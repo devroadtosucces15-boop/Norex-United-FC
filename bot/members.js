@@ -246,10 +246,52 @@ async function login(url, env) {
   if (!ret.startsWith(env.SITE_URL)) return new Response('Bad return URL', { status: 400 });
   const state = await seal(env, { r: ret, exp: Date.now() / 1000 + 600 });
   const q = new URLSearchParams({
-    client_id: env.DISCORD_APP_ID, response_type: 'code', scope: 'identify guilds.members.read',
+    client_id: env.DISCORD_APP_ID, response_type: 'code', scope: 'identify guilds.members.read connections', // connections: P2.4 verified PSN / Xbox / Steam
     redirect_uri: `${url.origin}/auth/callback`, state, prompt: 'none',
   });
   return Response.redirect(`https://discord.com/oauth2/authorize?${q}`, 302);
+}
+
+// ---------- P2.4 platform accounts (Discord `connections` scope) ----------
+// Discord tells us which PlayStation / Xbox / Steam / Epic accounts a member linked and whether the platform verified them.
+// Kept in profiles.verified at every login; nothing is stored for accounts Discord doesn't mark verified.
+const CONN = { playstation: 'psn', xbox: 'xbox', steam: 'steam', epicgames: 'epic' };
+async function saveConnections(env, uid, auth) {
+  const r = await fetch('https://discord.com/api/v10/users/@me/connections', { headers: auth });
+  if (!r.ok) return; // older sessions without the scope → 401; keep what we had
+  const list = await r.json();
+  const verified = {};
+  for (const c of Array.isArray(list) ? list : []) if (c.verified && CONN[c.type] && !verified[CONN[c.type]]) verified[CONN[c.type]] = { name: clean(c.name, 40), at: Date.now() };
+  if (!Object.keys(verified).length) { await run(env, "UPDATE profiles SET verified = '{}' WHERE user_id = ?", uid); return; } // no empty profile rows
+  await run(env, `INSERT INTO profiles (user_id, updated, verified) VALUES (?, ?, ?)
+    ON CONFLICT (user_id) DO UPDATE SET verified = excluded.verified`, uid, Date.now(), JSON.stringify(verified));
+}
+const loadSiteFor = (env) => (file) => fetch(`${String(env.SITE_URL).replace(/\/?$/, '/')}api/${file}.json`).then((r) => r.json());
+// On console the EA player name *is* the PSN ID / Xbox gamertag, so a verified account with the claimed player's name proves
+// the claim – approve it without waiting for a manager. → the platform label, or null when nothing matched.
+async function autoApprove(env, uid, loadSite) {
+  const c = await one(env, "SELECT * FROM claims WHERE user_id = ? AND status = 'pending'", uid);
+  if (!c) return null;
+  let verified = {};
+  try { verified = JSON.parse((await one(env, 'SELECT verified FROM profiles WHERE user_id = ?', uid))?.verified || '{}'); } catch {}
+  const hit = ['psn', 'xbox'].find((k) => verified[k]?.name && verified[k].name.toLowerCase() === String(c.player_name).toLowerCase());
+  if (!hit) return null;
+  if (await one(env, "SELECT 1 FROM claims WHERE user_id != ? AND player = ? AND status = 'approved'", uid, c.player)) return null;
+  const how = hit === 'psn' ? 'verified PSN' : 'verified Xbox';
+  const at = Date.now();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE claims SET status = 'approved', decided_by = ?, decided_at = ? WHERE user_id = ?").bind(`Auto (${how})`, at, uid),
+    env.DB.prepare("INSERT INTO claim_history (user_id, action, player, by_name, at) VALUES (?, 'approved', ?, ?, ?)").bind(uid, c.player_name, `Auto (${how})`, at),
+  ]);
+  await log(env, { u: uid, n: c.name, a: c.avatar }, 'claim-approved', `${c.name} → ${c.player_name} · auto (${how})`);
+  await rebuildPublic(env);
+  if (flagOn(env, { role: 'manager' }, 'roleSync')) { // a system decision – synced like a manager's
+    const pos = (await loadSite('players').catch(() => [])).find((x) => x.k === c.player)?.pos;
+    await safely(syncMember(env, uid, true, pos));
+  }
+  await safely(notify(env, [uid], { type: 'claim', title: `✅ ${c.player_name} is yours – matched your ${how} account`, body: 'You now have the verified badge on your player page.', link: `players/${c.player}.html` }));
+  await safely(notifyManagers(env, { icon: '🪪', title: `Claim auto-approved: ${c.name} → ${c.player_name}`, body: `Their Discord-verified ${hit === 'psn' ? 'PSN' : 'Xbox'} name matches the EA player name.`, link: 'members.html#manager' }));
+  return how;
 }
 
 async function callback(url, env) {
@@ -286,6 +328,7 @@ async function callback(url, env) {
       role = excluded.role, last_at = excluded.last_at, logins = users.logins + 1`, user.id, name, avatar, user.username, admin ? 1 : 0, role, now, now);
   const me = { u: user.id, n: name, a: avatar };
   await log(env, me, 'login', admin ? `as ${role}` : '');
+  await safely(saveConnections(env, user.id, auth).then(() => flagOn(env, { role }, 'platformLink') && autoApprove(env, user.id, loadSiteFor(env)))); // P2.4
   const session = await seal(env, { ...me, role, adm: admin, exp: Math.floor(Date.now() / 1000) + (admin ? 7 : 30) * DAY });
   return back(`norex_session=${session}`);
 }
@@ -328,8 +371,9 @@ async function route(p, method, body, me, env, loadSite, url) {
           name = excluded.name, avatar = excluded.avatar, decided_by = NULL, decided_at = NULL`, me.u, pl.k, pl.n, Date.now(), me.n, me.a);
     }
     await log(env, me, 'claim', pl.n);
-    await safely(notifyManagers(env, { icon: '🪪', title: `New player claim: ${me.n} → ${pl.n}`, link: 'members.html#manager' }, me.u));
-    return json({ claim: await getClaim(env, me.u) });
+    const auto = flagOn(env, me, 'platformLink') ? await safely(autoApprove(env, me.u, loadSite)) : null; // P2.4
+    if (!auto) await safely(notifyManagers(env, { icon: '🪪', title: `New player claim: ${me.n} → ${pl.n}`, link: 'members.html#manager' }, me.u));
+    return json({ claim: await getClaim(env, me.u), ...(auto ? { auto } : {}) });
   }
 
   if (p === '/api/profile' && method === 'POST') {
@@ -581,6 +625,8 @@ async function readRush(body, loadSite) {
   return { m: { date, opponent: club?.n ?? opponent, oppId: club ? String(club.id) : null, gf, ga, shot: shot || null, note: clean(body.note, 200) || null }, ps };
 }
 
+// P7.4 /rush log – the Discord command goes through exactly the same checks as the Squad Hub form.
+export const submitRush = (env, me, body, loadSite) => rushRoute('/api/rush', 'POST', body, me, env, loadSite);
 async function rushRoute(p, method, body, me, env, loadSite) {
   if (p === '/api/rush/queue' && method === 'GET') return json(await rushQueue(env, me));
 

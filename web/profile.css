@@ -95,3 +95,6 @@
 .pf-twitch{background:#9146ff;border-color:#9146ff}
 .pf-youtube{background:#ff0033;border-color:#ff0033}
 @media (max-width:720px){.pf-hero{grid-template-columns:1fr;justify-items:center;text-align:center}.pf-id{justify-items:center}.pf-meta,.pf-actions{justify-content:center}.pf-ids li{grid-template-columns:1fr auto}.pf-ids span{grid-column:1/-1}}
+.pf-start{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;margin:8px 0 0;padding:6px 12px;border-radius:999px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.5);color:#dff7e8;font-size:13px;text-decoration:none}
+.pf-start:hover{border-color:var(--win)}
+.pf-verified{display:inline-grid;place-items:center;width:16px;height:16px;margin-left:5px;border-radius:50%;background:#1d9bf0;color:#fff;font:700 10px var(--body);vertical-align:middle}

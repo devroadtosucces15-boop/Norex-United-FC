@@ -36,7 +36,7 @@ export const KV = {
 };
 
 // Fake Discord user for the login flow – tests change it (id 111 is in ADMIN_IDS = owner).
-export const mockDiscord = { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [], inGuild: true };
+export const mockDiscord = { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [], inGuild: true, connections: [] };
 export const SITE = 'http://localhost:4321/';
 globalThis.caches = { default: { match: async () => null, put: async () => {} } };
 const realFetch = globalThis.fetch;
@@ -44,6 +44,7 @@ globalThis.fetch = async (url) => {
   url = String(url);
   if (url.startsWith(SITE)) return new Response(fs.readFileSync(ROOT + 'site/' + url.slice(SITE.length)));
   if (url.includes('/oauth2/token')) return Response.json({ access_token: 't' });
+  if (url.endsWith('/users/@me/connections')) return Response.json(mockDiscord.connections ?? []); // P2.4
   if (url.endsWith('/users/@me')) return Response.json({ id: mockDiscord.id, username: mockDiscord.username, global_name: mockDiscord.global_name, avatar: null });
   if (url.includes('/guilds/')) return mockDiscord.inGuild ? Response.json({ roles: mockDiscord.roles }) : new Response('{}', { status: 404 });
   if (url.startsWith('https://discord.com/') || url.startsWith('https://api.github.com/')) throw new Error(`unexpected network call in test: ${url}`);

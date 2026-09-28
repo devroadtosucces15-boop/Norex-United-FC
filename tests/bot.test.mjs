@@ -29,6 +29,7 @@ const sample = {
   compare: [{ name: 'player1', value: players[0].n }, { name: 'player2', value: players[1].n }],
   top: [{ name: 'stat', value: 'rating' }],
   syncroles: null, // deferred reply – tested in discord.test.mjs (P2.5)
+  schedule: null, availability: null, lineup: null, rush: null, me: null, leaderboard: null, profile: null, // P7.4 – need the member DB: tests/wave8.test.mjs
 };
 for (const name of Object.keys(sample)) {
   if (!registered.includes(name) || !sample[name]) continue;

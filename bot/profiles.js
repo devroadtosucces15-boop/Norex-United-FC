@@ -26,7 +26,7 @@ export const profileOut = (r) => r && {
   bio: r.bio, positions: parse(r.positions, []), platform: r.platform, updated: r.updated,
   rushPositions: parse(r.rush_positions, []), tz: r.tz || '', playTimes: parse(r.play_times, null),
   ids: parse(r.ids, {}), twitch: r.twitch || '', youtube: r.youtube || '', country: r.country || '', club: r.fav_club || '',
-  tags: parse(r.tags, []),
+  tags: parse(r.tags, []), verified: parse(r.verified, {}), // P2.4 – { psn|xbox|steam|epic: { name, at } } from Discord
 };
 
 // ---------- validation (each returns the clean value, or throws a human message) ----------
@@ -142,6 +142,7 @@ export async function memberCard(env, me, id) {
     badgesOn ? badgesOf(env, id, me) : null,
     badgesOn ? achSummary(env, id) : null,
   ]);
+  const starting = flagOn(env, me, 'events') ? await startingFor(env, id) : null; // P3.4
   const role = u.role && u.role !== 'member' ? u.role : u.admin ? 'manager' : claim ? 'claimed' : 'member';
   return {
     member: { id: u.id, n: u.name, a: u.avatar, tag: u.tag, role, roleLabel: ROLE_LABEL[role], first: u.first_at, last: u.last_at, me: u.id === me.u },
@@ -150,5 +151,16 @@ export async function memberCard(env, me, id) {
     ...(activity ? { activity } : {}),
     ...(builds ? { builds } : {}),
     ...(badges ? { badges: badges.badges, canRemoveBadges: badges.canRemove, ach } : {}),
+    ...(starting ? { starting } : {}),
   };
+}
+// P3.4: the member's place in the next published lineup ({ event, type, title, start, pos, formation }) or null.
+const TIDY = { LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM', LDM: 'CDM', RDM: 'CDM', LAM: 'CAM', RAM: 'CAM', LS: 'ST', RS: 'ST' };
+async function startingFor(env, id) {
+  const rows = await all(env, "SELECT id, type, title, start, lineup, formation FROM events WHERE status = 'scheduled' AND lineup_at IS NOT NULL AND start + duration * 60000 > ? AND instr(lineup, ?) > 0 ORDER BY start LIMIT 5", Date.now(), `"${id}"`);
+  for (const r of rows) {
+    const slot = parse(r.lineup, {})[id];
+    if (slot) return { event: r.id, type: r.type, title: r.title ?? undefined, start: r.start, pos: TIDY[slot] ?? slot, formation: r.formation ?? undefined };
+  }
+  return null;
 }

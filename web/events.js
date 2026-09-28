@@ -42,6 +42,21 @@
     return out;
   }
 
+  // ================= P3.4 lineup pitch =================
+  const POS_OF = (slot) => ({ LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM', LDM: 'CDM', RDM: 'CDM', LAM: 'CAM', RAM: 'CAM', LS: 'ST', RS: 'ST' })[slot] ?? slot;
+  const first = (n) => String(n ?? '').split(/[\s_]/)[0].slice(0, 12);
+  // slots: { slot: person } – person = { id, n, a, pos? }. editable adds data-slot targets; sel = the slot being filled.
+  function pitchHtml(formations, formation, slots, { editable = false, me = null } = {}) {
+    const f = formations?.[formation];
+    if (!f) return '';
+    return `<div class="lu-pitch${editable ? ' edit' : ''}">${f.map(([slot, x, y]) => {
+      const p = slots[slot];
+      const warn = p && editable && p.s !== 'yes' && !p.on;
+      return `<${editable ? 'button type="button"' : 'div'} class="lu-slot${p ? ' on' : ''}${warn ? ' warn' : ''}${p && p.id === me ? ' me' : ''}"${warn ? ` title="${esc(p.n)} hasn’t said yes"` : ''} style="left:${x}%;top:${y}%" data-slot="${slot}"${editable ? ` aria-label="${slot}${p ? `: ${esc(p.n)}` : ' – empty'}"` : ''}>
+<span class="lu-dot">${p ? UI.avatar(p.a, p.n, 34) : `<b>${POS_OF(slot)}</b>`}</span><small>${p ? esc(first(p.n)) : ''}</small>${p ? `<em>${POS_OF(slot)}</em>` : ''}</${editable ? 'button' : 'div'}>`;
+    }).join('')}</div>`;
+  }
+
   // ================= Squad Hub tab =================
   function schedule(el, ctx) {
     let S = null, sel = new Set(), poll = null, day = null, showPast = false;
@@ -58,19 +73,20 @@
 <header>${ph === 'soon' || ph === 'live' ? `<input type="checkbox" class="ev-sel" data-sel aria-label="Select for bulk answer"${sel.has(e.id) ? ' checked' : ''}>` : ''}<span class="ev-ic" aria-hidden="true">${TYPES[e.type][0]}</span>
 <div class="ev-t"><b>${esc(label(e))}</b><small>${fmtTime(e.start)} – ${fmtTime(e.end)}${tzNote}${ph === 'soon' ? ` · ${until(e.start)}` : ''}</small></div>
 ${ph === 'live' ? UI.pill(Date.now() < e.start ? 'Starting soon' : Date.now() < e.end ? 'Live now' : 'Just finished', { emoji: '🔴', tone: 'red' }) : ph === 'cancelled' ? UI.pill('Cancelled', { emoji: '🚫', tone: 'loss' }) : ''}
+${e.lineupAt && e.lineup?.[ctx.me.u] ? UI.pill(`You’re starting at ${POS_OF(e.lineup[ctx.me.u])}`, { emoji: '🧩', tone: 'win' }) : ''}
 ${e.usual !== undefined && !my && ph !== 'past' ? UI.pill(e.usual ? 'You’re usually on' : 'Outside your usual times', { emoji: e.usual ? '🟢' : '🌙', tone: e.usual ? 'win' : '', tip: 'From the play times on your profile' }) : ''}</header>
 ${e.cancelReason ? `<p class="muted small">🚫 ${esc(e.cancelReason)}</p>` : ''}${e.notes ? `<p class="ev-notes">${esc(e.notes).replace(/\n/g, '<br>')}</p>` : ''}
 ${cov.length && ph !== 'cancelled' ? `<div class="ev-needs">${cov.map((c) => `<span class="ev-need${c.short ? ' short' : ''}" data-tip="${c.k === 'players' ? `${c.have} said yes` : `${c.have} first-choice ${c.k} said yes${c.could > c.have ? ` · ${c.could} can play it` : ''}`}">${c.k === 'players' ? '👥' : esc(c.k)} <b>${c.have}/${c.n}</b></span>`).join('')}</div>` : ''}
 <div class="ev-who"><span class="count-row"><span>✅ ${by('yes').length}</span><span>❔ ${by('maybe').length}</span><span>❌ ${by('no').length}</span></span><span class="faces">${faces(by('yes'))}${faces(by('maybe'), 'maybe')}</span></div>
-${live ? liveBox(e, me) : ''}
+${lineupView(e)}${live ? liveBox(e, me) : ''}
 <footer>${ph === 'soon' || ph === 'live' ? `<div class="pick" role="group" aria-label="Can you make it?">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="${my === s ? 'on' : ''}" data-rsvp="${s}" aria-pressed="${my === s}" aria-label="${s}">${ICON[s]}</button>`).join('')}</div>` : ''}
 <span class="grow"></span>${ph === 'past' && S.matchNight ? `<button type="button" class="btn sm${e.reportAt ? ' ghost' : ''}" data-report>📋 Session report</button>` : ''}
-${S.canManage && ph !== 'past' && ph !== 'cancelled' ? `<button type="button" class="btn sm ghost" data-edit>✏️</button><button type="button" class="btn sm ghost" data-cancel aria-label="Cancel event">🚫</button>` : ''}</footer></article>`;
+${S.canManage && ph !== 'past' && ph !== 'cancelled' ? `<button type="button" class="btn sm ghost" data-lineup>🧩 Lineup</button><button type="button" class="btn sm ghost" data-edit>✏️</button><button type="button" class="btn sm ghost" data-cancel aria-label="Cancel event">🚫</button>` : ''}</footer></article>`;
     }
     function liveBox(e, me) {
       const lineup = e.lineup || {};
       return `<div class="ev-live"><div class="row"><button type="button" class="btn sm${me ? ' on' : ''}" data-checkin>${me ? '🟢 You’re on' : '🟢 I’m on'}</button>
-<label class="ev-trial">🧪 Trying a position tonight? <select data-trial><option value="">No</option>${NEED_POS.map((p) => `<option${me?.trial === p ? ' selected' : ''}>${p}</option>`).join('')}</select></label>${S.canManage ? '<span class="grow"></span><button type="button" class="btn sm ghost" data-lineup>🧩 Quick lineup</button>' : ''}</div>
+<label class="ev-trial">🧪 Trying a position tonight? <select data-trial><option value="">No</option>${NEED_POS.map((p) => `<option${me?.trial === p ? ' selected' : ''}>${p}</option>`).join('')}</select></label></div>
 <h4>Who’s on <em>${e.checkins.length}</em></h4>${e.checkins.length ? `<ul class="ev-on">${e.checkins.map((c) => `<li>${UI.member({ id: c.id, n: c.n, a: c.a, sub: [lineup[c.id] && `🧩 ${lineup[c.id]}`, c.trial && `🧪 trying ${c.trial}`].filter(Boolean).join(' · ') }, { size: 26 })}</li>`).join('')}</ul>` : '<p class="muted small">Nobody has checked in yet.</p>'}</div>`;
     }
     function paint() {
@@ -100,7 +116,7 @@ ${past.length ? `<details class="ev-past"${showPast ? ' open' : ''}><summary>�
     }
     async function editor(ev) {
       const w = ev ? wall(ev.start, ev.tz) : (() => { const d = new Date(Date.now() + 86400e3); return { date: dayKey(d.getTime()), time: '20:00' }; })();
-      let f = { type: ev?.type ?? 'league', title: ev?.title ?? '', date: w.date, time: w.time, tz: ev?.tz ?? MY_TZ, duration: ev?.duration ?? 120, notes: ev?.notes ?? '', needs: { ...(ev?.needs ?? {}) }, public: ev?.public ?? false, repeat: 0, notify: true };
+      let f = { remind: ev?.remind ?? 'dm', type: ev?.type ?? 'league', title: ev?.title ?? '', date: w.date, time: w.time, tz: ev?.tz ?? MY_TZ, duration: ev?.duration ?? 120, notes: ev?.notes ?? '', needs: { ...(ev?.needs ?? {}) }, public: ev?.public ?? false, repeat: 0, notify: true };
       const zones = (() => { try { return Intl.supportedValuesOf('timeZone'); } catch { return [MY_TZ, 'UTC']; } })();
       const targets = !ev && S.canManage ? await ctx.call('/api/events/discord').catch(() => null) : null;
       for (;;) {
@@ -115,6 +131,7 @@ ${past.length ? `<details class="ev-past"${showPast ? ' open' : ''}><summary>�
 <fieldset class="ev-needs-in"><legend>Positions / numbers needed <small class="muted">(optional)</small></legend><label class="ev-n">👥 Players<input type="number" name="n-players" min="0" max="30" value="${f.needs.players ?? ''}"></label>${NEED_POS.map((p) => `<label class="ev-n">${p}<input type="number" name="n-${p}" min="0" max="11" value="${f.needs[p] ?? ''}"></label>`).join('')}</fieldset>
 <label>Notes<textarea name="notes" rows="3" maxlength="1000" placeholder="Lobby host, kit, who's streaming…">${esc(f.notes)}</textarea></label>
 <label class="dx-check"><input type="checkbox" name="public"${f.public ? ' checked' : ''}> <span>🌍 Show as “next match night” on the public home page</span></label>
+<label>Reminders <small class="muted">(24 h and 2 h before – in the event’s Discord post; people who haven’t answered get nudged)</small><select name="remind">${[['dm', '🔔 Nudge by bell + Discord DM'], ['mention', '📣 @mention them in the Discord channel'], ['off', '🔕 Reminder post only, no nudges']].map(([k, l]) => `<option value="${k}"${f.remind === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
 ${ev ? '' : `<label>Repeat weekly<select name="repeat">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map((r) => `<option value="${r}"${+f.repeat === r ? ' selected' : ''}>${r ? `${r + 1} weeks in total` : 'Just once'}</option>`).join('')}</select></label>
 <label class="dx-check"><input type="checkbox" name="notify"${f.notify ? ' checked' : ''}> <span>🔔 Tell members <small class="muted">(bell + Discord DM, per their settings)</small></span></label>
 ${targets?.ready ? `<label class="dx-check"><input type="checkbox" name="discordOn"${f.discordOn ? ' checked' : ''}> <span>💬 Post it to Discord</span></label><div class="ev-dc"${f.discordOn ? '' : ' hidden'}><label>Channel<select name="channel">${targets.channels.map((c) => `<option value="${esc(c.id)}"${c.id === (f.channel ?? targets.last) ? ' selected' : ''}>${c.news ? '📢' : '#'} ${esc(c.name)}</option>`).join('')}</select></label><label>Ping<select name="role"><option value="">Nobody</option>${targets.roles.map((r) => `<option value="${esc(r.id)}"${r.id === f.role ? ' selected' : ''}>${esc(r.name.startsWith('@') ? r.name : `@${r.name}`)}</option>`).join('')}</select></label></div>` : ''}`}</form>`,
@@ -122,7 +139,7 @@ ${targets?.ready ? `<label class="dx-check"><input type="checkbox" name="discord
           onOpen: (d) => {
             const read = () => {
               const fm = $('form', d), val = (n) => fm.elements.namedItem(n);
-              f = { ...f, type: $('input[name=type]:checked', d)?.value ?? f.type, title: val('title').value, date: val('date').value, time: val('time').value, tz: val('tz').value.trim(), duration: +val('duration').value, notes: val('notes').value, public: val('public').checked,
+              f = { ...f, remind: val('remind').value, type: $('input[name=type]:checked', d)?.value ?? f.type, title: val('title').value, date: val('date').value, time: val('time').value, tz: val('tz').value.trim(), duration: +val('duration').value, notes: val('notes').value, public: val('public').checked,
                 needs: Object.fromEntries(['players', ...NEED_POS].map((p) => [p, +val(`n-${p}`).value || 0]).filter(([, x]) => x > 0)) };
               if (!ev) Object.assign(f, { repeat: +val('repeat').value, notify: val('notify').checked, discordOn: !!val('discordOn')?.checked, channel: val('channel')?.value, role: val('role')?.value });
               const dc = $('.ev-dc', d);
@@ -141,17 +158,83 @@ ${targets?.ready ? `<label class="dx-check"><input type="checkbox" name="discord
         } catch (er) { ctx.toast(er.message, true); }
       }
     }
+    const people = (e) => {
+      const m = new Map();
+      for (const r of [...e.checkins, ...e.rsvps]) if (!m.has(r.id)) m.set(r.id, { id: r.id, n: r.n, a: r.a, s: e.rsvps.find((x) => x.id === r.id)?.s, pos: e.rsvps.find((x) => x.id === r.id)?.pos, on: e.checkins.some((c) => c.id === r.id), trial: e.checkins.find((c) => c.id === r.id)?.trial });
+      for (const [id, u] of Object.entries(e.lineupPeople || {})) if (!m.has(id)) m.set(id, { id, n: u.n, a: u.a });
+      return m;
+    };
+    function lineupView(e) {
+      const ids = Object.keys(e.lineup || {});
+      if (!e.lineupAt || !ids.length) return '';
+      const who = people(e);
+      if (e.formation && S.formations?.[e.formation]) {
+        const slots = Object.fromEntries(ids.map((id) => [e.lineup[id], who.get(id) ?? { id, n: 'Member' }]));
+        return `<details class="lu-view"${e.lineup[ctx.me.u] ? ' open' : ''}><summary>🧩 Lineup · ${esc(e.formation)} <small class="muted">published ${UI.ago(e.lineupAt)}</small></summary>${pitchHtml(S.formations, e.formation, slots, { me: ctx.me.u })}<p class="small"><a href="${BASE}playstyle.html#league-positions">🧠 Play Style for every position</a></p></details>`;
+      }
+      return `<p class="small">🧩 ${ids.map((id) => `${esc(who.get(id)?.n ?? 'Member')} <b>${esc(POS_OF(e.lineup[id]))}</b>`).join(' · ')}</p>`;
+    }
+    // P3.4 builder: pick a formation, tap a player then a slot (or drag), tap a filled slot to send them back to the bench.
     async function lineupModal(e) {
-      let lineup = { ...(e.lineup || {}) };
-      const people = [...e.checkins, ...e.rsvps.filter((r) => r.s === 'yes' && !e.checkins.some((c) => c.id === r.id))];
+      const who = people(e);
+      const inv = Object.entries(e.lineup || {});
+      let formation = e.formation ?? (e.type === 'rush' ? '' : '4-3-3');
+      let slots = Object.fromEntries(inv.filter(([, slot]) => !formation || S.formations[formation]?.some((x) => x[0] === slot)).map(([id, slot]) => [slot, id]));
+      let quick = Object.fromEntries(inv); // formation = '' → quick list { id: pos }
+      let pick = null, templates = null, tplName = '';
+      const bench = () => [...who.values()].filter((p) => !Object.values(slots).includes(p.id)).sort((a, b) => rank(b) - rank(a));
+      const rank = (p) => (p.s === 'yes' ? 2 : 0) + (p.on ? 1 : 0); // said yes first, then checked in
+      const chip = (p) => `<button type="button" class="lu-chip${pick === p.id ? ' sel' : ''}${p.s === 'yes' ? '' : ' soft'}" draggable="true" data-p="${esc(p.id)}">${UI.avatar(p.a, p.n, 24)}<span><b>${esc(p.n)}</b><small>${p.on ? '🟢 on · ' : ''}${p.s ? `${ICON[p.s]} ` : ''}${esc((p.pos || []).slice(0, 3).join('/'))}${p.trial ? ` · 🧪 ${esc(p.trial)}` : ''}</small></span></button>`;
+      const body = () => `<div class="lu-bar"><label>Formation <select data-f>${[['', '📋 Quick list (no pitch)'], ...Object.keys(S.formations).map((k) => [k, k])].map(([k, l]) => `<option value="${k}"${k === formation ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+${formation ? `<label>Template <select data-tpl><option value="">${templates ? (templates.length ? 'Load a saved lineup…' : 'No templates yet') : 'Loading…'}</option>${(templates || []).map((t) => `<option value="${t.id}">${esc(t.name)} · ${esc(t.formation)}</option>`).join('')}</select></label>
+<span class="lu-save"><input data-tplname maxlength="40" placeholder="Template name" value="${esc(tplName)}"><button type="button" class="btn sm ghost" data-savetpl>💾 Save</button></span>` : ''}</div>
+${formation ? `${pitchHtml(S.formations, formation, Object.fromEntries(Object.entries(slots).map(([slot, id]) => [slot, who.get(id) ?? { id, n: 'Member' }])), { editable: true })}
+<p class="muted small">${pick ? `Now tap a position for <b>${esc(who.get(pick)?.n)}</b>.` : 'Tap a player, then a position – or drag them onto the pitch. Tap a filled position to send them back.'}</p>
+<h4 class="lu-h">Available <em>${bench().length}</em></h4><div class="lu-bench">${bench().map(chip).join('') || '<p class="muted small">Everyone is placed.</p>'}</div>`
+    : `<div class="ev-lineup">${[...who.values()].map((p) => `<label>${UI.member({ id: p.id, n: p.n, a: p.a, sub: p.on ? '🟢 on' : p.s ? `${ICON[p.s]} said ${p.s}` : '' }, { size: 24, card: false })}<select data-u="${esc(p.id)}"><option value="">–</option>${NEED_POS.map((x) => `<option${quick[p.id] === x ? ' selected' : ''}>${x}</option>`).join('')}</select></label>`).join('') || UI.empty({ icon: '🧩', title: 'Nobody to place yet', text: 'Players appear once they answer or check in.' })}</div>`}`;
       const v = await UI.modal({
-        title: `Quick lineup · ${label(e)}`, icon: '🧩',
-        body: people.length ? `<p class="muted small">Checked-in players first. Everyone sees it on the event.</p><div class="ev-lineup">${people.map((p) => `<label>${UI.member({ id: p.id, n: p.n, a: p.a, sub: p.trial ? `🧪 trying ${p.trial}` : e.checkins.some((c) => c.id === p.id) ? '🟢 on' : 'said yes' }, { size: 24, card: false })}<select data-u="${esc(p.id)}"><option value="">–</option>${NEED_POS.map((x) => `<option${lineup[p.id] === x ? ' selected' : ''}>${x}</option>`).join('')}</select></label>`).join('')}</div>` : UI.empty({ icon: '🧩', title: 'Nobody to place yet', text: 'Players appear here once they check in or say yes.' }),
-        actions: people.length ? [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: 'Save lineup', value: 'ok' }] : undefined,
-        onOpen: (d) => d.addEventListener('change', (ev) => { const s = ev.target.closest('[data-u]'); if (s) { if (s.value) lineup[s.dataset.u] = s.value; else delete lineup[s.dataset.u]; } }),
+        title: `Lineup · ${label(e)}`, icon: '🧩', wide: true, body: `<div class="lu">${body()}</div>`,
+        actions: [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: '💾 Save draft', value: 'save', kind: 'ghost' }, { label: '📣 Publish', value: 'publish' }],
+        onOpen: (d) => {
+          const root = $('.lu', d);
+          const paint = () => { root.innerHTML = body(); };
+          const place = (slot) => {
+            const cur = slots[slot];
+            if (pick) { for (const k of Object.keys(slots)) if (slots[k] === pick) delete slots[k]; slots[slot] = pick; pick = null; }
+            else if (cur) delete slots[slot];
+            paint();
+          };
+          if (!templates) ctx.call('/api/events/templates').then((r) => { templates = r.templates; paint(); }).catch(() => { templates = []; paint(); });
+          root.addEventListener('click', async (ev) => {
+            const c = ev.target.closest('[data-p]'), sl = ev.target.closest('[data-slot]');
+            if (c) { pick = pick === c.dataset.p ? null : c.dataset.p; paint(); }
+            if (sl) place(sl.dataset.slot);
+            if (ev.target.closest('[data-savetpl]')) {
+              if (tplName.trim().length < 2) return ctx.toast('Give the template a name', true);
+              try { templates = (await ctx.call('/api/events/templates', { name: tplName, formation, slots })).templates; ctx.toast(`Template “${tplName}” saved`); paint(); } catch (er) { ctx.toast(er.message, true); }
+            }
+          });
+          root.addEventListener('change', (ev) => {
+            const t = ev.target;
+            if (t.matches('[data-f]')) { formation = t.value; slots = {}; pick = null; paint(); }
+            if (t.matches('[data-tpl]') && t.value) { const tp = templates.find((x) => x.id === +t.value); formation = tp.formation; slots = { ...tp.slots }; paint(); ctx.toast(`Loaded “${tp.name}” – players who aren’t on tonight show as “Member”`); }
+            if (t.matches('[data-u]')) { if (t.value) quick[t.dataset.u] = t.value; else delete quick[t.dataset.u]; }
+          });
+          root.addEventListener('input', (ev) => { if (ev.target.matches('[data-tplname]')) tplName = ev.target.value; });
+          root.addEventListener('dragstart', (ev) => { const c = ev.target.closest('[data-p]'); if (c) { pick = c.dataset.p; ev.dataTransfer.setData('text/plain', pick); } });
+          root.addEventListener('dragover', (ev) => { if (ev.target.closest('[data-slot]')) ev.preventDefault(); });
+          root.addEventListener('drop', (ev) => { const sl = ev.target.closest('[data-slot]'); if (sl) { ev.preventDefault(); pick = ev.dataTransfer.getData('text/plain') || pick; place(sl.dataset.slot); } });
+        },
       });
-      if (v !== 'ok') return;
-      try { S = await ctx.call('/api/events/lineup', { id: e.id, lineup }); paint(); ctx.toast('Lineup saved'); } catch (er) { ctx.toast(er.message, true); }
+      if (!v) return;
+      const lineup = formation ? Object.fromEntries(Object.entries(slots).map(([slot, id]) => [id, slot])) : quick;
+      if (v === 'publish' && !Object.keys(lineup).length) return ctx.toast('Place at least one player before publishing', true);
+      try {
+        const r = await ctx.call('/api/events/lineup', { id: e.id, formation: formation || null, lineup, publish: v === 'publish' });
+        S = r; paint();
+        ctx.toast(v === 'publish' ? `Lineup published · ${r.notified ?? 0} players told${r.discord?.ok ? ' · posted to Discord' : ''}` : 'Lineup saved as a draft');
+        if (r.discord && !r.discord.ok) ctx.toast(`Discord: ${r.discord.error}`, true);
+      } catch (er) { ctx.toast(er.message, true); }
     }
     async function report(e) {
       let r;

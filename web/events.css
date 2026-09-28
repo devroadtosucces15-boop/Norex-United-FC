@@ -109,3 +109,34 @@
   .ev-next{padding:12px 14px}.ev-next b{font-size:16px}.ev-next i{display:none}
 }
 @media (prefers-reduced-motion:reduce){.ev,.ev-on li,.rp-grade{animation:none}}
+
+/* P3.4 lineup pitch (builder + published view) */
+.lu{display:grid;gap:10px}
+.lu-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.lu-bar label{display:grid;gap:4px;font:600 12px var(--body);color:var(--muted)}
+.lu-bar select,.lu-save input{padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:13px var(--body);color-scheme:dark}
+.lu-save{display:flex;gap:6px;align-items:center}.lu-save input{width:150px}
+.lu-pitch{position:relative;aspect-ratio:68/80;max-height:62vh;width:100%;margin:0 auto;border-radius:14px;border:1px solid var(--line2);overflow:hidden;
+  background:radial-gradient(circle at 50% 50%,transparent 0 12%,rgba(255,255,255,.1) 12.2% 12.6%,transparent 12.8%),linear-gradient(0deg,transparent calc(50% - 1px),rgba(255,255,255,.1) 50%,transparent calc(50% + 1px)),
+  linear-gradient(0deg,rgba(255,255,255,.1) 0 1px,transparent 1px) 50% 100%/44% 16% no-repeat,repeating-linear-gradient(0deg,#123222 0 10%,#153a28 10% 20%)}
+.lu-pitch::before{content:"";position:absolute;left:28%;right:28%;bottom:0;height:16%;border:1px solid rgba(255,255,255,.12);border-bottom:0}
+.lu-slot{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:2px;width:74px;padding:0;border:0;background:none;color:#fff;font:600 11px var(--body);text-align:center}
+button.lu-slot{cursor:pointer}
+.lu-dot{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.45);border:2px dashed rgba(255,255,255,.4);transition:transform .15s,border-color .15s}
+.lu-dot b{font:700 12px var(--head);color:rgba(255,255,255,.8)}
+.lu-slot.on .lu-dot{border:2px solid #fff;background:var(--panel)}
+.lu-slot.me .lu-dot{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,193,106,.35)}
+.lu-slot small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 3px #000}
+.lu-slot em{font-style:normal;font:700 10px var(--head);color:var(--gold);letter-spacing:.06em}
+button.lu-slot:hover .lu-dot,button.lu-slot:focus-visible .lu-dot{transform:scale(1.12);border-color:var(--gold)}
+.lu-h{margin:4px 0 0;font:600 13px var(--head);text-transform:uppercase;letter-spacing:.08em}.lu-h em{font-style:normal;font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.1)}
+.lu-bench{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;max-height:30vh;overflow:auto}
+.lu-chip{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:#fff;cursor:grab;text-align:left;font:13px var(--body)}
+.lu-chip span{display:grid;min-width:0}.lu-chip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lu-chip small{color:var(--muted);font-size:11px}
+.lu-chip.soft{opacity:.7}
+.lu-chip.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(232,193,106,.35)}
+.lu-view summary{cursor:pointer;font:600 13px var(--head);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.lu-view .lu-pitch{max-width:420px}
+@media (max-width:560px){.lu-slot{width:60px;font-size:10px}.lu-dot{width:34px;height:34px}.lu-save input{width:120px}}
+.lu-slot.warn .lu-dot{border-color:var(--loss);box-shadow:0 0 0 3px rgba(239,68,68,.3)}
+.lu-slot.warn small::after{content:" ⚠️"}
