@@ -3,7 +3,7 @@
   "siteUrl": "https://devroadtosucces15-boop.github.io/Norex-United-FC/",
   "repoUrl": "https://github.com/devroadtosucces15-boop/Norex-United-FC",
   "discord": {
-    "applyLink": "",
+    "applyLink": "https://discord.gg/ZsMqKcqwUq",
     "note": "Discord invite with 'Apply to Join' enabled \u2013 people must be approved by an admin"
   },
   "brand": {
@@ -43,5 +43,9 @@
   },
   "members": {
     "api": "https://norex-bot.norexunited.workers.dev"
+  },
+  "streams": {
+    "youtube": "https://www.youtube.com/@NorexUnitedFC",
+    "twitch": "https://www.twitch.tv/norexunitedfc"
   }
 }
