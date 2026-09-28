@@ -6,6 +6,9 @@
   const PREVIEW = {
     apPerLevel: [20, 3], // index 0 = AP you start with at level 1, then AP gained per level (last value repeats)
     apCosts: [{ upTo: 70, cost: 1 }, { upTo: 80, cost: 2 }, { upTo: 90, cost: 3 }, { upTo: 99, cost: 4 }],
+    slots: { playstyles: 3, plus: 1, facilities: 3 },
+    body: { height: { min: 160, max: 200, def: 180 }, weight: { min: 55, max: 105, def: 75 } },
+    positions: { GK: ['GK'], DEF: ['CB', 'LB', 'RB'], MID: ['CDM', 'CM', 'CAM'], FWD: ['ST', 'LW', 'RW'] },
     base: { GK: { goalkeeping: 62, other: 40 }, DEF: { defending: 58, physical: 58, other: 50 }, MID: { passing: 58, dribbling: 56, other: 50 }, FWD: { shooting: 58, pace: 58, other: 50 }, outfieldGk: 12 },
   };
 
@@ -65,17 +68,59 @@
     return out;
   }
 
+  // Dataset shapes (all optional, entered by managers in Game rules → changed values):
+  //   playstyles      [{ id, name, icon?, desc?, plus?: true if it can be PlayStyle+ }]
+  //   specializations [{ id, name, desc?, archetypes?: [ids] (empty = all), bonus: { attr: n } }]
+  //   facilities      [{ id, name, desc?, bonus: { attr: n } }]
+  //   slots           { playstyles, plus, facilities }
+  //   body            { height: {min,max,def}, weight: {min,max,def}, heightMods: [{ from, to, mods }], weightMods: [...] }
+  //   archetypes[].positions ['ST', 'LW'] (else a default per group)
+  const slotsOf = (g) => ({ ...PREVIEW.slots, ...(g.slots || {}) });
+  const rangeOf = (g, k) => ({ ...PREVIEW.body[k], ...(g.body?.[k] || {}) });
+  const specsFor = (g, archId) => (g.specializations || []).filter((s) => !s.archetypes?.length || s.archetypes.includes(archId));
+  const bandMods = (list, v) => (list || []).find((r) => v >= r.from && v <= r.to)?.mods || {};
+
+  // Clean a build's choices against the data (unknown ids dropped, slot limits kept, body clamped).
+  function choices(g, b) {
+    const sl = slotsOf(g);
+    const ids = new Set((g.playstyles || []).map((p) => p.id));
+    const canPlus = new Set((g.playstyles || []).filter((p) => p.plus).map((p) => p.id));
+    const plus = [...new Set((b.plus || []).filter((id) => canPlus.has(id)))].slice(0, sl.plus);
+    const ps = [...new Set((b.ps || []).filter((id) => ids.has(id) && !plus.includes(id)))].slice(0, sl.playstyles);
+    const sp = specsFor(g, b.arch).some((s) => s.id === b.sp) ? b.sp : null;
+    const fids = new Set((g.facilities || []).map((f) => f.id));
+    const fa = [...new Set((b.fa || []).filter((id) => fids.has(id)))].slice(0, sl.facilities);
+    const H = rangeOf(g, 'height'), Wt = rangeOf(g, 'weight');
+    const clamp = (v, r) => Math.min(r.max, Math.max(r.min, Math.round(+v || r.def)));
+    return { ps, plus, sp, fa, h: clamp(b.h, H), w: clamp(b.w, Wt) };
+  }
+
+  // Attribute changes from specialization, facilities, height and weight – each listed by source for badges.
+  function modsOf(g, b) {
+    const c = choices(g, b);
+    const out = {};
+    const add = (src, mods) => { for (const [k, v] of Object.entries(mods || {})) if (+v) (out[k] ||= []).push([src, +v]); };
+    const sp = (g.specializations || []).find((s) => s.id === c.sp);
+    if (sp) add(sp.name, sp.bonus);
+    for (const id of c.fa) { const f = (g.facilities || []).find((x) => x.id === id); if (f) add(f.name, f.bonus); }
+    add('Height', bandMods(g.body?.heightMods, c.h));
+    add('Weight', bandMods(g.body?.weightMods, c.w));
+    return out;
+  }
+
   // Full evaluation of a build: { arch, level, spent: {attr: points} } → values, AP used/left, face stats, OVR.
   function evaluate(g, b) {
     const arch = archOf(g, b.arch);
     const level = Math.min(capOf(g), Math.max(1, b.level | 0));
     const base = baseOf(g, arch);
     const bonus = masteryBonus(g, arch?.id, level);
+    const mods = modsOf(g, { ...b, arch: arch?.id });
     const top = maxAttr(g);
     const rows = attrsOf(g).map((a) => {
       const add = Math.max(0, b.spent?.[a.name] | 0);
       const bon = bonus[a.name] || 0;
-      return { ...a, base: base[a.name], add, bonus: bon, value: Math.min(top, base[a.name] + add + bon), cost: costOf(g, base[a.name], add), sig: (arch?.signature || []).includes(a.name) };
+      const mod = (mods[a.name] || []).reduce((s, [, v]) => s + v, 0);
+      return { ...a, base: base[a.name], add, bonus: bon, mod, modFrom: mods[a.name] || [], value: Math.max(1, Math.min(top, base[a.name] + add + bon + mod)), cost: costOf(g, base[a.name], add), sig: (arch?.signature || []).includes(a.name) };
     });
     const total = apAt(g, level);
     const used = rows.reduce((s, r) => s + r.cost, 0);
@@ -88,7 +133,15 @@
       : [['PAC', avg('pace')], ['SHO', avg('shooting')], ['PAS', avg('passing')], ['DRI', avg('dribbling')], ['DEF', avg('defending')], ['PHY', avg('physical')]];
     const W = { GK: { goalkeeping: 0.9, physical: 0.1 }, DEF: { defending: 0.45, physical: 0.2, pace: 0.15, passing: 0.2 }, MID: { passing: 0.35, dribbling: 0.3, shooting: 0.15, defending: 0.1, physical: 0.1 }, FWD: { shooting: 0.45, dribbling: 0.25, pace: 0.2, physical: 0.1 } }[arch?.group || 'MID'];
     const ovr = Math.round(Object.entries(W).reduce((s, [k, w]) => s + avg(k) * w, 0));
-    return { arch, level, cap: capOf(g), rows, total, used, left: total - used, face, ovr, top, status: status(g, arch) };
+    // Position fit: how well the attribute mix suits each position the archetype plays (estimate, 0–99).
+    const PW = { GK: { goalkeeping: 1 }, CB: { defending: 0.5, physical: 0.3, pace: 0.2 }, LB: { pace: 0.35, defending: 0.35, passing: 0.3 }, RB: { pace: 0.35, defending: 0.35, passing: 0.3 },
+      CDM: { defending: 0.45, passing: 0.35, physical: 0.2 }, CM: { passing: 0.45, dribbling: 0.3, defending: 0.25 }, CAM: { passing: 0.4, dribbling: 0.35, shooting: 0.25 },
+      LM: { pace: 0.35, dribbling: 0.35, passing: 0.3 }, RM: { pace: 0.35, dribbling: 0.35, passing: 0.3 },
+      ST: { shooting: 0.5, pace: 0.25, physical: 0.25 }, CF: { shooting: 0.4, dribbling: 0.35, passing: 0.25 }, LW: { pace: 0.35, dribbling: 0.4, shooting: 0.25 }, RW: { pace: 0.35, dribbling: 0.4, shooting: 0.25 } };
+    const posFit = (arch?.positions?.length ? arch.positions : PREVIEW.positions[arch?.group || 'MID'])
+      .map((pos) => [pos, Math.round(Object.entries(PW[pos] || W).reduce((s, [k, w]) => s + avg(k) * w, 0))])
+      .sort((x, y) => y[1] - x[1]);
+    return { arch, level, cap: capOf(g), rows, total, used, left: total - used, face, ovr, fit: posFit, top, choices: choices(g, { ...b, arch: arch?.id }), slots: slotsOf(g), status: status(g, arch) };
   }
 
   // Can one more point go into this attribute? Returns the AP cost or null (at max / not enough AP).
@@ -119,6 +172,14 @@
     const p = list.map((a, i) => (b.spent?.[a.name] ? `${i.toString(36)}x${b.spent[a.name]}` : '')).filter(Boolean).join('.');
     const q = new URLSearchParams({ a: b.arch, l: String(b.level) });
     if (p) q.set('p', p);
+    const c = choices(g, b);
+    const idx = (list, ids) => ids.map((id) => list.findIndex((x) => x.id === id)).filter((i) => i >= 0).map((i) => i.toString(36)).join('.');
+    if (c.ps.length) q.set('ps', idx(g.playstyles, c.ps));
+    if (c.plus.length) q.set('pp', idx(g.playstyles, c.plus));
+    if (c.sp) q.set('sp', c.sp);
+    if (c.fa.length) q.set('fa', idx(g.facilities, c.fa));
+    if (b.h) q.set('h', String(c.h));
+    if (b.w) q.set('w', String(c.w));
     q.set('v', g.version || '');
     return q.toString();
   }
@@ -134,9 +195,12 @@
       if (a) spent[a.name] = +m[2];
     }
     const level = Math.min(capOf(g), Math.max(1, parseInt(q.get('l'), 10) || capOf(g)));
-    return { ...fit(g, { arch: arch.id, level, spent }), version: q.get('v') || null };
+    const ids = (list, str) => (str || '').split('.').map((x) => (list || [])[parseInt(x, 36)]?.id).filter(Boolean);
+    const extra = { ps: ids(g.playstyles, q.get('ps')), plus: ids(g.playstyles, q.get('pp')), sp: q.get('sp') || null, fa: ids(g.facilities, q.get('fa')), h: +q.get('h') || null, w: +q.get('w') || null };
+    const c = choices(g, { arch: arch.id, ...extra });
+    return { ...fit(g, { arch: arch.id, level, spent, ...c, h: extra.h && c.h, w: extra.w && c.w }), version: q.get('v') || null };
   }
 
-  const api = { PREVIEW, attrsOf, archOf, status, baseOf, capOf, apAt, stepCost, costOf, masteryBonus, evaluate, canAdd, fit, encode, decode };
+  const api = { PREVIEW, slotsOf, rangeOf, specsFor, choices, modsOf, attrsOf, archOf, status, baseOf, capOf, apAt, stepCost, costOf, masteryBonus, evaluate, canAdd, fit, encode, decode };
   globalThis.NXBuildMath = api;
 })();

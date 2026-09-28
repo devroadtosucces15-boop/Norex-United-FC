@@ -40,6 +40,26 @@ t('share link round-trip', back.arch === 'x' && back.level === 7 && back.spent.F
 t('share link: junk ignored, over-budget trimmed', (() => { const d = M.decode(g, 'a=x&l=1&p=zz9x5.0x999.bad'); return d && M.evaluate(g, d).left >= 0; })());
 t('share link without archetype → null', M.decode(g, 'l=5') === null);
 
+// (b) PlayStyles, Specializations, Facilities, Body
+const gb = { ...g, slots: { playstyles: 2, plus: 1, facilities: 1 },
+  playstyles: [{ id: 'finesse', name: 'Finesse Shot', plus: true }, { id: 'power', name: 'Power Shot', plus: true }, { id: 'trick', name: 'Trickster' }],
+  specializations: [{ id: 'poacher', name: 'Poacher', archetypes: ['x'], bonus: { Finishing: 2 } }, { id: 'other', name: 'Other', archetypes: ['nope'], bonus: { Vision: 5 } }],
+  facilities: [{ id: 'gym', name: 'Gym', bonus: { Strength: 3 } }, { id: 'track', name: 'Track', bonus: { 'Sprint Speed': 2 } }],
+  body: { height: { min: 160, max: 200, def: 180 }, weight: { min: 60, max: 100, def: 75 }, heightMods: [{ from: 190, to: 200, mods: { Agility: -3, 'Heading Accuracy': 2 } }], weightMods: [] } };
+const c1 = M.choices(gb, { arch: 'x', ps: ['finesse', 'power', 'trick', 'bogus'], plus: ['trick', 'power'], sp: 'other', fa: ['gym', 'track'], h: 250, w: 0 });
+t('choices: slot limits, unknown ids, + only where allowed', c1.plus.join() === 'power' && c1.ps.join() === 'finesse,trick' && c1.fa.join() === 'gym');
+t('choices: specialization must fit the archetype', c1.sp === null && M.choices(gb, { arch: 'x', sp: 'poacher' }).sp === 'poacher');
+t('choices: body clamped / defaulted', c1.h === 200 && c1.w === 75);
+const evb = M.evaluate(gb, { arch: 'x', level: 10, spent: {}, sp: 'poacher', fa: ['gym'], h: 195 });
+const row = (n) => evb.rows.find((r) => r.name === n);
+t('modifiers applied: spec +2, facility +3, height −3/+2', row('Finishing').mod === 2 && row('Strength').mod === 3 && row('Agility').mod === -3 && row('Heading Accuracy').mod === 2);
+t('modifier sources listed for badges', row('Agility').modFrom[0][0] === 'Height' && row('Finishing').value === 58 + 2);
+t('modifiers cost no AP', evb.used === 0);
+t('position fit: default positions per group, sorted', evb.fit.length === 3 && evb.fit[0][1] >= evb.fit[2][1] && evb.fit.every(([p]) => ['ST', 'LW', 'RW'].includes(p)));
+const bb = { arch: 'x', level: 5, spent: { Finishing: 1 }, ps: ['trick'], plus: ['power'], sp: 'poacher', fa: ['track'], h: 192, w: 81 };
+const back2 = M.decode(gb, M.encode(gb, bb));
+t('share link keeps PlayStyles, +, spec, facilities, body', back2.ps.join() === 'trick' && back2.plus.join() === 'power' && back2.sp === 'poacher' && back2.fa.join() === 'track' && back2.h === 192 && back2.w === 81);
+
 const html = fs.readFileSync(`${ROOT}site/builder.html`, 'utf8');
 t('builder page built, behind the builder flag, with coming-soon fallback', html.includes('data-flag="builder"') && html.includes('bd-soon') && html.includes('assets/builder.js'));
 done();
