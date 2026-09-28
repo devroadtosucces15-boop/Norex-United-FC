@@ -9,12 +9,14 @@
 //   DISCORD_PUBLIC_KEY, SITE_URL, GITHUB_REPO – public values in wrangler.toml
 
 import { handleMembers } from './members.js';
+import { updateLive } from './live.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 
 export default {
   async scheduled(event, env, ctx) {
+    ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
       method: 'POST',

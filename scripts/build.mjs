@@ -18,6 +18,11 @@ const MEMBER_API = config.members?.api || '';
 // Feature flags (P0.7): the site hides [data-flag] parts the viewer's role doesn't unlock; the Worker enforces.
 const FEATURES = JSON.stringify(config.features ?? {});
 const DISCORD_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.3 18.3 0 0 0-5.5 0L8.6 3a19.7 19.7 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18a19.9 19.9 0 0 0 6 3l1.3-2a13 13 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4-2 1 1.3 2a19.8 19.8 0 0 0 6-3c.5-5.2-.8-9.6-3.6-13.6ZM8 15.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.5 8 10.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>';
+// Club channels (P1.3): footer icons + home "Watch" section; the live bar/embed is drawn by app.js from /api/live.
+const STREAMS = config.streams ?? {};
+const YT_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z"/></svg>';
+const TWITCH_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M2.9 0 1.3 4.2v16.9h5.8V24h3.2l3.1-2.9h4.7l6.3-6.2V0H2.9Zm18.4 13.8-3.7 3.6h-5.8L8.6 20.3v-2.9H3.8V2.1h17.5v11.7ZM17.6 6.3v6.2h-2.1V6.3h2.1Zm-5.8 0v6.2H9.7V6.3h2.1Z"/></svg>';
+const CHANNELS = [['twitch', 'Twitch', TWITCH_SVG, 'Live match nights, Rush sessions and trials'], ['youtube', 'YouTube', YT_SVG, 'Highlights, goals of the week and full streams']].filter(([k]) => STREAMS[k]);
 const CREST_CDN = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
 
 // ---------- helpers ----------
@@ -324,9 +329,9 @@ function page({ title, base, active, body, description, image }) {
 <button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><i></i><i></i><i></i></button>
 <nav>${NAV.map(([k, href, label]) => `<a href="${base}${href}"${k === active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}
 <button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? '<span class="auth-slot"></span>' : ''}</nav></div></header>
-<main class="wrap">${body}</main>
+${CHANNELS.length && MEMBER_API ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
 <footer class="foot"><div class="wrap foot-in"><img src="${base}assets/crest.png" height="70" alt="">
-<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links">${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
+<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links">${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}${CHANNELS.map(([k, label, svg]) => `<a class="foot-${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
 <div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players and clubs…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
 <script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script></body></html>`;
@@ -393,6 +398,7 @@ ${members.length ? section('Club leaders', `<div class="grid4">
 ${card('Top scorers', barList(top((s) => num(s.goals)), { base }))}${card('Assists', barList(top((s) => num(s.assists)), { base }))}
 ${card('Avg rating', barList(top((s) => (num(s.gamesPlayed) >= 2 ? num(s.ratingAve) : 0)), { base, fmt: (v) => v.toFixed(1) }))}${card('Man of the match', barList(top((s) => num(s.manOfTheMatch)), { base }))}
 </div>`) : ''}
+${isHome && CHANNELS.length ? section('📺 Watch NOREX', `<div class="live-embed" hidden></div><div class="watch-grid">${CHANNELS.map(([k, label, svg, sub]) => `<a class="watch-card ${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener"><span class="wc-ic">${svg}</span><span><b>${label}</b><small>${sub}</small></span><span class="wc-go">Follow →</span></a>`).join('')}</div>`, { sub: 'streams & highlights', id: 'watch' }) : ''}
 ${section('Recent results', `<div class="fixtures">${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('') || '<p class="muted">No matches archived yet.</p>'}</div>${isHome && ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`)}
 ${!isHome && members.length ? section('Squad table', squadTable(members, id, base, `squad-${id}`)) : ''}`;
 }

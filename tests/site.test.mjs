@@ -26,4 +26,7 @@ t('P1.1 home stat cards link to drill-downs', /class="stat link" href="results\.
 t('P1.1 results page has League/Rush switch', res.includes('data-rush="results"'));
 const clubPages = files.filter((f) => /clubs\/\d+\.html$/.test(f));
 t('P1.1 other clubs link to their own drill-down (if archived)', clubPages.every((f) => { const h = read(f); const m = h.match(/href="(\d+-results\.html)\?f=played"/); return !m || fs.existsSync(SITE + 'clubs/' + m[1]); }) && clubPages.some((f) => /-results\.html\?f=won/.test(read(f))));
+// P1.3 streams
+t('P1.3 home has Watch section + live embed slot', index.includes('id="watch"') && index.includes('class="live-embed"') && index.includes(config.streams.twitch));
+t('P1.3 footer links both channels on every page', read(SITE + 'stats.html').includes(`href="${config.streams.youtube}"`) && read(SITE + 'stats.html').includes('class="live-bar"'));
 done();

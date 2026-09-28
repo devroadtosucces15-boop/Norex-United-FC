@@ -48,6 +48,7 @@
     "twitch": "https://www.twitch.tv/norexunitedfc"
   },
   "features": {
-    "rushLog": "members"
+    "rushLog": "members",
+    "liveBanner": "owner"
   }
 }

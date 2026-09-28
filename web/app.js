@@ -11,6 +11,7 @@ const RANK = { guest: 0, member: 1, claimed: 2, manager: 3, owner: 4 };
 const flagOn = (name, role = 'guest') => FLAGS[name] in FLAG_MIN && (RANK[role] ?? 0) >= FLAG_MIN[FLAGS[name]];
 const applyFlags = (role) => $$('[data-flag]').forEach((el) => { el.hidden = !flagOn(el.dataset.flag, role); });
 applyFlags('guest');
+let viewerRole = 'guest'; // set by the members block after login
 let apiCache;
 const api = () => (apiCache ??= Promise.all(['players', 'clubs'].map((f) => fetch(`${BASE}api/${f}.json`).then((r) => r.json()))));
 
@@ -307,7 +308,7 @@ if (MAPI) (() => {
   const roleTag = (r) => { const [l, c] = ROLE[r] || ROLE.member; return `<span class="tag ${c}">${l}</span>`; };
   const baseRole = session && (session.role ?? (session.adm ? 'manager' : 'member'));
   const ago = UI.time;
-  if (session) applyFlags(baseRole);
+  if (session) { applyFlags(baseRole); viewerRole = baseRole; }
   if (err) toast(err === 'not_member' ? 'Members only – you need to be in the NOREX Discord server.' : err === 'cancelled' ? 'Login cancelled.' : 'Discord login failed – try again.', true);
 
   // ---------- header: login button or account menu ----------
@@ -796,4 +797,35 @@ ${sec('Rush head to head', `<div class="tbl"><table><thead><tr><th>Opponent</th>
   $$('[data-modes] .mode-switch').forEach((el) => UI.tabs(el, (k) => set(k, true)));
   addEventListener('hashchange', () => { if (/^#rush-\d+$/.test(location.hash)) { const d = $(location.hash); if (d) d.open = true; else set('rush'); } });
   set(mode);
+})();
+
+// ================= Live stream bar + home embed (P1.3) =================
+// The Worker cron checks Twitch/YouTube every 10 min; we poll /api/live and show a pulsing bar site-wide and the
+// stream on the home page. Guarded by the `liveBanner` flag (the Worker answers 404 when it's off for the viewer).
+const liveBar = $('.live-bar');
+if (MAPI && liveBar && flagOn('liveBanner', viewerRole)) (() => {
+  const token = (() => { try { return localStorage.getItem('norex_session'); } catch { return null; } })();
+  const embed = $('.live-embed');
+  let shown = '';
+  const draw = (d) => {
+    const on = d?.live && (d.platform === 'twitch' ? /^\w{3,25}$/.test(d.channel || '') : /^[\w-]{11}$/.test(d.videoId || ''));
+    const key = on ? `${d.platform}:${d.channel || d.videoId}` : '';
+    liveBar.hidden = !on;
+    document.body.classList.toggle('is-live', !!on);
+    if (!on) { if (embed) { embed.hidden = true; embed.innerHTML = ''; } shown = ''; return; }
+    const where = d.platform === 'twitch' ? 'Twitch' : 'YouTube';
+    liveBar.innerHTML = `<div class="wrap live-in"><span class="live-dot" aria-hidden="true"></span><b>LIVE</b><span class="live-title">NOREX is live on ${where}${d.title ? ` – ${esc(d.title)}` : ''}</span><a class="btn sm" href="${embed ? '#watch' : esc(d.url)}"${embed ? '' : ' target="_blank" rel="noopener"'}>▶ Watch</a></div>`;
+    if (embed && key !== shown) {
+      shown = key;
+      const src = d.platform === 'twitch'
+        ? `https://player.twitch.tv/?channel=${encodeURIComponent(d.channel)}&parent=${encodeURIComponent(location.hostname)}&muted=true`
+        : `https://www.youtube-nocookie.com/embed/${encodeURIComponent(d.videoId)}?autoplay=1&mute=1`;
+      embed.innerHTML = `<div class="live-frame"><iframe src="${src}" title="NOREX live on ${where}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div><p class="small"><a href="${esc(d.url)}" target="_blank" rel="noopener">Open on ${where} ↗</a></p>`;
+      embed.hidden = false;
+    }
+  };
+  const poll = () => fetch(`${MAPI}/api/live`, { cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    .then((r) => (r.ok ? r.json() : null)).then(draw).catch(() => {});
+  poll();
+  setInterval(() => document.visibilityState === 'visible' && poll(), 120000);
 })();

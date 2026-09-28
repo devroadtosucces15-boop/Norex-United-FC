@@ -10,6 +10,7 @@
 // Data saved by the first (KV-only) version is copied into D1 once, on the first request after the switch.
 // Who may do what: bot/roles.js (can(user, action)).
 
+import { getLive } from './live.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
@@ -181,6 +182,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
     if (url.pathname === '/api/rush' && request.method === 'GET') return cors(env, json(await getRushPublic(env)));
     const me = await unseal(env, (request.headers.get('Authorization') || '').replace(/^Bearer /, ''));
+    if (url.pathname === '/api/live' && request.method === 'GET') { // P1.3 – public once the flag is 'public'
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'liveBanner')) return cors(env, fail('Not available yet.', 404));
+      return cors(env, json(await getLive(env)));
+    }
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};

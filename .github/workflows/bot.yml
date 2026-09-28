@@ -34,9 +34,9 @@ jobs:
         working-directory: bot
         run: npx --yes wrangler@4 d1 migrations apply norex --remote
 
-      - name: Feature flags (config.json → Worker var FEATURES)
+      - name: Feature flags + stream channels (config.json → Worker vars FEATURES, STREAMS)
         if: env.CLOUDFLARE_API_TOKEN != ''
-        run: node -e 'const f = JSON.stringify(require("./config.json").features || {}); require("fs").appendFileSync("bot/wrangler.toml", `FEATURES = ${JSON.stringify(f)}\n`); console.log("FEATURES", f)'
+        run: node -e 'const c = require("./config.json"); for (const [k, v] of [["FEATURES", c.features || {}], ["STREAMS", c.streams || {}]]) { const f = JSON.stringify(v); require("fs").appendFileSync("bot/wrangler.toml", `${k} = ${JSON.stringify(f)}\n`); console.log(k, f); }'
 
       - name: Deploy to Cloudflare Workers
         if: env.CLOUDFLARE_API_TOKEN != ''
