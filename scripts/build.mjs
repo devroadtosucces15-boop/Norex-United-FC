@@ -728,10 +728,13 @@ ${card('Positions', `<div class="pos-grid">${need.map((p) => `<div class="pos-ti
 </div>
 ${section('How to apply', `<ol class="steps">
 <li><b>Check your stats.</b> Find yourself on the <a href="players/index.html">Players page</a> if you've played us – we look at ratings, not just goals.</li>
-<li><b>Apply on Discord.</b> ${DISCORD ? 'The button below opens our server’s application form: EA ID, position and availability.' : 'Our application link is shared by club members – ask one of the squad.'}</li>
-<li><b>Get approved.</b> A club admin reviews every application. If it's a fit you'll be invited to a trial session.</li>
+<li><b>Apply on Discord.</b> ${DISCORD ? 'The button below opens our server’s application form: EA ID, position and availability.' : 'Ask one of the managers listed on this page.'}<span data-flag="trials" hidden> Or use the quick form on this page – no Discord server invite needed to send it.</span></li>
+<li><b>Get approved.</b> A manager reviews every application. Only managers can invite you to the server and to a trial session.</li>
 </ol>
-${RECRUIT.open && DISCORD ? `<p><a class="btn discord big" href="${esc(DISCORD)}" target="_blank" rel="noopener">${DISCORD_SVG} Apply on Discord</a></p><p class="muted small">You'll need a Discord account. Nobody joins the server without admin approval.</p>` : ''}`)}` }));
+${RECRUIT.open && DISCORD ? `<p><a class="btn discord big" href="${esc(DISCORD)}" target="_blank" rel="noopener">${DISCORD_SVG} Apply on Discord</a></p><p class="muted small">You'll need a Discord account. Nobody joins the server without a manager's approval.</p>` : ''}`)}
+${MEMBER_API ? `<div data-trials-page>
+<div data-flag="trials" hidden>${RECRUIT.open ? section('Quick application', '<div id="trial-form"></div>', { sub: 'EA ID, positions, platform, clips – a manager replies on Discord', id: 'apply-form' }) : ''}
+${section('Talk to a manager', '<div id="trial-contacts"></div>', { sub: 'Only managers can invite you – the owner and managers below', id: 'managers' })}</div></div>` : ''}` }));
 
 const linked = Object.values(state.clubs).filter((c) => c.tier === 'linked' || c.tier === 'manual');
 const askManager = DISCORD

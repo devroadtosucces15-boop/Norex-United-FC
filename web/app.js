@@ -312,6 +312,7 @@ if (MAPI) (() => {
     return d;
   };
   const toast = (msg, bad) => UI.toast(msg, bad ? 'bad' : 'ok');
+  const loadTrials = () => new Promise((ok, no) => (window.NXTrials ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/trials.js`, onload: ok, onerror: no }))));
   // Role badge (tiers from bot/roles.js). Sessions from before roles existed only carry `adm`.
   const ROLE = { owner: ['👑 Owner', 'owner'], manager: ['🛡️ Manager', 'home'], claimed: ['✅ Verified player', 'ok'], member: ['NOREX member', ''] };
   const roleTag = (r) => { const [l, c] = ROLE[r] || ROLE.member; return `<span class="tag ${c}">${l}</span>`; };
@@ -357,6 +358,10 @@ if (MAPI) (() => {
     });
   })();
 
+  // ---------- Trials page: manager contacts + application form (P1.4 / P1.5) ----------
+  const trialsPage = $('[data-trials-page]');
+  if (trialsPage && flagOn('trials', baseRole || 'guest')) loadTrials().then(() => NXTrials.apply(trialsPage, { call, toast })).catch(() => {});
+
   // ---------- Squad Hub ----------
   const hubEl = $('#hub');
   if (!hubEl) return;
@@ -369,7 +374,7 @@ if (MAPI) (() => {
   const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   const pill = (r) => `<span class="res ${r}">${r}</span>`;
   const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set() };
-  const TABS = [['me', '👤 My NOREX'], ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
+  const TABS = [['me', '👤 My NOREX'], ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
 
   hubEl.innerHTML = `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
 <div class="chipset hub-tabs">${TABS.map(([k, l]) => `<button class="chip" type="button" data-tab="${k}">${l}</button>`).join('')}</div>
@@ -396,7 +401,7 @@ if (MAPI) (() => {
       if (tab === S.tab) draw();
     } catch (e) { toast(e.message, true); }
   }
-  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, manager: viewManager }[S.tab])(); bind(); };
+  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, scout: () => '<div id="scout-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
 
   // ----- My NOREX -----
   function viewMe() {
@@ -555,7 +560,8 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
     // Member chip with hover card: claimed player + role from the admin overview.
     const mem = (id, u, sub, size = 26) => { const c = A.claims[id]; const pl = c?.status === 'approved' ? c : null; return UI.member({ id, n: u.n, a: u.a, sub: sub ?? (pl ? `🪪 ${pl.playerName}` : ''), player: pl?.player }, { size }); };
     const rq = S.rush?.pending || [];
-    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(A.flags ? [['flags', '🚩 Flags']] : [])];
+    const notesOn = flagOn('managerNotes', baseRole);
+    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(A.flags ? [['flags', '🚩 Flags']] : [])];
     if (!sub.some(([k]) => k === S.adminTab)) S.adminTab = 'claims';
     const body = {
       claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'New player claims show up here for approval.' })}
@@ -564,15 +570,17 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
 <div class="row">${UI.member({ id: m.by.id, n: m.by.n, a: m.by.a, sub: `logged ${UI.ago(m.at)}` }, { size: 24 })}<span class="grow"></span><button class="btn sm" type="button" data-rush="confirm" data-id="${m.id}">✅ Confirm</button><button class="btn ghost sm" type="button" data-rush="reject" data-id="${m.id}">Reject</button></div></div>`).join('')}</div>`
     : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'Rush results sent by members show up here for a quick check.' })}
 <h3 style="margin-top:24px">Last 30 days</h3>${S.rush?.recent?.length ? `<div class="tbl"><table><thead><tr><th>Match</th><th>Logged by</th><th>Status</th><th>By</th><th>When</th><th></th></tr></thead><tbody>${S.rush.recent.map((m) => `<tr><td>${pill(m.res)} ${m.gf}–${m.ga} vs ${esc(m.opp)} <small class="muted">${esc(m.date)}</small></td><td>${esc(m.by.n || '–')}</td><td><span class="tag ${RSTAT[m.status][1]}">${esc(m.status)}</span></td><td>${esc(m.decidedBy || '–')}</td><td>${m.decidedAt ? ago(m.decidedAt) : '–'}</td><td>${m.status === 'confirmed' ? `<button class="btn ghost sm" type="button" data-rush="remove" data-id="${m.id}">Remove</button>` : m.status === 'rejected' ? `<button class="btn ghost sm" type="button" data-rush="confirm" data-id="${m.id}">Confirm</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '🗂️', title: 'No decisions yet' })}`,
-      members: () => `<div class="tbl"><table><thead><tr><th>Member</th><th>Role</th><th>Player</th><th>Positions</th><th>Platform</th><th>This week</th><th class="n">Logins</th><th>Last seen</th></tr></thead><tbody>${users.map(([id, u]) => {
+      members: () => `<div class="tbl"><table><thead><tr><th>Member</th><th>Role</th><th>Player</th><th>Positions</th><th>Platform</th><th>This week</th><th class="n">Logins</th><th>Last seen</th>${notesOn ? '<th>Notes</th>' : ''}</tr></thead><tbody>${users.map(([id, u]) => {
         const c = A.claims[id], pf = A.profiles[id] || {};
-        return `<tr><td>${mem(id, u, u.tag ? `@${u.tag}` : '')}</td><td>${roleTag(u.role === 'member' || !u.role ? (u.admin ? 'manager' : c?.status === 'approved' ? 'claimed' : 'member') : u.role)}</td><td>${c ? `${esc(c.playerName)} <small class="muted">(${esc(c.status)})</small>` : '–'}</td><td>${esc((pf.positions || []).join(' / ') || '–')}</td><td>${esc(pf.platform || '–')}</td><td class="wk">${A.availability.map((d) => `<span data-tip="${esc(fmtDay(d.date))}">${ICON[d.byUser[id]?.s] || '·'}</span>`).join('')}</td><td class="n">${u.logins || 1}</td><td>${ago(u.last)}</td></tr>`;
+        return `<tr><td>${mem(id, u, u.tag ? `@${u.tag}` : '')}</td><td>${roleTag(u.role === 'member' || !u.role ? (u.admin ? 'manager' : c?.status === 'approved' ? 'claimed' : 'member') : u.role)}</td><td>${c ? `${esc(c.playerName)} <small class="muted">(${esc(c.status)})</small>` : '–'}</td><td>${esc((pf.positions || []).join(' / ') || '–')}</td><td>${esc(pf.platform || '–')}</td><td class="wk">${A.availability.map((d) => `<span data-tip="${esc(fmtDay(d.date))}">${ICON[d.byUser[id]?.s] || '·'}</span>`).join('')}</td><td class="n">${u.logins || 1}</td><td>${ago(u.last)}</td>${notesOn ? `<td><button class="tr-note-btn" type="button" data-notes="${esc(id)}" data-tip="Private manager notes">📝</button></td>` : ''}</tr>`;
       }).join('')}</tbody></table></div>`,
       week: () => `<div class="tbl"><table class="grid-week"><thead><tr><th>Member</th>${A.availability.map((d) => `<th>${esc(fmtDay(d.date))}</th>`).join('')}</tr></thead><tbody>${users.map(([id, u]) => `<tr><td>${mem(id, u)}</td>${A.availability.map((d) => `<td class="c s-${d.byUser[id]?.s || 'none'}">${ICON[d.byUser[id]?.s] || ''}</td>`).join('')}</tr>`).join('')}
 <tr class="tot"><td><b>Available</b></td>${A.availability.map((d) => { const v = Object.values(d.byUser); return `<td class="c"><b>${v.filter((x) => x.s === 'yes').length}</b><small> +${v.filter((x) => x.s === 'maybe').length}?</small></td>`; }).join('')}</tr></tbody></table></div>`,
       votes: () => `<div class="votes">${A.votes.map((m) => `<div class="card vote"><div class="vote-head">${pill(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b><small class="muted">${m.voters.length} votes</small></div>${m.voters.length ? `<ul class="voters">${m.voters.map((v) => `<li><img class="av" src="${esc(v.a)}" alt=""> ${esc(v.n)} → <b>${esc(v.pn || '?')}</b></li>`).join('')}</ul>` : '<p class="muted">No votes yet.</p>'}</div>`).join('')}</div>`,
       activity: () => `<div class="row" style="margin-bottom:12px"><select id="act-filter"><option value="">Everyone</option>${users.map(([id, u]) => `<option value="${id}"${S.actFilter === id ? ' selected' : ''}>${esc(u.n)}</option>`).join('')}</select></div>
 <ul class="feed">${A.activity.filter((a) => !S.actFilter || a.u === S.actFilter).map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><div>${mem(a.u, a, '', 22)} ${ACT_TXT[a.type] || esc(a.type)}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${ago(a.at)}</small></li>`).join('') || `<li>${UI.empty({ icon: '📜', title: 'No activity yet', text: S.actFilter ? 'This member has not done anything yet.' : '' })}</li>`}</ul>`,
+      trials: () => '<div id="trials-admin"></div>', // P1.5 – drawn by assets/trials.js
+      notes: () => '<div id="notes-admin"></div>', // P5.7
       game: () => `<div id="game-admin">${UI.skeleton('rows', 4)}</div>`, // PB.1 – drawn by assets/game.js
       // Owner only: read-only view of the live flags (the Worker's copy). Change them in config.json → features.
       flags: () => `<h3>🚩 Feature flags</h3><p class="muted small">New features start as <b>Owner</b> (only you see them) and get switched on at the QA checkpoints. Levels: off · owner · managers · members · public.</p>
@@ -602,6 +610,11 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
   Object.assign(ACT_TXT, { 'game-publish': 'published game rules', 'game-dismiss': 'dismissed a patch-note cap mention' });
   const gameAdmin = (el) => new Promise((ok, no) => (window.NXGame ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/game.js`, onload: ok, onerror: no }))))
     .then(() => NXGame.portal(el, { call, toast })).catch(() => toast('Could not load the game rules editor', true));
+  // Trials funnel, scouting and manager notes (P1.5 / P5.5 / P5.7) live in assets/trials.js, loaded on first use.
+  Object.assign(ACT, { 'trial-apply': '👑', 'trial-add': '➕', 'trial-status': '🧭', 'trial-link': '🪪', 'trial-session': '⚽', scout: '🔭', note: '📝', 'note-delete': '🗑' });
+  Object.assign(ACT_TXT, { 'trial-apply': 'applied on the Trials page', 'trial-add': 'added a trial card', 'trial-status': 'moved a trial', 'trial-link': 'linked a trial to a player', 'trial-session': 'logged a trial session', scout: 'recommended a player', note: 'wrote a private note', 'note-delete': 'deleted a note' });
+  const trialsCtx = () => ({ call, toast, role: S.me?.user?.role ?? baseRole, perms: S.me?.user?.perms ?? [], me: { u: session.u, n: session.n, a: session.a }, admin: S.admin, players: Array.isArray(S.players) ? S.players : [], flagTrials: flagOn('trials', baseRole) });
+  const withTrials = (fn) => loadTrials().then(() => fn(window.NXTrials, trialsCtx())).catch(() => toast('Could not load this part – try again', true));
   function bind() {
     panel.onclick = async (e) => {
       const t = e.target.closest('button, input');
@@ -632,6 +645,7 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
       if (d.rush) decideRush(+d.id, d.rush);
       if (d.goRush !== undefined) { e.preventDefault(); S.adminTab = 'rush'; go('manager'); }
       if (d.sub) { S.adminTab = d.sub; draw(); }
+      if (d.notes) { const u = S.admin.users[d.notes]; withTrials((T, ctx) => T.notesModal(ctx, { kind: 'member', subject: d.notes, title: `Notes · ${u?.n ?? 'member'}` })); }
       if (d.refresh !== undefined) { S.admin = null; draw(); load('manager'); }
       if (d.claim) {
         const c = S.admin.claims[d.u];
@@ -645,6 +659,7 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
     };
     const ga = $('#game-admin', panel);
     if (ga) gameAdmin(ga);
+    for (const [id, fn] of [['#trials-admin', 'portal'], ['#notes-admin', 'notesTab'], ['#scout-panel', 'scout']]) { const el = $(id, panel); if (el) withTrials((T, ctx) => T[fn](el, ctx)); }
     const rf = $('#rush-form', panel);
     if (rf) rf.onsubmit = (e) => { e.preventDefault(); sendRush(readRushForm()); };
   }
