@@ -22,6 +22,10 @@ import { docsList, knowledgeRoute } from './docs.js';
 import { eventsRoute, publicEvents, weekEvents } from './events.js';
 import { awardsRoute, trophies } from './awards.js';
 import { squadsRoute } from './squads.js';
+import { ratingsRoute } from './ratings.js';
+import { feedbackRoute } from './feedback.js';
+import { predictRoute } from './predict.js';
+import { recsRoute } from './recs.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -475,6 +479,14 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (awd) return awd;
   const sqd = await squadsRoute(p, method, body, me, env, log); // P3.5 Rush squad builder
   if (sqd) return sqd;
+  const rat = await ratingsRoute(p, method, body, me, env, loadSite, log, url); // P4.2 star ratings
+  if (rat) return rat;
+  const fbk = await feedbackRoute(p, method, body, me, env, log); // P4.4 anonymous feedback
+  if (fbk) return fbk;
+  const prd = await predictRoute(p, method, body, me, env, loadSite, log); // P3.8 predictions
+  if (prd) return prd;
+  const rec2 = await recsRoute(p, method, body, me, env, url); // P3.6 who to play with
+  if (rec2) return rec2;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

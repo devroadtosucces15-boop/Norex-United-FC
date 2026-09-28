@@ -1,0 +1,25 @@
+/* Member scout report (PB.5 a). Uses the tokens from style.css. */
+.sc{display:grid;gap:12px;text-align:left}
+.sc-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}.sc-head h3{margin:0}
+.sc h4{margin:0 0 6px;font:700 13px var(--head);text-transform:uppercase;letter-spacing:.06em}
+.sc-story{padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,rgba(200,53,44,.12),rgba(232,193,106,.06));border:1px solid var(--line2)}
+.sc-story p{margin:0 0 6px;line-height:1.55}.sc-story p:last-child{margin:0}
+.sc-sum{margin:0;line-height:1.55}
+.sc-dials{display:flex;flex-wrap:wrap;gap:12px}
+.sc-dial{position:relative;display:grid;justify-items:center;width:84px}
+.sc-dial svg{width:64px;height:64px;transform:rotate(-90deg)}
+.sc-dial circle{fill:none;stroke:var(--ink);stroke-width:3.4}
+.sc-dial circle.v{stroke:var(--gold);stroke-linecap:round;stroke-dasharray:var(--v) 100;transition:stroke-dasharray .8s ease}
+.sc-dial b{position:absolute;top:20px;font:700 17px var(--head)}
+.sc-dial small{font-size:11px;color:var(--muted);text-align:center}
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 18px}
+.sc-list{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:14px}
+.sc-list li{display:flex;gap:8px;line-height:1.4}.sc-list li>span{flex:none}
+.sc-list.good li{color:#d1fae5}.sc-list.bad li{color:#fecaca}
+.sc-pct{width:100%;border-collapse:collapse;font-size:13px}
+.sc-pct th{text-align:left;font-weight:600;padding:4px 8px 4px 0}.sc-pct td{padding:4px 6px;white-space:nowrap}
+.sc-pct tr{border-bottom:1px solid var(--line)}.sc-pct tr.minor{opacity:.65}
+.sc-pct td:last-child{display:flex;align-items:center;gap:8px;width:100%}.sc-pct td b{min-width:26px;text-align:right}
+.sc-bar{flex:1;position:relative;height:8px;min-width:60px;border-radius:999px;background:var(--ink);overflow:hidden}
+.sc-bar i{position:absolute;inset:0 auto 0 0;width:var(--p);border-radius:999px;background:linear-gradient(90deg,#991b1b,#eab308 50%,#22c55e)}
+@media (prefers-reduced-motion:reduce){.sc-dial circle.v{transition:none}}
