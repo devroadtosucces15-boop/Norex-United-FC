@@ -27,10 +27,8 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: bot
           secrets: |
-            DISCORD_PUBLIC_KEY
             GH_DISPATCH_TOKEN
         env:
-          DISCORD_PUBLIC_KEY: ${{ secrets.DISCORD_PUBLIC_KEY }}
           GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
 
       - uses: actions/setup-node@v4
@@ -42,5 +40,5 @@ jobs:
         if: env.CONFIGURED == 'true'
         run: node bot/register.mjs
         env:
-          DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
+          DISCORD_APP_ID: "1553967740543569970"
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}

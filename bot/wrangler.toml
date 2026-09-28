@@ -8,3 +8,5 @@ crons = ["*/10 * * * *"]
 [vars]
 SITE_URL = "https://devroadtosucces15-boop.github.io/Norex-United-FC/"
 GITHUB_REPO = "devroadtosucces15-boop/Norex-United-FC"
+DISCORD_APP_ID = "1553967740543569970"
+DISCORD_PUBLIC_KEY = "25181955eefb8efef9009dc5688490b496b2f889cd9fda5bd8ecd4ac8ec680b6"

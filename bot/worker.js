@@ -5,9 +5,8 @@
 // 10 minutes, because GitHub's own schedule is often delayed.
 //
 // Env (set by .github/workflows/bot.yml):
-//   DISCORD_PUBLIC_KEY – from the Discord developer portal (General Information)
-//   GH_DISPATCH_TOKEN  – GitHub token allowed to run this repo's Actions
-//   SITE_URL, GITHUB_REPO – in wrangler.toml
+//   GH_DISPATCH_TOKEN  – GitHub token allowed to run this repo's Actions (secret)
+//   DISCORD_PUBLIC_KEY, SITE_URL, GITHUB_REPO – public values in wrangler.toml
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
