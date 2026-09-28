@@ -201,8 +201,11 @@ function futCard(pl, base, { big = false } = {}) {
 </a>`;
 }
 
-const counter = (label, value, { suffix = '', dec = 0, text } = {}) =>
-  `<div class="stat"><span>${label}</span><b${text === undefined ? ` class="count" data-to="${num(value)}" data-dec="${dec}" data-suffix="${suffix}"` : ''}>${text ?? `${esc(dec ? num(value).toFixed(dec) : value ?? 0)}${suffix}`}</b></div>`;
+const counter = (label, value, { suffix = '', dec = 0, text, href } = {}) =>
+  `<${href ? `a class="stat link" href="${href}"` : 'div class="stat"'}><span>${label}</span><b${text === undefined ? ` class="count" data-to="${num(value)}" data-dec="${dec}" data-suffix="${suffix}"` : ''}>${text ?? `${esc(dec ? num(value).toFixed(dec) : value ?? 0)}${suffix}`}</b>${href ? '<i class="stat-go" aria-hidden="true">→</i>' : ''}</${href ? 'a' : 'div'}>`;
+// Friendly empty state (same look as UI.empty in web/ui.js).
+const emptyState = (icon, title, text = '', action = '') =>
+  `<div class="nx-empty"><span class="nx-empty-ic" aria-hidden="true">${icon}</span><b>${esc(title)}</b>${text ? `<p>${text}</p>` : ''}${action}</div>`;
 const resPill = (r) => `<span class="res ${r}">${r}</span>`;
 const ratingPill = (r) => `<span class="rp ${ratingClass(r)}">${r ? r.toFixed(1) : '–'}</span>`;
 const td = (v, n = false, sort) => `<td${n ? ' class="n"' : ''}${sort !== undefined ? ` data-v="${esc(sort)}"` : ''}>${v}</td>`;
@@ -372,8 +375,11 @@ ${isHome && RECRUIT.open ? `<p><a class="btn" href="${base}apply.html">👑 Appl
 ${isHome && (mvp || scorer) ? `<div class="hero-spot">${mvp ? `<a class="spot" href="${pUrl(mvp.pl, base)}"><small>Top rated</small><b>${esc(mvp.pl.name)}</b>${ratingPill(mvp.v)}</a>` : ''}${scorer ? `<a class="spot" href="${pUrl(scorer.pl, base)}"><small>Top scorer</small><b>${esc(scorer.pl.name)}</b><span class="rp r-great">${scorer.v} ⚽</span></a>` : ''}</div>` : ''}
 </section>
 <section class="stats reveal">
-${counter('Played', gp)}${counter('Won', o.wins)}${counter('Drawn', o.ties)}${counter('Lost', o.losses)}${counter('Win rate', pct(num(o.wins), gp), { suffix: '%' })}${counter('Goals', o.goals)}${counter('Conceded', o.goalsAgainst)}${counter('Goal diff', num(o.goals) - num(o.goalsAgainst))}
+${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
+    .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}
+${ms.length ? counter('Clean sheets', ms.filter((m) => !num(m.clubs[oppOf(m, id)].goals)).length, { href: drillHref(id, base, 'cleansheets') }) : ''}
 </section>
+${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}
 ${ms.length ? `<div class="grid2 reveal">${card('Latest result', poster(ms[0], base) + `<button class="btn dl-poster" type="button" data-for="poster-${ms[0].matchId}">⬇ Download result graphic</button>`, 'flush')}${sessions[0] ? card('Last session', sessionCard(sessions[0], base, id)) : ''}</div>` : ''}
 ${section('Performance', `<div class="grid-charts">
 ${card('Goals per match', goalBars(recent.map((m) => ({ for: num(m.clubs[id].goals), against: num(m.clubs[oppOf(m, id)].goals), res: result(m.clubs[id]), tip: `${dateStr(m.timestamp)} · ${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}` }))))}
@@ -397,6 +403,104 @@ function squadTable(members, id, base, tid) {
       const mb = p.clubStats[id];
       return `<tr data-pos="${groupOf(posOf(mb))}">${td(pLink(p.key, base))}${td(posOf(mb) || '—')}${td(esc(mb.proOverall ?? '–'), true)}${td(mb.gamesPlayed, true)}${td(mb.goals, true)}${td(mb.assists, true)}${td(ratingPill(num(mb.ratingAve)), true, mb.ratingAve)}${td(mb.manOfTheMatch, true)}${td(mb.winRate + '%', true, mb.winRate)}${td(mb.passSuccessRate + '%', true, mb.passSuccessRate)}${td(mb.tackleSuccessRate + '%', true, mb.tackleSuccessRate)}${td(num(mb.cleanSheetsDef) + num(mb.cleanSheetsGK), true)}${td(mb.redCards, true)}</tr>`;
     }), { filter: 'Filter players…' });
+}
+
+// ---------- stat drill-downs (P1.1) ----------
+// Every stat card on a club page links to <club>-results?f=<filter>; one static page per club holds every
+// filter as a tab panel (app.js opens the one named in ?f= and keeps the URL in sync).
+const DRILL = [
+  ['played', '📋 Played'], ['won', '✅ Won'], ['drawn', '🤝 Drawn'], ['lost', '❌ Lost'],
+  ['goals', '⚽ Goals'], ['conceded', '🥅 Conceded'], ['cleansheets', '🧤 Clean sheets'], ['winrate', '📈 Win rate'],
+];
+const drillPath = (id) => (id === homeId ? 'results.html' : `clubs/${id}-results.html`);
+const drillHref = (id, base, f) => `${base}${drillPath(id)}?f=${f}`;
+
+function drillBody(id, base) {
+  const ms = matches.filter((m) => m.clubs[id]);
+  const M = ms.map((m) => {
+    const o = oppOf(m, id), us = Object.values(m.players?.[id] || {}), them = Object.values(m.players?.[o] || {});
+    const gf = num(m.clubs[id].goals), ga = num(m.clubs[o].goals);
+    const motm = us.find((p) => p.mom === '1') ?? them.find((p) => p.mom === '1');
+    return {
+      m, o, gf, ga, res: result(m.clubs[id]), margin: gf - ga, us, them,
+      scorers: us.filter((p) => num(p.goals) > 0), motm, motmOurs: !!motm && us.includes(motm),
+      rating: avg(us.map((p) => num(p.rating))), shots: sum(us, (p) => num(p.shots)), oShots: sum(them, (p) => num(p.shots)),
+      pass: pct(sum(us, (p) => num(p.passesmade)), sum(us, (p) => num(p.passattempts))),
+      tackle: pct(sum(us, (p) => num(p.tacklesmade)), sum(us, (p) => num(p.tackleattempts))),
+    };
+  });
+  const by = (r) => M.filter((x) => x.res === r);
+  const scoreLink = (x) => `<a href="${base}matches/${x.m.matchId}.html">${x.gf}–${x.ga}</a>`;
+  const scorerTxt = (x) => x.scorers.map((p) => `${pLinkByName(p.playername, base)}${num(p.goals) > 1 ? ` ×${num(p.goals)}` : ''}`).join(', ') || '<span class="muted">–</span>';
+  const matchTable = (tid, rows, empty) => rows.length
+    ? table(tid, ['Date', 'Res', 'Opponent', 'Score', '#Margin', 'Scorers', 'MOTM', '#Team rating'], rows.map((x) =>
+      `<tr>${dateCell(x.m.timestamp)}${td(resPill(x.res))}${td(`${crest(x.o, 22, base)} ${clubLink(x.o, base)}`, false, clubName(x.o).toLowerCase())}${td(scoreLink(x), false, x.gf * 100 - x.ga)}${td((x.margin > 0 ? '+' : '') + x.margin, true, x.margin)}${td(scorerTxt(x))}${td(x.motm ? `${pLinkByName(x.motm.playername, base)}${x.motmOurs ? '' : ' <small class="muted">opp</small>'}` : '–')}${td(ratingPill(x.rating), true, x.rating.toFixed(2))}</tr>`), { filter: 'Search opponents or scorers…' })
+    : emptyState(...empty);
+  const strip = (title, rows) => rows.length ? `<h3 class="drill-sub">${title}</h3><div class="fixtures drill-strip">${rows.map((x) => fixture(x.m, id, base)).join('')}</div>` : '';
+  const leaders = (f, n = 10) => {
+    const T = new Map();
+    for (const x of M) for (const p of x.us) {
+      const k = nameToKey.get(p.playername.toLowerCase());
+      const e = T.get(k ?? p.playername) ?? { pl: k ? players.get(k) : null, name: p.playername, v: 0 };
+      e.v += f(p, x); T.set(k ?? p.playername, e);
+    }
+    return [...T.values()].filter((e) => e.v > 0 && !e.pl?.hidden).sort((a, b) => b.v - a.v).slice(0, n);
+  };
+  const bars = (rows) => goalBars(rows.slice(0, 20).reverse().map((x) => ({ for: x.gf, against: x.ga, res: x.res, tip: `${dateStr(x.m.timestamp)} · ${x.gf}–${x.ga} vs ${clubName(x.o)}` })));
+  const W = by('W'), D = by('D'), L = by('L'), CS = M.filter((x) => x.ga === 0);
+  const tot = (rows, f) => sum(rows, f);
+  const perGame = (rows, f) => (rows.length ? tot(rows, f) / rows.length : 0);
+
+  // "What went wrong": our numbers in defeats against our overall average.
+  const wrong = [
+    ['Goals scored', (x) => x.gf, 1, true], ['Goals conceded', (x) => x.ga, 1, false], ['Shots', (x) => x.shots, 1, true],
+    ['Opponent shots', (x) => x.oShots, 1, false], ['Pass accuracy', (x) => x.pass, 0, true, '%'], ['Tackle success', (x) => x.tackle, 0, true, '%'], ['Team rating', (x) => x.rating, 1, true],
+  ].map(([label, f, dec, upGood, suf = '']) => {
+    const inL = perGame(L, f), all = perGame(M, f), diff = inL - all, bad = upGood ? diff < 0 : diff > 0;
+    return `<li><span>${label}</span><b>${inL.toFixed(dec)}${suf}</b><small class="muted">avg ${all.toFixed(dec)}${suf}</small><em class="${Math.abs(diff) < (dec ? 0.05 : 0.5) ? '' : bad ? 'worse' : 'better'}">${diff > 0 ? '▲' : diff < 0 ? '▼' : '•'} ${Math.abs(diff).toFixed(dec)}${suf}</em></li>`;
+  }).join('');
+
+  let run = 0;
+  const cumulative = [...M].reverse().map((x, i, arr) => { run += x.res === 'W' ? 1 : 0; return { value: Math.round((run / (i + 1)) * 100), label: '', tip: `${dateStr(x.m.timestamp)} · ${x.res} ${x.gf}–${x.ga} vs ${clubName(x.o)} · ${Math.round((run / (i + 1)) * 100)}% after ${i + 1}` }; });
+  const oppScorers = new Map();
+  for (const x of M) for (const p of x.them) if (num(p.goals)) {
+    const e = oppScorers.get(p.playername) ?? { name: p.playername, club: x.o, v: 0 };
+    e.v += num(p.goals); oppScorers.set(p.playername, e);
+  }
+  const defLeaders = leaders((p, x) => (x.ga === 0 && ['goalkeeper', 'defender'].includes(String(p.pos).toLowerCase()) ? 1 : 0));
+  const keeperSaves = leaders((p) => (String(p.pos).toLowerCase() === 'goalkeeper' ? num(p.saves) : 0));
+
+  const P = {
+    played: `<section class="stats">${counter('Archived', M.length)}${counter('Record', 0, { text: `${W.length}-${D.length}-${L.length}` })}${counter('Goals per game', perGame(M, (x) => x.gf), { dec: 2 })}${counter('Conceded per game', perGame(M, (x) => x.ga), { dec: 2 })}</section>
+${card('Last 20 matches', bars(M))}${matchTable('dr-played', M, ['📭', 'No matches yet', 'Matches show up here after the next update.'])}`,
+    won: `${strip('💥 Biggest wins', [...W].sort((a, b) => b.margin - a.margin || b.gf - a.gf).slice(0, 3))}
+${matchTable('dr-won', W, ['🏆', 'No wins archived yet', 'The first win lands here automatically.'])}`,
+    drawn: matchTable('dr-drawn', D, ['🤝', 'No draws archived', 'Every game so far had a winner.']),
+    lost: L.length ? `${strip('🧊 Heaviest defeats', [...L].sort((a, b) => a.margin - b.margin).slice(0, 3))}
+<div class="grid2">${card('🔍 What went wrong', `<ul class="wrong">${wrong}</ul><p class="muted small">Per game in ${L.length} defeat${L.length > 1 ? 's' : ''} vs the average over all ${M.length} archived matches. ▲▼ in red = worse than usual.</p>`)}
+${card('Who beat us most', barList(Object.values(Object.fromEntries(L.map((x) => [x.o, { name: clubName(x.o), v: L.filter((y) => y.o === x.o).length }]))).sort((a, b) => b.v - a.v).slice(0, 5), { base }))}</div>
+${matchTable('dr-lost', L)}` : emptyState('😎', 'No defeats archived', 'Unbeaten in every archived match – long may it last.'),
+    goals: `<section class="stats">${counter('Goals', tot(M, (x) => x.gf))}${counter('Per game', perGame(M, (x) => x.gf), { dec: 2 })}${counter('Scored in', pct(M.filter((x) => x.gf).length, M.length), { suffix: '%' })}${counter('Hat-tricks', sum(M, (x) => x.us.filter((p) => num(p.goals) >= 3).length))}</section>
+<div class="grid2">${card('⚽ Scorers', barList(leaders((p) => num(p.goals)), { base }))}${card('🎯 Assists', barList(leaders((p) => num(p.assists)), { base }))}</div>
+${card('Goals per match', bars(M))}
+${matchTable('dr-goals', [...M].filter((x) => x.gf).sort((a, b) => b.gf - a.gf || b.m.timestamp - a.m.timestamp), ['⚽', 'No goals yet', 'Goals show up here once they are archived.'])}`,
+    conceded: `<section class="stats">${counter('Conceded', tot(M, (x) => x.ga))}${counter('Per game', perGame(M, (x) => x.ga), { dec: 2 })}${counter('Clean sheets', CS.length)}${counter('Opp. shots/game', perGame(M, (x) => x.oShots), { dec: 1 })}</section>
+<div class="grid2">${card('Opponents who scored most', barList([...oppScorers.values()].sort((a, b) => b.v - a.v).slice(0, 8).map((e) => ({ ...e, name: `${e.name} (${clubName(e.club)})` })), { base }))}${card('Goals per match', bars(M))}</div>
+${matchTable('dr-conceded', [...M].filter((x) => x.ga).sort((a, b) => b.ga - a.ga || b.m.timestamp - a.m.timestamp), ['🧱', 'Nothing conceded', 'Not a single goal against in the archive.'])}`,
+    cleansheets: `<div class="grid2">${card('🧤 Keepers & defenders', barList(defLeaders, { base }) + '<p class="muted small">Clean sheets played at GK or in defence.</p>')}${card('🧤 Keeper saves', barList(keeperSaves, { base }))}</div>
+${matchTable('dr-cs', CS, ['🧤', 'No clean sheets yet', 'Keep one and it shows up here.'])}`,
+    winrate: `<div class="grid2">${card('Season split', `<div class="donut-wrap">${donut([{ label: 'Won', value: W.length, color: 'var(--win)' }, { label: 'Drawn', value: D.length, color: 'var(--draw)' }, { label: 'Lost', value: L.length, color: 'var(--loss)' }], { center: `${pct(W.length, M.length)}%`, sub: 'win rate' })}
+<ul class="legend"><li><i style="background:var(--win)"></i>Won <b>${W.length}</b></li><li><i style="background:var(--draw)"></i>Drawn <b>${D.length}</b></li><li><i style="background:var(--loss)"></i>Lost <b>${L.length}</b></li></ul></div>`)}
+${card('Win rate over time', cumulative.length > 1 ? lineChart(cumulative, { min: 0, max: 100, ref: 50, id: `wr${id}` }) : emptyState('📈', 'Needs a few more matches'))}</div>
+${card('Win rate by opponent', barList([...new Set(M.map((x) => x.o))].map((o) => { const r = M.filter((x) => x.o === o); return { name: `${clubName(o)} (${r.length})`, v: pct(r.filter((x) => x.res === 'W').length, r.length) }; }).filter((e) => e.v > 0).sort((a, b) => b.v - a.v).slice(0, 10), { base, fmt: (v) => v + '%' }))}`,
+  };
+  const counts = { played: M.length, won: W.length, drawn: D.length, lost: L.length, goals: tot(M, (x) => x.gf), conceded: tot(M, (x) => x.ga), cleansheets: CS.length, winrate: `${pct(W.length, M.length)}%` };
+  const league = `<div class="tabs chipset drill-tabs" data-tabs data-drill>${DRILL.map(([k, l], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="f-${k}">${l} <small>${counts[k]}</small></button>`).join('')}</div>
+${DRILL.map(([k], i) => `<div class="tab-panel drill-panel" id="f-${k}"${i ? ' hidden' : ''}>${P[k]}</div>`).join('')}`;
+  const eaGp = num(clubs.get(id)?.overall?.gamesPlayed);
+  return `<section class="page-head reveal drill-head">${crest(id, 84, base)}<div><p class="kicker"><a href="${clubHref(id, base) ?? '#'}">← ${esc(clubName(id))}</a></p><h1>Match drill-down</h1>
+<p class="muted">Every stat card, match by match. Built from ${M.length} archived match${M.length === 1 ? '' : 'es'}${eaGp > M.length ? ` (EA's club totals count ${eaGp} – EA only shares the last few, so older ones aren't here)` : ''}.</p></div></section>
+<div class="reveal">${id === homeId ? modes(league, 'results', 'League & playoffs from EA · Rush logged by members') : league}</div>`;
 }
 
 // ---------- player page ----------
@@ -493,6 +597,11 @@ ${pageHead('The Squad', `${homeSquad.length} players · card stats are NOREX tot
 for (const id of clubs.keys()) {
   if (id === homeId) continue;
   write(`clubs/${id}.html`, page({ title: `${clubName(id)} – ${config.siteTitle}`, base: '../', active: 'clubs', body: clubBody(id, '../', false), image: crestSrc(id, '') }));
+}
+write('results.html', page({ title: `Results drill-down – ${config.siteTitle}`, base: '', active: 'home', description: `Every ${config.siteTitle} win, draw, defeat, goal and clean sheet, match by match.`, body: drillBody(homeId, '') }));
+for (const id of clubs.keys()) {
+  if (id === homeId || !matches.some((m) => m.clubs[id])) continue;
+  write(drillPath(id), page({ title: `${clubName(id)} results – ${config.siteTitle}`, base: '../', active: 'clubs', body: drillBody(id, '../'), image: crestSrc(id, '') }));
 }
 write(`clubs/${homeId}.html`, `<!doctype html><meta http-equiv="refresh" content="0;url=../index.html">`);
 const tierOrder = { home: 0, manual: 1, linked: 2, discovered: 3 };

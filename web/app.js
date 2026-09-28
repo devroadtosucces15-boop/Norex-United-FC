@@ -120,6 +120,15 @@ $$('[data-tabs]').forEach((g) => chipGroup(g, (b) => {
   });
 }));
 $$('.tab-panel:not([hidden])').forEach((p) => p.classList.add('in'));
+// Stat drill-downs (P1.1): ?f=won opens that tab; switching tabs updates the URL so it can be shared.
+$$('[data-drill]').forEach((g) => {
+  const want = new URLSearchParams(location.search).get('f');
+  $(`button[data-tab="f-${CSS.escape(want || '')}"]`, g)?.click();
+  g.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-tab]');
+    if (b) history.replaceState(null, '', `?f=${b.dataset.tab.slice(2)}${location.hash}`);
+  });
+});
 
 // ---------- 3D tilt on player cards ----------
 document.addEventListener('pointermove', (e) => {
@@ -696,6 +705,22 @@ ${sec('Rush results', `<div class="fixtures">${matches.map((m) => fixture(m, kno
       return `${sec('Rush', `<section class="stats">${stat('Apps', e.apps)}${statText('Record', `${e.W}-${e.D}-${e.L}`)}${stat('Goals', e.g)}${stat('Assists', e.a)}${stat('Avg rating', e.r, 1)}${stat('MOTM', e.motm)}${stat('G+A per game', (e.g + e.a) / e.apps, 2)}${stat('Win rate', pct(e.W, e.apps), 0, '%')}</section>`, 'logged by members')}
 ${sec('Rush match log', `<div class="tbl"><table><thead><tr><th>Date</th><th>Res</th><th>Score</th><th>Against</th><th>Pos</th><th class="n">Rating</th><th class="n">G</th><th class="n">A</th></tr></thead><tbody>${ms.map(row).join('')}</tbody></table></div>`, `${ms.length} games`)}`;
     },
+    // Stat drill-down (P1.1) for Rush: same filters as the League page, from confirmed results.
+    results({ matches, known }) {
+      if (!matches.length) return empty('No Rush results yet', 'Once Rush results are confirmed, every stat drills down here too.');
+      const F = [['played', '📋 Played', () => true], ['won', '✅ Won', (m) => m.res === 'W'], ['drawn', '🤝 Drawn', (m) => m.res === 'D'], ['lost', '❌ Lost', (m) => m.res === 'L'],
+        ['goals', '⚽ Goals', (m) => m.gf > 0], ['conceded', '🥅 Conceded', (m) => m.ga > 0], ['cleansheets', '🧤 Clean sheets', (m) => m.ga === 0], ['winrate', '📈 Win rate', () => true]];
+      const want = new URLSearchParams(location.search).get('f');
+      const cur = F.some(([k]) => k === want) ? want : 'played';
+      const R = record(matches);
+      const T = totals(matches);
+      const board = (f, title) => { const rows = T.map((e) => ({ e, v: f(e) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 8); const max = Math.max(1, ...rows.map((x) => x.v));
+        return `<div class="card"><h3>${title}</h3><ol class="barlist">${rows.map(({ e, v }, i) => `<li style="--w:${Math.max(4, (v / max) * 100)}%"><span class="bl-rank">${i + 1}</span><span class="bl-name">${who(e, known)}</span><b>${v}</b></li>`).join('') || '<li class="muted">No data yet</li>'}</ol></div>`; };
+      const extra = { goals: `<div class="grid2">${board((e) => e.g, '⚽ Rush scorers')}${board((e) => e.a, '🎯 Rush assists')}</div>`,
+        winrate: `<section class="stats">${stat('Played', R.p)}${stat('Win rate', pct(R.W, R.p), 0, '%')}${statText('Record', `${R.W}-${R.D}-${R.L}`)}${stat('Goal diff', R.gf - R.ga)}</section>` };
+      return `${UI.tabsHtml(F.map(([k, l]) => [k, l]), cur, 'rush-drill')}${F.map(([k, , f]) => { const ms = matches.filter(f);
+        return `<div class="rush-drill-panel" data-f="${k}"${k === cur ? '' : ' hidden'}>${extra[k] ?? ''}${ms.length ? `<div class="fixtures">${ms.map((m) => fixture(m, known)).join('')}</div>` : UI.empty({ icon: '📭', title: 'Nothing here yet', text: 'No confirmed Rush games match this filter.' })}</div>`; }).join('')}`;
+    },
     leaders({ matches, known }) {
       if (!matches.length) return empty('No Rush stats yet', 'Leaderboards, records and head-to-heads fill in as Rush results are confirmed.');
       const T = totals(matches);
@@ -749,6 +774,8 @@ ${sec('Rush head to head', `<div class="tbl"><table><thead><tr><th>Opponent</th>
       $$('.count', el).forEach(countUp);
       const bt = $('.rush-boards', el);
       if (bt) UI.tabs(bt, (k) => $$('.rush-board', el).forEach((b) => (b.hidden = b.dataset.board !== k)));
+      const dt = $('.rush-drill', el);
+      if (dt) UI.tabs(dt, (k) => { $$('.rush-drill-panel', el).forEach((p) => (p.hidden = p.dataset.f !== k)); history.replaceState(null, '', `?f=${k}${location.hash}`); });
       const target = /^#rush-\d+$/.test(location.hash) && $(location.hash, el);
       if (target) { target.open = true; target.scrollIntoView({ block: 'center' }); }
     } catch (e) {
