@@ -4,6 +4,7 @@ import path from 'node:path';
 import { ROOT, DATA, readJson, loadConfig, num } from './lib.mjs';
 import { lineChart, goalBars, donut, radar, spark } from './charts.mjs';
 import { buildUpdates } from './updates-page.mjs';
+import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 
 const OUT = path.join(ROOT, 'site');
 const config = loadConfig();
@@ -319,7 +320,7 @@ const INK = brand.ink ?? hex(homeKit.kitColor1, '#0b0f16');
 const NAV = [
   ['home', 'index.html', 'Club'], ['squad', 'squad.html', 'Squad'], ['matches', 'matches/index.html', 'Matches'],
   ['stats', 'stats.html', 'Stats'], ['compare', 'compare.html', 'Compare'], ['players', 'players/index.html', 'Players'],
-  ['clubs', 'clubs/index.html', 'Clubs'],
+  ['leaders', 'leaders.html', 'Leaders'], ['clubs', 'clubs/index.html', 'Clubs'],
   ['updates', 'updates.html', 'Updates'],
 ];
 
@@ -341,7 +342,7 @@ function page({ title, base, active, body, description, image }) {
 <button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? '<span class="auth-slot"></span>' : ''}</nav></div></header>
 ${CHANNELS.length && MEMBER_API ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
 <footer class="foot"><div class="wrap foot-in"><img src="${base}assets/crest.png" height="70" alt="">
-<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links">${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}${CHANNELS.map(([k, label, svg]) => `<a class="foot-${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
+<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links"><a href="${base}halloffame.html">🏛️ Hall of Fame</a>${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}${CHANNELS.map(([k, label, svg]) => `<a class="foot-${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
 <div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players and clubs…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
 <script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script></body></html>`;
@@ -682,13 +683,20 @@ for (const m of homeMatches) {
   e.p++; e[result(m.clubs[homeId]).toLowerCase()]++; e.gf += num(m.clubs[homeId].goals); e.ga += num(m.clubs[o].goals);
   h2h.set(o, e);
 }
+// Leaderboards, hall of fame + advanced metrics (P4.5 / P4.6 / P1.2) – lives in leaders-page.mjs.
+const LH = { write, page, pageHead, section, modes, esc, emptyState, pLink, clubName, config, brand, MEMBER_API, STARS, leaderboard: homeC?.leaderboard };
+const lm = leagueMatches({ homeMatches, homeId, isHidden: (pid) => !!players.get(pid)?.hidden, oppOf, result });
+buildLeaders(LH, lm);
+buildHallOfFame(LH, lm, { recs });
 write('stats.html', page({ title: `Stats – ${config.siteTitle}`, base: '', active: 'stats', body: `
 ${pageHead('Stats centre', "League leaderboards use EA's club totals; records and head-to-heads come from the match archive. Rush numbers come from results logged by members and confirmed by a manager.", '')}
 ${modes(`${section('Leaderboards', `<div class="tabs chipset" data-tabs>${boards.map(([k], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="lb${i}">${k}</button>`).join('')}</div>
 ${boards.map(([, f, fmt], i) => `<div class="tab-panel card" id="lb${i}"${i ? ' hidden' : ''}>${barList(hm.map(({ pl, s }) => ({ pl, v: f(s) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 10), { base: '', fmt: fmt ?? ((v) => v) })}</div>`).join('')}`)}
 ${recs.length ? section('Club records', `<div class="records">${recs.join('')}</div>`, { sub: 'from the archive' }) : ''}
 ${section('Head to head', table('h2h', ['Opponent', '#P', '#W', '#D', '#L', '#GF', '#GA', '#GD', 'Last'], [...h2h.values()].sort((a, b) => b.p - a.p).map((e) =>
-    `<tr>${td(`${crest(e.o, 22, '')} ${clubLink(e.o, '')}`)}${td(e.p, true)}${td(e.w, true)}${td(e.d, true)}${td(e.l, true)}${td(e.gf, true)}${td(e.ga, true)}${td((e.gf - e.ga > 0 ? '+' : '') + (e.gf - e.ga), true, e.gf - e.ga)}${td(`<a href="matches/${e.last.matchId}.html">${resPill(result(e.last.clubs[homeId]))} ${scoreOf(e.last)}</a>`)}</tr>`), { filter: 'Search opponents…' }))}`, 'leaders')}` }));
+    `<tr>${td(`${crest(e.o, 22, '')} ${clubLink(e.o, '')}`)}${td(e.p, true)}${td(e.w, true)}${td(e.d, true)}${td(e.l, true)}${td(e.gf, true)}${td(e.ga, true)}${td((e.gf - e.ga > 0 ? '+' : '') + (e.gf - e.ga), true, e.gf - e.ga)}${td(`<a href="matches/${e.last.matchId}.html">${resPill(result(e.last.clubs[homeId]))} ${scoreOf(e.last)}</a>`)}</tr>`), { filter: 'Search opponents…' }))}`, 'leaders')}
+${advancedSection(LH, lm)}
+<p class="muted small">🏆 Monthly tables, Player of the Month and Best XI: <a href="leaders.html">Leaderboards</a> · 🏛️ <a href="halloffame.html">Hall of Fame</a></p>` }));
 
 write('compare.html', page({ title: `Compare – ${config.siteTitle}`, base: '', active: 'compare', body: `
 ${pageHead('Head to head', "Pick any two players, from NOREX or anyone we've faced. Radar values are percentiles against every tracked player with 3+ games.", '')}

@@ -735,7 +735,12 @@ if (MAPI && $('[data-modes]')) (() => {
 <div class="rfx-body"><div class="tbl"><table><thead><tr><th>Player</th><th>Pos</th><th class="n">Rating</th><th class="n">G</th><th class="n">A</th><th>MOTM</th></tr></thead><tbody>${m.players.map((p) => `<tr><td>${who(p, known)}</td><td>${esc(p.pos || '–')}</td><td class="n">${rp(p.r)}</td><td class="n">${p.g}</td><td class="n">${p.a}</td><td>${p.motm ? '⭐' : ''}</td></tr>`).join('')}</tbody></table></div>
 <p class="small muted">vs ${oppHtml(m)}${m.note ? ` · ${esc(m.note)}` : ''}${m.shot ? ` · <a href="${esc(m.shot)}" target="_blank" rel="noopener nofollow ugc">📷 Screenshot</a>` : ''}</p></div></details>`;
 
+  // Rush → the shared metrics engine (web/metrics.js, loaded on the pages that use these views – P1.2 / P4.5).
+  const mx = (matches) => matches.map((m) => ({ id: m.id, ts: Date.parse(m.date + 'T12:00:00Z') / 1000, gf: m.gf, ga: m.ga, res: m.res, players: m.players.map((p) => ({ k: p.k, n: p.n, g: p.g, a: p.a, r: p.r, motm: p.motm, pos: p.pos })) }));
+  const mxCtx = (known, id) => ({ esc, id, link: (p) => who(p, known), empty: empty('No Rush stats yet', 'Leaderboards fill in as Rush results are confirmed.'), note: 'Rush has no minutes or shots, so rates are per game.' });
   const views = {
+    months: ({ matches, known }) => NXMetrics.leadersHtml(mxCtx(known, 'rush'), mx(matches), { minutes: false, seasonLabel: 'All Rush' }),
+    advanced: ({ matches, known }) => NXMetrics.advancedHtml(mxCtx(known, 'rush-adv'), mx(matches), { minutes: false }),
     matches({ matches, known }) {
       if (!matches.length) return empty('No Rush results yet', 'Members log Rush matches in the Squad Hub and a manager confirms them. They show up here straight away.');
       const R = record(matches);
@@ -820,6 +825,7 @@ ${sec('Rush head to head', `<div class="tbl"><table><thead><tr><th>Opponent</th>
       const [kind, arg] = el.dataset.rush.split(':');
       el.innerHTML = `<div class="rush-view">${views[kind](d, arg)}</div>`;
       $$('.count', el).forEach(countUp);
+      window.NXMetrics?.wire(el);
       const bt = $('.rush-boards', el);
       if (bt) UI.tabs(bt, (k) => $$('.rush-board', el).forEach((b) => (b.hidden = b.dataset.board !== k)));
       const dt = $('.rush-drill', el);

@@ -1,0 +1,96 @@
+/* Leaderboards (P4.5), Hall of Fame (P4.6) and advanced metrics (P1.2). Uses the tokens from style.css. */
+.mx-periods{margin:4px 0 16px;flex-wrap:wrap}
+.mx-panel{animation:mxIn .35s ease both}
+@keyframes mxIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mx-boards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin:14px 0}
+.mx-board h3{margin:0 0 10px;font:600 15px var(--head);text-transform:uppercase;letter-spacing:.06em}
+.mx-board .small{margin:10px 0 0}
+.mx-few{opacity:.5}
+.mx-table th{cursor:pointer;user-select:none}
+.mx-table th[aria-sort=descending]::after{content:" ▾"}.mx-table th[aria-sort=ascending]::after{content:" ▴"}
+.mx-adv{margin-top:14px}
+.mx-adv summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.mx-adv summary::-webkit-details-marker{display:none}
+.mx-adv summary::before{content:"▸";color:var(--red);transition:transform .2s}
+.mx-adv[open] summary::before{transform:rotate(90deg)}
+.mx-adv[open] .tbl{margin-top:12px}
+
+/* Player of the month spotlight */
+.mx-spot{position:relative;display:flex;gap:16px;align-items:center;padding:18px 20px;border-radius:var(--radius);overflow:hidden;isolation:isolate;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--red) 38%,var(--ink)),var(--ink) 70%);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent)}
+.mx-spot::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(115deg,transparent 0 18px,rgba(255,255,255,.035) 18px 36px)}
+.mx-spot-trophy{font-size:44px;filter:drop-shadow(0 0 14px color-mix(in srgb,var(--gold) 60%,transparent));animation:mxGlow 2.4s ease-in-out infinite}
+@keyframes mxGlow{50%{transform:scale(1.08) rotate(-4deg)}}
+.mx-spot small{display:block;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:700}
+.mx-spot b{display:block;font:700 28px/1.15 var(--head);text-transform:uppercase}
+.mx-spot b a{color:#fff}
+.mx-spot span{color:#d9dde4;font-size:14px}
+.mx-spot em{display:block;color:var(--muted);font-size:12px;font-style:normal;margin-top:2px}
+
+/* Best XI pitch */
+.mx-xi{margin-top:14px}
+.mx-xi h3{margin:0 0 12px;font:600 15px var(--head);text-transform:uppercase;letter-spacing:.06em}
+.mx-xi h3 small{font:400 12px var(--body);text-transform:none;letter-spacing:0}
+.mx-pitch{display:grid;gap:14px;padding:18px 10px;border-radius:12px;border:1px solid var(--line2);
+  background:radial-gradient(circle at 50% 50%,transparent 0 58px,rgba(255,255,255,.08) 59px 60px,transparent 61px),linear-gradient(0deg,transparent calc(50% - 1px),rgba(255,255,255,.08) 50%,transparent calc(50% + 1px)),repeating-linear-gradient(0deg,#123222 0 40px,#153a28 40px 80px)}
+.mx-line{display:flex;justify-content:space-evenly;gap:6px}
+.mx-dot{display:grid;justify-items:center;gap:3px;min-width:0;flex:1;max-width:120px;text-align:center}
+.mx-dot b{font-size:12.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mx-dot b a{color:#fff}
+.mx-dot small{color:rgba(255,255,255,.55);font-size:10px;font-weight:700;letter-spacing:.08em}
+.mx-dot .rp{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;font:700 14px var(--head);box-shadow:0 4px 14px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.7)}
+.mx-dot.empty{opacity:.4}
+
+/* Squad boards (members) */
+.lb-members .mx-boards{margin-top:0}
+.lb-soon{border-style:dashed;opacity:.8}
+
+/* Hall of Fame */
+.hof-hero .kicker{color:var(--gold)}
+.hof-months{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.hof-month{padding:16px;border-radius:var(--radius);background:linear-gradient(170deg,var(--panel2),var(--ink));border:1px solid var(--line2);transition:transform .2s,border-color .2s}
+.hof-month:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--gold) 50%,transparent)}
+.hof-month.live{border-style:dashed}
+.hof-month header{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+.hof-month header b{font:700 18px var(--head);text-transform:uppercase;letter-spacing:.04em}
+.hof-month header small{margin-left:auto}
+.hof-potm{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--gold) 35%,transparent)}
+.hof-potm>span{font-size:28px}
+.hof-potm small{display:block;color:var(--gold);font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.hof-potm b{font:700 19px var(--head);text-transform:uppercase}
+.hof-awards{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px;font-size:14px}
+.hof-awards li{display:grid;grid-template-columns:112px minmax(0,1fr) auto;gap:8px;align-items:baseline}
+.hof-awards li>a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.hof-awards li>span:first-child{color:var(--muted)}
+
+.hof-timeline{list-style:none;margin:0;padding:0 0 0 8px;position:relative}
+.hof-timeline::before{content:"";position:absolute;left:109px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--red),color-mix(in srgb,var(--red) 10%,transparent))}
+.hof-ev{display:grid;grid-template-columns:76px 36px 1fr;gap:10px;align-items:start;padding:8px 0}
+.hof-ev time{font:600 12px var(--head);color:var(--muted);text-transform:uppercase;text-align:right;padding-top:8px}
+.hof-ic{position:relative;z-index:1;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--panel2);border:2px solid var(--red);font-size:15px}
+.hof-ev b{font-weight:700}
+.hof-ev p{margin:2px 0 0;color:#cfd5de;font-size:14px}
+.hof-ev.moment .hof-ic{border-color:var(--gold)}
+.hof-ev.founded .hof-ic{background:var(--red);border-color:var(--gold)}
+.hof-ev .hof-x{margin-left:6px}
+
+.legends{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.legend{position:relative;padding:20px 18px;border-radius:16px;text-align:center;overflow:hidden;isolation:isolate;
+  background:linear-gradient(165deg,color-mix(in srgb,var(--gold) 22%,var(--panel2)),var(--ink) 75%);border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);transition:transform .25s}
+.legend::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(115deg,transparent 0 16px,rgba(255,255,255,.04) 16px 32px)}
+.legend:hover{transform:translateY(-4px) rotate(-.4deg)}
+.legend .lg-star{font-size:34px;display:block;animation:mxGlow 3s ease-in-out infinite}
+.legend b{display:block;font:700 22px/1.15 var(--head);text-transform:uppercase;margin-top:6px}
+.legend b a{color:#fff}
+.legend small{display:block;color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-top:4px}
+.legend p{color:#d5dae2;font-size:14px;margin:10px 0 0}
+.legend .lg-meta{color:var(--muted);font-size:11.5px;margin-top:10px}
+.hof-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.hof-form{display:grid;gap:10px}
+.hof-form label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+
+@media (max-width:560px){
+  .mx-spot{padding:14px}.mx-spot b{font-size:22px}.mx-spot-trophy{font-size:34px}
+  .mx-dot .rp{width:32px;height:32px;font-size:12px}.mx-dot b{font-size:11px}
+  .hof-timeline::before{left:79px}.hof-ev{grid-template-columns:48px 32px 1fr;gap:8px}.hof-ev time{font-size:10.5px}
+}
