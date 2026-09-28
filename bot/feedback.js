@@ -68,7 +68,8 @@ export async function feedbackRoute(p, method, body, me, env, log) {
   if (method !== 'POST') return fail('Not found', 404);
 
   if (p === '/api/feedback/send') {
-    if (!can(me, 'feedback.send')) return fail('Only verified players can send feedback – claim your player first.', 403);
+    // Verified players only – a manager's rank alone isn't enough, the sender needs an approved claim too.
+    if (!can(me, 'feedback.send') || !(await one(env, "SELECT 1 FROM claims WHERE user_id = ? AND status = 'approved'", me.u))) return fail('Only verified players can send feedback – claim your player first.', 403);
     const to = await one(env, "SELECT u.id, u.name FROM users u JOIN claims c ON c.user_id = u.id AND c.status = 'approved' WHERE u.id = ?", String(body.to ?? ''));
     if (!to) return fail('Pick a verified teammate.');
     if (to.id === me.u) return fail('That’s you 😉');
@@ -76,10 +77,16 @@ export async function feedbackRoute(p, method, body, me, env, log) {
     const text = cleanText(body.text, 500);
     if (text.length < 10) return fail('Write a bit more (10+ characters).');
     if (unclean(text)) return fail('Keep it clean – rephrase without the bad language.', 422);
-    const today = await sentToday(env, me);
-    if (today.n >= PER_DAY) return fail(`That’s ${PER_DAY} today – you can send more ${new Date(today.first + DAY).toUTCString().slice(17, 22)} UTC.`, 429);
-    await run(env, 'INSERT INTO feedback (from_id, from_name, to_id, to_name, kind, body, at) VALUES (?, ?, ?, ?, ?, ?, ?)', me.u, me.n, to.id, to.name, body.kind, text, Date.now());
-    await safely(notify(env, [to.id], { type: 'feedback', icon: KINDS[body.kind][0], title: `New anonymous ${KINDS[body.kind][1].toLowerCase()} from a teammate`, body: text.slice(0, 140), link: 'members.html#feedback' }));
+    // The daily limit is checked inside the INSERT, so sending several at once can't slip past it.
+    const now = Date.now();
+    const ins = await run(env, `INSERT INTO feedback (from_id, from_name, to_id, to_name, kind, body, at) SELECT ?, ?, ?, ?, ?, ?, ?
+      WHERE (SELECT COUNT(*) FROM feedback WHERE from_id = ? AND at > ?) < ?`, me.u, me.n, to.id, to.name, body.kind, text, now, me.u, now - DAY, PER_DAY);
+    if (!ins.meta?.changes) {
+      const today = await sentToday(env, me);
+      return fail(`That’s ${PER_DAY} today – you can send more ${new Date(today.first + DAY).toUTCString().slice(17, 22)} UTC.`, 429);
+    }
+    // No message text in the bell / DM: a message managers hide later must not already sit in someone's Discord DMs.
+    await safely(notify(env, [to.id], { type: 'feedback', icon: KINDS[body.kind][0], title: `New anonymous ${KINDS[body.kind][1].toLowerCase()} from a teammate – open the Squad Hub to read it`, link: 'members.html#feedback', ref: `feedback:${ins.meta.last_row_id}` }));
     await log(env, me, 'feedback-send', `${KINDS[body.kind][1]} → ${to.name}`);
     return json(await state(env, me));
   }
@@ -102,6 +109,7 @@ export async function feedbackRoute(p, method, body, me, env, log) {
     const hidden = body.hidden !== false;
     const r = await run(env, 'UPDATE feedback SET hidden = ?, hidden_by = ?, hidden_at = ? WHERE id = ?', hidden ? 1 : 0, hidden ? me.n : null, hidden ? Date.now() : null, Number(body.id) || 0);
     if (!r.meta?.changes) return fail('Message not found.', 404);
+    if (hidden) await run(env, 'DELETE FROM notifications WHERE ref = ?', `feedback:${Number(body.id)}`); // and its bell note
     await log(env, me, hidden ? 'feedback-hide' : 'feedback-unhide', `#${body.id}`);
     return json({ ok: true, hidden });
   }

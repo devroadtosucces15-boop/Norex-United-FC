@@ -61,6 +61,7 @@ t('feedback: 404 for members while owner-only', (await call(m2, '/api/feedback')
 setFlags({ feedback: 'members' });
 const fb0 = (await call(m2, '/api/feedback')).d;
 t('verified player can send; recipients = other verified players', fb0.canSend && fb0.left === PER_DAY && fb0.recipients.some((r) => r.id === '502') && !fb0.recipients.some((r) => r.id === '501' || r.id === '500'));
+t('a manager without a verified player can’t send either', (await call(mgr, '/api/feedback/send', { to: '502', kind: 'tip', text: 'Keep your shape at the back' })).s === 403);
 t('unverified member can’t send', (await call(m1, '/api/feedback/send', { to: '502', kind: 'tip', text: 'Keep your shape at the back' })).s === 403);
 t('only to verified players', (await call(m2, '/api/feedback/send', { to: '500', kind: 'tip', text: 'Keep your shape at the back' })).s === 400);
 t('bad kind refused', (await call(m2, '/api/feedback/send', { to: '502', kind: 'rant', text: 'Keep your shape at the back' })).s === 400);
@@ -70,7 +71,8 @@ const sent = await call(m2, '/api/feedback/send', { to: '502', kind: 'praise', t
 t('sent: counts down, shows in my sent list', sent.s === 200 && sent.d.left === PER_DAY - 1 && sent.d.sent[0].toName === 'Player Three');
 const inbox = (await call(m3, '/api/feedback')).d;
 t('recipient sees the message but not the author', inbox.inbox.length === 1 && inbox.unread === 1 && !JSON.stringify(inbox.inbox).includes('Player Two') && !('from' in inbox.inbox[0]));
-t('recipient is told (bell), without the author', (await call(m3, '/api/notify')).d.items.some((n) => n.type === 'feedback' && !JSON.stringify(n).includes('Player Two')));
+const note = (await call(m3, '/api/notify')).d.items.find((n) => n.type === 'feedback');
+t('recipient is told (bell), without the author or the text (nothing lands in DMs before moderation)', note && !JSON.stringify(note).includes('Player Two') && !JSON.stringify(note).includes('runs in behind'));
 t('mark read', (await call(m3, '/api/feedback/read', {})).d.unread === 0);
 await call(m2, '/api/feedback/send', { to: '502', kind: 'tip', text: 'Check your shoulder before receiving' });
 await call(m2, '/api/feedback/send', { to: '503', kind: 'tip', text: 'Hold the line when we press high' });
@@ -83,7 +85,9 @@ t('members can’t see authors', (await call(m1, '/api/feedback/all')).s === 403
 const all = (await call(mgr, '/api/feedback/all')).d.items;
 t('managers see authors, reported first', all[0].id === fid && all[0].fromName === 'Player Two' && all[0].report === 'Not fair');
 t('managers are told about reports', (await call(mgr, '/api/notify')).d.items.some((n) => /feedback reported/i.test(n.title)));
+t('each message’s bell note is tied to it', !!sqlite.prepare('SELECT 1 FROM notifications WHERE ref = ?').get(`feedback:${fid}`));
 await call(mgr, '/api/feedback/hide', { id: fid, hidden: true });
+t('hidden → its bell note is gone too', !sqlite.prepare('SELECT 1 FROM notifications WHERE ref = ?').get(`feedback:${fid}`));
 t('hidden → gone from the inbox, sender sees it was hidden', !(await call(m3, '/api/feedback')).d.inbox.some((f) => f.id === fid) && (await call(m2, '/api/feedback')).d.sent.find((f) => f.id === fid).hidden);
 t('profile shows "Send feedback" to verified players only', (await call(m2, '/api/member?u=502')).d.feedback === true && !(await call(m1, '/api/member?u=502')).d.feedback && !(await call(m3, '/api/member?u=502')).d.feedback);
 
