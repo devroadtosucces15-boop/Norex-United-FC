@@ -1,14 +1,32 @@
 // NOREX UNITED Discord bot – runs on Cloudflare Workers (free, always on, no PC needed).
 // Discord sends slash-command "interactions" here over HTTPS; we answer from the site's JSON API.
 //
+// It also runs a timer (see wrangler.toml) that asks GitHub to run the site update every
+// 10 minutes, because GitHub's own schedule is often delayed.
+//
 // Env (set by .github/workflows/bot.yml):
 //   DISCORD_PUBLIC_KEY – from the Discord developer portal (General Information)
-//   SITE_URL           – e.g. https://devroadtosucces15-boop.github.io/Norex-United-FC/
+//   GH_DISPATCH_TOKEN  – GitHub token allowed to run this repo's Actions
+//   SITE_URL, GITHUB_REPO – in wrangler.toml
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 
 export default {
+  async scheduled(event, env, ctx) {
+    if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
+    const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.GH_DISPATCH_TOKEN}`,
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'norex-bot',
+      },
+      body: JSON.stringify({ ref: 'main' }),
+    });
+    if (!res.ok) console.log('GitHub dispatch failed', res.status, await res.text());
+  },
+
   async fetch(request, env, ctx) {
     if (request.method === 'GET') return new Response('NOREX UNITED bot is running ⚽');
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });

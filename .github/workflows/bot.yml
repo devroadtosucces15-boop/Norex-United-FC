@@ -28,8 +28,10 @@ jobs:
           workingDirectory: bot
           secrets: |
             DISCORD_PUBLIC_KEY
+            GH_DISPATCH_TOKEN
         env:
           DISCORD_PUBLIC_KEY: ${{ secrets.DISCORD_PUBLIC_KEY }}
+          GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
 
       - uses: actions/setup-node@v4
         if: env.CONFIGURED == 'true'

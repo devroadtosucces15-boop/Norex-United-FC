@@ -2,5 +2,9 @@ name = "norex-bot"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
+[triggers]
+crons = ["*/10 * * * *"]
+
 [vars]
 SITE_URL = "https://devroadtosucces15-boop.github.io/Norex-United-FC/"
+GITHUB_REPO = "devroadtosucces15-boop/Norex-United-FC"
