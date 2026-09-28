@@ -12,6 +12,7 @@
 
 import { getLive } from './live.js';
 import { gameRoute, latestGame } from './game.js';
+import { applyRoute, getContacts, recruitRoute } from './trials.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
@@ -189,10 +190,16 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (!flagOn(env, me, 'liveBanner')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await getLive(env)));
     }
+    if (url.pathname === '/api/contacts' || url.pathname === '/api/trials/apply') { // P1.4 / P1.5 – public, behind the trials flag
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'trials')) return cors(env, fail('Not available yet.', 404));
+      if (request.method === 'POST' && url.pathname === '/api/trials/apply') return cors(env, await applyRoute(request, env, me, loadSite, log));
+      if (request.method === 'GET' && url.pathname === '/api/contacts') return cors(env, json(await getContacts(env)));
+    }
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
-    return cors(env, await route(url.pathname, request.method, body, me, env, loadSite));
+    return cors(env, await route(url.pathname, request.method, body, me, env, loadSite, url));
   } catch (e) {
     return cors(env, fail(e.message || 'Something went wrong', 500));
   }
@@ -256,7 +263,7 @@ async function currentRole(env, me) {
 }
 
 // ---------- API ----------
-async function route(p, method, body, me, env, loadSite) {
+async function route(p, method, body, me, env, loadSite, url) {
   if (!can(me, 'hub.use')) return fail('Members only.', 403);
   if (p === '/api/me' && method === 'GET') {
     const [claim, profile] = await Promise.all([getClaim(env, me.u), one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)]);
@@ -359,6 +366,9 @@ async function route(p, method, body, me, env, loadSite) {
     if (!flagOn(env, me, 'gameRules')) return fail('Not available yet.', 404);
     return gameRoute(p, method, body, me, env, loadSite, log);
   }
+
+  const rec = await recruitRoute(p, method, body, me, env, loadSite, log, url); // P1.5 trials · P5.5 scouting · P5.7 notes
+  if (rec) return rec;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

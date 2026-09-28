@@ -37,7 +37,9 @@ export const PERMS = {
   'builds.feature': 'manager', // PB – "Club recommended"
   'game.edit': 'manager', // PB.1 – publish game-rules versions (level cap, dataset), confirm patch-note cap changes
   'content.edit': 'manager', // P5.x – announcements, rules, FAQ
-  'notes.private': 'manager', // P5.x – private member notes
+  'notes.private': 'manager', // P5.7 – private notes per member / player / trial
+  'trials.manage': 'manager', // P1.5 – trial cards, sessions, decisions
+  'scout.recommend': 'member', // P5.5 – recommend a player to the managers
   'posts.moderate': 'manager', // P6.1 / P8.3 – pin/remove posts
   'messages.reported': 'manager', // P6.3 – managers see reported messages only
   'messages.all': 'owner', // P6.3 – owner/founder sees every DM and group chat

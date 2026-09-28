@@ -50,6 +50,9 @@
   "features": {
     "rushLog": "members",
     "gameRules": "owner",
-    "liveBanner": "owner"
+    "liveBanner": "owner",
+    "trials": "owner",
+    "scouting": "owner",
+    "managerNotes": "owner"
   }
 }
