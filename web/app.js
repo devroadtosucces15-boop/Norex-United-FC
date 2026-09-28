@@ -24,6 +24,27 @@ menuBtn?.addEventListener('click', () => {
   menuBtn.setAttribute('aria-expanded', open);
 });
 
+// ---------- header fit: tighten the links, then fall back to ☰ when they still don't fit ----------
+// More links appear as feature flags switch on (and the 🔔 bell / account menu arrive after login), so fixed breakpoints
+// can't know the width needed – measure instead. Above 1100px only; below it the CSS hamburger always applies.
+const bar = $('.bar');
+function fitNav() {
+  const root = document.documentElement;
+  root.classList.remove('nav-tight', 'nav-collapse');
+  if (!bar || innerWidth <= 1100) return;
+  const over = () => bar.scrollWidth > bar.clientWidth + 1;
+  if (over()) root.classList.add('nav-tight');
+  if (over()) { root.classList.remove('nav-tight'); root.classList.add('nav-collapse'); }
+}
+if (bar) {
+  let t;
+  const later = () => { clearTimeout(t); t = setTimeout(fitNav, 60); };
+  addEventListener('resize', later);
+  new MutationObserver(later).observe(bar, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+  document.fonts?.ready.then(fitNav);
+  fitNav();
+}
+
 // ---------- reveal on scroll + animated counters ----------
 function countUp(el) {
   const to = parseFloat(el.dataset.to), dec = +el.dataset.dec || 0, suf = el.dataset.suffix || '';

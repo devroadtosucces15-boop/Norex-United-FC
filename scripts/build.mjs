@@ -771,7 +771,7 @@ function worldHtml() {
   const name = (c) => (clubHref(c.id, '') ? `<a href="${clubHref(c.id, '')}">${esc(c.name)}</a>` : esc(c.name));
   return `<section class="stats world-stats">${me ? counter('World rank', me.rank, { text: `#${me.rank}` }) : ''}${counter(`${esc(config.siteTitle)} SR`, sr)}${counter('#1 skill rating', w.clubs[0].sr)}${counter('#100 cut-off', cut)}${me ? '' : counter('SR to the top 100', Math.max(0, cut - sr + 1))}</section>
 <p class="world-verdict">${me ? `🌍 <b>${esc(config.siteTitle)}</b> is <b>#${me.rank}</b> in the world – ${me.sr - cut} SR above the cut-off.` : `🎯 <b>${Math.max(0, cut - sr + 1)} SR</b> to break into the world top 100 (we're on ${sr}, #100 has ${cut}).`}</p>
-${table('world', ['#Rank', 'Club', '#SR', '#GP', 'W-D-L', '#Win %', '#Goals/gm', '#Clean sh.', '#Div'], w.clubs.map((c) =>
+${table('world-top', ['#Rank', 'Club', '#SR', '#GP', 'W-D-L', '#Win %', '#Goals/gm', '#Clean sh.', '#Div'], w.clubs.map((c) =>
     `<tr${c.id === homeId ? ' class="world-me"' : ''}>${td(c.rank, true)}${td(`${logo(c)} ${name(c)}`, false, c.name.toLowerCase())}${td(`<b>${c.sr}</b>`, true, c.sr)}${td(c.gp, true)}${td(`${c.w}-${c.d}-${c.l}`, false, c.w)}${td(pct(c.w, c.gp) + '%', true, pct(c.w, c.gp))}${td(c.gp ? (c.gf / c.gp).toFixed(2) : '–', true, c.gp ? c.gf / c.gp : 0)}${td(c.cs, true)}${td(c.div ?? '–', true, c.div ?? 99)}</tr>`), { filter: 'Search clubs…' })}
 <p class="muted small">All-time skill rating from EA, updated ${esc(new Date(w.fetchedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }))}. Every platform of this generation in one table.</p>`;
 }

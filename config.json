@@ -58,17 +58,17 @@
     "hallOfFame": "public",
     "profiles": "members",
     "builder": "owner",
-    "notifications": "owner",
-    "requests": "owner",
+    "notifications": "members",
+    "requests": "public",
     "proBuilds": "owner",
-    "discordMatch": "owner",
-    "roleSync": "owner",
-    "badges": "owner",
-    "myStats": "owner",
-    "playStyle": "owner",
-    "docs": "owner",
-    "suggestions": "owner",
-    "events": "owner",
-    "matchNight": "owner"
+    "discordMatch": "members",
+    "roleSync": "managers",
+    "badges": "members",
+    "myStats": "members",
+    "playStyle": "members",
+    "docs": "public",
+    "suggestions": "members",
+    "events": "public",
+    "matchNight": "members"
   }
 }

@@ -18,6 +18,10 @@ const text = [...html, ...files.filter((f) => /\.(js|css|json)$/.test(f))].map(r
 t('no link to the GitHub repo', !/github\.com\/devroadtosucces15-boop/i.test(text));
 t('no AI mentions', !/\b(claude|anthropic|chatgpt|openai)\b/i.test(text));
 t('every page has a <title> (redirects aside)', html.every((f) => /<title>[^<]+<\/title>|http-equiv="refresh"/.test(read(f))));
+// QA2: a duplicate id broke the World top 100 search (getElementById found the section, not the table).
+const dupIds = html.flatMap((f) => { const seen = new Set(); return [...read(f).matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]).filter((i) => (seen.has(i) ? true : (seen.add(i), false))).map((i) => `${f.slice(SITE.length)}#${i}`); });
+t(`no duplicate ids on any page${dupIds.length ? ` (${dupIds.slice(0, 3).join(', ')})` : ''}`, !dupIds.length);
+t('QA2 header fits itself: tight → ☰ when the links do not fit', read(SITE + 'assets/app.js').includes('function fitNav()') && read(SITE + 'assets/style.css').includes('html.nav-collapse nav{'));
 t('no unescaped template leftovers', html.every((f) => !/\$\{|undefined<|>undefined|NaN%/.test(read(f))));
 // P1.1 stat drill-downs
 const res = fs.existsSync(SITE + 'results.html') ? read(SITE + 'results.html') : '';

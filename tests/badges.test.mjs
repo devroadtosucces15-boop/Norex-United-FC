@@ -108,6 +108,7 @@ t('assets shipped', ['badges.js', 'badges.css', 'mystats.js', 'mystats.css'].eve
 const app = fs.readFileSync(ROOT + 'web/app.js', 'utf8');
 t('P2.6 hub tab behind the myStats flag', app.includes("flagOn('myStats', baseRole) ? [['stats', '📊 My stats']]") && app.includes('assets/mystats.js'));
 t('P4.3 unlock toast checked on hub start behind the badges flag', app.includes("flagOn('badges', me.user.role)") && app.includes('checkUnlocks'));
-t('flags ship owner-only', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.badges === 'owner' && JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.myStats === 'owner');
+const LEVELS = ['off', 'owner', 'managers', 'members', 'public'];
+t('badges + myStats flags declared with a valid level (owner-only until QA2, members after)', ['badges', 'myStats'].every((f) => LEVELS.includes(JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features[f])));
 
 done();
