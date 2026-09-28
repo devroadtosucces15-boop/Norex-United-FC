@@ -35,6 +35,7 @@ export const PERMS = {
   'lineup.unlock': 'claimed', // P3.x – claimed + Rush positions set
   'events.manage': 'manager', // P3.x
   'builds.feature': 'manager', // PB – "Club recommended"
+  'game.edit': 'manager', // PB.1 – publish game-rules versions (level cap, dataset), confirm patch-note cap changes
   'content.edit': 'manager', // P5.x – announcements, rules, FAQ
   'notes.private': 'manager', // P5.x – private member notes
   'posts.moderate': 'manager', // P6.1 / P8.3 – pin/remove posts

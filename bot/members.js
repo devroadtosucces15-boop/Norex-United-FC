@@ -11,6 +11,7 @@
 // Who may do what: bot/roles.js (can(user, action)).
 
 import { getLive } from './live.js';
+import { gameRoute, latestGame } from './game.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
@@ -181,6 +182,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     if (url.pathname === '/auth/callback') return callback(url, env);
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
     if (url.pathname === '/api/rush' && request.method === 'GET') return cors(env, json(await getRushPublic(env)));
+    if (url.pathname === '/api/game' && request.method === 'GET') return cors(env, json(await latestGame(env, loadSite)));
     const me = await unseal(env, (request.headers.get('Authorization') || '').replace(/^Bearer /, ''));
     if (url.pathname === '/api/live' && request.method === 'GET') { // P1.3 – public once the flag is 'public'
       if (me) me.role = await currentRole(env, me);
@@ -351,6 +353,11 @@ async function route(p, method, body, me, env, loadSite) {
   if (p.startsWith('/api/rush')) {
     if (!flagOn(env, me, 'rushLog')) return fail('Not available yet.', 404);
     return rushRoute(p, method, body, me, env, loadSite);
+  }
+
+  if (p.startsWith('/api/game/')) {
+    if (!flagOn(env, me, 'gameRules')) return fail('Not available yet.', 404);
+    return gameRoute(p, method, body, me, env, loadSite, log);
   }
 
   if (p.startsWith('/api/admin/')) {

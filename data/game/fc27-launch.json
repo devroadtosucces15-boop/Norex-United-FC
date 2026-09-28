@@ -1,0 +1,57 @@
+{
+ "version": "fc27-launch",
+ "game": "EA SPORTS FC 27",
+ "published": "2026-09-14",
+ "note": "Starting dataset (roadmap PB.1). Values EA has not published are left empty for managers to enter from the in-game screens. Never edit a published file: publish a new version from the manager portal (Game rules) or add fc27-<patch>.json.",
+ "sources": [
+  { "title": "Pitch Notes – FC 27 Launch Update", "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/pitch-notes-fc27-launch-update", "date": "2026-09-14" },
+  { "title": "Pitch Notes – The Grounds & Clubs Deep Dive", "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/pitch-notes-fc27-the-grounds-deep-dive", "date": "2026-08-04" },
+  { "title": "EA Help – Archetypes & progression", "url": "https://help.ea.com/en/articles/ea-sports-fc/archetypes/", "date": null }
+ ],
+ "levelCap": { "value": 40, "verified": false, "source": "unverified", "note": "Community-reported (EA forums). No official FC 27 note gives a number yet; confirm from the patch-notes log." },
+ "rules": [
+  { "id": "all-unlocked", "text": "Every archetype is unlocked from the start; progression (AXP) is per archetype.", "source": "ea-notes" },
+  { "id": "free-resets", "text": "Archetype resets no longer cost coins or a reset consumable.", "source": "ea-notes" },
+  { "id": "masteries", "text": "Levelling an archetype unlocks Masteries – small permanent attribute boosts for every archetype (e.g. Finisher level 10: +1 Finishing, +1 Composure).", "source": "ea-notes" },
+  { "id": "amps", "text": "Amps are temporary boosts for the active archetype (tiers 1–4, higher tiers add PlayStyles/PlayStyles+ and perks). At launch, Amps give no PlayStyle+.", "source": "ea-notes" },
+  { "id": "consumable-caps", "text": "AXP consumables can have their own level caps, always within the global max level.", "source": "ea-notes" }
+ ],
+ "archetypeGroups": [
+  { "id": "GK", "name": "Goalkeepers" },
+  { "id": "DEF", "name": "Defenders" },
+  { "id": "MID", "name": "Midfielders" },
+  { "id": "FWD", "name": "Forwards" }
+ ],
+ "archetypes": [
+  { "id": "shot-stopper", "name": "Shot Stopper", "group": "GK", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "sweeper-keeper", "name": "Sweeper Keeper", "group": "GK", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "progressor", "name": "Progressor", "group": "DEF", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "boss", "name": "Boss", "group": "DEF", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "engine", "name": "Engine", "group": "DEF", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "marauder", "name": "Marauder", "group": "DEF", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "recycler", "name": "Recycler", "group": "MID", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "maestro", "name": "Maestro", "group": "MID", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "creator", "name": "Creator", "group": "MID", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "spark", "name": "Spark", "group": "MID", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "magician", "name": "Magician", "group": "FWD", "signature": [], "base": {}, "source": "unverified" },
+  { "id": "finisher", "name": "Finisher", "group": "FWD", "signature": [], "base": {}, "source": "ea-notes" },
+  { "id": "target", "name": "Target", "group": "FWD", "signature": [], "base": {}, "source": "unverified" }
+ ],
+ "attributeGroups": [
+  { "id": "pace", "name": "Pace", "attributes": ["Acceleration", "Sprint Speed"] },
+  { "id": "shooting", "name": "Shooting", "attributes": ["Positioning", "Finishing", "Shot Power", "Long Shots", "Volleys", "Penalties"] },
+  { "id": "passing", "name": "Passing", "attributes": ["Vision", "Crossing", "Free Kick Accuracy", "Short Passing", "Long Passing", "Curve"] },
+  { "id": "dribbling", "name": "Dribbling", "attributes": ["Agility", "Balance", "Reactions", "Ball Control", "Dribbling", "Composure"] },
+  { "id": "defending", "name": "Defending", "attributes": ["Interceptions", "Heading Accuracy", "Defensive Awareness", "Standing Tackle", "Sliding Tackle"] },
+  { "id": "physical", "name": "Physical", "attributes": ["Jumping", "Stamina", "Strength", "Aggression"] },
+  { "id": "goalkeeping", "name": "Goalkeeping", "attributes": ["GK Diving", "GK Handling", "GK Kicking", "GK Positioning", "GK Reflexes"] }
+ ],
+ "apPerLevel": [],
+ "playstyles": [],
+ "specializations": [],
+ "facilities": [],
+ "masteries": [
+  { "archetype": "finisher", "level": 10, "bonus": { "Finishing": 1, "Composure": 1 }, "source": "ea-notes" }
+ ],
+ "body": { "heightMods": [], "weightMods": [] }
+}
