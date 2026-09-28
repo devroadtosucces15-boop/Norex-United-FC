@@ -31,6 +31,7 @@ export const TYPES = {
   rush: { icon: '⚡', label: 'My Rush results', def: 'site' },
   badge: { icon: '🎖️', label: 'Badges & achievements I get', def: 'site' },
   request: { icon: '📨', label: 'My club & privacy requests', def: 'dm' },
+  idea: { icon: '💡', label: 'Replies to my suggestions', def: 'site' },
   queue: { icon: '🛡️', label: 'Manager to-dos (new claims, trials, Rush results, requests)', def: 'site', role: 'manager' },
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },
 };
@@ -63,8 +64,9 @@ const modeOf = (prefs, type) => {
 let kick = false; // a DM was queued during this request → handleMembers sends it right after responding
 export const takeKick = () => { const k = kick; kick = false; return k; };
 
-// n = { type, title, body?, link?, icon?, ack? }. Recipients who can't see the feature yet (flag) are skipped,
+// n = { type, title, body?, link?, icon?, ack?, ref? }. Recipients who can't see the feature yet (flag) are skipped,
 // so nothing piles up or gets DMed while `notifications` is still owner-only.
+// ref names what the notification is about (e.g. 'rules:3' – P5.2), so acknowledging either side acknowledges both.
 export async function notify(env, ids, n) {
   ids = [...new Set((ids ?? []).filter(Boolean).map(String))].slice(0, 1000);
   if (!ids.length || !env.DB) return 0;
@@ -77,11 +79,17 @@ export async function notify(env, ids, n) {
     if (mode === 'off') continue;
     const dm = mode === 'dm' ? 'queued' : null;
     if (dm) kick = true;
-    stmts.push(env.DB.prepare('INSERT INTO notifications (user_id, type, icon, title, body, link, ack, at, dm) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(r.id, n.type, n.icon ?? TYPES[n.type]?.icon ?? '🔔', clean(n.title, 140), n.body ? cleanText(n.body, 1500) : null, safeLink(n.link), n.ack ? 1 : 0, at, dm));
+    stmts.push(env.DB.prepare('INSERT INTO notifications (user_id, type, icon, title, body, link, ack, at, dm, ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(r.id, n.type, n.icon ?? TYPES[n.type]?.icon ?? '🔔', clean(n.title, 140), n.body ? cleanText(n.body, 1500) : null, safeLink(n.link), n.ack ? 1 : 0, at, dm, n.ref ?? null));
   }
   for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
   return stmts.length;
+}
+// Everyone who logged in within 180 days (or only managers + owner) – announcements, rules (P7.1 / P5.2).
+export async function notifyMembers(env, n, audience = 'all') {
+  const to = audience === 'managers' ? "role IN ('manager', 'owner')" : '1 = 1';
+  const users = await all(env, `SELECT id FROM users WHERE ${to} AND last_at > ?`, Date.now() - 180 * DAY);
+  return notify(env, users.map((u) => u.id), n);
 }
 // Everyone with the manager role (or owner) who logged in within 120 days, except the person who acted.
 export async function notifyManagers(env, n, exceptId = null) {
@@ -193,8 +201,12 @@ async function notifyRoute(p, method, body, me, env, log) {
     return json(await state(env, me));
   }
   if (p === '/api/notify/ack') {
-    const r = await run(env, 'UPDATE notifications SET ack_at = ?, read_at = COALESCE(read_at, ?) WHERE id = ? AND user_id = ? AND ack = 1 AND ack_at IS NULL', Date.now(), Date.now(), Number(body.id) || 0, me.u);
+    const id = Number(body.id) || 0;
+    const r = await run(env, 'UPDATE notifications SET ack_at = ?, read_at = COALESCE(read_at, ?) WHERE id = ? AND user_id = ? AND ack = 1 AND ack_at IS NULL', Date.now(), Date.now(), id, me.u);
     if (!r.meta?.changes) return fail('Already acknowledged.', 409);
+    // P5.2: "Got it" on a rules notification counts as acknowledging that rules version (docs.js reads doc_acks).
+    const rules = /^rules:(\d+)$/.exec((await one(env, 'SELECT ref FROM notifications WHERE id = ?', id))?.ref ?? '');
+    if (rules) await run(env, 'INSERT OR IGNORE INTO doc_acks (user_id, version, name, avatar, at) VALUES (?, ?, ?, ?, ?)', me.u, Number(rules[1]), me.n, me.a ?? null, Date.now());
     await log(env, me, 'notify-ack', '');
     return json(await state(env, me));
   }
@@ -225,9 +237,7 @@ async function notifyRoute(p, method, body, me, env, log) {
     if (body.link && !link) return fail('The link must start with https:// or be a page of this site.');
     const today = await one(env, "SELECT COUNT(DISTINCT at) AS n FROM notifications WHERE type = 'announce' AND at > ?", Date.now() - DAY);
     if (today.n >= 10) return fail('That’s 10 announcements today – try again tomorrow.', 429);
-    const to = body.audience === 'managers' ? "role IN ('manager', 'owner')" : '1 = 1';
-    const users = await all(env, `SELECT id FROM users WHERE ${to} AND last_at > ?`, Date.now() - 180 * DAY);
-    const sent = await notify(env, users.map((u) => u.id), { type: 'announce', title, body: text || null, link, ack: !!body.ack });
+    const sent = await notifyMembers(env, { type: 'announce', title, body: text || null, link, ack: !!body.ack }, body.audience);
     await log(env, me, 'announce', `${title}${body.ack ? ' · must acknowledge' : ''} · ${sent} members`);
     return json({ ...await state(env, me), sent });
   }

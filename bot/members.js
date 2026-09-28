@@ -18,6 +18,7 @@ import { buildsRoute } from './builds.js';
 import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute, safely, takeKick } from './notify.js';
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { badgesRoute } from './badges.js';
+import { docsList, knowledgeRoute } from './docs.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -213,6 +214,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (me) me.role = await currentRole(env, me);
       return cors(env, await probuildsPublic(url.pathname, env, me, url));
     }
+    if (url.pathname === '/api/docs' && request.method === 'GET') { // P5.2 – guests see items marked public, behind the docs flag
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'docs')) return cors(env, fail('Not available yet.', 404));
+      return cors(env, json(await docsList(env, me)));
+    }
     if (url.pathname === '/api/overrides' || url.pathname === '/api/requests/public') { // P5.6 – build overrides + public "hide me"
       if (me) me.role = await currentRole(env, me);
       return cors(env, await publicRequestRoute(request, env, me, loadSite, log));
@@ -404,6 +410,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (pro) return pro;
   const bdg = await badgesRoute(p, method, body, me, env, loadSite, log, url); // P2.3 badges · P2.3/P4.3 achievements
   if (bdg) return bdg;
+  const kno = await knowledgeRoute(p, method, body, me, env, log, url); // P5.1 play style · P5.2/P5.3 docs · P5.4 suggestions
+  if (kno) return kno;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

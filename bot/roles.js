@@ -39,7 +39,13 @@ export const PERMS = {
   'builds.feature': 'manager', // PB.3 – "Club recommended" on the Pro Builds board
   'builds.squad': 'manager', // PB.4 – everyone's League/Rush build in the portal
   'game.edit': 'manager', // PB.1 – publish game-rules versions (level cap, dataset), confirm patch-note cap changes
-  'content.edit': 'manager', // P5.x – announcements, rules, FAQ
+  'content.edit': 'manager', // P5.1 / P5.2 – announcements, requirements, rules, FAQ, glossary, Play Style; see who acknowledged the rules
+  'docs.read': 'member', // P5.2 – members-only docs + Play Style (guests only see items marked public)
+  'docs.ack': 'member', // P5.2 – acknowledge the current rules
+  'announce.discord': 'manager', // P5.3 – post an announcement to a Discord channel (optional role ping)
+  'suggest.send': 'member', // P5.4 – suggestion box (optionally anonymous to members)
+  'suggest.vote': 'member', // P5.4
+  'suggest.decide': 'manager', // P5.4 – status (planned / done / declined) + reply, sees anonymous authors, removes
   'notes.private': 'manager', // P5.7 – private notes per member / player / trial
   'trials.manage': 'manager', // P1.5 – trial cards, sessions, decisions
   'scout.recommend': 'member', // P5.5 – recommend a player to the managers
