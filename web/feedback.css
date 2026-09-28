@@ -1,0 +1,19 @@
+/* Anonymous feedback (P4.4). Uses the tokens from style.css. */
+.fb-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start;justify-content:space-between;margin:0 0 12px}
+.fb-head h3{margin:0 0 4px}.fb-head p{margin:0;max-width:70ch}.fb-head .btn{margin:0}
+.fb-tabs{margin:0 0 12px}
+.fb-list{display:grid;gap:10px}
+.fb-item{display:grid;gap:6px;border-left:4px solid var(--line2)}
+.fb-item.k-praise{border-left-color:#22c55e}.fb-item.k-tip{border-left-color:#60a5fa}.fb-item.k-concern{border-left-color:#eab308}
+.fb-item.unread{box-shadow:0 0 0 1px rgba(232,193,106,.45)}
+.fb-item header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px}
+.fb-item p{margin:0;line-height:1.5;overflow-wrap:anywhere}
+.fb-item footer{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.fb-item footer .btn{margin:0}
+.fb-kind{font:700 12px var(--head);text-transform:uppercase;letter-spacing:.06em}
+.fb-report{padding:6px 10px;border-radius:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);font-size:13px}
+.fb-warn{padding:10px 12px;border-radius:10px;background:rgba(232,193,106,.1);border:1px solid rgba(232,193,106,.45);margin:0 0 12px;font-size:14px}
+.fb-form{display:grid;gap:10px}.fb-form select,.fb-form textarea{width:100%}
+.fb-kinds{display:flex;flex-wrap:wrap;gap:6px 14px;border:0;padding:0;margin:0}.fb-kinds legend{font:600 12px var(--body);color:var(--muted);margin-bottom:4px}
+.fb-kinds label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.fb-form select,.fb-form textarea{padding:9px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;color-scheme:dark;resize:vertical}
+.fb-form .row{gap:8px}.fb-form .row .btn{margin:0}

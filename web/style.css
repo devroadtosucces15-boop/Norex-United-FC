@@ -583,6 +583,7 @@ a.nx-member{cursor:pointer}
 .nx-tabs em{font:700 11px var(--body);font-style:normal;padding:1px 7px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2);color:#dfe3ea}
 .nx-hc{position:absolute;z-index:80;width:280px;max-width:calc(100vw - 16px);padding:14px;border-radius:var(--radius);background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line2);box-shadow:0 20px 50px rgba(0,0,0,.65);opacity:0;transform:translateY(6px);transition:opacity .15s,transform .15s;display:grid;gap:10px}
 .nx-hc.up{transform:translateY(-6px)}
+.nx-hc[hidden]{display:none} /* closed cards must not sit invisibly over the page and swallow clicks */
 .nx-hc.on{opacity:1;transform:none}
 .nx-hc::before{content:"";position:absolute;inset:0 0 auto;height:44px;border-radius:var(--radius) var(--radius) 0 0;background:repeating-linear-gradient(115deg,color-mix(in srgb,var(--red) 35%,transparent) 0 10px,transparent 10px 20px);opacity:.5;pointer-events:none}
 .nx-hc-top{position:relative;display:flex;align-items:center;gap:12px}
@@ -700,7 +701,7 @@ a.stat.link:hover .stat-go{color:var(--red);transform:translateX(3px)}
 
 /* ---------- empty states (P1.6) ---------- */
 .t-empty{text-align:center;padding:22px 12px!important}
-.barlist li.bl-empty{background:none;border:1px dashed var(--line2);justify-content:center;text-align:center;padding:14px}
+.barlist li.bl-empty{display:block;background:none;border:1px dashed var(--line2);text-align:center;padding:14px}.barlist li.bl-empty::before{display:none}
 
 /* ---------- 🔔 notification bell + "must acknowledge" bar (P7.1; the rest lives in notify.css) ---------- */
 .bell-wrap{position:relative;order:3;flex:none}

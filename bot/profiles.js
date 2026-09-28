@@ -6,6 +6,7 @@
 import { ROLE_LABEL, can, flagOn } from './roles.js';
 import { picksOf } from './probuilds.js';
 import { achSummary, badgesOf } from './badges.js';
+import { starSummary } from './ratings.js';
 
 export const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
 export const RUSH_POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
@@ -143,6 +144,8 @@ export async function memberCard(env, me, id) {
     badgesOn ? achSummary(env, id) : null,
   ]);
   const starting = flagOn(env, me, 'events') ? await startingFor(env, id) : null; // P3.4
+  const stars = claim && flagOn(env, me, 'starRatings') ? await starSummary(env, claim.player) : null; // P4.2
+  const feedback = !!claim && id !== me.u && flagOn(env, me, 'feedback') && can(me, 'feedback.send'); // P4.4 – "Send feedback" button
   const role = u.role && u.role !== 'member' ? u.role : u.admin ? 'manager' : claim ? 'claimed' : 'member';
   return {
     member: { id: u.id, n: u.name, a: u.avatar, tag: u.tag, role, roleLabel: ROLE_LABEL[role], first: u.first_at, last: u.last_at, me: u.id === me.u },
@@ -152,6 +155,8 @@ export async function memberCard(env, me, id) {
     ...(builds ? { builds } : {}),
     ...(badges ? { badges: badges.badges, canRemoveBadges: badges.canRemove, ach } : {}),
     ...(starting ? { starting } : {}),
+    ...(stars ? { stars } : {}),
+    ...(feedback ? { feedback } : {}),
   };
 }
 // P3.4: the member's place in the next published lineup ({ event, type, title, start, pos, formation }) or null.

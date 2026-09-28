@@ -55,8 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="card mx-board"><h3>📅 Attendance</h3>${bars(d.attendance.map((u) => ({ ...u, v: u.yes })), who, (u) => `${u.yes}${u.maybe ? ` <small class="muted">+${u.maybe}?</small>` : ''}`)}<p class="small muted">Days marked “I’m in” in the Squad Hub</p></div>
 <div class="card mx-board"><h3>⭐ MOTM by vote</h3>${bars(d.motmVotes.map((p) => ({ ...p, v: p.wins })), (p) => `<a href="${pHref(p.k)}">${esc(p.n)}</a>`)}<p class="small muted">Squad-vote winners · ${d.matchesVoted} matches voted</p></div>
 <div class="card mx-board"><h3>🗳️ Most votes cast</h3>${bars(d.voters.map((u) => ({ ...u, v: u.votes })), who)}<p class="small muted">Members who voted for MOTM</p></div>
-<div class="card mx-board lb-soon"><h3>🏅 Weekly awards</h3>${UI.empty({ icon: '🏅', title: 'Coming soon', text: 'Best Striker, Defender, Keeper and Midfielder winners land here once weekly awards open.' })}</div>
-<div class="card mx-board lb-soon"><h3>🔮 Predictions</h3>${UI.empty({ icon: '🔮', title: 'Coming soon', text: 'Score prediction points appear here once predictions open.' })}</div></div>`;
+${d.awards ? `<div class="card mx-board"><h3>🏅 Weekly awards</h3>${bars(d.awards.map((p) => ({ ...p, v: p.wins })), (p) => `<a href="${pHref(p.k)}">${esc(p.n)}</a>`)}<p class="small muted">Weekly award wins (votes + stat awards) this month</p></div>`
+  : `<div class="card mx-board lb-soon"><h3>🏅 Weekly awards</h3>${UI.empty({ icon: '🏅', title: 'Coming soon', text: 'Best Striker, Defender, Keeper and Midfielder winners land here once weekly awards open.' })}</div>`}
+${d.predictions ? `<div class="card mx-board"><h3>🔮 Predictions</h3>${bars(d.predictions.map((u) => ({ ...u, v: u.pts })), who, (u) => `${u.pts}${u.exact ? ` <small class="muted">${u.exact} exact</small>` : ''}`)}<p class="small muted">Prediction points from this month’s match nights</p></div>`
+  : `<div class="card mx-board lb-soon"><h3>🔮 Predictions</h3>${UI.empty({ icon: '🔮', title: 'Coming soon', text: 'Score prediction points appear here once predictions open.' })}</div>`}</div>`;
         } catch (e) { out.innerHTML = UI.empty({ icon: '📡', title: 'Squad boards are unavailable', text: e.message }); }
       };
       UI.tabs($('.lb-months', lb), show);

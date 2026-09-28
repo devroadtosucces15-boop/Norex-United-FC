@@ -32,7 +32,11 @@ export const PERMS = {
   'rush.submit': 'member', // P0.4 – members submit, managers confirm
   'rush.confirm': 'manager', // P0.4
   'feedback.send': 'claimed', // P4.4 – claimed → claimed players
-  'feedback.authors': 'manager', // P4.4 – who wrote anonymous feedback
+  'feedback.authors': 'manager', // P4.4 – who wrote anonymous feedback, hide messages, see reports
+  'ratings.give': 'member', // P4.2 – weekly 1–5★ for teammates (not yourself)
+  'ratings.raters': 'manager', // P4.2 – who gave which stars
+  'predict.play': 'member', // P3.8 – predictions game
+  'recs.view': 'member', // P3.6 – "who to play with tonight"
   'lineup.unlock': 'claimed', // P3.5 – Rush squad preferences (claimed + Rush positions set)
   'squads.manage': 'manager', // P3.5 – generate / edit / publish Rush squads, see everyone's preferences
   'events.manage': 'manager', // P3.1 – create / edit / cancel events, quick lineup (P3.7), share session reports

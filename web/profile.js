@@ -83,6 +83,7 @@
   const BMODES = [['league', '🏟️', 'League'], ['rush', '⚡', 'Rush']];
   // P2.3 / P4.3 – tags, community badges, achievements live in assets/badges.js
   const badgesOn = () => !!window.NXViewer?.flagOn('badges');
+  const loadJs = (file, glob) => (window[glob] ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/${file}`, onload: ok, onerror: no }))));
   const loadBadges = () => (window.NXBadges ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/badges.js`, onload: ok, onerror: no }))));
   const prettyArch = (id) => String(id || '').replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   const hcBuilds = (bl) => (bl && (bl.league || bl.rush) ? `<div class="pf-hc-row pf-hc-builds"><small>🧬 Builds</small><span>${BMODES.filter(([k]) => bl[k]).map(([k, ic]) => `<span title="${esc(bl[k].title)}">${ic} ${esc(prettyArch(bl[k].arch))} L${esc(bl[k].level)}${bl[k].position ? ` · ${esc(bl[k].position)}` : ''}</span>`).join('<br>')}</span></div>` : '');
@@ -110,10 +111,12 @@
     const allIds = withVerified(p);
     const ids = IDS.filter(([k]) => allIds[k]);
     const bd = badgesOn() && (await loadBadges().then(() => true).catch(() => false));
+    const st = d.stars && (await loadJs('ratings.js', 'NXRatings').then(() => true).catch(() => false)); // P4.2
     return `<div class="nx-hc-top">${UI.avatar(m.a, m.n, 56)}<div><b>${esc(m.n)} ${flag(p?.country)}</b><small>${m.tag ? `@${esc(m.tag)} · ` : ''}${rolePill(m.role)}</small></div></div>
 ${bd ? NXBadges.tagsHtml(p?.tags, { max: 4 }) : ''}
 ${claim ? `<a class="pf-hc-player" href="${playerUrl(claim.player)}">🪪 <b>${esc(claim.playerName)}</b>${pl?.ovr ? ` <span class="pf-ovr">${pl.ovr}</span>` : ''}${pl?.pos ? ` <small>${esc(pl.pos)}</small>` : ''}</a>` : ''}
 ${bd ? NXBadges.hcRow(d) : ''}
+${st ? `<div class="pf-hc-row"><small>🌟 Stars</small><span>${NXRatings.badge(d.stars)}</span></div>` : ''}
 ${p?.positions?.length || p?.rushPositions?.length ? `<div class="pf-hc-row"><small>League</small><span>${posLine(p.positions)}</span></div><div class="pf-hc-row"><small>⚡ Rush</small><span>${posLine(p.rushPositions)}</span></div>` : ''}
 ${p?.platform || ids.length ? `<div class="pf-hc-ids">${p.platform ? UI.pill(p.platform, { emoji: '🎮' }) : ''}${ids.map(([k, l, e]) => `<span data-tip="${esc(l)}${isVerified(p, k) ? ' · verified' : ''}">${e} ${esc(allIds[k])}${isVerified(p, k) ? tick : ''}</span>`).join('')}</div>` : ''}
 ${hcBuilds(d.builds)}
@@ -243,6 +246,9 @@ ${window.NXViewer?.flagOn('platformLink') ? `<p class="small muted">✓ PSN, Xbo
     }
     const { member: m, claim, profile: p = {}, activity, builds } = d;
     const bd = !!d.badges && (await loadBadges().then(() => true).catch(() => false)); // P2.3 / P4.3
+    const st = !!d.stars && (await loadJs('ratings.js', 'NXRatings').then(() => true).catch(() => false)); // P4.2
+    const scoutOn = !!claim && window.NXViewer?.flagOn('scoutReport'); // PB.5 – full report for the member + managers
+    const fullScout = m.me || ['manager', 'owner'].includes(window.NXViewer?.role);
     const pf = p || {};
     const pl = await findPlayer(ctx, claim?.player);
     const grid = pf.playTimes && convert(pf.playTimes, pf.tz, myTz);
@@ -256,13 +262,15 @@ ${window.NXViewer?.flagOn('platformLink') ? `<p class="small muted">✓ PSN, Xbo
 <div class="pf-id"><h1>${esc(m.n)}</h1><div class="pf-meta">${rolePill(m.role)}${m.tag ? `<span class="pf-tag">@${esc(m.tag)}</span>` : ''}${pf.club ? UI.pill(pf.club, { emoji: '❤️' }) : ''}${onNow(grid) ? '<span class="pf-live">🟢 Usually on now</span>' : ''}</div>
 ${d.starting ? `<a class="pf-start" href="${BASE}members.html#schedule-${d.starting.event}">🧩 ${m.me ? 'You’re' : 'Starting'} ${m.me ? 'starting ' : ''}at <b>${esc(d.starting.pos)}</b> · ${esc(d.starting.title || 'next match')} · ${esc(new Date(d.starting.start).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' }))}${d.starting.formation ? ` · ${esc(d.starting.formation)}` : ''}</a>` : ''}${bd ? NXBadges.tagsHtml(pf.tags) : ''}${pf.bio ? `<p class="pf-bio">${esc(pf.bio)}</p>` : ''}<small class="muted">Member since ${new Date(m.first).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} · last seen ${UI.time(m.last)}</small>
 <div class="pf-actions">${m.me ? `<a class="btn" href="${BASE}members.html#me">✏️ Edit my profile</a>` : `<a class="btn discord" href="https://discord.com/users/${encodeURIComponent(m.id)}" target="_blank" rel="noopener">💬 Open chat in Discord</a>`}
-${claim ? `<a class="btn ghost" href="${playerUrl(claim.player)}">🪪 View player page</a>` : ''}${activity ? '<a class="btn ghost" href="#pf-activity">📜 Activity log</a>' : ''}</div></div>
+${d.feedback ? '<button type="button" class="btn ghost" data-feedback>💌 Send feedback</button>' : ''}${claim ? `<a class="btn ghost" href="${playerUrl(claim.player)}">🪪 View player page</a>` : ''}${activity ? '<a class="btn ghost" href="#pf-activity">📜 Activity log</a>' : ''}</div></div>
 ${claim ? `<a class="pf-card" href="${playerUrl(claim.player)}"><small>Plays as</small><b>${esc(claim.playerName)}</b>${pl?.ovr ? `<span class="pf-ovr big">${pl.ovr}</span>` : ''}<small>${esc(pl?.pos || '')}${pl?.s ? ` · ${pl.s.gp} GP · ${pl.s.g}G ${pl.s.a}A · ${Number(pl.s.r).toFixed(1)}` : ''}</small></a>` : ''}</section>
+${st ? `<div class="pf-stars">${NXRatings.badge(d.stars, { big: true })}<small class="muted">Community star rating from teammates · raters stay private</small></div>` : ''}
 <div class="pf-grid2">
 ${claim && window.NXViewer?.flagOn('awards') ? '<div data-pf-trophies></div>' : ''}
 ${sec('📍 Positions', `<div class="pf-modes"><div><small>🏆 League</small><div>${posLine(pf.positions)}</div></div><div><small>⚡ Rush</small><div>${posLine(pf.rushPositions)}</div></div></div>`)}
 ${sec('🎮 Platform &amp; IDs', pf.platform || ids.length ? `<ul class="pf-ids">${pf.platform ? `<li><span>🎮 Platform</span><b>${esc(pf.platform)}</b></li>` : ''}${ids.map(([k, l, e]) => `<li><span>${e} ${l}</span><b>${esc(allIds[k])}${isVerified(pf, k) ? tick : ''}</b><button type="button" class="pf-copy" data-copy="${esc(allIds[k])}" aria-label="Copy ${l}">📋</button></li>`).join('')}</ul><small class="muted">${anyVerified ? '✓ = verified through Discord · the rest are self-reported.' : 'Self-reported – not verified yet.'}</small>` : '<p class="muted">No platform IDs added yet.</p>')}
 </div>
+${scoutOn ? '<div data-pf-scout></div>' : ''}
 ${bd ? sec(`🎖️ Community badges <small class="muted">from teammates</small>`, '<div data-pf-badges></div>') : ''}
 ${bd ? sec(`🏆 Achievements <small class="muted">${m.me ? 'yours' : 'unlocked from stats &amp; squad life'}</small>`, '<div data-pf-ach></div>') : ''}
 ${builds ? sec('🧬 Builds <small class="muted">League &amp; Rush</small>', `<div class="pb-minis" data-pf-builds>${UI.skeleton('rows', 2)}</div>`) : ''}
@@ -272,11 +280,17 @@ ${activity ? `<section class="card pf-sec" id="pf-activity"><h3>📜 Activity lo
     if (builds) paintBuilds($('[data-pf-builds]', el), builds, m.me);
     const tr = $('[data-pf-trophies]', el); // P4.1 trophy cabinet
     if (tr) (window.NXAwards ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/awards.js`, onload: ok, onerror: no })))).then(() => NXAwards.cabinet(tr, claim.player, ctx.call)).catch(() => {});
+    const sc = $('[data-pf-scout]', el); // PB.5 scout report
+    if (sc) loadJs('scout.js', 'NXScout').then(() => NXScout.section(sc, { k: claim.player, full: fullScout, name: claim.playerName })).catch(() => sc.remove());
     if (bd) {
       NXBadges.badgesSection($('[data-pf-badges]', el), { ...ctx, onChange: () => { cards.delete(m.id); UI.hoverCard.forget?.(m.id); } }, m, d);
       NXBadges.achievements($('[data-pf-ach]', el), ctx, m.id, { mine: m.me });
     }
     el.onclick = async (e) => {
+      if (e.target.closest('[data-feedback]')) { // P4.4
+        loadJs('feedback.js', 'NXFeedback').then(() => NXFeedback.send(ctx, m.id)).catch(() => ctx.toast('Could not open feedback – try again', true));
+        return;
+      }
       const b = e.target.closest('[data-copy]');
       if (!b) return;
       try { await navigator.clipboard.writeText(b.dataset.copy); ctx.toast('Copied'); } catch { ctx.toast('Could not copy', true); }
