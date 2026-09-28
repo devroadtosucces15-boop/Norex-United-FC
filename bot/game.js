@@ -6,7 +6,7 @@
 import { can } from './roles.js';
 
 // Dataset keys a manager may replace when publishing. Anything else in "changes" is rejected.
-export const DATA_KEYS = ['archetypeGroups', 'archetypes', 'attributeGroups', 'apPerLevel', 'playstyles', 'specializations', 'facilities', 'masteries', 'body', 'rules', 'sources', 'note'];
+export const DATA_KEYS = ['archetypeGroups', 'archetypes', 'attributeGroups', 'apPerLevel', 'apCosts', 'playstyles', 'specializations', 'facilities', 'masteries', 'body', 'rules', 'sources', 'note'];
 const MAX_BYTES = 200_000;
 const VERSION_RE = /^[a-z0-9][a-z0-9.-]{0,39}$/;
 

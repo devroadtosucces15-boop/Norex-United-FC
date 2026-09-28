@@ -4,6 +4,7 @@ import path from 'node:path';
 import { ROOT, DATA, readJson, loadConfig, num } from './lib.mjs';
 import { lineChart, goalBars, donut, radar, spark } from './charts.mjs';
 import { buildUpdates } from './updates-page.mjs';
+import { buildBuilder } from './builder-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 
 const OUT = path.join(ROOT, 'site');
@@ -771,6 +772,8 @@ ${RECRUIT.open ? `<p class="about-links"><a class="btn" href="apply.html">👑 A
 
 // FC 27 updates log + game data (P1.7 / PB.1) – lives in updates-page.mjs.
 buildUpdates({ write, page, pageHead, section, esc, emptyState, config });
+// Archetype builder sandbox (PB.2) – builder-page.mjs, client in web/builder.js.
+buildBuilder({ write, page, pageHead, esc, emptyState, config });
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
