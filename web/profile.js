@@ -259,6 +259,7 @@ ${d.starting ? `<a class="pf-start" href="${BASE}members.html#schedule-${d.start
 ${claim ? `<a class="btn ghost" href="${playerUrl(claim.player)}">🪪 View player page</a>` : ''}${activity ? '<a class="btn ghost" href="#pf-activity">📜 Activity log</a>' : ''}</div></div>
 ${claim ? `<a class="pf-card" href="${playerUrl(claim.player)}"><small>Plays as</small><b>${esc(claim.playerName)}</b>${pl?.ovr ? `<span class="pf-ovr big">${pl.ovr}</span>` : ''}<small>${esc(pl?.pos || '')}${pl?.s ? ` · ${pl.s.gp} GP · ${pl.s.g}G ${pl.s.a}A · ${Number(pl.s.r).toFixed(1)}` : ''}</small></a>` : ''}</section>
 <div class="pf-grid2">
+${claim && window.NXViewer?.flagOn('awards') ? '<div data-pf-trophies></div>' : ''}
 ${sec('📍 Positions', `<div class="pf-modes"><div><small>🏆 League</small><div>${posLine(pf.positions)}</div></div><div><small>⚡ Rush</small><div>${posLine(pf.rushPositions)}</div></div></div>`)}
 ${sec('🎮 Platform &amp; IDs', pf.platform || ids.length ? `<ul class="pf-ids">${pf.platform ? `<li><span>🎮 Platform</span><b>${esc(pf.platform)}</b></li>` : ''}${ids.map(([k, l, e]) => `<li><span>${e} ${l}</span><b>${esc(allIds[k])}${isVerified(pf, k) ? tick : ''}</b><button type="button" class="pf-copy" data-copy="${esc(allIds[k])}" aria-label="Copy ${l}">📋</button></li>`).join('')}</ul><small class="muted">${anyVerified ? '✓ = verified through Discord · the rest are self-reported.' : 'Self-reported – not verified yet.'}</small>` : '<p class="muted">No platform IDs added yet.</p>')}
 </div>
@@ -269,6 +270,8 @@ ${sec('🕒 When they play', grid ? `<p class="small muted">Shown in <b>your</b>
 ${pf.twitch || pf.youtube ? sec('📺 Channels', `<div class="row">${pf.twitch ? `<a class="btn pf-twitch" href="${twitchUrl(pf.twitch)}" target="_blank" rel="noopener nofollow">Twitch · ${esc(pf.twitch)}</a>` : ''}${pf.youtube ? `<a class="btn pf-youtube" href="${ytUrl(pf.youtube)}" target="_blank" rel="noopener nofollow">YouTube · ${esc(pf.youtube)}</a>` : ''}</div>`) : ''}
 ${activity ? `<section class="card pf-sec" id="pf-activity"><h3>📜 Activity log <small class="muted">managers only</small></h3>${activity.length ? `<ul class="feed">${activity.map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><div>${esc(a.type.replace(/-/g, ' '))}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${UI.time(a.at)}</small></li>`).join('')}</ul>` : UI.empty({ icon: '📜', title: 'No activity yet' })}</section>` : ''}`;
     if (builds) paintBuilds($('[data-pf-builds]', el), builds, m.me);
+    const tr = $('[data-pf-trophies]', el); // P4.1 trophy cabinet
+    if (tr) (window.NXAwards ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/awards.js`, onload: ok, onerror: no })))).then(() => NXAwards.cabinet(tr, claim.player, ctx.call)).catch(() => {});
     if (bd) {
       NXBadges.badgesSection($('[data-pf-badges]', el), { ...ctx, onChange: () => { cards.delete(m.id); UI.hoverCard.forget?.(m.id); } }, m, d);
       NXBadges.achievements($('[data-pf-ach]', el), ctx, m.id, { mine: m.me });

@@ -13,6 +13,7 @@ import { handleMembers } from './members.js';
 import { updateLive } from './live.js';
 import { notifyCron } from './notify.js';
 import { eventReminders } from './events.js';
+import { closeDue } from './awards.js';
 import { eventButton, memberCommand, MEMBER_COMMANDS } from './botcmds.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
@@ -24,7 +25,7 @@ const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
-    ctx.waitUntil(eventReminders(env).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, then P7.1 DMs + reminders
+    ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, then P7.1 DMs + reminders
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
       method: 'POST',
