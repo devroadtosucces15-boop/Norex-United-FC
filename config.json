@@ -70,14 +70,14 @@
     "suggestions": "members",
     "events": "public",
     "matchNight": "members",
-    "platformLink": "owner",
-    "discordRsvp": "owner",
-    "awards": "owner",
-    "rushSquads": "owner",
-    "starRatings": "owner",
-    "feedback": "owner",
-    "predictions": "owner",
-    "recommendations": "owner",
-    "scoutReport": "owner"
+    "platformLink": "members",
+    "discordRsvp": "members",
+    "awards": "public",
+    "rushSquads": "members",
+    "starRatings": "members",
+    "feedback": "members",
+    "predictions": "members",
+    "recommendations": "members",
+    "scoutReport": "public"
   }
 }
