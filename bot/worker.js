@@ -166,7 +166,11 @@ async function command(data, site, ctx) {
       }] };
     }
     case 'site':
-      return { content: `🌐 ${club.url}` };
+      return { embeds: [{
+        title: `${club.name} – links`, url: club.url, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
+        description: [`🌐 **Website:** ${club.url}`, club.apply && `👑 **Trials / apply:** ${club.apply}`, club.repo && `🛠️ **GitHub:** ${club.repo}`].filter(Boolean).join('\n'),
+        footer,
+      }] };
     default:
       return { content: 'Unknown command.', flags: 64 };
   }

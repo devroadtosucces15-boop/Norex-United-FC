@@ -2,6 +2,10 @@
   "siteTitle": "NOREX UNITED FC",
   "siteUrl": "https://devroadtosucces15-boop.github.io/Norex-United-FC/",
   "repoUrl": "https://github.com/devroadtosucces15-boop/Norex-United-FC",
+  "discord": {
+    "applyLink": "",
+    "note": "Discord invite with 'Apply to Join' enabled \u2013 people must be approved by an admin"
+  },
   "brand": {
     "red": "#c8352c",
     "ink": "#0b0f16",
@@ -18,5 +22,23 @@
     "followOpponentsOf": "all"
   },
   "hiddenPlayers": [],
-  "requestDelayMs": 400
+  "requestDelayMs": 400,
+  "recruitment": {
+    "open": true,
+    "headline": "Trials are by application only",
+    "requirements": [
+      "Active on PS5 / Xbox Series / PC (new gen)",
+      "Available for regular league nights",
+      "Mic and Discord for match comms",
+      "Competitive attitude \u2013 we play to win"
+    ],
+    "positions": [
+      "GK",
+      "CB",
+      "CDM",
+      "CM",
+      "CAM",
+      "ST"
+    ]
+  }
 }
