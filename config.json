@@ -60,6 +60,7 @@
     "builder": "owner",
     "notifications": "owner",
     "requests": "owner",
-    "proBuilds": "owner"
+    "proBuilds": "owner",
+    "roleSync": "owner"
   }
 }

@@ -19,6 +19,8 @@ const commands = [
     options: [{ type: STRING, name: 'stat', description: 'Which leaderboard', choices: ['goals', 'assists', 'ga', 'rating', 'motm', 'games'].map((v) => ({ name: v === 'ga' ? 'goals + assists' : v, value: v })) }],
   },
   { name: 'site', description: 'Link to the club website' },
+  // P2.5 – only shown to people with Discord's Manage Roles permission (server owner can widen it in Server Settings → Integrations).
+  { name: 'syncroles', description: 'Managers: give/remove the ✅ Verified role for every player claim', default_member_permissions: String(1 << 28), contexts: [0] },
 ];
 
 const res = await fetch(`https://discord.com/api/v10/applications/${app}/commands`, {

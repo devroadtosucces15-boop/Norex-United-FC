@@ -18,6 +18,7 @@ import { buildsRoute } from './builds.js';
 import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute, safely, takeKick } from './notify.js';
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
+import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
@@ -308,6 +309,7 @@ async function route(p, method, body, me, env, loadSite, url) {
     const owner = await one(env, "SELECT user_id FROM claims WHERE player = ? AND status = 'approved' AND user_id != ?", pl.k, me.u);
     if (owner) return fail('That player has already been claimed. Ask a manager if this is wrong.', 409);
     if (!(mine?.status === 'approved' && mine.player === pl.k)) {
+      if (mine?.status === 'approved' && flagOn(env, me, 'roleSync')) await safely(syncMember(env, me.u, false)); // P2.5
       await run(env, `INSERT INTO claims (user_id, player, player_name, status, at, name, avatar, decided_by, decided_at) VALUES (?, ?, ?, 'pending', ?, ?, ?, NULL, NULL)
         ON CONFLICT (user_id) DO UPDATE SET player = excluded.player, player_name = excluded.player_name, status = 'pending', at = excluded.at,
           name = excluded.name, avatar = excluded.avatar, decided_by = NULL, decided_at = NULL`, me.u, pl.k, pl.n, Date.now(), me.n, me.a);
@@ -421,6 +423,10 @@ async function route(p, method, body, me, env, loadSite, url) {
       ]);
       await log(env, me, `claim-${status}`, `${c.name} → ${c.player_name}`);
       await rebuildPublic(env);
+      if (flagOn(env, me, 'roleSync')) { // P2.5 – ✅ Verified (+ position) role in Discord
+        const pos = status === 'approved' ? (await loadSite('players').catch(() => [])).find((x) => x.k === c.player)?.pos : null;
+        await safely(syncMember(env, c.user_id, status === 'approved', pos));
+      }
       if (c.user_id !== me.u) {
         const title = { approved: `✅ Your claim for ${c.player_name} was approved`, rejected: `❌ Your claim for ${c.player_name} was not approved`, unlinked: `↩️ You were unlinked from ${c.player_name}` }[status];
         const text = status === 'approved' ? 'You now have the verified badge on your player page.' : 'Ask a manager on Discord if this looks wrong – you can send a new claim from the Squad Hub.';

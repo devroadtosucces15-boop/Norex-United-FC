@@ -54,6 +54,7 @@ export const PERMS = {
   'requests.club': 'member', // P5.6 – "Track another club"
   'requests.hide': 'guest', // P5.6 – "Hide me from the site" (visitors too, verified by managers)
   'requests.decide': 'manager', // P5.6 – approve / reject / undo requests
+  'roles.sync': 'manager', // P2.5 – /syncroles: re-sync the ✅ Verified Discord role for every claim
 };
 
 export function can(user, action) {
