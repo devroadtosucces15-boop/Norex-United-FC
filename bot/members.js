@@ -98,7 +98,7 @@ async function doMigrateKV(env) {
   if (!got.meta?.changes) return;
   try {
     const kv = env.NOREX_KV;
-    const doc = async (k, fb) => (kv ? await kv.get(k, 'json') : null) ?? fb;
+    const doc = async (k, fb) => { try { return (kv ? await kv.get(k, 'json') : null) ?? fb; } catch { return fb; } };
     const stmts = [];
     const add = (sql, ...args) => stmts.push(env.DB.prepare(sql).bind(...args));
 
@@ -132,15 +132,24 @@ async function doMigrateKV(env) {
       add('INSERT INTO activity (at, user_id, name, avatar, type, detail) VALUES (?, ?, ?, ?, ?, ?)', x.at, x.u ?? null, x.n ?? null, x.a ?? null, x.type, x.detail ?? '');
     }
     if (kv) {
-      for (const { name } of (await kv.list({ prefix: 'avail:' })).keys) {
-        for (const [uid, v] of Object.entries(await doc(name, {}))) {
-          add('INSERT OR IGNORE INTO availability (date, user_id, status, name, avatar, at) VALUES (?, ?, ?, ?, ?, ?)', name.slice(6), uid, v.s, v.n ?? null, v.a ?? null, v.at ?? Date.now());
-        }
+      // `avail:<date>` / `votes:<match>` = one document per day/match; the first version used one key per
+      // person instead (`avail:<date>:<uid>` → plain status, `vote:<match>:<uid>` → player key, details in metadata).
+      const perKey = async (name) => { try { return JSON.parse(await kv.get(name)); } catch { return null; } };
+      const addAvail = (date, uid, v) => STATUSES.includes(v.s) && add('INSERT OR IGNORE INTO availability (date, user_id, status, name, avatar, at) VALUES (?, ?, ?, ?, ?, ?)',
+        date, uid, v.s, v.n ?? users[uid]?.n ?? null, v.a ?? users[uid]?.a ?? null, v.at ?? Date.now());
+      const addVote = (mid, uid, v) => v.p && add('INSERT OR IGNORE INTO votes (match_id, user_id, player, name, avatar, at) VALUES (?, ?, ?, ?, ?, ?)',
+        mid, uid, v.p, v.n ?? users[uid]?.n ?? null, v.a ?? users[uid]?.a ?? null, v.at ?? Date.now());
+      for (const { name, metadata } of (await kv.list({ prefix: 'avail:' })).keys) {
+        const [, date, uid] = name.split(':');
+        if (uid) addAvail(date, uid, { ...metadata, s: metadata?.s ?? (await kv.get(name)) });
+        else for (const [u, v] of Object.entries((await perKey(name)) ?? {})) addAvail(date, u, v);
       }
       for (const { name } of (await kv.list({ prefix: 'votes:' })).keys) {
-        for (const [uid, v] of Object.entries(await doc(name, {}))) {
-          add('INSERT OR IGNORE INTO votes (match_id, user_id, player, name, avatar, at) VALUES (?, ?, ?, ?, ?, ?)', name.slice(6), uid, v.p, v.n ?? null, v.a ?? null, v.at ?? Date.now());
-        }
+        for (const [u, v] of Object.entries((await perKey(name)) ?? {})) addVote(name.slice(6), u, v);
+      }
+      for (const { name, metadata } of (await kv.list({ prefix: 'vote:' })).keys) {
+        const [, mid, uid] = name.split(':');
+        if (uid) addVote(mid, uid, { p: metadata?.p ?? (await kv.get(name)) });
       }
     }
     for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
