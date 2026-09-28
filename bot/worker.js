@@ -32,6 +32,7 @@ export default {
 
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
+    if (path.startsWith('/crest/')) return crestProxy(path, ctx);
     if (path.startsWith('/auth/') || path.startsWith('/api/')) {
       const site = (env.SITE_URL || '').replace(/\/?$/, '/');
       return handleMembers(request, env, ctx, (file) => load(site, file, ctx));
@@ -72,6 +73,23 @@ async function verify(req, body, publicKey) {
 }
 
 const json = (obj) => new Response(JSON.stringify(obj), { headers: { 'Content-Type': 'application/json' } });
+
+// ---------- club crest proxy (P1.6) ----------
+// EA's crest CDN sends no CORS header, so the site can't draw opponent crests onto the result-graphic canvas.
+// /crest/<assetId>.png fetches only from that CDN and adds one; cached at the edge for a week.
+const CREST_CDN = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
+async function crestProxy(path, ctx) {
+  const id = path.match(/^\/crest\/(\d{1,12})\.png$/)?.[1];
+  if (!id) return new Response('Not found', { status: 404 });
+  const key = new Request(`https://crest.cache/${id}.png`);
+  const hit = await caches.default.match(key);
+  if (hit) return hit;
+  const r = await fetch(`${CREST_CDN}${id}.png`, { cf: { cacheTtl: 604800 } });
+  if (!r.ok || !(r.headers.get('Content-Type') || '').startsWith('image/')) return new Response('Not found', { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+  const res = new Response(r.body, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=604800', 'Access-Control-Allow-Origin': '*' } });
+  ctx.waitUntil(caches.default.put(key, res.clone()));
+  return res;
+}
 
 // ---------- data (cached for 5 minutes at Cloudflare's edge) ----------
 async function load(site, file, ctx) {

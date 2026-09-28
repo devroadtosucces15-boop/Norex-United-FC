@@ -81,6 +81,8 @@ function crestSrc(id, base) {
   const asset = clubKit(id)?.crestAssetId;
   return asset ? `${CREST_CDN}${asset}.png` : badgeUri(id);
 }
+// Absolute crest URL for share previews (og:image) – EA crest, else our own (never a data: URI).
+const ogCrest = (id) => { const asset = String(id) !== homeId && clubKit(id)?.crestAssetId; return asset ? `${CREST_CDN}${num(asset)}.png` : `${SITE}assets/crest.png`; };
 const crest = (id, size, base, cls = '') =>
   `<img class="crest ${cls}" src="${esc(crestSrc(id, base))}" width="${size}" height="${size}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${esc(badgeUri(id)).replace(/'/g, '%27')}'">`;
 
@@ -218,7 +220,7 @@ const dateCell = (ts) => td(`<time datetime="${new Date(ts * 1000).toISOString()
 const table = (id, head, rows, opts = {}) => `
 ${opts.filter ? `<input class="filter" type="search" placeholder="${esc(opts.filter)}" data-filter="${id}" aria-label="${esc(opts.filter)}">` : ''}
 <div class="tbl"><table id="${id}" class="sortable"><thead><tr>${head.map((h) => `<th${h.startsWith('#') ? ' class="n"' : ''}>${esc(h.replace(/^#/, ''))}</th>`).join('')}</tr></thead>
-<tbody>${rows.length ? rows.join('') : `<tr><td colspan="${head.length}" class="muted">Nothing yet – check back after the next update.</td></tr>`}</tbody></table></div>`;
+<tbody>${rows.length ? rows.join('') : `<tr><td colspan="${head.length}" class="muted t-empty">📭 Nothing yet – the archive grows with every match, check back after the next one.</td></tr>`}</tbody></table></div>`;
 const section = (title, body, { sub = '', id = '', cls = '' } = {}) =>
   `<section class="block reveal ${cls}"${id ? ` id="${id}"` : ''}><h2 class="banner-h">${title}${sub ? ` <small>${sub}</small>` : ''}</h2>${body}</section>`;
 const card = (title, body, cls = '') => `<div class="card ${cls}">${title ? `<h3>${title}</h3>` : ''}${body}</div>`;
@@ -234,7 +236,7 @@ const modes = (league, rush, label = '') => (MEMBER_API ? `<div class="modes" da
 
 function barList(rows, { fmt = (v) => v, base }) {
   const max = Math.max(...rows.map((r) => r.v), 0.0001);
-  return `<ol class="barlist">${rows.map((r, i) => `<li style="--w:${Math.max(4, (r.v / max) * 100)}%"><span class="bl-rank">${i + 1}</span><span class="bl-name">${r.pl ? pLink(r.pl.key, base) : esc(r.name)}</span><b>${fmt(r.v)}</b></li>`).join('') || '<li class="muted">No data yet</li>'}</ol>`;
+  return `<ol class="barlist">${rows.map((r, i) => `<li style="--w:${Math.max(4, (r.v / max) * 100)}%"><span class="bl-rank">${i + 1}</span><span class="bl-name">${r.pl ? pLink(r.pl.key, base) : esc(r.name)}</span><b>${fmt(r.v)}</b></li>`).join('') || '<li class="muted bl-empty">📭 Nothing to rank yet – fills in as matches are archived.</li>'}</ol>`;
 }
 
 function formStrip(ms, id, base) {
@@ -252,6 +254,12 @@ function fixture(m, id, base) {
 <span class="fx-extra">${scorers ? `⚽ ${scorers}` : ''}</span></a>`;
 }
 
+// Crest the result-graphic canvas may draw: ours from the site, EA crests through the Worker's CORS proxy (P1.6).
+function posterCrest(id, base) {
+  if (String(id) === homeId) return `${base}assets/crest.png`;
+  const asset = clubKit(id)?.crestAssetId;
+  return asset ? (MEMBER_API ? `${MEMBER_API}/crest/${num(asset)}.png` : '') : badgeUri(id);
+}
 // Matchday poster (also drawn to a PNG by app.js).
 function poster(m, base, { link = true } = {}) {
   const [h, a] = Object.keys(m.clubs).sort((x, y) => (x === homeId ? -1 : y === homeId ? 1 : 0));
@@ -259,7 +267,7 @@ function poster(m, base, { link = true } = {}) {
   const all = Object.values(m.players || {}).flatMap((l) => Object.values(l));
   const motm = all.find((p) => p.mom === '1') ?? [...all].sort((x, y) => num(y.rating) - num(x.rating))[0];
   const res = result(m.clubs[h]);
-  return `<div class="poster res-${res}" id="poster-${m.matchId}" data-home="${esc(clubName(h))}" data-away="${esc(clubName(a))}" data-score="${esc(m.clubs[h].goals)}-${esc(m.clubs[a].goals)}" data-date="${esc(niceDate(m.timestamp))}" data-scorers="${esc(scorers(h).join(', '))}" data-ascorers="${esc(scorers(a).join(', '))}" data-motm="${esc(motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : '')}" data-crest="${h === homeId ? `${base}assets/crest.png` : ''}" data-res="${res}" data-type="${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}">
+  return `<div class="poster res-${res}" id="poster-${m.matchId}" data-home="${esc(clubName(h))}" data-away="${esc(clubName(a))}" data-score="${esc(m.clubs[h].goals)}-${esc(m.clubs[a].goals)}" data-date="${esc(niceDate(m.timestamp))}" data-scorers="${esc(scorers(h).join(', '))}" data-ascorers="${esc(scorers(a).join(', '))}" data-motm="${esc(motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : '')}" data-crest="${esc(posterCrest(h, base))}" data-acrest="${esc(posterCrest(a, base))}" data-res="${res}" data-type="${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}">
 <div class="po-label"><span>${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'} · ${niceDate(m.timestamp)}</span><span class="po-res">${res === 'W' ? 'Victory' : res === 'L' ? 'Defeat' : 'Draw'}</span></div>
 <div class="po-main">
 <div class="po-team">${crest(h, 110, base, 'po-crest')}<b>${clubLink(h, base)}</b><small>${scorers(h).map((s) => `⚽ ${esc(s)}`).join('<br>')}</small></div>
@@ -317,7 +325,7 @@ function page({ title, base, active, body, description, image }) {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title><meta name="description" content="${esc(description ?? `${config.siteTitle} – Pro Clubs stats, results and player cards, updated automatically.`)}">
-<meta property="og:title" content="${esc(title)}"><meta property="og:image" content="${esc(image ?? `${SITE}assets/crest.png`)}"><meta name="theme-color" content="${INK}">
+<meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description ?? `${config.siteTitle} – Pro Clubs stats, results and player cards.`)}"><meta property="og:site_name" content="${esc(config.siteTitle)}"><meta property="og:type" content="website"><meta property="og:image" content="${esc(image ?? `${SITE}assets/crest.png`)}"><meta name="twitter:card" content="summary"><meta name="theme-color" content="${INK}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${base}assets/style.css"><style>:root{--red:${RED};--ink:${INK};--accent:${RED}}</style>
@@ -387,11 +395,11 @@ ${ms.length ? counter('Clean sheets', ms.filter((m) => !num(m.clubs[oppOf(m, id)
 ${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}
 ${ms.length ? `<div class="grid2 reveal">${card('Latest result', poster(ms[0], base) + `<button class="btn dl-poster" type="button" data-for="poster-${ms[0].matchId}">⬇ Download result graphic</button>`, 'flush')}${sessions[0] ? card('Last session', sessionCard(sessions[0], base, id)) : ''}</div>` : ''}
 ${section('Performance', `<div class="grid-charts">
-${card('Goals per match', goalBars(recent.map((m) => ({ for: num(m.clubs[id].goals), against: num(m.clubs[oppOf(m, id)].goals), res: result(m.clubs[id]), tip: `${dateStr(m.timestamp)} · ${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}` }))))}
+${card('Goals per match', !recent.length ? emptyState('⚽', 'No goals to chart yet', 'Fills in after the first archived match.') : goalBars(recent.map((m) => ({ for: num(m.clubs[id].goals), against: num(m.clubs[oppOf(m, id)].goals), res: result(m.clubs[id]), tip: `${dateStr(m.timestamp)} · ${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}` }))))}
 ${card('Season split', `<div class="donut-wrap">${donut([{ label: 'Won', value: num(o.wins), color: 'var(--win)' }, { label: 'Drawn', value: num(o.ties), color: 'var(--draw)' }, { label: 'Lost', value: num(o.losses), color: 'var(--loss)' }], { center: `${pct(num(o.wins), gp)}%`, sub: 'win rate' })}
 <ul class="legend"><li><i style="background:var(--win)"></i>Won <b>${esc(o.wins ?? 0)}</b></li><li><i style="background:var(--draw)"></i>Drawn <b>${esc(o.ties ?? 0)}</b></li><li><i style="background:var(--loss)"></i>Lost <b>${esc(o.losses ?? 0)}</b></li></ul></div>`)}
 ${card('Team DNA', `<ul class="dna">${dna.map(([k, v, tip]) => `<li data-tip="${esc(tip)}"><span>${k}</span><div class="meter"><i style="--w:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></li>`).join('')}</ul>`)}
-${card('Average team rating', lineChart(teamRatings, { min: 5, max: 10, ref: 7, id: `tr${id}` }))}
+${card('Average team rating', teamRatings.length > 1 ? lineChart(teamRatings, { min: 5, max: 10, ref: 7, id: `tr${id}` }) : emptyState('📈', 'Trend needs two matches', 'The rating line appears once two matches are archived.'))}
 </div>`)}
 ${members.length ? section('The squad', `<div class="card-rail">${[...members].sort((a, b) => num(b.clubStats[id]?.gamesPlayed) - num(a.clubStats[id]?.gamesPlayed)).slice(0, 14).map((p) => futCard(p, base)).join('')}</div>${isHome ? `<p><a class="btn" href="${base}squad.html">Full squad →</a></p>` : ''}`, { sub: `${members.length} players` }) : ''}
 ${members.length ? section('Club leaders', `<div class="grid4">
@@ -399,7 +407,7 @@ ${card('Top scorers', barList(top((s) => num(s.goals)), { base }))}${card('Assis
 ${card('Avg rating', barList(top((s) => (num(s.gamesPlayed) >= 2 ? num(s.ratingAve) : 0)), { base, fmt: (v) => v.toFixed(1) }))}${card('Man of the match', barList(top((s) => num(s.manOfTheMatch)), { base }))}
 </div>`) : ''}
 ${isHome && CHANNELS.length ? section('📺 Watch NOREX', `<div class="live-embed" hidden></div><div class="watch-grid">${CHANNELS.map(([k, label, svg, sub]) => `<a class="watch-card ${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener"><span class="wc-ic">${svg}</span><span><b>${label}</b><small>${sub}</small></span><span class="wc-go">Follow →</span></a>`).join('')}</div>`, { sub: 'streams & highlights', id: 'watch' }) : ''}
-${section('Recent results', `<div class="fixtures">${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('') || '<p class="muted">No matches archived yet.</p>'}</div>${isHome && ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`)}
+${section('Recent results', `<div class="fixtures">${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('') || emptyState('🗂️', 'No matches archived yet', 'EA only shares the last five games, so the archive starts on the first update after a club is tracked. Results land here automatically.')}</div>${isHome && ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`)}
 ${!isHome && members.length ? section('Squad table', squadTable(members, id, base, `squad-${id}`)) : ''}`;
 }
 
@@ -536,7 +544,7 @@ ${(pl.isHome || pl.playedForHome) ? modes(league(), `player:${pl.key}`) : league
     return `${car ? section('Career', `<section class="stats">${counter('Games', car.gamesPlayed)}${counter('Goals', car.goals)}${counter('Assists', car.assists)}${counter('Avg rating', car.ratingAve, { dec: 1 })}${counter('MOTM', car.manOfTheMatch)}${counter('G+A per game', num(car.gamesPlayed) ? (num(car.goals) + num(car.assists)) / num(car.gamesPlayed) : 0, { dec: 2 })}</section>`, { sub: 'every club, from EA' }) : ''}
 <div class="grid2 reveal">
 ${pl.radar ? card('Player profile', `${radar(RADAR.map((ax, i) => ({ label: ax.label, raw: [pl.radarRaw[i]] })), [{ values: pl.radar, color: 'var(--red)', name: pl.name }])}<p class="muted small">Percentile vs ${pool.length} tracked players with 3+ games${pl.isHome ? ' (NOREX stats)' : ''}. Hover a point for the real number.</p>`) : ''}
-${card('Match ratings', trend.length ? lineChart(trend, { min: 4, max: 10, ref: 7, id: 'pt' }) + (best ? `<p class="small">Best: ${ratingPill(best.rating)} vs ${esc(clubName(best.oppId))} (${dateStr(best.ts)})</p>` : '') : '<p class="muted">Ratings appear here once this player features in an archived match.</p>')}
+${card('Match ratings', trend.length ? lineChart(trend, { min: 4, max: 10, ref: 7, id: 'pt' }) + (best ? `<p class="small">Best: ${ratingPill(best.rating)} vs ${esc(clubName(best.oppId))} (${dateStr(best.ts)})</p>` : '') : emptyState('📈', 'No match ratings yet', 'Ratings appear here once this player features in an archived match.'))}
 </div>
 ${Object.keys(pl.clubStats).length ? section('By club', table('byclub', ['Club', 'Pos', '#OVR', '#GP', '#Goals', '#Assists', '#Rating', '#MOTM', '#Win %', '#Pass %', '#Tackle %'], Object.entries(pl.clubStats).map(([cid, cs]) =>
     `<tr>${td(`${crest(cid, 22, base)} ${clubLink(cid, base)}`)}${td(posOf(cs) || '—')}${td(esc(cs.proOverall ?? '–'), true)}${td(cs.gamesPlayed, true)}${td(cs.goals, true)}${td(cs.assists, true)}${td(ratingPill(num(cs.ratingAve)), true, cs.ratingAve)}${td(cs.manOfTheMatch, true)}${td(cs.winRate + '%', true, cs.winRate)}${td(cs.passSuccessRate + '%', true, cs.passSuccessRate)}${td(cs.tackleSuccessRate + '%', true, cs.tackleSuccessRate)}</tr>`))) : ''}
@@ -619,13 +627,21 @@ ${pageHead('Clubs', 'Found automatically. Every opponent is tracked, and any clu
 
 for (const m of matches) {
   const [a, b] = Object.keys(m.clubs);
-  write(`matches/${m.matchId}.html`, page({ title: `${clubName(a)} ${m.clubs[a].goals}–${m.clubs[b].goals} ${clubName(b)}`, base: '../', active: 'matches', body: matchBody(m, '../') }));
+  // Share preview: the opponent's crest (ours for linked-club games) + score line, scorers and MOTM.
+  const [h, aw] = m.clubs[homeId] ? [homeId, oppOf(m, homeId)] : [a, b];
+  const all = Object.values(m.players || {}).flatMap((l) => Object.values(l));
+  const motm = all.find((p) => p.mom === '1');
+  const goals = Object.values(m.players?.[h] || {}).filter((p) => num(p.goals)).map((p) => `${p.playername}${num(p.goals) > 1 ? ` ×${num(p.goals)}` : ''}`);
+  const verdict = { W: 'Win', L: 'Defeat', D: 'Draw' }[result(m.clubs[h])];
+  write(`matches/${m.matchId}.html`, page({ title: `${clubName(h)} ${m.clubs[h].goals}–${m.clubs[aw].goals} ${clubName(aw)}`, base: '../', active: 'matches', body: matchBody(m, '../'),
+    description: `${verdict} · ${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'} · ${niceDate(m.timestamp)}${goals.length ? ` · ⚽ ${goals.join(', ')}` : ''}${motm ? ` · ⭐ MOTM ${motm.playername} (${num(motm.rating).toFixed(1)})` : ''}`,
+    image: ogCrest(h === homeId ? aw : h) }));
 }
 const sessions = sessionsFor(homeMatches, homeId);
 write('matches/index.html', page({ title: `Matches – ${config.siteTitle}`, base: '../', active: 'matches', body: `
 ${pageHead('Matches', 'Every match since the site started archiving (EA itself only keeps the last 5). Play nights are grouped into sessions and graded on results and goal difference.', '../')}
-${modes(`${section('Sessions', `<div class="session-grid">${sessions.map((s) => sessionCard(s, '../', homeId)).join('') || '<p class="muted">No sessions yet.</p>'}</div>`)}
-${section('All results', `<div class="fixtures">${homeMatches.map((m) => fixture(m, homeId, '../')).join('')}</div>`)}
+${modes(`${section('Sessions', `<div class="session-grid">${sessions.map((s) => sessionCard(s, '../', homeId)).join('') || emptyState('🗓️', 'No sessions yet', 'Every play night becomes a graded session card here.')}</div>`)}
+${section('All results', `<div class="fixtures">${homeMatches.map((m) => fixture(m, homeId, '../')).join('') || emptyState('🗂️', 'No results yet', 'Every league and playoff match is saved here from the next update on.')}</div>`)}
 ${matches.some((m) => !m.clubs[homeId]) ? section('Linked club matches', `<div class="fixtures">${matches.filter((m) => !m.clubs[homeId]).map((m) => fixture(m, Object.keys(m.clubs)[0], '../')).join('')}</div>`) : ''}`, 'matches', 'League & playoffs from EA · Rush logged by members')}` }));
 
 // Stats centre
@@ -678,7 +694,10 @@ ${pageHead('Head to head', "Pick any two players, from NOREX or anyone we've fac
 <div id="cmp-out" class="cmp-out"><p class="muted">Loading players…</p></div>` }));
 
 for (const pl of visiblePlayers) {
-  write(`players/${pl.key}.html`, page({ title: `${pl.name} – ${config.siteTitle}`, base: '../', active: 'players', body: playerBody(pl, '../') }));
+  const st = pl.main && num(pl.main.gamesPlayed) ? { gp: num(pl.main.gamesPlayed), g: num(pl.main.goals), a: num(pl.main.assists), r: num(pl.main.ratingAve) } : pl.arch && { gp: pl.arch.gp, g: pl.arch.g, a: pl.arch.a, r: pl.arch.r };
+  write(`players/${pl.key}.html`, page({ title: `${pl.name} – ${config.siteTitle}`, base: '../', active: 'players', body: playerBody(pl, '../'),
+    description: `${pl.pos || 'Player'}${pl.ovr ? ` · OVR ${pl.ovr}` : ''}${pl.mainClub ? ` · ${clubName(pl.mainClub)}` : ''}${st ? ` · ${st.gp} games, ${st.g} goals, ${st.a} assists, avg rating ${st.r.toFixed(1)}` : ''}`,
+    image: pl.mainClub ? ogCrest(pl.mainClub) : undefined }));
 }
 const pRows = [...visiblePlayers]
   .sort((a, b) => (b.isHome - a.isHome) || num(b.career?.gamesPlayed) - num(a.career?.gamesPlayed))

@@ -668,3 +668,7 @@ a.stat.link:hover .stat-go{color:var(--red);transform:translateX(3px)}
 .foot-twitch:hover{color:#b58cff!important}
 .foot-youtube:hover{color:#ff5a6e!important}
 @media (max-width:520px){.wc-go{display:none}.live-title{font-size:13px}}
+
+/* ---------- empty states (P1.6) ---------- */
+.t-empty{text-align:center;padding:22px 12px!important}
+.barlist li.bl-empty{background:none;border:1px dashed var(--line2);justify-content:center;text-align:center;padding:14px}

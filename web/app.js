@@ -208,12 +208,21 @@ $$('.dl-poster').forEach((btn) => btn.addEventListener('click', async () => {
   g.fillText(`${d.type} · ${d.date}`.toUpperCase(), W / 2, 90);
   g.font = '700 64px Oswald, Impact, sans-serif';
   g.fillText(d.res === 'W' ? 'VICTORY' : d.res === 'L' ? 'DEFEAT' : 'DRAW', W / 2, 170);
-  if (d.crest) {
+  // Both crests side by side (opponent crests come through the Worker's CORS proxy); one crest → centred.
+  const loadImg = async (src) => {
+    if (!src) return null;
     const img = new Image();
-    img.src = d.crest;
+    img.crossOrigin = 'anonymous';
+    img.src = src;
     await img.decode().catch(() => {});
-    if (img.naturalWidth) { const h = 420, w = (img.naturalWidth / img.naturalHeight) * h; g.drawImage(img, W / 2 - w / 2, 220, w, h); }
-  }
+    return img.naturalWidth ? img : null;
+  };
+  const [ch, ca] = await Promise.all([loadImg(d.crest), loadImg(d.acrest)]);
+  const put = (img, cx, h, maxW) => { let w = (img.naturalWidth / img.naturalHeight) * h; if (w > maxW) { h *= maxW / w; w = maxW; } g.drawImage(img, cx - w / 2, 430 - h / 2, w, h); };
+  if (ch && ca) {
+    put(ch, W * 0.26, 380, 380); put(ca, W * 0.74, 320, 320);
+    g.font = '700 54px Oswald, Impact, sans-serif'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText('VS', W / 2, 450); g.fillStyle = '#fff';
+  } else if (ch || ca) put(ch || ca, W / 2, 420, 420);
   g.font = '700 260px Oswald, Impact, sans-serif';
   g.fillText(d.score.replace('-', ' : '), W / 2, 900);
   g.font = '600 46px Oswald, Impact, sans-serif';
