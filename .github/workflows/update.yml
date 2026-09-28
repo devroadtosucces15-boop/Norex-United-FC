@@ -26,6 +26,8 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main # latest data, not the commit from when the run was queued
 
       - uses: actions/setup-node@v4
         with:
@@ -54,8 +56,13 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "data: update $(date -u +%Y-%m-%dT%H:%MZ)"
-            git pull --rebase --autostash
-            git push
+            # Another run may have pushed data meanwhile: our fetch is newer, so our files win (-X theirs).
+            for i in 1 2 3; do
+              if git pull --rebase -X theirs --autostash && git push; then break; fi
+              git rebase --abort 2>/dev/null || true
+              [ "$i" = 3 ] && exit 1
+              sleep $((i * 5))
+            done
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -77,9 +84,20 @@ jobs:
         uses: actions/deploy-pages@v4
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
 
-      - name: Alert Discord on failure
-        if: failure() && env.DISCORD_WEBHOOK != ''
+      - name: DM the owner on failure
+        if: failure()
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          OWNER_ID: "1322770005535756290"
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          curl -s -H "Content-Type: application/json" -d '{"content":"⚠️ Site update failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' "$DISCORD_WEBHOOK"
+          [ -z "$DISCORD_BOT_TOKEN" ] && exit 0
+          node -e '
+            const h = { Authorization: "Bot " + process.env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" };
+            const api = (p, b) => fetch("https://discord.com/api/v10" + p, { method: "POST", headers: h, body: JSON.stringify(b) }).then((r) => r.json());
+            (async () => {
+              const dm = await api("/users/@me/channels", { recipient_id: process.env.OWNER_ID });
+              if (!dm.id) return console.warn("DM failed", dm);
+              await api("/channels/" + dm.id + "/messages", { content: "⚠️ Site update failed: <" + process.env.RUN_URL + ">" });
+            })();
+          ' || true
