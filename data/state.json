@@ -450,14 +450,6 @@
    "discoveredVia": "80869",
    "name": "FUTBOL IS LIFE"
   },
-  "64671": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T08:10:56.164Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "233691"
-  },
   "64785": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T09:44:38.425Z",
@@ -491,22 +483,6 @@
    "depth": 6,
    "discoveredVia": "10519"
   },
-  "66762": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T07:01:12.680Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "47219"
-  },
-  "67181": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T06:41:06.291Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "2116"
-  },
   "67329": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T09:44:38.425Z",
@@ -523,22 +499,6 @@
    "depth": 6,
    "discoveredVia": "50998"
   },
-  "67569": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T08:48:37.534Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "512701"
-  },
-  "67581": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T07:40:15.872Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "72068"
-  },
   "68189": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T09:23:53.223Z",
@@ -546,54 +506,6 @@
    "fails": 0,
    "depth": 6,
    "discoveredVia": "33646"
-  },
-  "68496": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T08:50:14.416Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "538279"
-  },
-  "69372": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T08:40:12.625Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "426815"
-  },
-  "69879": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T08:50:14.416Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "536438"
-  },
-  "70142": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T08:59:39.069Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "642425"
-  },
-  "70412": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T07:05:44.739Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "48804"
-  },
-  "70551": {
-   "tier": "discovered",
-   "firstSeen": "2026-09-28T07:05:44.739Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 5,
-   "discoveredVia": "55150"
   },
   "70555": {
    "tier": "discovered",
@@ -699,6 +611,14 @@
    "depth": 5,
    "discoveredVia": "343952"
   },
+  "74507": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "69372"
+  },
   "74534": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T08:59:39.069Z",
@@ -722,6 +642,14 @@
    "fails": 0,
    "depth": 5,
    "discoveredVia": "276424"
+  },
+  "76057": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "66762"
   },
   "76203": {
    "tier": "discovered",
@@ -799,7 +727,7 @@
   "80869": {
    "tier": "home",
    "firstSeen": "2026-09-28T01:09:15.486Z",
-   "lastFetched": "2026-09-28T09:47:57.795Z",
+   "lastFetched": "2026-09-28T09:50:05.369Z",
    "fails": 0,
    "depth": 0,
    "name": "NOREX UNITED FC"
@@ -811,6 +739,14 @@
    "fails": 0,
    "depth": 5,
    "discoveredVia": "283757"
+  },
+  "82915": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "70142"
   },
   "83303": {
    "tier": "discovered",
@@ -1010,7 +946,7 @@
   "189496": {
    "tier": "linked",
    "firstSeen": "2026-09-28T01:13:37.021Z",
-   "lastFetched": "2026-09-28T09:47:57.795Z",
+   "lastFetched": "2026-09-28T09:50:05.369Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "61188",
@@ -1042,6 +978,14 @@
    "fails": 0,
    "depth": 5,
    "discoveredVia": "27775"
+  },
+  "194264": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "64671"
   },
   "196637": {
    "tier": "discovered",
@@ -1252,6 +1196,14 @@
    "depth": 5,
    "discoveredVia": "489293"
   },
+  "229764": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "68496"
+  },
   "229944": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T07:59:06.403Z",
@@ -1347,6 +1299,14 @@
    "fails": 0,
    "depth": 5,
    "discoveredVia": "59411"
+  },
+  "235333": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "67569"
   },
   "235457": {
    "tier": "discovered",
@@ -1493,6 +1453,14 @@
    "depth": 5,
    "discoveredVia": "715596"
   },
+  "255399": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "69879"
+  },
   "278826": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T08:20:11.474Z",
@@ -1556,6 +1524,14 @@
    "fails": 0,
    "depth": 5,
    "discoveredVia": "49498"
+  },
+  "297971": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "70412"
   },
   "298273": {
    "tier": "discovered",
@@ -1716,6 +1692,14 @@
    "fails": 0,
    "depth": 5,
    "discoveredVia": "56116"
+  },
+  "335493": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "67181"
   },
   "336016": {
    "tier": "discovered",
@@ -1886,6 +1870,14 @@
    "depth": 5,
    "discoveredVia": "70864"
   },
+  "414796": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "70551"
+  },
   "416554": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T07:05:44.739Z",
@@ -2054,6 +2046,14 @@
    "fails": 0,
    "depth": 5,
    "discoveredVia": "290499"
+  },
+  "431326": {
+   "tier": "discovered",
+   "firstSeen": "2026-09-28T09:50:05.369Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 6,
+   "discoveredVia": "67581"
   },
   "431607": {
    "tier": "discovered",
@@ -2332,7 +2332,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-28T03:20:00.799Z",
    "lastFetched": null,
-   "fails": 13,
+   "fails": 14,
    "depth": 4,
    "discoveredVia": "27728"
   },
@@ -3508,6 +3508,7 @@
   "64468": "2026-09-28",
   "64620": "2026-09-28",
   "64662": "2026-09-28",
+  "64671": "2026-09-28",
   "64768": "2026-09-28",
   "64792": "2026-09-28",
   "64800": "2026-09-28",
@@ -3536,36 +3537,46 @@
   "66534": "2026-09-28",
   "66576": "2026-09-28",
   "66691": "2026-09-28",
+  "66762": "2026-09-28",
   "66854": "2026-09-28",
   "66993": "2026-09-28",
+  "67181": "2026-09-28",
   "67249": "2026-09-28",
   "67272": "2026-09-28",
   "67442": "2026-09-28",
   "67527": "2026-09-28",
+  "67569": "2026-09-28",
+  "67581": "2026-09-28",
   "67752": "2026-09-28",
   "67837": "2026-09-28",
   "67972": "2026-09-28",
   "68384": "2026-09-28",
   "68400": "2026-09-28",
   "68407": "2026-09-28",
+  "68496": "2026-09-28",
   "68741": "2026-09-28",
   "68862": "2026-09-28",
   "69219": "2026-09-28",
   "69281": "2026-09-28",
   "69289": "2026-09-28",
   "69344": "2026-09-28",
+  "69372": "2026-09-28",
   "69519": "2026-09-28",
   "69576": "2026-09-28",
   "69586": "2026-09-28",
   "69603": "2026-09-28",
   "69628": "2026-09-28",
   "69768": "2026-09-28",
+  "69879": "2026-09-28",
   "69896": "2026-09-28",
   "69933": "2026-09-28",
   "70072": "2026-09-28",
+  "70142": "2026-09-28",
   "70200": "2026-09-28",
   "70214": "2026-09-28",
+  "70412": "2026-09-28",
   "70421": "2026-09-28",
+  "70551": "2026-09-28",
   "70864": "2026-09-28",
   "71016": "2026-09-28",
   "71142": "2026-09-28",
