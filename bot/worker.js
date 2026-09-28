@@ -15,6 +15,7 @@ import { notifyCron } from './notify.js';
 import { eventReminders } from './events.js';
 import { closeDue } from './awards.js';
 import { scoreDue } from './predict.js';
+import { serveMedia, storageGuard } from './feed.js';
 import { eventButton, memberCommand, MEMBER_COMMANDS } from './botcmds.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
@@ -27,6 +28,7 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
     ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => scoreDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, P4.1 awards, P3.8 predictions, then P7.1 DMs + reminders
+    if (new Date(event.scheduledTime ?? Date.now()).getUTCMinutes() < 10) ctx.waitUntil(storageGuard(env).catch((e) => console.log('storage guard failed', e.message))); // R0.4 – hourly
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
       method: 'POST',
@@ -43,6 +45,7 @@ export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     if (path.startsWith('/crest/')) return crestProxy(path, ctx);
+    if (path.startsWith('/media/') && (request.method === 'GET' || request.method === 'HEAD')) return serveMedia(request, env, path); // P6.1 feed pictures + clips (R2)
     if (path.startsWith('/auth/') || path.startsWith('/api/')) {
       const site = (env.SITE_URL || '').replace(/\/?$/, '/');
       return handleMembers(request, env, ctx, (file) => load(site, file, ctx));

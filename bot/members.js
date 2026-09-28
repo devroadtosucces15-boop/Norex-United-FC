@@ -11,7 +11,7 @@
 // Who may do what: bot/roles.js (can(user, action)).
 
 import { getLive } from './live.js';
-import { gameRoute, latestGame } from './game.js';
+import { gameDiffRoute, gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
 import { getHof, honoursRoute } from './honours.js';
 import { buildsRoute } from './builds.js';
@@ -26,6 +26,7 @@ import { ratingsRoute } from './ratings.js';
 import { feedbackRoute } from './feedback.js';
 import { predictRoute } from './predict.js';
 import { recsRoute } from './recs.js';
+import { feedRoute, publicPosts, uploadMedia } from './feed.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -196,6 +197,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
     if (url.pathname === '/api/rush' && request.method === 'GET') return cors(env, json(await getRushPublic(env)));
     if (url.pathname === '/api/game' && request.method === 'GET') return cors(env, json(await latestGame(env, loadSite)));
+    if (url.pathname === '/api/game/diff' && request.method === 'GET') return cors(env, json(await gameDiffRoute(env, loadSite, url.searchParams.get('from')))); // PB.6
     const me = await unseal(env, (request.headers.get('Authorization') || '').replace(/^Bearer /, ''));
     if (url.pathname === '/api/live' && request.method === 'GET') { // P1.3 – public once the flag is 'public'
       if (me) me.role = await currentRole(env, me);
@@ -231,6 +233,10 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (!flagOn(env, me, 'awards')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await trophies(env, url.searchParams.get('k'))));
     }
+    if (url.pathname === '/api/feed/public' && request.method === 'GET') { // P6.1 – posts managers marked public, once the feed is on for members
+      if (!flagOn(env, { role: 'member' }, 'feed')) return cors(env, fail('Not available yet.', 404));
+      return cors(env, json(await publicPosts(env)));
+    }
     if (url.pathname === '/api/docs' && request.method === 'GET') { // P5.2 – guests see items marked public, behind the docs flag
       if (me) me.role = await currentRole(env, me);
       if (!flagOn(env, me, 'docs')) return cors(env, fail('Not available yet.', 404));
@@ -242,6 +248,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     }
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
+    if (url.pathname === '/api/feed/upload' && request.method === 'POST') return cors(env, await uploadMedia(request, env, me)); // P6.1 – raw file body, streamed to R2
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
     const res = await route(url.pathname, request.method, body, me, env, loadSite, url);
     if (takeKick()) ctx?.waitUntil?.(deliverDMs(env).catch((e) => console.log('DM delivery failed', e.message))); // P7.1 – DMs right away
@@ -487,6 +494,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (prd) return prd;
   const rec2 = await recsRoute(p, method, body, me, env, url); // P3.6 who to play with
   if (rec2) return rec2;
+  const fed = await feedRoute(p, method, body, me, env, log, url); // P6.1 social feed
+  if (fed) return fed;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

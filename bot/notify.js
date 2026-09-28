@@ -36,6 +36,8 @@ export const TYPES = {
   award: { icon: '🏆', label: 'Weekly awards – results and my wins', def: 'site' },
   feedback: { icon: '💌', label: 'Anonymous feedback from teammates', def: 'dm' },
   predict: { icon: '🔮', label: 'My prediction points', def: 'site' },
+  social: { icon: '💬', label: 'Comments & reactions on my posts', def: 'site' },
+  patch: { icon: '🧬', label: 'Game patches & my builds', def: 'site' },
   queue: { icon: '🛡️', label: 'Manager to-dos (new claims, trials, Rush results, requests)', def: 'site', role: 'manager' },
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },
 };

@@ -44,7 +44,23 @@ if (!fs.readFileSync(file, 'utf8').includes('binding = "DB"')) {
 }
 console.log('D1 ready:', db.uuid);
 
-// Read-only check that the token can reach R2 (media, P6.1). Never fails the deploy.
-const r2 = await cf('/r2/buckets');
-console.log(r2.success ? '::notice title=R2 check::✅ R2 is enabled and the token can use it'
-  : `::warning title=R2 check::❌ R2 not ready – ${why(r2)}`);
+// R2 bucket for feed media (P6.1, decided in R0.4): created once and bound as MEDIA. Never fails the deploy – without
+// the bucket the Worker still runs and uploads answer "not set up yet".
+const BUCKET = 'norex-media';
+const r2 = await cf('/r2/buckets?per_page=1000');
+if (!r2.success) console.log(`::warning title=R2 check::❌ R2 not ready – ${why(r2)}`);
+else {
+  let ok = (r2.result?.buckets ?? []).some((b) => b.name === BUCKET);
+  if (!ok) {
+    const made = await cf('/r2/buckets', { method: 'POST', body: JSON.stringify({ name: BUCKET }) });
+    ok = made.success;
+    console.log(ok ? `Created R2 bucket ${BUCKET}` : `::warning title=R2 bucket::❌ could not create ${BUCKET} – ${why(made)}`);
+  }
+  if (ok) {
+    // Backstop for the Worker's storage guard: R2 itself deletes media older than 365 days.
+    const life = await cf(`/r2/buckets/${BUCKET}/lifecycle`, { method: 'PUT', body: JSON.stringify({ rules: [{ id: 'expire-365-days', enabled: true, conditions: { prefix: '' }, deleteObjectsTransition: { condition: { type: 'Age', maxAge: 365 * 86400 } } }] }) });
+    if (!life.success) console.log(`::warning title=R2 lifecycle::could not set the 365-day rule – ${why(life)}`);
+    if (!fs.readFileSync(file, 'utf8').includes('binding = "MEDIA"')) fs.appendFileSync(file, `\n[[r2_buckets]]\nbinding = "MEDIA"\nbucket_name = "${BUCKET}"\n`);
+    console.log(`::notice title=R2 check::✅ R2 bucket ${BUCKET} bound as MEDIA${life.success ? ' (365-day lifecycle on)' : ''}`);
+  }
+}

@@ -281,7 +281,7 @@ ${activity ? `<section class="card pf-sec" id="pf-activity"><h3>📜 Activity lo
     const tr = $('[data-pf-trophies]', el); // P4.1 trophy cabinet
     if (tr) (window.NXAwards ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/awards.js`, onload: ok, onerror: no })))).then(() => NXAwards.cabinet(tr, claim.player, ctx.call)).catch(() => {});
     const sc = $('[data-pf-scout]', el); // PB.5 scout report
-    if (sc) loadJs('scout.js', 'NXScout').then(() => NXScout.section(sc, { k: claim.player, full: fullScout, name: claim.playerName })).catch(() => sc.remove());
+    if (sc) loadJs('scout.js', 'NXScout').then(() => NXScout.section(sc, { k: claim.player, full: fullScout, name: claim.playerName, builds: fullScout ? builds : null })).catch(() => sc.remove());
     if (bd) {
       NXBadges.badgesSection($('[data-pf-badges]', el), { ...ctx, onChange: () => { cards.delete(m.id); UI.hoverCard.forget?.(m.id); } }, m, d);
       NXBadges.achievements($('[data-pf-ach]', el), ctx, m.id, { mine: m.me });

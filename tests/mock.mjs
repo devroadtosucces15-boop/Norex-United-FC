@@ -36,6 +36,28 @@ export const KV = {
 };
 
 // Fake Discord user for the login flow – tests change it (id 111 is in ADMIN_IDS = owner).
+// R2 shim (P6.1 feed media): put / get (with Range) / head / delete / list over a Map.
+export const r2 = new Map();
+const bytesOf = async (v) => (v instanceof ReadableStream ? new Uint8Array(await new Response(v).arrayBuffer()) : typeof v === 'string' ? new TextEncoder().encode(v) : new Uint8Array(v instanceof ArrayBuffer ? v : v.buffer ?? v));
+const r2obj = (key, o, range) => {
+  const start = range?.offset ?? 0, len = range?.length ?? o.bytes.length - start;
+  return { key, size: o.bytes.length, httpMetadata: o.httpMetadata, uploaded: o.uploaded, range: range ? { offset: start, length: len } : undefined,
+    body: new Response(o.bytes.slice(start, start + len)).body, writeHttpMetadata: (h) => o.httpMetadata?.contentType && h.set('Content-Type', o.httpMetadata.contentType) };
+};
+export const MEDIA = {
+  async put(key, value, opts = {}) { const bytes = await bytesOf(value); r2.set(key, { bytes, httpMetadata: opts.httpMetadata, uploaded: new Date() }); return { key, size: bytes.length }; },
+  async get(key, opts = {}) {
+    const o = r2.get(key); if (!o) return null;
+    let range;
+    const h = opts.range instanceof Headers ? opts.range.get('Range') : null;
+    const m = h && h.match(/bytes=(\d+)-(\d*)/);
+    if (m) range = { offset: +m[1], length: (m[2] ? +m[2] : o.bytes.length - 1) - +m[1] + 1 };
+    return r2obj(key, o, range);
+  },
+  async head(key) { const o = r2.get(key); return o ? { key, size: o.bytes.length, httpMetadata: o.httpMetadata } : null; },
+  async delete(keys) { for (const k of [].concat(keys)) r2.delete(k); },
+  async list() { return { objects: [...r2.entries()].map(([key, o]) => ({ key, size: o.bytes.length })), truncated: false }; },
+};
 export const mockDiscord = { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [], inGuild: true, connections: [] };
 export const SITE = 'http://localhost:4321/';
 globalThis.caches = { default: { match: async () => null, put: async () => {} } };
@@ -53,7 +75,7 @@ globalThis.fetch = async (url) => {
 
 export const env = {
   SITE_URL: SITE, DISCORD_APP_ID: '1', DISCORD_CLIENT_SECRET: 'shh', DISCORD_GUILD_ID: '9',
-  ADMIN_IDS: '111', ADMIN_ROLE_ID: 'mgr', OWNER_ROLE_ID: 'founder', NOREX_KV: KV, DB,
+  ADMIN_IDS: '111', ADMIN_ROLE_ID: 'mgr', OWNER_ROLE_ID: 'founder', NOREX_KV: KV, DB, MEDIA,
   FEATURES: JSON.stringify(config.features ?? {}),
 };
 

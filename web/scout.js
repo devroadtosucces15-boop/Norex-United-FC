@@ -192,11 +192,91 @@
     const pattern = patterns[0] ? `${patterns[0].text}.` : '';
     const next = improve[0] ? `Next step – ${lc(improve[0].text)}.` : 'No clear weak spot against the squad right now.';
     const summary = `${intro} ${strengths[0] ? `${strengths[0].text}.` : ''}`.trim();
-    return { k, mode, enough: true, games: n, sessions: sessions.length, grp, metrics, strengths, improve, patterns, insights, flags, team, suggestions, partners: partners.slice(0, 3), summary, narrative: [intro, strong, pattern, next].filter(Boolean) };
+    // visuals (part b): radar vs squad average, rating trend per session, where they play, form calendar
+    const AXES = grp === 'GK' ? [['rating', 'Rating'], ['saves', 'Saves'], ['conceded', 'Clean'], ['passPct', 'Passing'], ['win', 'Wins'], ['motm', 'MOTM']]
+      : [['gpg', 'Goals'], ['apg', 'Assists'], ['shots', 'Shots'], ['passPct', 'Passing'], ['tkl', 'Tackles'], ['rating', 'Rating']];
+    const radar = AXES.filter(([key]) => mine[key] != null).map(([key, label]) => {
+      const vals = [mine[key], ...peers.map((x) => x.m[key])].filter((v) => v != null);
+      const hi = Math.max(...vals), lo = Math.min(...vals);
+      // conceded: lower is better, so the axis is flipped; everything else scales to the best in the comparison
+      const scale = (v) => (v == null ? null : META[key].up ? (hi ? v / hi : 0) : hi === lo ? 1 : (hi - v) / (hi - lo));
+      return { k: key, label, text: META[key].fmt(mine[key]), me: r2(scale(mine[key])), avg: by[key]?.squadAvg != null ? r2(scale(by[key].squadAvg)) : null };
+    });
+    const trend = sessions.map((sn) => { const rs = sn.map((x) => x.r).filter((x) => x != null); return { ts: sn[0].ts, games: sn.length, wins: sn.filter((x) => x.res === 'W').length, r: rs.length ? r2(avg(rs)) : null }; });
+    const where = {};
+    for (const x of rows) if (x.grp) where[x.grp] = (where[x.grp] ?? 0) + 1;
+    const days = {};
+    for (const x of rows) {
+      const d = new Date(x.ts * 1000).toISOString().slice(0, 10);
+      const e = (days[d] ??= { date: d, games: 0, w: 0, d: 0, l: 0, rs: [] });
+      e.games++; e[x.res === 'W' ? 'w' : x.res === 'D' ? 'd' : 'l']++; if (x.r != null) e.rs.push(x.r);
+    }
+    const calendar = Object.values(days).map(({ rs, ...e }) => ({ ...e, r: rs.length ? r2(avg(rs)) : null }));
+    return { k, mode, enough: true, games: n, sessions: sessions.length, grp, metrics, strengths, improve, patterns, insights, flags, team, suggestions, partners: partners.slice(0, 3), summary, narrative: [intro, strong, pattern, next].filter(Boolean),
+      radar, trend, where, calendar };
+  }
+
+  // ---------- build vs how they actually play (part b, pure) ----------
+  // build = the member's League / Rush pick (/api/member → builds): { arch, position, level, code }; archGroup = archetype id → GK/DEF/MID/FWD.
+  const TWEAKS = {
+    passPct: ['Short Passing', 'Vision'], passes: ['Short Passing', 'Ball Control'], tklPct: ['Standing Tackle', 'Defensive Awareness'], tkl: ['Interceptions', 'Defensive Awareness'],
+    conv: ['Finishing', 'Composure'], shots: ['Positioning', 'Shot Power'], gpg: ['Finishing', 'Positioning'], apg: ['Vision', 'Crossing'], saves: ['GK Reflexes', 'GK Diving'], conceded: ['GK Positioning', 'GK Reflexes'],
+  };
+  function buildAdvice(R, build, archGroup = () => null) {
+    if (!R?.enough || !build) return [];
+    const out = [];
+    const intended = GROUP(build.position) ?? archGroup(build.arch);
+    const playShare = R.where[R.grp] ? Math.round((R.where[R.grp] / R.games) * 100) : null;
+    if (intended && intended !== R.grp) out.push({ icon: '🧭', text: `Your build is set up as a ${WORD[intended]}${build.position ? ` (${build.position})` : ''}, but ${playShare ?? 'most'}% of your games are as a ${WORD[R.grp]} – build for where you play, or ask for more games at ${build.position ?? WORD[intended]}.` });
+    else if (intended) out.push({ icon: '✅', text: `Your build matches where you play – a ${WORD[intended]} in ${playShare ?? 'most'}% of your games.` });
+    for (const imp of R.improve.slice(0, 2)) {
+      const attrs = TWEAKS[imp.k];
+      if (attrs) out.push({ icon: '🧬', text: `More ${attrs.join(' / ')} – ${lc(imp.text.split(' – ')[0])}.`, tweak: true });
+    }
+    return out;
   }
 
   // ---------- UI ----------
-  function section(el, { k, full = false, name = '' } = {}) {
+  // ---------- charts (SVG, no libraries) ----------
+  function radarSvg(axes) {
+    if (axes.length < 3) return '';
+    const S = 220, c = S / 2, R0 = 78, n = axes.length;
+    const pt = (i, v) => { const a = (Math.PI * 2 * i) / n - Math.PI / 2; return [c + Math.cos(a) * R0 * v, c + Math.sin(a) * R0 * v]; };
+    const poly = (vals) => vals.map((v, i) => pt(i, Math.max(0.04, v ?? 0)).map((x) => x.toFixed(1)).join(',')).join(' ');
+    const ring = (v) => `<polygon class="ring" points="${poly(axes.map(() => v))}"/>`;
+    return `<svg class="sc-radar" viewBox="0 0 ${S} ${S}" role="img" aria-label="Radar: ${axes.map((a) => `${a.label} ${a.text}`).join(', ')}">${[0.25, 0.5, 0.75, 1].map(ring).join('')}
+${axes.map((a, i) => { const [x, y] = pt(i, 1); const [lx, ly] = pt(i, 1.24); return `<line x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${a.label}</text>`; }).join('')}
+${axes.some((a) => a.avg != null) ? `<polygon class="avg" points="${poly(axes.map((a) => a.avg))}"/>` : ''}<polygon class="me" points="${poly(axes.map((a) => a.me))}"/></svg>`;
+  }
+  function trendSvg(trend) {
+    const pts = trend.filter((t) => t.r != null);
+    if (pts.length < 2) return '<p class="muted small">The trend shows after two sessions with ratings.</p>';
+    const W = 320, H = 120, lo = Math.min(5.5, ...pts.map((p) => p.r)), hi = Math.max(9, ...pts.map((p) => p.r));
+    const x = (i) => 14 + (i / (pts.length - 1)) * (W - 28), y = (v) => H - 14 - ((v - lo) / (hi - lo)) * (H - 28);
+    const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p.r).toFixed(1)}`).join(' ');
+    const avgY = y(pts.reduce((a, p) => a + p.r, 0) / pts.length).toFixed(1);
+    return `<svg class="sc-trend" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rating per session, ${pts.length} sessions, last ${pts.at(-1).r}"><line class="avg" x1="10" x2="${W - 10}" y1="${avgY}" y2="${avgY}"/><path d="${line}"/>
+${pts.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.r).toFixed(1)}" r="3.2" class="${p.wins * 2 >= p.games ? 'w' : 'l'}"><title>${new Date(p.ts * 1000).toLocaleDateString()} · ${p.r} · W ${p.wins} of ${p.games}</title></circle>`).join('')}</svg>`;
+  }
+  function pitchHtml(where, games) {
+    const zone = (g, label) => { const share = games ? (where[g] ?? 0) / games : 0; return `<div class="sc-zone" style="--a:${(0.08 + share * 0.85).toFixed(2)}"><b>${Math.round(share * 100)}%</b><small>${label}</small></div>`; };
+    return `<div class="sc-pitch" role="img" aria-label="Where they play">${zone('FWD', 'Attack')}${zone('MID', 'Midfield')}${zone('DEF', 'Defence')}${zone('GK', 'Goal')}</div>`;
+  }
+  function calendarHtml(cal) {
+    const by = new Map(cal.map((d) => [d.date, d]));
+    const end = new Date(); end.setUTCHours(0, 0, 0, 0);
+    const start = new Date(end - (7 * 12 - 1) * 864e5); // 12 weeks back, from that week's Monday
+    const monday = new Date(start - ((start.getUTCDay() + 6) % 7) * 864e5);
+    const cells = [];
+    for (let t = +monday; t <= +end; t += 864e5) {
+      const d = new Date(t).toISOString().slice(0, 10), e = by.get(d);
+      const tone = !e ? '' : e.w > e.l ? 'w' : e.l > e.w ? 'l' : 'd';
+      cells.push(`<i class="${tone}" style="${e ? `--o:${Math.min(1, 0.35 + e.games * 0.15)}` : ''}" title="${d}${e ? ` · ${e.games} game${e.games > 1 ? 's' : ''} · ${e.w}W ${e.d}D ${e.l}L${e.r != null ? ` · ${e.r}` : ''}` : ''}"></i>`);
+    }
+    return `<div class="sc-cal" role="img" aria-label="Form calendar, last 12 weeks">${cells.join('')}</div><p class="muted small sc-legend"><i class="w"></i> won more <i class="d"></i> level <i class="l"></i> lost more · darker = more games</p>`;
+  }
+
+  function section(el, { k, full = false, name = '', builds = null } = {}) {
     const BASE = document.body.dataset.base || '', MAPI = document.body.dataset.api || '';
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
     if (!document.querySelector('link[href$="scout.css"]')) document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: `${BASE}assets/scout.css` }));
@@ -219,8 +299,19 @@
 <div><h4>🧠 Patterns</h4>${R.patterns.length ? list(R.patterns) : '<p class="muted small">Patterns show after a few sessions.</p>'}</div><div><h4>💡 Suggestions</h4>${R.suggestions.length ? list(R.suggestions) : '<p class="muted small">Keep playing – suggestions come with more games.</p>'}</div>
 <div><h4>✨ Insights</h4>${R.insights.length ? list(R.insights) : '<p class="muted small">No callouts yet.</p>'}</div>${R.flags.length ? `<div><h4>🚩 Red flags</h4>${list(R.flags, 'bad')}</div>` : ''}</div>
 ${rows.length ? `<h4>📊 Percentiles <small class="muted">${R.mode === 'league' ? 'vs tracked players in the same position group (squad where not tracked)' : 'vs the Rush squad'}</small></h4><table class="sc-pct"><tbody>${rows.map((m) => `<tr class="${m.key ? '' : 'minor'}"><th>${esc(m.label)}</th><td>${esc(m.text)}</td><td>${bar(m.pctTracked ?? m.pctSquad)}</td></tr>`).join('')}</tbody></table>` : ''}
-<p class="muted small">Rule-based from the match log – refreshed with every data update. Radar, trend and position map come next.</p>`;
+<p class="muted small">Rule-based from the match log – refreshed with every data update.</p>`;
+      body.querySelector('.sc-story').insertAdjacentHTML('afterend', `<div class="sc-vis"><figure><figcaption>Radar <small class="muted">you vs ${R.mode === 'rush' ? 'Rush' : 'squad'} average</small></figcaption>${radarSvg(R.radar)}<p class="sc-key"><i class="me"></i> you <i class="avg"></i> average</p></figure>
+<figure><figcaption>Rating per session</figcaption>${trendSvg(R.trend)}</figure><figure><figcaption>Where you play</figcaption>${pitchHtml(R.where, R.games)}</figure><figure class="wide"><figcaption>Form calendar <small class="muted">last 12 weeks</small></figcaption>${calendarHtml(R.calendar)}</figure></div>`);
+      const bl = builds?.[R.mode];
+      if (bl) (archGroups ??= fetch(`${MAPI || '.'}${MAPI ? '/api/game' : `${BASE}api/game.json`}`).then((r) => r.json()).then((gm) => new Map((gm.archetypes ?? []).map((a) => [a.id, a.group]))).catch(() => new Map()))
+        .then((m) => {
+          const advice = buildAdvice(R, bl, (id) => m.get(id));
+          if (!advice.length) return;
+          const href = window.NXViewer?.flagOn('builder') && bl.code ? `${BASE}builder.html#${bl.code}` : null;
+          body.querySelector('.sc-vis').insertAdjacentHTML('afterend', `<div class="sc-build"><h4>🧬 Your ${R.mode === 'rush' ? 'Rush' : 'League'} build vs how you play</h4>${list(advice)}${href && advice.some((a) => a.tweak) ? `<a class="btn sm ghost" href="${esc(href)}">Open it in the Pro Builder</a>` : ''}</div>`);
+        });
     };
+    let archGroups = null;
     const show = async (mode) => {
       body.innerHTML = window.UI ? UI.skeleton('rows', 4) : '';
       const [squad, players] = await data;
@@ -240,5 +331,5 @@ ${rows.length ? `<h4>📊 Percentiles <small class="muted">${R.mode === 'league'
     show('league');
   }
 
-  globalThis.NXScout = { report, fromSquad, fromRush, metricsOf, pctile, section, GROUP };
+  globalThis.NXScout = { report, fromSquad, fromRush, metricsOf, pctile, section, buildAdvice, radarSvg, GROUP };
 })();

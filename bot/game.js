@@ -3,7 +3,8 @@
 // (stored whole in D1), and everything that needs the max level reads GET /api/game – so a cap change needs
 // no code change. Level-cap sentences found in EA's patch notes (P1.7, site api/updates.json) show up as
 // pending changes a manager confirms with one click.
-import { can } from './roles.js';
+import { can, flagOn } from './roles.js';
+import { notify, safely } from './notify.js';
 
 // Dataset keys a manager may replace when publishing. Anything else in "changes" is rejected.
 export const DATA_KEYS = ['archetypeGroups', 'archetypes', 'attributeGroups', 'apPerLevel', 'apCosts', 'slots', 'playstyles', 'specializations', 'facilities', 'masteries', 'body', 'rules', 'sources', 'note'];
@@ -45,6 +46,52 @@ async function adminState(env, loadSite) {
   return { current, versions, pending: await pendingCaps(env, loadSite, current), keys: DATA_KEYS };
 }
 
+// ---------- PB.6: what changed between two versions (pure, tested) ----------
+const names = (l) => new Map((Array.isArray(l) ? l : []).map((x) => [x.id ?? x.name, x.name ?? x.id]));
+const same = (x, y) => JSON.stringify(x ?? null) === JSON.stringify(y ?? null);
+export function gameDiff(a, b) {
+  const out = [];
+  const capA = a?.levelCap?.value, capB = b?.levelCap?.value;
+  if (capA !== capB) out.push({ icon: '🔝', text: `Max level ${capA ?? '?'} → ${capB ?? '?'}${capB > capA ? ` – ${capB - capA} more level${capB - capA === 1 ? '' : 's'} of AP to spend` : ''}` });
+  const list = (key, label) => {
+    const A = names(a?.[key]), B = names(b?.[key]);
+    const added = [...B.keys()].filter((k) => !A.has(k)).map((k) => B.get(k)), gone = [...A.keys()].filter((k) => !B.has(k)).map((k) => A.get(k));
+    const changed = [...B.keys()].filter((k) => A.has(k) && !same((a[key] ?? []).find((x) => (x.id ?? x.name) === k), (b[key] ?? []).find((x) => (x.id ?? x.name) === k))).map((k) => B.get(k));
+    const few = (l) => `${l.slice(0, 6).join(', ')}${l.length > 6 ? ` +${l.length - 6} more` : ''}`;
+    if (added.length) out.push({ icon: '➕', text: `New ${label}: ${few(added)}` });
+    if (gone.length) out.push({ icon: '➖', text: `${label.charAt(0).toUpperCase() + label.slice(1)} removed: ${few(gone)}` });
+    if (changed.length) out.push({ icon: '✏️', text: `${label.charAt(0).toUpperCase() + label.slice(1)} changed: ${few(changed)}` });
+  };
+  list('archetypes', 'archetypes'); list('playstyles', 'PlayStyles'); list('specializations', 'specializations'); list('facilities', 'facilities');
+  for (const [key, label] of [['apPerLevel', 'AP per level'], ['apCosts', 'AP costs'], ['slots', 'PlayStyle slots'], ['masteries', 'Masteries'], ['body', 'height / weight effects'], ['rules', 'game rules']]) {
+    if (!same(a?.[key], b?.[key])) out.push({ icon: '🔧', text: `${label} updated` });
+  }
+  return out;
+}
+// GET /api/game/diff?from=<version> – public (the builder shows it on builds made on older rules).
+export async function gameDiffRoute(env, loadSite, from) {
+  const to = await latestGame(env, loadSite);
+  const f = String(from ?? '').toLowerCase().slice(0, 40);
+  let old = null;
+  const row = env.DB && VERSION_RE.test(f) ? await env.DB.prepare('SELECT * FROM game_versions WHERE version = ?').bind(f).first() : null;
+  if (row) old = outRow(row);
+  else { const seed = await loadSite('game'); if (seed.version === f) old = seed; }
+  if (!old) return { from: f, to: to.version, known: false, changes: [] };
+  return { from: f, to: to.version, known: true, cap: { from: old.levelCap?.value, to: to.levelCap?.value }, changes: gameDiff(old, to) };
+}
+// After a publish: builders hear about it; anyone with builds on older rules gets their count.
+async function announcePatch(env, version, cap, before) {
+  const users = (await env.DB.prepare('SELECT id, role FROM users WHERE last_at > ?').bind(Date.now() - 180 * 86400e3).all()).results.filter((u) => flagOn(env, { role: u.role }, 'builder'));
+  if (!users.length) return;
+  const old = new Map((await env.DB.prepare('SELECT user_id, COUNT(*) AS n FROM builds WHERE removed_at IS NULL AND (version IS NULL OR version != ?) GROUP BY user_id').bind(version).all()).results.map((r) => [r.user_id, r.n]));
+  const capText = before !== cap ? `max level ${before} → ${cap}` : `max level ${cap}`;
+  const groups = new Map();
+  for (const u of users) { const n = old.get(u.id) ?? 0; (groups.get(n) ?? groups.set(n, []).get(n)).push(u.id); }
+  for (const [n, ids] of groups) {
+    await safely(notify(env, ids, { type: 'patch', icon: '🧬', title: `Game rules ${version}: ${capText}`, body: n ? `${n} of your builds ${n === 1 ? 'was' : 'were'} made on older rules – open ${n === 1 ? 'it' : 'one'} in the Pro Builder to see what changed and upgrade to the new max in one click.` : 'The Pro Builder uses the new rules now.', link: 'builder.html' }));
+  }
+}
+
 // Routes under /api/game/* (the public GET /api/game is answered before login in members.js).
 export async function gameRoute(p, method, body, me, env, loadSite, log) {
   if (!can(me, 'game.edit')) return fail('Managers only.', 403);
@@ -80,6 +127,7 @@ export async function gameRoute(p, method, body, me, env, loadSite, log) {
       .bind(version, cap, verified ? 1 : 0, source ?? (verified ? 'ea-notes' : 'unverified'), data, note, current.version, me.u, me.n, at)];
     if (hit) stmts.push(env.DB.prepare('INSERT OR REPLACE INTO game_decisions (hit_id, status, version, by_name, at) VALUES (?, ?, ?, ?, ?)').bind(hit, 'applied', version, me.n, at));
     await env.DB.batch(stmts);
+    await safely(announcePatch(env, version, cap, current.levelCap?.value)); // PB.6
     await log(env, me, 'game-publish', `${version} · max level ${cap}${verified ? ' ✓' : ''}`);
     return json(await adminState(env, loadSite));
   }

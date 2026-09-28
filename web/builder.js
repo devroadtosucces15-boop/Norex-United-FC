@@ -17,6 +17,7 @@
   let saved = null; // my builds (loaded on first use)
   let picks = {}; // PB.4: { league: buildId, rush: buildId } – my builds shown on my profile
   let postDraft = null; // the Post form keeps what was typed if the server says no
+  let patchFrom = null; // PB.6: the older rules version the open build was made on → upgrade banner
   const pro = () => window.NXViewer?.flagOn('proBuilds');
   const POS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
   const MODES = [['league', '🏟️', 'League'], ['rush', '⚡', 'Rush']];
@@ -55,8 +56,8 @@
     const d = decodeCode(x.code);
     if (!d) { toast('That build can’t be read with the current game data', 'error'); return; }
     push(); b = d; cur = { id: x.id, title: x.title, mine: x.mine, by: x.by?.n, position: x.position, mode: x.mode, posted: x.posted };
+    patchFrom = outdated(x) ? x.version : null;
     setHash(); draw();
-    if (outdated(x)) toast(`Made on ${x.version} – shown with the current rules (${g.version})`);
   };
   const loadMine = async () => { const r = await call('/api/builds'); picks = r.picks || {}; return (saved = r.builds); };
 
@@ -341,7 +342,7 @@ ${rows.map((r) => {
   }).join('')}</section>`;
     };
     const leftPct = ev.total ? Math.max(0, (ev.left / ev.total) * 100) : 0;
-    return `${st.preview ? `<div class="bd-note card"><b>🧪 Preview numbers</b> <span class="muted small">${[!st.base && 'archetype base attributes', !st.ap && 'AP per level', !st.costs && 'AP costs'].filter(Boolean).join(', ')} ${st.base && st.ap ? 'is' : 'are'} not entered from the in-game screens yet, so the builder uses placeholder values. Level cap, Masteries and archetypes come from game data <code>${esc(g.version)}</code>.</span></div>` : ''}
+    return `${patchFrom ? `<div class="bd-patch card" role="status"><span>⚠️ <b>Made on ${esc(patchFrom)}</b> – the game rules are now <b>${esc(g.version)}</b> (max level ${ev.cap}). Shown with the new rules.</span><span class="row">${ev.level < ev.cap ? `<button type="button" class="btn sm" data-upgrade>⬆ Upgrade to MAX (L${ev.cap})</button>` : ''}<button type="button" class="btn sm ghost" data-whatchanged>What changed?</button><button type="button" class="sq-mini" data-patchx aria-label="Hide this note">✕</button></span></div>` : ''}${st.preview ? `<div class="bd-note card"><b>🧪 Preview numbers</b> <span class="muted small">${[!st.base && 'archetype base attributes', !st.ap && 'AP per level', !st.costs && 'AP costs'].filter(Boolean).join(', ')} ${st.base && st.ap ? 'is' : 'are'} not entered from the in-game screens yet, so the builder uses placeholder values. Level cap, Masteries and archetypes come from game data <code>${esc(g.version)}</code>.</span></div>` : ''}
 <div class="bd-picker card">${groups.map((grp) => `<div class="bd-pgrp"><small>${ICON[grp.id] ?? ''} ${esc(grp.name)}</small><div class="chipset">${(g.archetypes || []).filter((a) => a.group === grp.id).map((a) => `<button type="button" class="chip${a.id === ev.arch.id ? ' on' : ''}" data-arch="${esc(a.id)}">${esc(a.name)}</button>`).join('')}</div></div>`).join('')}</div>
 <div class="bd-main">
 <div class="bd-left"><div class="bd-grid">${(g.attributeGroups || []).map(card).join('')}</div>
@@ -364,6 +365,12 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
 </aside></div>`;
   }
 
+  // PB.6: what changed between the build's rules and today's (GET /api/game/diff – public).
+  async function whatChanged(from) {
+    const body = await fetch(`${MAPI}/api/game/diff?from=${encodeURIComponent(from)}`).then((r) => r.json()).catch(() => null);
+    const list = body?.known ? body.changes : null;
+    UI.modal({ title: `${from} → ${g.version}`, icon: '🧬', body: list ? (list.length ? `<ul class="bd-diff">${list.map((c) => `<li><span>${c.icon}</span>${esc(c.text)}</li>`).join('')}</ul>` : '<p>No changes that affect builds.</p>') : '<p class="muted">The old rules aren’t on record any more – the build is shown with today’s rules.</p>' });
+  }
   function draw() {
     const y = scrollY;
     $('[data-bd-body]').innerHTML = view();
@@ -410,6 +417,9 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
       push(); b = { ...b, arch: t.dataset.arch, spent: {}, sp: null }; setHash(); draw();
     } else if (t.dataset.d) step(t.closest('[data-attr]').dataset.attr, +t.dataset.d, e.shiftKey ? 5 : 1);
     else if ('max' in t.dataset) { push(); b.level = M.capOf(g); setHash(); draw(); }
+    else if ('upgrade' in t.dataset) { push(); b.level = M.capOf(g); patchFrom = null; setHash(); draw(); toast(`Upgraded to level ${b.level} – spend the new points, then save`); } // PB.6
+    else if ('patchx' in t.dataset) { patchFrom = null; draw(); }
+    else if ('whatchanged' in t.dataset) whatChanged(patchFrom);
     else if ('undo' in t.dataset && hist.length) { b = JSON.parse(hist.pop()); setHash(); draw(); }
     else if ('reset' in t.dataset) { push(); b.spent = {}; setHash(); draw(); toast('Points reset – Undo brings them back'); }
     else if ('save' in t.dataset) save();
@@ -459,7 +469,7 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     const shared = hash ? M.decode(g, hash) : null;
     b = shared ? { arch: shared.arch, level: shared.level, spent: shared.spent, ps: shared.ps, plus: shared.plus, sp: shared.sp, fa: shared.fa, h: shared.h, w: shared.w } : { arch: first.id, level: M.capOf(g), spent: {} };
     cur = pending?.cur || null;
-    if (shared?.version && shared.version !== g.version) toast(`Built on ${shared.version} – shown with the current rules (${g.version})`);
+    if (shared?.version && shared.version !== g.version) patchFrom = shared.version; // PB.6 banner
     if (pending) setHash();
     draw();
     // builder.html?build=<id> opens a saved (own) or posted build – with a Fork button when it isn't yours.
