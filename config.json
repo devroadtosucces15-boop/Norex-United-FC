@@ -1,0 +1,14 @@
+{
+  "siteTitle": "NOREX UNITED FC",
+  "platform": "common-gen5",
+  "homeClubId": 80869,
+  "extraClubIds": [],
+  "discovery": {
+    "enabled": true,
+    "maxTrackedClubs": 400,
+    "discoveredPerRun": 12,
+    "followOpponentsOf": "all"
+  },
+  "hiddenPlayers": [],
+  "requestDelayMs": 400
+}

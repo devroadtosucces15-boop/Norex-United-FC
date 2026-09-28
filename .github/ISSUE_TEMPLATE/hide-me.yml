@@ -1,0 +1,14 @@
+name: Hide me from the site
+description: Remove your name and stats from the site.
+title: "Hide player: "
+labels: ["hide-player"]
+body:
+  - type: input
+    id: gamertag
+    attributes:
+      label: Gamertag to hide
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: A club admin will confirm it's you (for example on Discord) and then add you to `hiddenPlayers`.

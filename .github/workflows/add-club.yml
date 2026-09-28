@@ -1,0 +1,47 @@
+name: Add a club
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+
+jobs:
+  add:
+    if: contains(github.event.issue.labels.*.name, 'add-club') || startsWith(github.event.issue.title, 'Add club')
+    runs-on: ubuntu-latest
+    concurrency: update-site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Look up club and add it
+        id: add
+        run: node scripts/add-club.mjs
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+      - name: Commit and trigger update
+        if: steps.add.outputs.added == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLUB_NAME: ${{ steps.add.outputs.name }}
+        run: |
+          git config user.name "norex-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "config: track $CLUB_NAME"
+          git push
+          gh workflow run update.yml
+      - name: Reply and close
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MSG: ${{ steps.add.outputs.message || 'Something went wrong – a club admin will take a look.' }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "$MSG"
+          if [ "${{ steps.add.outputs.added }}" = "true" ] || [ "${{ steps.add.outputs.done }}" = "true" ]; then
+            gh issue close ${{ github.event.issue.number }}
+          fi

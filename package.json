@@ -1,0 +1,13 @@
+{
+  "name": "norex-united-site",
+  "private": true,
+  "type": "module",
+  "description": "Auto-updating Pro Clubs site for NOREX UNITED FC",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "fetch": "node scripts/fetch.mjs",
+    "build": "node scripts/build.mjs",
+    "update": "node scripts/fetch.mjs && node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs"
+  }
+}
