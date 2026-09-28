@@ -317,7 +317,7 @@ function page({ title, base, active, body, description, image }) {
 <div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links">${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
 <div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players and clubs…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
-<script src="${base}assets/app.js" defer></script></body></html>`;
+<script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script></body></html>`;
 }
 
 // ---------- club page ----------

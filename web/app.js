@@ -129,11 +129,7 @@ document.addEventListener('pointermove', (e) => {
 function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); }
 
 // ---------- relative times ----------
-const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
-$$('time.ago').forEach((t) => {
-  const mins = Math.round((new Date(t.dateTime) - Date.now()) / 60000);
-  t.textContent = Math.abs(mins) < 60 ? rtf.format(mins, 'minute') : Math.abs(mins) < 1440 ? rtf.format(Math.round(mins / 60), 'hour') : rtf.format(Math.round(mins / 1440), 'day');
-});
+UI.refreshTimes();
 
 // ---------- search palette ( / or Ctrl+K ) ----------
 const pal = $('.palette'), palIn = $('.pal-box input'), palList = $('.pal-box ul');
@@ -288,19 +284,12 @@ if (MAPI) (() => {
     if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
     return d;
   };
-  function toast(msg, bad) {
-    $$('.toast').forEach((t) => t.remove());
-    const t = document.createElement('div');
-    t.className = `toast${bad ? ' bad' : ''}`;
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-  }
+  const toast = (msg, bad) => UI.toast(msg, bad ? 'bad' : 'ok');
   // Role badge (tiers from bot/roles.js). Sessions from before roles existed only carry `adm`.
   const ROLE = { owner: ['👑 Owner', 'owner'], manager: ['🛡️ Manager', 'home'], claimed: ['✅ Verified player', 'ok'], member: ['NOREX member', ''] };
   const roleTag = (r) => { const [l, c] = ROLE[r] || ROLE.member; return `<span class="tag ${c}">${l}</span>`; };
   const baseRole = session && (session.role ?? (session.adm ? 'manager' : 'member'));
-  const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : `${Math.round(m / 1440)}d ago`; };
+  const ago = UI.time;
   if (err) toast(err === 'not_member' ? 'Members only – you need to be in the NOREX Discord server.' : err === 'cancelled' ? 'Login cancelled.' : 'Discord login failed – try again.', true);
 
   // ---------- header: login button or account menu ----------
@@ -382,7 +371,7 @@ if (MAPI) (() => {
 
   // ----- My NOREX -----
   function viewMe() {
-    if (!S.me) return '<p class="muted">Loading…</p>';
+    if (!S.me) return UI.skeleton('profile');
     const claim = S.me.claim, prof = S.me.profile || {};
     const taken = S.pub;
     const squad = S.players.filter((p) => p.home).sort((a, b) => a.n.localeCompare(b.n));
@@ -401,7 +390,7 @@ if (MAPI) (() => {
 
   // ----- Availability (multi-day select + bulk) -----
   function viewAvail() {
-    if (!S.avail) return '<p class="muted">Loading…</p>';
+    if (!S.avail) return UI.skeleton('cards', 4);
     const n = S.sel.size;
     return `<div class="bulk card${n ? ' on' : ''}"><span>${n ? `<b>${n}</b> day${n > 1 ? 's' : ''} selected` : 'Tip: tick several days, then set them all at once'}</span>
 <div class="bulk-btns">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="btn sm${n ? '' : ' ghost'}" data-bulk="${s}"${n ? '' : ' disabled'}>${ICON[s]} ${s}</button>`).join('')}<button type="button" class="btn ghost sm" data-bulk="clear"${n ? '' : ' disabled'}>Clear</button>
@@ -427,12 +416,12 @@ if (MAPI) (() => {
 
   // ----- Votes (change or remove any time) -----
   function viewVotes() {
-    if (!S.votes) return '<p class="muted">Loading…</p>';
+    if (!S.votes) return UI.skeleton('cards', 3);
     return `<p class="muted small">Pick one player per match. Tap another name to change your vote, or tap your pick again to remove it.</p><div class="votes">${S.votes.matches.map((m) => {
       const max = Math.max(1, ...Object.values(m.tally));
       return `<div class="card vote"><div class="vote-head">${pill(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b><small class="muted">${m.total} vote${m.total === 1 ? '' : 's'}</small></div>
 <ul>${[...m.players].sort((a, b) => (m.tally[b.k] || 0) - (m.tally[a.k] || 0) || b.r - a.r).map((p) => `<li class="${m.mine === p.k ? 'mine' : ''}" style="--w:${((m.tally[p.k] || 0) / max) * 100}%"><button type="button" data-m="${m.id}" data-p="${esc(p.k)}">${m.mine === p.k ? '✔ ' : ''}${esc(p.n)} <small>${Number(p.r).toFixed(1)}</small></button><b>${m.tally[p.k] || 0}</b></li>`).join('')}</ul></div>`;
-    }).join('') || '<p class="muted">No recent matches.</p>'}</div>`;
+    }).join('') || UI.empty({ icon: '⚽', title: 'No recent matches', text: 'Votes open after our next league or playoff game.' })}</div>`;
   }
   async function vote(matchId, player) {
     const prev = JSON.parse(JSON.stringify(S.votes));
@@ -449,25 +438,27 @@ if (MAPI) (() => {
   const ACT = { login: '🔑', claim: '🪪', 'claim-cancel': '↩', 'claim-approved': '✅', 'claim-rejected': '⛔', 'claim-unlinked': '🔓', profile: '✏️', availability: '📅', vote: '⭐', 'vote-remove': '☆' };
   const ACT_TXT = { login: 'logged in', claim: 'claimed', 'claim-cancel': 'cancelled their claim', 'claim-approved': 'approved claim', 'claim-rejected': 'rejected claim', 'claim-unlinked': 'unlinked', profile: 'updated profile', availability: 'set availability', vote: 'voted MOTM', 'vote-remove': 'removed MOTM vote' };
   function viewManager() {
-    if (!S.admin) return '<p class="muted">Loading…</p>';
+    if (!S.admin) return UI.skeleton('rows', 5);
     const A = S.admin;
     const claims = Object.entries(A.claims).map(([user, c]) => ({ user, ...c }));
     const pending = claims.filter((c) => c.status === 'pending');
     const decided = claims.filter((c) => c.status !== 'pending').sort((a, b) => (b.decidedAt || 0) - (a.decidedAt || 0));
     const users = Object.entries(A.users).sort(([, a], [, b]) => b.last - a.last);
+    // Member chip with hover card: claimed player + role from the admin overview.
+    const mem = (id, u, sub, size = 26) => { const c = A.claims[id]; const pl = c?.status === 'approved' ? c : null; return UI.member({ id, n: u.n, a: u.a, sub: sub ?? (pl ? `🪪 ${pl.playerName}` : ''), player: pl?.player }, { size }); };
     const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity']];
     const body = {
-      claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : '<p class="muted">Nothing waiting. 🎉</p>'}
-<h3 style="margin-top:24px">History</h3>${decided.length ? `<div class="tbl"><table><thead><tr><th>Member</th><th>Player</th><th>Status</th><th>By</th><th>When</th><th></th></tr></thead><tbody>${decided.map((c) => `<tr><td><img class="av" src="${esc(c.a)}" alt=""> ${esc(c.n)}</td><td><a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a></td><td><span class="tag${c.status === 'approved' ? ' home' : ''}">${esc(c.status)}</span></td><td>${esc(c.decidedBy || '–')}</td><td>${c.decidedAt ? ago(c.decidedAt) : '–'}</td><td>${c.status === 'approved' ? `<button class="btn ghost sm" data-claim="unlink" data-u="${c.user}" type="button">Unlink</button>` : `<button class="btn ghost sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No decisions yet.</p>'}`,
+      claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'New player claims show up here for approval.' })}
+<h3 style="margin-top:24px">History</h3>${decided.length ? `<div class="tbl"><table><thead><tr><th>Member</th><th>Player</th><th>Status</th><th>By</th><th>When</th><th></th></tr></thead><tbody>${decided.map((c) => `<tr><td>${mem(c.user, c)}</td><td><a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a></td><td><span class="tag${c.status === 'approved' ? ' home' : ''}">${esc(c.status)}</span></td><td>${esc(c.decidedBy || '–')}</td><td>${c.decidedAt ? ago(c.decidedAt) : '–'}</td><td>${c.status === 'approved' ? `<button class="btn ghost sm" data-claim="unlink" data-u="${c.user}" type="button">Unlink</button>` : `<button class="btn ghost sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button>`}</td></tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '🗂️', title: 'No decisions yet' })}`,
       members: () => `<div class="tbl"><table><thead><tr><th>Member</th><th>Role</th><th>Player</th><th>Positions</th><th>Platform</th><th>This week</th><th class="n">Logins</th><th>Last seen</th></tr></thead><tbody>${users.map(([id, u]) => {
         const c = A.claims[id], pf = A.profiles[id] || {};
-        return `<tr><td><img class="av" src="${esc(u.a)}" alt=""> ${esc(u.n)} <small class="muted">@${esc(u.tag || '')}</small></td><td>${roleTag(u.role === 'member' || !u.role ? (u.admin ? 'manager' : c?.status === 'approved' ? 'claimed' : 'member') : u.role)}</td><td>${c ? `${esc(c.playerName)} <small class="muted">(${esc(c.status)})</small>` : '–'}</td><td>${esc((pf.positions || []).join(' / ') || '–')}</td><td>${esc(pf.platform || '–')}</td><td class="wk">${A.availability.map((d) => `<span data-tip="${esc(fmtDay(d.date))}">${ICON[d.byUser[id]?.s] || '·'}</span>`).join('')}</td><td class="n">${u.logins || 1}</td><td>${ago(u.last)}</td></tr>`;
+        return `<tr><td>${mem(id, u, u.tag ? `@${u.tag}` : '')}</td><td>${roleTag(u.role === 'member' || !u.role ? (u.admin ? 'manager' : c?.status === 'approved' ? 'claimed' : 'member') : u.role)}</td><td>${c ? `${esc(c.playerName)} <small class="muted">(${esc(c.status)})</small>` : '–'}</td><td>${esc((pf.positions || []).join(' / ') || '–')}</td><td>${esc(pf.platform || '–')}</td><td class="wk">${A.availability.map((d) => `<span data-tip="${esc(fmtDay(d.date))}">${ICON[d.byUser[id]?.s] || '·'}</span>`).join('')}</td><td class="n">${u.logins || 1}</td><td>${ago(u.last)}</td></tr>`;
       }).join('')}</tbody></table></div>`,
-      week: () => `<div class="tbl"><table class="grid-week"><thead><tr><th>Member</th>${A.availability.map((d) => `<th>${esc(fmtDay(d.date))}</th>`).join('')}</tr></thead><tbody>${users.map(([id, u]) => `<tr><td><img class="av" src="${esc(u.a)}" alt=""> ${esc(u.n)}</td>${A.availability.map((d) => `<td class="c s-${d.byUser[id]?.s || 'none'}">${ICON[d.byUser[id]?.s] || ''}</td>`).join('')}</tr>`).join('')}
+      week: () => `<div class="tbl"><table class="grid-week"><thead><tr><th>Member</th>${A.availability.map((d) => `<th>${esc(fmtDay(d.date))}</th>`).join('')}</tr></thead><tbody>${users.map(([id, u]) => `<tr><td>${mem(id, u)}</td>${A.availability.map((d) => `<td class="c s-${d.byUser[id]?.s || 'none'}">${ICON[d.byUser[id]?.s] || ''}</td>`).join('')}</tr>`).join('')}
 <tr class="tot"><td><b>Available</b></td>${A.availability.map((d) => { const v = Object.values(d.byUser); return `<td class="c"><b>${v.filter((x) => x.s === 'yes').length}</b><small> +${v.filter((x) => x.s === 'maybe').length}?</small></td>`; }).join('')}</tr></tbody></table></div>`,
       votes: () => `<div class="votes">${A.votes.map((m) => `<div class="card vote"><div class="vote-head">${pill(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b><small class="muted">${m.voters.length} votes</small></div>${m.voters.length ? `<ul class="voters">${m.voters.map((v) => `<li><img class="av" src="${esc(v.a)}" alt=""> ${esc(v.n)} → <b>${esc(v.pn || '?')}</b></li>`).join('')}</ul>` : '<p class="muted">No votes yet.</p>'}</div>`).join('')}</div>`,
       activity: () => `<div class="row" style="margin-bottom:12px"><select id="act-filter"><option value="">Everyone</option>${users.map(([id, u]) => `<option value="${id}"${S.actFilter === id ? ' selected' : ''}>${esc(u.n)}</option>`).join('')}</select></div>
-<ul class="feed">${A.activity.filter((a) => !S.actFilter || a.u === S.actFilter).map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><img class="av" src="${esc(a.a)}" alt=""><div><b>${esc(a.n)}</b> ${ACT_TXT[a.type] || esc(a.type)}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${ago(a.at)}</small></li>`).join('') || '<li class="muted">No activity yet.</li>'}</ul>`,
+<ul class="feed">${A.activity.filter((a) => !S.actFilter || a.u === S.actFilter).map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><div>${mem(a.u, a, '', 22)} ${ACT_TXT[a.type] || esc(a.type)}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${ago(a.at)}</small></li>`).join('') || `<li>${UI.empty({ icon: '📜', title: 'No activity yet', text: S.actFilter ? 'This member has not done anything yet.' : '' })}</li>`}</ul>`,
     };
     return `<div class="chipset sub-tabs">${sub.map(([k, l]) => `<button class="chip${S.adminTab === k ? ' on' : ''}" type="button" data-sub="${k}">${l}</button>`).join('')}<button class="chip" type="button" data-refresh>↻ Refresh</button></div><div class="card mgr">${body[S.adminTab]()}</div>`;
   }
@@ -480,7 +471,7 @@ if (MAPI) (() => {
     try {
       const r = await call('/api/admin/claims', { user, action });
       S.admin.claims = r.claims;
-      S.admin.activity.unshift({ at: Date.now(), n: session.n, a: session.a, type: `claim-${c.status}`, detail: `${c.n} → ${c.playerName}` });
+      S.admin.activity.unshift({ at: Date.now(), u: session.u, n: session.n, a: session.a, type: `claim-${c.status}`, detail: `${c.n} → ${c.playerName}` });
       sessionStorage.removeItem('norex_public');
       draw();
       toast(`${c.playerName}: ${c.status}`);
@@ -517,7 +508,11 @@ if (MAPI) (() => {
       if (d.m) vote(d.m, d.p);
       if (d.sub) { S.adminTab = d.sub; draw(); }
       if (d.refresh !== undefined) { S.admin = null; draw(); load('manager'); }
-      if (d.claim) decide(d.u, d.claim);
+      if (d.claim) {
+        const c = S.admin.claims[d.u];
+        if (d.claim !== 'approve' && !(await UI.confirm({ title: d.claim === 'unlink' ? 'Unlink player?' : 'Reject claim?', text: `${c.n} → ${c.playerName}. ${d.claim === 'unlink' ? 'They lose the verified badge until a manager approves again.' : 'They can send a new claim afterwards.'}`, ok: d.claim === 'unlink' ? 'Unlink' : 'Reject', danger: true }))) return;
+        decide(d.u, d.claim);
+      }
     };
     panel.onchange = (e) => { if (e.target.id === 'act-filter') { S.actFilter = e.target.value; draw(); } };
   }
