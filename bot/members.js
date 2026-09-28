@@ -1,12 +1,15 @@
 // Member area: "Log in with Discord" for people in the NOREX Discord server, plus a small API
 // the static site calls for member features. Data lives in Cloudflare KV (free tier).
 //
-// Env: DISCORD_APP_ID, DISCORD_CLIENT_SECRET (secret), DISCORD_GUILD_ID, ADMIN_IDS (comma list),
-//      ADMIN_ROLE_ID (managers' role – gets the admin portal), MEMBER_ROLE_ID (optional – require a role, not just
+// Env: DISCORD_APP_ID, DISCORD_CLIENT_SECRET (secret), DISCORD_GUILD_ID, ADMIN_IDS (comma list – owners),
+//      ADMIN_ROLE_ID (managers' role – gets the admin portal), OWNER_ROLE_ID (Founder role – owner tier), MEMBER_ROLE_ID (optional – require a role, not just
 //      server membership), SITE_URL, DB (D1 binding – member data), NOREX_KV (KV binding – `public` cache only)
 //
 // Member data lives in D1 (tables in bot/migrations). KV keeps only the `public` document read by player pages.
 // Data saved by the first (KV-only) version is copied into D1 once, on the first request after the switch.
+// Who may do what: bot/roles.js (can(user, action)).
+
+import { ROLE_LABEL, atLeast, can, discordRole, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -54,7 +57,7 @@ const run = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).run();
 const marks = (n) => Array(n).fill('?').join(',');
 const opt = (v) => v ?? undefined; // NULL columns → key left out of the JSON, like the old documents
 
-const userOut = (r) => ({ n: r.name, a: r.avatar, tag: r.tag, admin: !!r.admin, first: r.first_at, last: r.last_at, logins: r.logins });
+const userOut = (r) => ({ n: r.name, a: r.avatar, tag: r.tag, admin: !!r.admin, role: r.role, first: r.first_at, last: r.last_at, logins: r.logins });
 const profileOut = (r) => r && { bio: r.bio, positions: JSON.parse(r.positions || '[]'), platform: r.platform, updated: r.updated };
 const claimOut = (r, history = []) => ({
   player: r.player, playerName: r.player_name, status: r.status, at: r.at, n: r.name, a: r.avatar,
@@ -104,8 +107,8 @@ async function doMigrateKV(env) {
 
     const users = await doc('users', {});
     for (const [id, u] of Object.entries(users)) {
-      add('INSERT OR IGNORE INTO users (id, name, avatar, tag, admin, first_at, last_at, logins) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        id, u.n ?? '', u.a ?? null, u.tag ?? null, u.admin ? 1 : 0, u.first ?? Date.now(), u.last ?? Date.now(), u.logins ?? 1);
+      add('INSERT OR IGNORE INTO users (id, name, avatar, tag, admin, role, first_at, last_at, logins) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        id, u.n ?? '', u.a ?? null, u.tag ?? null, u.admin ? 1 : 0, u.admin ? 'manager' : 'member', u.first ?? Date.now(), u.last ?? Date.now(), u.logins ?? 1);
     }
     let claims = await doc('claims', null);
     if (!claims && kv) { // very first version stored one key per claim
@@ -175,6 +178,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
     const me = await unseal(env, (request.headers.get('Authorization') || '').replace(/^Bearer /, ''));
     if (!me) return cors(env, fail('Please log in again.', 401));
+    me.role = await currentRole(env, me);
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
     return cors(env, await route(url.pathname, request.method, body, me, env, loadSite));
   } catch (e) {
@@ -219,27 +223,37 @@ async function callback(url, env) {
     : user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
       : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(user.id) >> 22n) % 6n)}.png`;
   const name = clean(member.nick || user.global_name || user.username, 40);
-  const admin = String(env.ADMIN_IDS || '').split(',').map((s) => s.trim()).includes(user.id)
-    || (!!env.ADMIN_ROLE_ID && !!member.roles?.includes(env.ADMIN_ROLE_ID));
+  const role = discordRole(env, user.id, member.roles ?? []);
+  const admin = atLeast(role, 'manager');
 
   const now = Date.now();
-  await run(env, `INSERT INTO users (id, name, avatar, tag, admin, first_at, last_at, logins) VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+  await run(env, `INSERT INTO users (id, name, avatar, tag, admin, role, first_at, last_at, logins) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
     ON CONFLICT (id) DO UPDATE SET name = excluded.name, avatar = excluded.avatar, tag = excluded.tag, admin = excluded.admin,
-      last_at = excluded.last_at, logins = users.logins + 1`, user.id, name, avatar, user.username, admin ? 1 : 0, now, now);
+      role = excluded.role, last_at = excluded.last_at, logins = users.logins + 1`, user.id, name, avatar, user.username, admin ? 1 : 0, role, now, now);
   const me = { u: user.id, n: name, a: avatar };
-  await log(env, me, 'login', admin ? 'as manager' : '');
-  const session = await seal(env, { ...me, adm: admin, exp: Math.floor(Date.now() / 1000) + (admin ? 7 : 30) * DAY });
+  await log(env, me, 'login', admin ? `as ${role}` : '');
+  const session = await seal(env, { ...me, role, adm: admin, exp: Math.floor(Date.now() / 1000) + (admin ? 7 : 30) * DAY });
   return back(`norex_session=${session}`);
+}
+
+// Role from the session (Discord roles at login) + `claimed` if the member's claim is approved right now.
+async function currentRole(env, me) {
+  const role = sessionRole(env, me);
+  if (role !== 'member') return role;
+  return (await one(env, 'SELECT status FROM claims WHERE user_id = ?', me.u))?.status === 'approved' ? 'claimed' : role;
 }
 
 // ---------- API ----------
 async function route(p, method, body, me, env, loadSite) {
+  if (!can(me, 'hub.use')) return fail('Members only.', 403);
   if (p === '/api/me' && method === 'GET') {
     const [claim, profile] = await Promise.all([getClaim(env, me.u), one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)]);
-    return json({ user: { id: me.u, name: me.n, avatar: me.a, admin: !!me.adm }, claim, profile: profileOut(profile) ?? null });
+    const user = { id: me.u, name: me.n, avatar: me.a, admin: can(me, 'portal.view'), role: me.role, roleLabel: ROLE_LABEL[me.role], perms: permsFor(me.role) };
+    return json({ user, claim, profile: profileOut(profile) ?? null });
   }
 
   if (p === '/api/claim' && method === 'POST') {
+    if (!can(me, 'claim.request')) return fail('Members only.', 403);
     const mine = await one(env, 'SELECT * FROM claims WHERE user_id = ?', me.u);
     if (body.cancel) {
       if (mine?.status === 'pending') {
@@ -263,6 +277,7 @@ async function route(p, method, body, me, env, loadSite) {
   }
 
   if (p === '/api/profile' && method === 'POST') {
+    if (!can(me, 'profile.edit')) return fail('Members only.', 403);
     const profile = {
       bio: clean(body.bio, 280),
       positions: (Array.isArray(body.positions) ? body.positions : []).filter((x) => POSITIONS.includes(x)).slice(0, 3),
@@ -280,6 +295,7 @@ async function route(p, method, body, me, env, loadSite) {
   if (p === '/api/availability') {
     const dates = days7();
     if (method === 'POST') {
+      if (!can(me, 'availability.set')) return fail('Members only.', 403);
       const pick = (Array.isArray(body.dates) ? body.dates : [body.date]).filter((d) => dates.includes(d));
       const status = body.status;
       if (!pick.length || !(STATUSES.includes(status) || status === 'clear')) return fail('Bad availability');
@@ -302,6 +318,7 @@ async function route(p, method, body, me, env, loadSite) {
     const club = await loadSite('club');
     const recent = club.matches.slice(0, 3);
     if (method === 'POST') {
+      if (!can(me, 'vote.motm')) return fail('Members only.', 403);
       const m = recent.find((x) => x.id === body.match);
       if (!m) return fail('Voting is only open for the latest matches.');
       const cur = await one(env, 'SELECT player FROM votes WHERE match_id = ? AND user_id = ?', String(m.id), me.u);
@@ -322,8 +339,9 @@ async function route(p, method, body, me, env, loadSite) {
   }
 
   if (p.startsWith('/api/admin/')) {
-    if (!me.adm) return fail('Managers only.', 403);
+    if (!can(me, 'portal.view')) return fail('Managers only.', 403);
     if (p === '/api/admin/claims' && method === 'POST') {
+      if (!can(me, 'claims.decide')) return fail('Managers only.', 403);
       const c = await one(env, 'SELECT * FROM claims WHERE user_id = ?', String(body.user ?? ''));
       if (!c) return fail('Claim not found', 404);
       let status;

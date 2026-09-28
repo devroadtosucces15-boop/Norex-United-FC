@@ -323,6 +323,8 @@ a.record[href]:hover{transform:translateY(-4px);border-color:var(--red);color:#f
 .club-card[hidden]{display:none}
 .tag{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#c7ccd5}
 .tag.home{background:var(--red);border-color:var(--red);color:#fff}
+.tag.owner{background:linear-gradient(135deg,var(--gold),#b8893a);border-color:var(--gold);color:var(--ink)}
+.tag.ok{border-color:var(--win);color:var(--win)}
 
 /* ---------- tables ---------- */
 .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
