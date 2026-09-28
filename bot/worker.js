@@ -153,7 +153,7 @@ async function command(data, site, ctx) {
       }] };
     }
     case 'top': {
-      const players = (await load(site, 'players', ctx)).filter((p) => p.home && p.s);
+      const players = (await load(site, 'players', ctx)).filter((p) => p.home && p.s && p.src === 'club');
       const stat = opt.stat ?? 'goals';
       const F = { goals: ['Top scorers', (p) => p.s.g], assists: ['Most assists', (p) => p.s.a], rating: ['Best average rating (3+ games)', (p) => (p.s.gp >= 3 ? p.s.r : 0), 1], motm: ['Most MOTM awards', (p) => p.s.m], games: ['Most appearances', (p) => p.s.gp], ga: ['Goals + assists', (p) => p.s.g + p.s.a] };
       const [title, f, dec = 0] = F[stat] ?? F.goals;
@@ -187,16 +187,32 @@ function matchEmbed(m, club, footer) {
 
 function playerEmbed(p, club, site, footer) {
   const s = p.s, c = p.car;
-  const trend = p.tr?.length ? p.tr.slice(-10).map((r) => (r >= 8 ? '🟩' : r >= 7 ? '🟢' : r >= 6 ? '🟧' : '🟥')).join('') : null;
+  const r1 = (v) => (+v || 0).toFixed(1);
+  const dot = (r) => (r >= 8 ? '🟢' : r >= 7 ? '🟡' : r >= 6 ? '🟠' : '🔴');
+  const recent = (p.tr ?? []).slice(-5).reverse();
+  const stats = (x) => `${x.gp} games · **${x.g}** goals · **${x.a}** assists\n⭐ Avg rating **${r1(x.r)}** · MOTM **${x.m}**`;
+  const fields = [];
+  if (s && s.gp) {
+    fields.push({
+      name: p.src === 'archive' ? `📋 ${p.sc ?? 'Club'} (from archived matches)` : `📋 ${p.sc ?? 'Club'} this season`,
+      value: `${stats(s)}\nPass **${s.p}%** · Tackle **${s.t}%** · Win **${s.w}%**`,
+    });
+  } else if (p.sc) {
+    fields.push({ name: `📋 ${p.sc}`, value: 'No games for this club yet this season.' });
+  }
+  if (c && c.gp) fields.push({ name: '🌍 Career (every club)', value: stats(c) });
+  if (recent.length) {
+    const avg = recent.reduce((t, v) => t + v, 0) / recent.length;
+    fields.push({
+      name: `📈 Last ${recent.length} match ratings (newest first)`,
+      value: `${recent.map((r) => `${dot(r)} **${r1(r)}**`).join('  ')}\nAverage **${r1(avg)}** · Best **${r1(Math.max(...recent))}**`,
+    });
+  }
   return {
     title: `${p.n}${p.ovr ? ` · ${p.ovr} OVR` : ''}`, url: `${site}players/${encodeURIComponent(p.k)}.html`,
     color: parseInt(club.color.slice(1), 16), thumbnail: p.crest ? { url: p.crest } : undefined,
     description: `**${p.pos}** · ${p.c.join(', ')}`,
-    fields: [
-      s && { name: `Club stats (${p.c[0]})`, value: `${s.gp} games · **${s.g}** goals · **${s.a}** assists\nRating **${s.r}** · MOTM ${s.m} · Win ${s.w}%\nPass ${s.p}% · Tackle ${s.t}%`, inline: true },
-      c && { name: 'Career (all clubs)', value: `${c.gp} games\n**${c.g}** goals · **${c.a}** assists\nRating **${c.r}** · MOTM ${c.m}`, inline: true },
-      trend && { name: 'Recent match ratings', value: trend },
-    ].filter(Boolean),
-    footer,
+    fields,
+    footer: { ...footer, text: '🟢 8+  🟡 7+  🟠 6+  🔴 under 6 · full profile on the site' },
   };
 }
