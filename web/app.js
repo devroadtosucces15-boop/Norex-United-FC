@@ -266,46 +266,62 @@ ${shape(a, 'var(--red)')}${shape(b, '#94a3b8')}</svg>`;
 })();
 
 
-// ================= Members: Discord login, Squad Hub, verified badges =================
+// ================= Members: Discord login, Squad Hub, manager portal, verified badges =================
 const MAPI = document.body.dataset.api;
 if (MAPI) (() => {
   const KEY = 'norex_session';
-  const store = { get: () => { try { return localStorage.getItem(KEY); } catch { return null; } }, set: (v) => { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch {} } };
+  const ls = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} } };
   const hash = new URLSearchParams(location.hash.slice(1));
-  if (hash.get('norex_session')) store.set(hash.get('norex_session'));
+  if (hash.get('norex_session')) ls.set(KEY, hash.get('norex_session'));
   const err = hash.get('norex_error');
   if (hash.has('norex_session') || err) history.replaceState(null, '', location.pathname + location.search);
-  const session = (() => { try { const t = store.get(); const p = JSON.parse(atob(t.split('.')[0].replace(/-/g, '+').replace(/_/g, '/'))); return p.exp > Date.now() / 1000 ? { token: t, ...p } : null; } catch { return null; } })();
-  if (!session) store.set(null);
+  // Session payload is base64url UTF-8 JSON – decode bytes properly so names with any characters show correctly.
+  const decode = (t) => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(t.split('.')[0].replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0))));
+  const session = (() => { try { const t = ls.get(KEY); const p = decode(t); return p.exp > Date.now() / 1000 ? { token: t, ...p } : null; } catch { return null; } })();
+  if (!session) ls.set(KEY, null);
+  const logout = () => { ls.set(KEY, null); ls.set('norex_me', null); location.href = `${BASE}index.html`; };
   const loginUrl = () => `${MAPI}/auth/login?return=${encodeURIComponent(location.href.split('#')[0])}`;
   const call = async (path, body) => {
-    const r = await fetch(MAPI + path, { method: body ? 'POST' : 'GET', headers: { Authorization: `Bearer ${session?.token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    const r = await fetch(MAPI + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: { Authorization: `Bearer ${session?.token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
     const d = await r.json().catch(() => ({}));
-    if (r.status === 401) { store.set(null); location.reload(); }
+    if (r.status === 401) { ls.set(KEY, null); location.reload(); }
     if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
     return d;
   };
   function toast(msg, bad) {
+    $$('.toast').forEach((t) => t.remove());
     const t = document.createElement('div');
     t.className = `toast${bad ? ' bad' : ''}`;
     t.textContent = msg;
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 4500);
+    setTimeout(() => t.remove(), 3500);
   }
+  const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : `${Math.round(m / 1440)}d ago`; };
   if (err) toast(err === 'not_member' ? 'Members only – you need to be in the NOREX Discord server.' : err === 'cancelled' ? 'Login cancelled.' : 'Discord login failed – try again.', true);
 
-  // Header
+  // ---------- header: login button or account menu ----------
   const slot = $('.auth-slot');
-  if (slot) slot.innerHTML = session
-    ? `<a class="me-btn" href="${BASE}members.html"><img src="${esc(session.a)}" alt="">${esc(session.n)}</a>`
-    : `<a class="login-btn" href="${loginUrl()}">Member login</a>`;
+  if (slot && !session) slot.innerHTML = `<a class="login-btn" href="${loginUrl()}">Member login</a>`;
+  if (slot && session) {
+    const cached = (() => { try { return JSON.parse(ls.get('norex_me') || 'null'); } catch { return null; } })();
+    const hub = `${BASE}members.html`;
+    slot.innerHTML = `<div class="acct"><button class="me-btn" type="button" aria-haspopup="true" aria-expanded="false"><img src="${esc(session.a)}" alt=""><span>${esc(session.n)}</span><i>▾</i></button>
+<div class="acct-menu" hidden><div class="acct-head"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><small>${session.adm ? 'Manager' : 'NOREX member'}</small></div></div>
+<a href="${hub}#me">👤 My profile</a>${cached?.player ? `<a href="${BASE}players/${encodeURIComponent(cached.player)}.html">🪪 My player page</a>` : ''}
+<a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a>${session.adm ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
+<button type="button" class="acct-out">↩ Log out</button></div></div>`;
+    const btn = $('.me-btn', slot), menu = $('.acct-menu', slot);
+    btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute('aria-expanded', !menu.hidden); };
+    document.addEventListener('click', (e) => { if (!slot.contains(e.target)) menu.hidden = true; });
+    $('.acct-out', slot).onclick = logout;
+  }
 
-  // Verified badges (public)
+  // ---------- verified badges (public) ----------
   (async () => {
     let data;
     try { data = JSON.parse(sessionStorage.getItem('norex_public') || 'null'); } catch {}
-    if (!data || Date.now() - data.t > 300000) {
-      try { data = { t: Date.now(), ...(await (await fetch(`${MAPI}/api/public`)).json()) }; sessionStorage.setItem('norex_public', JSON.stringify(data)); } catch { return; }
+    if (!data || Date.now() - data.t > 120000) {
+      try { data = { t: Date.now(), ...(await (await fetch(`${MAPI}/api/public`, { cache: 'no-store' })).json()) }; sessionStorage.setItem('norex_public', JSON.stringify(data)); } catch { return; }
     }
     const claims = data.claims || {};
     $$('.member-badge[data-player]').forEach((el) => {
@@ -319,97 +335,195 @@ if (MAPI) (() => {
     });
   })();
 
-  // Squad Hub
-  const hub = $('#hub');
-  if (!hub) return;
+  // ---------- Squad Hub ----------
+  const hubEl = $('#hub');
+  if (!hubEl) return;
   if (!session) {
-    hub.innerHTML = `<div class="card hub-login"><img src="${BASE}assets/crest.png" height="110" alt=""><div><h2>Members only</h2><p class="muted">Log in with your Discord account. Only members of the NOREX server get in.</p><a class="btn discord big" href="${loginUrl()}">Log in with Discord</a></div></div>`;
+    hubEl.innerHTML = `<div class="card hub-login"><img src="${BASE}assets/crest.png" height="110" alt=""><div><h2>Members only</h2><p class="muted">Log in with your Discord account. Only members of the NOREX server get in.</p><a class="btn discord big" href="${loginUrl()}">Log in with Discord</a></div></div>`;
     return;
   }
   const POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
+  const ICON = { yes: '✅', maybe: '❔', no: '❌' };
   const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  const pill = (r) => `<span class="res ${r}">${r}</span>`;
+  const S = { tab: 'me', me: null, players: [], pub: {}, avail: null, votes: null, admin: null, adminTab: 'claims', sel: new Set() };
+  const TABS = [['me', '👤 My NOREX'], ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
 
-  async function render() {
-    const [me, [players], pub] = await Promise.all([call('/api/me'), api(), fetch(`${MAPI}/api/public`).then((r) => r.json()).catch(() => ({ claims: {} }))]);
-    const squad = players.filter((p) => p.home).sort((a, b) => a.n.localeCompare(b.n));
-    const claimedBy = pub.claims || {};
-    const claim = me.claim, prof = me.profile || {};
-    const myPlayer = claim && players.find((p) => p.k === claim.player);
-    hub.innerHTML = `
-<div class="hub-head card"><img src="${esc(me.user.avatar)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(me.user.name)}</h2>${me.user.admin ? '<span class="tag home">Admin</span>' : '<span class="tag">Member</span>'}</div><button class="btn ghost" id="logout" type="button">Log out</button></div>
-<div class="grid2">
-<div class="card"><h3>My player</h3>${
-  claim?.status === 'approved' ? `<p>✅ You're verified as <a href="${BASE}players/${encodeURIComponent(claim.player)}.html"><b>${esc(claim.playerName)}</b></a>.</p>`
-  : claim?.status === 'pending' ? `<p>⏳ Claim for <b>${esc(claim.playerName)}</b> is waiting for admin approval.</p>`
-  : `${claim?.status === 'rejected' ? `<p class="muted">Your claim for ${esc(claim.playerName)} was not approved. Pick again or ask an admin.</p>` : '<p class="muted">Link your Discord to your in-game player. An admin approves it, then your player page shows a ✓ Verified badge.</p>'}
-  <div class="row"><select id="claim-pick"><option value="">Choose your gamertag…</option>${squad.map((p) => `<option value="${esc(p.k)}"${claimedBy[p.k] ? ' disabled' : ''}>${esc(p.n)}${claimedBy[p.k] ? ' (claimed)' : ''}</option>`).join('')}</select><button class="btn" id="claim-go" type="button">Claim</button></div>`}
-${myPlayer ? `<p class="small muted">${myPlayer.pos} · ${myPlayer.s ? `${myPlayer.s.gp} games · ${myPlayer.s.g}G ${myPlayer.s.a}A · ${myPlayer.s.r} avg` : ''}</p>` : ''}
-</div>
+  hubEl.innerHTML = `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2>${session.adm ? '<span class="tag home">Manager</span>' : '<span class="tag">Member</span>'}</div><button class="btn ghost" id="logout" type="button">Log out</button></div>
+<div class="chipset hub-tabs">${TABS.map(([k, l]) => `<button class="chip" type="button" data-tab="${k}">${l}</button>`).join('')}</div>
+<div id="panel"></div>`;
+  $('#logout').onclick = logout;
+  $('.hub-tabs').onclick = (e) => { const b = e.target.closest('[data-tab]'); if (b) go(b.dataset.tab); };
+  addEventListener('hashchange', () => go(location.hash.slice(1), false));
+  const panel = $('#panel');
+
+  function go(tab, push = true) {
+    if (!TABS.some(([k]) => k === tab)) tab = 'me';
+    S.tab = tab;
+    if (push) history.replaceState(null, '', `#${tab}`);
+    $$('.hub-tabs .chip').forEach((c) => c.classList.toggle('on', c.dataset.tab === tab));
+    draw();
+    load(tab);
+  }
+  async function load(tab) {
+    try {
+      if (tab === 'availability') S.avail = await call('/api/availability');
+      if (tab === 'votes') S.votes = await call('/api/vote');
+      if (tab === 'manager') S.admin = await call('/api/admin/overview');
+      if (tab === S.tab) draw();
+    } catch (e) { toast(e.message, true); }
+  }
+  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, manager: viewManager }[S.tab])(); bind(); };
+
+  // ----- My NOREX -----
+  function viewMe() {
+    if (!S.me) return '<p class="muted">Loading…</p>';
+    const claim = S.me.claim, prof = S.me.profile || {};
+    const taken = S.pub;
+    const squad = S.players.filter((p) => p.home).sort((a, b) => a.n.localeCompare(b.n));
+    const myPl = claim && S.players.find((p) => p.k === claim.player);
+    return `<div class="grid2"><div class="card"><h3>My player</h3>${
+      claim?.status === 'approved' ? `<div class="claim-ok">✅ Verified as <a href="${BASE}players/${encodeURIComponent(claim.player)}.html"><b>${esc(claim.playerName)}</b></a>${myPl?.s ? `<small>${myPl.pos} · ${myPl.s.gp} games · ${myPl.s.g}G ${myPl.s.a}A · ${Number(myPl.s.r).toFixed(1)} avg</small>` : ''}</div>`
+      : claim?.status === 'pending' ? `<div class="claim-wait">⏳ Claim for <b>${esc(claim.playerName)}</b> is waiting for a manager.</div><button class="btn ghost sm" data-act="claim-cancel" type="button">Cancel claim</button>`
+      : `${claim && ['rejected', 'unlinked'].includes(claim.status) ? `<p class="muted">Your claim for ${esc(claim.playerName)} was ${claim.status}${claim.decidedBy ? ` by ${esc(claim.decidedBy)}` : ''}. Pick again or ask a manager.</p>` : '<p class="muted">Link your Discord to your in-game player. A manager approves it, then your player page shows a ✓ Verified badge.</p>'}
+      <div class="row"><select id="claim-pick"><option value="">Choose your gamertag…</option>${squad.map((p) => `<option value="${esc(p.k)}"${taken[p.k] ? ' disabled' : ''}>${esc(p.n)}${taken[p.k] ? ' (claimed)' : ''}</option>`).join('')}</select><button class="btn" data-act="claim" type="button">Claim</button></div>`}</div>
 <div class="card"><h3>My profile</h3>
 <label class="fld">Bio <textarea id="pf-bio" maxlength="280" rows="3" placeholder="Playstyle, favourite position, anything…">${esc(prof.bio || '')}</textarea></label>
 <label class="fld">Positions (up to 3)</label><div class="chipset" id="pf-pos">${POS.map((p) => `<button type="button" class="chip${prof.positions?.includes(p) ? ' on' : ''}" data-p="${p}">${p}</button>`).join('')}</div>
 <label class="fld">Platform <select id="pf-plat"><option value="">–</option>${['PS5', 'Xbox', 'PC'].map((x) => `<option${prof.platform === x ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
-<button class="btn" id="pf-save" type="button">Save profile</button></div>
-</div>
-<section class="block"><h2 class="banner-h">Availability <small>next 7 nights</small></h2><div id="avail" class="avail"><p class="muted">Loading…</p></div></section>
-<section class="block"><h2 class="banner-h">Members' MOTM vote</h2><div id="votes" class="votes"><p class="muted">Loading…</p></div></section>
-${me.user.admin ? '<section class="block"><h2 class="banner-h">Admin · player claims</h2><div id="admin"><p class="muted">Loading…</p></div></section>' : ''}`;
-
-    $('#logout').onclick = () => { store.set(null); location.href = `${BASE}index.html`; };
-    $('#claim-go')?.addEventListener('click', async () => {
-      const v = $('#claim-pick').value;
-      if (!v) return toast('Pick your gamertag first', true);
-      try { await call('/api/claim', { player: v }); toast('Claim sent – an admin will approve it.'); render(); } catch (e) { toast(e.message, true); }
-    });
-    $('#pf-pos').addEventListener('click', (e) => {
-      const b = e.target.closest('.chip'); if (!b) return;
-      if (!b.classList.contains('on') && $$('#pf-pos .chip.on').length >= 3) return toast('Up to 3 positions', true);
-      b.classList.toggle('on');
-    });
-    $('#pf-save').onclick = async () => {
-      try {
-        await call('/api/profile', { bio: $('#pf-bio').value, platform: $('#pf-plat').value, positions: $$('#pf-pos .chip.on').map((b) => b.dataset.p) });
-        sessionStorage.removeItem('norex_public');
-        toast('Profile saved');
-      } catch (e) { toast(e.message, true); }
-    };
-    renderAvail(await call('/api/availability'));
-    renderVotes(await call('/api/vote'));
-    if (me.user.admin) renderAdmin(await call('/api/admin/claims'));
+<button class="btn" data-act="profile" type="button">Save profile</button>${prof.updated ? `<small class="muted"> Saved ${ago(prof.updated)}</small>` : ''}</div></div>`;
   }
 
-  function renderAvail(d) {
-    const icon = { yes: '✅', maybe: '❔', no: '❌' };
-    $('#avail').innerHTML = d.days.map((day) => {
+  // ----- Availability (multi-day select + bulk) -----
+  function viewAvail() {
+    if (!S.avail) return '<p class="muted">Loading…</p>';
+    const n = S.sel.size;
+    return `<div class="bulk card${n ? ' on' : ''}"><span>${n ? `<b>${n}</b> day${n > 1 ? 's' : ''} selected` : 'Tip: tick several days, then set them all at once'}</span>
+<div class="bulk-btns">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="btn sm${n ? '' : ' ghost'}" data-bulk="${s}"${n ? '' : ' disabled'}>${ICON[s]} ${s}</button>`).join('')}<button type="button" class="btn ghost sm" data-bulk="clear"${n ? '' : ' disabled'}>Clear</button>
+<button type="button" class="btn ghost sm" data-selall>${n === 7 ? 'Unselect all' : 'Select all week'}</button></div></div>
+<div class="avail">${S.avail.days.map((day) => {
       const mine = day.people.find((p) => p.id === session.u)?.s;
       const by = (s) => day.people.filter((p) => p.s === s);
-      return `<div class="day card"><b>${fmtDay(day.date)}</b><div class="count-row"><span>✅ ${by('yes').length}</span><span>❔ ${by('maybe').length}</span></div>
+      return `<div class="day card${S.sel.has(day.date) ? ' sel' : ''}${mine ? ` my-${mine}` : ''}"><label class="day-top"><input type="checkbox" data-sel="${day.date}"${S.sel.has(day.date) ? ' checked' : ''}><b>${fmtDay(day.date)}</b></label>
+<div class="count-row"><span>✅ ${by('yes').length}</span><span>❔ ${by('maybe').length}</span><span>❌ ${by('no').length}</span></div>
 <div class="faces">${by('yes').map((p) => `<img src="${esc(p.a)}" alt="" data-tip="${esc(p.n)}">`).join('')}${by('maybe').map((p) => `<img class="maybe" src="${esc(p.a)}" alt="" data-tip="${esc(p.n)} (maybe)">`).join('')}</div>
-<div class="pick">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="${mine === s ? 'on' : ''}" data-date="${day.date}" data-s="${mine === s ? 'clear' : s}" aria-label="${s}">${icon[s]}</button>`).join('')}</div></div>`;
-    }).join('');
-    $$('#avail .pick button').forEach((b) => (b.onclick = async () => {
-      try { renderAvail(await call('/api/availability', { date: b.dataset.date, status: b.dataset.s })); } catch (e) { toast(e.message, true); }
-    }));
+<div class="pick">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="${mine === s ? 'on' : ''}" data-day="${day.date}" data-s="${s}" aria-label="${s}">${ICON[s]}</button>`).join('')}</div></div>`;
+    }).join('')}</div>`;
+  }
+  async function setAvail(dates, status) {
+    const prev = JSON.parse(JSON.stringify(S.avail));
+    for (const day of S.avail.days) if (dates.includes(day.date)) {
+      day.people = day.people.filter((p) => p.id !== session.u);
+      if (status !== 'clear') day.people.push({ id: session.u, s: status, n: session.n, a: session.a });
+    }
+    draw();
+    try { S.avail = await call('/api/availability', { dates, status }); draw(); } catch (e) { S.avail = prev; draw(); toast(e.message, true); }
   }
 
-  function renderVotes(d) {
-    $('#votes').innerHTML = d.matches.map((m) => {
+  // ----- Votes (change or remove any time) -----
+  function viewVotes() {
+    if (!S.votes) return '<p class="muted">Loading…</p>';
+    return `<p class="muted small">Pick one player per match. Tap another name to change your vote, or tap your pick again to remove it.</p><div class="votes">${S.votes.matches.map((m) => {
       const max = Math.max(1, ...Object.values(m.tally));
-      return `<div class="card vote"><div class="vote-head">${resPillJs(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b><small class="muted">${m.total} vote${m.total === 1 ? '' : 's'}</small></div>
-<ul>${m.players.sort((a, b) => (m.tally[b.k] || 0) - (m.tally[a.k] || 0) || b.r - a.r).map((p) => `<li class="${m.mine === p.k ? 'mine' : ''}" style="--w:${((m.tally[p.k] || 0) / max) * 100}%"><button type="button" data-m="${m.id}" data-p="${esc(p.k)}">${esc(p.n)} <small>${p.r.toFixed(1)}</small></button><b>${m.tally[p.k] || 0}</b></li>`).join('')}</ul></div>`;
-    }).join('') || '<p class="muted">No recent matches.</p>';
-    $$('#votes button').forEach((b) => (b.onclick = async () => {
-      try { renderVotes(await call('/api/vote', { match: b.dataset.m, player: b.dataset.p })); toast('Vote saved'); } catch (e) { toast(e.message, true); }
-    }));
+      return `<div class="card vote"><div class="vote-head">${pill(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b><small class="muted">${m.total} vote${m.total === 1 ? '' : 's'}</small></div>
+<ul>${[...m.players].sort((a, b) => (m.tally[b.k] || 0) - (m.tally[a.k] || 0) || b.r - a.r).map((p) => `<li class="${m.mine === p.k ? 'mine' : ''}" style="--w:${((m.tally[p.k] || 0) / max) * 100}%"><button type="button" data-m="${m.id}" data-p="${esc(p.k)}">${m.mine === p.k ? '✔ ' : ''}${esc(p.n)} <small>${Number(p.r).toFixed(1)}</small></button><b>${m.tally[p.k] || 0}</b></li>`).join('')}</ul></div>`;
+    }).join('') || '<p class="muted">No recent matches.</p>'}</div>`;
   }
-  const resPillJs = (r) => `<span class="res ${r}">${r}</span>`;
-
-  function renderAdmin(d) {
-    $('#admin').innerHTML = d.claims.length ? `<div class="tbl"><table><thead><tr><th>Member</th><th>Claims</th><th>Status</th><th></th></tr></thead><tbody>${d.claims.map((c) => `<tr><td><img class="av" src="${esc(c.a)}" alt=""> ${esc(c.n)}</td><td><a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a></td><td><span class="tag${c.status === 'approved' ? ' home' : ''}">${esc(c.status)}</span></td><td>${c.status !== 'approved' ? `<button class="btn sm" data-u="${c.user}" data-a="approve" type="button">Approve</button>` : ''} ${c.status !== 'rejected' ? `<button class="btn ghost sm" data-u="${c.user}" data-a="reject" type="button">${c.status === 'approved' ? 'Unlink' : 'Reject'}</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No claims yet.</p>';
-    $$('#admin button').forEach((b) => (b.onclick = async () => {
-      try { renderAdmin(await call('/api/admin/claims', { user: b.dataset.u, action: b.dataset.a })); sessionStorage.removeItem('norex_public'); toast('Updated'); } catch (e) { toast(e.message, true); }
-    }));
+  async function vote(matchId, player) {
+    const prev = JSON.parse(JSON.stringify(S.votes));
+    const m = S.votes.matches.find((x) => x.id === matchId);
+    if (m.mine) { m.tally[m.mine]--; m.total--; }
+    const removing = m.mine === player;
+    m.mine = removing ? null : player;
+    if (!removing) { m.tally[player] = (m.tally[player] || 0) + 1; m.total++; }
+    draw();
+    try { S.votes = await call('/api/vote', { match: matchId, player: removing ? null : player }); draw(); toast(removing ? 'Vote removed' : 'Vote saved'); } catch (e) { S.votes = prev; draw(); toast(e.message, true); }
   }
 
-  render().catch((e) => { hub.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; });
+  // ----- Manager portal -----
+  const ACT = { login: '🔑', claim: '🪪', 'claim-cancel': '↩', 'claim-approved': '✅', 'claim-rejected': '⛔', 'claim-unlinked': '🔓', profile: '✏️', availability: '📅', vote: '⭐', 'vote-remove': '☆' };
+  const ACT_TXT = { login: 'logged in', claim: 'claimed', 'claim-cancel': 'cancelled their claim', 'claim-approved': 'approved claim', 'claim-rejected': 'rejected claim', 'claim-unlinked': 'unlinked', profile: 'updated profile', availability: 'set availability', vote: 'voted MOTM', 'vote-remove': 'removed MOTM vote' };
+  function viewManager() {
+    if (!S.admin) return '<p class="muted">Loading…</p>';
+    const A = S.admin;
+    const claims = Object.entries(A.claims).map(([user, c]) => ({ user, ...c }));
+    const pending = claims.filter((c) => c.status === 'pending');
+    const decided = claims.filter((c) => c.status !== 'pending').sort((a, b) => (b.decidedAt || 0) - (a.decidedAt || 0));
+    const users = Object.entries(A.users).sort(([, a], [, b]) => b.last - a.last);
+    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity']];
+    const body = {
+      claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : '<p class="muted">Nothing waiting. 🎉</p>'}
+<h3 style="margin-top:24px">History</h3>${decided.length ? `<div class="tbl"><table><thead><tr><th>Member</th><th>Player</th><th>Status</th><th>By</th><th>When</th><th></th></tr></thead><tbody>${decided.map((c) => `<tr><td><img class="av" src="${esc(c.a)}" alt=""> ${esc(c.n)}</td><td><a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a></td><td><span class="tag${c.status === 'approved' ? ' home' : ''}">${esc(c.status)}</span></td><td>${esc(c.decidedBy || '–')}</td><td>${c.decidedAt ? ago(c.decidedAt) : '–'}</td><td>${c.status === 'approved' ? `<button class="btn ghost sm" data-claim="unlink" data-u="${c.user}" type="button">Unlink</button>` : `<button class="btn ghost sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No decisions yet.</p>'}`,
+      members: () => `<div class="tbl"><table><thead><tr><th>Member</th><th>Role</th><th>Player</th><th>Positions</th><th>Platform</th><th>This week</th><th class="n">Logins</th><th>Last seen</th></tr></thead><tbody>${users.map(([id, u]) => {
+        const c = A.claims[id], pf = A.profiles[id] || {};
+        return `<tr><td><img class="av" src="${esc(u.a)}" alt=""> ${esc(u.n)} <small class="muted">@${esc(u.tag || '')}</small></td><td>${u.admin ? '<span class="tag home">Manager</span>' : '<span class="tag">Member</span>'}</td><td>${c ? `${esc(c.playerName)} <small class="muted">(${esc(c.status)})</small>` : '–'}</td><td>${esc((pf.positions || []).join(' / ') || '–')}</td><td>${esc(pf.platform || '–')}</td><td class="wk">${A.availability.map((d) => `<span data-tip="${esc(fmtDay(d.date))}">${ICON[d.byUser[id]?.s] || '·'}</span>`).join('')}</td><td class="n">${u.logins || 1}</td><td>${ago(u.last)}</td></tr>`;
+      }).join('')}</tbody></table></div>`,
+      week: () => `<div class="tbl"><table class="grid-week"><thead><tr><th>Member</th>${A.availability.map((d) => `<th>${esc(fmtDay(d.date))}</th>`).join('')}</tr></thead><tbody>${users.map(([id, u]) => `<tr><td><img class="av" src="${esc(u.a)}" alt=""> ${esc(u.n)}</td>${A.availability.map((d) => `<td class="c s-${d.byUser[id]?.s || 'none'}">${ICON[d.byUser[id]?.s] || ''}</td>`).join('')}</tr>`).join('')}
+<tr class="tot"><td><b>Available</b></td>${A.availability.map((d) => { const v = Object.values(d.byUser); return `<td class="c"><b>${v.filter((x) => x.s === 'yes').length}</b><small> +${v.filter((x) => x.s === 'maybe').length}?</small></td>`; }).join('')}</tr></tbody></table></div>`,
+      votes: () => `<div class="votes">${A.votes.map((m) => `<div class="card vote"><div class="vote-head">${pill(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b><small class="muted">${m.voters.length} votes</small></div>${m.voters.length ? `<ul class="voters">${m.voters.map((v) => `<li><img class="av" src="${esc(v.a)}" alt=""> ${esc(v.n)} → <b>${esc(v.pn || '?')}</b></li>`).join('')}</ul>` : '<p class="muted">No votes yet.</p>'}</div>`).join('')}</div>`,
+      activity: () => `<div class="row" style="margin-bottom:12px"><select id="act-filter"><option value="">Everyone</option>${users.map(([id, u]) => `<option value="${id}"${S.actFilter === id ? ' selected' : ''}>${esc(u.n)}</option>`).join('')}</select></div>
+<ul class="feed">${A.activity.filter((a) => !S.actFilter || a.u === S.actFilter).map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><img class="av" src="${esc(a.a)}" alt=""><div><b>${esc(a.n)}</b> ${ACT_TXT[a.type] || esc(a.type)}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${ago(a.at)}</small></li>`).join('') || '<li class="muted">No activity yet.</li>'}</ul>`,
+    };
+    return `<div class="chipset sub-tabs">${sub.map(([k, l]) => `<button class="chip${S.adminTab === k ? ' on' : ''}" type="button" data-sub="${k}">${l}</button>`).join('')}<button class="chip" type="button" data-refresh>↻ Refresh</button></div><div class="card mgr">${body[S.adminTab]()}</div>`;
+  }
+  async function decide(user, action) {
+    const prev = JSON.parse(JSON.stringify(S.admin.claims));
+    const c = S.admin.claims[user];
+    c.status = action === 'approve' ? 'approved' : action === 'unlink' ? 'unlinked' : 'rejected';
+    c.decidedBy = session.n; c.decidedAt = Date.now();
+    draw();
+    try {
+      const r = await call('/api/admin/claims', { user, action });
+      S.admin.claims = r.claims;
+      S.admin.activity.unshift({ at: Date.now(), n: session.n, a: session.a, type: `claim-${c.status}`, detail: `${c.n} → ${c.playerName}` });
+      sessionStorage.removeItem('norex_public');
+      draw();
+      toast(`${c.playerName}: ${c.status}`);
+    } catch (e) { S.admin.claims = prev; draw(); toast(e.message, true); }
+  }
+
+  // ----- event wiring for whatever panel is showing -----
+  function bind() {
+    panel.onclick = async (e) => {
+      const t = e.target.closest('button, input');
+      if (!t) return;
+      const d = t.dataset;
+      if (d.act === 'claim') {
+        const v = $('#claim-pick').value;
+        if (!v) return toast('Pick your gamertag first', true);
+        try { S.me.claim = (await call('/api/claim', { player: v })).claim; draw(); toast('Claim sent – a manager will approve it.'); } catch (er) { toast(er.message, true); }
+      }
+      if (d.act === 'claim-cancel') { try { S.me.claim = (await call('/api/claim', { cancel: true })).claim; draw(); toast('Claim cancelled'); } catch (er) { toast(er.message, true); } }
+      if (d.p && t.closest('#pf-pos')) {
+        if (!t.classList.contains('on') && $$('#pf-pos .chip.on').length >= 3) return toast('Up to 3 positions', true);
+        t.classList.toggle('on');
+      }
+      if (d.act === 'profile') {
+        try {
+          S.me.profile = (await call('/api/profile', { bio: $('#pf-bio').value, platform: $('#pf-plat').value, positions: $$('#pf-pos .chip.on').map((b) => b.dataset.p) })).profile;
+          sessionStorage.removeItem('norex_public');
+          draw(); toast('Profile saved');
+        } catch (er) { toast(er.message, true); }
+      }
+      if (d.sel !== undefined) { t.checked ? S.sel.add(d.sel) : S.sel.delete(d.sel); draw(); }
+      if (d.selall !== undefined) { S.sel = S.sel.size === 7 ? new Set() : new Set(S.avail.days.map((x) => x.date)); draw(); }
+      if (d.day) { const mine = S.avail.days.find((x) => x.date === d.day).people.find((p) => p.id === session.u)?.s; setAvail([d.day], mine === d.s ? 'clear' : d.s); }
+      if (d.bulk) { const dates = [...S.sel]; S.sel = new Set(); setAvail(dates, d.bulk); toast(`${dates.length} day${dates.length > 1 ? 's' : ''} updated`); }
+      if (d.m) vote(d.m, d.p);
+      if (d.sub) { S.adminTab = d.sub; draw(); }
+      if (d.refresh !== undefined) { S.admin = null; draw(); load('manager'); }
+      if (d.claim) decide(d.u, d.claim);
+    };
+    panel.onchange = (e) => { if (e.target.id === 'act-filter') { S.actFilter = e.target.value; draw(); } };
+  }
+
+  // ----- start -----
+  (async () => {
+    try {
+      const [me, [players], pub] = await Promise.all([call('/api/me'), api(), fetch(`${MAPI}/api/public`, { cache: 'no-store' }).then((r) => r.json()).catch(() => ({ claims: {} }))]);
+      S.me = me; S.players = players; S.pub = pub.claims || {};
+      ls.set('norex_me', JSON.stringify({ player: me.claim?.status === 'approved' ? me.claim.player : null }));
+      go(location.hash.slice(1) || 'me', false);
+    } catch (e) { panel.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; }
+  })();
 })();
