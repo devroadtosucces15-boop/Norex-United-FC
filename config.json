@@ -49,14 +49,14 @@
   },
   "features": {
     "rushLog": "members",
-    "gameRules": "owner",
-    "liveBanner": "owner",
-    "trials": "owner",
-    "scouting": "owner",
-    "managerNotes": "owner",
-    "leaders": "owner",
-    "hallOfFame": "owner",
-    "profiles": "owner",
+    "gameRules": "public",
+    "liveBanner": "public",
+    "trials": "public",
+    "scouting": "members",
+    "managerNotes": "managers",
+    "leaders": "members",
+    "hallOfFame": "public",
+    "profiles": "members",
     "builder": "owner"
   }
 }
