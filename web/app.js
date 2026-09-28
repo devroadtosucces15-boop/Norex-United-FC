@@ -321,6 +321,12 @@ if (MAPI) (() => {
   if (session) { applyFlags(baseRole); viewerRole = baseRole; }
   if (err) toast(err === 'not_member' ? 'Members only – you need to be in the NOREX Discord server.' : err === 'cancelled' ? 'Login cancelled.' : 'Discord login failed – try again.', true);
 
+  // ---------- Member profiles: hover cards everywhere + member.html (P2.1 / P2.2) ----------
+  const profilesOn = !!session && flagOn('profiles', baseRole);
+  const loadProfile = () => new Promise((ok, no) => (window.NXProfile ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/profile.js`, onload: ok, onerror: no }))));
+  const profileCtx = (extra) => ({ call, toast, me: { u: session.u, n: session.n, a: session.a }, role: baseRole, players: () => api().then(([p]) => p), ...extra });
+  if (profilesOn) UI.hoverCard.use((id) => loadProfile().then(() => NXProfile.card(id, profileCtx())));
+
   // ---------- header: login button or account menu ----------
   const slot = $('.auth-slot');
   if (slot && !session) slot.innerHTML = `<a class="login-btn" href="${loginUrl()}">Member login</a>`;
@@ -330,7 +336,7 @@ if (MAPI) (() => {
     const myRole = baseRole === 'member' && cached?.player ? 'claimed' : baseRole;
     slot.innerHTML = `<div class="acct"><button class="me-btn" type="button" aria-haspopup="true" aria-expanded="false"><img src="${esc(session.a)}" alt=""><span>${esc(session.n)}</span><i>▾</i></button>
 <div class="acct-menu" hidden><div class="acct-head"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><small>${ROLE[myRole][0]}</small></div></div>
-<a href="${hub}#me">👤 My profile</a>${cached?.player ? `<a href="${BASE}players/${encodeURIComponent(cached.player)}.html">🪪 My player page</a>` : ''}
+<a href="${hub}#me">👤 My profile</a>${profilesOn ? `<a href="${BASE}member.html?u=${encodeURIComponent(session.u)}">🪪 My public profile</a>` : ''}${cached?.player ? `<a href="${BASE}players/${encodeURIComponent(cached.player)}.html">🪪 My player page</a>` : ''}
 <a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a>${flagOn('rushLog', baseRole) ? `<a href="${hub}#rush">⚡ Log Rush result</a>` : ''}${session.adm ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
 <button type="button" class="acct-out">↩ Log out</button></div></div>`;
     const btn = $('.me-btn', slot), menu = $('.acct-menu', slot);
@@ -350,13 +356,20 @@ if (MAPI) (() => {
     $$('.member-badge[data-player]').forEach((el) => {
       const c = claims[el.dataset.player];
       if (!c) return;
-      el.innerHTML = `<div class="verified"><img src="${esc(c.avatar)}" alt=""><div><b>✓ Verified NOREX member</b><span>${esc(c.name ?? '')}${c.platform ? ` · ${esc(c.platform)}` : ''}${c.positions?.length ? ` · ${c.positions.map(esc).join(' / ')}` : ''}</span>${c.bio ? `<p>${esc(c.bio)}</p>` : ''}</div></div>`;
+      el.innerHTML = `<div class="verified"><img src="${esc(c.avatar)}" alt=""${c.id && profilesOn ? ` data-hc="${esc(c.id)}" data-hc-name="${esc(c.name ?? '')}" data-hc-av="${esc(c.avatar)}" tabindex="0"` : ''}><div><b>✓ Verified NOREX member</b><span>${c.id && profilesOn ? `<a href="${BASE}member.html?u=${encodeURIComponent(c.id)}">${esc(c.name ?? '')}</a>` : esc(c.name ?? '')}${c.country && /^[A-Z]{2}$/.test(c.country) ? ` ${String.fromCodePoint(...[...c.country].map((x) => 0x1f1a5 + x.charCodeAt(0)))}` : ''}${c.platform ? ` · ${esc(c.platform)}` : ''}${c.positions?.length ? ` · ${c.positions.map(esc).join(' / ')}` : ''}</span>${c.bio ? `<p>${esc(c.bio)}</p>` : ''}</div></div>`;
     });
     $$('a.fut').forEach((a) => {
       const k = decodeURIComponent((a.getAttribute('href') || '').split('/').pop().replace('.html', ''));
       if (claims[k]) a.classList.add('is-verified');
     });
   })();
+
+  const memberPage = $('#member-page');
+  if (memberPage) {
+    if (!session) memberPage.innerHTML = UI.empty({ icon: '🔒', title: 'Members only', text: 'Log in with Discord to see squad profiles.', action: `<a class="btn discord" href="${loginUrl()}">Log in with Discord</a>` });
+    else if (!profilesOn) memberPage.innerHTML = UI.empty({ icon: '🚧', title: 'Coming soon', text: 'Member profiles are still being built.' });
+    else loadProfile().then(() => NXProfile.page(memberPage, profileCtx())).catch(() => toast('Could not load the profile – try again', true));
+  }
 
   // ---------- Trials page: manager contacts + application form (P1.4 / P1.5) ----------
   const trialsPage = $('[data-trials-page]');
@@ -415,11 +428,11 @@ if (MAPI) (() => {
       : claim?.status === 'pending' ? `<div class="claim-wait">⏳ Claim for <b>${esc(claim.playerName)}</b> is waiting for a manager.</div><button class="btn ghost sm" data-act="claim-cancel" type="button">Cancel claim</button>`
       : `${claim && ['rejected', 'unlinked'].includes(claim.status) ? `<p class="muted">Your claim for ${esc(claim.playerName)} was ${claim.status}${claim.decidedBy ? ` by ${esc(claim.decidedBy)}` : ''}. Pick again or ask a manager.</p>` : '<p class="muted">Link your Discord to your in-game player. A manager approves it, then your player page shows a ✓ Verified badge.</p>'}
       <div class="row"><select id="claim-pick"><option value="">Choose your gamertag…</option>${squad.map((p) => `<option value="${esc(p.k)}"${taken[p.k] ? ' disabled' : ''}>${esc(p.n)}${taken[p.k] ? ' (claimed)' : ''}</option>`).join('')}</select><button class="btn" data-act="claim" type="button">Claim</button></div>`}</div>
-<div class="card"><h3>My profile</h3>
+${profilesOn ? '<div class="card" id="profile-editor" style="grid-column:1/-1"></div></div>' : `<div class="card"><h3>My profile</h3>
 <label class="fld">Bio <textarea id="pf-bio" maxlength="280" rows="3" placeholder="Playstyle, favourite position, anything…">${esc(prof.bio || '')}</textarea></label>
 <label class="fld">Positions (up to 3)</label><div class="chipset" id="pf-pos">${POS.map((p) => `<button type="button" class="chip${prof.positions?.includes(p) ? ' on' : ''}" data-p="${p}">${p}</button>`).join('')}</div>
 <label class="fld">Platform <select id="pf-plat"><option value="">–</option>${['PS5', 'Xbox', 'PC'].map((x) => `<option${prof.platform === x ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
-<button class="btn" data-act="profile" type="button">Save profile</button>${prof.updated ? `<small class="muted"> Saved ${ago(prof.updated)}</small>` : ''}</div></div>`;
+<button class="btn" data-act="profile" type="button">Save profile</button>${prof.updated ? `<small class="muted"> Saved ${ago(prof.updated)}</small>` : ''}</div></div>`}`;
   }
 
   // ----- Availability (multi-day select + bulk) -----
@@ -558,7 +571,7 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
     const decided = claims.filter((c) => c.status !== 'pending').sort((a, b) => (b.decidedAt || 0) - (a.decidedAt || 0));
     const users = Object.entries(A.users).sort(([, a], [, b]) => b.last - a.last);
     // Member chip with hover card: claimed player + role from the admin overview.
-    const mem = (id, u, sub, size = 26) => { const c = A.claims[id]; const pl = c?.status === 'approved' ? c : null; return UI.member({ id, n: u.n, a: u.a, sub: sub ?? (pl ? `🪪 ${pl.playerName}` : ''), player: pl?.player }, { size }); };
+    const mem = (id, u, sub, size = 26) => { const c = A.claims[id]; const pl = c?.status === 'approved' ? c : null; return UI.member({ id, n: u.n, a: u.a, sub: sub ?? (pl ? `🪪 ${pl.playerName}` : ''), player: pl?.player, href: profilesOn ? `${BASE}member.html?u=${encodeURIComponent(id)}` : undefined }, { size }); };
     const rq = S.rush?.pending || [];
     const notesOn = flagOn('managerNotes', baseRole);
     const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(A.flags ? [['flags', '🚩 Flags']] : [])];
@@ -657,6 +670,8 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
       if (e.target.id === 'act-filter') { S.actFilter = e.target.value; draw(); }
       if (e.target.dataset.f === 'k') { const g = $('[data-f="n"]', e.target.parentElement); g.hidden = e.target.value !== '__guest'; if (!g.hidden) g.focus(); }
     };
+    const pe = $('#profile-editor', panel);
+    if (pe) loadProfile().then(() => NXProfile.editor(pe, profileCtx({ onSaved: (p) => { S.me.profile = p; } }), S.me.profile)).catch(() => toast('Could not load the profile editor', true));
     const ga = $('#game-admin', panel);
     if (ga) gameAdmin(ga);
     for (const [id, fn] of [['#trials-admin', 'portal'], ['#notes-admin', 'notesTab'], ['#scout-panel', 'scout']]) { const el = $(id, panel); if (el) withTrials((T, ctx) => T[fn](el, ctx)); }

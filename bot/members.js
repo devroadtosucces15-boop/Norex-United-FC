@@ -13,12 +13,11 @@
 import { getLive } from './live.js';
 import { gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
+import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
-const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
-const PLATFORMS = ['PS5', 'Xbox', 'PC'];
 const STATUSES = ['yes', 'maybe', 'no'];
 const RUSH_POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
 const RUSH_DAILY = 10; // submissions per member per day
@@ -64,7 +63,6 @@ const marks = (n) => Array(n).fill('?').join(',');
 const opt = (v) => v ?? undefined; // NULL columns → key left out of the JSON, like the old documents
 
 const userOut = (r) => ({ n: r.name, a: r.avatar, tag: r.tag, admin: !!r.admin, role: r.role, first: r.first_at, last: r.last_at, logins: r.logins });
-const profileOut = (r) => r && { bio: r.bio, positions: JSON.parse(r.positions || '[]'), platform: r.platform, updated: r.updated };
 const claimOut = (r, history = []) => ({
   player: r.player, playerName: r.player_name, status: r.status, at: r.at, n: r.name, a: r.avatar,
   decidedBy: opt(r.decided_by), decidedAt: opt(r.decided_at), history,
@@ -297,18 +295,18 @@ async function route(p, method, body, me, env, loadSite, url) {
 
   if (p === '/api/profile' && method === 'POST') {
     if (!can(me, 'profile.edit')) return fail('Members only.', 403);
-    const profile = {
-      bio: clean(body.bio, 280),
-      positions: (Array.isArray(body.positions) ? body.positions : []).filter((x) => POSITIONS.includes(x)).slice(0, 3),
-      platform: PLATFORMS.includes(body.platform) ? body.platform : '',
-      updated: Date.now(),
-    };
-    await run(env, `INSERT INTO profiles (user_id, bio, positions, platform, updated) VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT (user_id) DO UPDATE SET bio = excluded.bio, positions = excluded.positions, platform = excluded.platform, updated = excluded.updated`,
-    me.u, profile.bio, JSON.stringify(profile.positions), profile.platform, profile.updated);
-    await log(env, me, 'profile', [profile.positions.join('/'), profile.platform].filter(Boolean).join(' · '));
+    const { profile, error } = await saveProfile(env, me, body); // P2.2 – only the fields sent change
+    if (error) return fail(error);
+    await log(env, me, 'profile', profileSummary(profile));
     if ((await one(env, 'SELECT status FROM claims WHERE user_id = ?', me.u))?.status === 'approved') await rebuildPublic(env);
     return json({ profile });
+  }
+
+  if (p === '/api/member' && method === 'GET') { // P2.1 – hover cards + member profile pages
+    if (!flagOn(env, me, 'profiles')) return fail('Not available yet.', 404);
+    if (!can(me, 'profiles.view')) return fail('Members only.', 403);
+    const card = await memberCard(env, me, String(url.searchParams.get('u') || me.u).slice(0, 24));
+    return card ? json(card) : fail('Member not found', 404);
   }
 
   if (p === '/api/availability') {
@@ -579,10 +577,11 @@ async function getPublic(env) {
   return cached ?? rebuildPublic(env);
 }
 async function rebuildPublic(env) {
-  const rows = await all(env, `SELECT c.player, c.name, c.avatar, p.bio, p.positions, p.platform FROM claims c
+  const rows = await all(env, `SELECT c.user_id, c.player, c.name, c.avatar, p.bio, p.positions, p.platform, p.country FROM claims c
     LEFT JOIN profiles p ON p.user_id = c.user_id WHERE c.status = 'approved'`);
   const claims = Object.fromEntries(rows.map((r) => [r.player, {
-    name: r.name, avatar: r.avatar, bio: opt(r.bio), positions: r.positions ? JSON.parse(r.positions) : undefined, platform: opt(r.platform),
+    id: r.user_id, name: r.name, avatar: r.avatar, bio: opt(r.bio), positions: r.positions ? JSON.parse(r.positions) : undefined, platform: opt(r.platform),
+    country: r.country || undefined,
   }]));
   const doc = { claims, updated: Date.now() };
   if (env.NOREX_KV) await env.NOREX_KV.put('public', JSON.stringify(doc));

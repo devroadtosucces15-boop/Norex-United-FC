@@ -712,6 +712,9 @@ ${table('players', ['Player', 'Clubs', 'Pos', '#OVR', '#Career GP', '#Goals', '#
 if (MEMBER_API) write('members.html', page({ title: `Squad Hub – ${config.siteTitle}`, base: '', active: '', body: `
 ${pageHead('Squad Hub', 'Members only. Log in with Discord – you must be in the NOREX server.', '')}
 <div id="hub" class="hub"><p class="muted">Loading…</p></div>` }));
+// Member profile page (P2.1) – member.html?u=<discord id>, drawn by assets/profile.js
+if (MEMBER_API) write('member.html', page({ title: `Member – ${config.siteTitle}`, base: '', active: '', description: `A NOREX UNITED squad member's profile.`, body: `
+<div id="member-page" class="member-page"><p class="muted">Loading…</p></div>` }));
 
 // Trials / application page
 const need = RECRUIT.positions ?? [];

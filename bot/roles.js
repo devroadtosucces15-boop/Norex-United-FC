@@ -19,6 +19,7 @@ export const PERMS = {
   'hub.use': 'member',
   'claim.request': 'member',
   'profile.edit': 'member',
+  'profiles.view': 'member', // P2.1 – hover cards + member profile pages
   'availability.set': 'member',
   'vote.motm': 'member',
   // Manager portal (built)
