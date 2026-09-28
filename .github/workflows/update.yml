@@ -36,6 +36,12 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
+      - name: Check EA's FC updates (patch notes log, every 6 h)
+        continue-on-error: true
+        run: node scripts/updates.mjs
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
       - name: Commit new data
         id: commit
         run: |

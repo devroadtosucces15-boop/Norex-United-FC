@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, DATA, readJson, loadConfig, num } from './lib.mjs';
 import { lineChart, goalBars, donut, radar, spark } from './charts.mjs';
+import { buildUpdates } from './updates-page.mjs';
 
 const OUT = path.join(ROOT, 'site');
 const config = loadConfig();
@@ -319,6 +320,7 @@ const NAV = [
   ['home', 'index.html', 'Club'], ['squad', 'squad.html', 'Squad'], ['matches', 'matches/index.html', 'Matches'],
   ['stats', 'stats.html', 'Stats'], ['compare', 'compare.html', 'Compare'], ['players', 'players/index.html', 'Players'],
   ['clubs', 'clubs/index.html', 'Clubs'],
+  ['updates', 'updates.html', 'Updates'],
 ];
 
 function page({ title, base, active, body, description, image }) {
@@ -752,6 +754,9 @@ ${RECRUIT.open ? `<p class="about-links"><a class="btn" href="apply.html">👑 A
 <p>${askManager}</p>
 <p class="muted">Tracking ${clubs.size} clubs · ${visiblePlayers.length} players · ${matches.length} archived matches · ${Object.keys(state.scanned ?? {}).length} clubs scanned.</p>
 </div>` }));
+
+// FC 27 updates log + game data (P1.7 / PB.1) – lives in updates-page.mjs.
+buildUpdates({ write, page, pageHead, section, esc, emptyState, config });
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({

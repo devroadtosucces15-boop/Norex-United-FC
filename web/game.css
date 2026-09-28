@@ -1,0 +1,72 @@
+/* FC updates log + game rules (roadmap P1.7 / PB.1). Loaded by the updates page and injected by game.js. */
+.tag.gold{background:color-mix(in srgb,var(--gold) 18%,transparent);border-color:var(--gold);color:var(--gold)}
+
+/* max-level strip */
+.gr-strip{display:flex;flex-wrap:wrap;align-items:center;gap:18px 28px;margin:6px 0 26px;position:relative;overflow:hidden;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--red) 22%,var(--panel)) 0%,var(--panel) 60%);border-color:var(--line2)}
+.gr-strip::after{content:"";position:absolute;inset:0 0 0 auto;width:38%;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(115deg,transparent 0 14px,rgba(255,255,255,.035) 14px 22px)}
+.gr-cap{display:flex;align-items:center;gap:12px}
+.gr-cap small{font:600 12px var(--head,Oswald),sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.gr-cap b{font:700 46px/1 Oswald,sans-serif;color:#fff;text-shadow:0 0 24px color-mix(in srgb,var(--red) 60%,transparent)}
+.gr-meta{display:flex;flex-direction:column;gap:4px;min-width:0}
+.gr-meta code{color:var(--gold)}
+.gr-rules{list-style:none;display:grid;gap:10px;padding:0}
+.gr-rules li{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+
+/* filters */
+.upd-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
+.upd-bar .filter{flex:1 1 260px;margin:0}
+.upd-bar .chip{cursor:pointer;transition:background .2s,border-color .2s,transform .15s}
+.upd-bar .chip:hover{transform:translateY(-1px)}
+.upd-bar .chip.on{background:var(--red);border-color:var(--red);color:#fff}
+
+/* entries: a timeline with a red spine */
+.upd-list{display:grid;gap:16px;position:relative;padding-left:22px}
+.upd-list::before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--red),transparent)}
+.upd{position:relative;display:grid;gap:10px;transition:border-color .2s,transform .2s}
+.upd::before{content:"";position:absolute;left:-22px;top:20px;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--red);box-shadow:0 0 0 4px var(--bg)}
+.upd:hover{border-color:var(--line2);transform:translateX(2px)}
+.upd:target{border-color:var(--red)}
+.upd-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+.upd-head time{font:600 12px Oswald,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.upd-badges{display:flex;flex-wrap:wrap;gap:6px}
+.upd h3{margin:0;font:600 20px/1.25 Oswald,sans-serif;letter-spacing:.02em;color:#fff;text-transform:none}
+.upd h3 a{color:inherit;text-decoration:none}
+.upd-sum{color:#cfd5de;margin:0}
+.upd-build{border-left:3px solid var(--red);padding:10px 12px;background:color-mix(in srgb,var(--red) 7%,transparent);border-radius:0 10px 10px 0}
+.upd-build ul{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:10px}
+.upd-build li{display:flex;gap:10px}
+.upd-build .kic{font-size:18px;line-height:1.2}
+.upd-build q{display:block;margin-top:3px;color:#cfd5de;font-style:italic;font-size:14px}
+.upd-secs summary{cursor:pointer;font-weight:600;color:#e3e7ee;padding:4px 0}
+.upd-secs ol{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:8px}
+.upd-secs li{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.upd-secs li.cat-clubs{border-color:color-mix(in srgb,var(--red) 55%,var(--line))}
+.upd-secs li b{display:block;margin:2px 0}
+.upd-secs li p{margin:2px 0 4px;font-size:14px;color:#cfd5de}
+.upd-cat{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.upd .btn{justify-self:start}
+
+/* manager portal: Game rules */
+.ga h3{margin-top:4px}
+.ga-now{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;padding:14px;margin-bottom:18px;border-radius:12px;border:1px solid var(--line2);
+  background:linear-gradient(120deg,color-mix(in srgb,var(--red) 18%,var(--panel)),var(--panel))}
+.ga-now>div:first-child{display:flex;align-items:center;gap:10px}
+.ga-now small{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ga-now b{font:700 40px/1 Oswald,sans-serif;color:#fff}
+.ga-now .muted{flex:1 1 280px}
+.ga-pend{display:grid;gap:10px}
+.ga-hit{display:grid;gap:8px}
+.ga-hit q{font-style:italic;color:#cfd5de}
+.ga-hit .row,.ga-now .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ga-hit .grow{flex:1}
+.ga-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.ga-form label{display:grid;gap:4px;font-size:13px;font-weight:600;color:#cfd5de}
+.ga-form .wide{grid-column:1/-1}
+.ga-form input,.ga-form textarea{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);min-width:0}
+.ga-form textarea{font:13px ui-monospace,monospace;resize:vertical}
+.ga-form .ga-chk{display:flex;align-items:center;gap:8px;align-self:end}
+.ga-form .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ga-cur td{background:color-mix(in srgb,var(--red) 8%,transparent)}
+@media (max-width:600px){.gr-cap b{font-size:38px}.upd-list{padding-left:16px}.upd::before{left:-16px}.upd-list::before{left:3px}}
