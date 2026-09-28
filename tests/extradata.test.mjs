@@ -87,7 +87,7 @@ t('squad.json carries dri/sa (null before they were kept)', squad.cols.includes(
 t('stats advanced table gets Drb/90', /Drb\/90/.test(page('stats.html')));
 
 // World top 100
-t('leaders page: world table with 100 clubs, escaped names', ((leaders.split('<table id="world"')[1] || '').split('</table>')[0].match(/<tr[ >]/g) || []).length === 101 && leaders.includes('World Club &lt;1&gt;'));
+t('leaders page: world table with 100 clubs, escaped names', ((leaders.split('<table id="world-top"')[1] || '').split('</table>')[0].match(/<tr[ >]/g) || []).length === 101 && leaders.includes('World Club &lt;1&gt;'));
 t('leaders page: SR gap to the cut-off', leaders.includes(`${Math.max(0, 2026 - sr + 1)} SR</b> to break into the world top 100`));
 
 // Calendar
