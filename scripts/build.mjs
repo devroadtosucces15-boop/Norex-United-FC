@@ -15,9 +15,7 @@ const SITE = config.siteUrl?.replace(/\/?$/, '/') ?? '';
 const DISCORD = config.discord?.applyLink || '';
 const RECRUIT = config.recruitment ?? {};
 const MEMBER_API = config.members?.api || '';
-const REPO = config.repoUrl || '';
 const DISCORD_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.3 18.3 0 0 0-5.5 0L8.6 3a19.7 19.7 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18a19.9 19.9 0 0 0 6 3l1.3-2a13 13 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4-2 1 1.3 2a19.8 19.8 0 0 0 6-3c.5-5.2-.8-9.6-3.6-13.6ZM8 15.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.5 8 10.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>';
-const GITHUB_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5Z"/></svg>';
 const CREST_CDN = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
 
 // ---------- helpers ----------
@@ -316,7 +314,7 @@ function page({ title, base, active, body, description, image }) {
 <button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? '<span class="auth-slot"></span>' : ''}</nav></div></header>
 <main class="wrap">${body}</main>
 <footer class="foot"><div class="wrap foot-in"><img src="${base}assets/crest.png" height="70" alt="">
-<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links">${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}${REPO ? `<a href="${esc(REPO)}" target="_blank" rel="noopener">${GITHUB_SVG} Source on GitHub</a>` : ''}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
+<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links">${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
 <div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players and clubs…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
 <script src="${base}assets/app.js" defer></script></body></html>`;
@@ -588,10 +586,12 @@ ${section('How to apply', `<ol class="steps">
 ${RECRUIT.open && DISCORD ? `<p><a class="btn discord big" href="${esc(DISCORD)}" target="_blank" rel="noopener">${DISCORD_SVG} Apply on Discord</a></p><p class="muted small">You'll need a Discord account. Nobody joins the server without admin approval.</p>` : ''}`)}` }));
 
 const linked = Object.values(state.clubs).filter((c) => c.tier === 'linked' || c.tier === 'manual');
-const repo = config.repoUrl ?? '';
+const askManager = DISCORD
+  ? `<a class="btn discord" href="${esc(DISCORD)}" target="_blank" rel="noopener">${DISCORD_SVG} Ask a manager on Discord</a>`
+  : 'Ask a club manager.';
 write('about.html', page({ title: `About – ${config.siteTitle}`, base: '', active: '', body: `${pageHead('About this site', '', '')}
 <div class="prose card">
-${RECRUIT.open || REPO ? `<p class="about-links">${RECRUIT.open ? `<a class="btn" href="apply.html">👑 Apply to join</a> ` : ''}${REPO ? `<a class="btn ghost" href="${esc(REPO)}" target="_blank" rel="noopener">${GITHUB_SVG} GitHub repo</a>` : ''}</p>` : ''}
+${RECRUIT.open ? `<p class="about-links"><a class="btn" href="apply.html">👑 Apply to join</a></p>` : ''}
 <p>This site updates itself about every 10 minutes from EA SPORTS FC's public Pro Clubs data. Nobody enters results by hand.</p>
 <h2>What it tracks</h2>
 <ul><li><b>${esc(config.siteTitle)}</b>: every match, box score, squad and career stat.</li>
@@ -599,9 +599,11 @@ ${RECRUIT.open || REPO ? `<p class="about-links">${RECRUIT.open ? `<a class="btn
 <li><b>Opponents</b>: every club we play gets a page with its squad and record.</li>
 <li><b>Players</b>: a card and profile for anyone who appears in any of the above.</li></ul>
 <h2>Play for another club?</h2>
-<p>If a club of yours isn't showing up yet, add it with the <a href="${esc(repo)}/issues/new?template=add-club.yml">Add a club form</a>. It gets picked up automatically.</p>
+<p>If a club of yours isn't showing up yet, tell a manager its name and we'll add it. Its matches get archived from then on.</p>
+<p>${askManager}</p>
 <h2>Don't want to be listed?</h2>
-<p>Use the <a href="${esc(repo)}/issues/new?template=hide-me.yml">Hide me form</a>, or ask a club admin.</p>
+<p>Send a manager your gamertag and you'll be hidden from every page on the next update.</p>
+<p>${askManager}</p>
 <p class="muted">Tracking ${clubs.size} clubs · ${visiblePlayers.length} players · ${matches.length} archived matches · ${Object.keys(state.scanned ?? {}).length} clubs scanned.</p>
 </div>` }));
 
@@ -630,7 +632,7 @@ write('api/club.json', JSON.stringify({
       ps: Object.entries(m.players?.[homeId] || {}).filter(([pid]) => !players.get(pid)?.hidden).map(([pid, p]) => ({ k: pid, n: p.playername, r: num(p.rating) })) };
   }),
   radarAxes: RADAR.map((a) => a.label),
-  apply: RECRUIT.open ? `${SITE}apply.html` : null, repo: REPO || null,
+  apply: RECRUIT.open ? `${SITE}apply.html` : null,
 }));
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 console.log(`Built ${clubs.size} clubs, ${visiblePlayers.length} players, ${matches.length} matches → site/`);

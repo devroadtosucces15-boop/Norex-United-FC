@@ -175,7 +175,7 @@ async function command(data, site, ctx) {
     case 'site':
       return { embeds: [{
         title: `${club.name} – links`, url: club.url, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: [`🌐 **Website:** ${club.url}`, club.apply && `👑 **Trials / apply:** ${club.apply}`, club.repo && `🛠️ **GitHub:** ${club.repo}`].filter(Boolean).join('\n'),
+        description: [`🌐 **Website:** ${club.url}`, club.apply && `👑 **Trials / apply:** ${club.apply}`].filter(Boolean).join('\n'),
         footer,
       }] };
     default:

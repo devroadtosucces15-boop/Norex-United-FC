@@ -272,7 +272,7 @@ async function main() {
 
 main().catch((e) => {
   console.error(e.message);
-  if (blocked) console.error('EA returned 403 (blocked). See README → "If EA blocks GitHub".');
+  if (blocked) console.error('EA returned 403 (blocked). Run the fetcher from another machine until the block lifts.');
   writeJson(stateFile, state);
   process.exit(1);
 });
