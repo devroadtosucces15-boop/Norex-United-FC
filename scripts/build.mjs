@@ -799,7 +799,10 @@ write('api/club.json', JSON.stringify({
     const l = Object.values(m.players?.[homeId] || {});
     return { id: m.matchId, ts: m.timestamp, opp: clubName(o), oppCrest: crestSrc(o, SITE), gf: num(m.clubs[homeId].goals), ga: num(m.clubs[o].goals), res: result(m.clubs[homeId]),
       scorers: l.filter((p) => num(p.goals)).map((p) => ({ n: p.playername, g: num(p.goals) })), motm: l.find((p) => p.mom === '1')?.playername ?? null, url: `${SITE}matches/${m.matchId}.html`,
-      ps: Object.entries(m.players?.[homeId] || {}).filter(([pid]) => !players.get(pid)?.hidden).map(([pid, p]) => ({ k: pid, n: p.playername, r: num(p.rating) })) };
+      ps: Object.entries(m.players?.[homeId] || {}).filter(([pid]) => !players.get(pid)?.hidden)
+      // ps: per-player line for the bot's "Show my match" card (P7.2) – rating, goals, assists, passes, tackles, shots, saves.
+      .map(([pid, p]) => ({ k: pid, n: p.playername, r: num(p.rating), g: num(p.goals), a: num(p.assists), pm: num(p.passesmade), pa: num(p.passattempts),
+        tm: num(p.tacklesmade), ta: num(p.tackleattempts), sh: num(p.shots), sv: num(p.saves), pos: p.pos ?? '', mom: p.mom === '1' ? 1 : 0 })) };
   }),
   radarAxes: RADAR.map((a) => a.label),
   apply: RECRUIT.open ? `${SITE}apply.html` : null,

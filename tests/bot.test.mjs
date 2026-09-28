@@ -28,9 +28,10 @@ const sample = {
   player: [{ name: 'gamertag', value: players[0].n }],
   compare: [{ name: 'player1', value: players[0].n }, { name: 'player2', value: players[1].n }],
   top: [{ name: 'stat', value: 'rating' }],
+  syncroles: null, // deferred reply – tested in discord.test.mjs (P2.5)
 };
 for (const name of Object.keys(sample)) {
-  if (!registered.includes(name)) continue;
+  if (!registered.includes(name) || !sample[name]) continue;
   await tt(`/${name} answers with an embed`, async () => { const d = await cmd(name, sample[name]); return !!embed(d)?.title && !d.content?.startsWith('⚠️'); });
 }
 t('every registered command has a test here', registered.length >= 7 && registered.every((n) => n in sample));

@@ -6,12 +6,15 @@
 //
 // Env (set by .github/workflows/bot.yml):
 //   GH_DISPATCH_TOKEN  – GitHub token allowed to run this repo's Actions (secret)
-//   DISCORD_BOT_TOKEN  – bot token, used to DM members their notifications (secret, P7.1)
+//   DISCORD_BOT_TOKEN  – bot token: DMs (P7.1), Verified role sync (P2.5) (secret)
 //   DISCORD_PUBLIC_KEY, SITE_URL, GITHUB_REPO – public values in wrangler.toml
 
 import { handleMembers } from './members.js';
 import { updateLive } from './live.js';
 import { notifyCron } from './notify.js';
+import { matchComponents, matchInteraction } from './matchcard.js';
+import { ROLE_HELP, syncAll } from './discordroles.js';
+import { can, discordRole, flagOn } from './roles.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
@@ -50,9 +53,28 @@ export default {
     if (i.type === 1) return json({ type: 1 }); // PING
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
     if (i.type === 4) return json({ type: 8, data: { choices: await autocomplete(i, site, ctx) } });
+    const who = discordUser(env, i);
+    if (i.type === 3 && /^norex:mme?:/.test(i.data?.custom_id ?? '')) { // P7.2 "Show my match" menu + "My match" button
+      try {
+        return json(await matchInteraction(i, site, {
+          load: (f) => load(site, f, ctx),
+          claimOf: (uid) => (env.DB ? env.DB.prepare("SELECT player FROM claims WHERE user_id = ? AND status = 'approved'").bind(uid).first('player') : null),
+          allowed: () => flagOn(env, who, 'discordMatch'),
+        }));
+      } catch (e) {
+        return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
+      }
+    }
+    if (i.type === 2 && i.data.name === 'syncroles') return syncRolesCommand(i, env, ctx, site, who);
     if (i.type === 2) {
       try {
-        return json({ type: 4, data: await command(i.data, site, ctx) });
+        const data = await command(i.data, site, ctx);
+        // P7.2: /last gets the same "Show my match" controls as the auto-posted result.
+        if (i.data.name === 'last' && data.embeds && flagOn(env, who, 'discordMatch')) {
+          const m = (await load(site, 'club', ctx)).matches[0];
+          if (m?.ps?.length) data.components = matchComponents(m.id, m.ps, m.url);
+        }
+        return json({ type: 4, data });
       } catch (e) {
         return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
       }
@@ -73,6 +95,37 @@ async function verify(req, body, publicKey) {
   } catch {
     return false;
   }
+}
+
+// The Discord user behind an interaction, as a permissions user (roles only – `claimed` is not needed here).
+function discordUser(env, i) {
+  const u = i.member?.user ?? i.user;
+  return { u: u?.id, role: u?.id ? discordRole(env, u.id, i.member?.roles ?? []) : 'guest' };
+}
+
+// ---------- P2.5 /syncroles (managers): re-sync the ✅ Verified role for every decided claim ----------
+// Deferred reply (type 5) – the Discord calls can take longer than the 3-second limit – then the result is patched in.
+function syncRolesCommand(i, env, ctx, site, who) {
+  if (!can(who, 'roles.sync') || !flagOn(env, who, 'roleSync')) return json({ type: 4, data: { content: '🔒 Managers only (and role sync is not switched on for you yet).', flags: 64 } });
+  if (!env.DB) return json({ type: 4, data: { content: '⚠️ The member database is not connected.', flags: 64 } });
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      const r = await syncAll(env, (f) => load(site, f, ctx));
+      content = r.error && !r.added && !r.removed
+        ? `⚠️ Role sync failed.\n${ROLE_HELP[r.error] ?? r.error}`
+        : [`🪪 **Role sync done** – ✅ Verified given to **${r.added}**, taken from **${r.removed}**${r.failed ? ` · ⚠️ ${r.failed} failed` : ''}.`,
+          r.positions?.length ? `📍 Position roles used: ${r.positions.join(', ')}` : '📍 No GK / DEF / MID / FWD roles in the server – only ✅ Verified is used (create them to add positions).',
+          r.left ? `⏭️ ${r.left} more to go – run **/syncroles** again.` : '',
+          r.error ? ROLE_HELP[r.error] ?? r.error : ''].filter(Boolean).join('\n');
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    }).catch((e) => console.log('syncroles reply failed', e.message));
+  })());
+  return json({ type: 5, data: { flags: 64 } });
 }
 
 const json = (obj) => new Response(JSON.stringify(obj), { headers: { 'Content-Type': 'application/json' } });

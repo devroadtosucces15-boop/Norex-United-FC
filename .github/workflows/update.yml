@@ -36,6 +36,7 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} # reads approved club requests (P5.6)
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }} # posts results with the "Show my match" menu (P7.2)
 
       - name: Check EA's FC updates (patch notes log, every 6 h)
         continue-on-error: true
