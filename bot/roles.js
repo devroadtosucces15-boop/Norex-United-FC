@@ -41,6 +41,8 @@ export const PERMS = {
   'notes.private': 'manager', // P5.7 – private notes per member / player / trial
   'trials.manage': 'manager', // P1.5 – trial cards, sessions, decisions
   'scout.recommend': 'member', // P5.5 – recommend a player to the managers
+  'leaders.view': 'member', // P4.5 – squad boards (attendance, MOTM votes) on the leaderboards page
+  'hof.manage': 'manager', // P4.6 – induct legends, add club-history moments
   'posts.moderate': 'manager', // P6.1 / P8.3 – pin/remove posts
   'messages.reported': 'manager', // P6.3 – managers see reported messages only
   'messages.all': 'owner', // P6.3 – owner/founder sees every DM and group chat

@@ -13,6 +13,7 @@
 import { getLive } from './live.js';
 import { gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
+import { getHof, honoursRoute } from './honours.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
@@ -194,6 +195,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (request.method === 'POST' && url.pathname === '/api/trials/apply') return cors(env, await applyRoute(request, env, me, loadSite, log));
       if (request.method === 'GET' && url.pathname === '/api/contacts') return cors(env, json(await getContacts(env)));
     }
+    if (url.pathname === '/api/hof' && request.method === 'GET') { // P4.6 – public legends + moments, behind the hallOfFame flag
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'hallOfFame')) return cors(env, fail('Not available yet.', 404));
+      return cors(env, json(await getHof(env, me)));
+    }
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
@@ -367,6 +373,8 @@ async function route(p, method, body, me, env, loadSite, url) {
 
   const rec = await recruitRoute(p, method, body, me, env, loadSite, log, url); // P1.5 trials · P5.5 scouting · P5.7 notes
   if (rec) return rec;
+  const hon = await honoursRoute(p, method, body, me, env, loadSite, log, url); // P4.5 squad boards · P4.6 hall of fame
+  if (hon) return hon;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);
