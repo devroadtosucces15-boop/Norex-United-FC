@@ -2,7 +2,8 @@
 // the static site calls for member features. Data lives in Cloudflare KV (free tier).
 //
 // Env: DISCORD_APP_ID, DISCORD_CLIENT_SECRET (secret), DISCORD_GUILD_ID, ADMIN_IDS (comma list),
-//      MEMBER_ROLE_ID (optional – require a role, not just server membership), SITE_URL, NOREX_KV (KV binding)
+//      ADMIN_ROLE_ID (managers' role – gets the admin portal), MEMBER_ROLE_ID (optional – require a role, not just
+//      server membership), SITE_URL, NOREX_KV (KV binding)
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -99,9 +100,10 @@ async function callback(url, env) {
     : user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
       : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(user.id) >> 22n) % 6n)}.png`;
   const name = clean(member.nick || user.global_name || user.username, 40);
-  const admin = String(env.ADMIN_IDS || '').split(',').map((s) => s.trim()).includes(user.id);
+  const admin = String(env.ADMIN_IDS || '').split(',').map((s) => s.trim()).includes(user.id)
+    || (!!env.ADMIN_ROLE_ID && !!member.roles?.includes(env.ADMIN_ROLE_ID));
   await env.NOREX_KV.put(`user:${user.id}`, JSON.stringify({ n: name, a: avatar }));
-  const session = await seal(env, { u: user.id, n: name, a: avatar, adm: admin, exp: Math.floor(Date.now() / 1000) + 30 * DAY });
+  const session = await seal(env, { u: user.id, n: name, a: avatar, adm: admin, exp: Math.floor(Date.now() / 1000) + (admin ? 7 : 30) * DAY });
   return back(`norex_session=${session}`);
 }
 
