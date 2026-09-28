@@ -360,7 +360,7 @@ if (MAPI) (() => {
     slot.innerHTML = `<div class="acct"><button class="me-btn" type="button" aria-haspopup="true" aria-expanded="false"><img src="${esc(session.a)}" alt=""><span>${esc(session.n)}</span><i>▾</i></button>
 <div class="acct-menu" hidden><div class="acct-head"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><small>${ROLE[myRole][0]}</small></div></div>
 <a href="${hub}#me">👤 My profile</a>${flagOn('myStats', baseRole) ? `<a href="${hub}#stats">📊 My stats</a>` : ''}${profilesOn ? `<a href="${BASE}member.html?u=${encodeURIComponent(session.u)}">🪪 My public profile</a>` : ''}${cached?.player ? `<a href="${BASE}players/${encodeURIComponent(cached.player)}.html">🪪 My player page</a>` : ''}
-${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notifications</a>` : ''}${flagOn('docs', baseRole) ? `<a href="${BASE}docs.html">📚 Club docs</a>` : ''}${flagOn('playStyle', baseRole) ? `<a href="${BASE}playstyle.html">🧠 Play Style</a>` : ''}${flagOn('suggestions', baseRole) ? `<a href="${hub}#ideas">💡 Ideas</a>` : ''}${flagOn('events', baseRole) ? `<a href="${hub}#schedule">🗓️ Schedule</a>` : ''}<a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a>${flagOn('rushLog', baseRole) ? `<a href="${hub}#rush">⚡ Log Rush result</a>` : ''}${session.adm ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
+${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notifications</a>` : ''}${flagOn('docs', baseRole) ? `<a href="${BASE}docs.html">📚 Club docs</a>` : ''}${flagOn('playStyle', baseRole) ? `<a href="${BASE}playstyle.html">🧠 Play Style</a>` : ''}${flagOn('suggestions', baseRole) ? `<a href="${hub}#ideas">💡 Ideas</a>` : ''}${flagOn('awards', baseRole) ? `<a href="${hub}#awards">🏆 Awards</a>` : ''}${flagOn('rushSquads', baseRole) ? `<a href="${hub}#squads">🤝 Rush squads</a>` : ''}${flagOn('events', baseRole) ? `<a href="${hub}#schedule">🗓️ Schedule</a>` : ''}<a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a>${flagOn('rushLog', baseRole) ? `<a href="${hub}#rush">⚡ Log Rush result</a>` : ''}${session.adm ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
 <button type="button" class="acct-out">↩ Log out</button></div></div>`;
     const btn = $('.me-btn', slot), menu = $('.acct-menu', slot);
     btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute('aria-expanded', !menu.hidden); };
@@ -382,6 +382,9 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
   if (newsEl && flagOn('docs', baseRole || 'guest')) loadDocs().then(() => NXDocs.news(newsEl)).catch(() => {});
   // ---------- 🗓️ schedule (P3.1–P3.7): next public event on the home page · hub tab – assets/events.js ----------
   const loadEvents = () => new Promise((ok, no) => (window.NXEvents ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/events.js`, onload: ok, onerror: no }))));
+  // ---------- 🏆 weekly awards (P4.1): hub tab + trophy cabinets on player pages – assets/awards.js ----------
+  const loadAwards = () => new Promise((ok, no) => (window.NXAwards ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/awards.js`, onload: ok, onerror: no }))));
+  if (flagOn('awards', baseRole || 'guest')) $$('.member-badge[data-player]').forEach((el) => loadAwards().then(() => NXAwards.cabinet(el, el.dataset.player)).catch(() => {}));
   const nextEl = $('[data-next-event]');
   if (nextEl && flagOn('events', baseRole || 'guest')) loadEvents().then(() => NXEvents.next(nextEl)).catch(() => {});
 
@@ -438,7 +441,7 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
   const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   const pill = (r) => `<span class="res ${r}">${r}</span>`;
   const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set() };
-  const TABS = [['me', '👤 My NOREX'], ...(flagOn('events', baseRole) ? [['schedule', '🗓️ Schedule']] : []), ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(flagOn('suggestions', baseRole) ? [['ideas', '💡 Ideas']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
+  const TABS = [['me', '👤 My NOREX'], ...(flagOn('events', baseRole) ? [['schedule', '🗓️ Schedule']] : []), ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(flagOn('suggestions', baseRole) ? [['ideas', '💡 Ideas']] : []), ...(flagOn('awards', baseRole) ? [['awards', '🏆 Awards']] : []), ...(flagOn('rushSquads', baseRole) ? [['squads', '🤝 Squads']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
 
   hubEl.innerHTML = `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
 <div class="chipset hub-tabs">${TABS.map(([k, l]) => `<button class="chip" type="button" data-tab="${k}">${l}</button>`).join('')}</div>
@@ -467,7 +470,7 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
       if (tab === S.tab) draw();
     } catch (e) { toast(e.message, true); }
   }
-  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', ideas: () => '<div id="ideas-panel"></div>', schedule: () => '<div id="schedule-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
+  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', ideas: () => '<div id="ideas-panel"></div>', schedule: () => '<div id="schedule-panel"></div>', awards: () => '<div id="awards-panel"></div>', squads: () => '<div id="squads-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
 
   // ----- My NOREX -----
   function viewMe() {
@@ -682,6 +685,10 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
   // Trials funnel, scouting and manager notes (P1.5 / P5.5 / P5.7) live in assets/trials.js, loaded on first use.
   Object.assign(ACT, { 'trial-apply': '👑', 'trial-add': '➕', 'trial-status': '🧭', 'trial-link': '🪪', 'trial-session': '⚽', scout: '🔭', note: '📝', 'note-delete': '🗑' });
   Object.assign(ACT_TXT, { 'trial-apply': 'applied on the Trials page', 'trial-add': 'added a trial card', 'trial-status': 'moved a trial', 'trial-link': 'linked a trial to a player', 'trial-session': 'logged a trial session', scout: 'recommended a player', note: 'wrote a private note', 'note-delete': 'deleted a note' });
+  Object.assign(ACT, { 'squads-prefs': '🤝', 'squads-save': '💾', 'squads-publish': '📣', 'squads-delete': '🗑' });
+  Object.assign(ACT_TXT, { 'squads-prefs': 'picked Rush teammates', 'squads-save': 'saved Rush squads', 'squads-publish': 'published Rush squads', 'squads-delete': 'deleted Rush squads' });
+  Object.assign(ACT, { 'award-vote': '🏆', 'award-category': '🏅', 'award-category-remove': '🗑', 'award-close': '🔒' });
+  Object.assign(ACT_TXT, { 'award-vote': 'voted in the weekly awards', 'award-category': 'added an award', 'award-category-remove': 'retired an award', 'award-close': 'closed the weekly awards' });
   Object.assign(ACT, { 'event-new': '🗓️', 'event-edit': '✏️', 'event-cancel': '🚫', 'event-rsvp': '✅', 'event-checkin': '🟢', 'event-lineup': '🧩', 'event-report': '📋' });
   Object.assign(ACT_TXT, { 'event-new': 'scheduled an event', 'event-edit': 'edited an event', 'event-cancel': 'cancelled an event', 'event-rsvp': 'answered an event', 'event-checkin': 'checked in', 'event-lineup': 'set a lineup', 'event-report': 'shared a session report' });
   Object.assign(ACT, { 'doc-new': '📚', 'doc-edit': '✏️', 'doc-remove': '🗑', 'doc-restore': '↩', 'doc-discord': '💬', 'rules-ack': '📜', 'rules-remind': '🔔', 'playstyle-edit': '🧠', suggest: '💡', 'suggest-status': '🛡️', 'suggest-remove': '🗑' });
@@ -748,6 +755,11 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
     if (ra) loadNotify().then(() => NXNotify.requestsPortal(ra, notifyCtx())).catch(() => toast('Could not load requests – try again', true));
     const sc = $('#schedule-panel', panel); // P3.1–P3.7 schedule, RSVPs, match night – assets/events.js
     if (sc) loadEvents().then(() => NXEvents.schedule(sc, { call, toast, me: { u: session.u, n: session.n, a: session.a } })).catch(() => toast('Could not load the schedule – try again', true));
+    const sq = $('#squads-panel', panel); // P3.5 Rush squad builder – assets/squads.js (+ squadgen.js for managers)
+    if (sq) (window.NXSquads ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/squads.js`, onload: ok, onerror: no }))))
+      .then(() => NXSquads.tab(sq, { call, toast, me: { u: session.u, n: session.n, a: session.a } })).catch(() => toast('Could not load Rush squads – try again', true));
+    const aw = $('#awards-panel', panel); // P4.1 weekly awards – assets/awards.js
+    if (aw) loadAwards().then(() => NXAwards.tab(aw, { call, toast, me: { u: session.u, n: session.n, a: session.a } })).catch(() => toast('Could not load the awards – try again', true));
     const ip = $('#ideas-panel', panel); // P5.4 suggestion box – assets/docs.js
     if (ip) loadDocs().then(() => NXDocs.ideas(ip, { call, toast, me: { u: session.u, n: session.n, a: session.a } })).catch(() => toast('Could not load the ideas – try again', true));
     const rf = $('#rush-form', panel);

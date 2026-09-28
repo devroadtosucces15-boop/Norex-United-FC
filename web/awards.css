@@ -1,0 +1,67 @@
+/* Weekly awards (P4.1): ballot, animated reveal, boards, trophy cabinet. Uses the tokens from style.css. */
+.aw-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 10px}
+.aw-head h3{margin:0}.aw-head p{margin:2px 0 0}.aw-head .btn{margin:0}
+.aw-views{margin:0 0 14px}.aw-views .chip{cursor:pointer}
+.aw-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.aw-cat{display:grid;gap:10px;align-content:start;animation:awIn .3s ease both}
+.aw-cat.voted{border-color:color-mix(in srgb,var(--gold) 55%,var(--line))}
+.aw-cat header{display:flex;align-items:center;gap:10px}
+.aw-cat header div{flex:1}
+.aw-cat h3{margin:0;font:700 18px var(--head);text-transform:uppercase;letter-spacing:.04em}
+.aw-ic{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;font-size:22px;background:rgba(232,193,106,.12);border:1px solid rgba(232,193,106,.35)}
+.aw-mine{margin:0;font-size:14px}
+.aw-noms{display:flex;flex-wrap:wrap;gap:6px;max-height:210px;overflow:auto}
+.aw-noms.dim .aw-nom:not(.on){opacity:.55}
+.aw-nom{display:grid;padding:6px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:#fff;font:600 13px var(--body);cursor:pointer;text-align:left;transition:border-color .15s,transform .15s}
+.aw-nom small{color:var(--muted);font-weight:500;font-size:11px}
+.aw-nom:hover{border-color:#fff;transform:translateY(-1px)}
+.aw-nom.on{background:linear-gradient(135deg,#b8860b,#f5d061);color:#111;border-color:#f5d061}.aw-nom.on small{color:#3a2a05}
+.aw-stats{margin:18px 0 0}.aw-stats h3{margin:0 0 8px}
+.aw-stats>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
+.aw-stat{display:grid;grid-template-columns:auto 1fr;gap:0 8px;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.aw-stat i{grid-row:span 2;font-style:normal;font-size:22px;align-self:center}.aw-stat small{color:var(--muted);font-size:12px}
+.aw-boards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:0 0 14px}
+.aw-boards h3,.aw-potm h3{margin:0 0 8px;font:700 16px var(--head);text-transform:uppercase}
+.aw-boards ol,.aw-potm ul,.aw-weeks ul{margin:0;padding-left:20px}.aw-boards li,.aw-potm li,.aw-weeks li{margin:4px 0}
+.aw-boards em{font-style:normal;color:var(--gold);font-weight:700;margin-left:4px}
+.aw-potm{margin:0 0 12px;border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
+.aw-potm small{color:var(--muted);margin-right:6px}
+.aw-h{margin:10px 0 8px}.aw-weeks{display:grid;gap:8px}.aw-weeks summary{cursor:pointer}
+.aw-tools{margin-top:16px}.aw-tools summary{cursor:pointer;font-weight:700}
+.aw-add{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
+.aw-add label,.aw-ch{display:grid;gap:4px;font:600 12px var(--body);color:var(--muted)}
+.aw-add input,.aw-add select,.aw-ch select{padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:13px var(--body);color-scheme:dark}
+.aw-add input[name=icon]{width:70px}
+.aw-tools .btn{margin:0}
+
+/* the reveal */
+.aw-stage{position:relative;padding:10px 0 4px;overflow:hidden;min-height:260px}
+.aw-spot{--x:50%;position:absolute;inset:-40px;pointer-events:none;background:radial-gradient(circle at var(--x) 45%,rgba(255,240,200,.18),transparent 34%);transition:background-position .4s}
+.aw-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;position:relative}
+.aw-card{perspective:900px;height:200px;cursor:pointer;outline:none}
+.aw-flip{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+.aw-card.open .aw-flip{transform:rotateY(180deg)}
+.aw-back,.aw-front{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:6px;padding:12px;border-radius:14px;backface-visibility:hidden;text-align:center}
+.aw-back{background:repeating-linear-gradient(135deg,#1a0808 0 12px,#240b0b 12px 24px);border:2px solid var(--red)}
+.aw-back span{font-size:34px}.aw-back b{font:700 15px var(--head);text-transform:uppercase}.aw-back small{color:var(--muted)}
+.aw-card:focus-visible .aw-back{box-shadow:0 0 0 3px var(--gold)}
+.aw-front{transform:rotateY(180deg);background:linear-gradient(160deg,#f5d061,#b8860b);color:#1d1403;border:2px solid #ffe8a3;box-shadow:0 10px 30px rgba(232,193,106,.35)}
+.aw-front .aw-ic{background:rgba(0,0,0,.12);border-color:rgba(0,0,0,.2)}
+.aw-front small{font:700 11px var(--body);text-transform:uppercase;letter-spacing:.1em}
+.aw-front b{font:700 20px/1.1 var(--head);text-transform:uppercase}
+.aw-front em{font-style:normal;font-size:12px;font-weight:700}
+.aw-hint{text-align:center;margin:10px 0 0}
+.aw-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.aw-confetti i{position:absolute;top:-10px;left:var(--x);width:7px;height:12px;background:var(--c);border-radius:2px;animation:awFall var(--d) ease-in var(--delay) forwards}
+@keyframes awFall{to{transform:translateY(320px) rotate(var(--r));opacity:0}}
+@keyframes awIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* trophy cabinet (player pages + profiles) */
+.aw-cabinet{display:grid;gap:6px;margin:10px 0 0}
+.aw-cabinet>b{font:700 13px var(--head);text-transform:uppercase;letter-spacing:.06em}
+.aw-cabinet>b em{font-style:normal;font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(232,193,106,.2);color:var(--gold)}
+.aw-cabinet>div{display:flex;flex-wrap:wrap;gap:6px}
+.aw-trophy{display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;background:rgba(232,193,106,.12);border:1px solid rgba(232,193,106,.4);font:600 12px var(--body)}
+.aw-trophy i{font-style:normal}.aw-trophy em{font-style:normal;color:var(--gold)}
+@media (max-width:560px){.aw-card{height:170px}.aw-front b{font-size:17px}}
+@media (prefers-reduced-motion:reduce){.aw-flip{transition:none}.aw-cat{animation:none}}

@@ -33,7 +33,8 @@ export const PERMS = {
   'rush.confirm': 'manager', // P0.4
   'feedback.send': 'claimed', // P4.4 – claimed → claimed players
   'feedback.authors': 'manager', // P4.4 – who wrote anonymous feedback
-  'lineup.unlock': 'claimed', // P3.x – claimed + Rush positions set
+  'lineup.unlock': 'claimed', // P3.5 – Rush squad preferences (claimed + Rush positions set)
+  'squads.manage': 'manager', // P3.5 – generate / edit / publish Rush squads, see everyone's preferences
   'events.manage': 'manager', // P3.1 – create / edit / cancel events, quick lineup (P3.7), share session reports
   'events.view': 'member', // P3.1 – schedule in the Squad Hub (+ session reports, P3.7)
   'events.rsvp': 'member', // P3.2 – ✅ ❔ ❌ per event
@@ -65,6 +66,8 @@ export const PERMS = {
   'requests.decide': 'manager', // P5.6 – approve / reject / undo requests
   'badges.give': 'member', // P2.3 – give teammates community badges (tags are part of profile.edit)
   'badges.remove': 'manager', // P2.3 – remove abusive badges (members can remove badges on their own profile)
+  'awards.vote': 'member', // P4.1 – weekly award ballots, boards
+  'awards.manage': 'manager', // P4.1 – fun categories, Discord channel, close a week early
   'roles.sync': 'manager', // P2.5 – /syncroles: re-sync the ✅ Verified Discord role for every claim
 };
 

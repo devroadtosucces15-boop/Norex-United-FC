@@ -20,6 +20,8 @@ import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
 import { eventsRoute, publicEvents, weekEvents } from './events.js';
+import { awardsRoute, trophies } from './awards.js';
+import { squadsRoute } from './squads.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -219,6 +221,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (me) me.role = await currentRole(env, me);
       if (!flagOn(env, me, 'events')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await publicEvents(env)));
+    }
+    if (url.pathname === '/api/awards/player' && request.method === 'GET') { // P4.1 – trophy cabinet on public player pages
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'awards')) return cors(env, fail('Not available yet.', 404));
+      return cors(env, json(await trophies(env, url.searchParams.get('k'))));
     }
     if (url.pathname === '/api/docs' && request.method === 'GET') { // P5.2 – guests see items marked public, behind the docs flag
       if (me) me.role = await currentRole(env, me);
@@ -464,6 +471,10 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (kno) return kno;
   const evt = await eventsRoute(p, method, body, me, env, log, loadSite, url); // P3.1 events · P3.2 RSVPs · P3.7 match night
   if (evt) return evt;
+  const awd = await awardsRoute(p, method, body, me, env, loadSite, log, url); // P4.1 weekly awards
+  if (awd) return awd;
+  const sqd = await squadsRoute(p, method, body, me, env, log); // P3.5 Rush squad builder
+  if (sqd) return sqd;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

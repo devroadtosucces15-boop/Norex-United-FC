@@ -33,6 +33,7 @@ export const TYPES = {
   request: { icon: '📨', label: 'My club & privacy requests', def: 'dm' },
   idea: { icon: '💡', label: 'Replies to my suggestions', def: 'site' },
   event: { icon: '📅', label: 'New events, changes and session reports', def: 'dm' },
+  award: { icon: '🏆', label: 'Weekly awards – results and my wins', def: 'site' },
   queue: { icon: '🛡️', label: 'Manager to-dos (new claims, trials, Rush results, requests)', def: 'site', role: 'manager' },
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },
 };
