@@ -5,7 +5,8 @@
 //      ADMIN_ROLE_ID (managers' role – gets the admin portal), OWNER_ROLE_ID (Founder role – owner tier), MEMBER_ROLE_ID (optional – require a role, not just
 //      server membership), SITE_URL, DB (D1 binding – member data), NOREX_KV (KV binding – `public` cache only)
 //
-// Member data lives in D1 (tables in bot/migrations). KV keeps only the `public` document read by player pages.
+// Member data lives in D1 (tables in bot/migrations). KV keeps only the `public` (player-page badges) and `rush`
+// (confirmed Rush results) caches read by the public pages.
 // Data saved by the first (KV-only) version is copied into D1 once, on the first request after the switch.
 // Who may do what: bot/roles.js (can(user, action)).
 
@@ -16,6 +17,8 @@ const DAY = 86400;
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
 const PLATFORMS = ['PS5', 'Xbox', 'PC'];
 const STATUSES = ['yes', 'maybe', 'no'];
+const RUSH_POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
+const RUSH_DAILY = 10; // submissions per member per day
 
 const b64url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64url = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
@@ -176,6 +179,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     await migrateKV(env);
     if (url.pathname === '/auth/callback') return callback(url, env);
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
+    if (url.pathname === '/api/rush' && request.method === 'GET') return cors(env, json(await getRushPublic(env)));
     const me = await unseal(env, (request.headers.get('Authorization') || '').replace(/^Bearer /, ''));
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
@@ -338,6 +342,8 @@ async function route(p, method, body, me, env, loadSite) {
     return json({ matches: recent.map((m, i) => voteView(m, docs[i], me)) });
   }
 
+  if (p.startsWith('/api/rush')) return rushRoute(p, method, body, me, env, loadSite);
+
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);
     if (p === '/api/admin/claims' && method === 'POST') {
@@ -409,6 +415,134 @@ function voteView(m, doc, me) {
   const tally = {};
   for (const v of Object.values(doc)) tally[v.p] = (tally[v.p] || 0) + 1;
   return { id: m.id, opp: m.opp, gf: m.gf, ga: m.ga, res: m.res, ts: m.ts, players: m.ps || [], tally, mine: doc[me.u]?.p ?? null, total: Object.keys(doc).length };
+}
+
+// ---------- Rush results (P0.4): members log, managers confirm ----------
+const rushOut = (r, ps) => ({
+  id: r.id, date: r.date, opp: r.opponent, oppId: opt(r.opp_club_id), gf: r.gf, ga: r.ga, res: r.gf > r.ga ? 'W' : r.gf < r.ga ? 'L' : 'D',
+  shot: opt(r.shot), note: opt(r.note), status: r.status, by: { id: r.by_id, n: r.by_name, a: r.by_avatar }, at: r.at,
+  decidedBy: opt(r.decided_by), decidedAt: opt(r.decided_at),
+  players: ps.map((x) => ({ k: x.player || undefined, n: x.name, pos: x.pos, g: x.goals, a: x.assists, r: x.rating ?? undefined, motm: !!x.motm })),
+});
+async function rushMatches(env, where, ...args) {
+  const rows = await all(env, `SELECT * FROM rush_matches WHERE ${where} ORDER BY date DESC, id DESC LIMIT 500`, ...args);
+  if (!rows.length) return [];
+  const ids = rows.map((r) => r.id);
+  const ps = await all(env, `SELECT * FROM rush_players WHERE match_id IN (${marks(ids.length)}) ORDER BY slot`, ...ids);
+  const by = {};
+  for (const x of ps) (by[x.match_id] ??= []).push(x);
+  return rows.map((r) => rushOut(r, by[r.id] ?? []));
+}
+// Confirmed matches, cached as one KV document (read by the Matches, player and Stats pages).
+async function getRushPublic(env) {
+  const cached = env.NOREX_KV && (await env.NOREX_KV.get('rush', 'json'));
+  return cached ?? rebuildRush(env);
+}
+async function rebuildRush(env) {
+  const matches = (await rushMatches(env, "status = 'confirmed'")).map(({ status, by, at, decidedBy, decidedAt, ...m }) => m);
+  const doc = { matches, updated: Date.now() };
+  if (env.NOREX_KV) await env.NOREX_KV.put('rush', JSON.stringify(doc));
+  return doc;
+}
+async function rushQueue(env, me) {
+  const [mine, pending, recent] = await Promise.all([
+    rushMatches(env, 'by_id = ? AND at > ?', me.u, Date.now() - 60 * DAY * 1000),
+    can(me, 'rush.confirm') ? rushMatches(env, "status = 'pending'") : [],
+    can(me, 'rush.confirm') ? rushMatches(env, "status != 'pending' AND decided_at > ?", Date.now() - 30 * DAY * 1000) : [],
+  ]);
+  return { mine, pending, recent, canConfirm: can(me, 'rush.confirm') };
+}
+const int = (v, min, max) => { const n = Number(v); return Number.isInteger(n) && n >= min && n <= max ? n : null; };
+
+// Validates a submitted match → { m, ps } or { error }.
+async function readRush(body, loadSite) {
+  const today = new Date(Date.now() + 14 * 3600e3).toISOString().slice(0, 10); // allow any timezone's "today"
+  const oldest = new Date(Date.now() - 365 * DAY * 1000).toISOString().slice(0, 10);
+  const date = String(body.date ?? '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > today || date < oldest) return { error: 'Pick the date the match was played (within the last year).' };
+  const opponent = clean(body.opponent, 60);
+  if (opponent.length < 2) return { error: 'Enter the opponent club.' };
+  const gf = int(body.gf, 0, 40), ga = int(body.ga, 0, 40);
+  if (gf === null || ga === null) return { error: 'Enter the final score.' };
+  let shot = clean(body.shot, 300);
+  if (shot) { try { const u = new URL(shot); if (u.protocol !== 'https:') throw 0; shot = u.href; } catch { return { error: 'The screenshot link must start with https://' }; } }
+  const [players, clubs] = await Promise.all([loadSite('players'), loadSite('clubs').catch(() => [])]);
+  const squad = new Map(players.filter((x) => x.home).map((x) => [x.k, x]));
+  const list = (Array.isArray(body.players) ? body.players : []).slice(0, 5);
+  const ps = [];
+  for (const x of list) {
+    const pl = x?.k ? squad.get(String(x.k)) : null;
+    if (x?.k && !pl) return { error: 'One of the players is not in the NOREX squad.' };
+    const name = pl ? pl.n : clean(x?.n, 40);
+    if (!name) continue;
+    if (pl && ps.some((y) => y.player === pl.k)) return { error: `${pl.n} is listed twice.` };
+    const goals = int(x.g ?? 0, 0, 40), assists = int(x.a ?? 0, 0, 40);
+    if (goals === null || assists === null) return { error: `Check ${name}'s goals and assists.` };
+    let rating = null;
+    if (x.r !== undefined && x.r !== null && x.r !== '') {
+      rating = Math.round(Number(x.r) * 10) / 10;
+      if (!(rating >= 1 && rating <= 10)) return { error: `${name}'s rating must be between 1 and 10.` };
+    }
+    ps.push({ player: pl?.k ?? '', name, pos: RUSH_POS.includes(x.pos) ? x.pos : '', goals, assists, rating, motm: x.motm ? 1 : 0 });
+  }
+  if (!ps.length) return { error: 'Add at least one NOREX player.' };
+  if (ps.filter((x) => x.motm).length > 1) return { error: 'Only one man of the match.' };
+  if (ps.reduce((s, x) => s + x.goals, 0) > gf) return { error: `Player goals add up to more than our ${gf}.` };
+  if (ps.reduce((s, x) => s + x.assists, 0) > gf) return { error: `Assists add up to more than our ${gf} goals.` };
+  const club = clubs.find((c) => c.n.toLowerCase() === opponent.toLowerCase());
+  return { m: { date, opponent: club?.n ?? opponent, oppId: club ? String(club.id) : null, gf, ga, shot: shot || null, note: clean(body.note, 200) || null }, ps };
+}
+
+async function rushRoute(p, method, body, me, env, loadSite) {
+  if (p === '/api/rush/queue' && method === 'GET') return json(await rushQueue(env, me));
+
+  if (p === '/api/rush' && method === 'POST') {
+    if (!can(me, 'rush.submit')) return fail('Members only.', 403);
+    const today = (await one(env, 'SELECT COUNT(*) AS n FROM rush_matches WHERE by_id = ? AND at > ?', me.u, Date.now() - DAY * 1000)).n;
+    if (today >= RUSH_DAILY) return fail(`That's ${RUSH_DAILY} Rush results today – try again tomorrow.`, 429);
+    const { m, ps, error } = await readRush(body, loadSite);
+    if (error) return fail(error);
+    const dupe = await one(env, "SELECT id FROM rush_matches WHERE date = ? AND lower(opponent) = lower(?) AND gf = ? AND ga = ? AND status IN ('pending', 'confirmed')", m.date, m.opponent, m.gf, m.ga);
+    if (dupe && !body.force) return fail('This result is already logged (same day, opponent and score). Log it again only if it was a separate match.', 409);
+    // Managers' own results count straight away unless they ask for a review.
+    const confirm = can(me, 'rush.confirm') && body.review !== true;
+    const at = Date.now();
+    const r = await run(env, `INSERT INTO rush_matches (date, opponent, opp_club_id, gf, ga, shot, note, status, by_id, by_name, by_avatar, at, decided_by, decided_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, m.date, m.opponent, m.oppId, m.gf, m.ga, m.shot, m.note,
+    confirm ? 'confirmed' : 'pending', me.u, me.n, me.a, at, confirm ? me.n : null, confirm ? at : null);
+    const id = r.meta.last_row_id;
+    await env.DB.batch(ps.map((x, i) => env.DB.prepare('INSERT INTO rush_players (match_id, slot, player, name, pos, goals, assists, rating, motm) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(id, i, x.player, x.name, x.pos, x.goals, x.assists, x.rating, x.motm)));
+    await log(env, me, confirm ? 'rush-logged' : 'rush-submit', `${m.gf}–${m.ga} vs ${m.opponent} · ${m.date}`);
+    if (confirm) await rebuildRush(env);
+    return json({ id, status: confirm ? 'confirmed' : 'pending', ...await rushQueue(env, me) });
+  }
+
+  if (p === '/api/rush/decide' && method === 'POST') {
+    const r = await one(env, 'SELECT * FROM rush_matches WHERE id = ?', Number(body.id) || 0);
+    if (!r) return fail('Rush result not found', 404);
+    const label = `${r.gf}–${r.ga} vs ${r.opponent} · ${r.date}`;
+    if (body.action === 'withdraw') { // the submitter takes back their own pending result
+      if (r.by_id !== me.u || r.status !== 'pending') return fail('Only your own pending results can be withdrawn.', 403);
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM rush_players WHERE match_id = ?').bind(r.id),
+        env.DB.prepare('DELETE FROM rush_matches WHERE id = ?').bind(r.id),
+      ]);
+      await log(env, me, 'rush-withdraw', label);
+      return json(await rushQueue(env, me));
+    }
+    if (!can(me, 'rush.confirm')) return fail('Managers only.', 403);
+    const next = { confirm: 'confirmed', reject: 'rejected', remove: 'removed' }[body.action];
+    if (!next) return fail('Unknown action');
+    if (next === 'removed' ? r.status !== 'confirmed' : r.status !== 'pending' && !(r.status === 'rejected' && next === 'confirmed')) {
+      return fail(`This result is already ${r.status}.`, 409);
+    }
+    await run(env, 'UPDATE rush_matches SET status = ?, decided_by = ?, decided_at = ? WHERE id = ?', next, me.n, Date.now(), r.id);
+    await log(env, me, `rush-${next}`, `${label}${r.by_id !== me.u ? ` (by ${r.by_name})` : ''}`);
+    if (next === 'confirmed' || r.status === 'confirmed') await rebuildRush(env);
+    return json(await rushQueue(env, me));
+  }
+  return fail('Not found', 404);
 }
 
 // ---------- public data (verified badges on player pages) ----------

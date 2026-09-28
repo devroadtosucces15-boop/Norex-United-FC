@@ -302,7 +302,7 @@ if (MAPI) (() => {
     slot.innerHTML = `<div class="acct"><button class="me-btn" type="button" aria-haspopup="true" aria-expanded="false"><img src="${esc(session.a)}" alt=""><span>${esc(session.n)}</span><i>▾</i></button>
 <div class="acct-menu" hidden><div class="acct-head"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><small>${ROLE[myRole][0]}</small></div></div>
 <a href="${hub}#me">👤 My profile</a>${cached?.player ? `<a href="${BASE}players/${encodeURIComponent(cached.player)}.html">🪪 My player page</a>` : ''}
-<a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a>${session.adm ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
+<a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a><a href="${hub}#rush">⚡ Log Rush result</a>${session.adm ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
 <button type="button" class="acct-out">↩ Log out</button></div></div>`;
     const btn = $('.me-btn', slot), menu = $('.acct-menu', slot);
     btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute('aria-expanded', !menu.hidden); };
@@ -340,8 +340,8 @@ if (MAPI) (() => {
   const ICON = { yes: '✅', maybe: '❔', no: '❌' };
   const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   const pill = (r) => `<span class="res ${r}">${r}</span>`;
-  const S = { tab: 'me', me: null, players: [], pub: {}, avail: null, votes: null, admin: null, adminTab: 'claims', sel: new Set() };
-  const TABS = [['me', '👤 My NOREX'], ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
+  const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set() };
+  const TABS = [['me', '👤 My NOREX'], ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ['rush', '⚡ Rush'], ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
 
   hubEl.innerHTML = `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
 <div class="chipset hub-tabs">${TABS.map(([k, l]) => `<button class="chip" type="button" data-tab="${k}">${l}</button>`).join('')}</div>
@@ -363,11 +363,12 @@ if (MAPI) (() => {
     try {
       if (tab === 'availability') S.avail = await call('/api/availability');
       if (tab === 'votes') S.votes = await call('/api/vote');
+      if (tab === 'rush' || tab === 'manager') S.rush = await call('/api/rush/queue');
       if (tab === 'manager') S.admin = await call('/api/admin/overview');
       if (tab === S.tab) draw();
     } catch (e) { toast(e.message, true); }
   }
-  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, manager: viewManager }[S.tab])(); bind(); };
+  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, manager: viewManager }[S.tab])(); bind(); };
 
   // ----- My NOREX -----
   function viewMe() {
@@ -434,9 +435,86 @@ if (MAPI) (() => {
     try { S.votes = await call('/api/vote', { match: matchId, player: removing ? null : player }); draw(); toast(removing ? 'Vote removed' : 'Vote saved'); } catch (e) { S.votes = prev; draw(); toast(e.message, true); }
   }
 
+  // ----- Rush logging (P0.4): members submit, managers confirm -----
+  const RSTAT = { pending: ['⏳ Waiting for a manager', ''], confirmed: ['✅ Confirmed', 'home'], rejected: ['⛔ Rejected', ''], removed: ['🗑 Removed', ''] };
+  const rushTitle = (m) => `${pill(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b> <small class="muted">${esc(fmtDay(m.date))}</small>`;
+  const rushPlayers = (m) => `<ul class="rush-ps">${m.players.map((p) => `<li><b>${esc(p.n)}</b>${p.k ? '' : ' <small class="muted">guest</small>'}${p.pos ? ` <span class="tag">${esc(p.pos)}</span>` : ''} ${p.g ? `⚽${p.g > 1 ? `×${p.g}` : ''} ` : ''}${p.a ? `🎯${p.a > 1 ? `×${p.a}` : ''} ` : ''}${p.r ? `<small>${Number(p.r).toFixed(1)}</small>` : ''}${p.motm ? ' ⭐' : ''}</li>`).join('')}</ul>
+${m.shot || m.note ? `<p class="small muted">${m.note ? esc(m.note) : ''}${m.shot && m.note ? ' · ' : ''}${m.shot ? `<a href="${esc(m.shot)}" target="_blank" rel="noopener nofollow ugc">📷 Screenshot</a>` : ''}</p>` : ''}`;
+  const rushRow = (i, pre = {}) => {
+    const squad = S.players.filter((p) => p.home).sort((a, b) => a.n.localeCompare(b.n));
+    return `<div class="rush-row" data-row="${i}"><select data-f="k" aria-label="Player ${i + 1}"><option value="">${i ? '– empty –' : 'Choose player…'}</option>${squad.map((p) => `<option value="${esc(p.k)}"${pre.k === p.k ? ' selected' : ''}>${esc(p.n)}</option>`).join('')}<option value="__guest">Guest (not in squad)…</option></select>
+<input data-f="n" placeholder="Guest name" maxlength="40" hidden aria-label="Guest name">
+<select data-f="pos" aria-label="Position"><option value="">Pos</option>${POS.map((x) => `<option${pre.pos === x ? ' selected' : ''}>${x}</option>`).join('')}</select>
+<label>G<input data-f="g" type="number" min="0" max="40" value="0" inputmode="numeric"></label><label>A<input data-f="a" type="number" min="0" max="40" value="0" inputmode="numeric"></label>
+<label>Rating<input data-f="r" type="number" min="1" max="10" step="0.1" placeholder="–" inputmode="decimal"></label><label class="motm" data-tip="Man of the match"><input type="radio" name="rush-motm" data-f="motm">⭐</label></div>`;
+  };
+  function viewRush() {
+    if (!S.rush) return UI.skeleton('cards', 2);
+    const claim = S.me?.claim?.status === 'approved' ? S.me.claim.player : '';
+    const myPos = S.me?.profile?.positions?.[0] || '';
+    const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const mine = S.rush.mine;
+    const waiting = S.rush.pending?.length || 0;
+    return `<div class="grid2 rush-hub"><form class="card rush-form" id="rush-form" novalidate><h3>⚡ Log a Rush result</h3>
+<p class="muted small">EA doesn't share Rush matches, so we log them ourselves. ${S.rush.canConfirm ? 'As a manager, your result counts straight away.' : 'A manager checks it, then it shows on the Matches, player and Stats pages.'}</p>
+<div class="rush-top"><label class="fld">Date<input type="date" id="rf-date" value="${today}" max="${today}" required></label>
+<label class="fld">Opponent<input id="rf-opp" list="rf-clubs" maxlength="60" placeholder="Club name" autocomplete="off" required></label><datalist id="rf-clubs">${S.clubs.map((c) => `<option value="${esc(c.n)}">`).join('')}</datalist></div>
+<div class="rush-score"><label>NOREX<input type="number" id="rf-gf" min="0" max="40" inputmode="numeric" required></label><i>–</i><label>Them<input type="number" id="rf-ga" min="0" max="40" inputmode="numeric" required></label></div>
+<label class="fld">Our players <small>(up to 5 · goals, assists, rating optional)</small></label><div class="rush-rows">${[0, 1, 2, 3, 4].map((i) => rushRow(i, i ? {} : { k: claim, pos: myPos })).join('')}</div>
+<label class="fld">Screenshot link <small>(optional)</small><input type="url" id="rf-shot" maxlength="300" placeholder="https://…"></label>
+<label class="fld">Note <small>(optional)</small><input id="rf-note" maxlength="200" placeholder="Anything worth remembering"></label>
+<button class="btn" type="submit" id="rf-send">${S.rush.canConfirm ? '✅ Save result' : '📨 Send for confirmation'}</button></form>
+<div class="card"><h3>My Rush results</h3>${S.rush.canConfirm && waiting ? `<p><button class="btn ghost sm" type="button" data-go-rush>🛡️ ${waiting} waiting for confirmation →</button></p>` : ''}
+${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item st-${m.status}"><div class="vote-head">${rushTitle(m)}</div>${rushPlayers(m)}
+<div class="row"><span class="tag ${RSTAT[m.status][1]}">${RSTAT[m.status][0]}</span><small class="muted">${m.decidedBy && m.status !== 'pending' ? `${esc(m.decidedBy)} · ${ago(m.decidedAt)}` : `sent ${ago(m.at)}`}</small>${m.status === 'pending' ? `<button class="btn ghost sm" type="button" data-rush="withdraw" data-id="${m.id}">Withdraw</button>` : ''}</div></div>`).join('')}</div>`
+    : UI.empty({ icon: '⚡', title: 'Nothing logged yet', text: 'Played Rush tonight? Log the result and it counts once a manager confirms it.' })}
+<p class="small"><a href="${BASE}matches/index.html#rush">See all Rush results →</a></p></div></div>`;
+  }
+  function readRushForm() {
+    const v = (id) => $(id).value.trim();
+    const players = $$('.rush-row').map((row) => {
+      const f = (k) => $(`[data-f="${k}"]`, row);
+      const k = f('k').value;
+      if (!k) return null;
+      return { ...(k === '__guest' ? { n: f('n').value.trim() } : { k }), pos: f('pos').value, g: +f('g').value || 0, a: +f('a').value || 0, r: f('r').value === '' ? null : +f('r').value, motm: f('motm').checked };
+    }).filter(Boolean);
+    return { date: v('#rf-date'), opponent: v('#rf-opp'), gf: v('#rf-gf') === '' ? null : +v('#rf-gf'), ga: v('#rf-ga') === '' ? null : +v('#rf-ga'), shot: v('#rf-shot'), note: v('#rf-note'), players };
+  }
+  async function sendRush(body) {
+    const btn = $('#rf-send');
+    btn.disabled = true;
+    try {
+      const r = await call('/api/rush', body);
+      S.rush = r;
+      draw();
+      toast(r.status === 'confirmed' ? 'Rush result saved' : 'Sent – a manager will confirm it');
+    } catch (e) {
+      btn.disabled = false;
+      if (/already logged/.test(e.message) && (await UI.confirm({ title: 'Already logged?', text: `${e.message}`, ok: 'Log it anyway' }))) return sendRush({ ...body, force: true });
+      toast(e.message, true);
+    }
+  }
+  async function decideRush(id, action) {
+    const all = [...S.rush.mine, ...(S.rush.pending || []), ...(S.rush.recent || [])];
+    const m = all.find((x) => x.id === id);
+    if (!m) return;
+    if (action !== 'confirm' && !(await UI.confirm({ title: { reject: 'Reject this result?', remove: 'Remove this result?', withdraw: 'Withdraw your result?' }[action], text: `${m.gf}–${m.ga} vs ${m.opp} (${fmtDay(m.date)}).${action === 'remove' ? ' It stops counting on the Matches, player and Stats pages.' : ''}`, ok: { reject: 'Reject', remove: 'Remove', withdraw: 'Withdraw' }[action], danger: true }))) return;
+    const prev = S.rush;
+    // optimistic: move it out of the queue
+    S.rush = { ...prev, mine: action === 'withdraw' ? prev.mine.filter((x) => x.id !== id) : prev.mine, pending: (prev.pending || []).filter((x) => x.id !== id),
+      recent: action === 'withdraw' ? prev.recent : [{ ...m, status: { confirm: 'confirmed', reject: 'rejected', remove: 'removed' }[action], decidedBy: session.n, decidedAt: Date.now() }, ...(prev.recent || []).filter((x) => x.id !== id)] };
+    draw();
+    try {
+      S.rush = await call('/api/rush/decide', { id, action });
+      if (S.admin) S.admin.activity.unshift({ at: Date.now(), u: session.u, n: session.n, a: session.a, type: `rush-${{ confirm: 'confirmed', reject: 'rejected', remove: 'removed', withdraw: 'withdraw' }[action]}`, detail: `${m.gf}–${m.ga} vs ${m.opp} · ${m.date}` });
+      draw();
+      toast({ confirm: 'Confirmed – it counts now', reject: 'Rejected', remove: 'Removed', withdraw: 'Withdrawn' }[action]);
+    } catch (e) { S.rush = prev; draw(); toast(e.message, true); }
+  }
+
   // ----- Manager portal -----
-  const ACT = { login: '🔑', claim: '🪪', 'claim-cancel': '↩', 'claim-approved': '✅', 'claim-rejected': '⛔', 'claim-unlinked': '🔓', profile: '✏️', availability: '📅', vote: '⭐', 'vote-remove': '☆' };
-  const ACT_TXT = { login: 'logged in', claim: 'claimed', 'claim-cancel': 'cancelled their claim', 'claim-approved': 'approved claim', 'claim-rejected': 'rejected claim', 'claim-unlinked': 'unlinked', profile: 'updated profile', availability: 'set availability', vote: 'voted MOTM', 'vote-remove': 'removed MOTM vote' };
+  const ACT = { login: '🔑', claim: '🪪', 'claim-cancel': '↩', 'claim-approved': '✅', 'claim-rejected': '⛔', 'claim-unlinked': '🔓', profile: '✏️', availability: '📅', vote: '⭐', 'vote-remove': '☆', 'rush-submit': '⚡', 'rush-logged': '⚡', 'rush-confirmed': '✅', 'rush-rejected': '⛔', 'rush-removed': '🗑', 'rush-withdraw': '↩' };
+  const ACT_TXT = { login: 'logged in', claim: 'claimed', 'claim-cancel': 'cancelled their claim', 'claim-approved': 'approved claim', 'claim-rejected': 'rejected claim', 'claim-unlinked': 'unlinked', profile: 'updated profile', availability: 'set availability', vote: 'voted MOTM', 'vote-remove': 'removed MOTM vote', 'rush-submit': 'sent a Rush result', 'rush-logged': 'logged a Rush result', 'rush-confirmed': 'confirmed Rush result', 'rush-rejected': 'rejected Rush result', 'rush-removed': 'removed Rush result', 'rush-withdraw': 'withdrew a Rush result' };
   function viewManager() {
     if (!S.admin) return UI.skeleton('rows', 5);
     const A = S.admin;
@@ -446,10 +524,15 @@ if (MAPI) (() => {
     const users = Object.entries(A.users).sort(([, a], [, b]) => b.last - a.last);
     // Member chip with hover card: claimed player + role from the admin overview.
     const mem = (id, u, sub, size = 26) => { const c = A.claims[id]; const pl = c?.status === 'approved' ? c : null; return UI.member({ id, n: u.n, a: u.a, sub: sub ?? (pl ? `🪪 ${pl.playerName}` : ''), player: pl?.player }, { size }); };
-    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity']];
+    const rq = S.rush?.pending || [];
+    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`], ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity']];
     const body = {
       claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'New player claims show up here for approval.' })}
 <h3 style="margin-top:24px">History</h3>${decided.length ? `<div class="tbl"><table><thead><tr><th>Member</th><th>Player</th><th>Status</th><th>By</th><th>When</th><th></th></tr></thead><tbody>${decided.map((c) => `<tr><td>${mem(c.user, c)}</td><td><a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a></td><td><span class="tag${c.status === 'approved' ? ' home' : ''}">${esc(c.status)}</span></td><td>${esc(c.decidedBy || '–')}</td><td>${c.decidedAt ? ago(c.decidedAt) : '–'}</td><td>${c.status === 'approved' ? `<button class="btn ghost sm" data-claim="unlink" data-u="${c.user}" type="button">Unlink</button>` : `<button class="btn ghost sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button>`}</td></tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '🗂️', title: 'No decisions yet' })}`,
+      rush: () => `<h3>Waiting for confirmation</h3>${rq.length ? `<div class="rush-list">${rq.map((m) => `<div class="rush-item card"><div class="vote-head">${rushTitle(m)}</div>${rushPlayers(m)}
+<div class="row">${UI.member({ id: m.by.id, n: m.by.n, a: m.by.a, sub: `logged ${UI.ago(m.at)}` }, { size: 24 })}<span class="grow"></span><button class="btn sm" type="button" data-rush="confirm" data-id="${m.id}">✅ Confirm</button><button class="btn ghost sm" type="button" data-rush="reject" data-id="${m.id}">Reject</button></div></div>`).join('')}</div>`
+    : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'Rush results sent by members show up here for a quick check.' })}
+<h3 style="margin-top:24px">Last 30 days</h3>${S.rush?.recent?.length ? `<div class="tbl"><table><thead><tr><th>Match</th><th>Logged by</th><th>Status</th><th>By</th><th>When</th><th></th></tr></thead><tbody>${S.rush.recent.map((m) => `<tr><td>${pill(m.res)} ${m.gf}–${m.ga} vs ${esc(m.opp)} <small class="muted">${esc(m.date)}</small></td><td>${esc(m.by.n || '–')}</td><td><span class="tag ${RSTAT[m.status][1]}">${esc(m.status)}</span></td><td>${esc(m.decidedBy || '–')}</td><td>${m.decidedAt ? ago(m.decidedAt) : '–'}</td><td>${m.status === 'confirmed' ? `<button class="btn ghost sm" type="button" data-rush="remove" data-id="${m.id}">Remove</button>` : m.status === 'rejected' ? `<button class="btn ghost sm" type="button" data-rush="confirm" data-id="${m.id}">Confirm</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '🗂️', title: 'No decisions yet' })}`,
       members: () => `<div class="tbl"><table><thead><tr><th>Member</th><th>Role</th><th>Player</th><th>Positions</th><th>Platform</th><th>This week</th><th class="n">Logins</th><th>Last seen</th></tr></thead><tbody>${users.map(([id, u]) => {
         const c = A.claims[id], pf = A.profiles[id] || {};
         return `<tr><td>${mem(id, u, u.tag ? `@${u.tag}` : '')}</td><td>${roleTag(u.role === 'member' || !u.role ? (u.admin ? 'manager' : c?.status === 'approved' ? 'claimed' : 'member') : u.role)}</td><td>${c ? `${esc(c.playerName)} <small class="muted">(${esc(c.status)})</small>` : '–'}</td><td>${esc((pf.positions || []).join(' / ') || '–')}</td><td>${esc(pf.platform || '–')}</td><td class="wk">${A.availability.map((d) => `<span data-tip="${esc(fmtDay(d.date))}">${ICON[d.byUser[id]?.s] || '·'}</span>`).join('')}</td><td class="n">${u.logins || 1}</td><td>${ago(u.last)}</td></tr>`;
@@ -506,6 +589,8 @@ if (MAPI) (() => {
       if (d.day) { const mine = S.avail.days.find((x) => x.date === d.day).people.find((p) => p.id === session.u)?.s; setAvail([d.day], mine === d.s ? 'clear' : d.s); }
       if (d.bulk) { const dates = [...S.sel]; S.sel = new Set(); setAvail(dates, d.bulk); toast(`${dates.length} day${dates.length > 1 ? 's' : ''} updated`); }
       if (d.m) vote(d.m, d.p);
+      if (d.rush) decideRush(+d.id, d.rush);
+      if (d.goRush !== undefined) { e.preventDefault(); S.adminTab = 'rush'; go('manager'); }
       if (d.sub) { S.adminTab = d.sub; draw(); }
       if (d.refresh !== undefined) { S.admin = null; draw(); load('manager'); }
       if (d.claim) {
@@ -514,17 +599,159 @@ if (MAPI) (() => {
         decide(d.u, d.claim);
       }
     };
-    panel.onchange = (e) => { if (e.target.id === 'act-filter') { S.actFilter = e.target.value; draw(); } };
+    panel.onchange = (e) => {
+      if (e.target.id === 'act-filter') { S.actFilter = e.target.value; draw(); }
+      if (e.target.dataset.f === 'k') { const g = $('[data-f="n"]', e.target.parentElement); g.hidden = e.target.value !== '__guest'; if (!g.hidden) g.focus(); }
+    };
+    const rf = $('#rush-form', panel);
+    if (rf) rf.onsubmit = (e) => { e.preventDefault(); sendRush(readRushForm()); };
   }
 
   // ----- start -----
   (async () => {
     try {
-      const [me, [players], pub] = await Promise.all([call('/api/me'), api(), fetch(`${MAPI}/api/public`, { cache: 'no-store' }).then((r) => r.json()).catch(() => ({ claims: {} }))]);
-      S.me = me; S.players = players; S.pub = pub.claims || {};
+      const [me, [players, clubs], pub] = await Promise.all([call('/api/me'), api(), fetch(`${MAPI}/api/public`, { cache: 'no-store' }).then((r) => r.json()).catch(() => ({ claims: {} }))]);
+      S.me = me; S.players = players; S.clubs = clubs; S.pub = pub.claims || {};
       $('#role-tag').innerHTML = roleTag(me.user.role);
       ls.set('norex_me', JSON.stringify({ player: me.claim?.status === 'approved' ? me.claim.player : null }));
       go(location.hash.slice(1) || 'me', false);
     } catch (e) { panel.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; }
   })();
+})();
+
+// ================= League ⇄ Rush (P0.4) =================
+// Any `[data-modes]` block (built by modes() in build.mjs) gets a switch; the choice is remembered and shared by
+// every switch on the page. Rush views are drawn from confirmed results in the member API (`/api/rush`).
+if (MAPI && $('[data-modes]')) (() => {
+  const KEY = 'norex_mode';
+  const saved = (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
+  let mode = /^#rush-\d+$/.test(location.hash) || saved === 'rush' ? 'rush' : 'league';
+  let data;
+  const load = () => (data ??= Promise.all([fetch(`${MAPI}/api/rush`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`)))), api()])
+    .then(([d, [players]]) => ({ matches: d.matches || [], known: new Set(players.map((p) => p.k)) })));
+  const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+  const avg = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
+  const rc = (r) => (r >= 9 ? 'r-elite' : r >= 8 ? 'r-great' : r >= 7 ? 'r-good' : r >= 6 ? 'r-mid' : 'r-low');
+  const rp = (r) => `<span class="rp ${r ? rc(r) : ''}">${r ? Number(r).toFixed(1) : '–'}</span>`;
+  const res = (r) => `<span class="res ${r}">${r}</span>`;
+  const day = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const stat = (label, v, dec = 0, suf = '') => `<div class="stat"><span>${label}</span><b class="count" data-to="${v}" data-dec="${dec}" data-suffix="${suf}">${Number(v).toFixed(dec)}${suf}</b></div>`;
+  const statText = (label, t) => `<div class="stat"><span>${label}</span><b>${t}</b></div>`;
+  const sec = (title, body, sub = '') => `<section class="block"><h2 class="banner-h">${title}${sub ? ` <small>${sub}</small>` : ''}</h2>${body}</section>`;
+  const logUrl = `${BASE}members.html#rush`;
+  const empty = (title, text) => UI.empty({ icon: '⚡', title, text, action: `<a class="btn sm" href="${logUrl}">⚡ Log a Rush result</a>` });
+  const who = (p, known) => (p.k && known.has(p.k) ? `<a href="${BASE}players/${encodeURIComponent(p.k)}.html">${esc(p.n)}</a>` : `${esc(p.n)}${p.k ? '' : ' <small class="muted">guest</small>'}`);
+  const oppHtml = (m) => (m.oppId ? `<a href="${BASE}clubs/${encodeURIComponent(m.oppId)}.html">${esc(m.opp)}</a>` : esc(m.opp));
+
+  // Per-player totals over the given matches (squad players only – guests have no key).
+  function totals(matches) {
+    const P = new Map();
+    for (const m of matches) for (const p of m.players) {
+      if (!p.k) continue;
+      const e = P.get(p.k) ?? { k: p.k, n: p.n, apps: 0, W: 0, D: 0, L: 0, g: 0, a: 0, rs: [], motm: 0 };
+      e.apps++; e[m.res]++; e.g += p.g; e.a += p.a; e.motm += p.motm ? 1 : 0; if (p.r) e.rs.push(p.r); e.n = p.n;
+      P.set(p.k, e);
+    }
+    return [...P.values()].map((e) => ({ ...e, r: avg(e.rs) }));
+  }
+  const record = (ms) => ({ p: ms.length, W: ms.filter((m) => m.res === 'W').length, D: ms.filter((m) => m.res === 'D').length, L: ms.filter((m) => m.res === 'L').length, gf: ms.reduce((s, m) => s + m.gf, 0), ga: ms.reduce((s, m) => s + m.ga, 0) });
+
+  const fixture = (m, known, open) => `<details class="rfx ${m.res}" id="rush-${m.id}"${open ? ' open' : ''}><summary>
+<span class="fx-date">${day(m.date)}</span>${res(m.res)}<span class="fx-team"><img class="crest" src="${BASE}assets/crest.png" width="28" height="28" alt=""><span>NOREX</span></span>
+<span class="fx-score">${m.gf}<i>–</i>${m.ga}</span><span class="fx-team away"><span>${esc(m.opp)}</span><span class="rush-badge" aria-hidden="true">⚡</span></span>
+<span class="fx-extra">${m.players.filter((p) => p.g).map((p) => `⚽ ${esc(p.n)}${p.g > 1 ? ` ×${p.g}` : ''}`).join(', ')}</span></summary>
+<div class="rfx-body"><div class="tbl"><table><thead><tr><th>Player</th><th>Pos</th><th class="n">Rating</th><th class="n">G</th><th class="n">A</th><th>MOTM</th></tr></thead><tbody>${m.players.map((p) => `<tr><td>${who(p, known)}</td><td>${esc(p.pos || '–')}</td><td class="n">${rp(p.r)}</td><td class="n">${p.g}</td><td class="n">${p.a}</td><td>${p.motm ? '⭐' : ''}</td></tr>`).join('')}</tbody></table></div>
+<p class="small muted">vs ${oppHtml(m)}${m.note ? ` · ${esc(m.note)}` : ''}${m.shot ? ` · <a href="${esc(m.shot)}" target="_blank" rel="noopener nofollow ugc">📷 Screenshot</a>` : ''}</p></div></details>`;
+
+  const views = {
+    matches({ matches, known }) {
+      if (!matches.length) return empty('No Rush results yet', 'Members log Rush matches in the Squad Hub and a manager confirms them. They show up here straight away.');
+      const R = record(matches);
+      const open = location.hash.slice(1);
+      return `<section class="stats">${stat('Played', R.p)}${stat('Won', R.W)}${stat('Drawn', R.D)}${stat('Lost', R.L)}${stat('Win rate', pct(R.W, R.p), 0, '%')}${stat('Goals', R.gf)}${stat('Conceded', R.ga)}${stat('Goal diff', R.gf - R.ga)}</section>
+<div class="form big"><span class="form-label">Form</span>${matches.slice(0, 10).reverse().map((m) => `<a href="#rush-${m.id}" data-tip="${esc(`${m.gf}–${m.ga} vs ${m.opp}`)}">${res(m.res)}</a>`).join('')}</div>
+${sec('Rush results', `<div class="fixtures">${matches.map((m) => fixture(m, known, open === `rush-${m.id}`)).join('')}</div>`, `${matches.length} confirmed`)}
+<p><a class="btn ghost" href="${logUrl}">⚡ Log a Rush result</a></p>`;
+    },
+    player({ matches, known }, key) {
+      const ms = matches.filter((m) => m.players.some((p) => p.k === key));
+      if (!ms.length) return empty('No Rush games logged yet', 'Rush results with this player appear here once a manager confirms them.');
+      const e = totals(ms).find((x) => x.k === key);
+      const row = (m) => { const p = m.players.find((x) => x.k === key); return `<tr><td>${m.date}</td><td>${res(m.res)}</td><td><a href="${BASE}matches/index.html#rush-${m.id}">${m.gf}–${m.ga}</a></td><td>${oppHtml(m)}</td><td>${esc(p.pos || '–')}</td><td class="n">${rp(p.r)}${p.motm ? ' ⭐' : ''}</td><td class="n">${p.g}</td><td class="n">${p.a}</td></tr>`; };
+      return `${sec('Rush', `<section class="stats">${stat('Apps', e.apps)}${statText('Record', `${e.W}-${e.D}-${e.L}`)}${stat('Goals', e.g)}${stat('Assists', e.a)}${stat('Avg rating', e.r, 1)}${stat('MOTM', e.motm)}${stat('G+A per game', (e.g + e.a) / e.apps, 2)}${stat('Win rate', pct(e.W, e.apps), 0, '%')}</section>`, 'logged by members')}
+${sec('Rush match log', `<div class="tbl"><table><thead><tr><th>Date</th><th>Res</th><th>Score</th><th>Against</th><th>Pos</th><th class="n">Rating</th><th class="n">G</th><th class="n">A</th></tr></thead><tbody>${ms.map(row).join('')}</tbody></table></div>`, `${ms.length} games`)}`;
+    },
+    leaders({ matches, known }) {
+      if (!matches.length) return empty('No Rush stats yet', 'Leaderboards, records and head-to-heads fill in as Rush results are confirmed.');
+      const T = totals(matches);
+      const min3 = (e, v) => (e.apps >= 3 ? v : 0);
+      const boards = [['Goals', (e) => e.g], ['Assists', (e) => e.a], ['G+A', (e) => e.g + e.a], ['Rating', (e) => min3(e, e.r), (v) => v.toFixed(1)], ['MOTM', (e) => e.motm],
+        ['Games', (e) => e.apps], ['Goals/game', (e) => min3(e, e.g / e.apps), (v) => v.toFixed(2)], ['Win %', (e) => min3(e, pct(e.W, e.apps)), (v) => v + '%']];
+      const bars = (f, fmt = (v) => v) => {
+        const rows = T.map((e) => ({ e, v: f(e) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 10);
+        const max = Math.max(0.0001, ...rows.map((x) => x.v));
+        return `<ol class="barlist">${rows.map(({ e, v }, i) => `<li style="--w:${Math.max(4, (v / max) * 100)}%"><span class="bl-rank">${i + 1}</span><span class="bl-name">${who(e, known)}</span><b>${fmt(v)}</b></li>`).join('') || '<li class="muted">Needs 3+ Rush games</li>'}</ol>`;
+      };
+      const apps = matches.flatMap((m) => m.players.map((p) => ({ m, p })));
+      const best = (f) => [...apps].sort((a, b) => f(b.p) - f(a.p))[0];
+      const margin = (m) => m.gf - m.ga;
+      const byMargin = [...matches].sort((a, b) => margin(b) - margin(a));
+      let run = 0, bestRun = 0;
+      for (const m of [...matches].reverse()) { run = m.res === 'W' ? run + 1 : 0; bestRun = Math.max(bestRun, run); }
+      const rec = (icon, title, value, sub, m) => `<a class="record"${m ? ` href="${BASE}matches/index.html#rush-${m.id}"` : ''}><span class="rec-icon">${icon}</span><small>${title}</small><b>${value}</b><span>${sub}</span></a>`;
+      const hat = apps.filter((x) => x.p.g >= 3);
+      const recs = [
+        margin(byMargin[0]) > 0 && rec('💥', 'Biggest win', `${byMargin[0].gf}–${byMargin[0].ga}`, `vs ${esc(byMargin[0].opp)}`, byMargin[0]),
+        margin(byMargin.at(-1)) < 0 && rec('🧊', 'Heaviest defeat', `${byMargin.at(-1).gf}–${byMargin.at(-1).ga}`, `vs ${esc(byMargin.at(-1).opp)}`, byMargin.at(-1)),
+        ...[['⚽', 'Most goals in a match', 'g'], ['🎯', 'Most assists in a match', 'a'], ['🌟', 'Highest match rating', 'r', (v) => v.toFixed(1)]].map(([icon, title, f, fmt = (v) => v]) => {
+          const b = best((p) => p[f] || 0); return b && b.p[f] ? rec(icon, title, fmt(b.p[f]), esc(b.p.n), b.m) : '';
+        }),
+        rec('🔥', 'Longest win streak', bestRun, 'Rush wins in a row'),
+        rec('🎩', 'Hat-tricks', hat.length, hat.slice(0, 3).map((x) => esc(x.p.n)).join(', ') || 'none yet'),
+      ].filter(Boolean);
+      const H = new Map();
+      for (const m of matches) {
+        const k = m.opp.toLowerCase();
+        const e = H.get(k) ?? { m, ms: [] };
+        e.ms.push(m); H.set(k, e);
+      }
+      const h2h = [...H.values()].map((e) => ({ ...e, R: record(e.ms) })).sort((a, b) => b.R.p - a.R.p);
+      const tabs = UI.tabsHtml(boards.map(([k], i) => [String(i), k]), '0', 'rush-boards');
+      return `${sec('Rush leaderboards', `${tabs}${boards.map(([, f, fmt], i) => `<div class="card rush-board" data-board="${i}"${i ? ' hidden' : ''}>${bars(f, fmt)}</div>`).join('')}`)}
+${sec('Rush records', `<div class="records">${recs.join('')}</div>`, `${matches.length} confirmed games`)}
+${sec('Rush head to head', `<div class="tbl"><table><thead><tr><th>Opponent</th><th class="n">P</th><th class="n">W</th><th class="n">D</th><th class="n">L</th><th class="n">GF</th><th class="n">GA</th><th class="n">GD</th><th>Last</th></tr></thead><tbody>${h2h.map(({ m, R, ms }) => `<tr><td>${oppHtml(m)}</td><td class="n">${R.p}</td><td class="n">${R.W}</td><td class="n">${R.D}</td><td class="n">${R.L}</td><td class="n">${R.gf}</td><td class="n">${R.ga}</td><td class="n">${R.gf - R.ga > 0 ? '+' : ''}${R.gf - R.ga}</td><td><a href="${BASE}matches/index.html#rush-${ms[0].id}">${res(ms[0].res)} ${ms[0].gf}–${ms[0].ga}</a></td></tr>`).join('')}</tbody></table></div>`)}`;
+    },
+  };
+
+  async function drawRush(el) {
+    if (el.dataset.drawn) return;
+    el.dataset.drawn = '1';
+    el.innerHTML = UI.skeleton('rows', 4);
+    try {
+      const d = await load();
+      const [kind, arg] = el.dataset.rush.split(':');
+      el.innerHTML = `<div class="rush-view">${views[kind](d, arg)}</div>`;
+      $$('.count', el).forEach(countUp);
+      const bt = $('.rush-boards', el);
+      if (bt) UI.tabs(bt, (k) => $$('.rush-board', el).forEach((b) => (b.hidden = b.dataset.board !== k)));
+      const target = /^#rush-\d+$/.test(location.hash) && $(location.hash, el);
+      if (target) { target.open = true; target.scrollIntoView({ block: 'center' }); }
+    } catch (e) {
+      delete el.dataset.drawn; data = null;
+      el.innerHTML = UI.empty({ icon: '📡', title: 'Rush results are unavailable right now', text: 'Check your connection and switch tabs to try again.' });
+    }
+  }
+  function set(m, save) {
+    mode = m;
+    if (save) { try { localStorage.setItem(KEY, m); } catch {} }
+    for (const b of $$('[data-modes]')) {
+      $$('.mode-switch [role=tab]', b).forEach((t) => { const on = t.dataset.key === m; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; });
+      $$(':scope > [data-mode]', b).forEach((p) => (p.hidden = p.dataset.mode !== m));
+      if (m === 'rush') $$(':scope > [data-rush]', b).forEach(drawRush);
+      else $$(':scope > [data-mode=league] .reveal:not(.in)', b).forEach((x) => x.classList.add('in'));
+    }
+  }
+  $$('[data-modes] .mode-switch').forEach((el) => UI.tabs(el, (k) => set(k, true)));
+  addEventListener('hashchange', () => { if (/^#rush-\d+$/.test(location.hash)) { const d = $(location.hash); if (d) d.open = true; else set('rush'); } });
+  set(mode);
 })();
