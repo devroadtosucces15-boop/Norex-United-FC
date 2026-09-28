@@ -12,6 +12,8 @@
 import { handleMembers } from './members.js';
 import { updateLive } from './live.js';
 import { notifyCron } from './notify.js';
+import { eventReminders } from './events.js';
+import { eventButton, memberCommand, MEMBER_COMMANDS } from './botcmds.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
 import { can, discordRole, flagOn } from './roles.js';
@@ -22,7 +24,7 @@ const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
-    ctx.waitUntil(notifyCron(env).catch((e) => console.log('notify cron failed', e.message))); // P7.1 DMs + reminders
+    ctx.waitUntil(eventReminders(env).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, then P7.1 DMs + reminders
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
       method: 'POST',
@@ -66,6 +68,22 @@ export default {
       }
     }
     if (i.type === 2 && i.data.name === 'syncroles') return syncRolesCommand(i, env, ctx, site, who);
+    if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
+      try { return json(await eventButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
+    }
+    if (i.type === 2 && MEMBER_COMMANDS.has(i.data.name)) { // P7.4 commands that read the member database
+      try {
+        const loadSite = (f) => load(site, f, ctx);
+        const club = await loadSite('club');
+        const footer = { text: `${club.name} · updates every 15 min`, icon_url: club.crest };
+        return json(await memberCommand(i, env, who, site, {
+          load: loadSite, playerEmbed: (p) => playerEmbed(p, club, site, footer),
+          top: async (stat) => ({ type: 4, data: await command({ name: 'top', options: [{ name: 'stat', value: stat }] }, site, ctx) }),
+        }));
+      } catch (e) {
+        return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
+      }
+    }
     if (i.type === 2) {
       try {
         const data = await command(i.data, site, ctx);
