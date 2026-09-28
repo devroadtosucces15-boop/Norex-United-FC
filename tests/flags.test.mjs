@@ -1,5 +1,6 @@
 // Feature flags (P0.7): levels off | owner | managers | members | public, enforced by the Worker.
-import { call, config, env, login } from './mock.mjs';
+import fs from 'node:fs';
+import { ROOT, call, config, env, login } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import { FLAG_LEVELS, featuresFor, flagOn, flags } from '../bot/roles.js';
 
@@ -33,4 +34,7 @@ env.FEATURES = JSON.stringify({ rushLog: 'members' });
 t('rushLog=members: member → 200', (await call(member, '/api/rush/queue')).s === 200);
 t('owner overview has the flag table', (await call(owner, '/api/admin/overview')).d.flags?.rushLog === 'members');
 t('manager overview has no flag table', (await call(mgr, '/api/admin/overview')).d.flags === undefined);
+// QA1: FEATURES/STREAMS must go under [vars] – appended after ensure-resources' [[d1_databases]] they were silently ignored
+const deployStep = fs.readFileSync(ROOT + '.github/workflows/bot.yml', 'utf8').split('\n').find((l) => l.includes('FEATURES') && l.includes('run:')) ?? '';
+t('bot.yml writes flags under [vars], not at the end of wrangler.toml', deployStep.includes('[vars]') && !deployStep.includes('appendFileSync'));
 done();
