@@ -10,7 +10,7 @@
 // Data saved by the first (KV-only) version is copied into D1 once, on the first request after the switch.
 // Who may do what: bot/roles.js (can(user, action)).
 
-import { ROLE_LABEL, atLeast, can, discordRole, permsFor, sessionRole } from './roles.js';
+import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -252,7 +252,7 @@ async function route(p, method, body, me, env, loadSite) {
   if (!can(me, 'hub.use')) return fail('Members only.', 403);
   if (p === '/api/me' && method === 'GET') {
     const [claim, profile] = await Promise.all([getClaim(env, me.u), one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)]);
-    const user = { id: me.u, name: me.n, avatar: me.a, admin: can(me, 'portal.view'), role: me.role, roleLabel: ROLE_LABEL[me.role], perms: permsFor(me.role) };
+    const user = { id: me.u, name: me.n, avatar: me.a, admin: can(me, 'portal.view'), role: me.role, roleLabel: ROLE_LABEL[me.role], perms: permsFor(me.role), features: featuresFor(env, me) };
     return json({ user, claim, profile: profileOut(profile) ?? null });
   }
 
@@ -342,7 +342,10 @@ async function route(p, method, body, me, env, loadSite) {
     return json({ matches: recent.map((m, i) => voteView(m, docs[i], me)) });
   }
 
-  if (p.startsWith('/api/rush')) return rushRoute(p, method, body, me, env, loadSite);
+  if (p.startsWith('/api/rush')) {
+    if (!flagOn(env, me, 'rushLog')) return fail('Not available yet.', 404);
+    return rushRoute(p, method, body, me, env, loadSite);
+  }
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);
@@ -387,6 +390,7 @@ async function route(p, method, body, me, env, loadSite) {
         activity: activity.map((x) => ({ at: x.at, u: x.user_id, n: x.name, a: x.avatar, type: x.type, detail: x.detail })),
         availability: dates.map((d) => ({ date: d, byUser: avail[d] })),
         votes: recent.map((m, i) => ({ id: m.id, opp: m.opp, gf: m.gf, ga: m.ga, res: m.res, voters: Object.entries(votes[i]).map(([id, v]) => ({ id, ...v, pn: (m.ps || []).find((x) => x.k === v.p)?.n })) })),
+        ...(can(me, 'settings.bot') ? { flags: flags(env) } : {}),
       });
     }
   }

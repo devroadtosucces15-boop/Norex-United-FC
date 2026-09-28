@@ -61,3 +61,22 @@ export function discordRole(env, userId, roles = []) {
 }
 // Sessions issued before P0.6 have only `adm`; ADMIN_IDS still marks the owner.
 export const sessionRole = (env, s) => s.role ?? (ids(env.ADMIN_IDS).includes(s.u) ? 'owner' : s.adm ? 'manager' : 'member');
+
+// ---------- Feature flags (roadmap P0.7) ----------
+// config.json → features { name: level } is copied into the Worker var FEATURES on deploy (bot.yml).
+// New member-facing features ship as 'owner' and a QA checkpoint switches them to 'members' / 'public'.
+// A flag says whether a feature exists for someone; can() still decides what they may do inside it.
+export const FLAG_LEVELS = ['off', 'owner', 'managers', 'members', 'public'];
+const FLAG_MIN = { owner: 'owner', managers: 'manager', members: 'member', public: 'guest' };
+export function flags(env) {
+  let map = {};
+  try { map = JSON.parse(env.FEATURES || '{}'); } catch { console.log('FEATURES is not valid JSON'); }
+  for (const [k, v] of Object.entries(map)) if (!FLAG_LEVELS.includes(v)) map[k] = 'off';
+  return map;
+}
+// Unknown flags count as 'off', so a typo hides a feature instead of leaking it.
+export function flagOn(env, user, name) {
+  const level = flags(env)[name] ?? 'off';
+  return level !== 'off' && atLeast(user?.role ?? 'guest', FLAG_MIN[level]);
+}
+export const featuresFor = (env, user) => Object.keys(flags(env)).filter((f) => flagOn(env, user, f));

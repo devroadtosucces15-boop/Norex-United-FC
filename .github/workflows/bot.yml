@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["bot/**"]
+    paths: ["bot/**", "config.json"]
 
 jobs:
   deploy:
@@ -33,6 +33,10 @@ jobs:
         if: env.CLOUDFLARE_API_TOKEN != ''
         working-directory: bot
         run: npx --yes wrangler@4 d1 migrations apply norex --remote
+
+      - name: Feature flags (config.json → Worker var FEATURES)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: node -e 'const f = JSON.stringify(require("./config.json").features || {}); require("fs").appendFileSync("bot/wrangler.toml", `FEATURES = ${JSON.stringify(f)}\n`); console.log("FEATURES", f)'
 
       - name: Deploy to Cloudflare Workers
         if: env.CLOUDFLARE_API_TOKEN != ''
