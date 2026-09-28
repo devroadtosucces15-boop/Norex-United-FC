@@ -719,3 +719,16 @@ a.stat.link:hover .stat-go{color:var(--red);transform:translateX(3px)}
 @keyframes ack-in{from{transform:translateY(-100%);opacity:0}}
 @media (max-width:1100px){.bell-wrap{margin-left:auto}.menu-btn{order:4}.bell-panel{position:fixed;top:74px;right:12px}}
 @media (max-width:560px){.ack-in{flex-wrap:wrap}.ack-t{flex-basis:calc(100% - 40px)}}
+/* P1.8 – match calendar filter, world top 100 */
+.calbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 14px;padding:10px 12px;border-radius:12px;background:repeating-linear-gradient(115deg,transparent 0 14px,rgba(200,53,44,.05) 14px 16px),var(--panel);border:1px solid var(--line)}
+.calbar .cal-ic{font-size:18px}
+.calbar button.chip{cursor:pointer}
+.cal-day{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.cal-day input{padding:6px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);font:inherit;color-scheme:dark}
+.cal-day input:focus{outline:2px solid var(--red);outline-offset:1px}
+.cal-count{margin-left:auto;font-weight:600}
+.cal-out{display:none!important}
+.world-verdict{margin:14px 0;padding:12px 16px;border-radius:12px;border-left:4px solid var(--red);background:var(--panel)}
+tr.world-me td{background:rgba(200,53,44,.18);font-weight:700}
+tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
+@media (max-width:560px){.cal-count{margin-left:0;flex-basis:100%}}

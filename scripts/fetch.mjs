@@ -15,7 +15,7 @@
 // members' other clubs and to fill in stats for players you meet.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJson, writeJson, loadConfig, loadOverrides, num, sleep } from './lib.mjs';
+import { DATA, readJson, writeJson, loadConfig, loadOverrides, num, sleep, eventCounts } from './lib.mjs';
 import { matchComponents } from '../bot/matchcard.js';
 
 const API = 'https://proclubs.ea.com/api/fc/';
@@ -84,7 +84,7 @@ function slimMatch(m, matchType) {
     for (const [pid, p] of Object.entries(list)) {
       const { match_event_aggregate_0, match_event_aggregate_1, match_event_aggregate_2,
         match_event_aggregate_3, vproattr, vprohackreason, ...keep } = p;
-      players[clubId][pid] = keep;
+      players[clubId][pid] = { ...keep, ...eventCounts(match_event_aggregate_0) };
     }
   }
   const clubs = {};
@@ -135,7 +135,8 @@ async function fetchClub(id) {
   }
 
   if (full) {
-    for (const matchType of ['leagueMatch', 'playoffMatch']) {
+    // Club friendlies (P1.8) only for the home club – a third mode on the site, never mixed into League totals.
+    for (const matchType of id === homeId ? ['leagueMatch', 'playoffMatch', 'friendlyMatch'] : ['leagueMatch', 'playoffMatch']) {
       const matches = (await api('clubs/matches', { clubIds: id, matchType })) || [];
       for (const m of matches) {
         Object.keys(m.clubs || {}).forEach((o) => o !== id && opponents.add(o));
@@ -145,6 +146,7 @@ async function fetchClub(id) {
         const file = path.join(DATA, 'matches', `${m.matchId}.json`);
         if (fs.existsSync(file)) continue;
         writeJson(file, slimMatch(m, matchType));
+        if (matchType === 'friendlyMatch') continue; // no Discord post, no link/discovery from friendlies
         if (id === homeId) newHomeMatches.push(m);
         if (id === homeId) Object.keys(m.players?.[id] || {}).forEach((pid) => homePlayerIds.add(pid));
         // A home player appearing for another club in an archived match links that club.
@@ -187,6 +189,23 @@ async function fetchClub(id) {
     fs.rmSync(path.join(DATA, 'clubs', `${id}.json`), { force: true });
   }
   return record;
+}
+
+// P1.8 – EA's global top 100 by skill rating, once a day → data/world.json (Leaderboards page).
+async function fetchWorld() {
+  const file = path.join(DATA, 'world.json');
+  if (readJson(file, {}).fetchedAt?.slice(0, 10) === now.slice(0, 10)) return;
+  const list = await api('allTimeLeaderboard', {}).catch((e) => (console.warn(`World top 100: ${e.message}`), null));
+  if (!Array.isArray(list) || !list.length) return;
+  writeJson(file, {
+    fetchedAt: now,
+    clubs: list.slice(0, 100).map((c) => ({
+      rank: num(c.rank), id: String(c.clubId), name: c.clubName ?? c.clubInfo?.name ?? '', crest: c.clubInfo?.customKit?.crestAssetId ?? null,
+      sr: num(c.skillRating), gp: num(c.gamesPlayed), w: num(c.wins), d: num(c.ties), l: num(c.losses), gf: num(c.goals), ga: num(c.goalsAgainst),
+      cs: num(c.cleanSheets), div: num(c.currentDivision) || null, rep: num(c.reputationtier),
+    })),
+  });
+  console.log(`World top 100 saved (#100 = SR ${num(list.at(-1)?.skillRating)})`);
 }
 
 let overrideHidden = []; // P5.6 "hide me" requests – kept out of the Discord post like on the site
@@ -310,6 +329,7 @@ async function main() {
     }
   }
 
+  await fetchWorld();
   await postToDiscord();
   writeJson(stateFile, state);
   // One heartbeat per day keeps GitHub from pausing the schedule on quiet weeks.

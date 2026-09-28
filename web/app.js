@@ -735,7 +735,7 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
 if (MAPI && $('[data-modes]')) (() => {
   const KEY = 'norex_mode';
   const saved = (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
-  let mode = /^#rush-\d+$/.test(location.hash) || saved === 'rush' ? 'rush' : 'league';
+  let mode = /^#rush-\d+$/.test(location.hash) || saved === 'rush' ? 'rush' : saved === 'friendly' ? 'friendly' : 'league';
   let data;
   const load = () => (data ??= Promise.all([fetch(`${MAPI}/api/rush`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`)))), api()])
     .then(([d, [players]]) => ({ matches: d.matches || [], known: new Set(players.map((p) => p.k)) })));
@@ -879,16 +879,40 @@ ${sec('Rush head to head', `<div class="tbl"><table><thead><tr><th>Opponent</th>
     mode = m;
     if (save) { try { localStorage.setItem(KEY, m); } catch {} }
     for (const b of $$('[data-modes]')) {
-      $$('.mode-switch [role=tab]', b).forEach((t) => { const on = t.dataset.key === m; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; });
-      $$(':scope > [data-mode]', b).forEach((p) => (p.hidden = p.dataset.mode !== m));
-      if (m === 'rush') $$(':scope > [data-rush]', b).forEach(drawRush);
-      else $$(':scope > [data-mode=league] .reveal:not(.in)', b).forEach((x) => x.classList.add('in'));
+      // Friendly (P1.8) only exists on some blocks – the others fall back to League.
+      const k = $(`:scope > [data-mode="${m}"]`, b) ? m : 'league';
+      $$('.mode-switch [role=tab]', b).forEach((t) => { const on = t.dataset.key === k; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; });
+      $$(':scope > [data-mode]', b).forEach((p) => (p.hidden = p.dataset.mode !== k));
+      if (k === 'rush') $$(':scope > [data-rush]', b).forEach(drawRush);
+      else $$(`:scope > [data-mode=${k}] .reveal:not(.in)`, b).forEach((x) => x.classList.add('in'));
     }
   }
   $$('[data-modes] .mode-switch').forEach((el) => UI.tabs(el, (k) => set(k, true)));
   addEventListener('hashchange', () => { if (/^#rush-\d+$/.test(location.hash)) { const d = $(location.hash); if (d) d.open = true; else set('rush'); } });
   set(mode);
 })();
+
+// ================= Match calendar filter (P1.8) =================
+// `.calbar[data-cal=<id>]` (calendar() in build.mjs): month chips or a day narrow every [data-day] item inside #id.
+// Uses a class, not `hidden`, so it stacks with the table search filter.
+for (const bar of $$('[data-cal]')) {
+  const scope = document.getElementById(bar.dataset.cal);
+  if (!scope) continue;
+  const day = $('input[type=date]', bar), out = $('.cal-count', bar), chips = $$('[data-month]', bar);
+  let month = 'all';
+  const apply = () => {
+    const d = day.value, ids = new Set();
+    for (const el of $$('[data-day]', scope)) {
+      const on = d ? el.dataset.day === d : month === 'all' || el.dataset.day.startsWith(month);
+      el.classList.toggle('cal-out', !on);
+      if (on) ids.add(el.dataset.id);
+    }
+    out.textContent = d || month !== 'all' ? (ids.size ? `${ids.size} match${ids.size === 1 ? '' : 'es'}` : 'No matches that day – pick another') : '';
+  };
+  const pick = (k) => chips.forEach((c) => { c.classList.toggle('on', c.dataset.month === k); c.setAttribute('aria-pressed', c.dataset.month === k); });
+  chips.forEach((c) => c.addEventListener('click', () => { month = c.dataset.month; day.value = ''; pick(month); apply(); }));
+  day.addEventListener('change', () => { month = day.value ? day.value.slice(0, 7) : 'all'; pick(chips.some((c) => c.dataset.month === month) ? month : 'all'); apply(); });
+}
 
 // ================= Live stream bar + home embed (P1.3) =================
 // The Worker cron checks Twitch/YouTube every 10 min; we poll /api/live and show a pulsing bar site-wide and the

@@ -16,12 +16,15 @@ export function leagueMatches({ homeMatches, homeId, isHidden, oppOf, result }) 
       id: m.matchId, ts: m.timestamp, opp, gf: num(m.clubs[homeId].goals), ga: num(m.clubs[opp]?.goals), res: result(m.clubs[homeId]),
       players: Object.entries(m.players?.[homeId] || {}).filter(([pid]) => !isHidden(pid)).map(([pid, p]) => ({
         k: pid, n: p.playername, g: num(p.goals), a: num(p.assists), r: num(p.rating), motm: num(p.mom) > 0, shots: num(p.shots), secs: num(p.secondsPlayed), grp: M.groupOf(p.pos),
+        // P1.8 – dribbles / second assists, only in games archived since they're kept (else left out → "–").
+        ...(p.dribbles !== undefined ? { dr: num(p.dribbles), sa: num(p.secondassists) } : {}),
       })),
     };
   });
 }
 
-const ctxFor = (h, base, id) => ({ esc: h.esc, id, link: (p) => h.pLink(p.k, base, p.n), empty: h.emptyState('📭', 'Nothing to rank yet', 'Fills in as matches are archived.') });
+const ctxFor = (h, base, id) => ({ esc: h.esc, id, link: (p) => h.pLink(p.k, base, p.n), empty: h.emptyState('📭', 'Nothing to rank yet', 'Fills in as matches are archived.'),
+  note: h.evSince ? `Dribbles and 2nd assists only count games archived since ${h.esc(h.evSince)}.` : '' });
 const METRICS_JS = (base) => `<link rel="stylesheet" href="${base}assets/honours.css"><script src="${base}assets/metrics.js" defer></script>`;
 const HONOURS = (base) => `<script src="${base}assets/honours.js" defer></script>`;
 
@@ -34,8 +37,9 @@ export function advancedSection(h, lm) {
 // P4.5 – leaderboards page.
 export function buildLeaders(h, lm) {
   const { write, page, pageHead, section, modes, config, MEMBER_API } = h;
-  const body = `${pageHead('🏆 Leaderboards', 'Monthly and season tables for goals, assists, rating and MOTM – with the Player of the Month and a Best XI for every month. League numbers come from archived EA matches; Rush from results logged by members.', '')}
+  const body = `${pageHead('🏆 Leaderboards', 'Monthly and season tables for goals, assists, rating and MOTM – with the Player of the Month and a Best XI for every month, plus where we stand in the world. League numbers come from archived EA matches; Rush from results logged by members.', '')}
 ${modes(section('Month by month', M.leadersHtml(ctxFor(h, '', 'lg'), lm, { seasonLabel: 'Season' }), { sub: `${lm.length} archived games`, id: 'months' }), 'months', 'Pick a month, or the whole season')}
+${section('🌍 World top 100', h.world, { sub: 'EA all-time skill rating · updated daily', id: 'world' })}
 ${MEMBER_API ? `<div data-flag="leaders" hidden>${section('Squad boards', '<div data-leaders-members></div>', { sub: 'attendance, MOTM votes, awards, predictions – members only', id: 'squad-boards' })}</div>` : ''}
 <p class="muted small">🏛️ Past winners, records and club legends live in the <a href="halloffame.html">Hall of Fame</a>.</p>
 ${METRICS_JS('')}${MEMBER_API ? HONOURS('') : ''}`;

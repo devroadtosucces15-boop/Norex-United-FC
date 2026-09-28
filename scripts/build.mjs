@@ -8,7 +8,7 @@ import { buildBuilder } from './builder-page.mjs';
 import { buildProBuilds } from './probuilds-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 
-const OUT = path.join(ROOT, 'site');
+const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
 const config = loadConfig();
 const homeId = String(config.homeClubId);
 const brand = config.brand ?? {};
@@ -62,13 +62,22 @@ function write(rel, html) {
 
 // ---------- load ----------
 const clubs = new Map(readDir(path.join(DATA, 'clubs')).map((c) => [String(c.id), c]));
-const matches = readDir(path.join(DATA, 'matches')).sort((a, b) => b.timestamp - a.timestamp);
+const allMatches = readDir(path.join(DATA, 'matches')).sort((a, b) => b.timestamp - a.timestamp);
+// P1.8: club friendlies are a mode of their own – never mixed into League/playoff totals, players or boards.
+const matches = allMatches.filter((m) => m.matchType !== 'friendlyMatch');
+const friendlies = allMatches.filter((m) => m.matchType === 'friendlyMatch' && m.clubs[homeId]);
+const typeLabel = (m) => ({ playoffMatch: 'Playoff', friendlyMatch: 'Friendly' })[m.matchType] ?? 'League';
+// P1.8: dribbles + second assists (EA event codes 174/115) only exist in matches archived after the fetcher kept them.
+const hasEv = (m) => Object.values(m.players || {}).some((l) => Object.values(l).some((p) => p.dribbles !== undefined));
+const evNum = (v) => (v === undefined ? null : num(v));
+const evFirst = Math.min(...allMatches.filter(hasEv).map((m) => m.timestamp));
+const EV_SINCE = Number.isFinite(evFirst) ? new Date(evFirst * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : null;
 function matchClubName(id) {
-  for (const m of matches) if (m.clubs[id]?.name) return m.clubs[id].name;
+  for (const m of allMatches) if (m.clubs[id]?.name) return m.clubs[id].name;
   return null;
 }
 const clubName = (id) => clubs.get(String(id))?.info?.name ?? state.clubs[id]?.name ?? matchClubName(id) ?? `Club ${id}`;
-const clubKit = (id) => clubs.get(String(id))?.info?.customKit ?? matches.find((m) => m.clubs[id]?.kit)?.clubs[id].kit ?? null;
+const clubKit = (id) => clubs.get(String(id))?.info?.customKit ?? allMatches.find((m) => m.clubs[id]?.kit)?.clubs[id].kit ?? null;
 const result = (c) => (c?.wins === '1' ? 'W' : c?.losses === '1' ? 'L' : 'D');
 const oppOf = (m, id) => Object.keys(m.clubs).find((k) => k !== id);
 const homeMatches = matches.filter((m) => m.clubs[homeId]);
@@ -96,7 +105,7 @@ const players = new Map();
 const nameToKey = new Map();
 function player(key) {
   if (!players.has(key)) {
-    players.set(key, { key, id: /^\d+$/.test(key) ? key : null, names: new Set(), name: null, clubStats: {}, career: null, apps: [] });
+    players.set(key, { key, id: /^\d+$/.test(key) ? key : null, names: new Set(), name: null, clubStats: {}, career: null, apps: [], fapps: [] });
   }
   return players.get(key);
 }
@@ -108,15 +117,19 @@ for (const m of [...matches].reverse()) {
       pl.names.add(p.playername);
       pl.name = p.playername;
       nameToKey.set(p.playername.toLowerCase(), pid);
-      pl.apps.push({
-        matchId: m.matchId, ts: m.timestamp, clubId, oppId, res: result(m.clubs[clubId]),
-        gf: num(m.clubs[clubId]?.goals), ga: num(m.clubs[oppId]?.goals),
-        goals: num(p.goals), assists: num(p.assists), rating: num(p.rating), mom: num(p.mom), pos: p.pos,
-        shots: num(p.shots), passes: num(p.passesmade), passAtt: num(p.passattempts),
-        tackles: num(p.tacklesmade), tackleAtt: num(p.tackleattempts), saves: num(p.saves), red: num(p.redcards),
-      });
+      pl.apps.push(appOf(m, clubId, oppId, p));
     }
   }
+}
+function appOf(m, clubId, oppId, p) {
+  return {
+    matchId: m.matchId, ts: m.timestamp, clubId, oppId, res: result(m.clubs[clubId]),
+    gf: num(m.clubs[clubId]?.goals), ga: num(m.clubs[oppId]?.goals),
+    goals: num(p.goals), assists: num(p.assists), rating: num(p.rating), mom: num(p.mom), pos: p.pos,
+    shots: num(p.shots), passes: num(p.passesmade), passAtt: num(p.passattempts),
+    tackles: num(p.tacklesmade), tackleAtt: num(p.tackleattempts), saves: num(p.saves), red: num(p.redcards),
+    dribbles: evNum(p.dribbles), sa: evNum(p.secondassists),
+  };
 }
 for (const [clubId, c] of clubs) {
   for (const mbr of c.members || []) {
@@ -135,7 +148,16 @@ for (const [clubId, c] of clubs) {
     if (!pl.career || num(car.gamesPlayed) > num(pl.career.gamesPlayed)) pl.career = car;
   }
 }
+// Friendlies (P1.8) go into their own log for players we already know – they never create players or League stats.
+for (const m of [...friendlies].reverse()) {
+  const oppId = oppOf(m, homeId);
+  for (const [pid, p] of Object.entries(m.players?.[homeId] || {})) {
+    const key = players.has(pid) ? pid : nameToKey.get(String(p.playername).toLowerCase());
+    if (key) players.get(key).fapps.push(appOf(m, homeId, oppId, p));
+  }
+}
 for (const pl of players.values()) {
+  pl.fapps.sort((a, b) => b.ts - a.ts);
   pl.hidden = hidden.has(String(pl.id ?? '').toLowerCase()) || [...pl.names].some((n) => hidden.has(n.toLowerCase()));
   pl.apps.sort((a, b) => b.ts - a.ts);
   pl.clubIds = [...new Set([...Object.keys(pl.clubStats), ...pl.apps.map((a) => a.clubId)])];
@@ -234,10 +256,21 @@ const pageHead = (title, sub, base, showCrest = true) =>
 
 // League ⇄ Rush switch (roadmap P0.4). League comes from EA data built here; Rush is logged by members and
 // drawn by app.js from the member API (`data-rush` says which view). Without the member API it's League only.
-const MODES = [['league', '🏆 League'], ['rush', '⚡ Rush']];
-const modes = (league, rush, label = '') => (MEMBER_API ? `<div class="modes" data-modes>
-<div class="mode-bar reveal"><div class="nx-tabs mode-switch" role="tablist" aria-label="League or Rush">${MODES.map(([k, l], i) => `<button type="button" role="tab" data-key="${k}" aria-selected="${!i}" tabindex="${i ? -1 : 0}">${l}</button>`).join('')}</div>${label ? `<small class="muted">${label}</small>` : ''}</div>
-<div data-mode="league">${league}</div><div data-mode="rush" data-rush="${esc(rush)}" hidden></div></div>` : league);
+// P1.8: an optional third tab, Friendly (club friendlies, built here like League) – only where `friendly` is given.
+const MODES = [['league', '🏆 League'], ['rush', '⚡ Rush'], ['friendly', '🤝 Friendly']];
+const modes = (league, rush, label = '', friendly = null) => (MEMBER_API ? `<div class="modes" data-modes>
+<div class="mode-bar reveal"><div class="nx-tabs mode-switch" role="tablist" aria-label="${friendly == null ? 'League or Rush' : 'League, Rush or Friendly'}">${MODES.filter(([k]) => k !== 'friendly' || friendly != null).map(([k, l], i) => `<button type="button" role="tab" data-key="${k}" aria-selected="${!i}" tabindex="${i ? -1 : 0}">${l}</button>`).join('')}</div>${label ? `<small class="muted">${label}</small>` : ''}</div>
+<div data-mode="league">${league}</div><div data-mode="rush" data-rush="${esc(rush)}" hidden></div>${friendly != null ? `<div data-mode="friendly" hidden>${friendly}</div>` : ''}</div>` : league);
+
+// P1.8: match calendar filter – month chips + a day picker that narrow every [data-day] item inside #scope (app.js).
+function calendar(scope, ms) {
+  if (ms.length < 2) return '';
+  const months = [...new Set(ms.map((m) => dateStr(m.timestamp).slice(0, 7)))].sort().reverse();
+  const days = ms.map((m) => dateStr(m.timestamp)).sort();
+  const mName = (ym) => new Date(ym + '-15T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  return `<div class="calbar" data-cal="${scope}"><span class="cal-ic" aria-hidden="true">📅</span><div class="chipset" role="group" aria-label="Month">${['all', ...months].map((k, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-month="${k}" aria-pressed="${!i}">${k === 'all' ? 'All' : mName(k)}</button>`).join('')}</div>
+<label class="cal-day"><span>Day</span><input type="date" min="${days[0]}" max="${days.at(-1)}" aria-label="Pick a match day"></label><small class="cal-count muted" aria-live="polite"></small></div>`;
+}
 
 function barList(rows, { fmt = (v) => v, base }) {
   const max = Math.max(...rows.map((r) => r.v), 0.0001);
@@ -251,7 +284,7 @@ function formStrip(ms, id, base) {
 function fixture(m, id, base) {
   const o = oppOf(m, id), us = m.clubs[id], them = m.clubs[o];
   const scorers = Object.values(m.players?.[id] || {}).filter((p) => num(p.goals) > 0).map((p) => `${esc(p.playername)}${num(p.goals) > 1 ? ` ×${p.goals}` : ''}`).join(', ');
-  return `<a class="fixture ${result(us)}" href="${base}matches/${m.matchId}.html">
+  return `<a class="fixture ${result(us)}" href="${base}matches/${m.matchId}.html" data-day="${dateStr(m.timestamp)}" data-id="${m.matchId}">
 <span class="fx-date">${niceDate(m.timestamp)}</span>${resPill(result(us))}
 <span class="fx-team">${crest(id, 28, base)}<span>${esc(clubName(id))}</span></span>
 <span class="fx-score">${esc(us.goals)}<i>–</i>${esc(them.goals)}</span>
@@ -272,8 +305,8 @@ function poster(m, base, { link = true } = {}) {
   const all = Object.values(m.players || {}).flatMap((l) => Object.values(l));
   const motm = all.find((p) => p.mom === '1') ?? [...all].sort((x, y) => num(y.rating) - num(x.rating))[0];
   const res = result(m.clubs[h]);
-  return `<div class="poster res-${res}" id="poster-${m.matchId}" data-home="${esc(clubName(h))}" data-away="${esc(clubName(a))}" data-score="${esc(m.clubs[h].goals)}-${esc(m.clubs[a].goals)}" data-date="${esc(niceDate(m.timestamp))}" data-scorers="${esc(scorers(h).join(', '))}" data-ascorers="${esc(scorers(a).join(', '))}" data-motm="${esc(motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : '')}" data-crest="${esc(posterCrest(h, base))}" data-acrest="${esc(posterCrest(a, base))}" data-res="${res}" data-type="${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}">
-<div class="po-label"><span>${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'} · ${niceDate(m.timestamp)}</span><span class="po-res">${res === 'W' ? 'Victory' : res === 'L' ? 'Defeat' : 'Draw'}</span></div>
+  return `<div class="poster res-${res}" id="poster-${m.matchId}" data-home="${esc(clubName(h))}" data-away="${esc(clubName(a))}" data-score="${esc(m.clubs[h].goals)}-${esc(m.clubs[a].goals)}" data-date="${esc(niceDate(m.timestamp))}" data-scorers="${esc(scorers(h).join(', '))}" data-ascorers="${esc(scorers(a).join(', '))}" data-motm="${esc(motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : '')}" data-crest="${esc(posterCrest(h, base))}" data-acrest="${esc(posterCrest(a, base))}" data-res="${res}" data-type="${typeLabel(m)}">
+<div class="po-label"><span>${typeLabel(m)} · ${niceDate(m.timestamp)}</span><span class="po-res">${res === 'W' ? 'Victory' : res === 'L' ? 'Defeat' : 'Draw'}</span></div>
 <div class="po-main">
 <div class="po-team">${crest(h, 110, base, 'po-crest')}<b>${clubLink(h, base)}</b><small>${scorers(h).map((s) => `⚽ ${esc(s)}`).join('<br>')}</small></div>
 <div class="po-score">${link ? `<a href="${base}matches/${m.matchId}.html">` : ''}${esc(m.clubs[h].goals)}<i>:</i>${esc(m.clubs[a].goals)}${link ? '</a>' : ''}</div>
@@ -454,7 +487,7 @@ function drillBody(id, base) {
   const scorerTxt = (x) => x.scorers.map((p) => `${pLinkByName(p.playername, base)}${num(p.goals) > 1 ? ` ×${num(p.goals)}` : ''}`).join(', ') || '<span class="muted">–</span>';
   const matchTable = (tid, rows, empty) => rows.length
     ? table(tid, ['Date', 'Res', 'Opponent', 'Score', '#Margin', 'Scorers', 'MOTM', '#Team rating'], rows.map((x) =>
-      `<tr>${dateCell(x.m.timestamp)}${td(resPill(x.res))}${td(`${crest(x.o, 22, base)} ${clubLink(x.o, base)}`, false, clubName(x.o).toLowerCase())}${td(scoreLink(x), false, x.gf * 100 - x.ga)}${td((x.margin > 0 ? '+' : '') + x.margin, true, x.margin)}${td(scorerTxt(x))}${td(x.motm ? `${pLinkByName(x.motm.playername, base)}${x.motmOurs ? '' : ' <small class="muted">opp</small>'}` : '–')}${td(ratingPill(x.rating), true, x.rating.toFixed(2))}</tr>`), { filter: 'Search opponents or scorers…' })
+      `<tr data-day="${dateStr(x.m.timestamp)}" data-id="${x.m.matchId}">${dateCell(x.m.timestamp)}${td(resPill(x.res))}${td(`${crest(x.o, 22, base)} ${clubLink(x.o, base)}`, false, clubName(x.o).toLowerCase())}${td(scoreLink(x), false, x.gf * 100 - x.ga)}${td((x.margin > 0 ? '+' : '') + x.margin, true, x.margin)}${td(scorerTxt(x))}${td(x.motm ? `${pLinkByName(x.motm.playername, base)}${x.motmOurs ? '' : ' <small class="muted">opp</small>'}` : '–')}${td(ratingPill(x.rating), true, x.rating.toFixed(2))}</tr>`), { filter: 'Search opponents or scorers…' })
     : emptyState(...empty);
   const strip = (title, rows) => rows.length ? `<h3 class="drill-sub">${title}</h3><div class="fixtures drill-strip">${rows.map((x) => fixture(x.m, id, base)).join('')}</div>` : '';
   const leaders = (f, n = 10) => {
@@ -515,12 +548,31 @@ ${card('Win rate over time', cumulative.length > 1 ? lineChart(cumulative, { min
 ${card('Win rate by opponent', barList([...new Set(M.map((x) => x.o))].map((o) => { const r = M.filter((x) => x.o === o); return { name: `${clubName(o)} (${r.length})`, v: pct(r.filter((x) => x.res === 'W').length, r.length) }; }).filter((e) => e.v > 0).sort((a, b) => b.v - a.v).slice(0, 10), { base, fmt: (v) => v + '%' }))}`,
   };
   const counts = { played: M.length, won: W.length, drawn: D.length, lost: L.length, goals: tot(M, (x) => x.gf), conceded: tot(M, (x) => x.ga), cleansheets: CS.length, winrate: `${pct(W.length, M.length)}%` };
-  const league = `<div class="tabs chipset drill-tabs" data-tabs data-drill>${DRILL.map(([k, l], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="f-${k}">${l} <small>${counts[k]}</small></button>`).join('')}</div>
-${DRILL.map(([k], i) => `<div class="tab-panel drill-panel" id="f-${k}"${i ? ' hidden' : ''}>${P[k]}</div>`).join('')}`;
+  const league = `${id === homeId ? calendar(`cal-${id}`, ms) : ''}<div id="cal-${id}"><div class="tabs chipset drill-tabs" data-tabs data-drill>${DRILL.map(([k, l], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="f-${k}">${l} <small>${counts[k]}</small></button>`).join('')}</div>
+${DRILL.map(([k], i) => `<div class="tab-panel drill-panel" id="f-${k}"${i ? ' hidden' : ''}>${P[k]}</div>`).join('')}</div>`;
   const eaGp = num(clubs.get(id)?.overall?.gamesPlayed);
   return `<section class="page-head reveal drill-head">${crest(id, 84, base)}<div><p class="kicker"><a href="${clubHref(id, base) ?? '#'}">← ${esc(clubName(id))}</a></p><h1>Match drill-down</h1>
 <p class="muted">Every stat card, match by match. Built from ${M.length} archived match${M.length === 1 ? '' : 'es'}${eaGp > M.length ? ` (EA's club totals count ${eaGp} – EA only shares the last few, so older ones aren't here)` : ''}.</p></div></section>
-<div class="reveal">${id === homeId ? modes(league, 'results', 'League & playoffs from EA · Rush logged by members') : league}</div>`;
+<div class="reveal">${id === homeId ? modes(league, 'results', 'League & playoffs from EA · Rush logged by members · friendlies apart', friendlyBody(base)) : league}</div>`;
+}
+
+// P1.8: the Friendly tab of the results + matches pages – record, scorers and every friendly (with the calendar).
+function friendlyBody(base) {
+  if (!friendlies.length) return emptyState('🤝', 'No friendlies yet', 'Club friendlies are saved here from now on – they never count towards League stats, leaderboards or awards.');
+  const R = friendlies.map((m) => result(m.clubs[homeId]));
+  const gf = sum(friendlies, (m) => num(m.clubs[homeId].goals)), ga = sum(friendlies, (m) => num(m.clubs[oppOf(m, homeId)].goals));
+  const T = new Map();
+  for (const m of friendlies) for (const [pid, p] of Object.entries(m.players?.[homeId] || {})) {
+    const k = players.has(pid) ? pid : nameToKey.get(String(p.playername).toLowerCase());
+    if (k && players.get(k)?.hidden) continue;
+    const e = T.get(k ?? p.playername) ?? { pl: k ? players.get(k) : null, name: p.playername, g: 0, a: 0 };
+    e.g += num(p.goals); e.a += num(p.assists); T.set(k ?? p.playername, e);
+  }
+  const top = (f) => [...T.values()].map((e) => ({ ...e, v: f(e) })).filter((e) => e.v > 0).sort((a, b) => b.v - a.v).slice(0, 8);
+  return `<section class="stats">${counter('Friendlies', friendlies.length)}${counter('Record', 0, { text: `${R.filter((r) => r === 'W').length}-${R.filter((r) => r === 'D').length}-${R.filter((r) => r === 'L').length}` })}${counter('Goals', gf)}${counter('Conceded', ga)}</section>
+<div class="grid2">${card('⚽ Scorers', barList(top((e) => e.g), { base }))}${card('🎯 Assists', barList(top((e) => e.a), { base }))}</div>
+${calendar('cal-fr', friendlies)}<div class="fixtures" id="cal-fr">${friendlies.map((m) => fixture(m, homeId, base)).join('')}</div>
+<p class="muted small">🤝 Club friendlies from EA – kept apart from League & playoff numbers.</p>`;
 }
 
 // ---------- player page ----------
@@ -545,7 +597,12 @@ function playerBody(pl, base) {
 ${a.length ? `<div class="form big"><span class="form-label">Form</span>${a.slice(0, 10).reverse().map((x) => `<a href="${base}matches/${x.matchId}.html" data-tip="${esc(`${x.gf}–${x.ga} vs ${clubName(x.oppId)} · ${x.rating.toFixed(1)}`)}">${resPill(x.res)}</a>`).join('')}</div>` : ''}
 <p><a class="btn" href="${base}compare.html?a=${encodeURIComponent(pl.key)}">⚖ Compare with…</a></p>
 </div></section>
-${(pl.isHome || pl.playedForHome) ? modes(league(), `player:${pl.key}`) : league()}`;
+${(pl.isHome || pl.playedForHome) ? modes(league(), `player:${pl.key}`, '', pl.fapps.length ? friendly() : null) : league()}`;
+  function friendly() {
+    const f = pl.fapps, ft = (k) => sum(f, (x) => x[k]);
+    return section('Friendlies', `<section class="stats">${counter('Apps', f.length)}${counter('Record', 0, { text: `${f.filter((x) => x.res === 'W').length}-${f.filter((x) => x.res === 'D').length}-${f.filter((x) => x.res === 'L').length}` })}${counter('Goals', ft('goals'))}${counter('Assists', ft('assists'))}${counter('Avg rating', avg(f.map((x) => x.rating)), { dec: 1 })}${counter('MOTM', ft('mom'))}</section>
+${logTable('flog', f, base)}<p class="muted small">🤝 Club friendlies – never counted in League stats.</p>`, { sub: `${f.length} archived` });
+  }
   function league() {
     return `${car ? section('Career', `<section class="stats">${counter('Games', car.gamesPlayed)}${counter('Goals', car.goals)}${counter('Assists', car.assists)}${counter('Avg rating', car.ratingAve, { dec: 1 })}${counter('MOTM', car.manOfTheMatch)}${counter('G+A per game', num(car.gamesPlayed) ? (num(car.goals) + num(car.assists)) / num(car.gamesPlayed) : 0, { dec: 2 })}</section>`, { sub: 'every club, from EA' }) : ''}
 <div class="grid2 reveal">
@@ -554,10 +611,23 @@ ${card('Match ratings', trend.length ? lineChart(trend, { min: 4, max: 10, ref: 
 </div>
 ${Object.keys(pl.clubStats).length ? section('By club', table('byclub', ['Club', 'Pos', '#OVR', '#GP', '#Goals', '#Assists', '#Rating', '#MOTM', '#Win %', '#Pass %', '#Tackle %'], Object.entries(pl.clubStats).map(([cid, cs]) =>
     `<tr>${td(`${crest(cid, 22, base)} ${clubLink(cid, base)}`)}${td(posOf(cs) || '—')}${td(esc(cs.proOverall ?? '–'), true)}${td(cs.gamesPlayed, true)}${td(cs.goals, true)}${td(cs.assists, true)}${td(ratingPill(num(cs.ratingAve)), true, cs.ratingAve)}${td(cs.manOfTheMatch, true)}${td(cs.winRate + '%', true, cs.winRate)}${td(cs.passSuccessRate + '%', true, cs.passSuccessRate)}${td(cs.tackleSuccessRate + '%', true, cs.tackleSuccessRate)}</tr>`))) : ''}
-${a.length ? section('Match log', `<section class="stats">${counter('Apps', a.length)}${counter('Record', 0, { text: `${w}-${d}-${l}` })}${counter('Goals', tot('goals'))}${counter('Assists', tot('assists'))}${counter('Avg rating', avg(a.map((x) => x.rating)), { dec: 1 })}${counter('MOTM', tot('mom'))}${counter('Pass %', pct(tot('passes'), tot('passAtt')), { suffix: '%' })}${counter('Tackle %', pct(tot('tackles'), tot('tackleAtt')), { suffix: '%' })}</section>
-${table('log', ['Date', 'Res', 'Score', 'For', 'Against', 'Pos', '#Rating', '#G', '#A', '#Shots', '#Pass', '#Tkl', '#Saves'], a.map((x) =>
-    `<tr>${dateCell(x.ts)}${td(resPill(x.res))}${td(`<a href="${base}matches/${x.matchId}.html">${x.gf}–${x.ga}</a>`)}${td(`${crest(x.clubId, 18, base)} ${clubLink(x.clubId, base)}`)}${td(`${crest(x.oppId, 18, base)} ${clubLink(x.oppId, base)}`)}${td(posAbbr(x.pos))}${td(ratingPill(x.rating) + (x.mom ? ' ⭐' : ''), true, x.rating)}${td(x.goals, true)}${td(x.assists, true)}${td(x.shots, true)}${td(`${x.passes}/${x.passAtt}`, true, x.passes)}${td(`${x.tackles}/${x.tackleAtt}`, true, x.tackles)}${td(x.saves, true)}</tr>`))}`, { sub: `${a.length} archived` }) : ''}`;
+${a.length ? section('Match log', `<section class="stats">${counter('Apps', a.length)}${counter('Record', 0, { text: `${w}-${d}-${l}` })}${counter('Goals', tot('goals'))}${counter('Assists', tot('assists'))}${counter('Avg rating', avg(a.map((x) => x.rating)), { dec: 1 })}${counter('MOTM', tot('mom'))}${counter('Pass %', pct(tot('passes'), tot('passAtt')), { suffix: '%' })}${counter('Tackle %', pct(tot('tackles'), tot('tackleAtt')), { suffix: '%' })}${evStats(a)}</section>
+${logTable('log', a, base)}${evNote(a)}`, { sub: `${a.length} archived` }) : ''}`;
   }
+}
+// P1.8: dribbles + second assists – totals and per 90 over the apps that have them, with a "since" note.
+function evStats(a) {
+  const e = a.filter((x) => x.dribbles != null);
+  if (!e.length) return '';
+  const drb = sum(e, (x) => x.dribbles);
+  return `${counter('Dribbles', drb)}${counter('Dribbles/game', drb / e.length, { dec: 1 })}${counter('2nd assists', sum(e, (x) => x.sa))}`;
+}
+const evNote = (a) => (a.some((x) => x.dribbles != null) ? `<p class="muted small">🏃 Dribbles and 2nd assists (the pass before the assist) come from EA's match events – only in games archived since ${esc(EV_SINCE)}.</p>` : '');
+function logTable(id, a, base) {
+  const ev = a.some((x) => x.dribbles != null);
+  const evd = (v) => td(v == null ? '<span class="muted">–</span>' : v, true, v ?? -1);
+  return table(id, ['Date', 'Res', 'Score', 'For', 'Against', 'Pos', '#Rating', '#G', '#A', ...(ev ? ['#2nd A'] : []), '#Shots', '#Pass', '#Tkl', ...(ev ? ['#Drb'] : []), '#Saves'], a.map((x) =>
+    `<tr>${dateCell(x.ts)}${td(resPill(x.res))}${td(`<a href="${base}matches/${x.matchId}.html">${x.gf}–${x.ga}</a>`)}${td(`${crest(x.clubId, 18, base)} ${clubLink(x.clubId, base)}`)}${td(`${crest(x.oppId, 18, base)} ${clubLink(x.oppId, base)}`)}${td(posAbbr(x.pos))}${td(ratingPill(x.rating) + (x.mom ? ' ⭐' : ''), true, x.rating)}${td(x.goals, true)}${td(x.assists, true)}${ev ? evd(x.sa) : ''}${td(x.shots, true)}${td(`${x.passes}/${x.passAtt}`, true, x.passes)}${td(`${x.tackles}/${x.tackleAtt}`, true, x.tackles)}${ev ? evd(x.dribbles) : ''}${td(x.saves, true)}</tr>`));
 }
 
 // ---------- match page ----------
@@ -571,10 +641,12 @@ function matchBody(m, base) {
       passPct: pct(sum(l, (p) => num(p.passesmade)), sum(l, (p) => num(p.passattempts))), tackles: sum(l, (p) => num(p.tacklesmade)),
       tacklePct: pct(sum(l, (p) => num(p.tacklesmade)), sum(l, (p) => num(p.tackleattempts))), saves: sum(l, (p) => num(p.saves)),
       rating: avg(l.map((p) => num(p.rating))), red: sum(l, (p) => num(p.redcards)), players: l.length,
+      dribbles: sum(l, (p) => num(p.dribbles)), sa: sum(l, (p) => num(p.secondassists)),
     };
   };
   const T = [team(h), team(aw)];
-  const rows = [['Goals', 'goals'], ['Shots', 'shots'], ['Passes', 'passes'], ['Pass accuracy', 'passPct', '%'], ['Tackles', 'tackles'], ['Tackle success', 'tacklePct', '%'], ['Saves', 'saves'], ['Avg rating', 'rating', '', 1], ['Red cards', 'red'], ['Human players', 'players']];
+  const ev = hasEv(m);
+  const rows = [['Goals', 'goals'], ['Shots', 'shots'], ['Passes', 'passes'], ['Pass accuracy', 'passPct', '%'], ...(ev ? [['Dribbles', 'dribbles'], ['2nd assists', 'sa']] : []), ['Tackles', 'tackles'], ['Tackle success', 'tacklePct', '%'], ['Saves', 'saves'], ['Avg rating', 'rating', '', 1], ['Red cards', 'red'], ['Human players', 'players']];
   const cmp = rows.map(([label, k, suf = '', dec = 0]) => {
     const x = T[0][k], y = T[1][k], tot = x + y || 1;
     return `<li><b class="${x > y ? 'lead' : ''}">${dec ? x.toFixed(dec) : x}${suf}</b><span>${label}</span><b class="${y > x ? 'lead' : ''}">${dec ? y.toFixed(dec) : y}${suf}</b><div class="duel"><i class="l" style="--w:${(x / tot) * 100}%"></i><i class="r" style="--w:${(y / tot) * 100}%"></i></div></li>`;
@@ -592,12 +664,13 @@ function matchBody(m, base) {
 ${dots.map(({ p, side, x, y }) => { const pl = players.get(p.pid); return `<a class="pp side${side}" style="left:${x}%;top:${y}%" ${pl && !pl.hidden ? `href="${pUrl(pl, base)}"` : ''} data-tip="${esc(`${p.playername} · ${posAbbr(p.pos)} · ${num(p.rating).toFixed(1)}${num(p.goals) ? ` · ${p.goals}G` : ''}${num(p.assists) ? ` · ${p.assists}A` : ''}`)}"><b class="${ratingClass(num(p.rating))}">${num(p.rating).toFixed(1)}</b><span>${esc(p.playername)}</span>${p.mom === '1' ? '<em>⭐</em>' : ''}${num(p.goals) ? `<u>${'⚽'.repeat(Math.min(num(p.goals), 3))}</u>` : ''}</a>`; }).join('')}</div>
 <div class="pitch-key"><span>${crest(h, 18, base)} ${esc(clubName(h))} →</span><span>← ${esc(clubName(aw))} ${crest(aw, 18, base)}</span></div>`;
 
-  const side = (cid) => section(`${crest(cid, 30, base)} ${clubLink(cid, base)}`, table(`m-${cid}`, ['Player', 'Pos', '#Rating', '#G', '#A', '#Shots', '#Pass', '#Tkl', '#Saves', 'MOTM'], list(cid).sort((x, y) => num(y.rating) - num(x.rating)).map((p) =>
-    `<tr>${td(pLink(p.pid, base, p.playername))}${td(posAbbr(p.pos))}${td(ratingPill(num(p.rating)), true, num(p.rating))}${td(p.goals, true)}${td(p.assists, true)}${td(p.shots, true)}${td(`${p.passesmade}/${p.passattempts}`, true, p.passesmade)}${td(`${p.tacklesmade}/${p.tackleattempts}`, true, p.tacklesmade)}${td(p.saves, true)}${td(p.mom === '1' ? '⭐' : '')}</tr>`)));
+  const evd = (v) => td(v === undefined ? '<span class="muted">–</span>' : esc(v), true, v === undefined ? -1 : num(v));
+  const side = (cid) => section(`${crest(cid, 30, base)} ${clubLink(cid, base)}`, table(`m-${cid}`, ['Player', 'Pos', '#Rating', '#G', '#A', ...(ev ? ['#2nd A'] : []), '#Shots', '#Pass', ...(ev ? ['#Drb'] : []), '#Tkl', '#Saves', 'MOTM'], list(cid).sort((x, y) => num(y.rating) - num(x.rating)).map((p) =>
+    `<tr>${td(pLink(p.pid, base, p.playername))}${td(posAbbr(p.pos))}${td(ratingPill(num(p.rating)), true, num(p.rating))}${td(p.goals, true)}${td(p.assists, true)}${ev ? evd(p.secondassists) : ''}${td(p.shots, true)}${td(`${p.passesmade}/${p.passattempts}`, true, p.passesmade)}${ev ? evd(p.dribbles) : ''}${td(`${p.tacklesmade}/${p.tackleattempts}`, true, p.tacklesmade)}${td(p.saves, true)}${td(p.mom === '1' ? '⭐' : '')}</tr>`)));
 
-  return `<div class="reveal">${poster(m, base, { link: false })}<button class="btn dl-poster" type="button" data-for="poster-${m.matchId}">⬇ Download result graphic</button></div>
+  return `${m.matchType === 'friendlyMatch' ? '<p class="kicker reveal">🤝 Club friendly – not counted in League stats</p>' : ''}<div class="reveal">${poster(m, base, { link: false })}<button class="btn dl-poster" type="button" data-for="poster-${m.matchId}">⬇ Download result graphic</button></div>
 <div class="grid2 reveal">${card('Match stats', `<div class="cmp-head"><span>${crest(h, 26, base)}</span><span>${crest(aw, 26, base)}</span></div><ul class="compare-bars">${cmp}</ul>`)}${card('Line-ups & ratings', pitch)}</div>
-${side(h)}${side(aw)}`;
+${side(h)}${side(aw)}${ev ? '<p class="muted small">🏃 Drb = dribbles completed, 2nd A = the pass before the assist (from EA\'s match events).</p>' : ''}`;
 }
 
 // ---------- write ----------
@@ -631,7 +704,7 @@ ${pageHead('Clubs', 'Found automatically. Every opponent is tracked, and any clu
 <div class="toolbar"><div class="chipset" data-tierfilter>${['all', 'home', 'linked', 'manual', 'discovered'].map((t, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tier="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div><input class="filter" type="search" placeholder="Search clubs…" data-cardfilter=".club-card"></div>
 <div class="club-grid">${clubList.map((c) => { const o = { ...(c.overall ?? {}), ...(c.leaderboard ?? {}) }; const tr = state.clubs[c.id]?.tier ?? 'archived'; return `<a class="club-card tier-${esc(tr)}" data-tier="${esc(tr)}" href="${clubHref(c.id, '../')}">${crest(c.id, 72, '../')}<b>${esc(clubName(c.id))}</b><span class="tag">${esc(tr)}</span><small>${esc(o.wins ?? 0)}W · ${esc(o.ties ?? 0)}D · ${esc(o.losses ?? 0)}L</small><small class="muted">SR ${esc(o.skillRating ?? '–')}${o.currentDivision ? ` · Div ${esc(o.currentDivision)}` : ''}</small></a>`; }).join('')}</div>` }));
 
-for (const m of matches) {
+for (const m of allMatches) {
   const [a, b] = Object.keys(m.clubs);
   // Share preview: the opponent's crest (ours for linked-club games) + score line, scorers and MOTM.
   const [h, aw] = m.clubs[homeId] ? [homeId, oppOf(m, homeId)] : [a, b];
@@ -640,15 +713,15 @@ for (const m of matches) {
   const goals = Object.values(m.players?.[h] || {}).filter((p) => num(p.goals)).map((p) => `${p.playername}${num(p.goals) > 1 ? ` ×${num(p.goals)}` : ''}`);
   const verdict = { W: 'Win', L: 'Defeat', D: 'Draw' }[result(m.clubs[h])];
   write(`matches/${m.matchId}.html`, page({ title: `${clubName(h)} ${m.clubs[h].goals}–${m.clubs[aw].goals} ${clubName(aw)}`, base: '../', active: 'matches', body: matchBody(m, '../'),
-    description: `${verdict} · ${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'} · ${niceDate(m.timestamp)}${goals.length ? ` · ⚽ ${goals.join(', ')}` : ''}${motm ? ` · ⭐ MOTM ${motm.playername} (${num(motm.rating).toFixed(1)})` : ''}`,
+    description: `${verdict} · ${typeLabel(m)} · ${niceDate(m.timestamp)}${goals.length ? ` · ⚽ ${goals.join(', ')}` : ''}${motm ? ` · ⭐ MOTM ${motm.playername} (${num(motm.rating).toFixed(1)})` : ''}`,
     image: ogCrest(h === homeId ? aw : h) }));
 }
 const sessions = sessionsFor(homeMatches, homeId);
 write('matches/index.html', page({ title: `Matches – ${config.siteTitle}`, base: '../', active: 'matches', body: `
 ${pageHead('Matches', 'Every match since the site started archiving (EA itself only keeps the last 5). Play nights are grouped into sessions and graded on results and goal difference.', '../')}
 ${modes(`${section('Sessions', `<div class="session-grid">${sessions.map((s) => sessionCard(s, '../', homeId)).join('') || emptyState('🗓️', 'No sessions yet', 'Every play night becomes a graded session card here.')}</div>`)}
-${section('All results', `<div class="fixtures">${homeMatches.map((m) => fixture(m, homeId, '../')).join('') || emptyState('🗂️', 'No results yet', 'Every league and playoff match is saved here from the next update on.')}</div>`)}
-${matches.some((m) => !m.clubs[homeId]) ? section('Linked club matches', `<div class="fixtures">${matches.filter((m) => !m.clubs[homeId]).map((m) => fixture(m, Object.keys(m.clubs)[0], '../')).join('')}</div>`) : ''}`, 'matches', 'League & playoffs from EA · Rush logged by members')}` }));
+${section('All results', `${calendar('cal-all', homeMatches)}<div class="fixtures" id="cal-all">${homeMatches.map((m) => fixture(m, homeId, '../')).join('') || emptyState('🗂️', 'No results yet', 'Every league and playoff match is saved here from the next update on.')}</div>`)}
+${matches.some((m) => !m.clubs[homeId]) ? section('Linked club matches', `<div class="fixtures">${matches.filter((m) => !m.clubs[homeId]).map((m) => fixture(m, Object.keys(m.clubs)[0], '../')).join('')}</div>`) : ''}`, 'matches', 'League & playoffs from EA · Rush logged by members · friendlies apart', section('Friendlies', friendlyBody('../')))}` }));
 
 // Stats centre
 const homeC = clubs.get(homeId);
@@ -687,7 +760,20 @@ for (const m of homeMatches) {
   h2h.set(o, e);
 }
 // Leaderboards, hall of fame + advanced metrics (P4.5 / P4.6 / P1.2) – lives in leaders-page.mjs.
-const LH = { write, page, pageHead, section, modes, esc, emptyState, pLink, clubName, config, brand, MEMBER_API, STARS, leaderboard: homeC?.leaderboard };
+// P1.8: EA's global top 100 by skill rating (data/world.json, fetched once a day) + where NOREX stands.
+function worldHtml() {
+  const w = readJson(path.join(DATA, 'world.json'), null);
+  if (!w?.clubs?.length) return emptyState('🌍', 'World table not loaded yet', 'EA’s global top 100 is fetched once a day – it appears after the next update.');
+  const sr = num(homeC?.overall?.skillRating), cut = w.clubs.at(-1).sr, me = w.clubs.find((c) => c.id === homeId);
+  const logo = (c) => (clubs.has(c.id) ? crest(c.id, 22, '') : c.crest ? `<img class="crest" src="${CREST_CDN}${num(c.crest)}.png" width="22" height="22" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '');
+  const name = (c) => (clubHref(c.id, '') ? `<a href="${clubHref(c.id, '')}">${esc(c.name)}</a>` : esc(c.name));
+  return `<section class="stats world-stats">${me ? counter('World rank', me.rank, { text: `#${me.rank}` }) : ''}${counter(`${esc(config.siteTitle)} SR`, sr)}${counter('#1 skill rating', w.clubs[0].sr)}${counter('#100 cut-off', cut)}${me ? '' : counter('SR to the top 100', Math.max(0, cut - sr + 1))}</section>
+<p class="world-verdict">${me ? `🌍 <b>${esc(config.siteTitle)}</b> is <b>#${me.rank}</b> in the world – ${me.sr - cut} SR above the cut-off.` : `🎯 <b>${Math.max(0, cut - sr + 1)} SR</b> to break into the world top 100 (we're on ${sr}, #100 has ${cut}).`}</p>
+${table('world', ['#Rank', 'Club', '#SR', '#GP', 'W-D-L', '#Win %', '#Goals/gm', '#Clean sh.', '#Div'], w.clubs.map((c) =>
+    `<tr${c.id === homeId ? ' class="world-me"' : ''}>${td(c.rank, true)}${td(`${logo(c)} ${name(c)}`, false, c.name.toLowerCase())}${td(`<b>${c.sr}</b>`, true, c.sr)}${td(c.gp, true)}${td(`${c.w}-${c.d}-${c.l}`, false, c.w)}${td(pct(c.w, c.gp) + '%', true, pct(c.w, c.gp))}${td(c.gp ? (c.gf / c.gp).toFixed(2) : '–', true, c.gp ? c.gf / c.gp : 0)}${td(c.cs, true)}${td(c.div ?? '–', true, c.div ?? 99)}</tr>`), { filter: 'Search clubs…' })}
+<p class="muted small">All-time skill rating from EA, updated ${esc(new Date(w.fetchedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }))}. Every platform of this generation in one table.</p>`;
+}
+const LH = { write, page, pageHead, section, modes, esc, emptyState, pLink, clubName, config, brand, MEMBER_API, STARS, leaderboard: homeC?.leaderboard, world: worldHtml(), evSince: EV_SINCE };
 const lm = leagueMatches({ homeMatches, homeId, isHidden: (pid) => !!players.get(pid)?.hidden, oppOf, result });
 buildLeaders(LH, lm);
 buildHallOfFame(LH, lm, { recs });
@@ -790,12 +876,13 @@ write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
 }))));
 // Personal match log for the Squad Hub dashboard (P2.6) and achievements (P2.3 / P4.3): our players' League
 // matches for NOREX, oldest → newest, compact rows (see cols). grp = position group from EA's app position.
-const SQUAD_COLS = ['ts', 'res', 'g', 'a', 'r', 'motm', 'shots', 'pass', 'passAtt', 'tkl', 'tklAtt', 'saves', 'gf', 'ga', 'grp'];
+// dri/sa = dribbles / second assists (P1.8), null for games archived before they were kept.
+const SQUAD_COLS = ['ts', 'res', 'g', 'a', 'r', 'motm', 'shots', 'pass', 'passAtt', 'tkl', 'tklAtt', 'saves', 'gf', 'ga', 'grp', 'dri', 'sa'];
 const GRP = { goalkeeper: 'GK', defender: 'DEF', midfielder: 'MID', forward: 'FWD', attacker: 'FWD' };
 write('api/squad.json', JSON.stringify({
   cols: SQUAD_COLS,
   players: Object.fromEntries(visiblePlayers.filter((pl) => pl.isHome || pl.playedForHome).map((pl) => [pl.key, pl.apps.filter((x) => x.clubId === homeId).slice(0, 300).reverse()
-    .map((x) => [x.ts, x.res, x.goals, x.assists, x.rating, x.mom ? 1 : 0, x.shots, x.passes, x.passAtt, x.tackles, x.tackleAtt, x.saves, x.gf, x.ga, GRP[x.pos] ?? ''])]).filter(([, l]) => l.length)),
+    .map((x) => [x.ts, x.res, x.goals, x.assists, x.rating, x.mom ? 1 : 0, x.shots, x.passes, x.passAtt, x.tackles, x.tackleAtt, x.saves, x.gf, x.ga, GRP[x.pos] ?? '', x.dribbles, x.sa])]).filter(([, l]) => l.length)),
 }));
 write('api/clubs.json', JSON.stringify([...clubs.values()].map((c) => ({ id: c.id, n: clubName(c.id), t: state.clubs[c.id]?.tier ?? 'archived', ...(clubKit(c.id)?.crestAssetId ? { cr: crestSrc(c.id, SITE) } : {}) }))));
 const ho = { ...(homeC?.overall ?? {}), ...(homeC?.leaderboard ?? {}) };

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const DATA = path.join(ROOT, 'data');
+export const DATA = process.env.NOREX_DATA || path.join(ROOT, 'data'); // tests point this at a fixture copy
 
 export function readJson(file, fallback = null) {
   try {
@@ -50,4 +50,17 @@ export async function loadOverrides(config, body) {
     console.warn('Overrides not loaded:', e.message);
     return none;
   }
+}
+
+// EA's per-player event counters ("111:21,174:5,…"). Only two codes are known (P1.8, from PLANNING/RESEARCH-fc-sites.md):
+// 174 = dribbles completed, 115 = second assists. Everything else is dropped.
+export const EVENTS = { 174: 'dribbles', 115: 'secondassists' };
+export function eventCounts(agg) {
+  if (typeof agg !== 'string' || !agg) return null;
+  const out = Object.fromEntries(Object.values(EVENTS).map((k) => [k, '0']));
+  for (const pair of agg.split(',')) {
+    const [code, n] = pair.split(':');
+    if (EVENTS[code]) out[EVENTS[code]] = String(num(n));
+  }
+  return out;
 }
