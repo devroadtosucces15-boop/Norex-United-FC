@@ -34,7 +34,10 @@ export const PERMS = {
   'feedback.send': 'claimed', // P4.4 – claimed → claimed players
   'feedback.authors': 'manager', // P4.4 – who wrote anonymous feedback
   'lineup.unlock': 'claimed', // P3.x – claimed + Rush positions set
-  'events.manage': 'manager', // P3.x
+  'events.manage': 'manager', // P3.1 – create / edit / cancel events, quick lineup (P3.7), share session reports
+  'events.view': 'member', // P3.1 – schedule in the Squad Hub (+ session reports, P3.7)
+  'events.rsvp': 'member', // P3.2 – ✅ ❔ ❌ per event
+  'events.checkin': 'member', // P3.7 – "I'm on" during a match night (+ position trial)
   'builds.save': 'member', // PB.2 – Save to My builds, fork
   'builds.feature': 'manager', // PB.3 – "Club recommended" on the Pro Builds board
   'builds.squad': 'manager', // PB.4 – everyone's League/Rush build in the portal

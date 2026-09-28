@@ -130,7 +130,7 @@ const DISCORD_HELP = {
 const discord = (env, path, init = {}) => fetch(`https://discord.com/api/v10${path}`, {
   ...init, headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
 });
-async function discordTargets(env) {
+export async function discordTargets(env) {
   if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return { ready: false, error: DISCORD_HELP.setup };
   const [c, r] = await Promise.all([discord(env, `/guilds/${env.DISCORD_GUILD_ID}/channels`), discord(env, `/guilds/${env.DISCORD_GUILD_ID}/roles`)]);
   if (!c.ok || !r.ok) return { ready: false, error: `Discord said ${c.ok ? r.status : c.status} – is the bot in the server?` };
@@ -142,21 +142,35 @@ async function discordTargets(env) {
     last: opt((await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value),
   };
 }
+// Sends one message to a channel, pinging `role` (the guild id = @everyone) and nobody else. Never throws.
+// Shared with P3.1 events. Returns { ok, id } or { ok: false, error } with a human explanation.
+export async function postEmbed(env, channel, role, message) {
+  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return { ok: false, error: DISCORD_HELP.setup };
+  channel = String(channel ?? ''); role = String(role ?? '');
+  if (!/^\d{5,25}$/.test(channel)) return { ok: false, error: 'Pick a channel.' };
+  if (role && !/^\d{1,25}$/.test(role)) return { ok: false, error: 'Pick a role to ping, or none.' };
+  const everyone = role && role === env.DISCORD_GUILD_ID;
+  const msg = {
+    ...message,
+    content: role ? `${everyone ? '@everyone' : `<@&${role}>`}${message.content ? ` ${message.content}` : ''}` : message.content,
+    allowed_mentions: role ? (everyone ? { parse: ['everyone'] } : { roles: [role] }) : { parse: [] },
+  };
+  let r;
+  try { r = await discord(env, `/channels/${channel}/messages`, { method: 'POST', body: JSON.stringify(msg) }); } catch (e) { return { ok: false, error: e.message }; }
+  const res = await r.json().catch(() => ({}));
+  if (!r.ok) return { ok: false, error: DISCORD_HELP[res.code] ?? `Discord refused the post (${r.status}${res.message ? `: ${res.message}` : ''}).` };
+  await run(env, "INSERT INTO meta (key, value) VALUES ('announce_channel', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", channel);
+  return { ok: true, id: res.id };
+}
 // Posts one docs item as a rich embed. Never throws – returns { ok } or { ok: false, error } for the UI.
 async function postDoc(env, me, id, target, log) {
   if (!can(me, 'announce.discord')) return { ok: false, error: 'Managers only.' };
-  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return { ok: false, error: DISCORD_HELP.setup };
   const channel = String(target.channel ?? ''), role = String(target.role ?? '');
-  if (!/^\d{5,25}$/.test(channel)) return { ok: false, error: 'Pick a channel.' };
-  if (role && !/^\d{1,25}$/.test(role)) return { ok: false, error: 'Pick a role to ping, or none.' };
   const d = await one(env, 'SELECT * FROM docs WHERE id = ? AND removed_at IS NULL', id);
   if (!d) return { ok: false, error: 'That item no longer exists.' };
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
   const img = d.body.split('\n').map((l) => l.trim()).find((l) => IMG_LINE.test(l));
-  const everyone = role && role === env.DISCORD_GUILD_ID;
-  const msg = {
-    content: role ? (everyone ? '@everyone' : `<@&${role}>`) : undefined,
-    allowed_mentions: role ? (everyone ? { parse: ['everyone'] } : { roles: [role] }) : { parse: [] },
+  const res = await postEmbed(env, channel, role, {
     embeds: [{
       title: `${{ announce: '📣', rules: '📜', requirements: '✅', faq: '❓', glossary: '📖', playstyle: '🧠' }[d.area] ?? '📣'} ${d.title}`.slice(0, 250),
       description: plain(d.body, true).slice(0, 3900) || undefined,
@@ -165,14 +179,10 @@ async function postDoc(env, me, id, target, log) {
       author: { name: me.n }, footer: { text: 'NOREX UNITED · club announcements' },
     }],
     components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Open on the site', url: `${site}docs.html#d-${d.id}` }] }],
-  };
-  let r;
-  try { r = await discord(env, `/channels/${channel}/messages`, { method: 'POST', body: JSON.stringify(msg) }); } catch (e) { return { ok: false, error: e.message }; }
-  const res = await r.json().catch(() => ({}));
-  if (!r.ok) return { ok: false, error: DISCORD_HELP[res.code] ?? `Discord refused the post (${r.status}${res.message ? `: ${res.message}` : ''}).` };
+  });
+  if (!res.ok) return res;
   await run(env, 'UPDATE docs SET discord_channel = ?, discord_msg = ?, discord_at = ? WHERE id = ?', channel, res.id ?? null, Date.now(), d.id);
-  await run(env, "INSERT INTO meta (key, value) VALUES ('announce_channel', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", channel);
-  await log(env, me, 'doc-discord', `${d.title}${role ? ` · ping ${everyone ? '@everyone' : 'role'}` : ''}`);
+  await log(env, me, 'doc-discord', `${d.title}${role ? ` · ping ${role === env.DISCORD_GUILD_ID ? '@everyone' : 'role'}` : ''}`);
   return { ok: true };
 }
 

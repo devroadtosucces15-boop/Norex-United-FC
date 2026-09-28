@@ -1,0 +1,111 @@
+/* Schedule, event availability, match night and session reports (P3.1 / P3.2 / P3.7). Uses the tokens from style.css. */
+.ev-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0 0 12px}
+.ev-top h3{margin:0}.ev-top p{margin:2px 0 0}
+.ev-top .btn{margin:0}
+
+/* 14-day calendar strip */
+.ev-cal{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(58px,1fr);gap:6px;overflow-x:auto;padding:2px 2px 10px;margin:0 0 12px;scrollbar-width:thin}
+.ev-day{display:grid;justify-items:center;gap:2px;padding:8px 4px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font:600 12px var(--body);cursor:pointer;transition:border-color .2s,transform .15s}
+.ev-day b{font:700 20px var(--head);color:#fff}
+.ev-day span{display:flex;gap:1px;min-height:18px}
+.ev-day .dot{font-style:normal;font-size:12px;filter:grayscale(.3)}
+.ev-day .dot.my-yes{filter:none;text-shadow:0 0 8px var(--win)}
+.ev-day[disabled]{opacity:.45;cursor:default}
+.ev-day.has:hover{border-color:#fff;transform:translateY(-2px)}
+.ev-day.today{border-color:var(--red)}
+.ev-day.on{background:#fff}.ev-day.on b,.ev-day.on small{color:#111}
+
+/* event cards */
+.ev-group{margin:0 0 18px;scroll-margin-top:150px}
+.ev-group>h4{margin:0 0 8px;font:600 14px var(--head);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.ev-group>h4 em{font-style:normal;color:var(--red);margin-left:6px}
+.ev{display:grid;gap:10px;margin:0 0 10px;position:relative;overflow:hidden;transition:border-color .15s,transform .15s;animation:evIn .3s ease both}
+.ev::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--line2)}
+.ev-league::before,.ev-playoffs::before{background:var(--red)}.ev-rush::before{background:var(--gold)}.ev-friendly::before{background:#60a5fa}.ev-trial::before{background:#a78bfa}.ev-training::before{background:var(--win)}
+.ev.sel{border-color:var(--red);transform:translateY(-2px)}
+.ev.my-yes{box-shadow:inset 0 3px 0 #22c55e}.ev.my-maybe{box-shadow:inset 0 3px 0 var(--draw)}.ev.my-no{box-shadow:inset 0 3px 0 var(--loss)}
+.ev.ph-cancelled{opacity:.6}.ev.ph-cancelled .ev-t b{text-decoration:line-through}
+.ev.ph-live{border-color:var(--red);box-shadow:0 0 0 1px rgba(200,53,44,.4),0 0 24px rgba(200,53,44,.18)}
+.ev>header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.ev-sel{accent-color:var(--red);width:18px;height:18px}
+.ev-ic{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.06);font-size:20px}
+.ev-t{flex:1;min-width:150px;display:grid}
+.ev-t b{font:700 18px var(--head);text-transform:uppercase;letter-spacing:.03em;color:#fff}
+.ev-t small{color:#cfd5de;font-size:13px}
+.ev-notes{margin:0;color:#d5dae2;font-size:14px;overflow-wrap:anywhere}
+.ev-needs{display:flex;flex-wrap:wrap;gap:6px}
+.ev-need{display:inline-flex;gap:6px;align-items:center;padding:3px 10px;border-radius:999px;font:600 12px var(--body);background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4)}
+.ev-need.short{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.45)}
+.ev-who{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ev>footer{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ev>footer .pick{min-width:170px}
+.ev>footer .btn{margin:0}
+.ev-past{margin-top:18px}
+.ev-past summary{cursor:pointer;font:600 14px var(--head);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+.ev-past summary em,.ev-live h4 em{font-style:normal;font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.1)}
+
+/* match night */
+.ev-live{padding:12px;border-radius:12px;background:linear-gradient(120deg,rgba(200,53,44,.14),transparent 70%);border:1px solid rgba(200,53,44,.35)}
+.ev-live .btn{margin:0}
+.ev-live .btn.on{background:var(--win);border-color:var(--win);color:#062b14}
+.ev-live h4{margin:12px 0 8px;font:600 13px var(--head);text-transform:uppercase;letter-spacing:.08em}
+.ev-trial{display:flex;align-items:center;gap:6px;font-size:13px;color:#cfd5de}
+.ev-trial select,.ev-lineup select{padding:6px 8px;border-radius:8px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:13px var(--body);color-scheme:dark}
+.ev-on{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.ev-on li{animation:evIn .3s ease both}
+.ev-lineup{display:grid;gap:8px}
+.ev-lineup label{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* editor */
+.ev-form{display:grid;gap:12px}
+.ev-form label{display:grid;gap:5px;font:600 13px var(--body);color:#dfe3ea}
+.ev-form :is(input:not([type=checkbox]):not([type=radio]),select,textarea),.ev-reason input{padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:14px var(--body);width:100%;min-width:0;color-scheme:dark}
+.ev-form :is(input,select,textarea):focus{outline:2px solid var(--red);outline-offset:1px}
+.ev-types .chip{cursor:pointer}.ev-types input,.ev-form .dx-check input{accent-color:var(--red)}
+.ev-types .chip:has(input:checked){background:#fff;color:#111;border-color:#fff}
+.ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.ev-needs-in{border:1px solid var(--line2);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.ev-needs-in legend{font:600 13px var(--body);padding:0 6px}
+.ev-form .ev-n{font-size:12px}
+.ev-form .ev-n input{padding:6px 8px}
+.ev-dc{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.ev-form .dx-check{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
+.ev-reason{display:grid;gap:5px;font:600 13px var(--body)}
+
+/* session report */
+.rp-head{display:flex;gap:14px;align-items:center;margin:0 0 12px}
+.rp-head div{display:grid;gap:2px}.rp-head small{color:#cfd5de}
+.rp-grade{display:grid;place-items:center;width:64px;height:64px;border-radius:16px;font:700 30px var(--head);color:#fff;background:var(--line2);animation:evPop .5s cubic-bezier(.2,1.6,.4,1) both}
+.rp-g{display:inline-grid;place-items:center;min-width:30px;padding:2px 6px;border-radius:7px;font:700 13px var(--head);background:var(--line2)}
+:is(.rp-grade,.rp-g).g-Ap{background:linear-gradient(135deg,#b8860b,#f5d061);color:#111}
+:is(.rp-grade,.rp-g).g-A{background:#059669}:is(.rp-grade,.rp-g).g-B{background:#15803d}:is(.rp-grade,.rp-g).g-C{background:#a16207}
+:is(.rp-grade,.rp-g).g-D{background:#c2410c}:is(.rp-grade,.rp-g).g-F{background:#b91c1c}
+.rp-results{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:6px}
+.rp-results li{display:flex;align-items:center;gap:8px}
+.rp-table b.up{color:var(--win)}.rp-table b.down{color:var(--loss)}
+.rp-share{margin-top:12px;padding:12px;border-radius:12px;border:1px dashed var(--line2);display:grid;gap:8px}
+.rp-share label{display:grid;gap:5px;font:600 13px var(--body)}
+.rp-share select{padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:14px var(--body);color-scheme:dark}
+
+/* home page strip */
+.ev-next{display:flex;align-items:center;gap:14px;margin:0 0 22px;padding:14px 18px;border-radius:var(--radius);text-decoration:none;color:#fff;
+  background:linear-gradient(110deg,rgba(232,193,106,.16),var(--panel) 60%);border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));transition:transform .2s,border-color .2s}
+.ev-next:hover{transform:translateY(-2px);border-color:var(--gold)}
+.ev-next.live{background:linear-gradient(110deg,rgba(200,53,44,.3),var(--panel) 60%);border-color:var(--red)}
+.ev-next-ic{font-size:28px}
+.ev-next>span:nth-child(2){flex:1;min-width:0;display:grid;gap:2px}
+.ev-next small{color:var(--gold);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+.ev-next.live small{color:#fff}
+.ev-next b{font:700 18px var(--head);text-transform:uppercase;letter-spacing:.03em}
+.ev-next em{font-style:normal;color:#c9cfd9;font-size:13.5px}
+.ev-next i{font-style:normal;font-size:20px;color:var(--gold)}
+.ev-short{color:var(--draw)}
+
+@keyframes evIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes evPop{from{transform:scale(.4) rotate(-12deg);opacity:0}}
+@media (max-width:560px){
+  .ev-t b{font-size:16px}
+  .ev>footer .pick{flex:1 1 100%}
+  .ev-next{padding:12px 14px}.ev-next b{font-size:16px}.ev-next i{display:none}
+}
+@media (prefers-reduced-motion:reduce){.ev,.ev-on li,.rp-grade{animation:none}}

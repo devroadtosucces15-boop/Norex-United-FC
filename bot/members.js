@@ -19,6 +19,7 @@ import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute,
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
+import { eventsRoute, publicEvents, weekEvents } from './events.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -213,6 +214,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
     if (request.method === 'GET' && ['/api/probuilds', '/api/probuilds/get', '/api/probuilds/player'].includes(url.pathname)) { // PB.3 / PB.4 – public to read
       if (me) me.role = await currentRole(env, me);
       return cors(env, await probuildsPublic(url.pathname, env, me, url));
+    }
+    if (url.pathname === '/api/events/public' && request.method === 'GET') { // P3.1 – "next match night" strip on the home page
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'events')) return cors(env, fail('Not available yet.', 404));
+      return cors(env, json(await publicEvents(env)));
     }
     if (url.pathname === '/api/docs' && request.method === 'GET') { // P5.2 – guests see items marked public, behind the docs flag
       if (me) me.role = await currentRole(env, me);
@@ -412,6 +418,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (bdg) return bdg;
   const kno = await knowledgeRoute(p, method, body, me, env, log, url); // P5.1 play style · P5.2/P5.3 docs · P5.4 suggestions
   if (kno) return kno;
+  const evt = await eventsRoute(p, method, body, me, env, log, loadSite, url); // P3.1 events · P3.2 RSVPs · P3.7 match night
+  if (evt) return evt;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);
@@ -466,6 +474,7 @@ async function route(p, method, body, me, env, loadSite, url) {
         availability: dates.map((d) => ({ date: d, byUser: avail[d] })),
         votes: recent.map((m, i) => ({ id: m.id, opp: m.opp, gf: m.gf, ga: m.ga, res: m.res, voters: Object.entries(votes[i]).map(([id, v]) => ({ id, ...v, pn: (m.ps || []).find((x) => x.k === v.p)?.n })) })),
         ...(can(me, 'settings.bot') ? { flags: flags(env) } : {}),
+        ...(flagOn(env, me, 'events') ? { events: await weekEvents(env, me) } : {}), // P3.2 – squad week by event
       });
     }
   }
