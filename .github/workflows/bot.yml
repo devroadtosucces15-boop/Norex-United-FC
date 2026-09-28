@@ -25,9 +25,14 @@ jobs:
         with:
           node-version: 22
 
-      - name: Member database (Cloudflare KV)
+      - name: Member database (Cloudflare KV + D1)
         if: env.CLOUDFLARE_API_TOKEN != ''
-        run: node bot/ensure-kv.mjs
+        run: node bot/ensure-resources.mjs
+
+      - name: Apply database migrations (D1)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: bot
+        run: npx --yes wrangler@4 d1 migrations apply norex --remote
 
       - name: Deploy to Cloudflare Workers
         if: env.CLOUDFLARE_API_TOKEN != ''
