@@ -338,7 +338,7 @@ if (MAPI) (() => {
     const myRole = baseRole === 'member' && cached?.player ? 'claimed' : baseRole;
     slot.innerHTML = `<div class="acct"><button class="me-btn" type="button" aria-haspopup="true" aria-expanded="false"><img src="${esc(session.a)}" alt=""><span>${esc(session.n)}</span><i>▾</i></button>
 <div class="acct-menu" hidden><div class="acct-head"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><small>${ROLE[myRole][0]}</small></div></div>
-<a href="${hub}#me">👤 My profile</a>${profilesOn ? `<a href="${BASE}member.html?u=${encodeURIComponent(session.u)}">🪪 My public profile</a>` : ''}${cached?.player ? `<a href="${BASE}players/${encodeURIComponent(cached.player)}.html">🪪 My player page</a>` : ''}
+<a href="${hub}#me">👤 My profile</a>${flagOn('myStats', baseRole) ? `<a href="${hub}#stats">📊 My stats</a>` : ''}${profilesOn ? `<a href="${BASE}member.html?u=${encodeURIComponent(session.u)}">🪪 My public profile</a>` : ''}${cached?.player ? `<a href="${BASE}players/${encodeURIComponent(cached.player)}.html">🪪 My player page</a>` : ''}
 ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notifications</a>` : ''}<a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a>${flagOn('rushLog', baseRole) ? `<a href="${hub}#rush">⚡ Log Rush result</a>` : ''}${session.adm ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
 <button type="button" class="acct-out">↩ Log out</button></div></div>`;
     const btn = $('.me-btn', slot), menu = $('.acct-menu', slot);
@@ -408,7 +408,7 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
   const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   const pill = (r) => `<span class="res ${r}">${r}</span>`;
   const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set() };
-  const TABS = [['me', '👤 My NOREX'], ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
+  const TABS = [['me', '👤 My NOREX'], ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
 
   hubEl.innerHTML = `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
 <div class="chipset hub-tabs">${TABS.map(([k, l]) => `<button class="chip" type="button" data-tab="${k}">${l}</button>`).join('')}</div>
@@ -436,7 +436,7 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
       if (tab === S.tab) draw();
     } catch (e) { toast(e.message, true); }
   }
-  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
+  const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
 
   // ----- My NOREX -----
   function viewMe() {
@@ -704,6 +704,10 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
     const ba = $('#builds-admin', panel); // PB.4 squad builds by position
     if (ba) (window.NXProBuilds ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/probuilds.js`, onload: ok, onerror: no })))).then(() => NXProBuilds.portal(ba)).catch(() => toast('Could not load the builds – try again', true));
     for (const [id, fn] of [['#trials-admin', 'portal'], ['#notes-admin', 'notesTab'], ['#scout-panel', 'scout']]) { const el = $(id, panel); if (el) withTrials((T, ctx) => T[fn](el, ctx)); }
+    const sp = $('#stats-panel', panel); // P2.6 personal dashboard – assets/mystats.js
+    if (sp) (window.NXMyStats ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/mystats.js`, onload: ok, onerror: no }))))
+      .then(() => NXMyStats.tab(sp, { call, toast, me: { u: session.u, n: session.n, a: session.a }, claim: S.me?.claim, players: () => api().then(([p]) => p), flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole) }))
+      .catch(() => toast('Could not load your stats – try again', true));
     const ap = $('#alerts-panel', panel), ra = $('#requests-admin', panel);
     if (ap) loadNotify().then(() => NXNotify.tab(ap, notifyCtx())).catch(() => toast('Could not load notifications – try again', true));
     if (ra) loadNotify().then(() => NXNotify.requestsPortal(ra, notifyCtx())).catch(() => toast('Could not load requests – try again', true));

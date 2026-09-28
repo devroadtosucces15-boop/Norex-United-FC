@@ -104,9 +104,10 @@ t('member card: no badges while flag is off for the viewer', !('badges' in (awai
 setFlags({ badges: 'members' });
 
 // ----- client -----
-t('assets shipped', ['badges.js', 'badges.css'].every((f) => fs.existsSync(ROOT + 'site/assets/' + f)));
+t('assets shipped', ['badges.js', 'badges.css', 'mystats.js', 'mystats.css'].every((f) => fs.existsSync(ROOT + 'site/assets/' + f)));
 const app = fs.readFileSync(ROOT + 'web/app.js', 'utf8');
+t('P2.6 hub tab behind the myStats flag', app.includes("flagOn('myStats', baseRole) ? [['stats', '📊 My stats']]") && app.includes('assets/mystats.js'));
 t('P4.3 unlock toast checked on hub start behind the badges flag', app.includes("flagOn('badges', me.user.role)") && app.includes('checkUnlocks'));
-t('flags ship owner-only', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.badges === 'owner');
+t('flags ship owner-only', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.badges === 'owner' && JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.myStats === 'owner');
 
 done();
