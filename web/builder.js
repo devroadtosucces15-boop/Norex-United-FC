@@ -2,6 +2,7 @@
 // over-cap guards, undo/reset, ★ signature attributes, face stats + OVR estimate, share link; (b) PlayStyles,
 // Specializations, Facilities and Body tabs (height/weight modifiers as +/− badges), position fit, League/Rush notes;
 // (c) Save image (branded PNG card), Save to My builds (login, Worker /api/builds), Compare two builds, Fork.
+// PB.3 / PB.4: 📣 Post to Pro Builds (/api/probuilds/post) and ⭐ Use as my build (/api/mybuild), behind the proBuilds flag.
 // Game data comes from NXGame.load() (newest published version), the maths from build-math.js.
 (() => {
   const root = document.querySelector('[data-builder]');
@@ -14,6 +15,11 @@
   let g, b, hist = [], tab = 'playstyles';
   let cur = null; // the saved build that's open: { id, title, mine, by } – Save updates it when it's mine
   let saved = null; // my builds (loaded on first use)
+  let picks = {}; // PB.4: { league: buildId, rush: buildId } – my builds shown on my profile
+  let postDraft = null; // the Post form keeps what was typed if the server says no
+  const pro = () => window.NXViewer?.flagOn('proBuilds');
+  const POS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
+  const MODES = [['league', '🏟️', 'League'], ['rush', '⚡', 'Rush']];
   const TABS = [['playstyles', '💫 PlayStyles'], ['specializations', '🎓 Specializations'], ['facilities', '🏟️ Facilities'], ['body', '📏 Body']];
   const none = (what) => `<div class="bd-empty"><span>🗂️</span><div><b>No ${what} in the game data yet</b><p class="muted small">Managers add them from the in-game screens (portal → 🎮 Game rules → changed values). They show up here straight away.</p></div></div>`;
   const toast = (m, t) => (window.UI ? UI.toast(m, t) : null);
@@ -48,11 +54,11 @@
   const open = (x) => {
     const d = decodeCode(x.code);
     if (!d) { toast('That build can’t be read with the current game data', 'error'); return; }
-    push(); b = d; cur = { id: x.id, title: x.title, mine: x.mine, by: x.by?.n };
+    push(); b = d; cur = { id: x.id, title: x.title, mine: x.mine, by: x.by?.n, position: x.position, mode: x.mode, posted: x.posted };
     setHash(); draw();
     if (outdated(x)) toast(`Made on ${x.version} – shown with the current rules (${g.version})`);
   };
-  const loadMine = async () => (saved = (await call('/api/builds')).builds);
+  const loadMine = async () => { const r = await call('/api/builds'); picks = r.picks || {}; return (saved = r.builds); };
 
   async function save() {
     if (await needLogin('save builds', 'save')) return;
@@ -89,7 +95,7 @@
     const m = UI.modal({ title: 'My builds', icon: '📂', wide: true, body: '<div data-mb>' + (UI.skeleton ? UI.skeleton('rows', 3) : '<p class="muted">Loading…</p>') + '</div>' });
     const box = m.el.querySelector('[data-mb]');
     const paint = () => {
-      box.innerHTML = saved.length ? `<p class="muted small">${saved.length} saved · open one to keep editing, or compare it with what’s on screen.</p><ul class="bd-list">${saved.map((x) => `<li${cur?.id === x.id ? ' class="on"' : ''}><div><b>${esc(x.title)}</b><small class="muted">${esc(archName(x.arch))} · L${x.level}${x.forkedFrom ? ' · 🍴 fork' : ''} · ${UI.ago ? UI.ago(x.updated) : new Date(x.updated).toLocaleDateString()}${outdated(x) ? ` · <span class="bd-old" title="Made on ${esc(x.version)}">⚠ older rules</span>` : ''}</small></div>
+      box.innerHTML = saved.length ? `<p class="muted small">${saved.length} saved · open one to keep editing, or compare it with what’s on screen.</p><ul class="bd-list">${saved.map((x) => `<li${cur?.id === x.id ? ' class="on"' : ''}><div><b>${esc(x.title)}</b><small class="muted">${esc(archName(x.arch))} · L${x.level}${x.forkedFrom ? ' · 🍴 fork' : ''}${x.posted ? ' · 📣 posted' : ''}${MODES.filter(([k]) => picks[k] === x.id).map(([, ic, l]) => ` · ${ic} my ${l} build`).join('')} · ${UI.ago ? UI.ago(x.updated) : new Date(x.updated).toLocaleDateString()}${outdated(x) ? ` · <span class="bd-old" title="Made on ${esc(x.version)}">⚠ older rules</span>` : ''}</small></div>
 <span class="bd-li-acts"><button type="button" class="btn sm" data-open="${x.id}">Open</button><button type="button" class="btn ghost sm" data-cmp="${x.id}" title="Compare with the build on screen">⚖️</button><button type="button" class="btn ghost sm" data-copy="${x.id}" title="Duplicate (fork)">🍴</button><button type="button" class="btn ghost sm" data-del="${x.id}" title="Delete" aria-label="Delete ${esc(x.title)}">🗑️</button></span></li>`).join('')}</ul>`
         : (UI.empty ? UI.empty({ icon: '📂', title: 'No saved builds yet', text: 'Press 💾 Save on any build and it lands here.' }) : '<p class="muted">No saved builds yet.</p>');
     };
@@ -107,6 +113,69 @@
         try { saved = (await call('/api/builds/delete', { id: x.id })).builds; if (cur?.id === x.id) { cur = null; draw(); } paint(); toast('Build deleted'); } catch (err) { saved = keep; paint(); toast(err.message, 'error'); }
       }
     });
+  }
+
+  // ---------- PB.3: post to Pro Builds · PB.4: use as my build ----------
+  const modeRadios = (name, pick) => `<div class="chipset" role="radiogroup" aria-label="Mode">${MODES.map(([k, ic, l]) => `<label class="chip pb-radio"><input type="radio" name="${name}" value="${k}"${pick === k ? ' checked' : ''}> ${ic} ${l}</label>`).join('')}</div>`;
+  const posSelect = (pick) => `<select data-pos>${POS.map((p) => `<option${p === pick ? ' selected' : ''}>${p}</option>`).join('')}</select>`;
+  async function post() {
+    if (await needLogin('post builds', 'post')) return;
+    const ev = M.evaluate(g, b);
+    const own = cur?.mine && cur.id;
+    let d = postDraft ?? { title: own ? cur.title : `${ev.arch.name} L${ev.level}`, position: cur?.position || ev.fit[0]?.[0], mode: cur?.mode || 'league', description: '', clip: '', tags: '' };
+    if (!postDraft && own && cur.posted) { // updating a post: start from what's on the board
+      const x = await call(`/api/probuilds/get?id=${cur.id}`).then((r) => r.build).catch(() => null);
+      if (x) d = { ...d, title: x.title, position: x.position || d.position, mode: x.mode || d.mode, description: x.desc || '', clip: x.clip || '', tags: (x.tags || []).join(', ') };
+    }
+    const v = await new Promise((ok) => {
+      const m = UI.modal({ title: cur?.posted && own ? 'Update your post' : 'Post to Pro Builds', icon: '📣', wide: true, body: `<div class="pb-form">
+<label class="pb-field"><span>Title</span><input data-t maxlength="60" value="${esc(d.title)}" autofocus></label>
+<div class="pb-2"><label class="pb-field"><span>Position</span>${posSelect(d.position)}</label><div class="pb-field"><span>Mode</span>${modeRadios('pbm', d.mode)}</div></div>
+<label class="pb-field"><span>How to play it</span><textarea data-d maxlength="1000" rows="4" placeholder="Role, runs, what to watch out for, which PlayStyles carry it…">${esc(d.description)}</textarea></label>
+<div class="pb-2"><label class="pb-field"><span>Clip link <small>(optional – YouTube, Twitch, Medal …)</small></span><input data-clip type="url" maxlength="300" value="${esc(d.clip)}" placeholder="https://youtu.be/…"></label>
+<label class="pb-field"><span>Tags <small>(up to 5, commas)</small></span><input data-tags maxlength="120" value="${esc(d.tags)}" placeholder="pace, finesse, rush"></label></div>
+<p class="muted small">🏷️ Archetype, level/MAX, patch, body and PlayStyles are labelled automatically. ${own ? 'Posting also saves what’s on screen to this build.' : 'The build is saved to My builds too.'}</p></div>`,
+      actions: [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: '📣 Post', value: 'ok' }] });
+      m.then((r) => {
+        const q = (s2) => m.el.querySelector(s2);
+        postDraft = { title: q('[data-t]').value.trim(), position: q('[data-pos]').value, mode: q('input[name=pbm]:checked')?.value || 'league', description: q('[data-d]').value, clip: q('[data-clip]').value.trim(), tags: q('[data-tags]').value };
+        ok(r && postDraft);
+      });
+    });
+    if (!v) return;
+    try {
+      const r = await call('/api/probuilds/post', { ...(own ? { id: cur.id } : {}), code: M.encode(g, b), ...v, tags: v.tags.split(',') });
+      postDraft = null; saved = null;
+      cur = { id: r.build.id, title: r.build.title, mine: true, position: r.build.position, mode: r.build.mode, posted: true };
+      draw();
+      UI.toast('📣 Posted to Pro Builds', 'ok', { action: { label: 'View post', fn: () => { location.href = `${BASE}probuilds.html#b=${r.build.id}`; } } });
+    } catch (e) { toast(e.message, 'bad'); }
+  }
+  async function myBuild() {
+    if (await needLogin('pick your build', 'mybuild')) return;
+    const ev = M.evaluate(g, b);
+    const v = await new Promise((ok) => {
+      const m = UI.modal({ title: 'Use as my build', icon: '⭐', body: `<p class="muted small">The build on screen shows on your profile, your hover card and your player page.${cur?.mine ? ' Your saved build is updated with what’s on screen.' : ' It’s saved to My builds.'}</p>
+<div class="pb-form"><div class="pb-field"><span>This is my…</span>${modeRadios('pbmy', cur?.mode || 'league')}</div><label class="pb-field"><span>Position</span>${posSelect(cur?.position || ev.fit[0]?.[0])}</label></div>`,
+        actions: [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: '⭐ Use this build', value: 'ok' }] });
+      m.then((r) => ok(r && { mode: m.el.querySelector('input[name=pbmy]:checked')?.value || 'league', position: m.el.querySelector('[data-pos]').value }));
+    });
+    if (!v) return;
+    try {
+      const code = M.encode(g, b);
+      let r;
+      if (cur?.mine && cur.id) {
+        await call('/api/builds', { id: cur.id, title: cur.title, code });
+        r = await call('/api/mybuild', { id: cur.id, ...v });
+      } else {
+        r = await call('/api/mybuild', { code, title: cur?.title || `${ev.arch.name} L${ev.level}`, ...v });
+        cur = { id: r.saved, title: r.picks[v.mode]?.title, mine: true, ...v };
+      }
+      picks = Object.fromEntries(MODES.map(([k]) => [k, r.picks[k]?.id]).filter(([, id]) => id));
+      saved = null; draw();
+      const me = (() => { try { return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(token().split('.')[0].replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)))).u; } catch { return null; } })();
+      UI.toast(`⭐ Now your ${v.mode === 'rush' ? 'Rush' : 'League'} build`, 'ok', me && window.NXViewer?.flagOn('profiles') ? { action: { label: 'View profile', fn: () => { location.href = `${BASE}member.html?u=${encodeURIComponent(me)}`; } } } : {});
+    } catch (e) { toast(e.message, 'bad'); }
   }
 
   // Side by side: the build on screen (A) against a saved build or a pasted share link (B).
@@ -289,6 +358,7 @@ ${cur ? `<div class="bd-cur"><span>${cur.mine ? '📂' : '👀'}</span><div><sma
 <div class="bd-modes">${notes(ev).map(([ic, t]) => `<p><span>${ic}</span><span>${t}</span></p>`).join('')}</div>
 <div class="bd-acts"><button type="button" class="btn ghost sm" data-undo${hist.length ? '' : ' disabled'}>↶ Undo</button><button type="button" class="btn ghost sm" data-reset${ev.used ? '' : ' disabled'}>⟲ Reset</button><button type="button" class="btn sm" data-share>🔗 Share link</button></div>
 <div class="bd-acts bd-save"><button type="button" class="btn sm" data-save>💾 ${cur?.mine ? 'Save' : 'Save build'}</button><button type="button" class="btn ghost sm" data-mine>📂 My builds</button><button type="button" class="btn ghost sm" data-compare>⚖️ Compare</button><button type="button" class="btn ghost sm" data-image>🖼️ Save image</button></div>
+${pro() ? `<div class="bd-acts bd-pro"><button type="button" class="btn sm" data-post>📣 ${cur?.posted && cur.mine ? 'Update post' : 'Post to Pro Builds'}</button><button type="button" class="btn ghost sm" data-mybuild title="Show this build on your profile">⭐ Use as my build</button><a class="btn ghost sm" href="${BASE}probuilds.html">🏆 Pro Builds</a></div>` : ''}
 <p class="muted small">* Face stats are group averages and OVR is a weighted estimate – EA doesn't publish its formula. Shift-click +/− moves 5 points.</p>
 ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-mast"><b>🏅 Masteries</b>${(g.masteries || []).filter((m) => m.archetype === ev.arch.id).map((m) => `<span class="${ev.level >= m.level ? 'on' : ''}">L${m.level}: ${Object.entries(m.bonus).map(([k, v]) => `+${v} ${esc(k)}`).join(', ')}</span>`).join('')}</div>` : ''}
 </aside></div>`;
@@ -345,6 +415,8 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     else if ('save' in t.dataset) save();
     else if ('mine' in t.dataset) myBuilds();
     else if ('compare' in t.dataset) compare();
+    else if ('post' in t.dataset) post();
+    else if ('mybuild' in t.dataset) myBuild();
     else if ('image' in t.dataset) image().catch(() => toast('Couldn’t draw the image – try again', 'error'));
     else if (t.dataset.fork) fork(+t.dataset.fork);
     else if ('close' in t.dataset) { cur = null; draw(); }
@@ -393,6 +465,6 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     // builder.html?build=<id> opens a saved (own) or posted build – with a Fork button when it isn't yours.
     const want = new URLSearchParams(location.search).get('build');
     if (want && token()) call(`/api/builds/get?id=${encodeURIComponent(want)}`).then((r) => open(r.build)).catch((e) => toast(e.message, 'error'));
-    if (pending?.then === 'save' && token()) setTimeout(save, 300); // after app.js stored the new session
+    if (token() && pending?.then) setTimeout({ save, post, mybuild: myBuild }[pending.then] || (() => {}), 300); // after app.js stored the new session
   }).catch(() => { $('[data-bd-body]').innerHTML = '<p class="muted">Couldn’t load the game data – try again in a moment.</p>'; });
 })();

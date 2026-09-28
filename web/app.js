@@ -12,6 +12,8 @@ const flagOn = (name, role = 'guest') => FLAGS[name] in FLAG_MIN && (RANK[role] 
 const applyFlags = (role) => $$('[data-flag]').forEach((el) => { el.hidden = !flagOn(el.dataset.flag, role); });
 applyFlags('guest');
 let viewerRole = 'guest'; // set by the members block after login
+// For page scripts that draw after load (builder, Pro Builds): who's looking and which flags are on for them.
+window.NXViewer = { get role() { return viewerRole; }, flagOn: (name) => flagOn(name, viewerRole) };
 let apiCache;
 const api = () => (apiCache ??= Promise.all(['players', 'clubs'].map((f) => fetch(`${BASE}api/${f}.json`).then((r) => r.json()))));
 
@@ -358,6 +360,17 @@ if (MAPI) (() => {
       if (!c) return;
       el.innerHTML = `<div class="verified"><img src="${esc(c.avatar)}" alt=""${c.id && profilesOn ? ` data-hc="${esc(c.id)}" data-hc-name="${esc(c.name ?? '')}" data-hc-av="${esc(c.avatar)}" tabindex="0"` : ''}><div><b>✓ Verified NOREX member</b><span>${c.id && profilesOn ? `<a href="${BASE}member.html?u=${encodeURIComponent(c.id)}">${esc(c.name ?? '')}</a>` : esc(c.name ?? '')}${c.country && /^[A-Z]{2}$/.test(c.country) ? ` ${String.fromCodePoint(...[...c.country].map((x) => 0x1f1a5 + x.charCodeAt(0)))}` : ''}${c.platform ? ` · ${esc(c.platform)}` : ''}${c.positions?.length ? ` · ${c.positions.map(esc).join(' / ')}` : ''}</span>${c.bio ? `<p>${esc(c.bio)}</p>` : ''}</div></div>`;
     });
+    if (flagOn('proBuilds', viewerRole)) $$('.member-badge[data-player]').forEach(async (el) => { // PB.4 – mini build cards
+      const c = claims[el.dataset.player];
+      if (!c?.id) return;
+      try {
+        const { picks } = await (await fetch(`${MAPI}/api/probuilds/player?u=${encodeURIComponent(c.id)}`, { cache: 'no-store', headers: session ? { Authorization: `Bearer ${session.token}` } : {} })).json();
+        if (!picks?.league && !picks?.rush) return;
+        if (!window.NXBuildCard) await new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/buildcard.js`, onload: ok, onerror: no })));
+        const g = await NXBuildCard.ready();
+        el.insertAdjacentHTML('beforeend', `<div class="pb-minis pb-player">${[['league', '🏟️ League build'], ['rush', '⚡ Rush build']].filter(([k]) => picks[k]).map(([k, l]) => NXBuildCard.mini(g, picks[k], { href: flagOn('builder', viewerRole) ? NXBuildCard.builderUrl(picks[k]) : undefined, head: `${l}${picks[k].position ? ` · ${picks[k].position}` : ''}` })).join('')}</div>`);
+      } catch {}
+    });
     $$('a.fut').forEach((a) => {
       const k = decodeURIComponent((a.getAttribute('href') || '').split('/').pop().replace('.html', ''));
       if (claims[k]) a.classList.add('is-verified');
@@ -574,7 +587,7 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
     const mem = (id, u, sub, size = 26) => { const c = A.claims[id]; const pl = c?.status === 'approved' ? c : null; return UI.member({ id, n: u.n, a: u.a, sub: sub ?? (pl ? `🪪 ${pl.playerName}` : ''), player: pl?.player, href: profilesOn ? `${BASE}member.html?u=${encodeURIComponent(id)}` : undefined }, { size }); };
     const rq = S.rush?.pending || [];
     const notesOn = flagOn('managerNotes', baseRole);
-    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(A.flags ? [['flags', '🚩 Flags']] : [])];
+    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(flagOn('proBuilds', baseRole) && S.me?.user?.perms?.includes('builds.squad') ? [['builds', '🧬 Builds']] : []), ...(A.flags ? [['flags', '🚩 Flags']] : [])];
     if (!sub.some(([k]) => k === S.adminTab)) S.adminTab = 'claims';
     const body = {
       claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'New player claims show up here for approval.' })}
@@ -595,6 +608,7 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
       trials: () => '<div id="trials-admin"></div>', // P1.5 – drawn by assets/trials.js
       notes: () => '<div id="notes-admin"></div>', // P5.7
       game: () => `<div id="game-admin">${UI.skeleton('rows', 4)}</div>`, // PB.1 – drawn by assets/game.js
+      builds: () => `<div id="builds-admin">${UI.skeleton('rows', 4)}</div>`, // PB.4 – drawn by assets/probuilds.js
       // Owner only: read-only view of the live flags (the Worker's copy). Change them in config.json → features.
       flags: () => `<h3>🚩 Feature flags</h3><p class="muted small">New features start as <b>Owner</b> (only you see them) and get switched on at the QA checkpoints. Levels: off · owner · managers · members · public.</p>
 ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature</th><th>Level</th><th>Who sees it</th><th>Site copy</th></tr></thead><tbody>${Object.entries(A.flags).map(([k, v]) => `<tr><td><code>${esc(k)}</code></td><td>${UI.pill(v, { emoji: FLAG_ICON[v], tone: v === 'public' ? 'win' : v === 'off' ? 'loss' : v === 'owner' ? 'gold' : 'draw' })}</td><td>${esc(FLAG_WHO[v] || '–')}</td><td>${FLAGS[k] === v ? '✅' : `<span class="tag" data-tip="The site updates on its next build">${esc(FLAGS[k] || 'missing')}</span>`}</td></tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '🚩', title: 'No flags yet' })}`,
@@ -619,7 +633,8 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
 
   // ----- event wiring for whatever panel is showing -----
   // Game rules editor (PB.1) lives in assets/game.js, loaded on first use.
-  Object.assign(ACT, { 'game-publish': '🎮', 'game-dismiss': '🙈' });
+  Object.assign(ACT, { 'game-publish': '🎮', 'game-dismiss': '🙈', 'build-save': '💾', 'build-update': '💾', 'build-delete': '🗑', 'build-fork': '🍴', 'probuild-post': '📣', 'probuild-unpost': '📤', 'probuild-remove': '🗑', 'probuild-feature': '⭐', 'probuild-comment': '💬', 'probuild-comment-remove': '🗑', mybuild: '🧬' });
+  Object.assign(ACT_TXT, { 'build-save': 'saved a build', 'build-update': 'updated a build', 'build-delete': 'deleted a build', 'build-fork': 'forked a build', 'probuild-post': 'posted to Pro Builds', 'probuild-unpost': 'took a build down', 'probuild-remove': 'removed a Pro Builds post', 'probuild-feature': 'changed Club recommended', 'probuild-comment': 'commented on a build', 'probuild-comment-remove': 'removed a comment', mybuild: 'picked their build' });
   Object.assign(ACT_TXT, { 'game-publish': 'published game rules', 'game-dismiss': 'dismissed a patch-note cap mention' });
   const gameAdmin = (el) => new Promise((ok, no) => (window.NXGame ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/game.js`, onload: ok, onerror: no }))))
     .then(() => NXGame.portal(el, { call, toast })).catch(() => toast('Could not load the game rules editor', true));
@@ -674,6 +689,8 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
     if (pe) loadProfile().then(() => NXProfile.editor(pe, profileCtx({ onSaved: (p) => { S.me.profile = p; } }), S.me.profile)).catch(() => toast('Could not load the profile editor', true));
     const ga = $('#game-admin', panel);
     if (ga) gameAdmin(ga);
+    const ba = $('#builds-admin', panel); // PB.4 squad builds by position
+    if (ba) (window.NXProBuilds ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/probuilds.js`, onload: ok, onerror: no })))).then(() => NXProBuilds.portal(ba)).catch(() => toast('Could not load the builds – try again', true));
     for (const [id, fn] of [['#trials-admin', 'portal'], ['#notes-admin', 'notesTab'], ['#scout-panel', 'scout']]) { const el = $(id, panel); if (el) withTrials((T, ctx) => T[fn](el, ctx)); }
     const rf = $('#rush-form', panel);
     if (rf) rf.onsubmit = (e) => { e.preventDefault(); sendRush(readRushForm()); };

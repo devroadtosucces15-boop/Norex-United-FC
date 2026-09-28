@@ -36,7 +36,8 @@ export const PERMS = {
   'lineup.unlock': 'claimed', // P3.x – claimed + Rush positions set
   'events.manage': 'manager', // P3.x
   'builds.save': 'member', // PB.2 – Save to My builds, fork
-  'builds.feature': 'manager', // PB – "Club recommended"
+  'builds.feature': 'manager', // PB.3 – "Club recommended" on the Pro Builds board
+  'builds.squad': 'manager', // PB.4 – everyone's League/Rush build in the portal
   'game.edit': 'manager', // PB.1 – publish game-rules versions (level cap, dataset), confirm patch-note cap changes
   'content.edit': 'manager', // P5.x – announcements, rules, FAQ
   'notes.private': 'manager', // P5.7 – private notes per member / player / trial

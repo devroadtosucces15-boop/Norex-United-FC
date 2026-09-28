@@ -15,6 +15,7 @@ import { gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
 import { getHof, honoursRoute } from './honours.js';
 import { buildsRoute } from './builds.js';
+import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
@@ -201,6 +202,10 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (!flagOn(env, me, 'hallOfFame')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await getHof(env, me)));
     }
+    if (request.method === 'GET' && ['/api/probuilds', '/api/probuilds/get', '/api/probuilds/player'].includes(url.pathname)) { // PB.3 / PB.4 – public to read
+      if (me) me.role = await currentRole(env, me);
+      return cors(env, await probuildsPublic(url.pathname, env, me, url));
+    }
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
@@ -378,6 +383,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (hon) return hon;
   const bld = await buildsRoute(p, method, body, me, env, log, url); // PB.2 saved builds, fork
   if (bld) return bld;
+  const pro = await probuildsRoute(p, method, body, me, env, log); // PB.3 Pro Builds board · PB.4 my build
+  if (pro) return pro;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

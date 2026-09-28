@@ -5,6 +5,7 @@ import { ROOT, DATA, readJson, loadConfig, num } from './lib.mjs';
 import { lineChart, goalBars, donut, radar, spark } from './charts.mjs';
 import { buildUpdates } from './updates-page.mjs';
 import { buildBuilder } from './builder-page.mjs';
+import { buildProBuilds } from './probuilds-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 
 const OUT = path.join(ROOT, 'site');
@@ -322,7 +323,7 @@ const NAV = [
   ['home', 'index.html', 'Club'], ['squad', 'squad.html', 'Squad'], ['matches', 'matches/index.html', 'Matches'],
   ['stats', 'stats.html', 'Stats'], ['compare', 'compare.html', 'Compare'], ['players', 'players/index.html', 'Players'],
   ['leaders', 'leaders.html', 'Leaders'], ['clubs', 'clubs/index.html', 'Clubs'],
-  ['updates', 'updates.html', 'Updates'], ['builder', 'builder.html', 'Builder', 'builder'],
+  ['updates', 'updates.html', 'Updates'], ['builder', 'builder.html', 'Builder', 'builder'], ['probuilds', 'probuilds.html', 'Pro Builds', 'proBuilds'],
 ];
 
 function page({ title, base, active, body, description, image }) {
@@ -774,6 +775,8 @@ ${RECRUIT.open ? `<p class="about-links"><a class="btn" href="apply.html">👑 A
 buildUpdates({ write, page, pageHead, section, esc, emptyState, config });
 // Archetype builder sandbox (PB.2) – builder-page.mjs, client in web/builder.js.
 buildBuilder({ write, page, pageHead, esc, emptyState, config });
+// Pro Builds board (PB.3) – probuilds-page.mjs, client in web/probuilds.js + web/buildcard.js.
+buildProBuilds({ write, page, pageHead, esc, emptyState, config });
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({

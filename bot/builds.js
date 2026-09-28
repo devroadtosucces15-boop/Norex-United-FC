@@ -3,7 +3,7 @@
 //   GET  /api/builds              members – my builds (newest first)
 //   GET  /api/builds/get?id=      one build: mine, or a posted one (PB.3) – for opening / comparing / forking
 //   POST /api/builds              save a new build, or update my own ({ id })
-//   POST /api/builds/delete       remove one of mine
+//   POST /api/builds/delete       remove one of mine (also unposts it and clears it as my League/Rush build)
 //   POST /api/builds/fork         copy a build I can see into my builds (forked_from keeps the trail)
 // All behind the `builder` flag; saving needs the builds.save permission (member).
 import { can, flagOn } from './roles.js';
@@ -21,13 +21,21 @@ const ID_RE = /^[a-z0-9][a-z0-9_-]{0,39}$/;
 const VERSION_RE = /^[a-z0-9][a-z0-9.-]{0,39}$/;
 
 const out = (r, me) => ({ id: r.id, title: r.title, code: r.code, arch: r.arch, level: r.level, version: r.version, forkedFrom: r.forked_from ?? null,
-  posted: !!r.posted_at, by: { id: r.user_id, n: r.name, a: r.avatar }, mine: r.user_id === me.u, at: r.at, updated: r.updated_at });
-const mine = async (env, me) => ({ builds: (await all(env, 'SELECT * FROM builds WHERE user_id = ? AND removed_at IS NULL ORDER BY updated_at DESC LIMIT ?', me.u, MAX_BUILDS)).map((r) => out(r, me)), max: MAX_BUILDS });
-// A build someone may open: their own, or a posted one.
-const visible = (env, me, id) => one(env, 'SELECT * FROM builds WHERE id = ? AND removed_at IS NULL AND (user_id = ? OR posted_at IS NOT NULL)', Number(id) || 0, me.u);
+  posted: !!r.posted_at, position: r.position ?? null, mode: r.mode ?? null, by: { id: r.user_id, n: r.name, a: r.avatar }, mine: r.user_id === me.u, at: r.at, updated: r.updated_at });
+// picks = which of my builds is my League / Rush build (PB.4, table my_builds).
+const mine = async (env, me) => {
+  const [rows, picks] = await Promise.all([
+    all(env, 'SELECT * FROM builds WHERE user_id = ? AND removed_at IS NULL ORDER BY updated_at DESC LIMIT ?', me.u, MAX_BUILDS),
+    all(env, 'SELECT mode, build_id FROM my_builds WHERE user_id = ?', me.u),
+  ]);
+  return { builds: rows.map((r) => out(r, me)), max: MAX_BUILDS, picks: Object.fromEntries(picks.map((x) => [x.mode, x.build_id])) };
+};
+// A build someone may open: their own, a posted one (PB.3), or one a member shows on their profile (PB.4).
+const visible = (env, me, id) => one(env, `SELECT * FROM builds WHERE id = ? AND removed_at IS NULL
+  AND (user_id = ? OR posted_at IS NOT NULL OR id IN (SELECT build_id FROM my_builds))`, Number(id) || 0, me.u);
 
 // Validate what the builder sends: title + share code (+ archetype/level/version for listing without decoding).
-function input(body) {
+export function buildInput(body) {
   const code = String(body.code ?? '').replace(/^#/, '');
   if (!CODE_RE.test(code)) return { err: 'That build could not be read – try the Share link button first.' };
   const q = new URLSearchParams(code);
@@ -53,7 +61,7 @@ export async function buildsRoute(p, method, body, me, env, log, url) {
   if (method !== 'POST') return fail('Not found', 404);
 
   if (p === '/api/builds') {
-    const v = input(body);
+    const v = buildInput(body);
     if (v.err) return fail(v.err);
     const at = Date.now();
     if (body.id != null) {
@@ -73,7 +81,10 @@ export async function buildsRoute(p, method, body, me, env, log, url) {
   if (p === '/api/builds/delete') {
     const r = await one(env, 'SELECT id, user_id, title FROM builds WHERE id = ? AND removed_at IS NULL', Number(body.id) || 0);
     if (!r || r.user_id !== me.u) return fail('Build not found.', 404);
-    await run(env, 'UPDATE builds SET removed_at = ? WHERE id = ?', Date.now(), r.id);
+    await env.DB.batch([ // deleting also takes it off the Pro Builds board and off my profile
+      env.DB.prepare('UPDATE builds SET removed_at = ?, posted_at = NULL, featured = NULL WHERE id = ?').bind(Date.now(), r.id),
+      env.DB.prepare('DELETE FROM my_builds WHERE build_id = ?').bind(r.id),
+    ]);
     await log(env, me, 'build-delete', r.title);
     return json(await mine(env, me));
   }

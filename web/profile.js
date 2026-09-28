@@ -71,6 +71,21 @@
   const playerUrl = (k) => `${BASE}players/${encodeURIComponent(k)}.html`;
   const posLine = (list) => (list?.length ? list.map((p, i) => `<span class="pf-pos p${i}" data-tip="${['1st', '2nd', '3rd'][i]} choice">${esc(p)}</span>`).join('') : '<span class="muted">–</span>');
 
+  // ---------- PB.4: my League / Rush build ----------
+  const loadCard = () => (window.NXBuildCard ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/buildcard.js`, onload: ok, onerror: no }))));
+  const BMODES = [['league', '🏟️', 'League'], ['rush', '⚡', 'Rush']];
+  const prettyArch = (id) => String(id || '').replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const hcBuilds = (bl) => (bl && (bl.league || bl.rush) ? `<div class="pf-hc-row pf-hc-builds"><small>🧬 Builds</small><span>${BMODES.filter(([k]) => bl[k]).map(([k, ic]) => `<span title="${esc(bl[k].title)}">${ic} ${esc(prettyArch(bl[k].arch))} L${esc(bl[k].level)}${bl[k].position ? ` · ${esc(bl[k].position)}` : ''}</span>`).join('<br>')}</span></div>` : '');
+  async function paintBuilds(el, bl, mine) {
+    try {
+      await loadCard();
+      const g = await NXBuildCard.ready();
+      const try_ = window.NXViewer?.flagOn('builder');
+      el.innerHTML = BMODES.map(([k, ic, l]) => (bl[k] ? NXBuildCard.mini(g, bl[k], { href: try_ ? NXBuildCard.builderUrl(bl[k]) : undefined, head: `${ic} ${l} build${bl[k].position ? ` · ${bl[k].position}` : ''}` })
+        : `<div class="pb-mini bad"><span class="pb-ovr">–</span><div class="pb-mini-main"><small>${ic} ${l} build</small><b>Not picked yet</b>${mine ? `<span class="pb-mini-sub">Open a build in the ${try_ ? `<a href="${BASE}builder.html">Pro Builder</a>` : 'Pro Builder'} or on <a href="${BASE}probuilds.html">Pro Builds</a> → ⭐ Use as my build</span>` : ''}</div></div>`)).join('');
+    } catch { el.innerHTML = '<p class="muted">Couldn’t load the game data for the builds.</p>'; }
+  }
+
   // ---------- data ----------
   const cards = new Map();
   const getCard = (id, ctx) => { if (!cards.has(id)) cards.set(id, ctx.call(`/api/member?u=${encodeURIComponent(id)}`).catch((e) => { cards.delete(id); throw e; })); return cards.get(id); };
@@ -87,6 +102,7 @@
 ${claim ? `<a class="pf-hc-player" href="${playerUrl(claim.player)}">🪪 <b>${esc(claim.playerName)}</b>${pl?.ovr ? ` <span class="pf-ovr">${pl.ovr}</span>` : ''}${pl?.pos ? ` <small>${esc(pl.pos)}</small>` : ''}</a>` : ''}
 ${p?.positions?.length || p?.rushPositions?.length ? `<div class="pf-hc-row"><small>League</small><span>${posLine(p.positions)}</span></div><div class="pf-hc-row"><small>⚡ Rush</small><span>${posLine(p.rushPositions)}</span></div>` : ''}
 ${p?.platform || ids.length ? `<div class="pf-hc-ids">${p.platform ? UI.pill(p.platform, { emoji: '🎮' }) : ''}${ids.map(([k, l, e]) => `<span data-tip="${esc(l)}">${e} ${esc(p.ids[k])}</span>`).join('')}</div>` : ''}
+${hcBuilds(d.builds)}
 ${grid ? `<div class="pf-hc-time">${onNow(grid) ? '<span class="pf-live">🟢 Usually on now</span>' : ''}${weekGrid(grid, { mini: true })}<small>🕒 ${esc(summary(grid))} <i>(your time)</i></small></div>` : ''}
 <div class="row"><a class="btn sm" href="${profileUrl(m.id)}">👤 View profile</a>${claim ? `<a class="btn sm ghost" href="${playerUrl(claim.player)}">🪪 Player page</a>` : ''}</div>`;
   }
@@ -204,7 +220,7 @@ ${grid ? `<div class="pf-hc-time">${onNow(grid) ? '<span class="pf-live">🟢 Us
       el.innerHTML = UI.empty({ icon: '🕵️', title: 'Member not found', text: e.message === 'Member not found' ? 'This member has not logged in to the site yet.' : e.message, action: `<a class="btn sm" href="${BASE}members.html">Back to the Squad Hub</a>` });
       return;
     }
-    const { member: m, claim, profile: p = {}, activity } = d;
+    const { member: m, claim, profile: p = {}, activity, builds } = d;
     const pf = p || {};
     const pl = await findPlayer(ctx, claim?.player);
     const grid = pf.playTimes && convert(pf.playTimes, pf.tz, myTz);
@@ -222,9 +238,11 @@ ${claim ? `<a class="pf-card" href="${playerUrl(claim.player)}"><small>Plays as<
 ${sec('📍 Positions', `<div class="pf-modes"><div><small>🏆 League</small><div>${posLine(pf.positions)}</div></div><div><small>⚡ Rush</small><div>${posLine(pf.rushPositions)}</div></div></div>`)}
 ${sec('🎮 Platform &amp; IDs', pf.platform || ids.length ? `<ul class="pf-ids">${pf.platform ? `<li><span>🎮 Platform</span><b>${esc(pf.platform)}</b></li>` : ''}${ids.map(([k, l, e]) => `<li><span>${e} ${l}</span><b>${esc(pf.ids[k])}</b><button type="button" class="pf-copy" data-copy="${esc(pf.ids[k])}" aria-label="Copy ${l}">📋</button></li>`).join('')}</ul><small class="muted">Self-reported – not verified yet.</small>` : '<p class="muted">No platform IDs added yet.</p>')}
 </div>
+${builds ? sec('🧬 Builds <small class="muted">League &amp; Rush</small>', `<div class="pb-minis" data-pf-builds>${UI.skeleton('rows', 2)}</div>`) : ''}
 ${sec('🕒 When they play', grid ? `<p class="small muted">Shown in <b>your</b> time – ${esc(tzLabel(myTz))}.${pf.tz && pf.tz !== myTz ? ` ${esc(m.n)}'s time zone: ${esc(tzLabel(pf.tz))}.` : ''}</p>${weekGrid(grid)}<p class="small">${esc(summary(grid))}</p>` : '<p class="muted">No play times added yet.</p>')}
 ${pf.twitch || pf.youtube ? sec('📺 Channels', `<div class="row">${pf.twitch ? `<a class="btn pf-twitch" href="${twitchUrl(pf.twitch)}" target="_blank" rel="noopener nofollow">Twitch · ${esc(pf.twitch)}</a>` : ''}${pf.youtube ? `<a class="btn pf-youtube" href="${ytUrl(pf.youtube)}" target="_blank" rel="noopener nofollow">YouTube · ${esc(pf.youtube)}</a>` : ''}</div>`) : ''}
 ${activity ? `<section class="card pf-sec" id="pf-activity"><h3>📜 Activity log <small class="muted">managers only</small></h3>${activity.length ? `<ul class="feed">${activity.map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><div>${esc(a.type.replace(/-/g, ' '))}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${UI.time(a.at)}</small></li>`).join('')}</ul>` : UI.empty({ icon: '📜', title: 'No activity yet' })}</section>` : ''}`;
+    if (builds) paintBuilds($('[data-pf-builds]', el), builds, m.me);
     el.onclick = async (e) => {
       const b = e.target.closest('[data-copy]');
       if (!b) return;

@@ -3,7 +3,8 @@
 //   GET  /api/member?u=<id>  any member's profile card (hover card + member.html) – flag `profiles`
 // Play times: 7 ints (Mon..Sun), bit h set = usually plays at hour h, in the member's own time zone (`tz`).
 // The site converts them to the viewer's time zone.
-import { ROLE_LABEL, can } from './roles.js';
+import { ROLE_LABEL, can, flagOn } from './roles.js';
+import { picksOf } from './probuilds.js';
 
 export const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
 export const RUSH_POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
@@ -111,10 +112,11 @@ export const profileSummary = (p) => [p.positions.join('/'), p.rushPositions.len
 export async function memberCard(env, me, id) {
   const u = await one(env, 'SELECT * FROM users WHERE id = ?', id);
   if (!u) return null;
-  const [claim, prof, activity] = await Promise.all([
+  const [claim, prof, activity, builds] = await Promise.all([
     one(env, "SELECT player, player_name FROM claims WHERE user_id = ? AND status = 'approved'", id),
     one(env, 'SELECT * FROM profiles WHERE user_id = ?', id),
     can(me, 'activity.view') ? all(env, 'SELECT at, type, detail FROM activity WHERE user_id = ? ORDER BY id DESC LIMIT 30', id) : null,
+    flagOn(env, me, 'proBuilds') ? picksOf(env, id) : null, // PB.4 – League / Rush build
   ]);
   const role = u.role && u.role !== 'member' ? u.role : u.admin ? 'manager' : claim ? 'claimed' : 'member';
   return {
@@ -122,5 +124,6 @@ export async function memberCard(env, me, id) {
     claim: claim ? { player: claim.player, playerName: claim.player_name } : null,
     profile: profileOut(prof),
     ...(activity ? { activity } : {}),
+    ...(builds ? { builds } : {}),
   };
 }
