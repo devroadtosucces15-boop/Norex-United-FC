@@ -8,6 +8,8 @@
 //   GH_DISPATCH_TOKEN  – GitHub token allowed to run this repo's Actions (secret)
 //   DISCORD_PUBLIC_KEY, SITE_URL, GITHUB_REPO – public values in wrangler.toml
 
+import { handleMembers } from './members.js';
+
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 
@@ -27,6 +29,11 @@ export default {
   },
 
   async fetch(request, env, ctx) {
+    const path = new URL(request.url).pathname;
+    if (path.startsWith('/auth/') || path.startsWith('/api/')) {
+      const site = (env.SITE_URL || '').replace(/\/?$/, '/');
+      return handleMembers(request, env, ctx, (file) => load(site, file, ctx));
+    }
     if (request.method === 'GET') return new Response('NOREX UNITED bot is running ⚽');
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 

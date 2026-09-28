@@ -265,3 +265,151 @@ ${shape(a, 'var(--red)')}${shape(b, '#94a3b8')}</svg>`;
   }
 })();
 
+
+// ================= Members: Discord login, Squad Hub, verified badges =================
+const MAPI = document.body.dataset.api;
+if (MAPI) (() => {
+  const KEY = 'norex_session';
+  const store = { get: () => { try { return localStorage.getItem(KEY); } catch { return null; } }, set: (v) => { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch {} } };
+  const hash = new URLSearchParams(location.hash.slice(1));
+  if (hash.get('norex_session')) store.set(hash.get('norex_session'));
+  const err = hash.get('norex_error');
+  if (hash.has('norex_session') || err) history.replaceState(null, '', location.pathname + location.search);
+  const session = (() => { try { const t = store.get(); const p = JSON.parse(atob(t.split('.')[0].replace(/-/g, '+').replace(/_/g, '/'))); return p.exp > Date.now() / 1000 ? { token: t, ...p } : null; } catch { return null; } })();
+  if (!session) store.set(null);
+  const loginUrl = () => `${MAPI}/auth/login?return=${encodeURIComponent(location.href.split('#')[0])}`;
+  const call = async (path, body) => {
+    const r = await fetch(MAPI + path, { method: body ? 'POST' : 'GET', headers: { Authorization: `Bearer ${session?.token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401) { store.set(null); location.reload(); }
+    if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+    return d;
+  };
+  function toast(msg, bad) {
+    const t = document.createElement('div');
+    t.className = `toast${bad ? ' bad' : ''}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4500);
+  }
+  if (err) toast(err === 'not_member' ? 'Members only – you need to be in the NOREX Discord server.' : err === 'cancelled' ? 'Login cancelled.' : 'Discord login failed – try again.', true);
+
+  // Header
+  const slot = $('.auth-slot');
+  if (slot) slot.innerHTML = session
+    ? `<a class="me-btn" href="${BASE}members.html"><img src="${esc(session.a)}" alt="">${esc(session.n)}</a>`
+    : `<a class="login-btn" href="${loginUrl()}">Member login</a>`;
+
+  // Verified badges (public)
+  (async () => {
+    let data;
+    try { data = JSON.parse(sessionStorage.getItem('norex_public') || 'null'); } catch {}
+    if (!data || Date.now() - data.t > 300000) {
+      try { data = { t: Date.now(), ...(await (await fetch(`${MAPI}/api/public`)).json()) }; sessionStorage.setItem('norex_public', JSON.stringify(data)); } catch { return; }
+    }
+    const claims = data.claims || {};
+    $$('.member-badge[data-player]').forEach((el) => {
+      const c = claims[el.dataset.player];
+      if (!c) return;
+      el.innerHTML = `<div class="verified"><img src="${esc(c.avatar)}" alt=""><div><b>✓ Verified NOREX member</b><span>${esc(c.name ?? '')}${c.platform ? ` · ${esc(c.platform)}` : ''}${c.positions?.length ? ` · ${c.positions.map(esc).join(' / ')}` : ''}</span>${c.bio ? `<p>${esc(c.bio)}</p>` : ''}</div></div>`;
+    });
+    $$('a.fut').forEach((a) => {
+      const k = decodeURIComponent((a.getAttribute('href') || '').split('/').pop().replace('.html', ''));
+      if (claims[k]) a.classList.add('is-verified');
+    });
+  })();
+
+  // Squad Hub
+  const hub = $('#hub');
+  if (!hub) return;
+  if (!session) {
+    hub.innerHTML = `<div class="card hub-login"><img src="${BASE}assets/crest.png" height="110" alt=""><div><h2>Members only</h2><p class="muted">Log in with your Discord account. Only members of the NOREX server get in.</p><a class="btn discord big" href="${loginUrl()}">Log in with Discord</a></div></div>`;
+    return;
+  }
+  const POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
+  const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+
+  async function render() {
+    const [me, [players], pub] = await Promise.all([call('/api/me'), api(), fetch(`${MAPI}/api/public`).then((r) => r.json()).catch(() => ({ claims: {} }))]);
+    const squad = players.filter((p) => p.home).sort((a, b) => a.n.localeCompare(b.n));
+    const claimedBy = pub.claims || {};
+    const claim = me.claim, prof = me.profile || {};
+    const myPlayer = claim && players.find((p) => p.k === claim.player);
+    hub.innerHTML = `
+<div class="hub-head card"><img src="${esc(me.user.avatar)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(me.user.name)}</h2>${me.user.admin ? '<span class="tag home">Admin</span>' : '<span class="tag">Member</span>'}</div><button class="btn ghost" id="logout" type="button">Log out</button></div>
+<div class="grid2">
+<div class="card"><h3>My player</h3>${
+  claim?.status === 'approved' ? `<p>✅ You're verified as <a href="${BASE}players/${encodeURIComponent(claim.player)}.html"><b>${esc(claim.playerName)}</b></a>.</p>`
+  : claim?.status === 'pending' ? `<p>⏳ Claim for <b>${esc(claim.playerName)}</b> is waiting for admin approval.</p>`
+  : `${claim?.status === 'rejected' ? `<p class="muted">Your claim for ${esc(claim.playerName)} was not approved. Pick again or ask an admin.</p>` : '<p class="muted">Link your Discord to your in-game player. An admin approves it, then your player page shows a ✓ Verified badge.</p>'}
+  <div class="row"><select id="claim-pick"><option value="">Choose your gamertag…</option>${squad.map((p) => `<option value="${esc(p.k)}"${claimedBy[p.k] ? ' disabled' : ''}>${esc(p.n)}${claimedBy[p.k] ? ' (claimed)' : ''}</option>`).join('')}</select><button class="btn" id="claim-go" type="button">Claim</button></div>`}
+${myPlayer ? `<p class="small muted">${myPlayer.pos} · ${myPlayer.s ? `${myPlayer.s.gp} games · ${myPlayer.s.g}G ${myPlayer.s.a}A · ${myPlayer.s.r} avg` : ''}</p>` : ''}
+</div>
+<div class="card"><h3>My profile</h3>
+<label class="fld">Bio <textarea id="pf-bio" maxlength="280" rows="3" placeholder="Playstyle, favourite position, anything…">${esc(prof.bio || '')}</textarea></label>
+<label class="fld">Positions (up to 3)</label><div class="chipset" id="pf-pos">${POS.map((p) => `<button type="button" class="chip${prof.positions?.includes(p) ? ' on' : ''}" data-p="${p}">${p}</button>`).join('')}</div>
+<label class="fld">Platform <select id="pf-plat"><option value="">–</option>${['PS5', 'Xbox', 'PC'].map((x) => `<option${prof.platform === x ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
+<button class="btn" id="pf-save" type="button">Save profile</button></div>
+</div>
+<section class="block"><h2 class="banner-h">Availability <small>next 7 nights</small></h2><div id="avail" class="avail"><p class="muted">Loading…</p></div></section>
+<section class="block"><h2 class="banner-h">Members' MOTM vote</h2><div id="votes" class="votes"><p class="muted">Loading…</p></div></section>
+${me.user.admin ? '<section class="block"><h2 class="banner-h">Admin · player claims</h2><div id="admin"><p class="muted">Loading…</p></div></section>' : ''}`;
+
+    $('#logout').onclick = () => { store.set(null); location.href = `${BASE}index.html`; };
+    $('#claim-go')?.addEventListener('click', async () => {
+      const v = $('#claim-pick').value;
+      if (!v) return toast('Pick your gamertag first', true);
+      try { await call('/api/claim', { player: v }); toast('Claim sent – an admin will approve it.'); render(); } catch (e) { toast(e.message, true); }
+    });
+    $('#pf-pos').addEventListener('click', (e) => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      if (!b.classList.contains('on') && $$('#pf-pos .chip.on').length >= 3) return toast('Up to 3 positions', true);
+      b.classList.toggle('on');
+    });
+    $('#pf-save').onclick = async () => {
+      try {
+        await call('/api/profile', { bio: $('#pf-bio').value, platform: $('#pf-plat').value, positions: $$('#pf-pos .chip.on').map((b) => b.dataset.p) });
+        sessionStorage.removeItem('norex_public');
+        toast('Profile saved');
+      } catch (e) { toast(e.message, true); }
+    };
+    renderAvail(await call('/api/availability'));
+    renderVotes(await call('/api/vote'));
+    if (me.user.admin) renderAdmin(await call('/api/admin/claims'));
+  }
+
+  function renderAvail(d) {
+    const icon = { yes: '✅', maybe: '❔', no: '❌' };
+    $('#avail').innerHTML = d.days.map((day) => {
+      const mine = day.people.find((p) => p.id === session.u)?.s;
+      const by = (s) => day.people.filter((p) => p.s === s);
+      return `<div class="day card"><b>${fmtDay(day.date)}</b><div class="count-row"><span>✅ ${by('yes').length}</span><span>❔ ${by('maybe').length}</span></div>
+<div class="faces">${by('yes').map((p) => `<img src="${esc(p.a)}" alt="" data-tip="${esc(p.n)}">`).join('')}${by('maybe').map((p) => `<img class="maybe" src="${esc(p.a)}" alt="" data-tip="${esc(p.n)} (maybe)">`).join('')}</div>
+<div class="pick">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="${mine === s ? 'on' : ''}" data-date="${day.date}" data-s="${mine === s ? 'clear' : s}" aria-label="${s}">${icon[s]}</button>`).join('')}</div></div>`;
+    }).join('');
+    $$('#avail .pick button').forEach((b) => (b.onclick = async () => {
+      try { renderAvail(await call('/api/availability', { date: b.dataset.date, status: b.dataset.s })); } catch (e) { toast(e.message, true); }
+    }));
+  }
+
+  function renderVotes(d) {
+    $('#votes').innerHTML = d.matches.map((m) => {
+      const max = Math.max(1, ...Object.values(m.tally));
+      return `<div class="card vote"><div class="vote-head">${resPillJs(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b><small class="muted">${m.total} vote${m.total === 1 ? '' : 's'}</small></div>
+<ul>${m.players.sort((a, b) => (m.tally[b.k] || 0) - (m.tally[a.k] || 0) || b.r - a.r).map((p) => `<li class="${m.mine === p.k ? 'mine' : ''}" style="--w:${((m.tally[p.k] || 0) / max) * 100}%"><button type="button" data-m="${m.id}" data-p="${esc(p.k)}">${esc(p.n)} <small>${p.r.toFixed(1)}</small></button><b>${m.tally[p.k] || 0}</b></li>`).join('')}</ul></div>`;
+    }).join('') || '<p class="muted">No recent matches.</p>';
+    $$('#votes button').forEach((b) => (b.onclick = async () => {
+      try { renderVotes(await call('/api/vote', { match: b.dataset.m, player: b.dataset.p })); toast('Vote saved'); } catch (e) { toast(e.message, true); }
+    }));
+  }
+  const resPillJs = (r) => `<span class="res ${r}">${r}</span>`;
+
+  function renderAdmin(d) {
+    $('#admin').innerHTML = d.claims.length ? `<div class="tbl"><table><thead><tr><th>Member</th><th>Claims</th><th>Status</th><th></th></tr></thead><tbody>${d.claims.map((c) => `<tr><td><img class="av" src="${esc(c.a)}" alt=""> ${esc(c.n)}</td><td><a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a></td><td><span class="tag${c.status === 'approved' ? ' home' : ''}">${esc(c.status)}</span></td><td>${c.status !== 'approved' ? `<button class="btn sm" data-u="${c.user}" data-a="approve" type="button">Approve</button>` : ''} ${c.status !== 'rejected' ? `<button class="btn ghost sm" data-u="${c.user}" data-a="reject" type="button">${c.status === 'approved' ? 'Unlink' : 'Reject'}</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No claims yet.</p>';
+    $$('#admin button').forEach((b) => (b.onclick = async () => {
+      try { renderAdmin(await call('/api/admin/claims', { user: b.dataset.u, action: b.dataset.a })); sessionStorage.removeItem('norex_public'); toast('Updated'); } catch (e) { toast(e.message, true); }
+    }));
+  }
+
+  render().catch((e) => { hub.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; });
+})();
