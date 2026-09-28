@@ -7,7 +7,7 @@ A free public website for NOREX UNITED FC that updates itself every ~15 minutes 
 - **A profile for every player** we play with or against, with EA career totals across *all* their clubs plus stats for each tracked club
 - **Clubs found automatically:** every opponent is tracked, and a background crawler scans the wider club network. When it finds one of our players in another club's squad, that club becomes **linked** and its matches are archived too
 - **Self-service:** players can add their other clubs, or ask to be hidden, through a GitHub issue form. No code needed
-- **Optional Discord bot** that posts every result (and alerts you if updates stop)
+- **Discord bot** that posts every result and answers `/player`, `/compare`, `/top` and more, hosted free on Cloudflare
 
 ## How it works
 
@@ -33,8 +33,26 @@ It needs only Node 22+ and has **no npm dependencies**, so nothing needs updatin
 3. In the repo, go to **Settings → Pages → Source: GitHub Actions**.
 4. **Settings → Actions → General → Workflow permissions: Read and write**.
 5. **Actions** tab → *Update site* → **Run workflow**. The site goes live at `https://YOUR-NAME.github.io/norex-united/`.
-6. *(Optional)* Create a Discord webhook (Server settings → Integrations → Webhooks). Then add it in the repo under **Settings → Secrets → Actions** as `DISCORD_WEBHOOK`.
+6. *(Optional)* Set up the Discord bot. See "Discord bot" below.
 7. *(Optional)* Add a custom domain under Settings → Pages (about £10/yr from any registrar).
+
+## Discord bot (runs in the cloud, no PC needed)
+
+There are two parts, and both are free:
+
+**A. Automatic result posts.** In Discord go to Server settings → Integrations → Webhooks → New webhook, pick a channel and copy the URL. In GitHub go to Settings → Secrets and variables → Actions → New secret and name it `DISCORD_WEBHOOK`. Every new result is then posted as a card with scorers, assists and man of the match.
+
+**B. Slash-command bot** (`/club`, `/last`, `/results`, `/player`, `/compare`, `/top`, `/site`), hosted on Cloudflare Workers:
+1. https://discord.com/developers/applications → **New Application** "NOREX UNITED".
+   - *General Information*: copy the **Application ID** and **Public Key**.
+   - *Bot*: **Reset Token** and copy it.
+   - *Installation*: tick **Guild Install**, scopes `applications.commands` + `bot`, then open the install link and add the bot to your server.
+2. Create a free Cloudflare account at https://dash.cloudflare.com.
+   - Copy your **Account ID** (on the right side of Workers & Pages).
+   - Go to My Profile → API Tokens → Create Token → template **Edit Cloudflare Workers**, and copy the token.
+3. In GitHub go to Settings → Secrets and variables → Actions and add: `DISCORD_APP_ID`, `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`.
+4. Actions → **Deploy Discord bot** → Run workflow. The log prints the bot address, e.g. `https://norex-bot.<you>.workers.dev`.
+5. Back in the Discord developer portal, go to *General Information* → **Interactions Endpoint URL**, paste that address, and Save.
 
 ## Everyday use
 

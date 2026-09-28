@@ -191,23 +191,41 @@ async function fetchClub(id) {
 async function postToDiscord() {
   const hook = process.env.DISCORD_WEBHOOK;
   if (!hook || !newHomeMatches.length) return;
-  const lines = newHomeMatches
+  const site = config.siteUrl?.replace(/\/?$/, '/') ?? '';
+  const crestCdn = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
+  const embeds = newHomeMatches
     .sort((a, b) => a.timestamp - b.timestamp)
+    .slice(-10)
     .map((m) => {
       const us = m.clubs[homeId];
       const oppId = Object.keys(m.clubs).find((k) => k !== homeId);
       const opp = m.clubs[oppId];
-      const res = us.wins === '1' ? '✅ W' : us.losses === '1' ? '❌ L' : '➖ D';
-      const scorers = Object.values(m.players?.[homeId] || {})
-        .filter((p) => num(p.goals) > 0)
-        .map((p) => `${p.playername}${num(p.goals) > 1 ? ` ×${p.goals}` : ''}`)
-        .join(', ');
-      return `${res} **${us.goals}–${opp.goals}** vs ${opp.details?.name ?? oppId}${scorers ? ` · ⚽ ${scorers}` : ''}`;
+      const res = us.wins === '1' ? 'W' : us.losses === '1' ? 'L' : 'D';
+      const ours = Object.values(m.players?.[homeId] || {});
+      const list = (f) => ours.filter((p) => num(p[f]) > 0).map((p) => `${p.playername}${num(p[f]) > 1 ? ` ×${p[f]}` : ''}`).join('\n');
+      const motm = Object.values(m.players || {}).flatMap((l) => Object.values(l)).find((p) => p.mom === '1');
+      const best = [...ours].sort((a, b) => num(b.rating) - num(a.rating))[0];
+      const oppCrest = opp.details?.customKit?.crestAssetId;
+      return {
+        title: `${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
+        url: site ? `${site}matches/${m.matchId}.html` : undefined,
+        color: { W: 0x22c55e, D: 0xeab308, L: 0xef4444 }[res],
+        description: res === 'W' ? '✅ **Victory**' : res === 'L' ? '❌ **Defeat**' : '➖ **Draw**',
+        thumbnail: { url: res === 'L' && oppCrest ? `${crestCdn}${oppCrest}.png` : `${site}assets/crest.png` },
+        fields: [
+          list('goals') && { name: '⚽ Goals', value: list('goals'), inline: true },
+          list('assists') && { name: '🎯 Assists', value: list('assists'), inline: true },
+          motm && { name: '⭐ Man of the match', value: `${motm.playername} (${num(motm.rating).toFixed(1)})`, inline: true },
+          best && { name: '📈 Our top rated', value: `${best.playername} (${num(best.rating).toFixed(1)})`, inline: true },
+        ].filter(Boolean),
+        timestamp: new Date(m.timestamp * 1000).toISOString(),
+        footer: { text: m.matchType === 'playoffMatch' ? 'Playoff match' : 'League match' },
+      };
     });
   await fetch(hook, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: lines.join('\n').slice(0, 1900) }),
+    body: JSON.stringify({ username: 'NOREX UNITED', avatar_url: site ? `${site}assets/crest.png` : undefined, embeds }),
   }).catch((e) => console.warn('Discord post failed:', e.message));
 }
 

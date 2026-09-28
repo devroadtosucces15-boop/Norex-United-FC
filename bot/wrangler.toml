@@ -1,0 +1,6 @@
+name = "norex-bot"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+SITE_URL = "https://devroadtosucces15-boop.github.io/Norex-United-FC/"

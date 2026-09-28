@@ -1,0 +1,44 @@
+name: Deploy Discord bot
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["bot/**"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CONFIGURED: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - name: Check setup
+        if: env.CONFIGURED != 'true'
+        run: echo "::notice::Bot secrets not added yet – see README → Discord bot. Skipping."
+
+      - uses: actions/checkout@v4
+        if: env.CONFIGURED == 'true'
+
+      - name: Deploy to Cloudflare Workers
+        if: env.CONFIGURED == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: bot
+          secrets: |
+            DISCORD_PUBLIC_KEY
+        env:
+          DISCORD_PUBLIC_KEY: ${{ secrets.DISCORD_PUBLIC_KEY }}
+
+      - uses: actions/setup-node@v4
+        if: env.CONFIGURED == 'true'
+        with:
+          node-version: 22
+
+      - name: Register slash commands
+        if: env.CONFIGURED == 'true'
+        run: node bot/register.mjs
+        env:
+          DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
