@@ -50,10 +50,11 @@ jobs:
         env:
           GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: |
           node -e '
             const s = {};
-            for (const k of ["GH_DISPATCH_TOKEN", "DISCORD_CLIENT_SECRET"]) if (process.env[k]) s[k] = process.env[k];
+            for (const k of ["GH_DISPATCH_TOKEN", "DISCORD_CLIENT_SECRET", "DISCORD_BOT_TOKEN"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync("secrets.json", JSON.stringify(s));
             console.log("Uploading:", Object.keys(s).join(", ") || "none");
           '

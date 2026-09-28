@@ -58,6 +58,8 @@
     "hallOfFame": "public",
     "profiles": "members",
     "builder": "owner",
+    "notifications": "owner",
+    "requests": "owner",
     "proBuilds": "owner"
   }
 }

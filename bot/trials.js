@@ -6,6 +6,7 @@
 //   /api/notes, /api/notes/*  managers – timestamped notes per member, player or trial
 // Flags: trials (contacts, form, portal), scouting, managerNotes. Permissions: bot/roles.js.
 import { can, flagOn } from './roles.js';
+import { notify, notifyManagers, safely } from './notify.js';
 
 const DAY = 86400e3;
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
@@ -91,6 +92,7 @@ export async function applyRoute(request, env, me, loadSite, log) {
   if (await openDupe(env, t.ea)) return fail('We already have an open application for this EA ID. A manager will be in touch on Discord.', 409);
   await insertTrial(env, t, 'form', 'applied', null, ip);
   await log(env, { u: null, n: t.ea, a: null }, 'trial-apply', `${t.positions.join('/')} · ${t.platform}`);
+  await safely(notifyManagers(env, { icon: '👑', title: `New trial application: ${t.ea} (${t.positions.join('/')} · ${t.platform})`, body: t.discord ? `Discord: ${t.discord}` : null, link: 'members.html#manager' }));
   return json({ ok: true });
 }
 
@@ -138,12 +140,18 @@ async function trialsRoute(p, method, body, me, env, loadSite, log) {
     const stmts = [];
     const add = (sql, ...args) => stmts.push(env.DB.prepare(sql).bind(...args));
     const logs = [];
+    let tell = null; // P7.1 notification sent after the write
     if (body.status !== undefined) {
       if (!TRIAL_STATUSES.includes(body.status) || body.status === 'recommended') return fail('Unknown status');
       if (body.status === r.status) return fail(`Already ${r.status}.`, 409);
       add('UPDATE trials SET status = ?, updated_at = ? WHERE id = ?', body.status, at, r.id);
       add('INSERT INTO trial_events (trial_id, kind, status, detail, by_name, at) VALUES (?, ?, ?, ?, ?, ?)', r.id, 'status', body.status, clean(body.reason, 200) || null, me.n, at);
       logs.push(['trial-status', `${r.ea_id} → ${body.status}`]);
+      // P7.1 – the member who recommended this player hears how their tip is going
+      if (r.source === 'scout' && r.by_id && r.by_id !== me.u) {
+        const word = { applied: 'is on the trial list', trialling: 'is now on trial ⚽', signed: 'signed for NOREX ✍️', released: 'was released after the trial', declined: 'was declined' }[body.status];
+        tell = () => safely(notify(env, [r.by_id], { type: 'trial', title: `Your tip ${r.ea_id} ${word}`, body: `Thanks for scouting! Updated by ${me.n}.`, link: 'members.html#scout' }));
+      }
     }
     if (body.player !== undefined) {
       let key = null;
@@ -174,6 +182,7 @@ async function trialsRoute(p, method, body, me, env, loadSite, log) {
     if (!stmts.length) return fail('Nothing to change');
     await env.DB.batch(stmts);
     for (const [type, detail] of logs) await log(env, me, type, detail);
+    await tell?.();
     return json(await trialsState(env, me));
   }
   return fail('Not found', 404);
@@ -195,6 +204,7 @@ async function scoutRoute(p, method, body, me, env, loadSite, log) {
   if (dupe) return fail(`${t.ea} is already on the managers' list (${dupe.status}).`, 409);
   await insertTrial(env, t, 'scout', 'recommended', me);
   await log(env, me, 'scout', `${t.ea} · ${t.positions.join('/')}`);
+  await safely(notifyManagers(env, { icon: '🔭', title: `New scouting tip: ${t.ea} (${t.positions.join('/')})`, body: `Recommended by ${me.n}: “${t.note}”`, link: 'members.html#manager' }, me.u));
   return json(await mine());
 }
 

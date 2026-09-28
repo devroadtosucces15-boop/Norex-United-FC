@@ -6,10 +6,12 @@
 //
 // Env (set by .github/workflows/bot.yml):
 //   GH_DISPATCH_TOKEN  – GitHub token allowed to run this repo's Actions (secret)
+//   DISCORD_BOT_TOKEN  – bot token, used to DM members their notifications (secret, P7.1)
 //   DISCORD_PUBLIC_KEY, SITE_URL, GITHUB_REPO – public values in wrangler.toml
 
 import { handleMembers } from './members.js';
 import { updateLive } from './live.js';
+import { notifyCron } from './notify.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
@@ -17,6 +19,7 @@ const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
+    ctx.waitUntil(notifyCron(env).catch((e) => console.log('notify cron failed', e.message))); // P7.1 DMs + reminders
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
       method: 'POST',

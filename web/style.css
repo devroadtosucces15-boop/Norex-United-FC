@@ -680,3 +680,42 @@ a.stat.link:hover .stat-go{color:var(--red);transform:translateX(3px)}
 /* ---------- empty states (P1.6) ---------- */
 .t-empty{text-align:center;padding:22px 12px!important}
 .barlist li.bl-empty{background:none;border:1px dashed var(--line2);justify-content:center;text-align:center;padding:14px}
+
+/* ---------- 🔔 notification bell + "must acknowledge" bar (P7.1; the rest lives in notify.css) ---------- */
+.bell-wrap{position:relative;order:3;flex:none}
+.bar:has(.bell-wrap) nav{margin-left:auto}
+.bell{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;border:1px solid var(--line2);background:var(--panel2);font-size:17px;cursor:pointer;transition:border-color .2s,transform .2s}
+.bell:hover,.bell[aria-expanded=true]{border-color:var(--red)}
+.bell.has span{animation:bell-ring 1.4s ease 1}
+.bell-n{position:absolute;top:-5px;right:-6px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--red);color:#fff;font:700 11px/19px var(--body);text-align:center;box-shadow:0 0 0 2px var(--ink)}
+.bell-n[hidden]{display:none}
+@keyframes bell-ring{0%,100%{transform:rotate(0)}15%{transform:rotate(16deg)}30%{transform:rotate(-14deg)}45%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}75%{transform:rotate(3deg)}}
+.bell-panel{position:absolute;right:0;top:calc(100% + 10px);z-index:45;width:min(380px,calc(100vw - 24px));max-height:min(560px,calc(100vh - 110px));display:flex;flex-direction:column;border-radius:14px;background:var(--panel);border:1px solid var(--line2);box-shadow:0 20px 50px rgba(0,0,0,.6);overflow:hidden}
+.bell-panel[hidden]{display:none}
+.bell-panel header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:3px solid var(--red);font:600 15px var(--head);text-transform:uppercase;letter-spacing:.06em}
+.bell-panel footer{display:flex;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--line);font:600 13px var(--body)}
+.bell-panel footer a{color:var(--muted)}.bell-panel footer a:hover{color:#fff}
+.bell-panel .nx-empty,.bell-panel .nx-skel{padding:18px}
+.linkish{background:none;border:0;padding:0;color:var(--muted);font:600 12px var(--body);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.linkish:hover{color:#fff}
+.nf-list{list-style:none;margin:0;padding:6px;overflow:auto}
+.nf{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:10px;cursor:pointer;position:relative}
+.nf-list .nf:hover,.nf-list .nf:focus-visible{background:var(--panel2);outline:none}
+.nf-ic{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);font-size:16px}
+.nf-t{min-width:0;display:grid;gap:2px}
+.nf-t b{font:600 14px/1.3 var(--body);color:#dfe3ea}
+.nf-t small{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.nf-t em{font-style:normal;color:var(--muted);font-size:12px}
+.nf.unread .nf-t b{color:#fff}
+.nf.unread::after{content:"";position:absolute;right:10px;top:16px;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red)}
+.nf.due .nf-ic{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 16%,var(--panel2))}
+.nf.due u{color:var(--gold)}
+.ack-bar{position:sticky;top:67px;z-index:19;background:linear-gradient(90deg,color-mix(in srgb,var(--red) 38%,var(--ink)),var(--ink));border-bottom:2px solid var(--red);animation:ack-in .4s ease}
+.ack-in{display:flex;align-items:center;gap:12px;padding-top:10px;padding-bottom:10px}
+.ack-ic{font-size:22px}.ack-t{flex:1;min-width:0;display:grid}
+.ack-t small{color:var(--gold);font:600 11px var(--body);text-transform:uppercase;letter-spacing:.1em}
+.ack-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ack-in .btn{margin:0;flex:none}
+@keyframes ack-in{from{transform:translateY(-100%);opacity:0}}
+@media (max-width:1100px){.bell-wrap{margin-left:auto}.menu-btn{order:4}.bell-panel{position:fixed;top:74px;right:12px}}
+@media (max-width:560px){.ack-in{flex-wrap:wrap}.ack-t{flex-basis:calc(100% - 40px)}}

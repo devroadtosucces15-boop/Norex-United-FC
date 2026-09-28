@@ -35,6 +35,7 @@ jobs:
         run: node scripts/fetch.mjs
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} # reads approved club requests (P5.6)
 
       - name: Check EA's FC updates (patch notes log, every 6 h)
         continue-on-error: true
@@ -60,6 +61,8 @@ jobs:
       - name: Build site
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
         run: node scripts/build.mjs
+        env:
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} # reads approved "hide me" requests (P5.6)
 
       - uses: actions/configure-pages@v5
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'

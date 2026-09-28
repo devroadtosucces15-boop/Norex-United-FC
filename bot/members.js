@@ -15,6 +15,7 @@ import { gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
 import { getHof, honoursRoute } from './honours.js';
 import { buildsRoute } from './builds.js';
+import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute, safely, takeKick } from './notify.js';
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -194,7 +195,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
     if (url.pathname === '/api/contacts' || url.pathname === '/api/trials/apply') { // P1.4 / P1.5 – public, behind the trials flag
       if (me) me.role = await currentRole(env, me);
       if (!flagOn(env, me, 'trials')) return cors(env, fail('Not available yet.', 404));
-      if (request.method === 'POST' && url.pathname === '/api/trials/apply') return cors(env, await applyRoute(request, env, me, loadSite, log));
+      if (request.method === 'POST' && url.pathname === '/api/trials/apply') {
+        const res = await applyRoute(request, env, me, loadSite, log);
+        if (takeKick()) ctx?.waitUntil?.(deliverDMs(env).catch(() => {}));
+        return cors(env, res);
+      }
       if (request.method === 'GET' && url.pathname === '/api/contacts') return cors(env, json(await getContacts(env)));
     }
     if (url.pathname === '/api/hof' && request.method === 'GET') { // P4.6 – public legends + moments, behind the hallOfFame flag
@@ -206,10 +211,16 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (me) me.role = await currentRole(env, me);
       return cors(env, await probuildsPublic(url.pathname, env, me, url));
     }
+    if (url.pathname === '/api/overrides' || url.pathname === '/api/requests/public') { // P5.6 – build overrides + public "hide me"
+      if (me) me.role = await currentRole(env, me);
+      return cors(env, await publicRequestRoute(request, env, me, loadSite, log));
+    }
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
-    return cors(env, await route(url.pathname, request.method, body, me, env, loadSite, url));
+    const res = await route(url.pathname, request.method, body, me, env, loadSite, url);
+    if (takeKick()) ctx?.waitUntil?.(deliverDMs(env).catch((e) => console.log('DM delivery failed', e.message))); // P7.1 – DMs right away
+    return cors(env, res);
   } catch (e) {
     return cors(env, fail(e.message || 'Something went wrong', 500));
   }
@@ -302,6 +313,7 @@ async function route(p, method, body, me, env, loadSite, url) {
           name = excluded.name, avatar = excluded.avatar, decided_by = NULL, decided_at = NULL`, me.u, pl.k, pl.n, Date.now(), me.n, me.a);
     }
     await log(env, me, 'claim', pl.n);
+    await safely(notifyManagers(env, { icon: '🪪', title: `New player claim: ${me.n} → ${pl.n}`, link: 'members.html#manager' }, me.u));
     return json({ claim: await getClaim(env, me.u) });
   }
 
@@ -383,6 +395,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (hon) return hon;
   const bld = await buildsRoute(p, method, body, me, env, log, url); // PB.2 saved builds, fork
   if (bld) return bld;
+  const ntf = await notifyRouteAll(p, method, body, me, env, loadSite, log); // P7.1 notifications · P5.6 requests
+  if (ntf) return ntf;
   const pro = await probuildsRoute(p, method, body, me, env, log); // PB.3 Pro Builds board · PB.4 my build
   if (pro) return pro;
 
@@ -407,6 +421,11 @@ async function route(p, method, body, me, env, loadSite, url) {
       ]);
       await log(env, me, `claim-${status}`, `${c.name} → ${c.player_name}`);
       await rebuildPublic(env);
+      if (c.user_id !== me.u) {
+        const title = { approved: `✅ Your claim for ${c.player_name} was approved`, rejected: `❌ Your claim for ${c.player_name} was not approved`, unlinked: `↩️ You were unlinked from ${c.player_name}` }[status];
+        const text = status === 'approved' ? 'You now have the verified badge on your player page.' : 'Ask a manager on Discord if this looks wrong – you can send a new claim from the Squad Hub.';
+        await safely(notify(env, [c.user_id], { type: 'claim', title, body: text, link: status === 'approved' ? `players/${c.player}.html` : 'members.html#me' }));
+      }
       return json({ claims: await getClaims(env) });
     }
     if (p === '/api/admin/overview' && method === 'GET') {
@@ -558,6 +577,7 @@ async function rushRoute(p, method, body, me, env, loadSite) {
       .bind(id, i, x.player, x.name, x.pos, x.goals, x.assists, x.rating, x.motm)));
     await log(env, me, confirm ? 'rush-logged' : 'rush-submit', `${m.gf}–${m.ga} vs ${m.opponent} · ${m.date}`);
     if (confirm) await rebuildRush(env);
+    else await safely(notifyManagers(env, { icon: '⚡', title: `Rush result to confirm: ${m.gf}–${m.ga} vs ${m.opponent}`, body: `Logged by ${me.n} · ${m.date}`, link: 'members.html#manager' }, me.u));
     return json({ id, status: confirm ? 'confirmed' : 'pending', ...await rushQueue(env, me) });
   }
 
@@ -583,6 +603,10 @@ async function rushRoute(p, method, body, me, env, loadSite) {
     await run(env, 'UPDATE rush_matches SET status = ?, decided_by = ?, decided_at = ? WHERE id = ?', next, me.n, Date.now(), r.id);
     await log(env, me, `rush-${next}`, `${label}${r.by_id !== me.u ? ` (by ${r.by_name})` : ''}`);
     if (next === 'confirmed' || r.status === 'confirmed') await rebuildRush(env);
+    if (r.by_id !== me.u) {
+      const title = { confirmed: `✅ Rush result confirmed: ${r.gf}–${r.ga} vs ${r.opponent}`, rejected: `❌ Rush result not confirmed: ${r.gf}–${r.ga} vs ${r.opponent}`, removed: `🗑 Rush result removed: ${r.gf}–${r.ga} vs ${r.opponent}` }[next];
+      await safely(notify(env, [r.by_id], { type: 'rush', title, body: `${r.date} · by ${me.n}`, link: 'members.html#rush' }));
+    }
     return json(await rushQueue(env, me));
   }
   return fail('Not found', 404);

@@ -2,7 +2,7 @@
 //
 // Tiers:
 //   home       – your club, fetched every run, full match history kept
-//   manual     – clubs added via config.extraClubIds or the "Add a club" issue form
+//   manual     – clubs added via config.extraClubIds or a "Track another club" request approved by a manager (P5.6)
 //   linked     – clubs one of your members also plays for (found automatically)
 //   discovered – clubs found by crawling opponents; only squad + career stats kept
 //
@@ -15,7 +15,7 @@
 // members' other clubs and to fill in stats for players you meet.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJson, writeJson, loadConfig, num, sleep } from './lib.mjs';
+import { DATA, readJson, writeJson, loadConfig, loadOverrides, num, sleep } from './lib.mjs';
 
 const API = 'https://proclubs.ea.com/api/fc/';
 const HEADERS = {
@@ -229,9 +229,32 @@ async function postToDiscord() {
   }).catch((e) => console.warn('Discord post failed:', e.message));
 }
 
+// P5.6: clubs approved in the manager portal. Approved by name only → look the ID up once via EA's club search and
+// report it back. Clubs no longer requested (undone) drop back to 'discovered' – only when the list loaded.
+async function trackRequested() {
+  const o = await loadOverrides(config);
+  if (!o.ok) return;
+  const resolved = [];
+  for (const c of o.clubs) {
+    let id = c.id;
+    if (!id) {
+      const hits = (await api('allTimeLeaderboard/search', { clubName: c.name }).catch(() => null)) || [];
+      id = hits.find((h) => String(h.clubName ?? h.clubInfo?.name ?? h.name ?? '').toLowerCase() === c.name.toLowerCase())?.clubId;
+      if (!id) { console.warn(`Requested club not found on EA: ${c.name}`); continue; }
+      resolved.push({ req: c.req, clubId: String(id) });
+    }
+    if (String(id) !== homeId) track(id, 'manual', { depth: 0 });
+    c.id = String(id);
+  }
+  if (resolved.length) await loadOverrides(config, { resolved });
+  const wanted = new Set([...(config.extraClubIds || []).map(String), ...o.clubs.map((c) => c.id).filter(Boolean)]);
+  for (const [id, c] of Object.entries(state.clubs)) if (c.tier === 'manual' && !wanted.has(id)) c.tier = 'discovered';
+}
+
 async function main() {
   track(homeId, 'home', { depth: 0 });
   for (const id of config.extraClubIds || []) track(id, 'manual', { depth: 0 });
+  await trackRequested();
 
   // Home first, so the roster is known before other clubs are checked for links.
   const home = await fetchClub(homeId);

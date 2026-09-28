@@ -49,6 +49,11 @@ export const PERMS = {
   'messages.reported': 'manager', // P6.3 – managers see reported messages only
   'messages.all': 'owner', // P6.3 – owner/founder sees every DM and group chat
   'settings.bot': 'owner', // P7/P8 – bot and site settings
+  'notify.use': 'member', // P7.1 – notification centre (bell, settings, Discord DMs)
+  'notify.announce': 'manager', // P7.1 – announcements / rules to every member (optionally must-acknowledge)
+  'requests.club': 'member', // P5.6 – "Track another club"
+  'requests.hide': 'guest', // P5.6 – "Hide me from the site" (visitors too, verified by managers)
+  'requests.decide': 'manager', // P5.6 – approve / reject / undo requests
 };
 
 export function can(user, action) {

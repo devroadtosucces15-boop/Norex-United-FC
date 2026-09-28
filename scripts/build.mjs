@@ -1,7 +1,7 @@
 // Turns data/ into a static website in site/. No dependencies, no framework.
 import fs from 'node:fs';
 import path from 'node:path';
-import { ROOT, DATA, readJson, loadConfig, num } from './lib.mjs';
+import { ROOT, DATA, readJson, loadConfig, loadOverrides, num } from './lib.mjs';
 import { lineChart, goalBars, donut, radar, spark } from './charts.mjs';
 import { buildUpdates } from './updates-page.mjs';
 import { buildBuilder } from './builder-page.mjs';
@@ -13,7 +13,8 @@ const config = loadConfig();
 const homeId = String(config.homeClubId);
 const brand = config.brand ?? {};
 const state = readJson(path.join(DATA, 'state.json'), { clubs: {} });
-const hidden = new Set((config.hiddenPlayers || []).map((h) => String(h).toLowerCase()));
+const overrides = await loadOverrides(config); // P5.6 – "hide me" requests approved by managers
+const hidden = new Set([...(config.hiddenPlayers || []), ...overrides.hiddenPlayers].map((h) => String(h).toLowerCase()));
 const builtAt = new Date().toISOString();
 const SITE = config.siteUrl?.replace(/\/?$/, '/') ?? '';
 const DISCORD = config.discord?.applyLink || '';
@@ -762,11 +763,9 @@ ${RECRUIT.open ? `<p class="about-links"><a class="btn" href="apply.html">👑 A
 <li><b>Linked clubs</b> (${linked.length}): other clubs our players also play for, found automatically by scanning squads.</li>
 <li><b>Opponents</b>: every club we play gets a page with its squad and record.</li>
 <li><b>Players</b>: a card and profile for anyone who appears in any of the above.</li></ul>
-<h2>Play for another club?</h2>
-<p>If a club of yours isn't showing up yet, tell a manager its name and we'll add it. Its matches get archived from then on.</p>
-<p>${askManager}</p>
-<h2>Don't want to be listed?</h2>
-<p>Send a manager your gamertag and you'll be hidden from every page on the next update.</p>
+<h2 id="requests">Play for another club? Don't want to be listed?</h2>
+<p>If a club of yours isn't showing up yet, we can add it – its matches get archived from then on. And if you'd rather not appear on this site, we hide your gamertag from every page on the next update.</p>
+<div id="request-forms" data-flag="requests" hidden></div>
 <p>${askManager}</p>
 <p class="muted">Tracking ${clubs.size} clubs · ${visiblePlayers.length} players · ${matches.length} archived matches · ${Object.keys(state.scanned ?? {}).length} clubs scanned.</p>
 </div>` }));
