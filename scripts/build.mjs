@@ -788,6 +788,15 @@ write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
   car: pl.career ? { gp: num(pl.career.gamesPlayed), g: num(pl.career.goals), a: num(pl.career.assists), r: num(pl.career.ratingAve), m: num(pl.career.manOfTheMatch) } : null,
   rad: pl.radar, raw: pl.radarRaw, tr: [...pl.apps].reverse().slice(-15).map((x) => x.rating),
 }))));
+// Personal match log for the Squad Hub dashboard (P2.6) and achievements (P2.3 / P4.3): our players' League
+// matches for NOREX, oldest → newest, compact rows (see cols). grp = position group from EA's app position.
+const SQUAD_COLS = ['ts', 'res', 'g', 'a', 'r', 'motm', 'shots', 'pass', 'passAtt', 'tkl', 'tklAtt', 'saves', 'gf', 'ga', 'grp'];
+const GRP = { goalkeeper: 'GK', defender: 'DEF', midfielder: 'MID', forward: 'FWD', attacker: 'FWD' };
+write('api/squad.json', JSON.stringify({
+  cols: SQUAD_COLS,
+  players: Object.fromEntries(visiblePlayers.filter((pl) => pl.isHome || pl.playedForHome).map((pl) => [pl.key, pl.apps.filter((x) => x.clubId === homeId).slice(0, 300).reverse()
+    .map((x) => [x.ts, x.res, x.goals, x.assists, x.rating, x.mom ? 1 : 0, x.shots, x.passes, x.passAtt, x.tackles, x.tackleAtt, x.saves, x.gf, x.ga, GRP[x.pos] ?? ''])]).filter(([, l]) => l.length)),
+}));
 write('api/clubs.json', JSON.stringify([...clubs.values()].map((c) => ({ id: c.id, n: clubName(c.id), t: state.clubs[c.id]?.tier ?? 'archived', ...(clubKit(c.id)?.crestAssetId ? { cr: crestSrc(c.id, SITE) } : {}) }))));
 const ho = { ...(homeC?.overall ?? {}), ...(homeC?.leaderboard ?? {}) };
 write('api/club.json', JSON.stringify({

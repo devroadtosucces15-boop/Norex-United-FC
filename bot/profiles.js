@@ -5,12 +5,15 @@
 // The site converts them to the viewer's time zone.
 import { ROLE_LABEL, can, flagOn } from './roles.js';
 import { picksOf } from './probuilds.js';
+import { achSummary, badgesOf } from './badges.js';
 
 export const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
 export const RUSH_POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
 const PLATFORMS = ['PS5', 'Xbox', 'PC'];
 const ID_KEYS = ['psn', 'xbox', 'ea', 'steam'];
 const FULL_DAY = 0xffffff;
+export const TAG_COLOURS = ['red', 'gold', 'green', 'blue', 'purple', 'grey'];
+const MAX_TAGS = 8;
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -23,6 +26,7 @@ export const profileOut = (r) => r && {
   bio: r.bio, positions: parse(r.positions, []), platform: r.platform, updated: r.updated,
   rushPositions: parse(r.rush_positions, []), tz: r.tz || '', playTimes: parse(r.play_times, null),
   ids: parse(r.ids, {}), twitch: r.twitch || '', youtube: r.youtube || '', country: r.country || '', club: r.fav_club || '',
+  tags: parse(r.tags, []),
 };
 
 // ---------- validation (each returns the clean value, or throws a human message) ----------
@@ -68,6 +72,22 @@ function youtube(v) {
   if (/^@[\w.-]{3,30}$/.test(x) || /^channel\/UC[\w-]{22}$/.test(x)) return x;
   throw new Error('YouTube: enter your @handle or channel link.');
 }
+// P2.3 self tags: [{ t: text ≤20, e: one emoji (optional), c: colour key }], max 8, no duplicates.
+const EMOJI = /^[\p{Extended_Pictographic}\p{Emoji_Component}\u200d\ufe0f\u{1F1E6}-\u{1F1FF}]+$/u;
+function tags(v) {
+  if (!Array.isArray(v)) throw new Error('Bad tags.');
+  if (v.length > MAX_TAGS) throw new Error(`Up to ${MAX_TAGS} tags.`);
+  const out = [];
+  for (const x of v) {
+    const t = clean(x?.t, 20).replace(/\s+/g, ' ');
+    if (!t) continue;
+    const e = String(x?.e ?? '').trim();
+    if (e && (!EMOJI.test(e) || [...e].length > 8 || /^[\d#*]+$/.test(e))) throw new Error(`“${t}”: pick one emoji or leave it empty.`);
+    if (out.some((o) => o.t.toLowerCase() === t.toLowerCase())) continue;
+    out.push({ t, e, c: TAG_COLOURS.includes(x?.c) ? x.c : 'grey' });
+  }
+  return out;
+}
 function country(v) {
   const x = clean(v, 8).toUpperCase();
   if (!x) return '';
@@ -77,7 +97,7 @@ function country(v) {
 
 // Saves the fields present in `body`, keeps the rest. Returns the new profile or { error }.
 export async function saveProfile(env, me, body) {
-  const cur = profileOut(await one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)) ?? { bio: '', positions: [], platform: '', rushPositions: [], tz: '', playTimes: null, ids: {}, twitch: '', youtube: '', country: '', club: '' };
+  const cur = profileOut(await one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)) ?? { bio: '', positions: [], platform: '', rushPositions: [], tz: '', playTimes: null, ids: {}, twitch: '', youtube: '', country: '', club: '', tags: [] };
   const has = (k) => Object.prototype.hasOwnProperty.call(body, k);
   const p = { ...cur };
   try {
@@ -92,16 +112,17 @@ export async function saveProfile(env, me, body) {
     if (has('youtube')) p.youtube = youtube(body.youtube);
     if (has('country')) p.country = country(body.country);
     if (has('club')) p.club = clean(body.club, 40);
+    if (has('tags')) p.tags = tags(body.tags);
   } catch (e) { return { error: e.message }; }
   if (p.playTimes && !p.tz) return { error: 'Pick your time zone so others see your play times in theirs.' };
   p.updated = Date.now();
-  await env.DB.prepare(`INSERT INTO profiles (user_id, bio, positions, platform, updated, rush_positions, tz, play_times, ids, twitch, youtube, country, fav_club)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  await env.DB.prepare(`INSERT INTO profiles (user_id, bio, positions, platform, updated, rush_positions, tz, play_times, ids, twitch, youtube, country, fav_club, tags)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (user_id) DO UPDATE SET bio = excluded.bio, positions = excluded.positions, platform = excluded.platform, updated = excluded.updated,
       rush_positions = excluded.rush_positions, tz = excluded.tz, play_times = excluded.play_times, ids = excluded.ids, twitch = excluded.twitch,
-      youtube = excluded.youtube, country = excluded.country, fav_club = excluded.fav_club`)
+      youtube = excluded.youtube, country = excluded.country, fav_club = excluded.fav_club, tags = excluded.tags`)
     .bind(me.u, p.bio, JSON.stringify(p.positions), p.platform, p.updated, JSON.stringify(p.rushPositions), p.tz,
-      p.playTimes ? JSON.stringify(p.playTimes) : '', JSON.stringify(p.ids), p.twitch, p.youtube, p.country, p.club).run();
+      p.playTimes ? JSON.stringify(p.playTimes) : '', JSON.stringify(p.ids), p.twitch, p.youtube, p.country, p.club, JSON.stringify(p.tags ?? [])).run();
   return { profile: p };
 }
 
@@ -112,11 +133,14 @@ export const profileSummary = (p) => [p.positions.join('/'), p.rushPositions.len
 export async function memberCard(env, me, id) {
   const u = await one(env, 'SELECT * FROM users WHERE id = ?', id);
   if (!u) return null;
-  const [claim, prof, activity, builds] = await Promise.all([
+  const badgesOn = flagOn(env, me, 'badges'); // P2.3 / P4.3
+  const [claim, prof, activity, builds, badges, ach] = await Promise.all([
     one(env, "SELECT player, player_name FROM claims WHERE user_id = ? AND status = 'approved'", id),
     one(env, 'SELECT * FROM profiles WHERE user_id = ?', id),
     can(me, 'activity.view') ? all(env, 'SELECT at, type, detail FROM activity WHERE user_id = ? ORDER BY id DESC LIMIT 30', id) : null,
     flagOn(env, me, 'proBuilds') ? picksOf(env, id) : null, // PB.4 – League / Rush build
+    badgesOn ? badgesOf(env, id, me) : null,
+    badgesOn ? achSummary(env, id) : null,
   ]);
   const role = u.role && u.role !== 'member' ? u.role : u.admin ? 'manager' : claim ? 'claimed' : 'member';
   return {
@@ -125,5 +149,6 @@ export async function memberCard(env, me, id) {
     profile: profileOut(prof),
     ...(activity ? { activity } : {}),
     ...(builds ? { builds } : {}),
+    ...(badges ? { badges: badges.badges, canRemoveBadges: badges.canRemove, ach } : {}),
   };
 }

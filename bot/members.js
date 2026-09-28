@@ -17,6 +17,7 @@ import { getHof, honoursRoute } from './honours.js';
 import { buildsRoute } from './builds.js';
 import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute, safely, takeKick } from './notify.js';
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
+import { badgesRoute } from './badges.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -342,7 +343,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       const pick = (Array.isArray(body.dates) ? body.dates : [body.date]).filter((d) => dates.includes(d));
       const status = body.status;
       if (!pick.length || !(STATUSES.includes(status) || status === 'clear')) return fail('Bad availability');
-      const old = new Date(Date.now() - 10 * DAY * 1000).toISOString().slice(0, 10);
+      const old = new Date(Date.now() - 400 * DAY * 1000).toISOString().slice(0, 10); // a year+ of history – attendance streaks (P4.3), monthly boards
       await env.DB.batch([
         ...pick.map((d) => (status === 'clear'
           ? env.DB.prepare('DELETE FROM availability WHERE date = ? AND user_id = ?').bind(d, me.u)
@@ -401,6 +402,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (ntf) return ntf;
   const pro = await probuildsRoute(p, method, body, me, env, log); // PB.3 Pro Builds board · PB.4 my build
   if (pro) return pro;
+  const bdg = await badgesRoute(p, method, body, me, env, loadSite, log, url); // P2.3 badges · P2.3/P4.3 achievements
+  if (bdg) return bdg;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

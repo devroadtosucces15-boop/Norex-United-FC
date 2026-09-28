@@ -719,6 +719,8 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
       $('#role-tag').innerHTML = roleTag(me.user.role);
       ls.set('norex_me', JSON.stringify({ player: me.claim?.status === 'approved' ? me.claim.player : null }));
       go(location.hash.slice(1) || 'me', false);
+      if (flagOn('badges', me.user.role)) (window.NXBadges ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/badges.js`, onload: ok, onerror: no })))) // P4.3 unlock toast
+        .then(() => NXBadges.checkUnlocks({ call })).catch(() => {});
     } catch (e) { panel.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; }
   })();
 })();

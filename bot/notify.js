@@ -29,6 +29,7 @@ export const TYPES = {
   claim: { icon: '🪪', label: 'Player claim decisions', def: 'dm' },
   trial: { icon: '🔭', label: 'My scouting tips', def: 'dm' },
   rush: { icon: '⚡', label: 'My Rush results', def: 'site' },
+  badge: { icon: '🎖️', label: 'Badges & achievements I get', def: 'site' },
   request: { icon: '📨', label: 'My club & privacy requests', def: 'dm' },
   queue: { icon: '🛡️', label: 'Manager to-dos (new claims, trials, Rush results, requests)', def: 'site', role: 'manager' },
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },

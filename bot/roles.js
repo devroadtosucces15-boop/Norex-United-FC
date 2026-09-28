@@ -54,6 +54,8 @@ export const PERMS = {
   'requests.club': 'member', // P5.6 – "Track another club"
   'requests.hide': 'guest', // P5.6 – "Hide me from the site" (visitors too, verified by managers)
   'requests.decide': 'manager', // P5.6 – approve / reject / undo requests
+  'badges.give': 'member', // P2.3 – give teammates community badges (tags are part of profile.edit)
+  'badges.remove': 'manager', // P2.3 – remove abusive badges (members can remove badges on their own profile)
   'roles.sync': 'manager', // P2.5 – /syncroles: re-sync the ✅ Verified Discord role for every claim
 };
 
