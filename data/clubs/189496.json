@@ -1,7 +1,7 @@
 {
  "id": "189496",
- "tier": "discovered",
- "fetchedAt": "2026-09-28T04:45:27.848Z",
+ "tier": "linked",
+ "fetchedAt": "2026-09-28T04:51:04.665Z",
  "info": {
   "name": "We blame lag fc",
   "clubId": 189496,
@@ -887,5 +887,10 @@
    "prevGoals": "1",
    "favoritePosition": "forward"
   }
- ]
+ ],
+ "leaderboard": {
+  "currentDivision": "2",
+  "bestDivision": "2",
+  "points": "62"
+ }
 }
