@@ -13,6 +13,7 @@ const apply = (body, ip = '1.1.1.1') => W('/api/trials/apply', { method: 'POST',
 const form = { ea: 'Rising_Star9', platform: 'PS5', positions: ['ST', 'CAM'], discord: 'risingstar', clips: 'https://youtu.be/abc', note: 'Box-to-box <script>x</script>' };
 
 // ----- flags (all owner-only at launch) -----
+setFlags({ trials: 'owner', scouting: 'owner', managerNotes: 'owner' }); // config.json may already have them on (QA1)
 t('contacts hidden while flag is owner-only', (await W('/api/contacts')).status === 404);
 t('public form hidden while flag is owner-only', (await apply(form)).s === 404);
 t('manager gets 404 for trials while owner-only', (await call(mgr, '/api/trials')).s === 404);

@@ -29,4 +29,8 @@ t('P1.1 other clubs link to their own drill-down (if archived)', clubPages.every
 // P1.3 streams
 t('P1.3 home has Watch section + live embed slot', index.includes('id="watch"') && index.includes('class="live-embed"') && index.includes(config.streams.twitch));
 t('P1.3 footer links both channels on every page', read(SITE + 'stats.html').includes(`href="${config.streams.youtube}"`) && read(SITE + 'stats.html').includes('class="live-bar"'));
+// QA1: deferred page scripts placed before ui.js run first – they must wait for DOMContentLoaded or guard window.UI
+const early = new Set(html.flatMap((f) => { const h = read(f); const ui = h.indexOf('assets/ui.js'); return [...h.matchAll(/src="(?:\.\.\/)*assets\/([\w-]+\.js)"/g)].filter((m) => ui < 0 || m.index < ui).map((m) => m[1]); }));
+t('QA1 page scripts before ui.js never touch UI at load', [...early].every((js) => { const src = fs.existsSync(SITE + 'assets/' + js) ? read(SITE + 'assets/' + js) : ''; return !/\bUI\./.test(src) || /DOMContentLoaded|window\.UI/.test(src); }));
+t('QA1 hub grid column can shrink (no phone overflow)', /\.hub\{display:grid;grid-template-columns:minmax\(0,1fr\)/.test(read(SITE + 'assets/style.css')));
 done();

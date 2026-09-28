@@ -37,7 +37,7 @@ h3{font-size:15px;letter-spacing:.08em;color:var(--muted);font-weight:600;margin
 .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--ink) 82%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .top::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:3px;background:linear-gradient(90deg,transparent,var(--red) 20%,var(--red) 80%,transparent)}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:66px}
-.brand{display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .brand img{filter:drop-shadow(0 2px 8px rgba(0,0,0,.6));transition:transform .3s}
 .brand:hover img{transform:rotate(-6deg) scale(1.08)}
 .brand span{display:flex;flex-direction:column;line-height:.95;font-family:var(--head)}
@@ -53,7 +53,14 @@ nav a:hover::after,nav a[aria-current]::after{transform:scaleX(1)}
 kbd{font:11px var(--body);padding:1px 5px;border:1px solid var(--line2);border-radius:4px;color:var(--muted)}
 .menu-btn{display:none;width:42px;height:42px;border:1px solid var(--line2);border-radius:8px;background:var(--panel);cursor:pointer;padding:10px;flex-direction:column;justify-content:space-between}
 .menu-btn i{display:block;height:2px;background:#fff;border-radius:2px;transition:.25s}
-@media (max-width:900px){
+/* 9 links + search + apply + account need ~1240px: tighten from 1320px, hamburger from 1100px */
+@media (min-width:1101px) and (max-width:1320px){
+  nav a{padding:8px 7px;font-size:14px;letter-spacing:.05em}
+  nav a::after{left:7px;right:7px}
+  .search-btn kbd{display:none}
+  .me-btn>span{display:none}
+}
+@media (max-width:1100px){
   .menu-btn{display:flex}
   nav{position:fixed;inset:69px 0 auto 0;flex-direction:column;align-items:stretch;padding:12px 16px 20px;background:color-mix(in srgb,var(--ink) 96%,transparent);border-bottom:3px solid var(--red);transform:translateY(-120%);transition:transform .3s;max-height:calc(100vh - 69px);overflow:auto}
   nav.open{transform:none}
@@ -386,7 +393,7 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px}
 .foot-links a:hover{color:#fff}
 .about-links{display:flex;flex-wrap:wrap;gap:10px}
 .about-links .btn{margin-top:0}
-@media (max-width:900px){.discord-btn{margin:10px 0 0;justify-content:center;padding:12px}}
+@media (max-width:1100px){.discord-btn{margin:10px 0 0;justify-content:center;padding:12px}}
 .checks{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .checks li{position:relative;padding-left:30px}
 .checks li::before{content:"✓";position:absolute;left:0;top:-1px;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--red);font-weight:700;font-size:13px}
@@ -403,7 +410,8 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px}
 .login-btn:hover{border-color:#5865f2;color:#fff}
 .me-btn{display:flex;align-items:center;gap:8px;margin-left:6px;padding:4px 12px 4px 4px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2);font:600 13px var(--body)}
 .me-btn img{width:28px;height:28px;border-radius:50%}
-@media (max-width:900px){.login-btn,.me-btn{margin:10px 0 0;justify-content:center;padding:12px}}
+.me-btn>span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:1100px){.login-btn,.me-btn{margin:10px 0 0;justify-content:center;padding:12px}}
 .verified{display:flex;gap:12px;align-items:flex-start;margin:10px 0 4px;padding:10px 14px;border-radius:12px;background:rgba(88,101,242,.14);border:1px solid rgba(88,101,242,.5);max-width:560px}
 .verified img{width:44px;height:44px;border-radius:50%}
 .verified b{display:block;color:#aab2ff;font-size:13px}
@@ -411,7 +419,7 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px}
 .verified p{margin:4px 0 0;font-size:13px;color:#cfd5de;font-style:italic}
 @media (max-width:900px){.verified{margin:10px auto 4px;text-align:left}}
 .fut.is-verified::after{content:"✓";position:absolute;right:10px;bottom:14%;z-index:3;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#5865f2;color:#fff;font:700 13px var(--body);box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.hub{display:grid;gap:16px}
+.hub{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .hub-login{display:flex;gap:24px;align-items:center;padding:28px}
 .hub-login h2{font-size:28px;margin-bottom:6px}
 .hub-head{display:flex;align-items:center;gap:16px}
@@ -460,7 +468,7 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px}
 .acct-menu a,.acct-out{display:block;padding:9px 10px;border-radius:8px;font:500 14px var(--body);color:#dfe3ea;text-align:left;background:none;border:0;cursor:pointer}
 .acct-menu a:hover,.acct-out:hover{background:var(--panel2);color:#fff}
 .acct-out{border-top:1px solid var(--line);margin-top:4px;border-radius:0 0 8px 8px}
-@media (max-width:900px){.acct{margin:10px 0 0}.acct .me-btn{width:100%;justify-content:center}.acct-menu{position:static;margin-top:8px;box-shadow:none}}
+@media (max-width:1100px){.acct{margin:10px 0 0}.acct .me-btn{width:100%;justify-content:center}.acct-menu{position:static;margin-top:8px;box-shadow:none}}
 /* hub */
 .hub-tabs{margin:4px 0}
 .hub-tabs .chip,.sub-tabs .chip{padding:9px 16px;font-size:14px}

@@ -50,6 +50,7 @@ t('assets shipped', ['metrics.js', 'honours.js', 'honours.css'].every((f) => fs.
 const owner = await login('111', [], 'Founder');
 const mgr = await login('600', ['mgr'], 'Coach');
 const member = await login('500');
+setFlags({ hallOfFame: 'owner', leaders: 'owner' }); // config.json may already have them on (QA1)
 t('flags: hof 404 while owner-only (guest)', (await W('/api/hof')).status === 404);
 t('flags: leaders 404 for a member while owner-only', (await call(member, '/api/leaders')).s === 404);
 t('owner can read hof while owner-only', (await call(owner, '/api/hof')).s === 200);

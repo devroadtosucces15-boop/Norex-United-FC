@@ -231,7 +231,7 @@ ${T.data.canNotes ? `<section><h4>📝 Manager notes <small class="muted">(manag
           const s = b.dataset.to;
           if (['declined', 'released', 'signed'].includes(s)) {
             let reason = '';
-            const r = await UI.modal({ title: `${NEXT_LABEL[s]} ${t0.ea}?`, icon: ST[s][0], body: '<label class="fld">Reason (optional, shown in the history)<input class="tr-reason" maxlength="200"></label>', actions: [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: NEXT_LABEL[s], value: 'ok', kind: s === 'signed' ? '' : 'danger' }], onOpen: (d2) => { d2.addEventListener('input', (ev) => { reason = ev.target.value; }); } });
+            const r = await UI.modal({ title: `${NEXT_LABEL[s].replace(/^\S+\s/, '')} ${t0.ea}?`, icon: ST[s][0], body: '<label class="fld">Reason (optional, shown in the history)<input class="tr-reason" maxlength="200"></label>', actions: [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: NEXT_LABEL[s], value: 'ok', kind: s === 'signed' ? '' : 'danger' }], onOpen: (d2) => { d2.addEventListener('input', (ev) => { reason = ev.target.value; }); } });
             if (r !== 'ok') return;
             return setStatus(ctx, id, s, reason);
           }

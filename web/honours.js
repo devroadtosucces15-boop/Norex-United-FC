@@ -2,7 +2,8 @@
 //   [data-leaders-members]  squad boards for a month: attendance, MOTM vote wins, votes cast (+ awards / predictions later)
 //   [data-hof-legends]      legend cards; managers induct and remove
 //   [data-hof-timeline]     manager-added moments merged into the club history timeline
-(() => {
+// Runs on DOMContentLoaded: this deferred script sits in <main>, before ui.js, so window.UI isn't there yet.
+document.addEventListener('DOMContentLoaded', () => {
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -127,4 +128,4 @@ ${S.legends.length ? `<div class="legends">${S.legends.map(legendCard).join('')}
     }
   });
   load();
-})();
+});

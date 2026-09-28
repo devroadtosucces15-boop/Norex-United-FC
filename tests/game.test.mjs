@@ -10,6 +10,7 @@ const latest = async () => (await (await W('/api/game')).json());
 
 const g0 = await latest();
 t('public GET /api/game without login → seed', g0.version === seed.version && g0.levelCap.value === seed.levelCap.value && !g0.levelCap.verified);
+env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), gameRules: 'owner' }); // config.json may already have it on (QA1)
 t('flag is owner-only: manager gets 404', (await call(mgr, '/api/game/admin')).s === 404);
 const a0 = await call(owner, '/api/game/admin');
 t('owner sees admin state: current + seed in history', a0.s === 200 && a0.d.current.version === seed.version && a0.d.versions.at(-1).seed);
