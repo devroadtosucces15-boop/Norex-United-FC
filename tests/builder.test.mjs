@@ -62,4 +62,7 @@ t('share link keeps PlayStyles, +, spec, facilities, body', back2.ps.join() === 
 
 const html = fs.readFileSync(`${ROOT}site/builder.html`, 'utf8');
 t('builder page built, behind the builder flag, with coming-soon fallback', html.includes('data-flag="builder"') && html.includes('bd-soon') && html.includes('assets/builder.js'));
+t('Builder nav link hidden behind the flag', /<a href="builder.html"[^>]*data-flag="builder" hidden>Builder<\/a>/.test(html));
+const js = fs.readFileSync(`${ROOT}site/assets/builder.js`, 'utf8');
+t('(c) save / my builds / compare / image / fork wired', ['data-save', 'data-mine', 'data-compare', 'data-image', 'data-fork', '/api/builds/fork'].every((k) => js.includes(k)));
 done();

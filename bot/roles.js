@@ -35,6 +35,7 @@ export const PERMS = {
   'feedback.authors': 'manager', // P4.4 – who wrote anonymous feedback
   'lineup.unlock': 'claimed', // P3.x – claimed + Rush positions set
   'events.manage': 'manager', // P3.x
+  'builds.save': 'member', // PB.2 – Save to My builds, fork
   'builds.feature': 'manager', // PB – "Club recommended"
   'game.edit': 'manager', // PB.1 – publish game-rules versions (level cap, dataset), confirm patch-note cap changes
   'content.edit': 'manager', // P5.x – announcements, rules, FAQ

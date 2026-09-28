@@ -14,6 +14,7 @@ import { getLive } from './live.js';
 import { gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
 import { getHof, honoursRoute } from './honours.js';
+import { buildsRoute } from './builds.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
@@ -375,6 +376,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (rec) return rec;
   const hon = await honoursRoute(p, method, body, me, env, loadSite, log, url); // P4.5 squad boards · P4.6 hall of fame
   if (hon) return hon;
+  const bld = await buildsRoute(p, method, body, me, env, log, url); // PB.2 saved builds, fork
+  if (bld) return bld;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

@@ -1,6 +1,7 @@
 // Archetype builder sandbox (roadmap PB.2): (a) archetype picker, level 1…cap with MAX, AP spending with live bars,
 // over-cap guards, undo/reset, ★ signature attributes, face stats + OVR estimate, share link; (b) PlayStyles,
-// Specializations, Facilities and Body tabs (height/weight modifiers as +/− badges), position fit, League/Rush notes.
+// Specializations, Facilities and Body tabs (height/weight modifiers as +/− badges), position fit, League/Rush notes;
+// (c) Save image (branded PNG card), Save to My builds (login, Worker /api/builds), Compare two builds, Fork.
 // Game data comes from NXGame.load() (newest published version), the maths from build-math.js.
 (() => {
   const root = document.querySelector('[data-builder]');
@@ -11,12 +12,199 @@
   const ICON = { GK: '🧤', DEF: '🛡️', MID: '🎯', FWD: '⚡' };
   const GICON = { pace: '💨', shooting: '🎯', passing: '🅿️', dribbling: '🪄', defending: '🛡️', physical: '💪', goalkeeping: '🧤' };
   let g, b, hist = [], tab = 'playstyles';
+  let cur = null; // the saved build that's open: { id, title, mine, by } – Save updates it when it's mine
+  let saved = null; // my builds (loaded on first use)
   const TABS = [['playstyles', '💫 PlayStyles'], ['specializations', '🎓 Specializations'], ['facilities', '🏟️ Facilities'], ['body', '📏 Body']];
   const none = (what) => `<div class="bd-empty"><span>🗂️</span><div><b>No ${what} in the game data yet</b><p class="muted small">Managers add them from the in-game screens (portal → 🎮 Game rules → changed values). They show up here straight away.</p></div></div>`;
   const toast = (m, t) => (window.UI ? UI.toast(m, t) : null);
 
   const push = () => { hist.push(JSON.stringify(b)); if (hist.length > 100) hist.shift(); };
   const setHash = () => history.replaceState(null, '', `#${M.encode(g, b)}`);
+
+  // ---------- member API (saving needs a Discord login; the sandbox itself is public) ----------
+  const MAPI = document.body.dataset.api || '';
+  const BASE = document.body.dataset.base || '';
+  const token = () => { try { const t = localStorage.getItem('norex_session'); const p = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(t.split('.')[0].replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)))); return p.exp > Date.now() / 1000 ? t : null; } catch { return null; } };
+  const call = async (path, body) => {
+    const r = await fetch(MAPI + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: { Authorization: `Bearer ${token()}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+    return d;
+  };
+  const PENDING = 'norex_builder_pending'; // the build survives the Discord login round trip (the callback drops our hash)
+  const login = (then) => {
+    try { sessionStorage.setItem(PENDING, JSON.stringify({ code: M.encode(g, b), cur, then })); } catch {}
+    location.href = `${MAPI}/auth/login?return=${encodeURIComponent(location.href.split('#')[0])}`;
+  };
+  const needLogin = async (what, then) => {
+    if (token()) return false;
+    if (!MAPI) { toast('Saving isn’t available on this copy of the site', 'error'); return true; }
+    if (window.UI && await UI.confirm({ title: `Log in to ${what}`, icon: '🔐', text: 'Building and sharing is open to everyone. Saving builds needs a NOREX Discord login – your current build comes with you.', ok: 'Log in with Discord' })) login(then);
+    return true;
+  };
+  const archName = (id) => (g.archetypes || []).find((a) => a.id === id)?.name ?? id;
+  const outdated = (x) => x.version && x.version !== g.version;
+  const decodeCode = (code) => { const d = M.decode(g, code); return d && { arch: d.arch, level: d.level, spent: d.spent, ps: d.ps, plus: d.plus, sp: d.sp, fa: d.fa, h: d.h, w: d.w }; };
+  const open = (x) => {
+    const d = decodeCode(x.code);
+    if (!d) { toast('That build can’t be read with the current game data', 'error'); return; }
+    push(); b = d; cur = { id: x.id, title: x.title, mine: x.mine, by: x.by?.n };
+    setHash(); draw();
+    if (outdated(x)) toast(`Made on ${x.version} – shown with the current rules (${g.version})`);
+  };
+  const loadMine = async () => (saved = (await call('/api/builds')).builds);
+
+  async function save() {
+    if (await needLogin('save builds', 'save')) return;
+    const update = cur?.mine && cur.id;
+    const title = await new Promise((ok) => {
+      const m = UI.modal({ title: update ? 'Save build' : 'Save to My builds', icon: '💾', body: `<label class="bd-field"><span>Name</span><input maxlength="60" value="${esc(cur?.title && cur.mine ? cur.title : `${archName(b.arch)} L${b.level}`)}" autofocus></label>${update ? '<p class="muted small">Saving updates this build. Use <b>Save as new</b> to keep both.</p>' : ''}`,
+        actions: [{ label: 'Cancel', value: null, kind: 'ghost' }, ...(update ? [{ label: 'Save as new', value: 'new', kind: 'ghost' }] : []), { label: '💾 Save', value: 'save' }],
+        onOpen: (d, close) => d.querySelector('input').addEventListener('keydown', (e) => { if (e.key === 'Enter') close('save'); }) });
+      m.then((v) => ok(v && { v, t: m.el.querySelector('input').value.trim() }));
+    });
+    if (!title) return;
+    try {
+      const r = await call('/api/builds', { ...(title.v === 'save' && update ? { id: cur.id } : {}), title: title.t, code: M.encode(g, b) });
+      saved = r.builds;
+      const s = saved.find((x) => x.id === r.saved);
+      cur = s ? { id: s.id, title: s.title, mine: true } : cur;
+      draw(); toast(`💾 Saved “${s?.title ?? title.t}” to My builds`, 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  async function fork(id) {
+    if (await needLogin('fork builds')) return;
+    try {
+      const r = await call('/api/builds/fork', { id });
+      saved = r.builds;
+      const s = saved.find((x) => x.id === r.saved);
+      if (s) open(s);
+      toast('🍴 Forked into My builds – change it however you like', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  async function myBuilds() {
+    if (await needLogin('see your builds')) return;
+    const m = UI.modal({ title: 'My builds', icon: '📂', wide: true, body: '<div data-mb>' + (UI.skeleton ? UI.skeleton('rows', 3) : '<p class="muted">Loading…</p>') + '</div>' });
+    const box = m.el.querySelector('[data-mb]');
+    const paint = () => {
+      box.innerHTML = saved.length ? `<p class="muted small">${saved.length} saved · open one to keep editing, or compare it with what’s on screen.</p><ul class="bd-list">${saved.map((x) => `<li${cur?.id === x.id ? ' class="on"' : ''}><div><b>${esc(x.title)}</b><small class="muted">${esc(archName(x.arch))} · L${x.level}${x.forkedFrom ? ' · 🍴 fork' : ''} · ${UI.ago ? UI.ago(x.updated) : new Date(x.updated).toLocaleDateString()}${outdated(x) ? ` · <span class="bd-old" title="Made on ${esc(x.version)}">⚠ older rules</span>` : ''}</small></div>
+<span class="bd-li-acts"><button type="button" class="btn sm" data-open="${x.id}">Open</button><button type="button" class="btn ghost sm" data-cmp="${x.id}" title="Compare with the build on screen">⚖️</button><button type="button" class="btn ghost sm" data-copy="${x.id}" title="Duplicate (fork)">🍴</button><button type="button" class="btn ghost sm" data-del="${x.id}" title="Delete" aria-label="Delete ${esc(x.title)}">🗑️</button></span></li>`).join('')}</ul>`
+        : (UI.empty ? UI.empty({ icon: '📂', title: 'No saved builds yet', text: 'Press 💾 Save on any build and it lands here.' }) : '<p class="muted">No saved builds yet.</p>');
+    };
+    try { await loadMine(); paint(); } catch (e) { box.innerHTML = `<p class="muted">${esc(e.message)}</p>`; return; }
+    box.addEventListener('click', async (e) => {
+      const t = e.target.closest('button'); if (!t) return;
+      const x = saved.find((s) => s.id === +(t.dataset.open || t.dataset.cmp || t.dataset.copy || t.dataset.del));
+      if (!x) return;
+      if (t.dataset.open) { m.close(); open(x); }
+      else if (t.dataset.cmp) { m.close(); compare(x); }
+      else if (t.dataset.copy) { m.close(); fork(x.id); }
+      else if (t.dataset.del) {
+        if (!(await UI.confirm({ title: `Delete “${x.title}”?`, text: 'It disappears from My builds. Share links you sent still work.', ok: 'Delete', danger: true }))) return;
+        const keep = saved; saved = saved.filter((s) => s.id !== x.id); paint(); // optimistic
+        try { saved = (await call('/api/builds/delete', { id: x.id })).builds; if (cur?.id === x.id) { cur = null; draw(); } paint(); toast('Build deleted'); } catch (err) { saved = keep; paint(); toast(err.message, 'error'); }
+      }
+    });
+  }
+
+  // Side by side: the build on screen (A) against a saved build or a pasted share link (B).
+  function compareHtml(A, B, la, lb, all) {
+    const ea = M.evaluate(g, A), eb = M.evaluate(g, B);
+    const d = (x, y) => (x === y ? '' : `<em class="${x > y ? 'pos' : 'neg'}">${x > y ? '▲' : '▼'}${Math.abs(x - y)}</em>`);
+    const line = (k, x, y) => `<tr${x === y ? ' class="same"' : ''}><td class="${x > y ? 'win' : ''}">${x}${d(x, y)}</td><th>${esc(k)}</th><td class="${y > x ? 'win' : ''}">${y}${d(y, x)}</td></tr>`;
+    const ps = (ev) => [...ev.choices.plus.map((id) => `${(g.playstyles || []).find((p) => p.id === id)?.name ?? id}+`), ...ev.choices.ps.map((id) => (g.playstyles || []).find((p) => p.id === id)?.name ?? id)].map(esc).join(', ') || '–';
+    const rows = ea.rows.map((r, i) => [r.name, r.value, eb.rows[i]?.value ?? 0]).filter(([, x, y]) => all || x !== y);
+    return `<table class="bd-cmp"><thead><tr><th>${esc(la)}<small>${esc(ea.arch.name)} · L${ea.level}</small></th><th></th><th>${esc(lb)}<small>${esc(eb.arch.name)} · L${eb.level}</small></th></tr></thead>
+<tbody>${line('OVR*', ea.ovr, eb.ovr)}${ea.face.map(([k, v], i) => line(k, v, eb.face[i]?.[1] ?? 0)).join('')}${line('AP left', ea.left, eb.left)}
+<tr class="sub"><td>${ps(ea)}</td><th>💫 PlayStyles</th><td>${ps(eb)}</td></tr><tr class="sub"><td>${ea.choices.h} cm · ${ea.choices.w} kg</td><th>📏 Body</th><td>${eb.choices.h} cm · ${eb.choices.w} kg</td></tr>
+<tr class="grp"><th colspan="3">${all ? 'All attributes' : `Attributes that differ (${rows.length})`}</th></tr>${rows.map(([k, x, y]) => line(k, x, y)).join('') || '<tr><td colspan="3" class="muted">Same attributes.</td></tr>'}</tbody></table>`;
+  }
+  async function compare(pre) {
+    if (!window.UI) return;
+    let list = saved;
+    if (!list && token()) list = await loadMine().catch(() => []);
+    list ||= [];
+    const opts = list.map((x) => `<option value="${x.id}"${pre?.id === x.id ? ' selected' : ''}>${esc(x.title)} – ${esc(archName(x.arch))} L${x.level}</option>`).join('');
+    const m = UI.modal({ title: 'Compare builds', icon: '⚖️', wide: true, body: `<div class="bd-cmp-pick"><span><b>A</b> ${esc(cur?.title ?? 'Build on screen')}</span><span>vs <b>B</b></span>
+<select data-cmp-b aria-label="Build B">${opts}<option value="link"${list.length ? '' : ' selected'}>Paste a share link…</option></select>
+<input data-cmp-link placeholder="Paste a builder share link" aria-label="Share link"${list.length ? ' hidden' : ''}><label class="small"><input type="checkbox" data-cmp-all> all attributes</label></div>
+${token() ? '' : `<p class="muted small">🔐 Log in to compare with your saved builds – share links work for everyone.</p>`}<div data-cmp-out></div>` });
+    const el = m.el, sel = el.querySelector('[data-cmp-b]'), link = el.querySelector('[data-cmp-link]'), outEl = el.querySelector('[data-cmp-out]');
+    const run = () => {
+      link.hidden = sel.value !== 'link';
+      const x = list.find((s) => String(s.id) === sel.value);
+      const code = x ? x.code : (link.value.split('#')[1] || link.value).trim();
+      const B = code && decodeCode(code);
+      outEl.innerHTML = B ? compareHtml(b, B, cur?.title ?? 'On screen', x?.title ?? 'Shared build', el.querySelector('[data-cmp-all]').checked)
+        : `<p class="muted">${code ? '⚠️ That link isn’t a builder link.' : 'Pick a saved build or paste a share link to compare.'}</p>`;
+    };
+    el.addEventListener('input', run); el.addEventListener('change', run);
+    run();
+  }
+
+  // Branded PNG card of the build (1080×1350, club colours, crest, face stats, top attributes, PlayStyles).
+  async function image() {
+    const ev = M.evaluate(g, b), W = 1080, H = 1350;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d');
+    const css = getComputedStyle(document.documentElement);
+    const red = css.getPropertyValue('--red').trim() || '#c8352c', gold = css.getPropertyValue('--gold').trim() || '#f5d061';
+    await document.fonts?.ready;
+    const bg = x.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#1d0d0e'); bg.addColorStop(0.55, '#0b0f16'); bg.addColorStop(1, '#07090d');
+    x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    x.save(); x.globalAlpha = 0.05; x.fillStyle = '#fff';
+    for (let i = -H; i < W; i += 60) { x.beginPath(); x.moveTo(i, H); x.lineTo(i + 6, H); x.lineTo(i + 6 + H * 0.47, 0); x.lineTo(i + H * 0.47, 0); x.fill(); }
+    x.restore();
+    x.fillStyle = red; x.fillRect(0, 0, W, 12); x.fillRect(0, H - 12, W, 12);
+    const crest = new Image(); crest.src = `${BASE}assets/crest.png`; await crest.decode().catch(() => {});
+    if (crest.naturalWidth) { const h = 170, w = (crest.naturalWidth / crest.naturalHeight) * h; x.drawImage(crest, 60, 50, w, h); }
+    const T = (txt, px, py, font, col = '#fff', align = 'left') => { x.font = font; x.fillStyle = col; x.textAlign = align; x.fillText(txt, px, py); };
+    T('NOREX UNITED · PRO BUILD', 200, 100, '600 34px Oswald, Impact, sans-serif', '#9aa3b2');
+    T((cur?.title || ev.arch.name).toUpperCase().slice(0, 28), 200, 160, '700 58px Oswald, Impact, sans-serif');
+    T('★★★★★', 200, 205, '400 28px sans-serif', gold);
+    // OVR shield
+    x.fillStyle = red; x.beginPath(); x.roundRect(W - 230, 50, 170, 190, 22); x.fill();
+    T(String(ev.ovr), W - 145, 170, '700 104px Oswald, Impact, sans-serif', '#fff', 'center');
+    T('OVR*', W - 145, 220, '600 28px Oswald, Impact, sans-serif', '#fff', 'center');
+    // archetype + level
+    const grp = (g.archetypeGroups || []).find((q) => q.id === ev.arch.group)?.name ?? '';
+    T(`${ICON[ev.arch.group] ?? ''} ${ev.arch.name.toUpperCase()}`, 60, 310, '700 52px Oswald, Impact, sans-serif');
+    T(`${grp.toUpperCase()} · LEVEL ${ev.level}${ev.level === ev.cap ? ' · MAX' : ` / ${ev.cap}`}`, 60, 360, '600 30px Oswald, Impact, sans-serif', ev.level === ev.cap ? gold : '#9aa3b2');
+    // face stats
+    ev.face.forEach(([k, v], i) => {
+      const bx = 60 + i * 162, by = 400;
+      x.fillStyle = 'rgba(255,255,255,.06)'; x.beginPath(); x.roundRect(bx, by, 148, 130, 16); x.fill();
+      T(String(v), bx + 74, by + 78, '700 64px Oswald, Impact, sans-serif', v >= 80 ? '#4ade80' : v >= 65 ? gold : '#fff', 'center');
+      T(k, bx + 74, by + 114, '600 26px Oswald, Impact, sans-serif', '#9aa3b2', 'center');
+    });
+    // top attributes with bars
+    T('TOP ATTRIBUTES', 60, 595, '600 30px Oswald, Impact, sans-serif', red);
+    const top = [...ev.rows].sort((p, q) => q.value - p.value || q.sig - p.sig).slice(0, 10);
+    top.forEach((r, i) => {
+      const col = i % 2, row = Math.floor(i / 2), bx = 60 + col * 490, by = 640 + row * 72;
+      T(`${r.sig ? '★ ' : ''}${r.name}`, bx, by, '500 28px Inter, sans-serif', r.sig ? gold : '#e5e7eb');
+      T(String(r.value), bx + 450, by, '700 32px Oswald, Impact, sans-serif', '#fff', 'right');
+      x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(bx, by + 14, 450, 8);
+      x.fillStyle = red; x.fillRect(bx, by + 14, 450 * Math.min(1, r.value / ev.top), 8);
+    });
+    // PlayStyles, specialization, body
+    const name = (list, id) => (list || []).find((q) => q.id === id)?.name ?? id;
+    const ps = [...ev.choices.plus.map((id) => `${name(g.playstyles, id)}+`), ...ev.choices.ps.map((id) => name(g.playstyles, id))];
+    let y = 1030;
+    const line = (label, val) => { if (!val) return; T(label, 60, y, '600 28px Oswald, Impact, sans-serif', '#9aa3b2'); T(val.slice(0, 60), 300, y, '500 28px Inter, sans-serif'); y += 52; };
+    line('PLAYSTYLES', ps.join(' · '));
+    line('SPECIALIZATION', ev.choices.sp && name(g.specializations, ev.choices.sp));
+    line('BODY', `${ev.choices.h} cm · ${ev.choices.w} kg`);
+    line('BEST FIT', ev.fit.slice(0, 3).map(([p, v]) => `${p} ${v}`).join(' · '));
+    T(`Game rules ${g.version}${ev.status.preview ? ' · preview numbers' : ''} · * estimate`, 60, H - 50, '500 24px Inter, sans-serif', '#6b7280');
+    T(location.host || 'NOREX UNITED', W - 60, H - 50, '600 26px Oswald, Impact, sans-serif', '#9aa3b2', 'right');
+    const a = document.createElement('a');
+    a.download = `norex-build-${(cur?.title || ev.arch.name)}-L${ev.level}.png`.replace(/[^\w.-]+/g, '_');
+    a.href = c.toDataURL('image/png'); a.click();
+    toast('🖼️ Build card saved');
+  }
 
   function pane(ev) {
     const c = ev.choices, sl = ev.slots;
@@ -91,6 +279,7 @@ ${rows.map((r) => {
 <div class="bd-tabs card"><div class="nx-tabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${k === tab}">${l}${k === 'playstyles' ? `<em>${ev.choices.ps.length + ev.choices.plus.length}</em>` : k === 'facilities' ? `<em>${ev.choices.fa.length}</em>` : ''}</button>`).join('')}</div>
 <div class="bd-pane">${pane(ev)}</div></div></div>
 <aside class="bd-side card">
+${cur ? `<div class="bd-cur"><span>${cur.mine ? '📂' : '👀'}</span><div><small>${cur.mine ? 'My build' : `Build by ${esc(cur.by || 'a member')}`}</small><b>${esc(cur.title)}</b></div>${cur.mine ? '' : `<button type="button" class="btn sm" data-fork="${cur.id}">🍴 Fork</button>`}<button type="button" class="x" data-close aria-label="Close this build" title="Start a new build (keeps what's on screen)">×</button></div>` : ''}
 <div class="bd-arch"><span class="bd-ic">${ICON[ev.arch.group] ?? '⚽'}</span><div><small>${esc(groups.find((x) => x.id === ev.arch.group)?.name ?? '')}</small><h2>${esc(ev.arch.name)}</h2></div><div class="bd-ovr" title="Estimated overall"><b>${ev.ovr}</b><small>OVR*</small></div></div>
 <label class="bd-lvl"><span>Level <b>${ev.level}</b> / <span>${ev.cap}</span>${ev.level === ev.cap ? ' <span class="tag home">MAX</span>' : ''}</span>
 <span class="row"><input type="range" min="1" max="${ev.cap}" value="${ev.level}" data-level aria-label="Level"><button type="button" class="btn sm${ev.level === ev.cap ? ' ghost' : ''}" data-max>MAX</button></span></label>
@@ -99,6 +288,7 @@ ${rows.map((r) => {
 <div class="bd-fit"><small>📍 Position fit*</small>${ev.fit.map(([pos, v], i) => `<div class="${i ? '' : 'best'}"><b>${esc(pos)}</b><span class="bd-bar"><i class="a" style="width:${pct(v)}%"></i></span><em>${v}</em></div>`).join('')}</div>
 <div class="bd-modes">${notes(ev).map(([ic, t]) => `<p><span>${ic}</span><span>${t}</span></p>`).join('')}</div>
 <div class="bd-acts"><button type="button" class="btn ghost sm" data-undo${hist.length ? '' : ' disabled'}>↶ Undo</button><button type="button" class="btn ghost sm" data-reset${ev.used ? '' : ' disabled'}>⟲ Reset</button><button type="button" class="btn sm" data-share>🔗 Share link</button></div>
+<div class="bd-acts bd-save"><button type="button" class="btn sm" data-save>💾 ${cur?.mine ? 'Save' : 'Save build'}</button><button type="button" class="btn ghost sm" data-mine>📂 My builds</button><button type="button" class="btn ghost sm" data-compare>⚖️ Compare</button><button type="button" class="btn ghost sm" data-image>🖼️ Save image</button></div>
 <p class="muted small">* Face stats are group averages and OVR is a weighted estimate – EA doesn't publish its formula. Shift-click +/− moves 5 points.</p>
 ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-mast"><b>🏅 Masteries</b>${(g.masteries || []).filter((m) => m.archetype === ev.arch.id).map((m) => `<span class="${ev.level >= m.level ? 'on' : ''}">L${m.level}: ${Object.entries(m.bonus).map(([k, v]) => `+${v} ${esc(k)}`).join(', ')}</span>`).join('')}</div>` : ''}
 </aside></div>`;
@@ -152,6 +342,12 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     else if ('max' in t.dataset) { push(); b.level = M.capOf(g); setHash(); draw(); }
     else if ('undo' in t.dataset && hist.length) { b = JSON.parse(hist.pop()); setHash(); draw(); }
     else if ('reset' in t.dataset) { push(); b.spent = {}; setHash(); draw(); toast('Points reset – Undo brings them back'); }
+    else if ('save' in t.dataset) save();
+    else if ('mine' in t.dataset) myBuilds();
+    else if ('compare' in t.dataset) compare();
+    else if ('image' in t.dataset) image().catch(() => toast('Couldn’t draw the image – try again', 'error'));
+    else if (t.dataset.fork) fork(+t.dataset.fork);
+    else if ('close' in t.dataset) { cur = null; draw(); }
     else if ('share' in t.dataset) {
       setHash();
       try { await navigator.clipboard.writeText(location.href); toast('🔗 Link copied – anyone can open this build'); } catch { prompt('Copy this link:', location.href); }
@@ -184,9 +380,19 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     g = data;
     const first = (g.archetypes || [])[0];
     if (!first) { $('[data-bd-body]').innerHTML = '<p class="muted">No archetypes in the game data yet.</p>'; return; }
-    const shared = location.hash.length > 1 ? M.decode(g, location.hash) : null;
+    // Back from the Discord login: restore the build that was on screen (the callback replaced our hash).
+    let pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem(PENDING) || 'null'); sessionStorage.removeItem(PENDING); } catch {}
+    const hash = /[#&]a=/.test(location.hash) ? location.hash : pending?.code || '';
+    const shared = hash ? M.decode(g, hash) : null;
     b = shared ? { arch: shared.arch, level: shared.level, spent: shared.spent, ps: shared.ps, plus: shared.plus, sp: shared.sp, fa: shared.fa, h: shared.h, w: shared.w } : { arch: first.id, level: M.capOf(g), spent: {} };
+    cur = pending?.cur || null;
     if (shared?.version && shared.version !== g.version) toast(`Built on ${shared.version} – shown with the current rules (${g.version})`);
+    if (pending) setHash();
     draw();
+    // builder.html?build=<id> opens a saved (own) or posted build – with a Fork button when it isn't yours.
+    const want = new URLSearchParams(location.search).get('build');
+    if (want && token()) call(`/api/builds/get?id=${encodeURIComponent(want)}`).then((r) => open(r.build)).catch((e) => toast(e.message, 'error'));
+    if (pending?.then === 'save' && token()) setTimeout(save, 300); // after app.js stored the new session
   }).catch(() => { $('[data-bd-body]').innerHTML = '<p class="muted">Couldn’t load the game data – try again in a moment.</p>'; });
 })();
