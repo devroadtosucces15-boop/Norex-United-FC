@@ -6,6 +6,7 @@ import { lineChart, goalBars, donut, radar, spark } from './charts.mjs';
 import { buildUpdates } from './updates-page.mjs';
 import { buildBuilder } from './builder-page.mjs';
 import { buildProBuilds } from './probuilds-page.mjs';
+import { buildDocs } from './docs-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 
 const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
@@ -378,7 +379,7 @@ function page({ title, base, active, body, description, image }) {
 <button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? '<span class="auth-slot"></span>' : ''}</nav></div></header>
 ${CHANNELS.length && MEMBER_API ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
 <footer class="foot"><div class="wrap foot-in"><img src="${base}assets/crest.png" height="70" alt="">
-<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links"><a href="${base}halloffame.html">🏛️ Hall of Fame</a>${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}${CHANNELS.map(([k, label, svg]) => `<a class="foot-${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
+<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links"><a href="${base}halloffame.html">🏛️ Hall of Fame</a>${MEMBER_API ? `<a href="${base}docs.html" data-flag="docs" hidden>📚 Club docs</a><a href="${base}playstyle.html" data-flag="playStyle" hidden>🧠 Play Style</a>` : ''}${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}${CHANNELS.map(([k, label, svg]) => `<a class="foot-${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
 <div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players and clubs…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
 <script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script></body></html>`;
@@ -426,6 +427,7 @@ ${isHome && RECRUIT.open ? `<p><a class="btn" href="${base}apply.html">👑 Appl
 </div>
 ${isHome && (mvp || scorer) ? `<div class="hero-spot">${mvp ? `<a class="spot" href="${pUrl(mvp.pl, base)}"><small>Top rated</small><b>${esc(mvp.pl.name)}</b>${ratingPill(mvp.v)}</a>` : ''}${scorer ? `<a class="spot" href="${pUrl(scorer.pl, base)}"><small>Top scorer</small><b>${esc(scorer.pl.name)}</b><span class="rp r-great">${scorer.v} ⚽</span></a>` : ''}</div>` : ''}
 </section>
+${isHome && MEMBER_API ? '<div data-news data-flag="docs" hidden></div>' : ''}
 <section class="stats reveal">
 ${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}
@@ -862,6 +864,8 @@ buildUpdates({ write, page, pageHead, section, esc, emptyState, config });
 buildBuilder({ write, page, pageHead, esc, emptyState, config });
 // Pro Builds board (PB.3) – probuilds-page.mjs, client in web/probuilds.js + web/buildcard.js.
 buildProBuilds({ write, page, pageHead, esc, emptyState, config });
+// Club docs (P5.2) + Play Style (P5.1) – docs-page.mjs, client in web/docs.js + web/docs-md.js.
+if (MEMBER_API) buildDocs({ write, page, pageHead, esc, emptyState, config });
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
