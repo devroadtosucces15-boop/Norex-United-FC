@@ -73,6 +73,7 @@ export const PERMS = {
   'awards.vote': 'member', // P4.1 – weekly award ballots, boards
   'awards.manage': 'manager', // P4.1 – fun categories, Discord channel, close a week early
   'roles.sync': 'manager', // P2.5 – /syncroles: re-sync the ✅ Verified Discord role for every claim
+  'insights.view': 'manager', // Club Intelligence – /insights server + club analysis (weekly DM goes to the owner)
 };
 
 export function can(user, action) {

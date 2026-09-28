@@ -6,7 +6,7 @@
 //
 // Env (set by .github/workflows/bot.yml):
 //   GH_DISPATCH_TOKEN  – GitHub token allowed to run this repo's Actions (secret)
-//   DISCORD_BOT_TOKEN  – bot token: DMs (P7.1), Verified role sync (P2.5) (secret)
+//   DISCORD_BOT_TOKEN  – bot token: DMs (P7.1), Verified role sync (P2.5), Club Intelligence server reads (secret)
 //   DISCORD_PUBLIC_KEY, SITE_URL, GITHUB_REPO – public values in wrangler.toml
 
 import { handleMembers } from './members.js';
@@ -16,6 +16,7 @@ import { eventReminders } from './events.js';
 import { closeDue } from './awards.js';
 import { scoreDue } from './predict.js';
 import { eventButton, memberCommand, MEMBER_COMMANDS } from './botcmds.js';
+import { insightsCron, insightsNow, reportEmbeds } from './insights.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
 import { can, discordRole, flagOn } from './roles.js';
@@ -27,6 +28,8 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
     ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => scoreDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, P4.1 awards, P3.8 predictions, then P7.1 DMs + reminders
+    const site = (env.SITE_URL || '').replace(/\/?$/, '/');
+    if (flagOn(env, { role: 'owner' }, 'insights')) ctx.waitUntil(insightsCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('insights cron failed', e.message))); // weekly Club Intelligence DM
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
       method: 'POST',
@@ -86,6 +89,7 @@ export default {
         return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
       }
     }
+    if (i.type === 2 && i.data.name === 'insights') return insightsCommand(i, env, ctx, site, who);
     if (i.type === 2) {
       try {
         const data = await command(i.data, site, ctx);
@@ -144,6 +148,24 @@ function syncRolesCommand(i, env, ctx, site, who) {
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
     }).catch((e) => console.log('syncroles reply failed', e.message));
+  })());
+  return json({ type: 5, data: { flags: 64 } });
+}
+
+// ---------- /insights (managers): Club Intelligence report – Discord server + club data → scores and advice ----------
+function insightsCommand(i, env, ctx, site, who) {
+  if (!can(who, 'insights.view') || !flagOn(env, who, 'insights')) return json({ type: 4, data: { content: '🔒 Managers only (and Club Intelligence is not switched on for you yet).', flags: 64 } });
+  if (!env.DB) return json({ type: 4, data: { content: '⚠️ The member database is not connected.', flags: 64 } });
+  ctx.waitUntil((async () => {
+    let body;
+    try {
+      body = { embeds: reportEmbeds(await insightsNow(env, (f) => load(site, f, ctx)), site) };
+    } catch (e) {
+      body = { content: `⚠️ Could not build the report: ${e.message === 'no-access' ? "the bot can't see the server – check it is still in the server with **View Channels**." : e.message}` };
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, allowed_mentions: { parse: [] } }),
+    }).catch((e) => console.log('insights reply failed', e.message));
   })());
   return json({ type: 5, data: { flags: 64 } });
 }

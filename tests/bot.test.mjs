@@ -30,6 +30,7 @@ const sample = {
   top: [{ name: 'stat', value: 'rating' }],
   syncroles: null, // deferred reply – tested in discord.test.mjs (P2.5)
   schedule: null, availability: null, lineup: null, rush: null, me: null, leaderboard: null, profile: null, // P7.4 – need the member DB: tests/wave8.test.mjs
+  insights: null, // deferred reply – tested in insights.test.mjs (Club Intelligence)
 };
 for (const name of Object.keys(sample)) {
   if (!registered.includes(name) || !sample[name]) continue;
