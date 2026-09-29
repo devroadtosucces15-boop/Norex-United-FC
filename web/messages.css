@@ -80,3 +80,17 @@
   .mc-shell.mc-open .mc-thread{display:flex}
   .mc-back{display:inline-block}
 }
+/* P6.3b – live room, typing, link/image previews, search */
+.mc-find{width:100%;margin-top:8px;background:var(--panel2);border:1px solid var(--line2);border-radius:10px;color:var(--text);padding:8px 12px;font:inherit;font-size:13px}
+.mc-find:focus{outline:2px solid var(--red);outline-offset:1px}
+.mc-live{display:inline-flex;align-items:center;gap:5px;color:var(--muted)}
+.mc-live::before{content:"";width:7px;height:7px;border-radius:50%;background:#eab308}
+.mc-live.on{color:#86efac}.mc-live.on::before{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:mcPulse 2s infinite}
+.mc-typing{min-height:18px;padding:0 16px 4px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.mc-dots{display:inline-flex;gap:3px}.mc-dots i{width:5px;height:5px;border-radius:50%;background:var(--red);animation:mcDot 1s infinite}
+.mc-dots i:nth-child(2){animation-delay:.15s}.mc-dots i:nth-child(3){animation-delay:.3s}
+.mc-bub-in a{color:#ffb4ae;text-decoration:underline;overflow-wrap:anywhere}
+.mc-img{display:block;margin-top:6px}.mc-img img{display:block;max-width:min(260px,100%);max-height:220px;border-radius:10px;border:1px solid var(--line2);object-fit:cover}
+@keyframes mcDot{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-3px);opacity:1}}
+@keyframes mcPulse{50%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+@media (prefers-reduced-motion:reduce){.mc-dots i,.mc-live.on::before{animation:none}}

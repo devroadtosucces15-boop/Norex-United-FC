@@ -15,3 +15,12 @@ ADMIN_IDS = "1322770005535756290"
 MEMBER_ROLE_ID = ""
 ADMIN_ROLE_ID = "1371389857649393684"
 OWNER_ROLE_ID = "1451571867579322422"
+
+# P6.3b live chat: one Durable Object per chat room (SQLite-backed class = Workers Free plan)
+[[durable_objects.bindings]]
+name = "CHAT_ROOM"
+class_name = "ChatRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom"]

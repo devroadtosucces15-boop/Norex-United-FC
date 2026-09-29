@@ -1,11 +1,15 @@
-// Messaging (roadmap P6.3): 1:1 DMs and member-created group chats. Polling UI for now – Durable Objects
-// real-time upgrade is P6.3b. Mid-life group editing (P6.3c) is done: rename/re-emoji + add/remove members.
+// Messaging (roadmap P6.3): 1:1 DMs and member-created group chats. Real-time (P6.3b): one Durable Object
+// per chat (bot/chatroom.js) pushes new messages + typing over a WebSocket; the client falls back to polling
+// when the socket is down (or on the mock server, which has no CHAT_ROOM binding). Mid-life group editing
+// (P6.3c): rename/re-emoji + add/remove members.
+//   GET  /api/chats/:id/ws?t=<session>     WebSocket upgrade (browsers can't send headers on a socket)
+//   GET  /api/chats/search?q=              search the text of messages in my chats (30 newest hits)
 //   GET  /api/chats                        my chats, newest activity first, with unread counts
 //   GET  /api/chats?all=1                  owner/founder: every chat on the club (disclosed in the chat UI)
 //   POST /api/chats { kind:'dm', user }              open (or reuse) a 1:1 DM
 //   POST /api/chats { kind:'group', name, emoji, members }   create a group chat
 //   GET  /api/chats/:id/messages[?before=] up to 50 messages, oldest first
-//   POST /api/chats/:id/messages { text }  send a message (polled by everyone else until P6.3b)
+//   POST /api/chats/:id/messages { text }  send a message (pushed live to the room)
 //   POST /api/chats/:id/read               mark everything in the chat read
 //   POST /api/chats/:id/leave              leave a group chat (DMs can't be left)
 //   POST /api/chats/:id/settings { name?, emoji? }    group only: rename / change icon (any member)
@@ -30,6 +34,28 @@ const marks = (n) => Array(n).fill('?').join(',');
 const opt = (v) => v ?? undefined;
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u0009\u000b-\u001f<>]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
 const excerpt = (s, n = 90) => { const t = String(s).replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
+
+// Fan an event out to everyone connected to this chat's room. Never fails the request that triggered it.
+async function pushRoom(env, id, evt) {
+  if (!env.CHAT_ROOM) return;
+  try {
+    const room = env.CHAT_ROOM.get(env.CHAT_ROOM.idFromName(`chat:${id}`));
+    await room.fetch('https://room/push', { method: 'POST', body: JSON.stringify(evt) });
+  } catch (e) { console.log('chat push failed', e.message); }
+}
+
+// WebSocket upgrade – called from members.js with the session already unsealed from `?t=` and its role
+// resolved. Members get a live socket; owner read-all viewers get a read-only one (never shown typing).
+export async function chatSocket(request, env, me, id) {
+  if (request.headers.get('Upgrade') !== 'websocket') return fail('Expected a WebSocket.', 426);
+  if (!env.CHAT_ROOM) return fail('Live chat is not set up.', 503);
+  if (!me || !flagOn(env, me, 'messages') || !can(me, 'messages.use')) return fail('Not available yet.', 404);
+  const acc = await access(env, me, id);
+  if (!acc) return fail('Chat not found.', 404);
+  const q = new URLSearchParams({ u: me.u, n: me.n || 'Member', ro: acc.mine ? '0' : '1' });
+  const room = env.CHAT_ROOM.get(env.CHAT_ROOM.idFromName(`chat:${id}`));
+  return room.fetch(new Request(`https://room/ws?${q}`, { headers: request.headers }));
+}
 
 const msgOut = (r) => ({
   id: r.id, chatId: r.chat_id, text: r.text, at: r.at, by: { id: r.user_id, n: r.name, a: opt(r.avatar) },
@@ -147,6 +173,19 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     return json({ people: rows.map((r) => ({ id: r.id, n: r.name, a: opt(r.avatar), tag: opt(r.tag) })) });
   }
 
+  if (p === '/api/chats/search' && method === 'GET') { // only chats I'm a member of – owner read-all stays a deliberate toggle
+    const q = clean(url.searchParams.get('q'), 60).toLowerCase();
+    if (q.length < 2) return json({ results: [] });
+    const like = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
+    const rows = await all(env, `SELECT m.*, c.kind, c.name AS chat_name, c.emoji AS chat_emoji FROM chat_messages m
+      JOIN chat_members me ON me.chat_id = m.chat_id AND me.user_id = ?
+      JOIN chats c ON c.id = m.chat_id WHERE m.removed = 0 AND lower(m.text) LIKE ? ESCAPE '\\' ORDER BY m.id DESC LIMIT 30`, me.u, like);
+    const dmNames = rows.some((r) => r.kind === 'dm')
+      ? Object.fromEntries((await all(env, `SELECT chat_id, name FROM chat_members WHERE user_id != ? AND chat_id IN (${marks(rows.length)})`, me.u, ...rows.map((r) => r.chat_id))).map((r) => [r.chat_id, r.name]))
+      : {};
+    return json({ results: rows.map((r) => ({ ...msgOut(r), chatName: r.kind === 'dm' ? (dmNames[r.chat_id] ?? 'DM') : (r.chat_name || 'Group'), chatEmoji: r.kind === 'group' ? (r.chat_emoji || '💬') : undefined })) });
+  }
+
   if (p === '/api/chats/reports' && method === 'GET') {
     if (!can(me, 'messages.reported')) return fail('Managers only.', 403);
     const rows = await all(env, `SELECT m.*, c.kind, c.name AS chat_name, c.emoji AS chat_emoji FROM chat_messages m
@@ -161,6 +200,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     if (body.action === 'remove') {
       await run(env, 'UPDATE chat_messages SET removed = 1 WHERE id = ?', mid);
       await log(env, me, 'message-remove', `#${mid}`);
+      await pushRoom(env, msg.chat_id, { t: 'removed', id: mid });
     } else if (body.action === 'clear') {
       await run(env, 'UPDATE chat_messages SET reported_at = NULL, reported_by = NULL, reported_reason = NULL WHERE id = ?', mid);
       await log(env, me, 'message-unreport', `#${mid}`);
@@ -189,6 +229,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     if (others.length) await safely(notify(env, others.map((o) => o.user_id), { type: 'message', icon: patch.emoji || acc.chat.emoji || '💬', title: `${me.n} updated ${patch.name || acc.chat.name}`, link: `messages.html#c${id}` }));
     const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
     const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
+    await pushRoom(env, id, { t: 'chat' });
     return json({ chat: chatOut(chat, members, null, 0, me) });
   }
 
@@ -213,6 +254,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     await safely(notify(env, rows.map((r) => r.id), { type: 'message', icon: acc.chat.emoji || '💬', title: `${me.n} added you to ${acc.chat.emoji || '💬'} ${acc.chat.name}`, link: `messages.html#c${id}` }));
     const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
     const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
+    await pushRoom(env, id, { t: 'chat' });
     return json({ chat: chatOut(chat, members, null, 0, me) });
   }
 
@@ -230,6 +272,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     await log(env, me, 'chat-remove-member', `${acc.chat.emoji || '💬'} ${acc.chat.name} · -${target.name}`);
     const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
     const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
+    await pushRoom(env, id, { t: 'chat' });
     return json({ chat: chatOut(chat, members, null, 0, me) });
   }
 
@@ -260,7 +303,9 @@ export async function chatRoute(p, method, body, me, env, log, url) {
       const title = acc.chat.kind === 'dm' ? `${me.n} messaged you` : `${me.n} in ${acc.chat.emoji || '💬'} ${acc.chat.name}`;
       await safely(notify(env, others.map((o) => o.user_id), { type: 'message', title, body: excerpt(text, 140), link: `messages.html#c${id}` }));
     }
-    return json({ message: msgOut({ id: r.meta.last_row_id, chat_id: id, user_id: me.u, name: me.n, avatar: me.a, text, at }) });
+    const message = msgOut({ id: r.meta.last_row_id, chat_id: id, user_id: me.u, name: me.n, avatar: me.a, text, at });
+    await pushRoom(env, id, { t: 'msg', message });
+    return json({ message });
   }
   if (m[3] === 'read' && method === 'POST') {
     if (!acc.mine) return fail('You can only read this chat.', 403);

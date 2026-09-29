@@ -29,7 +29,7 @@ import { recsRoute } from './recs.js';
 import { feedPublic, feedRoute } from './feed.js';
 import { hotwPublic, hotwRoute } from './hotw.js';
 import { socialRoute, touch } from './social.js';
-import { chatRoute } from './chat.js';
+import { chatRoute, chatSocket } from './chat.js';
 import { mediaUploadRoute } from './media.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
@@ -240,6 +240,12 @@ export async function handleMembers(request, env, ctx, loadSite) {
       return cors(env, d.error ? fail(d.error, d.status) : json(d));
     }
     const me = await unseal(env, (request.headers.get('Authorization') || '').replace(/^Bearer /, ''));
+    const wsChat = url.pathname.match(/^\/api\/chats\/(\d+)\/ws$/); // P6.3b live chat – token in ?t= (no headers on a socket), no CORS wrap on a 101
+    if (wsChat) {
+      const who = await unseal(env, url.searchParams.get('t'));
+      if (who) who.role = await currentRole(env, who);
+      return chatSocket(request, env, who, Number(wsChat[1]));
+    }
     if (url.pathname === '/api/live' && request.method === 'GET') { // P1.3 – public once the flag is 'public'
       if (me) me.role = await currentRole(env, me);
       if (!flagOn(env, me, 'liveBanner')) return cors(env, fail('Not available yet.', 404));

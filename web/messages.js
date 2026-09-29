@@ -1,5 +1,7 @@
 // Messaging on the client (roadmap P6.3) – messages.html [data-messages].
-// Chat list + thread, polling every 6s while the tab is visible (P6.3b upgrades this to Durable Objects).
+// Chat list + thread. P6.3b: the open chat gets a WebSocket to its Durable Object room (new messages, typing,
+// removals pushed live); polling every 6s stays as the fallback while the socket is down. Links are clickable,
+// direct image links preview inline, and "🔎 Search" looks through the text of every chat you're in.
 // Group chats can be renamed/re-emoji'd and have members added/removed mid-life (P6.3c).
 // Owners/founders can flip "👁 All chats" to read (not post into) every DM and group chat – disclosed here.
 (() => {
@@ -21,6 +23,20 @@
 
   let el, me = null, chats = [], canReadAll = false, canModerate = false, viewingAll = false;
   let active = null, thread = null, msgs = [], lastId = 0, poll = 0;
+  let ws = null, wsFor = 0, wsRetry = 0, wsPing = 0, typingSent = 0, typingTimer = 0, ticks = 0, searchQ = '', searchHits = null;
+  const typers = new Map(); // userId -> { n, until }
+
+  // Links become safe anchors; direct image links (https only) also preview under the text.
+  const URL_RE = /\bhttps?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]]/g;
+  function fmt(text) {
+    const imgs = [];
+    const html = esc(text).replace(URL_RE, (u) => {
+      const raw = u.replace(/&amp;/g, '&');
+      if (/^https:\/\/[^?#]+\.(png|jpe?g|gif|webp)([?#].*)?$/i.test(raw) && imgs.length < 3) imgs.push(u);
+      return `<a href="${u}" target="_blank" rel="noopener nofollow ugc">${u.length > 60 ? `${u.slice(0, 57)}…` : u}</a>`;
+    }).replace(/\n/g, '<br>');
+    return `<p>${html}</p>${imgs.map((u) => `<a class="mc-img" href="${u}" target="_blank" rel="noopener nofollow ugc"><img src="${u}" alt="" loading="lazy" referrerpolicy="no-referrer"></a>`).join('')}`;
+  }
 
   const chatEmoji = (c) => c.kind === 'group' ? esc(c.emoji || '💬') : '';
   function avatarOf(c, size) {
@@ -38,7 +54,14 @@
     const rows = chats.length ? chats.map(chatRow).join('') : `<li class="mc-empty">${UI.empty({ icon: '💬', title: viewingAll ? 'No chats yet' : 'No messages yet', text: viewingAll ? '' : 'Start a DM or a group chat with the squad.' })}</li>`;
     return `<aside class="mc-list${active ? ' side' : ''}"><div class="mc-list-head"><button type="button" class="btn sm" data-act="new-dm">✉️ New message</button><button type="button" class="btn sm ghost" data-act="new-group">👥 New group</button>
 ${canReadAll ? `<label class="mc-readall" data-tip="Owners/founders can read every chat, for moderation"><input type="checkbox" ${viewingAll ? 'checked' : ''} data-act="viewall"> 👁 All chats</label>` : ''}</div>
-<ul class="mc-chats">${rows}</ul></aside>`;
+<input class="mc-find" type="search" placeholder="🔎 Search messages…" aria-label="Search messages" value="${esc(searchQ)}" ${viewingAll ? 'hidden' : ''}>
+<ul class="mc-chats">${searchHits ? searchList() : rows}</ul></aside>`;
+  }
+  function searchList() {
+    if (!searchHits.length) return `<li class="mc-empty muted small">No messages match “${esc(searchQ)}”.</li>`;
+    return searchHits.map((m) => `<li class="mc-row"><button type="button" class="mc-row-btn" data-act="open" data-id="${m.chatId}">${m.chatEmoji ? `<span class="mc-gav" style="--s:40px" aria-hidden="true">${esc(m.chatEmoji)}</span>` : UI.avatar(m.by.a, m.by.n, 40)}
+<span class="mc-row-main"><b>${esc(m.chatName)}</b><small>${m.by.id === me ? 'You' : esc(m.by.n)}: ${esc(m.text.length > 90 ? `${m.text.slice(0, 89)}…` : m.text)}</small></span>
+<span class="mc-row-meta">${UI.time(m.at)}</span></button></li>`).join('');
   }
 
   // ---------- thread ----------
@@ -46,7 +69,7 @@ ${canReadAll ? `<label class="mc-readall" data-tip="Owners/founders can read eve
     const mine = m.by.id === me;
     const showName = !mine && thread?.kind === 'group';
     return `<div class="mc-msg${mine ? ' mine' : ''}" data-id="${m.id}">${!mine ? UI.avatar(m.by.a, m.by.n, 26) : ''}
-<div class="mc-bub"><div class="mc-bub-in">${showName ? `<b class="mc-who">${esc(m.by.n)}</b>` : ''}<p>${esc(m.text).replace(/\n/g, '<br>')}</p></div>
+<div class="mc-bub"><div class="mc-bub-in">${showName ? `<b class="mc-who">${esc(m.by.n)}</b>` : ''}${fmt(m.text)}</div>
 <div class="mc-bub-meta">${UI.time(m.at)}${m.reported ? ' · 🚩 reported' : ''}${!mine && !viewingAll ? `<button type="button" class="linkish" data-act="report" data-id="${m.id}">Report</button>` : ''}</div></div></div>`;
   }
   function threadPane() {
@@ -54,19 +77,88 @@ ${canReadAll ? `<label class="mc-readall" data-tip="Owners/founders can read eve
     if (!thread) return `<section class="mc-thread">${UI.skeleton('rows', 4)}</section>`;
     const canPost = !viewingAll && !thread.readonly;
     return `<section class="mc-thread" data-id="${active}">
-<header class="mc-t-head"><button type="button" class="mc-back" data-act="back" aria-label="Back to chats">←</button>${avatarOf(thread, 34)}<div class="mc-t-title"><b>${esc(thread.name)}</b>${thread.kind === 'group' ? `<small>${thread.members.length} member${thread.members.length === 1 ? '' : 's'}</small>` : ''}</div>
+<header class="mc-t-head"><button type="button" class="mc-back" data-act="back" aria-label="Back to chats">←</button>${avatarOf(thread, 34)}<div class="mc-t-title"><b>${esc(thread.name)}</b><small>${thread.kind === 'group' ? `${thread.members.length} member${thread.members.length === 1 ? '' : 's'} · ` : ''}<span class="mc-live${ws?.readyState === 1 && wsFor === active ? ' on' : ''}" data-live>${ws?.readyState === 1 && wsFor === active ? 'Live' : 'Syncing'}</span></small></div>
 <span class="mc-more-wrap"><button type="button" class="mc-more" data-act="menu" aria-label="Chat options" aria-expanded="false">⋯</button><span class="mc-menu" hidden>${thread.kind === 'group' && thread.mine ? '<button type="button" data-act="settings">⚙️ Group settings</button><button type="button" data-act="leave">🚪 Leave group</button>' : '<span class="mc-menu-empty">No options</span>'}</span></span></header>
 ${viewingAll ? '<div class="mc-banner">👁 Viewing as owner – read-only, not counted as a reply.</div>' : ''}
 <div class="mc-msgs" data-msgs>${msgs.length ? msgs.map(bubble).join('') : `<p class="muted small mc-first">${thread.kind === 'dm' ? 'Say hello 👋' : 'Nobody has said anything yet.'}</p>`}</div>
+<div class="mc-typing" data-typing aria-live="polite"></div>
 ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows="1" maxlength="2000" placeholder="Message…" aria-label="Message" data-mention></textarea><button class="btn sm" type="submit">Send</button></form>` : ''}
 </section>`;
   }
 
   function draw() {
+    // Keep a half-typed message (and the search box) across redraws – polls and pushes repaint the whole pane.
+    const ta = $('#mc-compose textarea', el), draft = ta?.value ?? '', hadFocus = document.activeElement === ta;
+    const findFocus = document.activeElement?.classList?.contains('mc-find');
     el.innerHTML = `<div class="mc-shell${active ? ' mc-open' : ''}">${listPane()}${threadPane()}</div>`;
     const msgsEl = $('[data-msgs]', el);
     if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
+    const ta2 = $('#mc-compose textarea', el);
+    if (ta2 && draft) ta2.value = draft;
+    if (ta2 && hadFocus) ta2.focus();
+    if (findFocus) { const f = $('.mc-find', el); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+    paintTyping();
     UI.refreshTimes(el);
+  }
+
+  // ---------- live room (P6.3b) ----------
+  function paintTyping() {
+    const box = $('[data-typing]', el);
+    if (!box) return;
+    const now = Date.now();
+    for (const [u, t] of typers) if (t.until < now) typers.delete(u);
+    const names = [...typers.values()].map((t) => t.n);
+    box.innerHTML = names.length ? `<span class="mc-dots" aria-hidden="true"><i></i><i></i><i></i></span> ${esc(names.slice(0, 2).join(' & '))}${names.length > 2 ? ' + others' : ''} ${names.length === 1 ? 'is' : 'are'} typing…` : '';
+  }
+  function paintLive() {
+    const l = $('[data-live]', el);
+    if (!l) return;
+    const on = ws?.readyState === 1 && wsFor === active;
+    l.classList.toggle('on', on); l.textContent = on ? 'Live' : 'Syncing';
+  }
+  function disconnect() {
+    clearTimeout(wsRetry); clearInterval(wsPing); typers.clear();
+    if (ws) { ws.onclose = null; try { ws.close(1000); } catch { /* already closed */ } }
+    ws = null; wsFor = 0;
+  }
+  function connect(id) {
+    disconnect();
+    const s = session();
+    if (!s || !MAPI || !window.WebSocket) return;
+    let sock;
+    try { sock = new WebSocket(`${MAPI.replace(/^http/, 'ws')}/api/chats/${id}/ws?t=${encodeURIComponent(s.token)}`); } catch { return; }
+    ws = sock; wsFor = id;
+    sock.onopen = () => { paintLive(); wsPing = setInterval(() => { if (sock.readyState === 1) sock.send('ping'); }, 30000); };
+    sock.onmessage = (e) => { if (e.data !== 'pong') { try { onPush(JSON.parse(e.data)); } catch { /* ignore junk */ } } };
+    sock.onclose = () => {
+      clearInterval(wsPing);
+      if (ws !== sock) return;
+      ws = null; paintLive();
+      if (active === id && !document.hidden) wsRetry = setTimeout(() => { if (active === id) connect(id); }, 8000); // polling covers the gap
+    };
+  }
+  function onPush(ev) {
+    if (ev.t === 'typing' && ev.u !== me) { typers.set(ev.u, { n: ev.n, until: Date.now() + 5000 }); paintTyping(); setTimeout(paintTyping, 5200); return; }
+    if (ev.t === 'msg' && ev.message?.chatId === active) {
+      typers.delete(ev.message.by.id);
+      if (!msgs.some((m) => m.id === ev.message.id)) { msgs.push(ev.message); lastId = Math.max(lastId, ev.message.id); draw(); }
+      if (!thread?.readonly && !viewingAll && !document.hidden) call(`/api/chats/${active}/read`).catch(() => {});
+      loadChats().catch(() => {});
+      return;
+    }
+    if (ev.t === 'removed') { const n = msgs.length; msgs = msgs.filter((m) => m.id !== ev.id); if (msgs.length !== n) draw(); return; }
+    if (ev.t === 'chat') loadChats().then(() => { const c = chats.find((x) => x.id === active); if (c && thread) { thread = { ...c, readonly: thread.readonly }; draw(); } }).catch(() => {});
+  }
+  function sendTyping() {
+    if (ws?.readyState !== 1 || Date.now() - typingSent < 3000) return;
+    typingSent = Date.now();
+    ws.send(JSON.stringify({ t: 'typing' }));
+  }
+  async function runSearch(q) {
+    searchQ = q;
+    if (q.length < 2) { searchHits = null; draw(); return; }
+    try { const d = await call(`/api/chats/search?q=${encodeURIComponent(q)}`); if (searchQ === q) { searchHits = d.results; draw(); } }
+    catch (e) { toast(e.message, true); }
   }
 
   // ---------- data ----------
@@ -87,12 +179,16 @@ ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows
       if (c) { c.unread = 0; }
       draw();
       if (!d.readonly) call(`/api/chats/${id}/read`).catch(() => {});
+      if (active === id) connect(id);
     } catch (e) { toast(e.message, true); active = null; draw(); }
   }
   async function pollNow() {
     if (document.hidden) return;
+    const live = ws?.readyState === 1 && wsFor === active;
+    ticks++;
+    if (live && ticks % 5) return; // socket up: only refresh the chat list (other chats' unread) every ~30s
     try { await loadChats(); } catch { /* transient */ }
-    if (!active || viewingAll) return;
+    if (!active || viewingAll || live) return;
     try {
       const d = await call(`/api/chats/${active}/messages`);
       const fresh = d.messages.filter((m) => m.id > lastId);
@@ -200,7 +296,7 @@ ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows
     el.addEventListener('click', async (e) => {
       const open = e.target.closest('[data-act=open]');
       if (open) { openChat(+open.dataset.id); return; }
-      if (e.target.closest('[data-act=back]')) { active = null; thread = null; history.replaceState(null, '', location.pathname + location.search); draw(); return; }
+      if (e.target.closest('[data-act=back]')) { disconnect(); active = null; thread = null; history.replaceState(null, '', location.pathname + location.search); draw(); return; }
       if (e.target.closest('[data-act=new-dm]')) { newDM(); return; }
       if (e.target.closest('[data-act=new-group]')) { newGroup(); return; }
       if (e.target.closest('[data-act=settings]')) { groupSettings(); return; }
@@ -226,7 +322,7 @@ ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows
       if (!e.target.closest('.mc-menu')) $$('.mc-menu', el).forEach((x) => x.hidden = true);
     });
     el.addEventListener('change', (e) => {
-      if (e.target.matches('[data-act=viewall]')) { viewingAll = e.target.checked; active = null; thread = null; loadChats(); }
+      if (e.target.matches('[data-act=viewall]')) { disconnect(); viewingAll = e.target.checked; searchQ = ''; searchHits = null; active = null; thread = null; loadChats(); }
     });
     el.addEventListener('submit', async (e) => {
       if (e.target.id !== 'mc-compose') return;
@@ -236,9 +332,15 @@ ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows
       ta.disabled = true;
       try {
         const { message } = await call(`/api/chats/${active}/messages`, { text });
-        msgs.push(message); lastId = message.id; ta.value = ''; draw();
+        ta.value = '';
+        if (!msgs.some((m) => m.id === message.id)) msgs.push(message);
+        lastId = Math.max(lastId, message.id); draw();
         loadChats();
       } catch (er) { toast(er.message, true); } finally { ta.disabled = false; ta.focus?.(); }
+    });
+    el.addEventListener('input', (e) => {
+      if (e.target.matches('#mc-compose textarea')) sendTyping();
+      if (e.target.matches('.mc-find')) { clearTimeout(typingTimer); const q = e.target.value.trim(); typingTimer = setTimeout(() => runSearch(q), 250); }
     });
     el.addEventListener('keydown', (e) => {
       if (e.target.matches('#mc-compose textarea') && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#mc-compose').requestSubmit(); }
@@ -260,8 +362,8 @@ ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows
       if (h) openChat(+h[1], false);
     } catch (e) { el.innerHTML = `<div class="mc-empty">${UI.empty({ icon: '⚠️', title: 'Could not load messages', text: e.message })}</div>`; }
     poll = setInterval(pollNow, 6000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) pollNow(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { pollNow(); if (active && !viewingAll && ws?.readyState !== 1) connect(active); } });
   }
   document.addEventListener('DOMContentLoaded', init);
-  window.addEventListener('pagehide', () => clearInterval(poll));
+  window.addEventListener('pagehide', () => { clearInterval(poll); disconnect(); });
 })();

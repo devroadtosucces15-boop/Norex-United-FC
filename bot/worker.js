@@ -349,3 +349,4 @@ function playerEmbed(p, club, site, footer) {
     footer: { ...footer, text: '🟢 8+  🟡 7+  🟠 6+  🔴 under 6 · full profile on the site' },
   };
 }
+export { ChatRoom } from './chatroom.js'; // P6.3b live chat rooms (Durable Object)

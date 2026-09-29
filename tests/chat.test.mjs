@@ -1,5 +1,5 @@
 // P6.3a messaging: DMs, group chats, unread counts, reports, owner read-all.
-import { call, env, login, sqlite } from './mock.mjs';
+import { call, env, login, sqlite, W } from './mock.mjs';
 import { t, done } from './lib.mjs';
 
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
@@ -109,5 +109,51 @@ t('chats: owner can read any chat, flagged read-only', r.s === 200 && r.d.readon
 t('chats: owner cannot post into a chat they are not in', (await call(owner, `/api/chats/${dmId}/messages`, { text: 'butting in' })).s === 403);
 t('chats: owner "all chats" listing sees every chat, not just their own', (await call(owner, '/api/chats?all=1')).d.chats.length >= 2);
 t('chats: owner listing flag exposed to the client', (await call(owner, '/api/chats')).d.canReadAll === true && (await call(m1, '/api/chats')).d.canReadAll === false);
+
+// ---- P6.3b: search, live room pushes, WebSocket gate, ChatRoom relay ----
+r = await call(m1, '/api/chats/search?q=TONIGHT');
+t('search: finds my message case-insensitively, with the DM named after the other person', r.s === 200 && r.d.results.some((x) => x.text.includes('on tonight') && x.chatName === 'Player Two'));
+t('search: outsiders get nothing from chats they are not in', (await call(m3, '/api/chats/search?q=tonight')).d.results.every((x) => !x.text.includes('on tonight')));
+t('search: 1-letter queries return nothing', (await call(m1, '/api/chats/search?q=o')).d.results.length === 0);
+t('search: LIKE wildcards are literal', (await call(m1, '/api/chats/search?q=%25%25')).d.results.length === 0);
+
+const wsReq = (tok, id = dmId, up = true) => W(`/api/chats/${id}/ws${tok ? `?t=${encodeURIComponent(tok)}` : ''}`, { headers: up ? { Upgrade: 'websocket' } : {} });
+t('ws: 503 (polling fallback) when no room binding', (await wsReq(m1)).status === 503);
+const pushes = [], opened = [];
+env.CHAT_ROOM = {
+  idFromName: (n) => n,
+  get: (name) => ({ fetch: async (u, init) => {
+    const url = typeof u === 'string' ? u : u.url;
+    if (url.includes('/push')) pushes.push({ name, ev: JSON.parse(init.body) }); else opened.push({ name, url });
+    return new Response('ok');
+  } }),
+};
+t('ws: refused without a session', (await wsReq(null)).status === 404);
+t('ws: refused for a non-member', (await wsReq(m3)).status === 404);
+t('ws: needs an Upgrade header', (await wsReq(m1, dmId, false)).status === 426);
+await wsReq(m1);
+t('ws: member joins the chat room read-write', opened.at(-1)?.name === `chat:${dmId}` && opened.at(-1).url.includes('ro=0') && opened.at(-1).url.includes('u=500'));
+await wsReq(owner);
+t('ws: owner read-all joins read-only', opened.at(-1)?.url.includes('ro=1'));
+r = await call(m2, `/api/chats/${dmId}/messages`, { text: 'Live now' });
+t('push: a new message is pushed to the room', pushes.some((p) => p.name === `chat:${dmId}` && p.ev.t === 'msg' && p.ev.message.id === r.d.message.id));
+env.CHAT_ROOM.get = () => ({ fetch: async () => { throw new Error('room down'); } });
+t('push: a broken room never fails the send', (await call(m1, `/api/chats/${dmId}/messages`, { text: 'still works' })).s === 200);
+delete env.CHAT_ROOM;
+
+const { ChatRoom } = await import('../bot/chatroom.js');
+const sockets = [];
+const fakeWs = (who) => { const w = { who, sent: [], send(d) { this.sent.push(d); }, deserializeAttachment: () => who, close() {} }; sockets.push(w); return w; };
+const room = new ChatRoom({ getWebSockets: () => sockets, setWebSocketAutoResponse() {} }, {});
+const a = fakeWs({ u: '500', n: 'Player One' }), b = fakeWs({ u: '501', n: 'Player Two' }), o = fakeWs({ u: '111', n: 'Boss', ro: true });
+await room.webSocketMessage(a, JSON.stringify({ t: 'typing' }));
+t('room: typing is relayed to the others, not echoed', b.sent.length === 1 && JSON.parse(b.sent[0]).n === 'Player One' && a.sent.length === 0 && o.sent.length === 1);
+await room.webSocketMessage(o, JSON.stringify({ t: 'typing' }));
+t('room: read-only (owner) sockets never show as typing', b.sent.length === 1);
+await room.webSocketMessage(a, 'not json');
+await room.webSocketMessage(a, JSON.stringify({ t: 'msg', message: { text: 'forged' } }));
+t('room: clients cannot forge pushes', b.sent.length === 1);
+await room.fetch(new Request('https://room/push', { method: 'POST', body: '{"t":"removed","id":1}' }));
+t('room: /push fans out to every socket', [a, b, o].every((w) => w.sent.at(-1) === '{"t":"removed","id":1}'));
 
 done();
