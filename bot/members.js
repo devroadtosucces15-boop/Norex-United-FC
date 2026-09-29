@@ -105,6 +105,39 @@ async function getClaims(env) {
   return Object.fromEntries(rows.map((r) => [r.user_id, claimOut(r, (byUser[r.user_id] ?? []).slice(-20))]));
 }
 
+// P8.2 – manager portal drill-down: everything one member has done, in one call.
+// Message text is metadata-only for managers (chat name + when, never the words) unless the
+// message was reported (managers see reported text) or the caller is owner (sees everything, per P0.6).
+async function memberActivity(env, me, uid) {
+  const seeAllMsg = can(me, 'messages.all');
+  const seeReported = can(me, 'messages.reported');
+  const [claim, votes, ratings, avail, posts, acks, activity, msgRows] = await Promise.all([
+    getClaim(env, uid),
+    all(env, 'SELECT * FROM votes WHERE user_id = ? ORDER BY at DESC LIMIT 50', uid),
+    all(env, 'SELECT * FROM star_ratings WHERE user_id = ? ORDER BY at DESC LIMIT 50', uid),
+    all(env, 'SELECT * FROM availability WHERE user_id = ? ORDER BY at DESC LIMIT 100', uid),
+    all(env, 'SELECT id, body, tag, at, removed FROM posts WHERE user_id = ? ORDER BY at DESC LIMIT 50', uid),
+    all(env, 'SELECT * FROM doc_acks WHERE user_id = ? ORDER BY at DESC', uid),
+    all(env, 'SELECT * FROM activity WHERE user_id = ? ORDER BY id DESC LIMIT 200', uid),
+    all(env, `SELECT cm.id, cm.chat_id, cm.text, cm.at, cm.reported_at, c.kind, c.name FROM chat_messages cm
+               JOIN chats c ON c.id = cm.chat_id WHERE cm.user_id = ? AND cm.removed = 0 ORDER BY cm.at DESC LIMIT 100`, uid),
+  ]);
+  return {
+    claim,
+    votes: votes.map((v) => ({ matchId: v.match_id, player: v.player, at: v.at })),
+    ratings: ratings.map((r) => ({ week: r.week, player: r.player, stars: r.stars, at: r.at })),
+    availability: avail.map((a) => ({ date: a.date, status: a.status, at: a.at })),
+    posts: posts.map((p) => ({ id: p.id, body: p.body, tag: p.tag, at: p.at, removed: !!p.removed })),
+    acknowledgements: acks.map((a) => ({ version: a.version, at: a.at })),
+    activity: activity.map((a) => ({ at: a.at, type: a.type, detail: a.detail })),
+    // metadata only – text included only when policy allows (owner, or a reported message a manager may see)
+    messages: msgRows.map((m) => ({
+      chatId: m.chat_id, kind: m.kind, chatName: opt(m.name), at: m.at, reported: !!m.reported_at,
+      ...(seeAllMsg || (m.reported_at && seeReported) ? { text: m.text } : {}),
+    })),
+  };
+}
+
 async function log(env, me, type, detail) {
   await env.DB.batch([
     env.DB.prepare('INSERT INTO activity (at, user_id, name, avatar, type, detail) VALUES (?, ?, ?, ?, ?, ?)').bind(Date.now(), me.u, me.n, me.a, type, detail),
@@ -524,6 +557,13 @@ async function route(p, method, body, me, env, loadSite, url) {
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);
+    if (p.startsWith('/api/admin/member/') && method === 'GET') { // P8.2 – drill-down: everything one member has done
+      if (!can(me, 'activity.view')) return fail('Managers only.', 403);
+      const uid = p.slice('/api/admin/member/'.length);
+      const u = await one(env, 'SELECT * FROM users WHERE id = ?', uid);
+      if (!u) return fail('Member not found', 404);
+      return json({ user: userOut(u), ...(await memberActivity(env, me, uid)) });
+    }
     if (p === '/api/admin/claims' && method === 'POST') {
       if (!can(me, 'claims.decide')) return fail('Managers only.', 403);
       const c = await one(env, 'SELECT * FROM claims WHERE user_id = ?', String(body.user ?? ''));

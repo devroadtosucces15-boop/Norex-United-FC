@@ -658,9 +658,9 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
 <div class="row">${UI.member({ id: m.by.id, n: m.by.n, a: m.by.a, sub: `logged ${UI.ago(m.at)}` }, { size: 24 })}<span class="grow"></span><button class="btn sm" type="button" data-rush="confirm" data-id="${m.id}">✅ Confirm</button><button class="btn ghost sm" type="button" data-rush="reject" data-id="${m.id}">Reject</button></div></div>`).join('')}</div>`
     : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'Rush results sent by members show up here for a quick check.' })}
 <h3 style="margin-top:24px">Last 30 days</h3>${S.rush?.recent?.length ? `<div class="tbl"><table><thead><tr><th>Match</th><th>Logged by</th><th>Status</th><th>By</th><th>When</th><th></th></tr></thead><tbody>${S.rush.recent.map((m) => `<tr><td>${pill(m.res)} ${m.gf}–${m.ga} vs ${esc(m.opp)} <small class="muted">${esc(m.date)}</small></td><td>${esc(m.by.n || '–')}</td><td><span class="tag ${RSTAT[m.status][1]}">${esc(m.status)}</span></td><td>${esc(m.decidedBy || '–')}</td><td>${m.decidedAt ? ago(m.decidedAt) : '–'}</td><td>${m.status === 'confirmed' ? `<button class="btn ghost sm" type="button" data-rush="remove" data-id="${m.id}">Remove</button>` : m.status === 'rejected' ? `<button class="btn ghost sm" type="button" data-rush="confirm" data-id="${m.id}">Confirm</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '🗂️', title: 'No decisions yet' })}`,
-      members: () => `<div class="tbl"><table><thead><tr><th>Member</th><th>Role</th><th>Player</th><th>Positions</th><th>Platform</th><th>This week</th><th class="n">Logins</th><th>Last seen</th>${notesOn ? '<th>Notes</th>' : ''}</tr></thead><tbody>${users.map(([id, u]) => {
+      members: () => `<div class="tbl"><table><thead><tr><th>Member</th><th>Role</th><th>Player</th><th>Positions</th><th>Platform</th><th>This week</th><th class="n">Logins</th><th>Last seen</th>${notesOn ? '<th>Notes</th>' : ''}<th></th></tr></thead><tbody>${users.map(([id, u]) => {
         const c = A.claims[id], pf = A.profiles[id] || {};
-        return `<tr><td>${mem(id, u, u.tag ? `@${u.tag}` : '')}</td><td>${roleTag(u.role === 'member' || !u.role ? (u.admin ? 'manager' : c?.status === 'approved' ? 'claimed' : 'member') : u.role)}</td><td>${c ? `${esc(c.playerName)} <small class="muted">(${esc(c.status)})</small>` : '–'}</td><td>${esc((pf.positions || []).join(' / ') || '–')}</td><td>${esc(pf.platform || '–')}</td><td class="wk">${A.availability.map((d) => `<span data-tip="${esc(fmtDay(d.date))}">${ICON[d.byUser[id]?.s] || '·'}</span>`).join('')}</td><td class="n">${u.logins || 1}</td><td>${ago(u.last)}</td>${notesOn ? `<td><button class="tr-note-btn" type="button" data-notes="${esc(id)}" data-tip="Private manager notes">📝</button></td>` : ''}</tr>`;
+        return `<tr><td>${mem(id, u, u.tag ? `@${u.tag}` : '')}</td><td>${roleTag(u.role === 'member' || !u.role ? (u.admin ? 'manager' : c?.status === 'approved' ? 'claimed' : 'member') : u.role)}</td><td>${c ? `${esc(c.playerName)} <small class="muted">(${esc(c.status)})</small>` : '–'}</td><td>${esc((pf.positions || []).join(' / ') || '–')}</td><td>${esc(pf.platform || '–')}</td><td class="wk">${A.availability.map((d) => `<span data-tip="${esc(fmtDay(d.date))}">${ICON[d.byUser[id]?.s] || '·'}</span>`).join('')}</td><td class="n">${u.logins || 1}</td><td>${ago(u.last)}</td>${notesOn ? `<td><button class="tr-note-btn" type="button" data-notes="${esc(id)}" data-tip="Private manager notes">📝</button></td>` : ''}<td><button class="tr-note-btn" type="button" data-drill="${esc(id)}" data-tip="Open profile or activity log">🔎</button></td></tr>`;
       }).join('')}</tbody></table></div>`,
       week: () => `${window.NXEvents && A.events ? NXEvents.weekTable(A.events, users, mem) : ''}<div class="tbl"><table class="grid-week"><thead><tr><th>Member</th>${A.availability.map((d) => `<th>${esc(fmtDay(d.date))}</th>`).join('')}</tr></thead><tbody>${users.map(([id, u]) => `<tr><td>${mem(id, u)}</td>${A.availability.map((d) => `<td class="c s-${d.byUser[id]?.s || 'none'}">${ICON[d.byUser[id]?.s] || ''}</td>`).join('')}</tr>`).join('')}
 <tr class="tot"><td><b>Available</b></td>${A.availability.map((d) => { const v = Object.values(d.byUser); return `<td class="c"><b>${v.filter((x) => x.s === 'yes').length}</b><small> +${v.filter((x) => x.s === 'maybe').length}?</small></td>`; }).join('')}</tr></tbody></table></div>`,
@@ -693,6 +693,37 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
       draw();
       toast(`${c.playerName}: ${c.status}`);
     } catch (e) { S.admin.claims = prev; draw(); toast(e.message, true); }
+  }
+
+  // P8.2 – "Open profile" or "View activity log" for one member.
+  async function openDrill(id) {
+    const u = S.admin.users[id];
+    const canProfile = profilesOn;
+    const choice = await UI.modal({
+      title: u?.n || 'Member', icon: '🔎',
+      body: '<p class="muted">What do you want to see?</p>',
+      actions: [
+        ...(canProfile ? [{ label: 'Open profile', value: 'profile' }] : []),
+        { label: 'View activity log', value: 'log' },
+        { label: 'Cancel', value: null, kind: 'ghost' },
+      ],
+    });
+    if (choice === 'profile') return void (location.href = `${BASE}member.html?u=${encodeURIComponent(id)}`);
+    if (choice !== 'log') return;
+    let d;
+    try { d = await call(`/api/admin/member/${encodeURIComponent(id)}`); } catch (e) { return toast(e.message, true); }
+    const row = (icon, label, items) => !items.length ? '' : `<h4>${icon} ${label}</h4><ul class="feed">${items}</ul>`;
+    const body = `
+${row('📜', 'Activity', d.activity.map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><div>${ACT_TXT[a.type] || esc(a.type)}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${ago(a.at)}</small></li>`))}
+${row('🪪', 'Claim history', (d.claim?.history || []).map((h) => `<li><div>${esc(h.action)} <span class="muted">${esc(h.player)}</span></div><small class="muted">${ago(h.at)} · ${esc(h.by || '–')}</small></li>`))}
+${row('🗳️', 'MOTM votes', d.votes.map((v) => `<li><div>voted <b>${esc(v.player)}</b></div><small class="muted">${ago(v.at)}</small></li>`))}
+${row('🌟', 'Star ratings given', d.ratings.map((r) => `<li><div>${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)} → ${esc(r.player)}</div><small class="muted">${esc(r.week)} · ${ago(r.at)}</small></li>`))}
+${row('📅', 'Availability', d.availability.map((a) => `<li><div>${esc(fmtDay(a.date))}: ${ICON[a.status] || a.status}</div><small class="muted">${ago(a.at)}</small></li>`))}
+${row('📰', 'Posts', d.posts.map((p) => `<li><div>${p.removed ? '<i>(removed)</i> ' : ''}${esc((p.body || '').slice(0, 140))}</div><small class="muted">${esc(p.tag)} · ${ago(p.at)}</small></li>`))}
+${row('💬', 'Messages', d.messages.map((m) => `<li><div>${m.kind === 'dm' ? 'DM' : `group “${esc(m.chatName || '')}”`}${m.reported ? ` ${UI.pill('reported', { emoji: '🚩', tone: 'loss' })}` : ''}${m.text != null ? `: ${esc(m.text.slice(0, 140))}` : ' <span class="muted">(content hidden)</span>'}</div><small class="muted">${ago(m.at)}</small></li>`))}
+${row('📜', 'Acknowledged rules', d.acknowledgements.map((a) => `<li><div>Rules v${a.version}</div><small class="muted">${ago(a.at)}</small></li>`))}
+${[d.activity, d.claim?.history, d.votes, d.ratings, d.availability, d.posts, d.messages, d.acknowledgements].every((x) => !x || !x.length) ? UI.empty({ icon: '📭', title: 'Nothing on record yet' }) : ''}`;
+    UI.modal({ title: `Activity log · ${u?.n ?? 'member'}`, icon: '📜', body, wide: true, actions: [{ label: 'Close', value: null, kind: 'ghost' }] });
   }
 
   // ----- event wiring for whatever panel is showing -----
@@ -757,6 +788,7 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
       if (d.goRush !== undefined) { e.preventDefault(); S.adminTab = 'rush'; go('manager'); }
       if (d.sub) { S.adminTab = d.sub; draw(); }
       if (d.notes) { const u = S.admin.users[d.notes]; withTrials((T, ctx) => T.notesModal(ctx, { kind: 'member', subject: d.notes, title: `Notes · ${u?.n ?? 'member'}` })); }
+      if (d.drill) openDrill(d.drill);
       if (d.refresh !== undefined) { S.admin = null; draw(); load('manager'); }
       if (d.claim) {
         const c = S.admin.claims[d.u];
