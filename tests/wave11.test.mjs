@@ -2,6 +2,7 @@
 import { call, env, login, siteJson, W } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import { gameDiff } from '../bot/game.js';
+import '../web/scout.js';
 
 const seed = siteJson('game');
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
@@ -47,5 +48,35 @@ const A = { version: 'a', levelCap: { value: 40 }, archetypes: [{ id: 'x', name:
 const B = { version: 'b', levelCap: { value: 40, verified: true }, archetypes: [{ id: 'x', name: 'X', base: { Pace: 60 } }, { id: 'z', name: 'Z' }], attributeGroups: [{ attributes: ['Pace', 'Agility'] }] };
 const d = gameDiff(A, B).items.map((x) => x.text);
 t('diff: cap confirmed, archetype added/removed/updated, attribute list', d.includes('Max level 40 confirmed by EA') && d.includes('Archetypes added: Z') && d.includes('Archetypes removed: Y') && d.includes('Archetypes updated: X') && d.some((x) => x.startsWith('Attribute list changed')));
+
+// ---------- PB.5 (b): visuals + build check ----------
+const S = globalThis.NXScout;
+const row = (ts, o) => ({ ts, res: 'W', g: 0, a: 0, r: 7, motm: 0, grp: 'FWD', pass: 9, passAtt: 10, tkl: 1, tklAtt: 2, shots: 2, saves: 0, ga: 1, dri: null, match: ts, ...o });
+const synth = { x: [], y: [], z: [], w: [] };
+for (let s = 0; s < 6; s++) for (let i = 0; i < 2; i++) {
+  const ts = 1.79e9 + s * 3 * 86400 + i * 900;
+  synth.x.push(row(ts, { g: 2, shots: 3, pass: 6, passAtt: 10, r: 7 + s * 0.2, res: i ? 'L' : 'W', grp: s < 4 ? 'FWD' : 'MID' }));
+  for (const k of ['y', 'z', 'w']) synth[k].push(row(ts, {}));
+}
+const R = S.report('x', synth, { names: { x: 'Xavi' } });
+t('radar: key metrics vs squad average (1 = squad level, capped at 2, needs a squad value)', R.radar.length >= 3 && R.radar.every((a) => a.rel >= 0 && a.rel <= 2 && a.label && a.avg) && R.radar.find((a) => a.k === 'passPct')?.rel < 1 && !R.radar.some((a) => a.k === 'gpg')); // squad scores 0 → no scale for goals
+t('trend: one point per session with record + rating', R.trend.length === 6 && R.trend.every((p) => p.n === 2 && p.w === 1 && p.l === 1) && R.trend.at(-1).r > R.trend[0].r);
+t('position usage: groups with games + rating', R.usage.groups.FWD.n === 8 && R.usage.groups.MID.n === 4 && R.usage.groups.FWD.r != null && !Object.keys(R.usage.pos).length);
+t('form calendar: one entry per match day', Object.keys(R.days).length === 6 && Object.values(R.days).every((d) => d.n === 2));
+const html = S.visualsHtml(R);
+t('visuals render: radar, trend, pitch, calendar – no NaN', ['sc-radar', 'sc-trend', 'sc-pitch', 'sc-cal'].every((c) => html.includes(c)) && !/NaN|undefined/.test(html));
+const rushR = S.report('x', S.fromRush({ matches: [1, 2, 3, 4].map((id) => ({ id, date: '2026-09-0' + id, res: 'W', ga: 1, players: [{ k: 'x', pos: id < 4 ? 'ST' : 'CAM', g: 1, r: 7.5 }] })) }), { mode: 'rush' });
+t('Rush usage keeps exact positions → pitch spots', rushR.usage.pos.ST.n === 3 && rushR.usage.pos.CAM.n === 1 && S.visualsHtml(rushR).includes('class="spot"'));
+
+const rowsOf = (o) => Object.entries(o).map(([name, value]) => ({ name, value }));
+const ev = { arch: { name: 'Boss', group: 'DEF' }, fit: [['CB', 80], ['CDM', 74]], rows: rowsOf({ 'Short Passing': 55, Vision: 61, Composure: 70, 'Ball Control': 72, Finishing: 58, Positioning: 64, 'Sprint Speed': 66 }) };
+const C = S.buildCheck(R, { id: 5, title: 'Wall', position: 'CB', mode: 'league' }, ev);
+t('build check: build role vs where they play', C.role[0].icon === '🧭' && /CB Boss \(defender\)/.test(C.role[0].text) && /as a forward/.test(C.role[0].text));
+t('build check: strength despite a low attribute is called out', C.role.some((r) => /Goals is a strength even with Finishing at 58/.test(r.text)));
+t('build tweak: weakest linked attribute, with why + target', C.tweaks[0]?.attr === 'Short Passing' && /More Short Passing \(55 in the build\)/.test(C.tweaks[0].text) && /pass accuracy is 60% vs 90%/.test(C.tweaks[0].text));
+const ok = S.buildCheck(R, { title: 'Nine', position: 'ST' }, { ...ev, arch: { name: 'Finisher', group: 'FWD' }, fit: [['ST', 70], ['CF', 69]] });
+t('build check: matching role → ✅', ok.role[0].icon === '✅' && /67% of your League games/.test(ok.role[0].text));
+t('build check: fit better elsewhere', S.buildCheck(R, { title: 'x', position: 'CDM' }, ev).role.some((r) => /fits CB better than CDM \(80 vs 74/.test(r.text)));
+t('build check: nothing without a build or data', S.buildCheck(R, null, ev) === null && S.buildCheck({ enough: false }, {}, ev) === null);
 
 done();

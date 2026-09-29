@@ -520,6 +520,9 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     // builder.html?build=<id> opens a saved (own) or posted build – with a Fork button when it isn't yours.
     const want = new URLSearchParams(location.search).get('build');
     if (!want && token() && new URLSearchParams(location.search).has('upgrade')) myBuilds(); // from the game-update notification
+    const focus = new URLSearchParams(location.search).get('focus'); // PB.5 scout report: "More <attribute>" → highlight that row
+    const flash = () => { const r = focus && [...root.querySelectorAll('[data-attr]')].find((x) => x.dataset.attr === focus); if (r) { r.scrollIntoView({ block: 'center', behavior: 'smooth' }); r.classList.add('bd-focus'); } };
+    if (focus) setTimeout(flash, want && token() ? 900 : 200);
     if (want && token()) call(`/api/builds/get?id=${encodeURIComponent(want)}`).then((r) => open(r.build)).catch((e) => toast(e.message, 'error'));
     if (token() && pending?.then) setTimeout({ save, post, mybuild: myBuild }[pending.then] || (() => {}), 300); // after app.js stored the new session
   }).catch(() => { $('[data-bd-body]').innerHTML = '<p class="muted">Couldn’t load the game data – try again in a moment.</p>'; });

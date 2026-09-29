@@ -1,8 +1,11 @@
-// Member scout report (roadmap PB.5, part a) – analysis + a rule-based narrative (free, deterministic, explainable).
+// Member scout report (roadmap PB.5) – analysis + a rule-based narrative (free, deterministic, explainable).
+// Part b adds the visuals (radar vs squad average, rating trend, position-usage pitch, form calendar) and the build check
+// (NXScout.buildCheck: the member's League/Rush build vs how they actually play → role match + attribute tweaks linked to the builder).
 // Pure engine (also imported by the tests): NXScout.report(k, games, { tracked, names, mode })
 //   games   = { playerKey: [row] } with rows { ts, res, g, a, r, motm, grp, pass, passAtt, tkl, tklAtt, shots, saves, ga, dri, match }
 //   tracked = players.json – League only: percentiles among every tracked player in the same position group
-// → { enough, games, grp, metrics, strengths, improve, patterns, insights, flags, team, suggestions, summary, narrative }
+// → { enough, games, grp, metrics, strengths, improve, patterns, insights, flags, team, suggestions, summary, narrative,
+//      radar, trend, usage, days }
 // NXScout.fromSquad(squad) / NXScout.fromRush(rush) turn api/squad.json and /api/rush into that shape.
 // NXScout.section(el, { k, full, name }) draws it: League / Rush tabs; full report for the member + managers, short version otherwise.
 (() => {
@@ -49,6 +52,7 @@
     ['win', 'Win rate', (v) => `${Math.round(v)}%`, true, ['GK', 'DEF', 'MID', 'FWD']],
     ['motm', 'MOTM rate', (v) => `${Math.round(v)}%`, true, ['GK', 'DEF', 'MID', 'FWD']],
   ];
+  const SHORT = { rating: 'Rating', gpg: 'Goals', apg: 'Assists', shots: 'Shots', conv: 'Conversion', passPct: 'Pass %', passes: 'Passes', tklPct: 'Tackle %', tkl: 'Tackles', saves: 'Saves', conceded: 'Conceded' };
   const META = Object.fromEntries(METRICS.map(([k, label, fmt, up, groups]) => [k, { k, label, fmt, up, groups }]));
   function metricsOf(rows) {
     const n = rows.length;
@@ -192,11 +196,133 @@
     const pattern = patterns[0] ? `${patterns[0].text}.` : '';
     const next = improve[0] ? `Next step – ${lc(improve[0].text)}.` : 'No clear weak spot against the squad right now.';
     const summary = `${intro} ${strengths[0] ? `${strengths[0].text}.` : ''}`.trim();
-    return { k, mode, enough: true, games: n, sessions: sessions.length, grp, metrics, strengths, improve, patterns, insights, flags, team, suggestions, partners: partners.slice(0, 3), summary, narrative: [intro, strong, pattern, next].filter(Boolean) };
+    // visuals: radar vs squad average (1 = squad level, lower-is-better flipped), rating per session, position usage, days played
+    const radar = metrics.filter((m) => m.key && !OUTCOME.includes(m.k) && m.squadAvg > 0).slice(0, 7)
+      .map((m) => ({ k: m.k, label: SHORT[m.k] ?? m.label, text: m.text, avg: META[m.k].fmt(m.squadAvg), rel: r2(Math.min(2, m.up ? m.value / m.squadAvg : m.squadAvg / Math.max(m.value, 0.001))) }));
+    const tally = (l) => ({ n: l.length, w: l.filter((r) => r.res === 'W').length, d: l.filter((r) => r.res === 'D').length, l: l.filter((r) => r.res === 'L').length, r: ((x) => (x == null ? null : r2(x)))(avg(l.map((r) => r.r).filter((v) => v != null))) });
+    const trend = sessions.slice(-20).map((s) => ({ ts: s[0].ts, ...tally(s) }));
+    const usage = {}, byPos = {}, byDay = {};
+    for (const r of rows) {
+      if (r.grp) (usage[r.grp] ??= []).push(r);
+      if (r.pos) (byPos[r.pos] ??= []).push(r);
+      (byDay[new Date(r.ts * 1000).toISOString().slice(0, 10)] ??= []).push(r);
+    }
+    const tallied = (o) => Object.fromEntries(Object.entries(o).map(([key, l]) => [key, tally(l)]));
+    return { k, mode, enough: true, games: n, sessions: sessions.length, grp, metrics, strengths, improve, patterns, insights, flags, team, suggestions, partners: partners.slice(0, 3), summary, narrative: [intro, strong, pattern, next].filter(Boolean),
+      radar: radar.length >= 3 ? radar : [], trend, usage: { groups: tallied(usage), pos: tallied(byPos) }, days: tallied(byDay) };
+  }
+
+  // ---------- build check: the member's build (PB.4 pick) vs how they play ----------
+  // x = { id, title, code, position, mode }, ev = NXBuildMath.evaluate() of it (rows, fit, arch, face).
+  // Attributes that move each stat (only those in the game data are used) + why.
+  const TWEAK = {
+    passPct: [['Short Passing', 'Vision', 'Composure', 'Ball Control'], 'cleaner passes under pressure'],
+    passes: [['Short Passing', 'Vision', 'Reactions'], 'more of the ball in build-up'],
+    tklPct: [['Standing Tackle', 'Defensive Awareness', 'Sliding Tackle', 'Reactions'], 'win more of the duels you go into'],
+    tkl: [['Defensive Awareness', 'Interceptions', 'Stamina', 'Aggression'], 'get to more duels'],
+    conceded: { GK: [['GK Reflexes', 'GK Diving', 'GK Positioning', 'GK Handling'], 'stop more of the shots you face'], _: [['Defensive Awareness', 'Standing Tackle', 'Sprint Speed', 'Strength'], 'recover and close down faster'] },
+    conv: [['Finishing', 'Composure', 'Positioning', 'Volleys'], 'turn more shots into goals'],
+    shots: [['Positioning', 'Shot Power', 'Long Shots', 'Acceleration'], 'get more shots away'],
+    gpg: [['Finishing', 'Positioning', 'Composure'], 'score more'],
+    apg: [['Vision', 'Crossing', 'Short Passing', 'Curve'], 'create more for others'],
+    saves: [['GK Reflexes', 'GK Diving', 'GK Positioning'], 'make more saves'],
+  };
+  function buildCheck(R, x, ev, { mode = R?.mode ?? 'league' } = {}) {
+    if (!R?.enough || !x || !ev) return null;
+    const role = [], tweaks = [];
+    const val = (name) => ev.rows.find((r) => r.name === name)?.value;
+    const bGrp = GROUP(x.position) ?? ev.arch?.group ?? null;
+    const games = Object.values(R.usage?.groups ?? {}).reduce((sm, u) => sm + u.n, 0) || R.games;
+    const share = (g) => Math.round(((R.usage?.groups?.[g]?.n ?? 0) / games) * 100);
+    const label = `${x.position ? `${x.position} ` : ''}${ev.arch?.name ?? 'build'}`;
+    const Mode = mode === 'rush' ? 'Rush' : 'League';
+    if (bGrp && bGrp !== R.grp) role.push({ icon: '🧭', text: `Your ${Mode} build is a ${label} (${WORD[bGrp]}), but ${share(R.grp)}% of your ${Mode} games are as a ${WORD[R.grp]} – ${share(bGrp) ? `only ${share(bGrp)}% as a ${WORD[bGrp]}` : `none as a ${WORD[bGrp]}`}` });
+    else if (bGrp) role.push({ icon: '✅', text: `Build matches how you play: ${label} for a ${WORD[bGrp]} – ${share(bGrp)}% of your ${Mode} games there` });
+    const best = ev.fit?.[0], set = x.position && ev.fit?.find(([pos]) => pos === x.position);
+    if (best && set && best[0] !== x.position && best[1] - set[1] >= 3) role.push({ icon: '📍', text: `The build fits ${best[0]} better than ${x.position} (${best[1]} vs ${set[1]} fit)` });
+    for (const s of (R.strengths ?? []).slice(0, 2)) {
+      const t = TWEAK[s.k] && (Array.isArray(TWEAK[s.k]) ? TWEAK[s.k] : TWEAK[s.k][R.grp] ?? TWEAK[s.k]._);
+      const low = t && t[0].map((a) => [a, val(a)]).filter(([, v]) => v != null).sort((p, q) => p[1] - q[1])[0];
+      if (low && low[1] < 70) role.push({ icon: '💪', text: `${SHORT[s.k] ?? s.k} is a strength even with ${low[0]} at ${low[1]} in the build – that’s your game, not the numbers` });
+    }
+    const used = new Set();
+    for (const m of R.improve ?? []) {
+      const t = TWEAK[m.k] && (Array.isArray(TWEAK[m.k]) ? TWEAK[m.k] : TWEAK[m.k][R.grp] ?? TWEAK[m.k]._);
+      if (!t) continue;
+      const pick = t[0].map((a) => [a, val(a)]).filter(([a, v]) => v != null && !used.has(a)).sort((p, q) => p[1] - q[1])[0];
+      if (!pick) continue;
+      used.add(pick[0]);
+      const now = R.metrics.find((q) => q.k === m.k)?.text;
+      tweaks.push({ attr: pick[0], value: pick[1], k: m.k, icon: '🔧', text: `More ${pick[0]} (${pick[1]} in the build) to ${t[1]} – ${META[m.k].label.toLowerCase()} is ${now} vs ${META[m.k].fmt(m.target)} for the squad` });
+    }
+    if (R.grp === 'DEF' && (R.improve ?? []).some((m) => m.k === 'tklPct' || m.k === 'conceded') && (val('Sprint Speed') ?? 99) < 70 && !used.has('Sprint Speed')) tweaks.push({ attr: 'Sprint Speed', value: val('Sprint Speed'), icon: '💨', text: `More Sprint Speed (${val('Sprint Speed')} now) – you lose duels on the turn as a ${x.position || 'defender'}` });
+    return { role, tweaks: tweaks.slice(0, 4), label };
   }
 
   // ---------- UI ----------
-  function section(el, { k, full = false, name = '' } = {}) {
+  // ---------- visuals (SVG, theme tokens, data-tip tooltips from app.js) ----------
+  const escH = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const DAYFMT = (ts) => new Date(ts * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  function radarSvg(axes) {
+    const C = 120, RAD = 78, n = axes.length;
+    const pt = (i, v) => { const a = -Math.PI / 2 + (i * 2 * Math.PI) / n, r = RAD * Math.min(1, v / 2); return [C + r * Math.cos(a), C + r * Math.sin(a)]; };
+    const poly = (vals) => vals.map((v, i) => pt(i, v).map((x) => x.toFixed(1)).join(',')).join(' ');
+    const rings = [0.5, 1, 1.5, 2].map((v) => `<polygon class="${v === 1 ? 'avg' : 'ring'}" points="${poly(axes.map(() => v))}"/>`).join('');
+    const spokes = axes.map((_, i) => { const [x, y] = pt(i, 2); return `<line x1="${C}" y1="${C}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`; }).join('');
+    const labels = axes.map((a, i) => { const [x, y] = pt(i, 2.36); return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${Math.abs(x - C) < 8 ? 'middle' : x > C ? 'start' : 'end'}">${escH(a.label)}</text>`; }).join('');
+    const dots = axes.map((a, i) => { const [x, y] = pt(i, a.rel); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" data-tip="${escH(`${a.label}: ${a.text} · squad ${a.avg}`)}"/>`; }).join('');
+    return `<svg class="sc-radar" viewBox="-40 0 320 240" role="img" aria-label="Radar: this player vs the squad average">${rings}${spokes}<polygon class="me" points="${poly(axes.map((a) => a.rel))}"/>${dots}${labels}</svg>`;
+  }
+  function trendSvg(tr, overall) {
+    const pts = tr.filter((x) => x.r != null);
+    if (pts.length < 2) return '<p class="muted small">The trend shows after two sessions with ratings.</p>';
+    const W = 600, H = 170, P = 26;
+    const lo = Math.max(0, Math.floor(Math.min(...pts.map((x) => x.r), overall ?? 10) - 0.5)), hi = Math.min(10, Math.ceil(Math.max(...pts.map((x) => x.r), overall ?? 0) + 0.3));
+    const X = (i) => P + (i * (W - 2 * P)) / (pts.length - 1), Y = (v) => H - P - ((v - lo) / (hi - lo || 1)) * (H - 2 * P);
+    const line = pts.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(x.r).toFixed(1)}`).join('');
+    const grid = [lo, (lo + hi) / 2, hi].map((v) => `<line class="g" x1="${P}" x2="${W - P}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}"/><text x="${P - 6}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end">${v.toFixed(1)}</text>`).join('');
+    const avgLine = overall != null ? `<line class="avg" x1="${P}" x2="${W - P}" y1="${Y(overall).toFixed(1)}" y2="${Y(overall).toFixed(1)}"/>` : '';
+    const dots = pts.map((x, i) => `<circle class="${x.w > x.l ? 'w' : x.l > x.w ? 'l' : 'd'}" cx="${X(i).toFixed(1)}" cy="${Y(x.r).toFixed(1)}" r="5" data-tip="${escH(`${DAYFMT(x.ts)} · ${x.n} game${x.n > 1 ? 's' : ''} · ${x.w}W ${x.d}D ${x.l}L · rating ${x.r.toFixed(1)}`)}"/>`).join('');
+    return `<svg class="sc-trend" viewBox="0 0 ${W} ${H}" role="img" aria-label="Average rating per session"><defs><linearGradient id="scg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--red)" stop-opacity=".35"/><stop offset="1" stop-color="var(--red)" stop-opacity="0"/></linearGradient></defs>${grid}${avgLine}<path class="area" d="${line}L${X(pts.length - 1).toFixed(1)},${H - P}L${P},${H - P}Z"/><path class="ln" d="${line}"/>${dots}</svg>`;
+  }
+  // Pitch, attacking to the right. League knows only the position group; Rush logs the exact position.
+  const ZONE = { GK: [0, 44], DEF: [44, 124], MID: [124, 214], FWD: [214, 300] };
+  const SPOT = { GK: [20, 95], CB: [78, 95], LB: [92, 30], RB: [92, 160], LWB: [120, 26], RWB: [120, 164], CDM: [140, 95], CM: [170, 95], LM: [182, 32], RM: [182, 158], CAM: [205, 95], LW: [238, 40], RW: [238, 150], CF: [245, 95], ST: [268, 95] };
+  function pitchSvg(u, games) {
+    const zones = Object.entries(ZONE).map(([g, [a, b]]) => { const x = u.groups[g]; const sh = x ? x.n / games : 0; return `<rect class="z" x="${a}" y="0" width="${b - a}" height="190" style="--o:${(0.08 + sh * 0.7).toFixed(2)}"${x ? ` data-tip="${escH(`${WORD[g]}: ${x.n} games · ${Math.round(sh * 100)}%${x.r != null ? ` · rating ${x.r.toFixed(1)}` : ''} · ${x.w}W ${x.d}D ${x.l}L`)}"` : ''}/>${x ? `<text class="zt" x="${(a + b) / 2}" y="${Object.keys(u.pos).length ? 182 : 100}" text-anchor="middle">${Math.round(sh * 100)}%</text>` : ''}`; }).join('');
+    const lines = '<rect class="pl" x="1" y="1" width="298" height="188" rx="6"/><line class="pl" x1="150" y1="1" x2="150" y2="189"/><circle class="pl" cx="150" cy="95" r="24"/><rect class="pl" x="1" y="50" width="34" height="90"/><rect class="pl" x="265" y="50" width="34" height="90"/>';
+    const top = Math.max(1, ...Object.values(u.pos).map((x) => x.n));
+    const dots = Object.entries(u.pos).filter(([p]) => SPOT[p]).map(([p, x]) => { const [cx, cy] = SPOT[p]; return `<g class="spot" data-tip="${escH(`${p}: ${x.n} games${x.r != null ? ` · rating ${x.r.toFixed(1)}` : ''} · ${x.w}W ${x.d}D ${x.l}L`)}"><circle cx="${cx}" cy="${cy}" r="${(8 + (x.n / top) * 8).toFixed(1)}"/><text x="${cx}" y="${cy + 4}" text-anchor="middle">${p}</text></g>`; }).join('');
+    return `<svg class="sc-pitch" viewBox="0 0 300 190" role="img" aria-label="Where they play">${zones}${lines}${dots}</svg>`;
+  }
+  // Form calendar: the 12 weeks up to the last game, one square per day (colour = result, stronger = more games).
+  function calendarHtml(days) {
+    const keys = Object.keys(days).sort();
+    if (!keys.length) return '';
+    const end = new Date(`${keys.at(-1)}T00:00:00Z`), start = new Date(end);
+    start.setUTCDate(start.getUTCDate() - 83);
+    start.setUTCDate(start.getUTCDate() - ((start.getUTCDay() + 6) % 7)); // back to Monday – columns are weeks
+    const cells = [];
+    for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+      const key = d.toISOString().slice(0, 10), x = days[key];
+      const cls = x ? (x.w > x.l ? 'w' : x.l > x.w ? 'l' : 'd') : '';
+      cells.push(`<i class="${cls}"${x ? ` style="--a:${Math.min(1, 0.45 + x.n * 0.14).toFixed(2)}" data-tip="${escH(`${new Date(`${key}T12:00:00Z`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })} · ${x.n} game${x.n > 1 ? 's' : ''} · ${x.w}W ${x.d}D ${x.l}L${x.r != null ? ` · ${x.r.toFixed(1)}` : ''}`)}"` : ''}></i>`);
+    }
+    const played = keys.filter((kk) => new Date(`${kk}T00:00:00Z`) >= start).length;
+    return `<div class="sc-cal" role="img" aria-label="Days played in the last 12 weeks">${cells.join('')}</div><p class="muted small sc-legend"><span><i class="w"></i> won more</span><span><i class="d"></i> level</span><span><i class="l"></i> lost more</span> · ${played} match days up to ${new Date(`${keys.at(-1)}T12:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</p>`;
+  }
+  function visualsHtml(R) {
+    const games = Object.values(R.usage.groups).reduce((sm, u) => sm + u.n, 0);
+    const rating = R.metrics.find((m) => m.k === 'rating')?.value ?? null;
+    return `<div class="sc-vis">
+${R.radar.length ? `<figure><h4>🕸️ Radar <small class="muted">vs ${R.mode === 'rush' ? 'Rush squad' : 'squad'} average (gold ring)</small></h4>${radarSvg(R.radar)}</figure>` : ''}
+${games ? `<figure><h4>📍 Where they play <small class="muted">${Object.keys(R.usage.pos).length ? 'by position' : 'by position group (EA gives no exact position)'}</small></h4>${pitchSvg(R.usage, games)}</figure>` : ''}
+<figure><h4>📈 Rating trend <small class="muted">per session · dashed = overall ${rating != null ? rating.toFixed(2) : ''}</small></h4>${trendSvg(R.trend, rating)}</figure>
+<figure><h4>🗓️ Form calendar <small class="muted">last 12 weeks</small></h4>${calendarHtml(R.days)}</figure>
+</div>`;
+  }
+
+  function section(el, { k, full = false, name = '', builds = null, mine = false } = {}) {
     const BASE = document.body.dataset.base || '', MAPI = document.body.dataset.api || '';
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
     if (!document.querySelector('link[href$="scout.css"]')) document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: `${BASE}assets/scout.css` }));
@@ -219,8 +345,28 @@
 <div><h4>🧠 Patterns</h4>${R.patterns.length ? list(R.patterns) : '<p class="muted small">Patterns show after a few sessions.</p>'}</div><div><h4>💡 Suggestions</h4>${R.suggestions.length ? list(R.suggestions) : '<p class="muted small">Keep playing – suggestions come with more games.</p>'}</div>
 <div><h4>✨ Insights</h4>${R.insights.length ? list(R.insights) : '<p class="muted small">No callouts yet.</p>'}</div>${R.flags.length ? `<div><h4>🚩 Red flags</h4>${list(R.flags, 'bad')}</div>` : ''}</div>
 ${rows.length ? `<h4>📊 Percentiles <small class="muted">${R.mode === 'league' ? 'vs tracked players in the same position group (squad where not tracked)' : 'vs the Rush squad'}</small></h4><table class="sc-pct"><tbody>${rows.map((m) => `<tr class="${m.key ? '' : 'minor'}"><th>${esc(m.label)}</th><td>${esc(m.text)}</td><td>${bar(m.pctTracked ?? m.pctSquad)}</td></tr>`).join('')}</tbody></table>` : ''}
-<p class="muted small">Rule-based from the match log – refreshed with every data update. Radar, trend and position map come next.</p>`;
+${visualsHtml(R)}
+${builds ? '<div class="sc-build" data-sc-build></div>' : ''}
+<p class="muted small">Rule-based from the match log – refreshed with every data update.</p>`;
+      if (builds) paintBuild(el.querySelector('[data-sc-build]'), R);
     };
+    // 🧬 Build check – the member's League/Rush build (PB.4) vs how they play; tweaks open the builder on that attribute.
+    const loadCard = () => (window.NXBuildCard ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/buildcard.js`, onload: ok, onerror: no }))));
+    async function paintBuild(box, R) {
+      const x = builds[R.mode], Mode = R.mode === 'rush' ? 'Rush' : 'League';
+      if (!x) { box.innerHTML = `<h4>🧬 Build check</h4><p class="muted small">No ${Mode} build picked yet${mine ? ` – open one in the <a href="${BASE}builder.html">Pro Builder</a> and press ⭐ Use as my build to get build tweaks here` : ''}.</p>`; return; }
+      box.innerHTML = `<h4>🧬 Build check</h4>${window.UI ? UI.skeleton('rows', 2) : ''}`;
+      try {
+        await loadCard();
+        const g = await NXBuildCard.ready();
+        const info = NXBuildCard.info(g, x);
+        const C = info && buildCheck(R, x, info.ev, { mode: R.mode });
+        if (!C) { box.innerHTML = `<h4>🧬 Build check</h4><p class="muted small">Couldn’t read the ${Mode} build with the current game data.</p>`; return; }
+        const href = (attr) => `${BASE}builder.html?${mine && x.id ? `build=${encodeURIComponent(x.id)}&` : ''}focus=${encodeURIComponent(attr)}${mine && x.id ? '' : `#${x.code}`}`;
+        box.innerHTML = `<h4>🧬 Build check <small class="muted">${Mode} build “${esc(x.title)}” · ${esc(C.label)}${info.current ? '' : ' · ⚠ older game rules'}</small></h4>
+<div class="sc-grid"><div>${list(C.role)}</div><div>${C.tweaks.length ? `<ul class="sc-list sc-tweaks">${C.tweaks.map((t) => `<li><span>${t.icon}</span><span>${esc(t.text)} <a class="sc-go" href="${esc(href(t.attr))}">Open in builder →</a></span></li>`).join('')}</ul>` : '<p class="muted small">👍 No build change needed for the gaps we see – keep sharpening the signature attributes.</p>'}</div></div>`;
+      } catch { box.innerHTML = '<h4>🧬 Build check</h4><p class="muted small">Couldn’t load the game data for the build.</p>'; }
+    }
     const show = async (mode) => {
       body.innerHTML = window.UI ? UI.skeleton('rows', 4) : '';
       const [squad, players] = await data;
@@ -240,5 +386,5 @@ ${rows.length ? `<h4>📊 Percentiles <small class="muted">${R.mode === 'league'
     show('league');
   }
 
-  globalThis.NXScout = { report, fromSquad, fromRush, metricsOf, pctile, section, GROUP };
+  globalThis.NXScout = { report, fromSquad, fromRush, metricsOf, pctile, section, buildCheck, visualsHtml, GROUP };
 })();

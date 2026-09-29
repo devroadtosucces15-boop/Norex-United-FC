@@ -151,3 +151,7 @@
 .bd-mig-list{list-style:none;margin:0;padding:0;display:grid;gap:3px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));font-size:14px}
 .bd-mig-list li{display:flex;gap:6px}
 .bd-mig-all{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin:0 0 10px;padding:8px 10px;border-radius:10px;border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));background:color-mix(in srgb,var(--gold) 8%,var(--panel2))}
+/* PB.5 – scout report "More <attribute>" link lands here */
+.bd-row.bd-focus{border-radius:8px;box-shadow:0 0 0 2px var(--gold);animation:bd-flash 1.2s ease-out 3}
+@keyframes bd-flash{0%{background:color-mix(in srgb,var(--gold) 35%,transparent)}100%{background:transparent}}
+@media (prefers-reduced-motion:reduce){.bd-row.bd-focus{animation:none}}
