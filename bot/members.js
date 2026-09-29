@@ -26,6 +26,7 @@ import { ratingsRoute } from './ratings.js';
 import { feedbackRoute } from './feedback.js';
 import { predictRoute } from './predict.js';
 import { recsRoute } from './recs.js';
+import { feedRoute } from './feed.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -491,6 +492,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (prd) return prd;
   const rec2 = await recsRoute(p, method, body, me, env, url); // P3.6 who to play with
   if (rec2) return rec2;
+  const fed = await feedRoute(p, method, body, me, env, log, url); // P6.1 social feed
+  if (fed) return fed;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

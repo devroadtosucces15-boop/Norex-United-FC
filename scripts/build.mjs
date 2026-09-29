@@ -7,6 +7,7 @@ import { buildUpdates } from './updates-page.mjs';
 import { buildBuilder } from './builder-page.mjs';
 import { buildProBuilds } from './probuilds-page.mjs';
 import { buildDocs } from './docs-page.mjs';
+import { buildFeed } from './feed-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 
 const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
@@ -358,7 +359,7 @@ const NAV = [
   ['home', 'index.html', 'Club'], ['squad', 'squad.html', 'Squad'], ['matches', 'matches/index.html', 'Matches'],
   ['stats', 'stats.html', 'Stats'], ['compare', 'compare.html', 'Compare'], ['players', 'players/index.html', 'Players'],
   ['leaders', 'leaders.html', 'Leaders'], ['clubs', 'clubs/index.html', 'Clubs'],
-  ['updates', 'updates.html', 'Updates'], ['builder', 'builder.html', 'Builder', 'builder'], ['probuilds', 'probuilds.html', 'Pro Builds', 'proBuilds'],
+  ['feed', 'feed.html', 'Feed', 'feed'], ['updates', 'updates.html', 'Updates'], ['builder', 'builder.html', 'Builder', 'builder'], ['probuilds', 'probuilds.html', 'Pro Builds', 'proBuilds'],
 ];
 
 function page({ title, base, active, body, description, image }) {
@@ -866,6 +867,8 @@ buildBuilder({ write, page, pageHead, esc, emptyState, config });
 buildProBuilds({ write, page, pageHead, esc, emptyState, config });
 // Club docs (P5.2) + Play Style (P5.1) – docs-page.mjs, client in web/docs.js + web/docs-md.js.
 if (MEMBER_API) buildDocs({ write, page, pageHead, esc, emptyState, config });
+// Club feed (P6.1) – feed-page.mjs, client in web/feed.js (+ web/docs-md.js for links and embeds).
+if (MEMBER_API) buildFeed({ write, page, pageHead, emptyState, config });
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({

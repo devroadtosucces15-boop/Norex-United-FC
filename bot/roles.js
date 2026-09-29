@@ -59,6 +59,8 @@ export const PERMS = {
   'scout.recommend': 'member', // P5.5 – recommend a player to the managers
   'leaders.view': 'member', // P4.5 – squad boards (attendance, MOTM votes) on the leaderboards page
   'hof.manage': 'manager', // P4.6 – induct legends, add club-history moments
+  'feed.view': 'member', // P6.1 – club feed: read, react, comment
+  'feed.post': 'member', // P6.1 – write posts (edit/remove own)
   'posts.moderate': 'manager', // P6.1 / P8.3 – pin/remove posts
   'messages.reported': 'manager', // P6.3 – managers see reported messages only
   'messages.all': 'owner', // P6.3 – owner/founder sees every DM and group chat

@@ -79,6 +79,7 @@
     "predictions": "members",
     "recommendations": "members",
     "scoutReport": "public",
-    "insights": "owner"
+    "insights": "owner",
+    "feed": "owner"
   }
 }
