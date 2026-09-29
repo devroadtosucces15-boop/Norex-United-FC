@@ -29,6 +29,7 @@ import { recsRoute } from './recs.js';
 import { feedPublic, feedRoute } from './feed.js';
 import { hotwPublic, hotwRoute } from './hotw.js';
 import { socialRoute, touch } from './social.js';
+import { chatRoute } from './chat.js';
 import { mediaUploadRoute } from './media.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
@@ -514,6 +515,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (soc) return soc;
   const hw = await hotwRoute(p, method, body, me, env, log); // P6.2 highlight of the week
   if (hw) return hw;
+  const cht = await chatRoute(p, method, body, me, env, log, url); // P6.3a messaging: DMs + group chats
+  if (cht) return cht;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);
