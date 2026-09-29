@@ -20,6 +20,7 @@ import { insightsCron, insightsNow, reportEmbeds } from './insights.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
 import { can, discordRole, flagOn } from './roles.js';
+import { mediaCron, serveMedia } from './media.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
@@ -28,6 +29,7 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
     ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => scoreDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, P4.1 awards, P3.8 predictions, then P7.1 DMs + reminders
+    ctx.waitUntil(mediaCron(env).catch((e) => console.log('media guard failed', e.message))); // P6.1b R2 storage guard (hourly)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
     if (flagOn(env, { role: 'owner' }, 'insights')) ctx.waitUntil(insightsCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('insights cron failed', e.message))); // weekly Club Intelligence DM
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
@@ -46,6 +48,7 @@ export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     if (path.startsWith('/crest/')) return crestProxy(path, ctx);
+    if (path.startsWith('/media/')) return serveMedia(request, env, path.slice(7)); // P6.1b feed photos/clips (R2)
     if (path.startsWith('/auth/') || path.startsWith('/api/')) {
       const site = (env.SITE_URL || '').replace(/\/?$/, '/');
       return handleMembers(request, env, ctx, (file) => load(site, file, ctx));

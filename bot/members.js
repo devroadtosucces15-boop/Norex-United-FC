@@ -27,6 +27,7 @@ import { feedbackRoute } from './feedback.js';
 import { predictRoute } from './predict.js';
 import { recsRoute } from './recs.js';
 import { feedRoute } from './feed.js';
+import { mediaUploadRoute } from './media.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
@@ -247,6 +248,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     }
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
+    if (url.pathname === '/api/feed/upload' && request.method === 'POST') return cors(env, await mediaUploadRoute(request, me, env, url)); // P6.1b – raw file body
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
     const res = await route(url.pathname, request.method, body, me, env, loadSite, url);
     if (takeKick()) ctx?.waitUntil?.(deliverDMs(env).catch((e) => console.log('DM delivery failed', e.message))); // P7.1 – DMs right away

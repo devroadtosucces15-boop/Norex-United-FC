@@ -94,3 +94,51 @@
   .fd-meta{order:3;flex-basis:100%;justify-content:flex-start;padding-left:48px}
   .fd-left{order:3;flex-basis:100%}
 }
+
+/* photos + clips (P6.1b) */
+.fd-upbtn{cursor:pointer;white-space:nowrap}
+.fd-upbtn.off{opacity:.5;pointer-events:none}
+.fd-compose.drop{outline:2px dashed var(--red);outline-offset:-4px}
+.fd-att{display:flex;flex-wrap:wrap;gap:8px}
+.fd-att-i{position:relative;width:92px;height:92px;border-radius:10px;overflow:hidden;background:var(--panel2);border:1px solid var(--line2);animation:fd-in .25s ease both}
+.fd-att-i img,.fd-att-i video{width:100%;height:100%;object-fit:cover;display:block}
+.fd-att-i.err{border-color:var(--loss)}
+.fd-att-i.err img,.fd-att-i.err video{opacity:.35}
+.fd-att-k{position:absolute;left:5px;bottom:5px;font-style:normal;font-size:14px;filter:drop-shadow(0 1px 2px #000)}
+.fd-att-x{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(11,15,22,.8);color:#fff;font-size:16px;line-height:1;cursor:pointer}
+.fd-att-x:hover{background:var(--red)}
+.fd-att-bar{position:absolute;left:6px;right:6px;bottom:6px;height:5px;border-radius:3px;background:rgba(11,15,22,.75);overflow:hidden}
+.fd-att-bar span{display:block;height:100%;background:repeating-linear-gradient(115deg,var(--red) 0 8px,#e0564d 8px 16px);transition:width .2s}
+.fd-att-done{position:absolute;right:5px;bottom:4px;width:20px;height:20px;border-radius:50%;background:var(--win);color:#0b0f16;font-weight:700;display:grid;place-items:center;font-size:12px}
+.fd-att-e{position:absolute;inset:auto 0 0 0;padding:3px 5px;font-size:10px;line-height:1.2;background:rgba(11,15,22,.85);color:#ffb3ad}
+.fd-media{display:grid;gap:4px;margin:10px 0 6px;border-radius:12px;overflow:hidden}
+.fd-media.n2,.fd-media.n4{grid-template-columns:1fr 1fr}
+.fd-media.n3{grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr}
+.fd-media.n3 > :first-child{grid-row:span 2}
+.fd-img{display:block;background:var(--panel2);min-height:0}
+.fd-img img{display:block;width:100%;height:auto;max-height:520px;object-fit:cover;transition:transform .3s,filter .3s}
+.fd-media:not(.n1) .fd-img img{height:100%;aspect-ratio:1;max-height:320px}
+.fd-media.n3 .fd-img:first-child img{aspect-ratio:auto}
+.fd-img:hover img{filter:brightness(1.08)}
+.fd-vid{display:block;width:100%;max-height:560px;background:#000;border-radius:12px}
+.fd-gone{display:grid;justify-items:center;gap:2px;padding:22px 14px;text-align:center;color:var(--muted);border:1px dashed var(--line2);border-radius:12px;background:repeating-linear-gradient(115deg,rgba(255,255,255,.02) 0 12px,transparent 12px 24px)}
+.fd-gone span{font-size:26px;filter:grayscale(.4)}
+.fd-gone b{color:var(--text);text-transform:capitalize}
+
+/* owner storage dashboard */
+.fd-stchip{margin-left:auto;cursor:pointer;font:inherit;font-size:13px}
+.fd-st h3{font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:14px;margin:0 0 8px}
+.fd-st-top{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.fd-st-used{font-family:Oswald,sans-serif;font-size:30px;color:var(--win)}
+.fd-st-used.warn{color:var(--draw)}.fd-st-used.bad{color:var(--loss)}
+.fd-st-bar{position:relative;height:14px;border-radius:7px;background:var(--panel2);border:1px solid var(--line2);margin:10px 0 12px}
+.fd-st-bar .fill{position:absolute;inset:0 auto 0 0;border-radius:7px;background:linear-gradient(90deg,var(--win),#5fd18a);transition:width .6s}
+.fd-st-bar .fill.warn{background:linear-gradient(90deg,var(--draw),#f0b429)}.fd-st-bar .fill.bad{background:var(--loss)}
+.fd-st-bar i{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--muted);cursor:help}
+.fd-st-bar i.stop{background:var(--red)}
+.fd-st-off{padding:10px 12px;border-radius:10px;background:rgba(200,53,44,.14);border:1px solid var(--red)}
+.fd-st-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+.fd-st-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.fd-st-list li{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;background:var(--panel2);font-size:13px}
+.fd-st-n{flex:1;min-width:0}.fd-st-n small{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:560px){.fd-st-cols{grid-template-columns:1fr}.fd-att-i{width:76px;height:76px}}

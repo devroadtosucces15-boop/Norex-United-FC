@@ -62,6 +62,7 @@ export const PERMS = {
   'feed.view': 'member', // P6.1 – club feed: read, react, comment
   'feed.post': 'member', // P6.1 – write posts (edit/remove own)
   'posts.moderate': 'manager', // P6.1 / P8.3 – pin/remove posts
+  'media.storage': 'owner', // P6.1b – media storage dashboard (R2 usage, delete files)
   'messages.reported': 'manager', // P6.3 – managers see reported messages only
   'messages.all': 'owner', // P6.3 – owner/founder sees every DM and group chat
   'settings.bot': 'owner', // P7/P8 – bot and site settings

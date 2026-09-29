@@ -35,6 +35,27 @@ export const KV = {
   async list({ prefix }) { return { keys: [...store].filter(([k]) => k.startsWith(prefix)).map(([name, { m }]) => ({ name, metadata: m })) }; },
 };
 
+// R2 shim (feed photos/clips, P6.1b) – put() drains the stream, so a failing check in the Worker rejects like on R2.
+export const r2objects = new Map();
+export const R2 = {
+  async put(key, value, o = {}) {
+    const buf = value instanceof ReadableStream ? Buffer.concat(await Array.fromAsync(value)) : Buffer.from(value);
+    r2objects.set(key, { buf, type: o.httpMetadata?.contentType, uploaded: new Date() });
+  },
+  async get(key, o = {}) {
+    const x = r2objects.get(key);
+    if (!x) return null;
+    const m = /bytes=(\d*)-(\d*)/.exec(o.range?.get?.('range') ?? '');
+    const offset = m ? (m[1] ? +m[1] : x.buf.length - +m[2]) : 0;
+    const end = m && m[1] && m[2] ? +m[2] : x.buf.length - 1;
+    const part = x.buf.subarray(offset, end + 1);
+    return { key, size: x.buf.length, httpEtag: `"${key.length}"`, range: m ? { offset, length: part.length } : undefined,
+      body: new Blob([part]).stream(), writeHttpMetadata: (h) => h.set('Content-Type', x.type) };
+  },
+  async delete(keys) { for (const k of [keys].flat()) r2objects.delete(k); },
+  async list() { return { objects: [...r2objects].map(([key, x]) => ({ key, size: x.buf.length, uploaded: x.uploaded })), truncated: false }; },
+};
+
 // Fake Discord user for the login flow – tests change it (id 111 is in ADMIN_IDS = owner).
 export const mockDiscord = { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [], inGuild: true, connections: [] };
 export const SITE = 'http://localhost:4321/';
@@ -53,7 +74,7 @@ globalThis.fetch = async (url) => {
 
 export const env = {
   SITE_URL: SITE, DISCORD_APP_ID: '1', DISCORD_CLIENT_SECRET: 'shh', DISCORD_GUILD_ID: '9',
-  ADMIN_IDS: '111', ADMIN_ROLE_ID: 'mgr', OWNER_ROLE_ID: 'founder', NOREX_KV: KV, DB,
+  ADMIN_IDS: '111', ADMIN_ROLE_ID: 'mgr', OWNER_ROLE_ID: 'founder', NOREX_KV: KV, DB, MEDIA: R2,
   FEATURES: JSON.stringify(config.features ?? {}),
 };
 

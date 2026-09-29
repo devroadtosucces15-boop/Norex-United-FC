@@ -1,8 +1,9 @@
 // Club social feed (roadmap P6.1) – step (a): text posts with links/embeds, reactions, comments (one level of replies),
-// author edit/delete, manager pin/remove. Media uploads (R2 + storage guard) and sharing/public posts follow as P6.1b/c.
+// author edit/delete, manager pin/remove; (b) photos and clips from R2 – upload, storage guard and owner dashboard in media.js.
+// Sharing/public posts follow as P6.1c.
 //   GET  /api/feed?f=all|highlight|league|rush|mine&before=<id>   members: a page of posts (pinned first on page one)
 //   GET  /api/feed/post?id=                                       members: one post (permalink feed.html#p<id>)
-//   POST /api/feed/post      { text, tag }                        members: new post – POSTS_DAY per day
+//   POST /api/feed/post      { text, tag, media? }                members: new post – POSTS_DAY per day (media = uploaded keys)
 //   POST /api/feed/edit      { id, text, tag }                    author: edit
 //   POST /api/feed/delete    { id }                               author or managers: remove (kept for the record)
 //   POST /api/feed/react     { id, emoji }                        members: toggle one club emoji
@@ -12,6 +13,7 @@
 // Authors show with their current Discord name, avatar, @username and ID (joined from users at read time).
 import { can, flagOn } from './roles.js';
 import { notify, safely } from './notify.js';
+import { attach, checkAttach, dropMedia, IMAGE_MAX, mediaFor, mediaRoute, PER_POST, postMediaKeys, UPLOADS_DAY, VIDEO_MAX } from './media.js';
 
 export const TAGS = { chat: ['💬', 'Chat'], highlight: ['🎬', 'Highlight'], league: ['🏟️', 'League'], rush: ['⚡', 'Rush'] };
 export const EMOJI = ['⚽', '🔥', '👑', '👏', '😂', '😮', '🧤'];
@@ -37,10 +39,11 @@ const POST_SQL = 'SELECT p.*, u.name AS u_name, u.avatar AS u_avatar, u.tag AS u
 async function hydrate(env, me, rows) {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
-  const [reacts, comments] = await Promise.all([
+  const [reacts, comments, media] = await Promise.all([
     all(env, `SELECT r.post_id, r.user_id, r.emoji, u.name FROM post_reactions r LEFT JOIN users u ON u.id = r.user_id WHERE r.post_id IN (${marks(ids.length)}) ORDER BY r.at`, ...ids),
     all(env, `SELECT c.*, u.name AS u_name, u.avatar AS u_avatar, u.tag AS u_tag FROM post_comments c LEFT JOIN users u ON u.id = c.user_id
       WHERE c.post_id IN (${marks(ids.length)}) ORDER BY c.id LIMIT 3000`, ...ids),
+    mediaFor(env, ids),
   ]);
   return rows.map((r) => {
     const rs = reacts.filter((x) => x.post_id === r.id);
@@ -52,7 +55,7 @@ async function hydrate(env, me, rows) {
     const shown = cs.filter((c) => !c.removed || (!c.parent_id && live.some((x) => x.parent_id === c.id)));
     return {
       id: r.id, by: author(r), text: r.body, tag: r.tag, at: r.at, edited: opt(r.edited_at), pinned: !!r.pinned,
-      reacts: counts, who, mine: rs.filter((x) => x.user_id === me.u).map((x) => x.emoji),
+      media: media[r.id] ?? [], reacts: counts, who, mine: rs.filter((x) => x.user_id === me.u).map((x) => x.emoji),
       comments: shown.map((c) => (c.removed ? { id: c.id, removed: true, at: c.at } : { id: c.id, parent: opt(c.parent_id), by: author(c), text: c.body, at: c.at })),
       nComments: live.length,
     };
@@ -67,15 +70,18 @@ async function page(env, me, f, before) {
   const more = rest.length > PAGE;
   const posts = await hydrate(env, me, [...pinned, ...rest.slice(0, PAGE)]);
   const today = await one(env, 'SELECT COUNT(*) AS n FROM posts WHERE user_id = ? AND at > ?', me.u, Date.now() - DAY);
-  return { posts, more, next: more ? rest[PAGE - 1].id : undefined, tags: TAGS, emoji: EMOJI, canModerate: can(me, 'posts.moderate'), left: Math.max(0, POSTS_DAY - today.n), perDay: POSTS_DAY, me: me.u };
+  const ups = await one(env, 'SELECT COUNT(*) AS n FROM media WHERE user_id = ? AND at > ?', me.u, Date.now() - DAY);
+  const uploads = { on: !!env.MEDIA, left: Math.max(0, UPLOADS_DAY - ups.n), perDay: UPLOADS_DAY, image: IMAGE_MAX, video: VIDEO_MAX, perPost: PER_POST };
+  return { posts, more, next: more ? rest[PAGE - 1].id : undefined, tags: TAGS, emoji: EMOJI, canModerate: can(me, 'posts.moderate'), canStorage: can(me, 'media.storage'), uploads, left: Math.max(0, POSTS_DAY - today.n), perDay: POSTS_DAY, me: me.u };
 }
 const onePost = async (env, me, id) => {
   const r = await one(env, `${POST_SQL} WHERE p.id = ? AND p.removed = 0`, Number(id) || 0);
   return r ? (await hydrate(env, me, [r]))[0] : null;
 };
-const postBody = (body) => {
+// A post needs text unless it carries a photo or clip.
+const postBody = (body, hasMedia = false) => {
   const text = cleanText(body.text, 2000);
-  if (!text) return { error: 'Write something first.' };
+  if (!text && !hasMedia) return { error: 'Write something first.' };
   if (!TAGS[body.tag]) return { error: 'Pick a tag: chat, highlight, League or Rush.' };
   return { text, tag: body.tag };
 };
@@ -89,26 +95,31 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     const post = await onePost(env, me, url.searchParams.get('id'));
     return post ? json({ post, tags: TAGS, emoji: EMOJI, canModerate: can(me, 'posts.moderate'), me: me.u }) : fail('This post was removed or never existed.', 404);
   }
+  const med = await mediaRoute(p, method, body, me, env, log);
+  if (med) return med;
   if (method !== 'POST') return fail('Not found', 404);
   const id = Number(body.id) || 0;
 
   if (p === '/api/feed/post') {
     if (!can(me, 'feed.post')) return fail('Members only.', 403);
-    const v = postBody(body);
+    const m = await checkAttach(env, me, body.media);
+    if (m.error) return fail(m.error);
+    const v = postBody(body, m.keys.length > 0);
     if (v.error) return fail(v.error);
     // The daily limit sits inside the INSERT so posting in parallel can't slip past it.
     const now = Date.now();
     const ins = await run(env, `INSERT INTO posts (user_id, name, body, tag, at) SELECT ?, ?, ?, ?, ?
       WHERE (SELECT COUNT(*) FROM posts WHERE user_id = ? AND at > ?) < ?`, me.u, me.n, v.text, v.tag, now, me.u, now - DAY, POSTS_DAY);
     if (!ins.meta?.changes) return fail(`That’s ${POSTS_DAY} posts today – post again tomorrow.`, 429);
-    await log(env, me, 'post', `${TAGS[v.tag][0]} ${excerpt(v.text, 60)}`);
+    await attach(env, me, ins.meta.last_row_id, m.keys);
+    await log(env, me, 'post', `${TAGS[v.tag][0]} ${m.keys.length ? '📎 ' : ''}${excerpt(v.text || 'photo/clip', 60)}`);
     return json({ post: await onePost(env, me, ins.meta.last_row_id) });
   }
   if (p === '/api/feed/edit') {
     const r = await one(env, 'SELECT user_id FROM posts WHERE id = ? AND removed = 0', id);
     if (!r) return fail('Post not found.', 404);
     if (r.user_id !== me.u) return fail('Only the author can edit a post.', 403);
-    const v = postBody(body);
+    const v = postBody(body, (await postMediaKeys(env, id)).length > 0);
     if (v.error) return fail(v.error);
     await run(env, 'UPDATE posts SET body = ?, tag = ?, edited_at = ? WHERE id = ?', v.text, v.tag, Date.now(), id);
     return json({ post: await onePost(env, me, id) });
@@ -119,8 +130,9 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     const mine = r.user_id === me.u;
     if (!mine && !can(me, 'posts.moderate')) return fail('Only the author or a manager can remove a post.', 403);
     await run(env, 'UPDATE posts SET removed = 1, removed_by = ?, removed_at = ?, pinned = 0 WHERE id = ?', me.n, Date.now(), id);
+    await dropMedia(env, await postMediaKeys(env, id), 2); // photos/clips of a removed post leave storage straight away
     await run(env, 'DELETE FROM notifications WHERE ref IN (?, ?)', `feed:${id}`, `feed-react:${id}`);
-    if (!mine) await safely(notify(env, [r.user_id], { type: 'feed', icon: '🛡️', title: 'A manager removed one of your feed posts', body: `“${excerpt(r.body)}” – ask a manager on Discord if you think this was a mistake.`, link: 'feed.html' }));
+    if (!mine) await safely(notify(env, [r.user_id], { type: 'feed', icon: '🛡️', title: 'A manager removed one of your feed posts', body: `“${excerpt(r.body || 'photo/clip')}” – ask a manager on Discord if you think this was a mistake.`, link: 'feed.html' }));
     await log(env, me, mine ? 'post-delete' : 'post-remove', `#${id} ${excerpt(r.body, 60)}`);
     return json({ ok: true, id });
   }

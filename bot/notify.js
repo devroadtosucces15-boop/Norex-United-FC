@@ -38,6 +38,7 @@ export const TYPES = {
   predict: { icon: '🔮', label: 'My prediction points', def: 'site' },
   game: { icon: '🎮', label: 'Game updates – new max level & rules', def: 'site' },
   feed: { icon: '💬', label: 'Comments, replies and reactions on my feed posts', def: 'site' },
+  storage: { icon: '💾', label: 'Media storage clean-ups (feed photos & clips)', def: 'dm', role: 'owner' },
   queue: { icon: '🛡️', label: 'Manager to-dos (new claims, trials, Rush results, requests)', def: 'site', role: 'manager' },
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },
 };
