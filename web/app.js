@@ -393,6 +393,11 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
   });
   const nextEl = $('[data-next-event]');
   if (nextEl && flagOn('events', baseRole || 'guest')) loadEvents().then(() => NXEvents.next(nextEl)).catch(() => {});
+  // ---------- 🎬 highlight of the week on the home page (P6.2) · 🟢 who's online (P6.4) – assets/hotw.js, assets/presence.js ----------
+  const loadAsset = (file, global) => new Promise((ok, no) => (window[global] ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/${file}`, onload: ok, onerror: no }))));
+  const hotwEl = $('[data-hotw]');
+  if (hotwEl && flagOn('hotw', baseRole || 'guest')) loadAsset('hotw.js', 'NXHotw').then(() => NXHotw.home(hotwEl)).catch(() => {});
+  if (session && flagOn('presence', baseRole)) loadAsset('presence.js', 'NXPresence').then(() => NXPresence.start({ call, toast })).catch(() => {});
 
   // ---------- verified badges (public) ----------
   (async () => {
@@ -701,6 +706,8 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
   Object.assign(ACT_TXT, { 'event-new': 'scheduled an event', 'event-edit': 'edited an event', 'event-cancel': 'cancelled an event', 'event-rsvp': 'answered an event', 'event-checkin': 'checked in', 'event-lineup': 'set a lineup', 'event-report': 'shared a session report' });
   Object.assign(ACT, { 'doc-new': '📚', 'doc-edit': '✏️', 'doc-remove': '🗑', 'doc-restore': '↩', 'doc-discord': '💬', 'rules-ack': '📜', 'rules-remind': '🔔', 'playstyle-edit': '🧠', suggest: '💡', 'suggest-status': '🛡️', 'suggest-remove': '🗑' });
   Object.assign(ACT_TXT, { 'doc-new': 'added to the club docs', 'doc-edit': 'edited the club docs', 'doc-remove': 'removed a doc', 'doc-restore': 'restored an older version', 'doc-discord': 'posted to Discord', 'rules-ack': 'acknowledged the rules', 'rules-remind': 'sent a rules reminder', 'playstyle-edit': 'edited the Play Style', suggest: 'sent an idea', 'suggest-status': 'answered an idea', 'suggest-remove': 'removed an idea' });
+  Object.assign(ACT, { 'hotw-vote': '🎬', 'hotw-unvote': '↩', 'presence-hide': '🙈', 'presence-show': '🟢' });
+  Object.assign(ACT_TXT, { 'hotw-vote': 'voted for the highlight of the week', 'hotw-unvote': 'took back a highlight vote', 'presence-hide': 'switched to appear offline', 'presence-show': 'is visible online again' });
   Object.assign(ACT, { announce: '📣', 'notify-ack': '✓', request: '📨', 'request-approved': '✅', 'request-rejected': '⛔', 'request-undone': '↩' });
   Object.assign(ACT_TXT, { announce: 'sent an announcement', 'notify-ack': 'acknowledged an announcement', request: 'sent a request', 'request-approved': 'approved a request', 'request-rejected': 'rejected a request', 'request-undone': 'undid a request' });
   const trialsCtx = () => ({ call, toast, role: S.me?.user?.role ?? baseRole, perms: S.me?.user?.perms ?? [], me: { u: session.u, n: session.n, a: session.a }, admin: S.admin, players: Array.isArray(S.players) ? S.players : [], flagTrials: flagOn('trials', baseRole) });

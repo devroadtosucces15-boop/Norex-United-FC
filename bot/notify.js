@@ -37,6 +37,7 @@ export const TYPES = {
   feedback: { icon: '💌', label: 'Anonymous feedback from teammates', def: 'dm' },
   predict: { icon: '🔮', label: 'My prediction points', def: 'site' },
   game: { icon: '🎮', label: 'Game updates – new max level & rules', def: 'site' },
+  mention: { icon: '📣', label: 'When someone @mentions me', def: 'dm' },
   feed: { icon: '💬', label: 'Comments, replies and reactions on my feed posts', def: 'site' },
   storage: { icon: '💾', label: 'Media storage clean-ups (feed photos & clips)', def: 'dm', role: 'owner' },
   queue: { icon: '🛡️', label: 'Manager to-dos (new claims, trials, Rush results, requests)', def: 'site', role: 'manager' },

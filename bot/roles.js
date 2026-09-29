@@ -68,6 +68,9 @@ export const PERMS = {
   'settings.bot': 'owner', // P7/P8 – bot and site settings
   'notify.use': 'member', // P7.1 – notification centre (bell, settings, Discord DMs)
   'notify.announce': 'manager', // P7.1 – announcements / rules to every member (optionally must-acknowledge)
+  'presence.view': 'member', // P6.4 – who's online now (+ appear offline)
+  'mentions.use': 'member', // P6.5 – @mention members (people search), react to comments
+  'hotw.vote': 'member', // P6.2 – vote the highlight of the week (not your own clip)
   'requests.club': 'member', // P5.6 – "Track another club"
   'requests.hide': 'guest', // P5.6 – "Hide me from the site" (visitors too, verified by managers)
   'requests.decide': 'manager', // P5.6 – approve / reject / undo requests

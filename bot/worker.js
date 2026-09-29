@@ -14,6 +14,7 @@ import { updateLive } from './live.js';
 import { notifyCron } from './notify.js';
 import { eventReminders } from './events.js';
 import { closeDue } from './awards.js';
+import { hotwDue } from './hotw.js';
 import { scoreDue } from './predict.js';
 import { eventButton, memberCommand, MEMBER_COMMANDS } from './botcmds.js';
 import { insightsCron, insightsNow, reportEmbeds } from './insights.js';
@@ -28,7 +29,7 @@ const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
-    ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => scoreDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, P4.1 awards, P3.8 predictions, then P7.1 DMs + reminders
+    ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => hotwDue(env)).then(() => scoreDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, P4.1 awards, P6.2 highlight of the week, P3.8 predictions, then P7.1 DMs + reminders
     ctx.waitUntil(mediaCron(env).catch((e) => console.log('media guard failed', e.message))); // P6.1b R2 storage guard (hourly)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
     if (flagOn(env, { role: 'owner' }, 'insights')) ctx.waitUntil(insightsCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('insights cron failed', e.message))); // weekly Club Intelligence DM

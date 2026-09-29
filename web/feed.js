@@ -40,7 +40,7 @@
     }
     const x = urls.find((u) => X_POST.test(u));
     if (x) h += `<a class="fd-card" href="${esc(x)}" target="_blank" rel="noopener nofollow"><b>𝕏</b><span>View the post on X<small>${esc(x.replace(/^https:\/\/(www\.)?/, '').slice(0, 60))}</small></span></a>`;
-    return h;
+    return at(h);
   }
   const who = (u) => UI.member({ id: u.id, n: u.n, a: u.a, sub: `${u.tag ? `@${u.tag} · ` : ''}ID ${u.id}`, href: NXViewer.flagOn('profiles') ? `member.html?u=${encodeURIComponent(u.id)}` : undefined }, { size: 38 });
   const whoSmall = (u) => UI.member({ id: u.id, n: u.n, a: u.a, sub: u.tag ? `@${u.tag}` : '', href: NXViewer.flagOn('profiles') ? `member.html?u=${encodeURIComponent(u.id)}` : undefined }, { size: 22, sub: false });
@@ -55,14 +55,14 @@
   function comment(c, p) {
     if (c.removed) return `<li class="fd-c removed" data-cid="${c.id}"><p class="muted small">🗑 Comment removed</p>${replies(c, p)}</li>`;
     const mine = c.by.id === me;
-    return `<li class="fd-c" data-cid="${c.id}"><div class="fd-c-body"><div class="fd-c-text">${whoSmall(c.by)}<p>${esc(c.text).replace(/\n/g, '<br>')}</p></div>
-<div class="fd-c-meta">${UI.time(c.at)}<button type="button" class="linkish" data-act="reply" data-cid="${c.parent ?? c.id}" data-to="${esc(c.by.n)}">↩ Reply</button>${mine || S.canModerate ? `<button type="button" class="linkish" data-act="uncomment" data-cid="${c.id}">${mine ? 'Delete' : '🛡 Remove'}</button>` : ''}</div></div>${c.parent ? '' : replies(c, p)}</li>`;
+    return `<li class="fd-c" data-cid="${c.id}"><div class="fd-c-body"><div class="fd-c-text">${whoSmall(c.by)}<p>${at(esc(c.text).replace(/\n/g, '<br>'))}</p></div>
+<div class="fd-c-meta">${UI.time(c.at)}${crx(c)}<button type="button" class="linkish" data-act="reply" data-cid="${c.parent ?? c.id}" data-to="${esc(c.by.n)}">↩ Reply</button>${mine || S.canModerate ? `<button type="button" class="linkish" data-act="uncomment" data-cid="${c.id}">${mine ? 'Delete' : '🛡 Remove'}</button>` : ''}</div></div>${c.parent ? '' : replies(c, p)}</li>`;
   }
   const replies = (c, p) => { const r = p.comments.filter((x) => x.parent === c.id); return r.length ? `<ul class="fd-replies">${r.map((x) => comment(x, p)).join('')}</ul>` : ''; };
   function comments(p) {
     const top = p.comments.filter((c) => !c.parent);
     return `<div class="fd-comments"${open.has(p.id) ? '' : ' hidden'}><ul class="fd-clist">${top.map((c) => comment(c, p)).join('')}</ul>
-<form class="fd-cform" data-post="${p.id}"><input type="hidden" name="parent"><div class="fd-replying" hidden></div><div class="fd-crow"><textarea name="text" rows="1" maxlength="500" placeholder="Write a comment…" aria-label="Comment"></textarea><button class="btn sm" type="submit">Send</button></div></form></div>`;
+<form class="fd-cform" data-post="${p.id}"><input type="hidden" name="parent"><div class="fd-replying" hidden></div><div class="fd-crow"><textarea name="text" data-mention rows="1" maxlength="500" placeholder="Write a comment… @ to mention" aria-label="Comment"></textarea><button class="btn sm" type="submit">Send</button></div></form></div>`;
   }
   // Photos (1–4, grid + lightbox) or one clip; files the storage guard cleared show a placeholder.
   function gallery(p) {
@@ -84,7 +84,7 @@
 <span class="fd-more-wrap"><button type="button" class="fd-more" data-act="menu" aria-label="Post options" aria-expanded="false">⋯</button><span class="fd-menu" hidden>${menu.map(([k, l]) => `<button type="button" data-act="${k}">${l}</button>`).join('')}</span></span></header>
 ${p.text ? `<div class="fd-body md">${body(p.text)}</div>` : ''}${gallery(p)}
 ${reacts(p)}
-<footer class="fd-foot"><button type="button" class="fd-cbtn" data-act="comments" aria-expanded="${open.has(p.id)}">💬 ${p.nComments ? plural(p.nComments, 'comment') : 'Comment'}</button></footer>
+<footer class="fd-foot"><button type="button" class="fd-cbtn" data-act="comments" aria-expanded="${open.has(p.id)}">💬 ${p.nComments ? plural(p.nComments, 'comment') : 'Comment'}</button>${hotwBtn(p)}</footer>
 ${comments(p)}</article>`;
   }
   function tray() {
@@ -106,7 +106,7 @@ ${a.err ? `<small class="fd-att-e">${esc(a.err)}</small>` : a.key ? '<small clas
     const s = session();
     const u = S.uploads ?? {};
     return `<form class="fd-compose card" id="fd-compose">${UI.avatar(s?.a, s?.n, 42)}<div class="fd-cmp-main">
-<textarea name="text" rows="3" maxlength="2000" placeholder="Share a goal, a result, a Rush invite… ${u.on ? 'add a photo or clip, or ' : ''}paste a YouTube / Twitch / Streamable link to embed it" aria-label="New post"></textarea>
+<textarea name="text" data-mention rows="3" maxlength="2000" placeholder="Share a goal, a result, a Rush invite… ${u.on ? 'add a photo or clip, or ' : ''}paste a YouTube / Twitch / Streamable link to embed it" aria-label="New post"></textarea>
 <div class="fd-cmp-row"><div class="fd-tags" role="radiogroup" aria-label="Tag">${Object.entries(S.tags).map(([k, [i, l]], n) => `<label><input type="radio" name="tag" value="${k}"${n === 0 ? ' checked' : ''}><span>${i} ${esc(l)}</span></label>`).join('')}</div>
 ${u.on ? `<label class="btn ghost sm fd-upbtn" role="button" tabindex="0" title="Photos up to ${mb(u.image)} · clips up to ${mb(u.video)}">📷 Photo / 🎬 Clip<input type="file" class="fd-file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" multiple hidden></label>` : ''}
 <span class="grow"></span><small class="muted fd-left">${S.left} of ${S.perDay} left today</small><button class="btn" type="submit"${S.left ? '' : ' disabled'}>📣 Post</button></div>
@@ -117,7 +117,7 @@ ${u.on ? `<label class="btn ghost sm fd-upbtn" role="button" tabindex="0" title=
     // Keep what's being written across redraws ("Load older", pin).
     const old = $('#fd-compose', el);
     const keep = old && { text: old.text.value, tag: old.tag.value };
-    el.innerHTML = `${composer()}
+    el.innerHTML = `${composer()}${hotwStrip()}
 <div class="fd-filters chips" role="tablist">${FILTERS.map(([k, i, l]) => `<button type="button" class="chip${k === f ? ' strong' : ''}" data-f="${k}" role="tab" aria-selected="${k === f}">${i} ${l}</button>`).join('')}${S.canStorage ? '<button type="button" class="chip fd-stchip" data-act="storage">💾 Storage</button>' : ''}</div>
 <div class="fd-list">${list.length ? list.map(post).join('') : UI.empty({ icon: f === 'mine' ? '✍️' : '📰', title: f === 'mine' ? 'You haven’t posted yet' : 'Nothing here yet', text: f === 'all' ? 'Be the first – share a clip, a result or a Rush invite.' : 'Try another filter, or post one yourself.' })}</div>
 ${S.more ? '<p class="fd-morebox"><button type="button" class="btn ghost" data-act="more">Load older posts</button></p>' : ''}`;
@@ -131,8 +131,8 @@ ${S.more ? '<p class="fd-morebox"><button type="button" class="btn ghost" data-a
 
   // ---------- data ----------
   async function load() {
-    const d = await call(`/api/feed?f=${f}`);
-    S = { ...d, posts: d.posts };
+    const [d, h] = await Promise.all([call(`/api/feed?f=${f}`), NXViewer.flagOn('hotw') ? call('/api/hotw').catch(() => null) : null]);
+    S = { ...d, posts: d.posts, hotw: h };
     me = d.me;
     draw();
   }
@@ -312,10 +312,44 @@ ${S.more ? '<p class="fd-morebox"><button type="button" class="btn ghost" data-a
     } else if (a === 'noreply') {
       const fm = btn.closest('form');
       fm.parent.value = ''; $('.fd-replying', fm).hidden = true;
+    } else if (a === 'hotw') {
+      hotwVote(p);
     } else if (a === 'uncomment') {
       if (!(await UI.confirm({ title: 'Remove this comment?', ok: 'Remove', danger: true }))) return;
       try { replace((await call('/api/feed/uncomment', { id: +btn.dataset.cid })).post); } catch (e) { toast(e.message, true); }
     }
+  }
+
+  // ---------- P6.5 @mentions + comment reactions · P6.2 highlight of the week (shared pieces in web/social.js) ----------
+  const socialOn = () => !!window.NXSocial && NXViewer.flagOn('mentions');
+  const at = (h) => (window.NXSocial && S ? NXSocial.mentions(h, Object.assign({}, ...S.posts.map((x) => x.mentions || {}))) : h);
+  const crx = (c) => (socialOn() ? NXSocial.reactBar(c, S.emoji, { kind: 'comment', id: c.id, small: true }) : '');
+  const closesIn = (t) => { const h = Math.max(1, Math.round((t - Date.now()) / 36e5)); return h < 48 ? `${h} h` : `${Math.round(h / 24)} days`; };
+  function hotwStrip() {
+    const H = S.hotw;
+    if (!H) return '';
+    const n = H.entries.length, l = H.last;
+    return `<section class="hotw-strip" aria-label="Highlight of the week"><div class="hotw-now"><span aria-hidden="true">🎬</span><b>Highlight of week ${H.weekNo}</b><span>${n ? `${plural(n, 'clip')} in the running · ${plural(H.voters, 'vote')} so far` : 'No clips yet – post one tagged 🎬 Highlight'} · closes in ${closesIn(H.closes)}${H.myVote ? ' · ✅ you voted' : ''}</span><span class="grow"></span>${n && f !== 'highlight' ? '<button type="button" class="btn ghost sm" data-f="highlight">🗳 Vote now</button>' : ''}</div>
+${l ? `<a class="hotw-last" href="#p${l.post}"><span class="trophy" aria-hidden="true">🏆</span>${UI.avatar(l.by.a, l.by.n, 26)}<span>Week ${l.weekNo}: <b>${esc(l.by.n)}</b></span><em>${esc(l.text)}</em><small class="muted">${plural(l.votes, 'vote')}</small></a>` : ''}
+<small class="muted">One vote each (not your own clip), changeable until Sunday night. The winner is featured on the club home page and in Discord.</small></section>`;
+  }
+  function hotwBtn(p) {
+    if (p.tag !== 'highlight' || !S.hotw?.entries.includes(p.id)) return '';
+    if (p.by.id === me) return '<button type="button" class="fd-hotw" disabled><span>🎬</span> In the running</button>';
+    const on = S.hotw.myVote === p.id;
+    return `<button type="button" class="fd-hotw${on ? ' on' : ''}" data-act="hotw" aria-pressed="${on}"><span>${on ? '✅' : '🗳'}</span> ${on ? 'Your clip of the week' : 'Clip of the week'}</button>`;
+  }
+  async function hotwVote(p) {
+    const before = { ...S.hotw }, prev = before.myVote, pick = prev === p.id ? null : p.id;
+    const paint = () => { [prev, p.id].map(find).filter(Boolean).forEach(redraw); const s = $('.hotw-strip', el); if (s) s.outerHTML = hotwStrip(); };
+    S.hotw = { ...before, myVote: pick ?? undefined, voters: before.voters + (prev ? (pick ? 0 : -1) : 1) };
+    paint();
+    try { S.hotw = await call('/api/hotw/vote', { post: pick }); paint(); toast(pick ? 'Vote in 🗳 – you can change it until Sunday night' : 'Vote taken back'); } catch (e) { S.hotw = before; paint(); toast(e.message, true); }
+  }
+  function social() {
+    if (!socialOn()) return;
+    NXSocial.wire(el, { call, toast, emoji: () => S.emoji, find: (k, id) => (k === 'comment' ? S.posts.flatMap((x) => x.comments).find((c) => c.id === id) : null) });
+    NXSocial.autocomplete(el, call);
   }
 
   function wire() {
@@ -369,6 +403,7 @@ ${S.more ? '<p class="fd-morebox"><button type="button" class="btn ghost" data-a
           fm.text.value = '';
           clearAtt();
           S.left = Math.max(0, S.left - 1);
+          if (np.tag === 'highlight' && S.hotw) S.hotw.entries.unshift(np.id);
           if (f === 'all' || f === 'mine' || f === np.tag) S.posts.splice(S.posts.filter((x) => x.pinned).length, 0, np);
           draw();
           $(`#p${np.id}`, el)?.classList.add('flash');
@@ -399,6 +434,7 @@ ${S.more ? '<p class="fd-morebox"><button type="button" class="btn ghost" data-a
     }
     el.innerHTML = UI.skeleton('cards', 2);
     wire();
+    social();
     load().then(jump).catch((e) => { el.innerHTML = UI.empty({ icon: '📡', title: 'Could not load the feed', text: e.message }); });
   }
 

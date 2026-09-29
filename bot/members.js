@@ -27,6 +27,8 @@ import { feedbackRoute } from './feedback.js';
 import { predictRoute } from './predict.js';
 import { recsRoute } from './recs.js';
 import { feedRoute } from './feed.js';
+import { hotwPublic, hotwRoute } from './hotw.js';
+import { socialRoute, touch } from './social.js';
 import { mediaUploadRoute } from './media.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
@@ -237,6 +239,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (!flagOn(env, me, 'awards')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await trophies(env, url.searchParams.get('k'))));
     }
+    if (url.pathname === '/api/hotw/public' && request.method === 'GET') { // P6.2 – highlight of the week on the home page, behind the hotw flag
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'hotw')) return cors(env, fail('Not available yet.', 404));
+      return cors(env, json(await hotwPublic(env)));
+    }
     if (url.pathname === '/api/docs' && request.method === 'GET') { // P5.2 – guests see items marked public, behind the docs flag
       if (me) me.role = await currentRole(env, me);
       if (!flagOn(env, me, 'docs')) return cors(env, fail('Not available yet.', 404));
@@ -248,6 +255,8 @@ export async function handleMembers(request, env, ctx, loadSite) {
     }
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
+    const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)
+    if (ctx?.waitUntil) ctx.waitUntil(seen); else await seen;
     if (url.pathname === '/api/feed/upload' && request.method === 'POST') return cors(env, await mediaUploadRoute(request, me, env, url)); // P6.1b – raw file body
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
     const res = await route(url.pathname, request.method, body, me, env, loadSite, url);
@@ -496,6 +505,10 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (rec2) return rec2;
   const fed = await feedRoute(p, method, body, me, env, log, url); // P6.1 social feed
   if (fed) return fed;
+  const soc = await socialRoute(p, method, body, me, env, log, url); // P6.4 presence · P6.5 mentions + comment reactions
+  if (soc) return soc;
+  const hw = await hotwRoute(p, method, body, me, env, log); // P6.2 highlight of the week
+  if (hw) return hw;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

@@ -80,6 +80,9 @@
     "recommendations": "members",
     "scoutReport": "public",
     "insights": "owner",
-    "feed": "owner"
+    "feed": "owner",
+    "hotw": "owner",
+    "presence": "owner",
+    "mentions": "owner"
   }
 }

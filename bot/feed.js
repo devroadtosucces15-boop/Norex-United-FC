@@ -13,6 +13,7 @@
 // Authors show with their current Discord name, avatar, @username and ID (joined from users at read time).
 import { can, flagOn } from './roles.js';
 import { notify, safely } from './notify.js';
+import { mentionMap, mentionTags, notifyMentions, reactionsFor } from './social.js';
 import { attach, checkAttach, dropMedia, IMAGE_MAX, mediaFor, mediaRoute, PER_POST, postMediaKeys, UPLOADS_DAY, VIDEO_MAX } from './media.js';
 
 export const TAGS = { chat: ['💬', 'Chat'], highlight: ['🎬', 'Highlight'], league: ['🏟️', 'League'], rush: ['⚡', 'Rush'] };
@@ -31,6 +32,7 @@ const run = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).run();
 const marks = (n) => Array(n).fill('?').join(',');
 const opt = (v) => v ?? undefined;
 const excerpt = (s, n = 90) => { const t = String(s).replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
+const only = (map, texts) => Object.fromEntries(texts.flatMap(mentionTags).filter((t) => map[t]).map((t) => [t, map[t]]));
 const author = (r) => ({ id: r.user_id, n: r.u_name ?? r.name ?? 'Member', a: opt(r.u_avatar), tag: opt(r.u_tag) });
 const FILTER = { all: '', highlight: " AND p.tag = 'highlight'", league: " AND p.tag = 'league'", rush: " AND p.tag = 'rush'", mine: ' AND p.user_id = ?' };
 const POST_SQL = 'SELECT p.*, u.name AS u_name, u.avatar AS u_avatar, u.tag AS u_tag FROM posts p LEFT JOIN users u ON u.id = p.user_id';
@@ -45,6 +47,12 @@ async function hydrate(env, me, rows) {
       WHERE c.post_id IN (${marks(ids.length)}) ORDER BY c.id LIMIT 3000`, ...ids),
     mediaFor(env, ids),
   ]);
+  // P6.5 – club reactions on comments + @mentions that point at real members (the client turns those into chips).
+  const liveComments = comments.filter((c) => !c.removed);
+  const [crx, ats] = await Promise.all([
+    reactionsFor(env, 'comment', liveComments.map((c) => c.id), me),
+    mentionMap(env, [...rows.map((r) => r.body), ...liveComments.map((c) => c.body)]),
+  ]);
   return rows.map((r) => {
     const rs = reacts.filter((x) => x.post_id === r.id);
     const counts = {}, who = {};
@@ -56,8 +64,8 @@ async function hydrate(env, me, rows) {
     return {
       id: r.id, by: author(r), text: r.body, tag: r.tag, at: r.at, edited: opt(r.edited_at), pinned: !!r.pinned,
       media: media[r.id] ?? [], reacts: counts, who, mine: rs.filter((x) => x.user_id === me.u).map((x) => x.emoji),
-      comments: shown.map((c) => (c.removed ? { id: c.id, removed: true, at: c.at } : { id: c.id, parent: opt(c.parent_id), by: author(c), text: c.body, at: c.at })),
-      nComments: live.length,
+      comments: shown.map((c) => (c.removed ? { id: c.id, removed: true, at: c.at } : { id: c.id, parent: opt(c.parent_id), by: author(c), text: c.body, at: c.at, ...crx[c.id] })),
+      nComments: live.length, mentions: only(ats, [r.body, ...live.map((c) => c.body)]),
     };
   });
 }
@@ -113,6 +121,7 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     if (!ins.meta?.changes) return fail(`That’s ${POSTS_DAY} posts today – post again tomorrow.`, 429);
     await attach(env, me, ins.meta.last_row_id, m.keys);
     await log(env, me, 'post', `${TAGS[v.tag][0]} ${m.keys.length ? '📎 ' : ''}${excerpt(v.text || 'photo/clip', 60)}`);
+    await notifyMentions(env, me, { text: v.text, flag: 'feed', where: 'in a feed post', link: `feed.html#p${ins.meta.last_row_id}`, ref: `feed:${ins.meta.last_row_id}` }); // P6.5
     return json({ post: await onePost(env, me, ins.meta.last_row_id) });
   }
   if (p === '/api/feed/edit') {
@@ -121,7 +130,9 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     if (r.user_id !== me.u) return fail('Only the author can edit a post.', 403);
     const v = postBody(body, (await postMediaKeys(env, id)).length > 0);
     if (v.error) return fail(v.error);
+    const before = (await one(env, 'SELECT body FROM posts WHERE id = ?', id))?.body ?? '';
     await run(env, 'UPDATE posts SET body = ?, tag = ?, edited_at = ? WHERE id = ?', v.text, v.tag, Date.now(), id);
+    await notifyMentions(env, me, { text: v.text, before, flag: 'feed', where: 'in a feed post', link: `feed.html#p${id}`, ref: `feed:${id}` }); // P6.5 – only newly added names
     return json({ post: await onePost(env, me, id) });
   }
   if (p === '/api/feed/delete') {
@@ -170,6 +181,7 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     const replyTo = parent?.replyTo && parent.replyTo !== me.u ? parent.replyTo : null;
     if (replyTo) await safely(notify(env, [replyTo], { ...n, icon: '↩️', title: `${me.n} replied to your comment` }));
     if (post.user_id !== me.u && post.user_id !== replyTo) await safely(notify(env, [post.user_id], { ...n, title: `${me.n} commented on your post` }));
+    await notifyMentions(env, me, { text, flag: 'feed', where: 'in a comment', link: n.link, ref: n.ref, skip: [post.user_id, replyTo] }); // P6.5
     return json({ post: await onePost(env, me, id) });
   }
   if (p === '/api/feed/uncomment') {
