@@ -649,7 +649,7 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
     const mem = (id, u, sub, size = 26) => { const c = A.claims[id]; const pl = c?.status === 'approved' ? c : null; return UI.member({ id, n: u.n, a: u.a, sub: sub ?? (pl ? `🪪 ${pl.playerName}` : ''), player: pl?.player, href: profilesOn ? `${BASE}member.html?u=${encodeURIComponent(id)}` : undefined }, { size }); };
     const rq = S.rush?.pending || [];
     const notesOn = flagOn('managerNotes', baseRole);
-    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('requests', baseRole) ? [['requests', '📨 Requests']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(flagOn('proBuilds', baseRole) && S.me?.user?.perms?.includes('builds.squad') ? [['builds', '🧬 Builds']] : []), ...(A.flags ? [['flags', '🚩 Flags']] : [])];
+    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('requests', baseRole) ? [['requests', '📨 Requests']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(flagOn('proBuilds', baseRole) && S.me?.user?.perms?.includes('builds.squad') ? [['builds', '🧬 Builds']] : []), ...(A.flags ? [['bot', '🤖 Bot settings'], ['flags', '🚩 Flags']] : [])];
     if (!sub.some(([k]) => k === S.adminTab)) S.adminTab = 'claims';
     const body = {
       claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'New player claims show up here for approval.' })}
@@ -671,6 +671,7 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
       notes: () => '<div id="notes-admin"></div>', // P5.7
       requests: () => '<div id="requests-admin"></div>', // P5.6 – drawn by assets/notify.js
       game: () => `<div id="game-admin">${UI.skeleton('rows', 4)}</div>`, // PB.1 – drawn by assets/game.js
+      bot: () => `<div id="bot-admin">${UI.skeleton('rows', 4)}</div>`, // P7.5 – drawn by assets/settings.js
       builds: () => `<div id="builds-admin">${UI.skeleton('rows', 4)}</div>`, // PB.4 – drawn by assets/probuilds.js
       // Owner only: read-only view of the live flags (the Worker's copy). Change them in config.json → features.
       flags: () => `<h3>🚩 Feature flags</h3><p class="muted small">New features start as <b>Owner</b> (only you see them) and get switched on at the QA checkpoints. Levels: off · owner · managers · members · public.</p>
@@ -701,6 +702,11 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
   Object.assign(ACT_TXT, { 'game-publish': 'published game rules', 'game-dismiss': 'dismissed a patch-note cap mention' });
   const gameAdmin = (el) => new Promise((ok, no) => (window.NXGame ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/game.js`, onload: ok, onerror: no }))))
     .then(() => NXGame.portal(el, { call, toast })).catch(() => toast('Could not load the game rules editor', true));
+  // Bot personalisation (P7.5) lives in assets/settings.js, loaded on first use.
+  Object.assign(ACT, { 'bot-settings': '🤖' });
+  Object.assign(ACT_TXT, { 'bot-settings': 'updated bot settings' });
+  const botAdmin = (el) => new Promise((ok, no) => (window.NXBotSettings ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/settings.js`, onload: ok, onerror: no }))))
+    .then(() => NXBotSettings.portal(el, { call, toast })).catch(() => toast('Could not load bot settings', true));
   // Trials funnel, scouting and manager notes (P1.5 / P5.5 / P5.7) live in assets/trials.js, loaded on first use.
   Object.assign(ACT, { 'trial-apply': '👑', 'trial-add': '➕', 'trial-status': '🧭', 'trial-link': '🪪', 'trial-session': '⚽', scout: '🔭', note: '📝', 'note-delete': '🗑' });
   Object.assign(ACT_TXT, { 'trial-apply': 'applied on the Trials page', 'trial-add': 'added a trial card', 'trial-status': 'moved a trial', 'trial-link': 'linked a trial to a player', 'trial-session': 'logged a trial session', scout: 'recommended a player', note: 'wrote a private note', 'note-delete': 'deleted a note' });
@@ -766,6 +772,8 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
     if (pe) loadProfile().then(() => NXProfile.editor(pe, profileCtx({ onSaved: (p) => { S.me.profile = p; } }), S.me.profile)).catch(() => toast('Could not load the profile editor', true));
     const ga = $('#game-admin', panel);
     if (ga) gameAdmin(ga);
+    const bta = $('#bot-admin', panel);
+    if (bta) botAdmin(bta);
     const ba = $('#builds-admin', panel); // PB.4 squad builds by position
     if (ba) (window.NXProBuilds ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/probuilds.js`, onload: ok, onerror: no })))).then(() => NXProBuilds.portal(ba)).catch(() => toast('Could not load the builds – try again', true));
     for (const [id, fn] of [['#trials-admin', 'portal'], ['#notes-admin', 'notesTab'], ['#scout-panel', 'scout']]) { const el = $(id, panel); if (el) withTrials((T, ctx) => T[fn](el, ctx)); }

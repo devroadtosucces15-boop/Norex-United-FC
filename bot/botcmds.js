@@ -7,12 +7,14 @@
 //   /me            my verified player's card
 //   /leaderboard   League (EA) or Rush (confirmed logs) top 10
 //   /profile       a member's profile – player, positions, platforms (✓ = verified by Discord, P2.4)  (flag `profiles`)
+//   /awards        this week's ballot + last week's winners                                            (flag `awards`)
 // Replies that are about "me" are ephemeral (flags 64) – only the person who asked sees them.
 import { can, flagOn } from './roles.js';
 import { answerEvents, EVENT_TYPES, eventMessage } from './events.js';
 import { submitRush } from './members.js';
+import { state as awardsState } from './awards.js';
 
-export const MEMBER_COMMANDS = new Set(['schedule', 'availability', 'lineup', 'rush', 'me', 'leaderboard', 'profile']);
+export const MEMBER_COMMANDS = new Set(['schedule', 'availability', 'lineup', 'rush', 'me', 'leaderboard', 'profile', 'awards']);
 const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results);
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const parse = (s, fb) => { try { return JSON.parse(s) ?? fb; } catch { return fb; } };
@@ -143,6 +145,24 @@ export async function memberCommand(i, env, who, site, h) {
         plats.length && { name: '🎮 Platforms', value: `${plats.join('\n')}${Object.keys(verified).length ? '\n✓ = verified through Discord' : ''}` },
       ].filter(Boolean),
       footer: { text: 'NOREX UNITED · full profile on the site' },
+    }], allowed_mentions: { parse: [] } } };
+  }
+  if (name === 'awards') {
+    if (!flagOn(env, who, 'awards')) return say('🔒 Weekly awards are not switched on yet.');
+    if (!can(who, 'awards.vote')) return say('🔒 Members of the NOREX server only.');
+    const st = await awardsState(env, me, h.load);
+    const ballot = st.categories.length ? st.categories.map((c) => `${c.icon} **${c.name}**`).join('\n') : 'No categories yet – a manager adds them in the Squad Hub.';
+    const auto = st.stats.map((s) => `${s.icon} **${s.name}** – ${s.how}`).join('\n');
+    const last = st.last?.winners.length ? st.last.winners.map((w) => `${w.icon} **${w.name}** — ${w.n ? `[${w.n}](${site}players/${encodeURIComponent(w.k)}.html)` : '–'}`).join('\n') : 'No winners yet.';
+    return { type: 4, data: { embeds: [{
+      title: `🏆 Weekly awards · ${st.week}`, url: `${site}members.html#awards`, color: RED,
+      description: st.closed ? 'This week’s voting has closed.' : `Voting closes ${ts(st.closes)} (${ts(st.closes, 'R')}) – cast your votes in the Squad Hub.`,
+      fields: [
+        { name: '🗳️ Vote now', value: ballot.slice(0, 1024) },
+        { name: '📊 Decided automatically', value: auto.slice(0, 1024) },
+        { name: `🏅 Last week’s winners${st.last ? ` (${st.last.week})` : ''}`, value: last.slice(0, 1024) },
+      ],
+      footer: { text: 'NOREX UNITED · vote in the Squad Hub' },
     }], allowed_mentions: { parse: [] } } };
   }
   return say('Unknown command.');

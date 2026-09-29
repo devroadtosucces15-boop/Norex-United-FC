@@ -120,6 +120,14 @@ sqlite.prepare("UPDATE rush_matches SET status = 'confirmed' WHERE opponent = 'R
 t('P7.4 /leaderboard mode:rush from confirmed logs', /Rush – Top scorers/.test((await slash('leaderboard', [{ name: 'mode', value: 'rush' }, { name: 'stat', value: 'goals' }])).data.embeds[0].title));
 t('P7.4 /leaderboard mode:league = the EA leaderboard', !!(await slash('leaderboard', [{ name: 'mode', value: 'league' }, { name: 'stat', value: 'goals' }])).data.embeds?.[0]?.title);
 
+// ================= P7.5 =================
+setFlags({ awards: 'members' });
+const aw = await slash('awards');
+t('P7.5 /awards: this week\'s ballot + last winners', /Weekly awards/.test(aw.data.embeds[0].title) && /Vote now/.test(aw.data.embeds[0].fields[0].name) && /Decided automatically/.test(aw.data.embeds[0].fields[1].name));
+setFlags({ awards: 'off' });
+t('P7.5 /awards off → friendly message', /not switched on/.test((await slash('awards')).data.content));
+setFlags({ awards: 'members' });
+
 // ================= P2.4 =================
 const psnName = siteJson('players').filter((p) => p.home)[1].n, psnKey = siteJson('players').filter((p) => p.home)[1].k;
 Object.assign(mockDiscord, { connections: [{ type: 'playstation', name: psnName, verified: true }, { type: 'xbox', name: 'NotVerified', verified: false }, { type: 'steam', name: 'SteamGuy', verified: true }, { type: 'twitch', name: 'tw', verified: true }] });

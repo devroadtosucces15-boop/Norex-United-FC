@@ -52,6 +52,24 @@ export async function loadOverrides(config, body) {
   }
 }
 
+// Bot personalisation (P7.5) set in the manager portal, stored in the Worker's D1 – read the same way as
+// loadOverrides() (a key derived from DISCORD_CLIENT_SECRET, a GitHub secret the Worker also has).
+export async function loadBotSettings(config) {
+  const api = config.members?.api, secret = process.env.DISCORD_CLIENT_SECRET;
+  const none = { ok: false, resultChannel: '', pingRole: '', color: 'c8352c', emoji: '⚽', autoPosts: { results: true, reminders: true, awards: true } };
+  if (!api || !secret) return none;
+  try {
+    const { createHash } = await import('node:crypto');
+    const key = createHash('sha256').update(`${secret}:norex-bot-settings`).digest('hex');
+    const res = await fetch(`${api}/api/bot/settings/public`, { signal: AbortSignal.timeout(10000), headers: { 'X-Norex-Key': key } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { ok: true, ...(await res.json()) };
+  } catch (e) {
+    console.warn('Bot settings not loaded:', e.message);
+    return none;
+  }
+}
+
 // EA's per-player event counters ("111:21,174:5,…"). Only two codes are known (P1.8, from PLANNING/RESEARCH-fc-sites.md):
 // 174 = dribbles completed, 115 = second assists. Everything else is dropped.
 export const EVENTS = { 174: 'dribbles', 115: 'secondassists' };

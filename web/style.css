@@ -295,6 +295,13 @@ button.chip{cursor:pointer}
 .in .radar .shape{transform:scale(1)}
 .radar circle{cursor:pointer}
 .spark{vertical-align:middle}
+.posmap{max-width:260px;margin:0 auto;display:block}
+.pm-turf{fill:#14532d}
+.pm-lines{stroke:rgba(255,255,255,.3);stroke-width:1.5}
+.pm-zone{fill:var(--red);stroke:#fff;stroke-width:1.5;cursor:pointer;transform-box:fill-box;transform-origin:center;transform:scale(0);transition:transform .7s cubic-bezier(.2,.8,.2,1),fill-opacity .2s}
+.in .pm-zone{transform:scale(1)}
+.pm-zone:hover{fill-opacity:.9!important}
+.pm-label{fill:#fff;font:700 12px var(--head);text-transform:uppercase;letter-spacing:.04em;text-anchor:middle;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .dna{list-style:none;margin:0;padding:0;display:grid;gap:14px}
 .dna li{display:grid;grid-template-columns:86px 1fr 34px;gap:10px;align-items:center;cursor:default}
 .dna span{font:600 13px var(--head);text-transform:uppercase;letter-spacing:.08em;color:#cfd5de}

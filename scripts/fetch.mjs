@@ -15,7 +15,7 @@
 // members' other clubs and to fill in stats for players you meet.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJson, writeJson, loadConfig, loadOverrides, num, sleep, eventCounts } from './lib.mjs';
+import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, num, sleep, eventCounts } from './lib.mjs';
 import { matchComponents } from '../bot/matchcard.js';
 
 const API = 'https://proclubs.ea.com/api/fc/';
@@ -216,6 +216,8 @@ let overrideHidden = []; // P5.6 "hide me" requests – kept out of the Discord 
 async function postToDiscord() {
   const hook = process.env.DISCORD_WEBHOOK;
   if (!hook || !newHomeMatches.length) return;
+  const settings = await loadBotSettings(config); // P7.5 – result channel override, ping role, emoji, on/off
+  if (!settings.autoPosts.results) return;
   const site = config.siteUrl?.replace(/\/?$/, '/') ?? '';
   const crestCdn = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
   const hide = new Set([...(config.hiddenPlayers || []), ...overrideHidden].map((h) => String(h).toLowerCase()));
@@ -236,7 +238,7 @@ async function postToDiscord() {
       const url = site ? `${site}matches/${m.matchId}.html` : undefined;
       const components = matchComponents(m.matchId, ourIds.map(([k, p]) => ({ k, n: p.playername, r: num(p.rating), g: num(p.goals), a: num(p.assists) })), url);
       return { components, embed: {
-        title: `${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
+        title: `${settings.emoji ? `${settings.emoji} ` : ''}${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
         url,
         color: { W: 0x22c55e, D: 0xeab308, L: 0xef4444 }[res],
         description: res === 'W' ? '✅ **Victory**' : res === 'L' ? '❌ **Defeat**' : '➖ **Draw**',
@@ -253,13 +255,16 @@ async function postToDiscord() {
     });
   let rest = items;
   const token = process.env.DISCORD_BOT_TOKEN;
+  const pingContent = settings.pingRole ? `<@&${settings.pingRole}>` : undefined;
+  const allowedMentions = settings.pingRole ? { roles: [settings.pingRole] } : { parse: [] };
   if (token && ['members', 'public'].includes(config.features?.discordMatch)) {
-    const channel = await fetch(hook).then((r) => (r.ok ? r.json() : null)).then((w) => w?.channel_id).catch(() => null);
+    // P7.5: a configured result channel overrides the webhook's own channel (still needs the bot token to redirect).
+    const channel = settings.resultChannel || await fetch(hook).then((r) => (r.ok ? r.json() : null)).then((w) => w?.channel_id).catch(() => null);
     while (channel && rest.length) {
       const { embed, components } = rest[0];
       const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, {
         method: 'POST', headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ embeds: [embed], components, allowed_mentions: { parse: [] } }),
+        body: JSON.stringify({ content: pingContent, embeds: [embed], components, allowed_mentions: allowedMentions }),
       }).catch((e) => ({ ok: false, status: e.message }));
       if (!r.ok) { console.warn(`Bot post failed (${r.status}) – the bot needs View Channel + Send Messages + Embed Links there. Using the webhook.`); break; }
       rest = rest.slice(1);
@@ -269,7 +274,7 @@ async function postToDiscord() {
   await fetch(hook, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'NOREX UNITED', avatar_url: site ? `${site}assets/crest.png` : undefined, embeds: rest.map((x) => x.embed) }),
+    body: JSON.stringify({ username: 'NOREX UNITED', avatar_url: site ? `${site}assets/crest.png` : undefined, content: pingContent, embeds: rest.map((x) => x.embed), allowed_mentions: allowedMentions }),
   }).catch((e) => console.warn('Discord post failed:', e.message));
 }
 

@@ -11,6 +11,7 @@
 import { can, flagOn } from './roles.js';
 import { notify, notifyMembers, safely } from './notify.js';
 import { postEmbed } from './docs.js';
+import { getBotSettings } from './settings.js';
 
 const DAY = 86400e3, WEEK = 7 * DAY;
 export const STAT_AWARDS = {
@@ -53,7 +54,7 @@ const catOut = (c) => ({ id: c.id, name: c.name, icon: c.icon, grp: c.grp, built
 const awardName = (cats, a) => (STAT_AWARDS[a] ? { icon: STAT_AWARDS[a][0], name: STAT_AWARDS[a][1], stat: true } : (() => { const c = cats.find((x) => String(x.id) === String(a)); return c ? { icon: c.icon, name: c.name } : { icon: '🏆', name: 'Award' }; })());
 const winnersOut = (rows, cats) => rows.map((w) => ({ period: w.period, award: w.award, ...awardName(cats, w.award), k: w.player, n: w.name, value: w.value }));
 
-async function state(env, me, loadSite) {
+export async function state(env, me, loadSite) {
   await closeDue(env, loadSite).catch((e) => console.log('awards close failed', e.message)); // in case the cron hasn't yet
   const week = weekOf(Date.now());
   const [cats, mine, voters, lastWeek, closedNow] = await Promise.all([
@@ -152,13 +153,14 @@ async function announce(env, loadSite) {
     }
     await safely(notifyMembers(env, { type: 'award', title: `🏆 The week ${wk.week.split('-W')[1]} awards are in – watch the reveal`, link: 'members.html#awards' }));
     const channel = (await one(env, "SELECT value FROM meta WHERE key = 'awards_channel'"))?.value;
-    if (channel && env.DISCORD_BOT_TOKEN) {
+    const settings = await getBotSettings(env); // P7.5 – "which auto-posts are on" + embed colour
+    if (channel && env.DISCORD_BOT_TOKEN && settings.autoPosts.awards) {
       const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
       const byAward = new Map();
       for (const w of winners) (byAward.get(w.award) ?? byAward.set(w.award, { ...w, names: [] }).get(w.award)).names.push(`[${w.n}](${site}players/${encodeURIComponent(w.k)}.html)`);
       const potm = winnersOut(await all(env, "SELECT * FROM award_winners WHERE period = ? AND award = 'potm' AND player != ''", `M${wk.month}`), cats);
       await postEmbed(env, channel, '', { embeds: [{
-        title: `🏆 Weekly awards · week ${wk.week.split('-W')[1]}`, url: `${site}members.html#awards`, color: RED,
+        title: `🏆 Weekly awards · week ${wk.week.split('-W')[1]}`, url: `${site}members.html#awards`, color: parseInt(settings.color, 16) || RED,
         description: [...byAward.values()].map((a) => `${a.icon} **${a.name}** — ${a.names.join(', ')}${a.stat ? '' : ` (${a.value} vote${a.value === 1 ? '' : 's'})`}`).join('\n').slice(0, 3900),
         ...(potm.length && wk.month < weekOf(Date.now()).month ? { fields: [{ name: `👑 Player of the Month · ${wk.month}`, value: potm.map((p) => p.n).join(', ') }] } : {}),
         footer: { text: 'NOREX UNITED · vote for this week in the Squad Hub' },

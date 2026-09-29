@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, DATA, readJson, loadConfig, loadOverrides, num } from './lib.mjs';
-import { lineChart, goalBars, donut, radar, spark } from './charts.mjs';
+import { lineChart, goalBars, donut, radar, spark, pitchMap } from './charts.mjs';
 import { buildUpdates } from './updates-page.mjs';
 import { buildBuilder } from './builder-page.mjs';
 import { buildProBuilds } from './probuilds-page.mjs';
@@ -612,6 +612,7 @@ ${logTable('flog', f, base)}<p class="muted small">🤝 Club friendlies – neve
 <div class="grid2 reveal">
 ${pl.radar ? card('Player profile', `${radar(RADAR.map((ax, i) => ({ label: ax.label, raw: [pl.radarRaw[i]] })), [{ values: pl.radar, color: 'var(--red)', name: pl.name }])}<p class="muted small">Percentile vs ${pool.length} tracked players with 3+ games${pl.isHome ? ' (NOREX stats)' : ''}. Hover a point for the real number.</p>`) : ''}
 ${card('Match ratings', trend.length ? lineChart(trend, { min: 4, max: 10, ref: 7, id: 'pt' }) + (best ? `<p class="small">Best: ${ratingPill(best.rating)} vs ${esc(clubName(best.oppId))} (${dateStr(best.ts)})</p>` : '') : emptyState('📈', 'No match ratings yet', 'Ratings appear here once this player features in an archived match.'))}
+${a.length ? card('Position map', `${pitchMap(pitchGroups(a))}<p class="muted small">🗺️ Estimated – EA's match data has no pitch coordinates. Bubble size = share of games in that role, shade = involvement while playing it.</p>`) : ''}
 </div>
 ${Object.keys(pl.clubStats).length ? section('By club', table('byclub', ['Club', 'Pos', '#OVR', '#GP', '#Goals', '#Assists', '#Rating', '#MOTM', '#Win %', '#Pass %', '#Tackle %'], Object.entries(pl.clubStats).map(([cid, cs]) =>
     `<tr>${td(`${crest(cid, 22, base)} ${clubLink(cid, base)}`)}${td(posOf(cs) || '—')}${td(esc(cs.proOverall ?? '–'), true)}${td(cs.gamesPlayed, true)}${td(cs.goals, true)}${td(cs.assists, true)}${td(ratingPill(num(cs.ratingAve)), true, cs.ratingAve)}${td(cs.manOfTheMatch, true)}${td(cs.winRate + '%', true, cs.winRate)}${td(cs.passSuccessRate + '%', true, cs.passSuccessRate)}${td(cs.tackleSuccessRate + '%', true, cs.tackleSuccessRate)}</tr>`))) : ''}
@@ -627,6 +628,26 @@ function evStats(a) {
   return `${counter('Dribbles', drb)}${counter('Dribbles/game', drb / e.length, { dec: 1 })}${counter('2nd assists', sum(e, (x) => x.sa))}`;
 }
 const evNote = (a) => (a.some((x) => x.dribbles != null) ? `<p class="muted small">🏃 Dribbles and 2nd assists (the pass before the assist) come from EA's match events – only in games archived since ${esc(EV_SINCE)}.</p>` : '');
+// P7.3: EA exposes no pitch coordinates, so this is a role/involvement map, not a real heat map – bubble size = share
+// of games played in that role, shade = involvement while playing it (each role's own defining stat).
+const PITCH_ZONES = { GK: { x: 50, y: 90, label: 'GK', stat: 'saves', cap: 4 }, DEF: { x: 50, y: 70, label: 'DEF', stat: 'tackles', cap: 4 }, MID: { x: 50, y: 48, label: 'MID', stat: 'passes', cap: 25 }, FWD: { x: 50, y: 22, label: 'FWD', stat: 'g+a+shots', cap: 6 } };
+function pitchGroups(a) {
+  const byGroup = {};
+  for (const x of a) {
+    const g = POS[String(x.pos).toLowerCase()];
+    if (!g) continue;
+    (byGroup[g] ??= []).push(x);
+  }
+  const total = a.length;
+  return Object.entries(byGroup).map(([g, apps]) => {
+    const z = PITCH_ZONES[g];
+    const value = g === 'FWD' ? sum(apps, (x) => x.goals * 3 + x.assists * 2 + x.shots) : sum(apps, (x) => x[z.stat]) || 0;
+    const perGame = value / apps.length;
+    const share = apps.length / total;
+    return { label: z.label, x: z.x, y: z.y, r: 12 + Math.sqrt(share) * 44, intensity: Math.min(1, perGame / z.cap), tip: `${z.label} · ${apps.length} of ${total} games (${Math.round(share * 100)}%) · ${r1(perGame)} ${z.stat}/game` };
+  });
+}
+const r1 = (n) => Math.round(n * 10) / 10;
 function logTable(id, a, base) {
   const ev = a.some((x) => x.dribbles != null);
   const evd = (v) => td(v == null ? '<span class="muted">–</span>' : v, true, v ?? -1);

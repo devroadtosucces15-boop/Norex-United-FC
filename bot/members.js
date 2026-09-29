@@ -33,6 +33,7 @@ import { chatRoute } from './chat.js';
 import { mediaUploadRoute } from './media.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
+import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
@@ -259,6 +260,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (me) me.role = await currentRole(env, me);
       return cors(env, await publicRequestRoute(request, env, me, loadSite, log));
     }
+    if (url.pathname === '/api/bot/settings/public') return cors(env, await botSettingsPublicRoute(request, env)); // P7.5 – fetch.mjs reads before posting
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
     const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)
@@ -517,6 +519,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (hw) return hw;
   const cht = await chatRoute(p, method, body, me, env, log, url); // P6.3a messaging: DMs + group chats
   if (cht) return cht;
+  const bst = await botSettingsRoute(p, method, body, me, env, log); // P7.5 bot personalisation
+  if (bst) return bst;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

@@ -18,6 +18,7 @@ import { can, flagOn, flags } from './roles.js';
 import { notify, notifyMembers, safely } from './notify.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
+import { getBotSettings } from './settings.js';
 
 const REMIND = ['dm', 'mention', 'off'];
 
@@ -437,7 +438,8 @@ async function lineupRoute(p, method, body, me, env, log) {
 // Events scheduled less than 2 h ahead only get the T-2h one. Each fires once (remind24_at / remind2_at).
 export async function eventReminders(env) {
   if (!env.DB || !rsvpButtons(env)) return { sent: 0 };
-  const everyone = flagOn(env, { role: 'member' }, 'discordRsvp'); // owner/managers-only while testing: no channel post
+  const settings = await getBotSettings(env); // P7.5 – "which auto-posts are on"
+  const everyone = flagOn(env, { role: 'member' }, 'discordRsvp') && settings.autoPosts.reminders; // owner/managers-only while testing: no channel post
   const now = Date.now();
   const due = await all(env, `SELECT * FROM events WHERE status = 'scheduled' AND start > ? AND (
     (remind24_at IS NULL AND start <= ? AND start > ?) OR (remind2_at IS NULL AND start <= ?)) ORDER BY start LIMIT 10`, now, now + 24 * HOUR, now + 2 * HOUR, now + 2 * HOUR);
