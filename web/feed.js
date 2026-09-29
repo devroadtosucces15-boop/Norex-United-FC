@@ -40,9 +40,11 @@
   const who = (u) => UI.member({ id: u.id, n: u.n, a: u.a, sub: `${u.tag ? `@${u.tag} · ` : ''}ID ${u.id}`, href: NXViewer.flagOn('profiles') ? `member.html?u=${encodeURIComponent(u.id)}` : undefined }, { size: 38 });
   const whoSmall = (u) => UI.member({ id: u.id, n: u.n, a: u.a, sub: u.tag ? `@${u.tag}` : '', href: NXViewer.flagOn('profiles') ? `member.html?u=${encodeURIComponent(u.id)}` : undefined }, { size: 22, sub: false });
 
+  // "Name, Name +3" – the server sends up to 12 names per emoji.
+  const tip = (p, e) => { const w = p.who[e] ?? []; return w.join(', ') + (p.reacts[e] > w.length ? ` +${p.reacts[e] - w.length}` : ''); };
   function reacts(p) {
     const used = S.emoji.filter((e) => p.reacts[e]);
-    return `<div class="fd-react">${used.map((e) => `<button type="button" class="fd-rx${p.mine.includes(e) ? ' on' : ''}" data-rx="${e}" aria-pressed="${p.mine.includes(e)}" data-tip="${esc((p.who[e] ?? []).join(', ') + (p.reacts[e] > (p.who[e] ?? []).length ? ` +${p.reacts[e] - p.who[e].length}` : ''))}"><span>${e}</span><b>${p.reacts[e]}</b></button>`).join('')}
+    return `<div class="fd-react">${used.map((e) => `<button type="button" class="fd-rx${p.mine.includes(e) ? ' on' : ''}" data-rx="${e}" aria-pressed="${p.mine.includes(e)}" data-tip="${esc(tip(p, e))}"><span>${e}</span><b>${p.reacts[e]}</b></button>`).join('')}
 <span class="fd-add-wrap"><button type="button" class="fd-add" data-act="pick" aria-label="Add a reaction" aria-expanded="false">😀<i>+</i></button><span class="fd-pick" hidden>${S.emoji.map((e) => `<button type="button" data-rx="${e}" aria-label="React ${e}">${e}</button>`).join('')}</span></span></div>`;
   }
   function comment(c, p) {
@@ -116,6 +118,8 @@ ${S.more ? '<p class="fd-morebox"><button type="button" class="btn ghost" data-a
   async function react(p, emoji) {
     const before = { reacts: { ...p.reacts }, mine: [...p.mine], who: p.who };
     const on = p.mine.includes(emoji);
+    const myName = session()?.n ?? 'You';
+    p.who = { ...p.who, [emoji]: on ? (p.who[emoji] ?? []).filter((n) => n !== myName) : [...(p.who[emoji] ?? []), myName] };
     p.mine = on ? p.mine.filter((e) => e !== emoji) : [...p.mine, emoji];
     p.reacts = { ...p.reacts, [emoji]: Math.max(0, (p.reacts[emoji] ?? 0) + (on ? -1 : 1)) };
     if (!p.reacts[emoji]) delete p.reacts[emoji];

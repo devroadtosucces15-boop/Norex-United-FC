@@ -2,6 +2,7 @@
 [data-flag="feed"]:not([hidden]) ~ .fd-soon{display:none}
 .fd{max-width:760px;margin:0 auto;display:grid;gap:14px}
 .fd .grow{flex:1}
+.fd [hidden]{display:none!important}
 
 /* composer */
 .fd-compose{display:flex;gap:12px;align-items:flex-start;position:relative;overflow:hidden}
