@@ -15,7 +15,7 @@
 // members' other clubs and to fill in stats for players you meet.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, num, sleep, eventCounts } from './lib.mjs';
+import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, loadCrawlCursor, saveCrawlSlice, num, sleep, eventCounts } from './lib.mjs';
 import { matchComponents } from '../bot/matchcard.js';
 
 const API = 'https://proclubs.ea.com/api/fc/';
@@ -208,6 +208,28 @@ async function fetchWorld() {
   console.log(`World top 100 saved (#100 = SR ${num(list.at(-1)?.skillRating)})`);
 }
 
+// P9.1 – resumable club-ID crawl: a small slice of EA's sequential club-ID range every run, checkpointed in
+// D1 via the Worker (this script has no D1 access) so the crawl survives across many 10-minute runs without
+// any single one needing to cover the whole range. Lightweight rows only (id, name, crest) – clubs already
+// tracked elsewhere are skipped (they already have full detail); clubs with no current-game data are simply
+// left out, one-match clubs are kept like any other.
+async function crawlSlice() {
+  const checkpoint = await loadCrawlCursor(config);
+  if (!checkpoint) return; // members API not configured – skip quietly
+  const size = config.crawl?.sliceSize ?? 15;
+  const start = checkpoint.cursor || 1;
+  const found = [];
+  for (let id = start; id < start + size; id++) {
+    const key = String(id);
+    if (key === homeId || state.clubs[key]) continue;
+    const info = await api('clubs/info', { clubIds: key }).catch(() => null);
+    const clubInfo = info?.[key];
+    if (clubInfo?.name) found.push({ id: key, name: clubInfo.name, crest: clubInfo.customKit?.crestAssetId ?? null });
+  }
+  const saved = await saveCrawlSlice(config, start + size, found);
+  if (saved) console.log(`Crawl: checked ${start}-${start + size - 1}, indexed ${found.length} (world total so far ${checkpoint.indexed + found.length})`);
+}
+
 let overrideHidden = []; // P5.6 "hide me" requests – kept out of the Discord post like on the site
 
 // New home results → Discord. With the bot token and the discordMatch flag on for members/public, each result is
@@ -335,6 +357,7 @@ async function main() {
   }
 
   await fetchWorld();
+  await crawlSlice();
   await postToDiscord();
   writeJson(stateFile, state);
   // One heartbeat per day keeps GitHub from pausing the schedule on quiet weeks.

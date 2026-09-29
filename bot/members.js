@@ -34,6 +34,7 @@ import { mediaUploadRoute } from './media.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
+import { crawlRoute } from './crawl.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
@@ -353,6 +354,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
       return cors(env, await publicRequestRoute(request, env, me, loadSite, log));
     }
     if (url.pathname === '/api/bot/settings/public') return cors(env, await botSettingsPublicRoute(request, env)); // P7.5 – fetch.mjs reads before posting
+    if (url.pathname === '/api/crawl') return cors(env, await crawlRoute(request, env)); // P9.1 – fetch.mjs's resumable club-ID crawl checkpoint
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me);
     const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)

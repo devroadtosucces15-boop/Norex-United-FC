@@ -52,6 +52,40 @@ export async function loadOverrides(config, body) {
   }
 }
 
+// P9.1 resumable club crawl: fetch.mjs has no D1 access, so its checkpoint and lightweight index rows live
+// in the Worker's D1, read/written the same keyed way as loadOverrides() (a key derived from DISCORD_CLIENT_SECRET).
+async function crawlAuthKey() {
+  const { createHash } = await import('node:crypto');
+  return createHash('sha256').update(`${process.env.DISCORD_CLIENT_SECRET}:norex-crawl`).digest('hex');
+}
+export async function loadCrawlCursor(config) {
+  const api = config.members?.api, secret = process.env.DISCORD_CLIENT_SECRET;
+  if (!api || !secret) return null;
+  try {
+    const res = await fetch(`${api}/api/crawl`, { signal: AbortSignal.timeout(10000), headers: { 'X-Norex-Key': await crawlAuthKey() } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json(); // { cursor, indexed }
+  } catch (e) {
+    console.warn('Crawl checkpoint not loaded:', e.message);
+    return null;
+  }
+}
+export async function saveCrawlSlice(config, cursor, found) {
+  const api = config.members?.api, secret = process.env.DISCORD_CLIENT_SECRET;
+  if (!api || !secret) return false;
+  try {
+    const res = await fetch(`${api}/api/crawl`, {
+      method: 'POST', signal: AbortSignal.timeout(10000),
+      headers: { 'X-Norex-Key': await crawlAuthKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cursor, found }),
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn('Crawl slice not saved:', e.message);
+    return false;
+  }
+}
+
 // Bot personalisation (P7.5) set in the manager portal, stored in the Worker's D1 – read the same way as
 // loadOverrides() (a key derived from DISCORD_CLIENT_SECRET, a GitHub secret the Worker also has).
 export async function loadBotSettings(config) {
