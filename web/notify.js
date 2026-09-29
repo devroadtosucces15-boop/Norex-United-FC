@@ -69,7 +69,7 @@ ${list.length ? `<ul class="nf-list">${list.map(item).join('')}</ul>` : UI.empty
     };
     const close = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
     btn.onclick = (e) => { e.stopPropagation(); panel.hidden ? open() : close(); };
-    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener('click', (e) => { if (!panel.hidden && !wrap.contains(e.target)) close(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { close(); btn.focus(); } });
     panel.addEventListener('click', async (e) => {
       if (e.target.closest('[data-all]')) return markRead(ctx, { all: true });

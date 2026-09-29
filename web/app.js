@@ -364,7 +364,7 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
 <button type="button" class="acct-out">↩ Log out</button></div></div>`;
     const btn = $('.me-btn', slot), menu = $('.acct-menu', slot);
     btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute('aria-expanded', !menu.hidden); };
-    document.addEventListener('click', (e) => { if (!slot.contains(e.target)) menu.hidden = true; });
+    document.addEventListener('click', (e) => { if (!menu.hidden && !slot.contains(e.target)) menu.hidden = true; });
     $('.acct-out', slot).onclick = logout;
   }
 
