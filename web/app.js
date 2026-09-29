@@ -30,11 +30,16 @@ menuBtn?.addEventListener('click', () => {
 const bar = $('.bar');
 function fitNav() {
   const root = document.documentElement;
+  if (!bar || innerWidth <= 1100) { root.classList.remove('nav-tight', 'nav-collapse'); return; }
+  // Recheck needs to strip the classes to measure the natural width, which would otherwise flash the
+  // uncollapsed nav open for a frame – hide the bar for that instant so nothing is ever painted mid-measure.
+  const restore = bar.style.visibility;
+  bar.style.visibility = 'hidden';
   root.classList.remove('nav-tight', 'nav-collapse');
-  if (!bar || innerWidth <= 1100) return;
   const over = () => bar.scrollWidth > bar.clientWidth + 1;
   if (over()) root.classList.add('nav-tight');
   if (over()) { root.classList.remove('nav-tight'); root.classList.add('nav-collapse'); }
+  bar.style.visibility = restore;
 }
 if (bar) {
   let t;
