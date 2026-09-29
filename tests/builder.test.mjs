@@ -11,7 +11,9 @@ const cap = seed.levelCap.value;
 const ev0 = M.evaluate(seed, { arch: 'finisher', level: cap, spent: {} });
 t('level cap from game data is the MAX', ev0.cap === cap && ev0.level === cap);
 t('level clamped to 1…cap', M.evaluate(seed, { arch: 'finisher', level: 999, spent: {} }).level === cap && M.evaluate(seed, { arch: 'finisher', level: 0, spent: {} }).level === 1);
-t('seed has no in-game numbers → preview flagged', ev0.status.preview);
+t('current seed has real archetype/AP/cost data → not a preview', !ev0.status.preview);
+const emptySeed = JSON.parse(fs.readFileSync(ROOT + 'data/game/fc27-launch.json', 'utf8'));
+t('a seed with empty archetypes/AP/costs still flags preview', M.evaluate(emptySeed, { arch: 'finisher', level: emptySeed.levelCap.value, spent: {} }).status.preview);
 t('AP total grows with level', M.apAt(seed, 1) < M.apAt(seed, 10) && M.apAt(seed, 10) < M.apAt(seed, cap));
 t('face stats + OVR present', ev0.face.length === 6 && ev0.ovr > 0);
 t('Finisher mastery at L10: +1 Finishing', M.evaluate(seed, { arch: 'finisher', level: 10, spent: {} }).rows.find((r) => r.name === 'Finishing').bonus === 1
@@ -59,6 +61,20 @@ t('position fit: default positions per group, sorted', evb.fit.length === 3 && e
 const bb = { arch: 'x', level: 5, spent: { Finishing: 1 }, ps: ['trick'], plus: ['power'], sp: 'poacher', fa: ['track'], h: 192, w: 81 };
 const back2 = M.decode(gb, M.encode(gb, bb));
 t('share link keeps PlayStyles, +, spec, facilities, body', back2.ps.join() === 'trick' && back2.plus.join() === 'power' && back2.sp === 'poacher' && back2.fa.join() === 'track' && back2.h === 192 && back2.w === 81);
+
+// Real-data extras (roadmap PB.1 community import): per-attribute cost tiers, per-archetype attribute
+// ceilings, and the new archetype/thresholds specialization shape - alongside the legacy shapes above.
+const gt = { ...g, archetypes: [{ id: 'y', name: 'Y', group: 'FWD', base: { Finishing: { base: 58, max: 80 }, Vision: { base: 58, max: 99 } } }],
+  costTiers: { hard: [{ from: 0, to: 60, cost: 1 }, { from: 60, to: 99, cost: 9 }] },
+  attributeCosts: { y: { Finishing: 'hard' } }, // Vision has no assigned tier -> falls back to the global apCosts curve
+  specializations: [{ id: 'spec-y', name: 'Spec Y', archetype: 'y', thresholds: { Vision: 70 }, grantsPlaystyle: 'ps1', perk: { name: 'Perk', desc: 'd' }, desc: 'Needs Vision 70 -> grants PS1' }] };
+t('attrTop: per-archetype ceiling below the global scale', M.attrTop(gt, M.archOf(gt, 'y'), 'Finishing') === 80 && M.attrTop(gt, M.archOf(gt, 'y'), 'Vision') === 99);
+t('stepCostFor: named tier picked over the global curve', M.stepCostFor(gt, M.archOf(gt, 'y'), 'Finishing', 65) === 9 && M.stepCostFor(gt, M.archOf(gt, 'y'), 'Finishing', 10) === 1);
+t('stepCostFor: falls back to the global curve when no tier is assigned', M.stepCostFor(gt, M.archOf(gt, 'y'), 'Vision', 10) === M.stepCost(gt, 10));
+const evy = M.evaluate(gt, { arch: 'y', level: 10, spent: { Finishing: 5 } });
+t('evaluate uses per-attribute tier cost and per-attribute cap', evy.rows.find((r) => r.name === 'Finishing').cost === M.costOfFor(gt, evy.arch, 'Finishing', 58, 5) && evy.rows.find((r) => r.name === 'Finishing').top === 80);
+t('canAdd respects the per-attribute ceiling', M.canAdd(gt, M.evaluate(gt, { arch: 'y', level: 40, spent: { Finishing: 22 } }), 'Finishing') === null); // 58+22=80=top
+t('specsFor: new archetype/thresholds shape alongside the legacy archetypes[] shape', M.specsFor(gt, 'y').map((s) => s.id).join() === 'spec-y' && M.specsFor(gb, 'x').map((s) => s.id).join() === 'poacher');
 
 const html = fs.readFileSync(`${ROOT}site/builder.html`, 'utf8');
 t('builder page built, behind the builder flag, with coming-soon fallback', html.includes('data-flag="builder"') && html.includes('bd-soon') && html.includes('assets/builder.js'));

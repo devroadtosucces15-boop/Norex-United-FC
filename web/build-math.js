@@ -19,19 +19,22 @@
   function status(g, arch) {
     return {
       ap: !!g.apPerLevel?.length,
-      costs: !!g.apCosts?.length,
+      costs: !!(g.apCosts?.length || (g.costTiers && Object.keys(g.costTiers).length)),
       base: !!(arch && Object.keys(arch.base || {}).length),
       get preview() { return !(this.ap && this.costs && this.base); },
     };
   }
 
+  // arch.base[attr] is either a plain number (legacy/manual entry) or { base, max } (community/real data,
+  // where the archetype's own ceiling for that attribute can sit below the global scale).
   function baseOf(g, arch) {
     const real = arch?.base || {};
     const grp = arch?.group || 'MID';
     const p = PREVIEW.base[grp] || PREVIEW.base.MID;
     const out = {};
     for (const a of attrsOf(g)) {
-      if (real[a.name] != null) out[a.name] = +real[a.name];
+      const r = real[a.name];
+      if (r != null) out[a.name] = +(typeof r === 'object' ? r.base : r);
       else if (a.group === 'goalkeeping' && grp !== 'GK') out[a.name] = PREVIEW.base.outfieldGk;
       else out[a.name] = p[a.group] ?? p.other;
     }
@@ -40,6 +43,8 @@
 
   const capOf = (g) => Math.max(1, +g.levelCap?.value || 1);
   const maxAttr = (g) => { const c = g.apCosts?.length ? g.apCosts : PREVIEW.apCosts; return c[c.length - 1].upTo; };
+  // Per-archetype, per-attribute ceiling if the dataset has one (real data), else the global scale top.
+  const attrTop = (g, arch, name) => { const r = arch?.base?.[name]; return r && typeof r === 'object' && r.max != null ? +r.max : maxAttr(g); };
 
   // Total AP available at a level: start value + one entry per level gained.
   function apAt(g, level) {
@@ -49,7 +54,9 @@
     return sum;
   }
 
-  // AP cost to raise an attribute from value v to v + 1 (tiers get dearer near the top).
+  // AP cost to raise an attribute from value v to v + 1, against the single global curve (tiers get dearer
+  // near the top). Kept as the simple global-curve utility; evaluate()/canAdd()/fit() use stepCostFor below,
+  // which picks the attribute's own tier when the dataset has per-attribute cost tiers (real data).
   function stepCost(g, v) {
     const tiers = g.apCosts?.length ? g.apCosts : PREVIEW.apCosts;
     const t = tiers.find((x) => v + 1 <= x.upTo);
@@ -61,6 +68,22 @@
     return c;
   }
 
+  // Real data (costTiers + attributeCosts, roadmap PB.1 community import): each attribute is assigned a named
+  // tier (range bands, e.g. { from, to, cost }) per archetype. Falls back to the global apCosts/PREVIEW curve
+  // (stepCost) when the dataset has no per-attribute tier for this archetype/attribute.
+  function stepCostFor(g, arch, name, v) {
+    const tierKey = g.attributeCosts?.[arch?.id]?.[name];
+    const bands = tierKey && g.costTiers?.[tierKey];
+    if (!bands?.length) return stepCost(g, v);
+    const b = bands.find((x) => v < x.to);
+    return b ? +b.cost : Infinity;
+  }
+  function costOfFor(g, arch, name, from, added) {
+    let c = 0;
+    for (let i = 0; i < added; i++) c += stepCostFor(g, arch, name, from + i);
+    return c;
+  }
+
   // Free boosts from Masteries unlocked at this archetype level (EA notes, e.g. Finisher L10 +1 FIN/+1 COM).
   function masteryBonus(g, archId, level) {
     const out = {};
@@ -68,16 +91,25 @@
     return out;
   }
 
-  // Dataset shapes (all optional, entered by managers in Game rules → changed values):
+  // Dataset shapes (all optional, entered by managers in Game rules → changed values, or from a community
+  // import per roadmap PB.1):
   //   playstyles      [{ id, name, icon?, desc?, plus?: true if it can be PlayStyle+ }]
-  //   specializations [{ id, name, desc?, archetypes?: [ids] (empty = all), bonus: { attr: n } }]
+  //   specializations manual shape: [{ id, name, desc?, archetypes?: [ids] (empty = all), bonus: { attr: n } }]
+  //                   real-data shape: [{ id, name, archetype, thresholds: { attr: n }, grantsPlaystyle?, perk?, desc? }]
+  //                   (both read by specsFor(); desc is shown as-is, so a real-data entry should pre-render its
+  //                   own human-readable text - e.g. "Needs Jumping 90 … → grants X + perk: Y")
   //   facilities      [{ id, name, desc?, bonus: { attr: n } }]
   //   slots           { playstyles, plus, facilities }
   //   body            { height: {min,max,def}, weight: {min,max,def}, heightMods: [{ from, to, mods }], weightMods: [...] }
   //   archetypes[].positions ['ST', 'LW'] (else a default per group)
+  //   archetypes[].base[attr] either a plain number, or { base, max } when the archetype has its own ceiling
+  //   costTiers       { tierName: [{ from, to, cost }] } - per-attribute range-cost bands (real data)
+  //   attributeCosts  { archetypeId: { attr: tierName } } - which tier each attribute uses, per archetype
   const slotsOf = (g) => ({ ...PREVIEW.slots, ...(g.slots || {}) });
   const rangeOf = (g, k) => ({ ...PREVIEW.body[k], ...(g.body?.[k] || {}) });
-  const specsFor = (g, archId) => (g.specializations || []).filter((s) => !s.archetypes?.length || s.archetypes.includes(archId));
+  // Real data (roadmap PB.1 community import) ties a spec to one archetype via s.archetype; older/manual
+  // entries may still use the s.archetypes list shape (empty = all archetypes) - both are supported.
+  const specsFor = (g, archId) => (g.specializations || []).filter((s) => (s.archetype ? s.archetype === archId : (!s.archetypes?.length || s.archetypes.includes(archId))));
   const bandMods = (list, v) => (list || []).find((r) => v >= r.from && v <= r.to)?.mods || {};
 
   // Clean a build's choices against the data (unknown ids dropped, slot limits kept, body clamped).
@@ -115,12 +147,13 @@
     const base = baseOf(g, arch);
     const bonus = masteryBonus(g, arch?.id, level);
     const mods = modsOf(g, { ...b, arch: arch?.id });
-    const top = maxAttr(g);
+    const top = maxAttr(g); // global scale (bar width etc.) - per-attribute ceiling is row.top below
     const rows = attrsOf(g).map((a) => {
       const add = Math.max(0, b.spent?.[a.name] | 0);
       const bon = bonus[a.name] || 0;
       const mod = (mods[a.name] || []).reduce((s, [, v]) => s + v, 0);
-      return { ...a, base: base[a.name], add, bonus: bon, mod, modFrom: mods[a.name] || [], value: Math.max(1, Math.min(top, base[a.name] + add + bon + mod)), cost: costOf(g, base[a.name], add), sig: (arch?.signature || []).includes(a.name) };
+      const rowTop = attrTop(g, arch, a.name);
+      return { ...a, base: base[a.name], add, bonus: bon, mod, modFrom: mods[a.name] || [], top: rowTop, value: Math.max(1, Math.min(rowTop, base[a.name] + add + bon + mod)), cost: costOfFor(g, arch, a.name, base[a.name], add), sig: (arch?.signature || []).includes(a.name) };
     });
     const total = apAt(g, level);
     const used = rows.reduce((s, r) => s + r.cost, 0);
@@ -147,8 +180,8 @@
   // Can one more point go into this attribute? Returns the AP cost or null (at max / not enough AP).
   function canAdd(g, ev, name) {
     const r = ev.rows.find((x) => x.name === name);
-    if (!r || r.value >= ev.top) return null;
-    const c = stepCost(g, r.base + r.add);
+    if (!r || r.value >= r.top) return null;
+    const c = stepCostFor(g, ev.arch, name, r.base + r.add);
     return c <= ev.left ? c : null;
   }
 
@@ -157,7 +190,7 @@
     const spent = { ...b.spent };
     let ev = evaluate(g, { ...b, spent });
     while (ev.left < 0) {
-      const r = ev.rows.filter((x) => x.add > 0).sort((x, y) => stepCost(g, y.base + y.add - 1) - stepCost(g, x.base + x.add - 1))[0];
+      const r = ev.rows.filter((x) => x.add > 0).sort((x, y) => stepCostFor(g, ev.arch, y.name, y.base + y.add - 1) - stepCostFor(g, ev.arch, x.name, x.base + x.add - 1))[0];
       if (!r) break;
       spent[r.name] = r.add - 1;
       if (!spent[r.name]) delete spent[r.name];
@@ -201,6 +234,6 @@
     return { ...fit(g, { arch: arch.id, level, spent, ...c, h: extra.h && c.h, w: extra.w && c.w }), version: q.get('v') || null };
   }
 
-  const api = { PREVIEW, slotsOf, rangeOf, specsFor, choices, modsOf, attrsOf, archOf, status, baseOf, capOf, apAt, stepCost, costOf, masteryBonus, evaluate, canAdd, fit, encode, decode };
+  const api = { PREVIEW, slotsOf, rangeOf, specsFor, choices, modsOf, attrsOf, archOf, status, baseOf, capOf, attrTop, apAt, stepCost, costOf, stepCostFor, costOfFor, masteryBonus, evaluate, canAdd, fit, encode, decode };
   globalThis.NXBuildMath = api;
 })();

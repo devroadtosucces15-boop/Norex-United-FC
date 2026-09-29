@@ -390,7 +390,7 @@ ${rows.map((r) => {
 <span class="bd-bar" aria-hidden="true"><i class="b" style="width:${pct(r.base)}%"></i><i class="a" style="left:${pct(r.base)}%;width:${pct(r.add)}%"></i>${r.bonus ? `<i class="m" style="left:${pct(r.base + r.add)}%;width:${pct(r.bonus)}%"></i>` : ''}</span>
 <button type="button" class="bd-pm" data-d="-1" aria-label="Lower ${esc(r.name)}"${r.add ? '' : ' disabled'}>−</button>
 <b class="bd-val">${r.value}${r.add ? `<small>+${r.add}</small>` : ''}${r.bonus ? `<small class="gold" title="Mastery bonus">+${r.bonus}</small>` : ''}${r.mod ? `<small class="${r.mod > 0 ? 'pos' : 'neg'}" title="${esc(r.modFrom.map(([f, v]) => `${f} ${v > 0 ? '+' : ''}${v}`).join(' · '))}">${r.mod > 0 ? '+' : ''}${r.mod}</small>` : ''}</b>
-<button type="button" class="bd-pm" data-d="1" aria-label="Raise ${esc(r.name)}"${c == null ? ' disabled' : ''} title="${c == null ? (r.value >= ev.top ? 'At the maximum' : 'Not enough AP') : `Costs ${c} AP`}">+</button></div>`;
+<button type="button" class="bd-pm" data-d="1" aria-label="Raise ${esc(r.name)}"${c == null ? ' disabled' : ''} title="${c == null ? (r.value >= r.top ? 'At the maximum' : 'Not enough AP') : `Costs ${c} AP`}">+</button></div>`;
   }).join('')}</section>`;
     };
     const leftPct = ev.total ? Math.max(0, (ev.left / ev.total) * 100) : 0;
