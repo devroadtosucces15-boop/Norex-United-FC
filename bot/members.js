@@ -26,7 +26,7 @@ import { ratingsRoute } from './ratings.js';
 import { feedbackRoute } from './feedback.js';
 import { predictRoute } from './predict.js';
 import { recsRoute } from './recs.js';
-import { feedRoute } from './feed.js';
+import { feedPublic, feedRoute } from './feed.js';
 import { hotwPublic, hotwRoute } from './hotw.js';
 import { socialRoute, touch } from './social.js';
 import { mediaUploadRoute } from './media.js';
@@ -243,6 +243,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (me) me.role = await currentRole(env, me);
       if (!flagOn(env, me, 'hotw')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await hotwPublic(env)));
+    }
+    if (url.pathname === '/api/feed/public' && request.method === 'GET') { // P6.1c – posts a member marked public, on the home page
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'feed')) return cors(env, fail('Not available yet.', 404));
+      return cors(env, json(await feedPublic(env)));
     }
     if (url.pathname === '/api/docs' && request.method === 'GET') { // P5.2 – guests see items marked public, behind the docs flag
       if (me) me.role = await currentRole(env, me);

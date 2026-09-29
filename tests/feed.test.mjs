@@ -101,4 +101,39 @@ const pg2 = (await call(mgr, `/api/feed?before=${pg1.next}`)).d;
 t('paging: page two has no pinned repeats and no overlap', pg2.posts.length && !pg2.posts.some((p) => p.pinned || pg1.posts.some((q) => q.id === p.id)));
 t('canModerate for managers', pg1.canModerate === true);
 
+// ---- P6.1c: public flag, report queue, share to Discord ----
+setFlags({ feed: 'public' }); // the /api/feed/public strip only shows to guests once the flag reaches public
+const pub1 = (await call(m1, '/api/feed/post', { text: 'A public one', tag: 'chat' })).d.post;
+t('setpublic: someone else can’t', (await call(m2, '/api/feed/setpublic', { id: pub1.id, public: true })).s === 403);
+t('setpublic: author can make it public', (await call(m1, '/api/feed/setpublic', { id: pub1.id, public: true })).d.post.public === true);
+t('feed/public: shows the public post (no login needed)', (await call(null, '/api/feed/public')).d.posts.some((p) => p.id === pub1.id));
+t('feed/public: private posts stay off it', !(await call(null, '/api/feed/public')).d.posts.some((p) => p.id === p1.id));
+t('setpublic: manager can undo it', (await call(mgr, '/api/feed/setpublic', { id: pub1.id, public: false })).d.post.public === false);
+t('feed/public: gone once made private again', !(await call(null, '/api/feed/public')).d.posts.some((p) => p.id === pub1.id));
+
+t('report: can’t report your own post', (await call(m1, '/api/feed/report', { id: pub1.id, reason: 'x' })).s === 400);
+let rp = (await call(m2, '/api/feed/report', { id: pub1.id, reason: 'Spam' })).d.post;
+t('report: flags it, member only sees their own flag as a bool', rp.reported === true && rp.myReport === true);
+t('report: only once', (await call(m2, '/api/feed/report', { id: pub1.id, reason: 'again' })).s === 409);
+t('report: notifies managers with the post link', sqlite.prepare("SELECT COUNT(*) AS n FROM notifications WHERE user_id = '600' AND link = ?").get(`feed.html#p${pub1.id}`).n === 1);
+const rpMgr = (await call(mgr, `/api/feed/post?id=${pub1.id}`)).d.post;
+t('report: managers see who + why', rpMgr.reported?.by === '501' && rpMgr.reported?.reason === 'Spam');
+t('unreport: members can’t', (await call(m1, '/api/feed/unreport', { id: pub1.id })).s === 403);
+t('unreport: manager clears it', (await call(mgr, '/api/feed/unreport', { id: pub1.id })).d.post.reported === false);
+
+env.DISCORD_BOT_TOKEN = 'bot';
+const shares = [];
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init = {}) => {
+  const u = String(url);
+  if (u.endsWith('/guilds/9/channels')) return Response.json([{ id: '70001', name: 'general', type: 0, position: 2 }]);
+  if (u.endsWith('/guilds/9/roles')) return Response.json([{ id: '9', name: '@everyone', position: 0 }]);
+  const m = u.match(/\/channels\/(\w+)\/messages$/);
+  if (m) { shares.push({ channel: m[1], ...JSON.parse(init.body) }); return Response.json({ id: `m${shares.length}` }); }
+  return realFetch(url, init);
+};
+t('share: members can’t', (await call(m1, '/api/feed/share', { id: pub1.id, channel: '70001' })).s === 403);
+const shared = (await call(mgr, '/api/feed/share', { id: pub1.id, channel: '70001' })).d.post;
+t('share: manager posts it to Discord and the post remembers it', shares.length === 1 && shares[0].channel === '70001' && shares[0].embeds[0].url.includes(`feed.html#p${pub1.id}`) && !!shared.shared);
+
 done();

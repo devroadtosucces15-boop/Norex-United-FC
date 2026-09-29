@@ -428,7 +428,7 @@ ${isHome && RECRUIT.open ? `<p><a class="btn" href="${base}apply.html">👑 Appl
 </div>
 ${isHome && (mvp || scorer) ? `<div class="hero-spot">${mvp ? `<a class="spot" href="${pUrl(mvp.pl, base)}"><small>Top rated</small><b>${esc(mvp.pl.name)}</b>${ratingPill(mvp.v)}</a>` : ''}${scorer ? `<a class="spot" href="${pUrl(scorer.pl, base)}"><small>Top scorer</small><b>${esc(scorer.pl.name)}</b><span class="rp r-great">${scorer.v} ⚽</span></a>` : ''}</div>` : ''}
 </section>
-${isHome && MEMBER_API ? '<div data-next-event hidden></div><div data-hotw hidden></div><div data-news data-flag="docs" hidden></div>' : ''}
+${isHome && MEMBER_API ? '<div data-next-event hidden></div><div data-hotw hidden></div><div data-feed-public hidden></div><div data-news data-flag="docs" hidden></div>' : ''}
 <section class="stats reveal">
 ${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}

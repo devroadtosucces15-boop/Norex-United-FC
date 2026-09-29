@@ -78,9 +78,18 @@
   function post(p) {
     const [ic, label] = S.tags[p.tag] ?? S.tags.chat;
     const mine = p.by.id === me;
-    const menu = [['copy', '🔗 Copy link'], mine && ['edit', '✏️ Edit'], S.canModerate && ['pin', p.pinned ? '📌 Unpin' : '📌 Pin to top'], (mine || S.canModerate) && ['remove', mine ? '🗑 Delete' : '🛡 Remove post']].filter(Boolean);
+    const menu = [
+      ['copy', '🔗 Copy link'],
+      mine && ['edit', '✏️ Edit'],
+      (mine || S.canModerate) && ['public', p.public ? '🔒 Make members-only' : '🌐 Make public'],
+      S.canShare && ['share', '📣 Share to Discord'],
+      !mine && !p.myReport && ['report', '🚩 Report'],
+      S.canModerate && p.reported && ['unreport', '✅ Clear report'],
+      S.canModerate && ['pin', p.pinned ? '📌 Unpin' : '📌 Pin to top'],
+      (mine || S.canModerate) && ['remove', mine ? '🗑 Delete' : '🛡 Remove post'],
+    ].filter(Boolean);
     return `<article class="fd-post t-${esc(p.tag)}${p.pinned ? ' pinned' : ''}" id="p${p.id}" data-id="${p.id}">
-<header class="fd-head">${who(p.by)}<span class="fd-meta">${p.pinned ? '<span class="fd-pin">📌 Pinned</span>' : ''}<span class="fd-tag">${ic} ${esc(label)}</span><a href="#p${p.id}" class="fd-when">${UI.time(p.at)}${p.edited ? ' · edited' : ''}</a></span>
+<header class="fd-head">${who(p.by)}<span class="fd-meta">${p.pinned ? '<span class="fd-pin">📌 Pinned</span>' : ''}${p.public ? '<span class="fd-pin" data-tip="Shown on the public home page">🌐 Public</span>' : ''}${S.canModerate && p.reported ? `<span class="fd-pin bad" data-tip="Reported by ${esc(p.reported.by === me ? 'you' : 'a member')}: ${esc(p.reported.reason)}">🚩 Reported</span>` : ''}<span class="fd-tag">${ic} ${esc(label)}</span><a href="#p${p.id}" class="fd-when">${UI.time(p.at)}${p.edited ? ' · edited' : ''}</a></span>
 <span class="fd-more-wrap"><button type="button" class="fd-more" data-act="menu" aria-label="Post options" aria-expanded="false">⋯</button><span class="fd-menu" hidden>${menu.map(([k, l]) => `<button type="button" data-act="${k}">${l}</button>`).join('')}</span></span></header>
 ${p.text ? `<div class="fd-body md">${body(p.text)}</div>` : ''}${gallery(p)}
 ${reacts(p)}
@@ -317,6 +326,37 @@ ${S.more ? '<p class="fd-morebox"><button type="button" class="btn ghost" data-a
     } else if (a === 'uncomment') {
       if (!(await UI.confirm({ title: 'Remove this comment?', ok: 'Remove', danger: true }))) return;
       try { replace((await call('/api/feed/uncomment', { id: +btn.dataset.cid })).post); } catch (e) { toast(e.message, true); }
+    } else if (a === 'public') {
+      const on = !p.public;
+      if (on && !(await UI.confirm({ title: 'Show this post on the public home page?', text: 'Anyone visiting the site sees it, even without logging in.', ok: 'Make public' }))) return;
+      try { replace((await call('/api/feed/setpublic', { id: p.id, public: on })).post); toast(on ? 'Now public 🌐' : 'Members-only again'); } catch (e) { toast(e.message, true); }
+    } else if (a === 'report') {
+      let reason = '';
+      const v = await UI.modal({
+        title: 'Report this post', icon: '🚩', body: '<form onsubmit="return false"><textarea name="reason" rows="3" maxlength="200" placeholder="What’s wrong with it? (optional)" aria-label="Reason"></textarea></form>',
+        actions: [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: '🚩 Report', value: 'ok', kind: 'danger' }],
+        onOpen: (d) => d.addEventListener('input', () => { reason = $('form', d).reason.value; }),
+      });
+      if (v !== 'ok') return;
+      try { replace((await call('/api/feed/report', { id: p.id, reason })).post); toast('Reported – the managers will take a look'); } catch (e) { toast(e.message, true); }
+    } else if (a === 'unreport') {
+      try { replace((await call('/api/feed/unreport', { id: p.id })).post); toast('Report cleared'); } catch (e) { toast(e.message, true); }
+    } else if (a === 'share') {
+      try {
+        const t = await call('/api/docs/discord');
+        if (!t.ready) { toast(t.error, true); return; }
+        let f = {};
+        const v = await UI.modal({
+          title: 'Share to Discord', icon: '📣',
+          body: `${p.shared ? `<p class="muted small">Already shared ${UI.time(p.shared)} – this posts it again.</p>` : ''}<div class="dx-dc-row"><label>Channel<select name="channel">${t.channels.map((c) => `<option value="${esc(c.id)}"${c.id === t.last ? ' selected' : ''}>${c.news ? '📢' : '#'} ${esc(c.name)}</option>`).join('')}</select></label>
+<label>Ping<select name="role"><option value="">Nobody</option>${t.roles.map((r) => `<option value="${esc(r.id)}">${esc(r.name.startsWith('@') ? r.name : `@${r.name}`)}</option>`).join('')}</select></label></div>`,
+          actions: [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: '📣 Post', value: 'ok' }],
+          onOpen: (d) => { const rd = () => { f = { channel: $('[name=channel]', d)?.value, role: $('[name=role]', d)?.value }; }; rd(); d.addEventListener('change', rd); },
+        });
+        if (v !== 'ok') return;
+        replace((await call('/api/feed/share', { id: p.id, ...f })).post);
+        toast('Posted to Discord 📣');
+      } catch (e) { toast(e.message, true); }
     }
   }
 

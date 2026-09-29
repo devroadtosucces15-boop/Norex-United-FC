@@ -397,6 +397,9 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
   const loadAsset = (file, global) => new Promise((ok, no) => (window[global] ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/${file}`, onload: ok, onerror: no }))));
   const hotwEl = $('[data-hotw]');
   if (hotwEl && flagOn('hotw', baseRole || 'guest')) loadAsset('hotw.js', 'NXHotw').then(() => NXHotw.home(hotwEl)).catch(() => {});
+  // ---------- 📰 public feed posts on the home page (P6.1c) – assets/feed-public.js ----------
+  const feedPubEl = $('[data-feed-public]');
+  if (feedPubEl && flagOn('feed', baseRole || 'guest')) loadAsset('feed-public.js', 'NXFeedPublic').then(() => NXFeedPublic.home(feedPubEl)).catch(() => {});
   if (session && flagOn('presence', baseRole)) loadAsset('presence.js', 'NXPresence').then(() => NXPresence.start({ call, toast })).catch(() => {});
 
   // ---------- verified badges (public) ----------

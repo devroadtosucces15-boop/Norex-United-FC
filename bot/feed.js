@@ -10,9 +10,15 @@
 //   POST /api/feed/comment   { id, parent?, text }                members: comment or reply – COMMENTS_DAY per day
 //   POST /api/feed/uncomment { id }                               author or managers: remove a comment
 //   POST /api/feed/pin       { id, pinned }                       managers: pin to the top (max MAX_PINNED)
+//   GET  /api/feed/public                                         anyone (flag): latest public posts for the home page strip
+//   POST /api/feed/setpublic { id, public }                       author or managers: show/hide on the public home page
+//   POST /api/feed/report    { id, reason }                       members: flag a post for the managers (one at a time)
+//   POST /api/feed/unreport  { id }                                managers: clear a report without removing the post
+//   POST /api/feed/share     { id, channel, role }                managers: post it to a Discord channel
 // Authors show with their current Discord name, avatar, @username and ID (joined from users at read time).
 import { can, flagOn } from './roles.js';
-import { notify, safely } from './notify.js';
+import { notify, notifyManagers, safely } from './notify.js';
+import { postEmbed } from './docs.js';
 import { mentionMap, mentionTags, notifyMentions, reactionsFor } from './social.js';
 import { attach, checkAttach, dropMedia, IMAGE_MAX, mediaFor, mediaRoute, PER_POST, postMediaKeys, UPLOADS_DAY, VIDEO_MAX } from './media.js';
 
@@ -61,11 +67,16 @@ async function hydrate(env, me, rows) {
     // A removed comment stays as a "removed" stub only while it still has visible replies.
     const live = cs.filter((c) => !c.removed);
     const shown = cs.filter((c) => !c.removed || (!c.parent_id && live.some((x) => x.parent_id === c.id)));
+    const mod = can(me, 'posts.moderate');
     return {
       id: r.id, by: author(r), text: r.body, tag: r.tag, at: r.at, edited: opt(r.edited_at), pinned: !!r.pinned,
       media: media[r.id] ?? [], reacts: counts, who, mine: rs.filter((x) => x.user_id === me.u).map((x) => x.emoji),
       comments: shown.map((c) => (c.removed ? { id: c.id, removed: true, at: c.at } : { id: c.id, parent: opt(c.parent_id), by: author(c), text: c.body, at: c.at, ...crx[c.id] })),
       nComments: live.length, mentions: only(ats, [r.body, ...live.map((c) => c.body)]),
+      public: !!r.public, myReport: r.reported_by === me.u,
+      // P6.1c – managers see who reported it and why; a member only sees whether they reported it themselves.
+      reported: !r.reported_at ? false : mod ? { at: r.reported_at, by: r.reported_by, reason: r.reported_reason } : true,
+      shared: opt(r.discord_at),
     };
   });
 }
@@ -80,12 +91,24 @@ async function page(env, me, f, before) {
   const today = await one(env, 'SELECT COUNT(*) AS n FROM posts WHERE user_id = ? AND at > ?', me.u, Date.now() - DAY);
   const ups = await one(env, 'SELECT COUNT(*) AS n FROM media WHERE user_id = ? AND at > ?', me.u, Date.now() - DAY);
   const uploads = { on: !!env.MEDIA, left: Math.max(0, UPLOADS_DAY - ups.n), perDay: UPLOADS_DAY, image: IMAGE_MAX, video: VIDEO_MAX, perPost: PER_POST };
-  return { posts, more, next: more ? rest[PAGE - 1].id : undefined, tags: TAGS, emoji: EMOJI, canModerate: can(me, 'posts.moderate'), canStorage: can(me, 'media.storage'), uploads, left: Math.max(0, POSTS_DAY - today.n), perDay: POSTS_DAY, me: me.u };
+  return { posts, more, next: more ? rest[PAGE - 1].id : undefined, tags: TAGS, emoji: EMOJI, canModerate: can(me, 'posts.moderate'), canStorage: can(me, 'media.storage'), canShare: can(me, 'announce.discord'), uploads, left: Math.max(0, POSTS_DAY - today.n), perDay: POSTS_DAY, me: me.u };
 }
 const onePost = async (env, me, id) => {
   const r = await one(env, `${POST_SQL} WHERE p.id = ? AND p.removed = 0`, Number(id) || 0);
   return r ? (await hydrate(env, me, [r]))[0] : null;
 };
+// P6.1c – latest public posts for the guest-facing home page strip (no login, no moderation details).
+export async function feedPublic(env) {
+  const rows = await all(env, `${POST_SQL} WHERE p.removed = 0 AND p.public = 1 ORDER BY p.id DESC LIMIT 6`);
+  if (!rows.length) return { posts: [] };
+  const media = await mediaFor(env, rows.map((r) => r.id));
+  return {
+    posts: rows.map((r) => ({
+      id: r.id, by: author(r), text: excerpt(r.body, 220), tag: r.tag, at: r.at,
+      media: (media[r.id] ?? []).slice(0, 1),
+    })),
+  };
+}
 // A post needs text unless it carries a photo or clip.
 const postBody = (body, hasMedia = false) => {
   const text = cleanText(body.text, 2000);
@@ -101,7 +124,7 @@ export async function feedRoute(p, method, body, me, env, log, url) {
   if (p === '/api/feed' && method === 'GET') return json(await page(env, me, url.searchParams.get('f') || 'all', Number(url.searchParams.get('before')) || 0));
   if (p === '/api/feed/post' && method === 'GET') {
     const post = await onePost(env, me, url.searchParams.get('id'));
-    return post ? json({ post, tags: TAGS, emoji: EMOJI, canModerate: can(me, 'posts.moderate'), me: me.u }) : fail('This post was removed or never existed.', 404);
+    return post ? json({ post, tags: TAGS, emoji: EMOJI, canModerate: can(me, 'posts.moderate'), canShare: can(me, 'announce.discord'), me: me.u }) : fail('This post was removed or never existed.', 404);
   }
   const med = await mediaRoute(p, method, body, me, env, log);
   if (med) return med;
@@ -201,6 +224,50 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     const r = await run(env, 'UPDATE posts SET pinned = ?, pinned_by = ? WHERE id = ? AND removed = 0', pinned ? 1 : 0, pinned ? me.n : null, id);
     if (!r.meta?.changes) return fail('Post not found.', 404);
     await log(env, me, pinned ? 'post-pin' : 'post-unpin', `#${id}`);
+    return json({ post: await onePost(env, me, id) });
+  }
+  if (p === '/api/feed/setpublic') {
+    const r = await one(env, 'SELECT user_id FROM posts WHERE id = ? AND removed = 0', id);
+    if (!r) return fail('Post not found.', 404);
+    if (r.user_id !== me.u && !can(me, 'posts.moderate')) return fail('Only the author or a manager can do that.', 403);
+    const pub = body.public !== false;
+    await run(env, 'UPDATE posts SET public = ? WHERE id = ?', pub ? 1 : 0, id);
+    await log(env, me, pub ? 'post-public' : 'post-private', `#${id}`);
+    return json({ post: await onePost(env, me, id) });
+  }
+  if (p === '/api/feed/report') {
+    const r = await one(env, 'SELECT user_id, body, reported_at FROM posts WHERE id = ? AND removed = 0', id);
+    if (!r) return fail('Post not found.', 404);
+    if (r.user_id === me.u) return fail('You can’t report your own post.');
+    if (r.reported_at) return fail('Already reported – the managers are on it.', 409);
+    const reason = cleanText(body.reason, 200) || 'No reason given';
+    await run(env, 'UPDATE posts SET reported_at = ?, reported_by = ?, reported_reason = ? WHERE id = ?', Date.now(), me.u, reason, id);
+    await safely(notifyManagers(env, { type: 'queue', icon: '🚩', title: `${me.n} reported a feed post`, body: `“${excerpt(r.body || 'photo/clip', 100)}” – ${reason}`, link: `feed.html#p${id}` }, me.u));
+    await log(env, me, 'post-report', `#${id}: ${reason}`);
+    return json({ post: await onePost(env, me, id) });
+  }
+  if (p === '/api/feed/unreport') {
+    if (!can(me, 'posts.moderate')) return fail('Managers only.', 403);
+    const r = await run(env, 'UPDATE posts SET reported_at = NULL, reported_by = NULL, reported_reason = NULL WHERE id = ? AND removed = 0', id);
+    if (!r.meta?.changes) return fail('Post not found.', 404);
+    await log(env, me, 'post-unreport', `#${id}`);
+    return json({ post: await onePost(env, me, id) });
+  }
+  if (p === '/api/feed/share') {
+    if (!can(me, 'announce.discord')) return fail('Managers only.', 403);
+    const r = await one(env, `${POST_SQL} WHERE p.id = ? AND p.removed = 0`, id);
+    if (!r) return fail('Post not found.', 404);
+    const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
+    const res = await postEmbed(env, body.channel, body.role, {
+      embeds: [{
+        title: `${TAGS[r.tag]?.[0] ?? '💬'} ${r.name ?? 'A member'} on the club feed`, url: `${site}feed.html#p${id}`, color: 0xc8352c,
+        description: excerpt(r.body || '(photo/clip)', 400),
+        footer: { text: 'NOREX UNITED · club feed' },
+      }],
+    });
+    if (!res.ok) return fail(res.error, 400);
+    await run(env, 'UPDATE posts SET discord_at = ? WHERE id = ?', Date.now(), id);
+    await log(env, me, 'post-share', `#${id}`);
     return json({ post: await onePost(env, me, id) });
   }
   return fail('Not found', 404);

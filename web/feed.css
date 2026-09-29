@@ -41,6 +41,7 @@
 .fd-when{color:var(--muted);text-decoration:none}.fd-when:hover{color:var(--text)}
 .fd-tag{padding:2px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2);color:var(--text);white-space:nowrap}
 .fd-pin{color:#fff;background:var(--red);padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.fd-pin.bad{background:#7f1d1d}
 .fd-more-wrap,.fd-add-wrap{position:relative}
 .fd-more{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;padding:2px 6px;border-radius:8px;cursor:pointer}
 .fd-more:hover,.fd-more[aria-expanded="true"]{color:#fff;background:var(--panel2)}
