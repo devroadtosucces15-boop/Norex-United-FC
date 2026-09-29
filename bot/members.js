@@ -82,7 +82,9 @@ const run = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).run();
 const marks = (n) => Array(n).fill('?').join(',');
 const opt = (v) => v ?? undefined; // NULL columns → key left out of the JSON, like the old documents
 
-const userOut = (r) => ({ n: r.name, a: r.avatar, tag: r.tag, admin: !!r.admin, role: r.role, first: r.first_at, last: r.last_at, logins: r.logins });
+const parseWarnings = (s) => { try { return JSON.parse(s || '[]'); } catch { return []; } };
+const userOut = (r) => ({ n: r.name, a: r.avatar, tag: r.tag, admin: !!r.admin, role: r.role, first: r.first_at, last: r.last_at, logins: r.logins,
+  mutedUntil: r.muted_until > Date.now() ? r.muted_until : undefined, warnings: parseWarnings(r.warnings) }); // P8.3
 const claimOut = (r, history = []) => ({
   player: r.player, playerName: r.player_name, status: r.status, at: r.at, n: r.name, a: r.avatar,
   decidedBy: opt(r.decided_by), decidedAt: opt(r.decided_at), history,
@@ -111,7 +113,7 @@ async function getClaims(env) {
 async function memberActivity(env, me, uid) {
   const seeAllMsg = can(me, 'messages.all');
   const seeReported = can(me, 'messages.reported');
-  const [claim, votes, ratings, avail, posts, acks, activity, msgRows] = await Promise.all([
+  const [claim, votes, ratings, avail, posts, acks, activity, msgRows, roleHistory] = await Promise.all([
     getClaim(env, uid),
     all(env, 'SELECT * FROM votes WHERE user_id = ? ORDER BY at DESC LIMIT 50', uid),
     all(env, 'SELECT * FROM star_ratings WHERE user_id = ? ORDER BY at DESC LIMIT 50', uid),
@@ -121,6 +123,7 @@ async function memberActivity(env, me, uid) {
     all(env, 'SELECT * FROM activity WHERE user_id = ? ORDER BY id DESC LIMIT 200', uid),
     all(env, `SELECT cm.id, cm.chat_id, cm.text, cm.at, cm.reported_at, c.kind, c.name FROM chat_messages cm
                JOIN chats c ON c.id = cm.chat_id WHERE cm.user_id = ? AND cm.removed = 0 ORDER BY cm.at DESC LIMIT 100`, uid),
+    all(env, 'SELECT from_role, to_role, at FROM role_history WHERE user_id = ? ORDER BY at DESC LIMIT 50', uid), // P8.3
   ]);
   return {
     claim,
@@ -130,12 +133,62 @@ async function memberActivity(env, me, uid) {
     posts: posts.map((p) => ({ id: p.id, body: p.body, tag: p.tag, at: p.at, removed: !!p.removed })),
     acknowledgements: acks.map((a) => ({ version: a.version, at: a.at })),
     activity: activity.map((a) => ({ at: a.at, type: a.type, detail: a.detail })),
+    roleHistory: roleHistory.map((r) => ({ from: r.from_role, to: r.to_role, at: r.at })), // P8.3
     // metadata only – text included only when policy allows (owner, or a reported message a manager may see)
     messages: msgRows.map((m) => ({
       chatId: m.chat_id, kind: m.kind, chatName: opt(m.name), at: m.at, reported: !!m.reported_at,
       ...(seeAllMsg || (m.reported_at && seeReported) ? { text: m.text } : {}),
     })),
   };
+}
+
+// ---------- P8.1 – manager portal "full visibility": search + filter across the submission types ----------
+const SUBMISSION_TYPES = ['feedback', 'ratings', 'awardVotes', 'predictions', 'suggestions', 'builds'];
+async function submissions(env, type, q) {
+  const like = q ? `%${q.replace(/[%_]/g, '\\$&')}%` : null;
+  const esc = like ? " ESCAPE '\\'" : '';
+  if (type === 'feedback') {
+    const rows = await all(env, `SELECT * FROM feedback ${like ? `WHERE (from_name LIKE ?${esc} OR to_name LIKE ?${esc} OR body LIKE ?${esc})` : ''} ORDER BY at DESC LIMIT 300`, ...(like ? [like, like, like] : []));
+    return rows.map((r) => ({ id: r.id, at: r.at, author: r.from_name, subject: r.to_name, kind: r.kind, body: r.body, hidden: !!r.hidden, reported: !!r.reported_at, report: opt(r.report) }));
+  }
+  if (type === 'ratings') {
+    const rows = await all(env, `SELECT * FROM star_ratings ${like ? `WHERE (name LIKE ?${esc} OR player LIKE ?${esc})` : ''} ORDER BY at DESC LIMIT 300`, ...(like ? [like, like] : []));
+    return rows.map((r) => ({ id: `${r.week}:${r.user_id}:${r.player}`, at: r.at, author: r.name, subject: r.player, body: `${r.stars}★ · week ${r.week}` }));
+  }
+  if (type === 'awardVotes') {
+    const rows = await all(env, `SELECT v.week, v.player, v.at, u.name AS voter, c.name AS category FROM award_votes v
+      LEFT JOIN users u ON u.id = v.user_id LEFT JOIN award_categories c ON c.id = v.category_id
+      ${like ? `WHERE (u.name LIKE ?${esc} OR v.player LIKE ?${esc} OR c.name LIKE ?${esc})` : ''} ORDER BY v.at DESC LIMIT 300`, ...(like ? [like, like, like] : []));
+    return rows.map((r) => ({ id: `${r.week}:${r.voter}:${r.category}`, at: r.at, author: opt(r.voter), subject: r.player, body: `${opt(r.category) ?? 'Award'} · week ${r.week}` }));
+  }
+  if (type === 'predictions') {
+    const rows = await all(env, `SELECT * FROM predictions ${like ? `WHERE name LIKE ?${esc}` : ''} ORDER BY at DESC LIMIT 300`, ...(like ? [like] : []));
+    return rows.map((r) => ({ id: `${r.event_id}:${r.user_id}`, at: r.at, author: r.name, subject: `Event #${r.event_id}`, body: `${r.gf}–${r.ga}${r.points != null ? ` · ${r.points}pt` : ''}` }));
+  }
+  if (type === 'suggestions') {
+    const rows = await all(env, `SELECT * FROM suggestions WHERE removed_at IS NULL ${like ? `AND (by_name LIKE ?${esc} OR title LIKE ?${esc} OR body LIKE ?${esc})` : ''} ORDER BY at DESC LIMIT 300`, ...(like ? [like, like, like] : []));
+    return rows.map((r) => ({ id: r.id, at: r.at, author: r.by_name, subject: r.title, body: r.body, kind: r.status, anon: !!r.anon }));
+  }
+  if (type === 'builds') {
+    const rows = await all(env, `SELECT * FROM builds WHERE removed_at IS NULL ${like ? `AND (name LIKE ?${esc} OR title LIKE ?${esc})` : ''} ORDER BY at DESC LIMIT 300`, ...(like ? [like, like] : []));
+    return rows.map((r) => ({ id: r.id, at: r.at, author: r.name, subject: r.title, body: `${r.arch} · lvl ${r.level}${r.posted_at ? ' · posted' : ''}` }));
+  }
+  return [];
+}
+
+// ---------- P8.3 – unified review queue: everything currently reported, across features ----------
+async function reportsQueue(env) {
+  const [posts, fb, msgs] = await Promise.all([
+    all(env, `SELECT id, user_id, name, body, tag, reported_at, reported_by, reported_reason FROM posts WHERE reported_at IS NOT NULL AND removed = 0 ORDER BY reported_at DESC LIMIT 100`),
+    all(env, `SELECT id, from_name, to_name, body, kind, reported_at, report FROM feedback WHERE reported_at IS NOT NULL AND hidden = 0 ORDER BY reported_at DESC LIMIT 100`),
+    all(env, `SELECT m.id, m.chat_id, m.name, m.text, m.reported_at, m.reported_by, m.reported_reason, c.kind, c.name AS chat_name FROM chat_messages m
+      JOIN chats c ON c.id = m.chat_id WHERE m.reported_at IS NOT NULL AND m.removed = 0 ORDER BY m.reported_at DESC LIMIT 100`),
+  ]);
+  return [
+    ...posts.map((p) => ({ source: 'post', id: p.id, at: p.reported_at, author: p.name, reason: opt(p.reported_reason), excerpt: (p.body || '').slice(0, 140), link: `feed.html#p${p.id}` })),
+    ...fb.map((f) => ({ source: 'feedback', id: f.id, at: f.reported_at, author: `${f.from_name} → ${f.to_name}`, reason: opt(f.report), excerpt: (f.body || '').slice(0, 140), link: 'members.html#feedback' })),
+    ...msgs.map((m) => ({ source: 'message', id: m.id, at: m.reported_at, author: m.name, reason: opt(m.reported_reason), excerpt: (m.text || '').slice(0, 140), link: `messages.html#c${m.chat_id}` })),
+  ].sort((a, b) => b.at - a.at);
 }
 
 async function log(env, me, type, detail) {
@@ -397,10 +450,15 @@ async function callback(url, env) {
   const admin = atLeast(role, 'manager');
 
   const now = Date.now();
+  const prevRole = (await one(env, 'SELECT role FROM users WHERE id = ?', user.id))?.role;
   await run(env, `INSERT INTO users (id, name, avatar, tag, admin, role, first_at, last_at, logins) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
     ON CONFLICT (id) DO UPDATE SET name = excluded.name, avatar = excluded.avatar, tag = excluded.tag, admin = excluded.admin,
       role = excluded.role, last_at = excluded.last_at, logins = users.logins + 1`, user.id, name, avatar, user.username, admin ? 1 : 0, role, now, now);
   const me = { u: user.id, n: name, a: avatar };
+  if (prevRole && prevRole !== role) { // P8.3 – role-change history (Discord role sync)
+    await run(env, 'INSERT INTO role_history (user_id, from_role, to_role, at) VALUES (?, ?, ?, ?)', user.id, prevRole, role, now);
+    await log(env, me, 'role-change', `${ROLE_LABEL[prevRole] ?? prevRole} → ${ROLE_LABEL[role] ?? role}`);
+  }
   await log(env, me, 'login', admin ? `as ${role}` : '');
   await safely(saveConnections(env, user.id, auth).then(() => flagOn(env, { role }, 'platformLink') && autoApprove(env, user.id, loadSiteFor(env)))); // P2.4
   const session = await seal(env, { ...me, role, adm: admin, exp: Math.floor(Date.now() / 1000) + (admin ? 7 : 30) * DAY });
@@ -569,6 +627,41 @@ async function route(p, method, body, me, env, loadSite, url) {
       const u = await one(env, 'SELECT * FROM users WHERE id = ?', uid);
       if (!u) return fail('Member not found', 404);
       return json({ user: userOut(u), ...(await memberActivity(env, me, uid)) });
+    }
+    if (p === '/api/admin/submissions' && method === 'GET') { // P8.1 – full visibility across submission types
+      if (!can(me, 'submissions.view')) return fail('Managers only.', 403);
+      const type = String(url?.searchParams.get('type') ?? '');
+      if (!SUBMISSION_TYPES.includes(type)) return fail(`type must be one of: ${SUBMISSION_TYPES.join(', ')}`);
+      return json({ type, rows: await submissions(env, type, clean(url?.searchParams.get("q") ?? "", 100)) });
+    }
+    if (p === '/api/admin/reports' && method === 'GET') { // P8.3 – unified reported-content queue
+      if (!can(me, 'reports.view')) return fail('Managers only.', 403);
+      return json({ items: await reportsQueue(env) });
+    }
+    if (p === '/api/admin/warn' && method === 'POST') { // P8.3
+      if (!can(me, 'moderation.manage')) return fail('Managers only.', 403);
+      const uid = String(body.user ?? '');
+      const reason = clean(body.reason, 200);
+      if (!reason) return fail('Give a reason.');
+      const u = await one(env, 'SELECT warnings, name FROM users WHERE id = ?', uid);
+      if (!u) return fail('Member not found', 404);
+      const warnings = [...parseWarnings(u.warnings), { at: Date.now(), by: me.n, reason }];
+      await run(env, 'UPDATE users SET warnings = ? WHERE id = ?', JSON.stringify(warnings), uid);
+      await log(env, me, 'warn', `${u.name}: ${reason}`);
+      await safely(notify(env, [uid], { type: 'moderation', icon: '⚠️', title: 'You received a warning from the managers', body: reason, link: 'members.html#me' }));
+      return json({ ok: true, warnings });
+    }
+    if (p === '/api/admin/mute' && method === 'POST') { // P8.3
+      if (!can(me, 'moderation.manage')) return fail('Managers only.', 403);
+      const uid = String(body.user ?? '');
+      const hours = Math.max(0, Number(body.hours) || 0);
+      const u = await one(env, 'SELECT name FROM users WHERE id = ?', uid);
+      if (!u) return fail('Member not found', 404);
+      const until = hours ? Date.now() + hours * 3600e3 : null;
+      await run(env, 'UPDATE users SET muted_until = ? WHERE id = ?', until, uid);
+      await log(env, me, until ? 'mute' : 'unmute', until ? `${u.name} · ${hours}h` : u.name);
+      if (until) await safely(notify(env, [uid], { type: 'moderation', icon: '🔇', title: 'You’ve been muted by the managers', body: `You can't post, comment or message until ${new Date(until).toLocaleString()}.`, link: 'members.html#me' }));
+      return json({ ok: true, mutedUntil: until ?? undefined });
     }
     if (p === '/api/admin/claims' && method === 'POST') {
       if (!can(me, 'claims.decide')) return fail('Managers only.', 403);

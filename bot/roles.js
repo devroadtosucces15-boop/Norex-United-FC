@@ -81,6 +81,9 @@ export const PERMS = {
   'awards.manage': 'manager', // P4.1 – fun categories, Discord channel, close a week early
   'roles.sync': 'manager', // P2.5 – /syncroles: re-sync the ✅ Verified Discord role for every claim
   'insights.view': 'manager', // Club Intelligence – /insights server + club analysis (weekly DM goes to the owner)
+  'submissions.view': 'manager', // P8.1 – portal: feedback, ratings, award votes, predictions, suggestions, builds in one place
+  'reports.view': 'manager', // P8.3 – unified reported-content queue (posts, feedback, messages)
+  'moderation.manage': 'manager', // P8.3 – warn / mute members
 };
 
 export function can(user, action) {
@@ -91,6 +94,12 @@ export function can(user, action) {
 
 // Every action this role unlocks – sent to the site so it can show the right buttons.
 export const permsFor = (role) => Object.keys(PERMS).filter((a) => atLeast(role, PERMS[a]));
+
+// P8.3 – a muted member keeps read access but can't post/comment/message until this passes.
+export async function muted(env, uid) {
+  const r = await env.DB.prepare('SELECT muted_until FROM users WHERE id = ?').bind(uid).first();
+  return r?.muted_until > Date.now() ? r.muted_until : null;
+}
 
 const ids = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
 // Role from Discord at login (roles = the member's role IDs in the NOREX server). `claimed` is added per request.

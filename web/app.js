@@ -459,7 +459,8 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
   const ICON = { yes: '✅', maybe: '❔', no: '❌' };
   const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   const pill = (r) => `<span class="res ${r}">${r}</span>`;
-  const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set() };
+  const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set(),
+    subm: { type: 'feedback', q: '', rows: null }, reports: null }; // P8.1 / P8.3
   const TABS = [['me', '👤 My NOREX'], ...(flagOn('events', baseRole) ? [['schedule', '🗓️ Schedule']] : []), ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(flagOn('suggestions', baseRole) ? [['ideas', '💡 Ideas']] : []), ...(flagOn('awards', baseRole) ? [['awards', '🏆 Awards']] : []), ...(flagOn('rushSquads', baseRole) ? [['squads', '🤝 Squads']] : []), ...(flagOn('starRatings', baseRole) ? [['ratings', '🌟 Ratings']] : []), ...(flagOn('predictions', baseRole) ? [['predict', '🔮 Predict']] : []), ...(flagOn('recommendations', baseRole) ? [['teamup', '🎯 Team up']] : []), ...(flagOn('feedback', baseRole) ? [['feedback', '💌 Feedback']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
 
   hubEl.innerHTML = `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
@@ -485,9 +486,38 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
       if (tab === 'availability') S.avail = await call('/api/availability');
       if (tab === 'votes') S.votes = await call('/api/vote');
       if ((tab === 'rush' || tab === 'manager') && flagOn('rushLog', baseRole)) S.rush = await call('/api/rush/queue');
-      if (tab === 'manager') { S.admin = await call('/api/admin/overview'); if (S.admin.events?.length) await loadEvents().catch(() => {}); }
+      if (tab === 'manager') {
+        S.admin = await call('/api/admin/overview');
+        if (S.admin.events?.length) await loadEvents().catch(() => {});
+        if (S.adminTab === 'submissions') await loadSubmissions();
+        if (S.adminTab === 'reports') await loadReports();
+      }
       if (tab === S.tab) draw();
     } catch (e) { toast(e.message, true); }
+  }
+  // P8.1 – manager portal "full visibility": search + filter across submission types.
+  async function loadSubmissions(type = S.subm.type, q = S.subm.q) {
+    S.subm = { type, q, rows: null };
+    draw();
+    try { S.subm = { type, q, rows: (await call(`/api/admin/submissions?type=${type}&q=${encodeURIComponent(q)}`)).rows }; } catch (e) { toast(e.message, true); S.subm.rows = []; }
+    if (S.adminTab === 'submissions') draw();
+  }
+  function exportCSV(rows, name) {
+    const cols = ['at', 'author', 'subject', 'kind', 'body'];
+    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [cols.join(','), ...rows.map((r) => cols.map((c) => cell(c === 'at' ? new Date(r.at).toISOString() : r[c])).join(','))].join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `norex-${name}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  // P8.3 – unified reported-content queue: posts, feedback, messages currently flagged for review.
+  async function loadReports() {
+    S.reports = null;
+    draw();
+    try { S.reports = (await call('/api/admin/reports')).items; } catch (e) { toast(e.message, true); S.reports = []; }
+    if (S.adminTab === 'reports') draw();
   }
   const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', ideas: () => '<div id="ideas-panel"></div>', schedule: () => '<div id="schedule-panel"></div>', awards: () => '<div id="awards-panel"></div>', squads: () => '<div id="squads-panel"></div>', ratings: () => '<div id="ratings-panel"></div>', predict: () => '<div id="predict-panel"></div>', teamup: () => '<div id="teamup-panel"></div>', feedback: () => '<div id="feedback-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
 
@@ -649,7 +679,8 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
     const mem = (id, u, sub, size = 26) => { const c = A.claims[id]; const pl = c?.status === 'approved' ? c : null; return UI.member({ id, n: u.n, a: u.a, sub: sub ?? (pl ? `🪪 ${pl.playerName}` : ''), player: pl?.player, href: profilesOn ? `${BASE}member.html?u=${encodeURIComponent(id)}` : undefined }, { size }); };
     const rq = S.rush?.pending || [];
     const notesOn = flagOn('managerNotes', baseRole);
-    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('requests', baseRole) ? [['requests', '📨 Requests']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(flagOn('proBuilds', baseRole) && S.me?.user?.perms?.includes('builds.squad') ? [['builds', '🧬 Builds']] : []), ...(A.flags ? [['bot', '🤖 Bot settings'], ['flags', '🚩 Flags']] : [])];
+    const canSubm = S.me?.user?.perms?.includes('submissions.view'), canReports = S.me?.user?.perms?.includes('reports.view');
+    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(canSubm ? [['submissions', '📋 Submissions']] : []), ...(canReports ? [['reports', `🚩 Reports${S.reports?.length ? ` (${S.reports.length})` : ''}`]] : []), ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('requests', baseRole) ? [['requests', '📨 Requests']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(flagOn('proBuilds', baseRole) && S.me?.user?.perms?.includes('builds.squad') ? [['builds', '🧬 Builds']] : []), ...(A.flags ? [['bot', '🤖 Bot settings'], ['flags', '🚩 Flags']] : [])];
     if (!sub.some(([k]) => k === S.adminTab)) S.adminTab = 'claims';
     const body = {
       claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'New player claims show up here for approval.' })}
@@ -667,6 +698,20 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
       votes: () => `<div class="votes">${A.votes.map((m) => `<div class="card vote"><div class="vote-head">${pill(m.res)} <b>${m.gf}–${m.ga} vs ${esc(m.opp)}</b><small class="muted">${m.voters.length} votes</small></div>${m.voters.length ? `<ul class="voters">${m.voters.map((v) => `<li><img class="av" src="${esc(v.a)}" alt=""> ${esc(v.n)} → <b>${esc(v.pn || '?')}</b></li>`).join('')}</ul>` : '<p class="muted">No votes yet.</p>'}</div>`).join('')}</div>`,
       activity: () => `<div class="row" style="margin-bottom:12px"><select id="act-filter"><option value="">Everyone</option>${users.map(([id, u]) => `<option value="${id}"${S.actFilter === id ? ' selected' : ''}>${esc(u.n)}</option>`).join('')}</select></div>
 <ul class="feed">${A.activity.filter((a) => !S.actFilter || a.u === S.actFilter).map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><div>${mem(a.u, a, '', 22)} ${ACT_TXT[a.type] || esc(a.type)}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${ago(a.at)}</small></li>`).join('') || `<li>${UI.empty({ icon: '📜', title: 'No activity yet', text: S.actFilter ? 'This member has not done anything yet.' : '' })}</li>`}</ul>`,
+      submissions: () => { // P8.1 – full visibility: feedback, ratings, award votes, predictions, suggestions, builds
+        const SUBM_LABEL = { feedback: '💌 Feedback', ratings: '🌟 Ratings', awardVotes: '🏆 Award votes', predictions: '🔮 Predictions', suggestions: '💡 Suggestions', builds: '🧬 Builds' };
+        const rows = S.subm.rows;
+        return `<div class="row" style="margin-bottom:12px;flex-wrap:wrap;gap:8px"><select id="subm-type">${Object.entries(SUBM_LABEL).map(([k, l]) => `<option value="${k}"${S.subm.type === k ? ' selected' : ''}>${l}</option>`).join('')}</select>
+<input id="subm-q" placeholder="Search author, text…" value="${esc(S.subm.q)}" style="flex:1;min-width:160px"><button class="btn ghost sm" type="button" id="subm-search">Search</button>
+<button class="btn ghost sm" type="button" id="subm-csv"${rows?.length ? '' : ' disabled'}>⬇️ Export CSV</button></div>
+${rows === null ? UI.skeleton('rows', 5) : rows.length ? `<div class="tbl"><table><thead><tr><th>When</th><th>Author</th><th>Subject</th><th>Detail</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${ago(r.at)}</td><td>${esc(r.author ?? '–')}</td><td>${esc(r.subject ?? '–')}</td><td>${r.kind ? `<span class="tag">${esc(r.kind)}</span> ` : ''}${esc((r.body || '').slice(0, 160))}${r.reported ? ` ${UI.pill('reported', { emoji: '🚩', tone: 'loss' })}` : ''}</td></tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '📭', title: 'Nothing here yet' })}`;
+      },
+      reports: () => { // P8.3 – unified reported-content review queue
+        const items = S.reports;
+        const src = { post: ['📰 Post', 'feed.js'], feedback: ['💌 Feedback', 'feedback.js'], message: ['💬 Message', 'chat.js'] };
+        return `<p class="muted small">Everything currently flagged by a member, across the feed, anonymous feedback and DMs/groups.</p>
+${items === null ? UI.skeleton('rows', 4) : items.length ? `<div class="claim-list">${items.map((r) => `<div class="claim-row card"><div><span class="tag">${src[r.source]?.[0] ?? r.source}</span> <b>${esc(r.author ?? '–')}</b>${r.reason ? ` <span class="muted">“${esc(r.reason)}”</span>` : ''}<div class="muted small">${esc(r.excerpt || '')}</div><small class="muted">${ago(r.at)}</small></div><div class="row">${r.link ? `<a class="btn ghost sm" href="${esc(r.link)}">Open</a>` : ''}<button class="btn ghost sm" type="button" data-report-clear="${r.source}" data-id="${r.id}">✅ Clear</button><button class="btn ghost sm danger" type="button" data-report-remove="${r.source}" data-id="${r.id}">🗑 Remove</button></div></div>`).join('')}</div>` : UI.empty({ icon: '🎉', title: 'Nothing reported', text: 'Flagged posts, feedback and messages show up here.' })}`;
+      },
       trials: () => '<div id="trials-admin"></div>', // P1.5 – drawn by assets/trials.js
       notes: () => '<div id="notes-admin"></div>', // P5.7
       requests: () => '<div id="requests-admin"></div>', // P5.6 – drawn by assets/notify.js
@@ -699,16 +744,20 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
   async function openDrill(id) {
     const u = S.admin.users[id];
     const canProfile = profilesOn;
+    const canMod = S.me?.user?.perms?.includes('moderation.manage');
     const choice = await UI.modal({
       title: u?.n || 'Member', icon: '🔎',
-      body: '<p class="muted">What do you want to see?</p>',
+      body: `<p class="muted">What do you want to see?</p>${u?.mutedUntil ? `<p class="small">🔇 Muted until ${new Date(u.mutedUntil).toLocaleString()}</p>` : ''}${u?.warnings?.length ? `<p class="small">⚠️ ${u.warnings.length} warning${u.warnings.length > 1 ? 's' : ''} on record</p>` : ''}`,
       actions: [
         ...(canProfile ? [{ label: 'Open profile', value: 'profile' }] : []),
         { label: 'View activity log', value: 'log' },
+        ...(canMod ? [{ label: '⚠️ Warn', value: 'warn' }, { label: u?.mutedUntil ? '🔊 Unmute' : '🔇 Mute', value: 'mute' }] : []),
         { label: 'Cancel', value: null, kind: 'ghost' },
       ],
     });
     if (choice === 'profile') return void (location.href = `${BASE}member.html?u=${encodeURIComponent(id)}`);
+    if (choice === 'warn') return void warnMember(id, u);
+    if (choice === 'mute') return void muteMember(id, u);
     if (choice !== 'log') return;
     let d;
     try { d = await call(`/api/admin/member/${encodeURIComponent(id)}`); } catch (e) { return toast(e.message, true); }
@@ -716,14 +765,37 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
     const body = `
 ${row('📜', 'Activity', d.activity.map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><div>${ACT_TXT[a.type] || esc(a.type)}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${ago(a.at)}</small></li>`))}
 ${row('🪪', 'Claim history', (d.claim?.history || []).map((h) => `<li><div>${esc(h.action)} <span class="muted">${esc(h.player)}</span></div><small class="muted">${ago(h.at)} · ${esc(h.by || '–')}</small></li>`))}
+${row('🔀', 'Role changes', (d.roleHistory || []).map((h) => `<li><div>${roleTag(h.from)} → ${roleTag(h.to)}</div><small class="muted">${ago(h.at)}</small></li>`))}
+${row('⚠️', 'Warnings', (u?.warnings || []).map((w) => `<li><div>${esc(w.reason)}</div><small class="muted">${ago(w.at)} · ${esc(w.by)}</small></li>`))}
 ${row('🗳️', 'MOTM votes', d.votes.map((v) => `<li><div>voted <b>${esc(v.player)}</b></div><small class="muted">${ago(v.at)}</small></li>`))}
 ${row('🌟', 'Star ratings given', d.ratings.map((r) => `<li><div>${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)} → ${esc(r.player)}</div><small class="muted">${esc(r.week)} · ${ago(r.at)}</small></li>`))}
 ${row('📅', 'Availability', d.availability.map((a) => `<li><div>${esc(fmtDay(a.date))}: ${ICON[a.status] || a.status}</div><small class="muted">${ago(a.at)}</small></li>`))}
 ${row('📰', 'Posts', d.posts.map((p) => `<li><div>${p.removed ? '<i>(removed)</i> ' : ''}${esc((p.body || '').slice(0, 140))}</div><small class="muted">${esc(p.tag)} · ${ago(p.at)}</small></li>`))}
 ${row('💬', 'Messages', d.messages.map((m) => `<li><div>${m.kind === 'dm' ? 'DM' : `group “${esc(m.chatName || '')}”`}${m.reported ? ` ${UI.pill('reported', { emoji: '🚩', tone: 'loss' })}` : ''}${m.text != null ? `: ${esc(m.text.slice(0, 140))}` : ' <span class="muted">(content hidden)</span>'}</div><small class="muted">${ago(m.at)}</small></li>`))}
 ${row('📜', 'Acknowledged rules', d.acknowledgements.map((a) => `<li><div>Rules v${a.version}</div><small class="muted">${ago(a.at)}</small></li>`))}
-${[d.activity, d.claim?.history, d.votes, d.ratings, d.availability, d.posts, d.messages, d.acknowledgements].every((x) => !x || !x.length) ? UI.empty({ icon: '📭', title: 'Nothing on record yet' }) : ''}`;
+${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings, d.availability, d.posts, d.messages, d.acknowledgements].every((x) => !x || !x.length) ? UI.empty({ icon: '📭', title: 'Nothing on record yet' }) : ''}`;
     UI.modal({ title: `Activity log · ${u?.n ?? 'member'}`, icon: '📜', body, wide: true, actions: [{ label: 'Close', value: null, kind: 'ghost' }] });
+  }
+  // P8.3 – warn / mute a member from the portal.
+  async function warnMember(id, u) {
+    let text = '';
+    const reason = await UI.modal({ title: `Warn ${u?.n ?? 'member'}`, icon: '⚠️', body: '<label class="fld">Reason<input id="warn-reason" maxlength="200" placeholder="What happened?"></label>', actions: [{ label: 'Send warning', value: 'ok' }, { label: 'Cancel', value: null, kind: 'ghost' }],
+      onOpen: (el) => { const inp = $('#warn-reason', el); inp?.focus(); inp?.addEventListener('input', () => { text = inp.value.trim(); }); } });
+    if (reason !== 'ok') return;
+    if (!text) return toast('Give a reason', true);
+    try { await call('/api/admin/warn', { user: id, reason: text }); S.admin = await call('/api/admin/overview'); draw(); toast('Warning sent'); } catch (e) { toast(e.message, true); }
+  }
+  async function muteMember(id, u) {
+    if (u?.mutedUntil) {
+      try { await call('/api/admin/mute', { user: id, hours: 0 }); S.admin = await call('/api/admin/overview'); draw(); toast('Unmuted'); } catch (e) { toast(e.message, true); }
+      return;
+    }
+    const choice = await UI.modal({
+      title: `Mute ${u?.n ?? 'member'}`, icon: '🔇', body: '<p class="muted small">They can still read everything – just can’t post, comment or message.</p>',
+      actions: [{ label: '1 hour', value: 1 }, { label: '24 hours', value: 24 }, { label: '7 days', value: 168 }, { label: 'Cancel', value: null, kind: 'ghost' }],
+    });
+    if (!choice) return;
+    try { await call('/api/admin/mute', { user: id, hours: choice }); S.admin = await call('/api/admin/overview'); draw(); toast('Muted'); } catch (e) { toast(e.message, true); }
   }
 
   // ----- event wiring for whatever panel is showing -----
@@ -755,6 +827,8 @@ ${[d.activity, d.claim?.history, d.votes, d.ratings, d.availability, d.posts, d.
   Object.assign(ACT_TXT, { 'hotw-vote': 'voted for the highlight of the week', 'hotw-unvote': 'took back a highlight vote', 'presence-hide': 'switched to appear offline', 'presence-show': 'is visible online again' });
   Object.assign(ACT, { announce: '📣', 'notify-ack': '✓', request: '📨', 'request-approved': '✅', 'request-rejected': '⛔', 'request-undone': '↩' });
   Object.assign(ACT_TXT, { announce: 'sent an announcement', 'notify-ack': 'acknowledged an announcement', request: 'sent a request', 'request-approved': 'approved a request', 'request-rejected': 'rejected a request', 'request-undone': 'undid a request' });
+  Object.assign(ACT, { 'post-report': '🚩', 'post-unreport': '✅', 'message-remove': '🗑', 'message-unreport': '✅', warn: '⚠️', mute: '🔇', unmute: '🔊', 'role-change': '🔀' }); // P8.3
+  Object.assign(ACT_TXT, { 'post-report': 'reported a feed post', 'post-unreport': 'cleared a report', 'message-remove': 'removed a message', 'message-unreport': 'cleared a message report', warn: 'warned a member', mute: 'muted a member', unmute: 'unmuted a member', 'role-change': 'changed role' });
   const trialsCtx = () => ({ call, toast, role: S.me?.user?.role ?? baseRole, perms: S.me?.user?.perms ?? [], me: { u: session.u, n: session.n, a: session.a }, admin: S.admin, players: Array.isArray(S.players) ? S.players : [], flagTrials: flagOn('trials', baseRole) });
   const withTrials = (fn) => loadTrials().then(() => fn(window.NXTrials, trialsCtx())).catch(() => toast('Could not load this part – try again', true));
   function bind() {
@@ -786,7 +860,26 @@ ${[d.activity, d.claim?.history, d.votes, d.ratings, d.availability, d.posts, d.
       if (d.m) vote(d.m, d.p);
       if (d.rush) decideRush(+d.id, d.rush);
       if (d.goRush !== undefined) { e.preventDefault(); S.adminTab = 'rush'; go('manager'); }
-      if (d.sub) { S.adminTab = d.sub; draw(); }
+      if (d.sub) {
+        S.adminTab = d.sub; draw();
+        if (d.sub === 'submissions' && S.subm.rows === null) loadSubmissions();
+        if (d.sub === 'reports' && S.reports === null) loadReports();
+      }
+      if (t.id === 'subm-search') loadSubmissions(S.subm.type, $('#subm-q').value.trim());
+      if (t.id === 'subm-csv' && S.subm.rows?.length) exportCSV(S.subm.rows, S.subm.type);
+      if (d.reportClear || d.reportRemove) {
+        const source = d.reportClear ?? d.reportRemove, id = d.id;
+        const remove = !!d.reportRemove;
+        if (remove && !(await UI.confirm({ title: 'Remove this content?', text: 'It disappears from the site. This can’t be undone.', ok: 'Remove', danger: true }))) return;
+        try {
+          if (source === 'post') await call(remove ? '/api/feed/delete' : '/api/feed/unreport', { id: Number(id) });
+          else if (source === 'feedback') await call('/api/feedback/hide', { id: Number(id), hidden: remove });
+          else await call(`/api/chats/reports/${id}`, { action: remove ? 'remove' : 'clear' });
+          S.reports = S.reports.filter((r) => !(r.source === source && String(r.id) === String(id)));
+          draw();
+          toast(remove ? 'Removed' : 'Report cleared');
+        } catch (er) { toast(er.message, true); }
+      }
       if (d.notes) { const u = S.admin.users[d.notes]; withTrials((T, ctx) => T.notesModal(ctx, { kind: 'member', subject: d.notes, title: `Notes · ${u?.n ?? 'member'}` })); }
       if (d.drill) openDrill(d.drill);
       if (d.refresh !== undefined) { S.admin = null; draw(); load('manager'); }
@@ -798,6 +891,7 @@ ${[d.activity, d.claim?.history, d.votes, d.ratings, d.availability, d.posts, d.
     };
     panel.onchange = (e) => {
       if (e.target.id === 'act-filter') { S.actFilter = e.target.value; draw(); }
+      if (e.target.id === 'subm-type') loadSubmissions(e.target.value, S.subm.q);
       if (e.target.dataset.f === 'k') { const g = $('[data-f="n"]', e.target.parentElement); g.hidden = e.target.value !== '__guest'; if (!g.hidden) g.focus(); }
     };
     const pe = $('#profile-editor', panel);

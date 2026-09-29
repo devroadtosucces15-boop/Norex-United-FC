@@ -16,7 +16,7 @@
 //   POST /api/feed/unreport  { id }                                managers: clear a report without removing the post
 //   POST /api/feed/share     { id, channel, role }                managers: post it to a Discord channel
 // Authors show with their current Discord name, avatar, @username and ID (joined from users at read time).
-import { can, flagOn } from './roles.js';
+import { can, flagOn, muted } from './roles.js';
 import { notify, notifyManagers, safely } from './notify.js';
 import { postEmbed } from './docs.js';
 import { mentionMap, mentionTags, notifyMentions, reactionsFor } from './social.js';
@@ -133,6 +133,8 @@ export async function feedRoute(p, method, body, me, env, log, url) {
 
   if (p === '/api/feed/post') {
     if (!can(me, 'feed.post')) return fail('Members only.', 403);
+    const mutedUntil = await muted(env, me.u);
+    if (mutedUntil) return fail(`You’re muted until ${new Date(mutedUntil).toLocaleString()}.`, 403);
     const m = await checkAttach(env, me, body.media);
     if (m.error) return fail(m.error);
     const v = postBody(body, m.keys.length > 0);
@@ -184,6 +186,8 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     return json({ id, reacts: post.reacts, who: post.who, mine: post.mine });
   }
   if (p === '/api/feed/comment') {
+    const mutedUntil = await muted(env, me.u);
+    if (mutedUntil) return fail(`You’re muted until ${new Date(mutedUntil).toLocaleString()}.`, 403);
     const post = await one(env, 'SELECT user_id, body FROM posts WHERE id = ? AND removed = 0', id);
     if (!post) return fail('Post not found.', 404);
     const text = cleanText(body.text, 500);

@@ -20,7 +20,7 @@
 //   POST /api/chats/reports/:mid { action: 'clear' | 'remove' }
 // Owner/founder can read (not post into) any chat they're not a member of – the managers-see-reports-only /
 // owner-sees-everything split from the roadmap. Group size capped at 16 to keep the D1 batch small.
-import { can, flagOn } from './roles.js';
+import { can, flagOn, muted } from './roles.js';
 import { notify, notifyManagers, safely } from './notify.js';
 
 const GROUP_EMOJI = ['💬', '⚽', '🔥', '🎮', '🏆', '🤝', '📣', '⚡'];
@@ -289,6 +289,8 @@ export async function chatRoute(p, method, body, me, env, log, url) {
   }
   if (m[3] === 'messages' && method === 'POST') {
     if (!acc.mine) return fail('You can only read this chat.', 403);
+    const mutedUntil = await muted(env, me.u);
+    if (mutedUntil) return fail(`You’re muted until ${new Date(mutedUntil).toLocaleString()}.`, 403);
     const text = clean(body.text, 2000);
     if (!text) return fail('Write a message.');
     const at = Date.now();

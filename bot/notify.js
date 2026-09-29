@@ -42,6 +42,7 @@ export const TYPES = {
   feed: { icon: '💬', label: 'Comments, replies and reactions on my feed posts', def: 'site' },
   storage: { icon: '💾', label: 'Media storage clean-ups (feed photos & clips)', def: 'dm', role: 'owner' },
   queue: { icon: '🛡️', label: 'Manager to-dos (new claims, trials, Rush results, requests)', def: 'site', role: 'manager' },
+  moderation: { icon: '🛡️', label: 'Warnings and mutes from the managers', def: 'dm' }, // P8.3
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },
 };
 const MODES = ['dm', 'site', 'off'];
