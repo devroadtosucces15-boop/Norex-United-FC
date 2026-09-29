@@ -1,5 +1,5 @@
-// Messaging (roadmap P6.3a): 1:1 DMs and member-created group chats. Polling UI for now – Durable Objects
-// real-time upgrade is P6.3b, mid-life group editing (rename/add/remove members) is P6.3c.
+// Messaging (roadmap P6.3): 1:1 DMs and member-created group chats. Polling UI for now – Durable Objects
+// real-time upgrade is P6.3b. Mid-life group editing (P6.3c) is done: rename/re-emoji + add/remove members.
 //   GET  /api/chats                        my chats, newest activity first, with unread counts
 //   GET  /api/chats?all=1                  owner/founder: every chat on the club (disclosed in the chat UI)
 //   POST /api/chats { kind:'dm', user }              open (or reuse) a 1:1 DM
@@ -8,6 +8,9 @@
 //   POST /api/chats/:id/messages { text }  send a message (polled by everyone else until P6.3b)
 //   POST /api/chats/:id/read               mark everything in the chat read
 //   POST /api/chats/:id/leave              leave a group chat (DMs can't be left)
+//   POST /api/chats/:id/settings { name?, emoji? }    group only: rename / change icon (any member)
+//   POST /api/chats/:id/members { add: [userId] }     group only: add up to the 16-member cap
+//   POST /api/chats/:id/members/:uid                  group only: remove that member (not yourself – use /leave)
 //   POST /api/chats/:id/messages/:mid/report { reason }
 //   GET  /api/chats/reports                managers: reported messages queue
 //   POST /api/chats/reports/:mid { action: 'clear' | 'remove' }
@@ -163,6 +166,71 @@ export async function chatRoute(p, method, body, me, env, log, url) {
       await log(env, me, 'message-unreport', `#${mid}`);
     } else return fail('Unknown action');
     return json({ ok: true });
+  }
+
+  const mSettings = p.match(/^\/api\/chats\/(\d+)\/settings$/);
+  if (mSettings && method === 'POST') {
+    const id = Number(mSettings[1]);
+    const acc = await access(env, me, id);
+    if (!acc) return fail('Chat not found.', 404);
+    if (!acc.mine) return fail('You can only read this chat.', 403);
+    if (acc.chat.kind !== 'group') return fail('Only group chats can be renamed.');
+    const patch = {};
+    if (body.name !== undefined) {
+      const name = clean(body.name, 40).replace(/\n/g, ' ');
+      if (!name) return fail('Give the group a name.');
+      patch.name = name;
+    }
+    if (body.emoji !== undefined && GROUP_EMOJI.includes(body.emoji)) patch.emoji = body.emoji;
+    if (!Object.keys(patch).length) return fail('Nothing to change.');
+    await run(env, `UPDATE chats SET ${Object.keys(patch).map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, ...Object.values(patch), id);
+    await log(env, me, 'chat-settings', `${patch.emoji || acc.chat.emoji || '💬'} ${patch.name || acc.chat.name}`);
+    const others = await all(env, 'SELECT user_id FROM chat_members WHERE chat_id = ? AND user_id != ?', id, me.u);
+    if (others.length) await safely(notify(env, others.map((o) => o.user_id), { type: 'message', icon: patch.emoji || acc.chat.emoji || '💬', title: `${me.n} updated ${patch.name || acc.chat.name}`, link: `messages.html#c${id}` }));
+    const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
+    const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
+    return json({ chat: chatOut(chat, members, null, 0, me) });
+  }
+
+  const mAddMembers = p.match(/^\/api\/chats\/(\d+)\/members$/);
+  if (mAddMembers && method === 'POST') {
+    const id = Number(mAddMembers[1]);
+    const acc = await access(env, me, id);
+    if (!acc) return fail('Chat not found.', 404);
+    if (!acc.mine) return fail('You can only read this chat.', 403);
+    if (acc.chat.kind !== 'group') return fail('Only group chats can add members.');
+    const existing = await all(env, 'SELECT user_id FROM chat_members WHERE chat_id = ?', id);
+    const existingIds = new Set(existing.map((r) => r.user_id));
+    const room = GROUP_MAX - existing.length;
+    if (room <= 0) return fail(`Groups top out at ${GROUP_MAX} members.`);
+    const addIds = [...new Set((Array.isArray(body.add) ? body.add : []).map(String))].filter((uid) => uid !== me.u && !existingIds.has(uid)).slice(0, room);
+    if (!addIds.length) return fail('No new members to add.');
+    const rows = await all(env, `SELECT id, name, avatar FROM users WHERE id IN (${marks(addIds.length)})`, ...addIds);
+    if (rows.length !== addIds.length) return fail('One of those members was not found.');
+    const at = Date.now();
+    await env.DB.batch(rows.map((r) => env.DB.prepare('INSERT INTO chat_members (chat_id, user_id, name, avatar, joined_at, read_at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, r.id, r.name, r.avatar, at, 0)));
+    await log(env, me, 'chat-add-members', `${acc.chat.emoji || '💬'} ${acc.chat.name} · +${rows.map((r) => r.name).join(', ')}`);
+    await safely(notify(env, rows.map((r) => r.id), { type: 'message', icon: acc.chat.emoji || '💬', title: `${me.n} added you to ${acc.chat.emoji || '💬'} ${acc.chat.name}`, link: `messages.html#c${id}` }));
+    const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
+    const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
+    return json({ chat: chatOut(chat, members, null, 0, me) });
+  }
+
+  const mRemoveMember = p.match(/^\/api\/chats\/(\d+)\/members\/([\w.-]+)$/);
+  if (mRemoveMember && method === 'POST') {
+    const id = Number(mRemoveMember[1]); const uid = mRemoveMember[2];
+    const acc = await access(env, me, id);
+    if (!acc) return fail('Chat not found.', 404);
+    if (!acc.mine) return fail('You can only read this chat.', 403);
+    if (acc.chat.kind !== 'group') return fail('Only group chats support removing members.');
+    if (uid === me.u) return fail('Use "Leave group" to remove yourself.');
+    const target = await one(env, 'SELECT * FROM chat_members WHERE chat_id = ? AND user_id = ?', id, uid);
+    if (!target) return fail('That member is not in this chat.', 404);
+    await run(env, 'DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?', id, uid);
+    await log(env, me, 'chat-remove-member', `${acc.chat.emoji || '💬'} ${acc.chat.name} · -${target.name}`);
+    const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
+    const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
+    return json({ chat: chatOut(chat, members, null, 0, me) });
   }
 
   const m = p.match(/^\/api\/chats\/(\d+)(\/(messages|read|leave))?(\/messages\/(\d+)\/report)?$/);

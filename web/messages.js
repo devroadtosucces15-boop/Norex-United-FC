@@ -1,5 +1,6 @@
-// Messaging on the client (roadmap P6.3a) – messages.html [data-messages].
+// Messaging on the client (roadmap P6.3) – messages.html [data-messages].
 // Chat list + thread, polling every 6s while the tab is visible (P6.3b upgrades this to Durable Objects).
+// Group chats can be renamed/re-emoji'd and have members added/removed mid-life (P6.3c).
 // Owners/founders can flip "👁 All chats" to read (not post into) every DM and group chat – disclosed here.
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
@@ -54,7 +55,7 @@ ${canReadAll ? `<label class="mc-readall" data-tip="Owners/founders can read eve
     const canPost = !viewingAll && !thread.readonly;
     return `<section class="mc-thread" data-id="${active}">
 <header class="mc-t-head"><button type="button" class="mc-back" data-act="back" aria-label="Back to chats">←</button>${avatarOf(thread, 34)}<div class="mc-t-title"><b>${esc(thread.name)}</b>${thread.kind === 'group' ? `<small>${thread.members.length} member${thread.members.length === 1 ? '' : 's'}</small>` : ''}</div>
-<span class="mc-more-wrap"><button type="button" class="mc-more" data-act="menu" aria-label="Chat options" aria-expanded="false">⋯</button><span class="mc-menu" hidden>${thread.kind === 'group' && thread.mine ? '<button type="button" data-act="leave">🚪 Leave group</button>' : '<span class="mc-menu-empty">No options</span>'}</span></span></header>
+<span class="mc-more-wrap"><button type="button" class="mc-more" data-act="menu" aria-label="Chat options" aria-expanded="false">⋯</button><span class="mc-menu" hidden>${thread.kind === 'group' && thread.mine ? '<button type="button" data-act="settings">⚙️ Group settings</button><button type="button" data-act="leave">🚪 Leave group</button>' : '<span class="mc-menu-empty">No options</span>'}</span></span></header>
 ${viewingAll ? '<div class="mc-banner">👁 Viewing as owner – read-only, not counted as a reply.</div>' : ''}
 <div class="mc-msgs" data-msgs>${msgs.length ? msgs.map(bubble).join('') : `<p class="muted small mc-first">${thread.kind === 'dm' ? 'Say hello 👋' : 'Nobody has said anything yet.'}</p>`}</div>
 ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows="1" maxlength="2000" placeholder="Message…" aria-label="Message" data-mention></textarea><button class="btn sm" type="submit">Send</button></form>` : ''}
@@ -153,6 +154,47 @@ ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows
     if (created) { await loadChats(); await openChat(created.id); }
   }
 
+  // ---------- group settings (P6.3c) ----------
+  function membersList(c) {
+    return c.members.map((m) => `<li class="chip" data-uid="${m.id}">${esc(m.n)}${m.id === me ? ' (you)' : `<button type="button" data-rm-member="${m.id}" aria-label="Remove ${esc(m.n)}">×</button>`}</li>`).join('');
+  }
+  async function groupSettings() {
+    const c = thread;
+    if (!c || c.kind !== 'group') return;
+    await UI.modal({
+      title: 'Group settings', icon: '⚙️', wide: true, actions: [{ label: 'Close', value: null, kind: 'ghost' }],
+      body: `<input class="mc-gname" type="text" maxlength="40" placeholder="Group name" value="${esc(c.name)}" aria-label="Group name">
+<div class="mc-emoji" role="radiogroup" aria-label="Icon">${GROUP_EMOJI.map((e) => `<label><input type="radio" name="ge" value="${e}"${e === (c.emoji || '💬') ? ' checked' : ''}><span>${e}</span></label>`).join('')}</div>
+<button type="button" class="btn sm mc-create" data-act="save-settings">Save name/icon</button>
+<h4>Members</h4><ul class="mc-picked" data-members>${membersList(c)}</ul>
+<input class="mc-search" type="search" placeholder="Add members…" aria-label="Add members"><ul class="mc-picklist" role="listbox"></ul>`,
+      onOpen: (dlg, close) => {
+        const applyChat = (chat) => { thread = { ...thread, ...chat }; active = chat.id; $('[data-members]', dlg).innerHTML = membersList(thread); draw(); loadChats(); };
+        pickPerson(dlg, async (p) => {
+          try { const { chat } = await call(`/api/chats/${active}/members`, { add: [p.id] }); toast(`Added ${p.n}.`); applyChat(chat); }
+          catch (er) { toast(er.message, true); }
+        });
+        dlg.addEventListener('click', async (e) => {
+          if (e.target.closest('[data-act=save-settings]')) {
+            const name = $('.mc-gname', dlg).value.trim();
+            const emoji = $('input[name=ge]:checked', dlg)?.value;
+            if (!name) return toast('Give the group a name.', true);
+            try { const { chat } = await call(`/api/chats/${active}/settings`, { name, emoji }); toast('Saved.'); applyChat(chat); }
+            catch (er) { toast(er.message, true); }
+            return;
+          }
+          const rm = e.target.closest('[data-rm-member]');
+          if (rm) {
+            if (!(await UI.confirm({ title: 'Remove this member?', text: 'They can be added back later.', ok: 'Remove', danger: true }))) return;
+            try { const { chat } = await call(`/api/chats/${active}/members/${rm.dataset.rmMember}`, {}); toast('Removed.'); applyChat(chat); }
+            catch (er) { toast(er.message, true); }
+          }
+        });
+      },
+    });
+    draw();
+  }
+
   // ---------- events ----------
   function wire() {
     el.addEventListener('click', async (e) => {
@@ -161,6 +203,7 @@ ${canPost ? `<form class="mc-compose" id="mc-compose"><textarea name="text" rows
       if (e.target.closest('[data-act=back]')) { active = null; thread = null; history.replaceState(null, '', location.pathname + location.search); draw(); return; }
       if (e.target.closest('[data-act=new-dm]')) { newDM(); return; }
       if (e.target.closest('[data-act=new-group]')) { newGroup(); return; }
+      if (e.target.closest('[data-act=settings]')) { groupSettings(); return; }
       const menuBtn = e.target.closest('[data-act=menu]');
       if (menuBtn) { const m = menuBtn.nextElementSibling; const open2 = m.hidden; $$('.mc-menu', el).forEach((x) => x.hidden = true); m.hidden = !open2; menuBtn.setAttribute('aria-expanded', String(!open2)); return; }
       if (e.target.closest('[data-act=leave]')) {

@@ -64,6 +64,27 @@ await call(m3, `/api/chats/${groupId}/leave`, {});
 t('chats: leaving a group removes it from your inbox', !(await call(m3, '/api/chats')).d.chats.some((c) => c.id === groupId));
 t('chats: group re-fetch confirms only 2 members left', (await call(m1, '/api/chats')).d.chats.find((c) => c.id === groupId).members.length === 2);
 
+// ---------- group settings (P6.3c) ----------
+r = await call(m1, '/api/chats', { kind: 'group', name: 'Squad', emoji: '⚽', members: ['501'] });
+const gId = r.d.chat.id;
+t('chats: settings only apply to groups', (await call(m1, `/api/chats/${dmId}/settings`, { name: 'x' })).s === 400);
+t('chats: outsider cannot rename', (await call(m3, `/api/chats/${gId}/settings`, { name: 'x' })).s === 404);
+t('chats: blank name refused', (await call(m1, `/api/chats/${gId}/settings`, { name: '' })).s === 400);
+r = await call(m1, `/api/chats/${gId}/settings`, { name: 'Squad 2.0', emoji: '🏆' });
+t('chats: any member can rename + re-emoji', r.d.chat.name === 'Squad 2.0' && r.d.chat.emoji === '🏆');
+t('chats: rename notifies the other members', !!sqlite.prepare("SELECT 1 FROM notifications WHERE user_id = '501' AND type = 'message' AND title LIKE '%Squad 2.0%'").get());
+t('chats: outsider cannot add members', (await call(m3, `/api/chats/${gId}/members`, { add: ['502'] })).s === 404);
+t('chats: adding an unknown member fails', (await call(m1, `/api/chats/${gId}/members`, { add: ['ghost-id'] })).s === 400);
+r = await call(m1, `/api/chats/${gId}/members`, { add: ['502', '500', '502'] });
+t('chats: add ignores self/dupes, adds the new member', r.d.chat.members.length === 3);
+t('chats: newly added member was notified', !!sqlite.prepare("SELECT 1 FROM notifications WHERE user_id = '502' AND type = 'message' AND title LIKE '%added you%'").get());
+t('chats: outsider cannot remove a member', (await call(ghost, `/api/chats/${gId}/members/502`, {})).s === 404);
+t('chats: use leave to remove yourself', (await call(m1, `/api/chats/${gId}/members/500`, {})).s === 400);
+t('chats: removing someone not in the chat 404s', (await call(m1, `/api/chats/${gId}/members/999`, {})).s === 404);
+r = await call(m2, `/api/chats/${gId}/members/502`, {});
+t('chats: any member can remove another', r.d.chat.members.length === 2 && !r.d.chat.members.some((x) => x.id === '502'));
+t('chats: DMs cannot use group member management', (await call(m1, `/api/chats/${dmId}/members`, { add: ['502'] })).s === 400);
+
 // ---------- reports ----------
 r = await call(m2, `/api/chats/${dmId}/messages`, { text: 'rude thing' });
 const rudeId = r.d.message.id;
