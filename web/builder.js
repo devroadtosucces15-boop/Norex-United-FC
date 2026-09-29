@@ -3,6 +3,8 @@
 // Specializations, Facilities and Body tabs (height/weight modifiers as +/− badges), position fit, League/Rush notes;
 // (c) Save image (branded PNG card), Save to My builds (login, Worker /api/builds), Compare two builds, Fork.
 // PB.3 / PB.4: 📣 Post to Pro Builds (/api/probuilds/post) and ⭐ Use as my build (/api/mybuild), behind the proBuilds flag.
+// PB.6: a build made on older game rules shows "what changed" (NXGame.changes) + ⬆ Upgrade to new MAX; My builds can
+// upgrade one or all outdated builds in one click; builder.html?upgrade=1 (the game-update notification) opens My builds.
 // Game data comes from NXGame.load() (newest published version), the maths from build-math.js.
 (() => {
   const root = document.querySelector('[data-builder]');
@@ -17,6 +19,7 @@
   let saved = null; // my builds (loaded on first use)
   let picks = {}; // PB.4: { league: buildId, rush: buildId } – my builds shown on my profile
   let postDraft = null; // the Post form keeps what was typed if the server says no
+  let mig = null; // PB.6: { from, diff } while the build on screen was made on an older game-rules version
   const pro = () => window.NXViewer?.flagOn('proBuilds');
   const POS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
   const MODES = [['league', '🏟️', 'League'], ['rush', '⚡', 'Rush']];
@@ -55,9 +58,44 @@
     const d = decodeCode(x.code);
     if (!d) { toast('That build can’t be read with the current game data', 'error'); return; }
     push(); b = d; cur = { id: x.id, title: x.title, mine: x.mine, by: x.by?.n, position: x.position, mode: x.mode, posted: x.posted };
-    setHash(); draw();
-    if (outdated(x)) toast(`Made on ${x.version} – shown with the current rules (${g.version})`);
+    setHash(); outdated(x) ? older(x.version) : (mig = null); draw();
   };
+  // ---------- PB.6: older game rules → what changed + upgrade to the new MAX ----------
+  const older = (from) => {
+    mig = { from, diff: undefined };
+    const want = mig;
+    (window.NXGame?.changes ? NXGame.changes(from) : Promise.resolve(null)).then((d) => { if (mig === want) { mig.diff = d; draw(); } });
+  };
+  const upgraded = (code) => { const d = decodeCode(code); return d && M.fit(g, { ...d, level: M.capOf(g) }); };
+  async function upgradeSaved(x) { // one click: the saved build moves to the live rules at the new MAX (a posted build keeps its votes)
+    const nb = upgraded(x.code);
+    if (!nb) throw new Error(`“${x.title}” can’t be read with the current game data`);
+    const r = await call('/api/builds', { id: x.id, title: x.title, code: M.encode(g, nb) });
+    saved = r.builds;
+    return nb;
+  }
+  async function upgradeHere() {
+    push(); b = M.fit(g, { ...b, level: M.capOf(g) }); mig = null; setHash();
+    const ev = M.evaluate(g, b);
+    if (cur?.mine && cur.id && token()) {
+      try {
+        const r = await call('/api/builds', { id: cur.id, title: cur.title, code: M.encode(g, b) });
+        saved = r.builds; draw();
+        toast(`⬆ “${cur.title}” is on ${g.version} at MAX (L${ev.level}) – saved${ev.left ? ` · ${ev.left} AP to spend` : ''}`, 'success');
+      } catch (e) { draw(); toast(e.message, 'error'); }
+    } else { draw(); toast(`⬆ Upgraded to MAX (L${ev.level}) on ${g.version}${ev.left ? ` – ${ev.left} AP to spend` : ''}. Save to keep it.`, 'success'); }
+  }
+  function migHtml(ev) {
+    if (!mig) return '';
+    const d = mig.diff, items = d?.items || [];
+    const list = d === undefined ? '<p class="muted small">Checking what changed…</p>'
+      : items.length ? `<ul class="bd-mig-list">${items.slice(0, 8).map((x) => `<li><span>${esc(x.icon)}</span>${esc(x.text)}</li>`).join('')}${items.length > 8 ? `<li class="muted">+ ${items.length - 8} more</li>` : ''}</ul>`
+      : `<p class="muted small">${d?.unknown ? 'That version isn’t in the history any more – the build is shown with today’s rules.' : 'No details for this change – the build is shown with today’s rules.'}</p>`;
+    const atMax = ev.level >= ev.cap;
+    return `<div class="bd-mig card" role="status"><div class="bd-mig-h"><b>⚠️ Made on older game rules</b><span class="muted small">Version <code>${esc(mig.from)}</code> → now <code>${esc(g.version)}</code> · max level ${ev.cap}</span><button type="button" class="x" data-mig-close aria-label="Hide">×</button></div>
+<small class="muted">🆕 What changed</small>${list}
+<div class="row"><button type="button" class="btn sm" data-upgrade>⬆ ${atMax ? `Move to ${esc(g.version)}` : `Upgrade to new MAX · L${ev.cap}`}</button><span class="muted small">${cur?.mine ? 'Saves this build straight away – Undo brings the old one back on screen.' : 'Keeps your points; new AP is left to spend.'}</span></div></div>`;
+  }
   const loadMine = async () => { const r = await call('/api/builds'); picks = r.picks || {}; return (saved = r.builds); };
 
   async function save() {
@@ -75,7 +113,7 @@
       saved = r.builds;
       const s = saved.find((x) => x.id === r.saved);
       cur = s ? { id: s.id, title: s.title, mine: true } : cur;
-      draw(); toast(`💾 Saved “${s?.title ?? title.t}” to My builds`, 'success');
+      mig = null; draw(); toast(`💾 Saved “${s?.title ?? title.t}” to My builds`, 'success');
     } catch (e) { toast(e.message, 'error'); }
   }
 
@@ -95,15 +133,30 @@
     const m = UI.modal({ title: 'My builds', icon: '📂', wide: true, body: '<div data-mb>' + (UI.skeleton ? UI.skeleton('rows', 3) : '<p class="muted">Loading…</p>') + '</div>' });
     const box = m.el.querySelector('[data-mb]');
     const paint = () => {
-      box.innerHTML = saved.length ? `<p class="muted small">${saved.length} saved · open one to keep editing, or compare it with what’s on screen.</p><ul class="bd-list">${saved.map((x) => `<li${cur?.id === x.id ? ' class="on"' : ''}><div><b>${esc(x.title)}</b><small class="muted">${esc(archName(x.arch))} · L${x.level}${x.forkedFrom ? ' · 🍴 fork' : ''}${x.posted ? ' · 📣 posted' : ''}${MODES.filter(([k]) => picks[k] === x.id).map(([, ic, l]) => ` · ${ic} my ${l} build`).join('')} · ${UI.ago ? UI.ago(x.updated) : new Date(x.updated).toLocaleDateString()}${outdated(x) ? ` · <span class="bd-old" title="Made on ${esc(x.version)}">⚠ older rules</span>` : ''}</small></div>
-<span class="bd-li-acts"><button type="button" class="btn sm" data-open="${x.id}">Open</button><button type="button" class="btn ghost sm" data-cmp="${x.id}" title="Compare with the build on screen">⚖️</button><button type="button" class="btn ghost sm" data-copy="${x.id}" title="Duplicate (fork)">🍴</button><button type="button" class="btn ghost sm" data-del="${x.id}" title="Delete" aria-label="Delete ${esc(x.title)}">🗑️</button></span></li>`).join('')}</ul>`
+      const old = saved.filter(outdated);
+      box.innerHTML = saved.length ? `<p class="muted small">${saved.length} saved · open one to keep editing, or compare it with what’s on screen.</p>${old.length ? `<div class="bd-mig-all"><span>⚠️ <b>${old.length}</b> ${old.length === 1 ? 'build is' : 'builds are'} on older game rules – now <code>${esc(g.version)}</code>, max level ${M.capOf(g)}.</span><button type="button" class="btn sm" data-upall>⬆ Upgrade ${old.length === 1 ? 'it' : `all ${old.length}`} to MAX</button></div>` : ''}<ul class="bd-list">${saved.map((x) => `<li${cur?.id === x.id ? ' class="on"' : ''}><div><b>${esc(x.title)}</b><small class="muted">${esc(archName(x.arch))} · L${x.level}${x.forkedFrom ? ' · 🍴 fork' : ''}${x.posted ? ' · 📣 posted' : ''}${MODES.filter(([k]) => picks[k] === x.id).map(([, ic, l]) => ` · ${ic} my ${l} build`).join('')} · ${UI.ago ? UI.ago(x.updated) : new Date(x.updated).toLocaleDateString()}${outdated(x) ? ` · <span class="bd-old" title="Made on ${esc(x.version)}">⚠ older rules</span>` : ''}</small></div>
+<span class="bd-li-acts">${outdated(x) ? `<button type="button" class="btn sm" data-up="${x.id}" title="Move to ${esc(g.version)} at MAX (L${M.capOf(g)})">⬆ Upgrade</button>` : ''}<button type="button" class="btn sm" data-open="${x.id}">Open</button><button type="button" class="btn ghost sm" data-cmp="${x.id}" title="Compare with the build on screen">⚖️</button><button type="button" class="btn ghost sm" data-copy="${x.id}" title="Duplicate (fork)">🍴</button><button type="button" class="btn ghost sm" data-del="${x.id}" title="Delete" aria-label="Delete ${esc(x.title)}">🗑️</button></span></li>`).join('')}</ul>`
         : (UI.empty ? UI.empty({ icon: '📂', title: 'No saved builds yet', text: 'Press 💾 Save on any build and it lands here.' }) : '<p class="muted">No saved builds yet.</p>');
     };
     try { await loadMine(); paint(); } catch (e) { box.innerHTML = `<p class="muted">${esc(e.message)}</p>`; return; }
     box.addEventListener('click', async (e) => {
       const t = e.target.closest('button'); if (!t) return;
-      const x = saved.find((s) => s.id === +(t.dataset.open || t.dataset.cmp || t.dataset.copy || t.dataset.del));
+      if ('upall' in t.dataset) {
+        t.disabled = true;
+        let ok = 0;
+        for (const x of saved.filter(outdated)) {
+          try { const nb = await upgradeSaved(x); ok++; if (cur?.id === x.id && mig) { push(); b = nb; mig = null; setHash(); draw(); } } catch (err) { toast(err.message, 'error'); }
+        }
+        paint(); if (ok) toast(`⬆ ${ok} build${ok === 1 ? '' : 's'} upgraded to MAX on ${g.version}`, 'success');
+        return;
+      }
+      const x = saved.find((s) => s.id === +(t.dataset.open || t.dataset.cmp || t.dataset.copy || t.dataset.del || t.dataset.up));
       if (!x) return;
+      if (t.dataset.up) {
+        t.disabled = true;
+        try { const nb = await upgradeSaved(x); if (cur?.id === x.id && mig) { push(); b = nb; mig = null; setHash(); draw(); } paint(); toast(`⬆ “${x.title}” upgraded to MAX (L${M.capOf(g)})`, 'success'); } catch (err) { t.disabled = false; toast(err.message, 'error'); }
+        return;
+      }
       if (t.dataset.open) { m.close(); open(x); }
       else if (t.dataset.cmp) { m.close(); compare(x); }
       else if (t.dataset.copy) { m.close(); fork(x.id); }
@@ -341,7 +394,7 @@ ${rows.map((r) => {
   }).join('')}</section>`;
     };
     const leftPct = ev.total ? Math.max(0, (ev.left / ev.total) * 100) : 0;
-    return `${st.preview ? `<div class="bd-note card"><b>🧪 Preview numbers</b> <span class="muted small">${[!st.base && 'archetype base attributes', !st.ap && 'AP per level', !st.costs && 'AP costs'].filter(Boolean).join(', ')} ${st.base && st.ap ? 'is' : 'are'} not entered from the in-game screens yet, so the builder uses placeholder values. Level cap, Masteries and archetypes come from game data <code>${esc(g.version)}</code>.</span></div>` : ''}
+    return `${migHtml(ev)}${st.preview ? `<div class="bd-note card"><b>🧪 Preview numbers</b> <span class="muted small">${[!st.base && 'archetype base attributes', !st.ap && 'AP per level', !st.costs && 'AP costs'].filter(Boolean).join(', ')} ${st.base && st.ap ? 'is' : 'are'} not entered from the in-game screens yet, so the builder uses placeholder values. Level cap, Masteries and archetypes come from game data <code>${esc(g.version)}</code>.</span></div>` : ''}
 <div class="bd-picker card">${groups.map((grp) => `<div class="bd-pgrp"><small>${ICON[grp.id] ?? ''} ${esc(grp.name)}</small><div class="chipset">${(g.archetypes || []).filter((a) => a.group === grp.id).map((a) => `<button type="button" class="chip${a.id === ev.arch.id ? ' on' : ''}" data-arch="${esc(a.id)}">${esc(a.name)}</button>`).join('')}</div></div>`).join('')}</div>
 <div class="bd-main">
 <div class="bd-left"><div class="bd-grid">${(g.attributeGroups || []).map(card).join('')}</div>
@@ -420,6 +473,8 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     else if ('image' in t.dataset) image().catch(() => toast('Couldn’t draw the image – try again', 'error'));
     else if (t.dataset.fork) fork(+t.dataset.fork);
     else if ('close' in t.dataset) { cur = null; draw(); }
+    else if ('upgrade' in t.dataset) upgradeHere();
+    else if ('migClose' in t.dataset) { mig = null; draw(); }
     else if ('share' in t.dataset) {
       setHash();
       try { await navigator.clipboard.writeText(location.href); toast('🔗 Link copied – anyone can open this build'); } catch { prompt('Copy this link:', location.href); }
@@ -459,11 +514,12 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     const shared = hash ? M.decode(g, hash) : null;
     b = shared ? { arch: shared.arch, level: shared.level, spent: shared.spent, ps: shared.ps, plus: shared.plus, sp: shared.sp, fa: shared.fa, h: shared.h, w: shared.w } : { arch: first.id, level: M.capOf(g), spent: {} };
     cur = pending?.cur || null;
-    if (shared?.version && shared.version !== g.version) toast(`Built on ${shared.version} – shown with the current rules (${g.version})`);
+    if (shared?.version && shared.version !== g.version && !pending) older(shared.version);
     if (pending) setHash();
     draw();
     // builder.html?build=<id> opens a saved (own) or posted build – with a Fork button when it isn't yours.
     const want = new URLSearchParams(location.search).get('build');
+    if (!want && token() && new URLSearchParams(location.search).has('upgrade')) myBuilds(); // from the game-update notification
     if (want && token()) call(`/api/builds/get?id=${encodeURIComponent(want)}`).then((r) => open(r.build)).catch((e) => toast(e.message, 'error'));
     if (token() && pending?.then) setTimeout({ save, post, mybuild: myBuild }[pending.then] || (() => {}), 300); // after app.js stored the new session
   }).catch(() => { $('[data-bd-body]').innerHTML = '<p class="muted">Couldn’t load the game data – try again in a moment.</p>'; });

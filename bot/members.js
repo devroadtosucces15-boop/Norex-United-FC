@@ -11,7 +11,7 @@
 // Who may do what: bot/roles.js (can(user, action)).
 
 import { getLive } from './live.js';
-import { gameRoute, latestGame } from './game.js';
+import { gameChanges, gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
 import { getHof, honoursRoute } from './honours.js';
 import { buildsRoute } from './builds.js';
@@ -196,6 +196,10 @@ export async function handleMembers(request, env, ctx, loadSite) {
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
     if (url.pathname === '/api/rush' && request.method === 'GET') return cors(env, json(await getRushPublic(env)));
     if (url.pathname === '/api/game' && request.method === 'GET') return cors(env, json(await latestGame(env, loadSite)));
+    if (url.pathname === '/api/game/changes' && request.method === 'GET') { // PB.6 – public "what changed since version X"
+      const d = await gameChanges(env, loadSite, url.searchParams.get('from'));
+      return cors(env, d.error ? fail(d.error, d.status) : json(d));
+    }
     const me = await unseal(env, (request.headers.get('Authorization') || '').replace(/^Bearer /, ''));
     if (url.pathname === '/api/live' && request.method === 'GET') { // P1.3 – public once the flag is 'public'
       if (me) me.role = await currentRole(env, me);
