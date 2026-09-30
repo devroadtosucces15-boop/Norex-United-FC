@@ -415,6 +415,204 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
   matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', updateMode);
 })();
 
+// ---------- squad 3D card carousel (redesign board 04, part 2) ----------
+// The flat `.card-grid` from build.mjs always works (no-JS, reduced motion). This upgrades it into a
+// draggable ring – the hero coin's drag-to-spin-and-settle code (board 02) ported to a full circle instead
+// of a two-sided flip – with the front card enlarged and flippable for season stats + last-10 ratings.
+(() => {
+  const root = $('[data-carousel]');
+  if (!root) return;
+  let all = [];
+  try { all = JSON.parse($('[data-carousel-data]', root)?.textContent || '[]'); } catch {}
+  if (!all.length) return;
+
+  const flat = $('[data-carousel-flat]', root), stage = $('[data-carousel-stage]', root);
+  const filterWrap = $('[data-carousel-filter]', root);
+  let ring, cards = [], visible = [], rot = 0, front = 0, built = false, group = 'All', dragStart = null, dragRotStart = 0, moved = false, countEl;
+
+  function visibleData() { return group === 'All' ? all : all.filter((p) => p.group === group); }
+  function inRect(r, x, y) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+
+  function applyRot(animate) {
+    ring.classList.toggle('dragging', !animate);
+    ring.style.setProperty('--car-rot', `${rot}deg`);
+  }
+
+  function updateFront() {
+    const n = visible.length;
+    if (!n) return;
+    const step = 360 / n;
+    let best = 0, bestDist = Infinity;
+    for (let i = 0; i < n; i++) {
+      const angle = ((rot + i * step) % 360 + 360) % 360;
+      const dist = Math.min(angle, 360 - angle);
+      if (dist < bestDist) { bestDist = dist; best = i; }
+    }
+    front = best;
+    let vi = -1;
+    cards.forEach((c) => { if (c.hidden) return; vi++; c.classList.toggle('front', vi === best); });
+    if (countEl) countEl.textContent = `Drag to spin · ${best + 1} of ${n}`;
+  }
+
+  function step(dir) {
+    const n = visible.length || 1;
+    rot -= dir * (360 / n);
+    applyRot(true);
+    updateFront();
+  }
+
+  function layout() {
+    visible = visibleData();
+    const n = visible.length;
+    stage.style.setProperty('--car-step', `${360 / Math.max(n, 1)}deg`);
+    stage.style.setProperty('--car-radius', '260px'); // fixed depth: a shallow ring so the perspective(1400) scale stays sane regardless of squad size
+    let vi = -1;
+    cards.forEach((c) => {
+      const on = c.dataset.group === '' || group === 'All' || c.dataset.group === group;
+      c.hidden = !on;
+      if (on) c.style.setProperty('--i', ++vi);
+    });
+    rot = 0;
+    applyRot(true);
+    updateFront();
+  }
+
+  function build() {
+    ring = document.createElement('div');
+    ring.className = 'carousel-ring';
+    cards = all.map((p) => {
+      const c = document.createElement('div');
+      c.className = 'carousel-card';
+      c.dataset.group = p.group;
+      c.innerHTML = `<div class="carousel-flip"><div class="carousel-front">${p.front}</div><div class="carousel-back">${p.back}</div></div>`;
+      ring.append(c);
+      return c;
+    });
+    stage.append(ring);
+
+    const nav = document.createElement('div');
+    nav.className = 'carousel-nav';
+    nav.innerHTML = `<button type="button" aria-label="Previous card">◀</button><span class="carousel-hint"></span><button type="button" aria-label="Next card">▶</button>`;
+    const [prevBtn, , nextBtn] = nav.children;
+    countEl = nav.children[1];
+    prevBtn.addEventListener('click', () => step(-1));
+    nextBtn.addEventListener('click', () => step(1));
+    stage.after(nav);
+
+    // Deeply-nested 3D transforms (ring > card > flip > front/back) don't always hit-test at their
+    // projected screen position across browsers/GPUs – clicks and pointerdowns can resolve to the flat
+    // `stage` container regardless of which card is visually under the pointer. So every interaction is
+    // driven from here using getBoundingClientRect() math (which DOES report the correct projected box)
+    // rather than trusting e.target inside the 3D scene.
+    stage.addEventListener('pointerdown', (e) => {
+      dragStart = e.clientX; dragRotStart = rot; moved = false;
+      stage.setPointerCapture(e.pointerId);
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (dragStart == null) return;
+      const dx = e.clientX - dragStart;
+      if (Math.abs(dx) > 4) moved = true;
+      rot = dragRotStart + dx * 0.4;
+      applyRot(false);
+      updateFront();
+    });
+    const endDrag = () => { if (dragStart == null) return; dragStart = null; const n = visible.length || 1; const st = 360 / n; rot = Math.round(rot / st) * st; applyRot(true); updateFront(); };
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+    stage.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+    });
+    stage.addEventListener('click', (e) => {
+      if (moved) return;
+      const fc = cards.find((c) => c.classList.contains('front'));
+      if (!fc || !inRect(fc.getBoundingClientRect(), e.clientX, e.clientY)) return;
+      if (!fc.classList.contains('flipped')) { fc.classList.add('flipped'); return; }
+      const link = $('.carousel-back a', fc);
+      if (link && inRect(link.getBoundingClientRect(), e.clientX, e.clientY)) location.href = link.href;
+      else fc.classList.remove('flipped');
+    });
+
+    layout();
+  }
+
+  filterWrap?.addEventListener('click', (e) => {
+    const b = e.target.closest('button.chip');
+    if (!b) return;
+    $$('button.chip', filterWrap).forEach((x) => x.classList.toggle('on', x === b));
+    group = b.dataset.pos;
+    $$('.fut', flat).forEach((el) => (el.hidden = group !== 'All' && el.dataset.pos !== group));
+    if (built) layout();
+  });
+
+  const canUse3D = () => !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function updateMode() {
+    const on = canUse3D();
+    flat.hidden = on; stage.hidden = !on;
+    if (on && !built) { build(); built = true; }
+  }
+  updateMode();
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', updateMode);
+})();
+
+// ---------- leaders podium (redesign board 04, part 2) ----------
+// Flat ranked lists (barList, driven by the existing [data-tabs]/.tab-panel chip switcher) always work.
+// This grows a 3D-tilted top-3 podium on top when motion is allowed – hovering tilts it toward the pointer
+// (the hero's --px/--py tilt pattern, board 02), and switching tabs drops the old blocks and grows new
+// ones from the ground.
+(() => {
+  const root = $('[data-podium]');
+  if (!root) return;
+  let data = [];
+  try { data = JSON.parse($('[data-podium-data]', root)?.textContent || '[]'); } catch {}
+  if (!data.length) return;
+  const byKey = new Map(data.map((d) => [d.key, d]));
+  const stage = $('[data-podium-stage]', root), stage3d = $('.podium-3d', stage);
+  const tabsWrap = $('[data-tabs]', root);
+  const ORDER = [1, 0, 2]; // visual left-to-right: 2nd, 1st, 3rd
+  const RANK_CLS = { 0: 'pod-1', 1: 'pod-2', 2: 'pod-3' };
+  const initials = (n) => (n || '?').trim()[0]?.toUpperCase() || '?';
+
+  function render(key, animate) {
+    const d = byKey.get(key);
+    if (!d) return;
+    const draw = () => {
+      stage3d.innerHTML = ORDER.filter((i) => d.top3[i]).map((i) => {
+        const p = d.top3[i];
+        return `<a class="pod-block ${RANK_CLS[i]}" href="${p.href}"><span class="pod-tag"><span class="pod-av">${esc(initials(p.name))}</span><span class="pod-name">${esc(p.name)}</span><span class="pod-v">${esc(p.v)}</span></span><span class="pod-rank">${i + 1}</span></a>`;
+      }).join('');
+      requestAnimationFrame(() => requestAnimationFrame(() => $$('.pod-block', stage3d).forEach((b) => b.classList.add('in'))));
+    };
+    if (animate && stage3d.children.length) {
+      $$('.pod-block', stage3d).forEach((b) => b.classList.remove('in'));
+      setTimeout(draw, 260);
+    } else draw();
+  }
+
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function updateMode() {
+    const on = !reduced();
+    stage.hidden = !on;
+    if (on) render($('.chip.on', tabsWrap)?.dataset.tab.replace('pod-', '') || data[0].key, false);
+  }
+  updateMode();
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', updateMode);
+
+  tabsWrap?.addEventListener('click', (e) => {
+    const b = e.target.closest('button.chip');
+    if (!b || reduced()) return;
+    render(b.dataset.tab.replace('pod-', ''), true);
+  });
+
+  stage.addEventListener('pointermove', (e) => {
+    if (reduced() || e.pointerType !== 'mouse') return;
+    const r = stage.getBoundingClientRect();
+    stage.style.setProperty('--ppx', (((e.clientX - r.left) / r.width) - 0.5).toFixed(3));
+    stage.style.setProperty('--ppy', (((e.clientY - r.top) / r.height) - 0.5).toFixed(3));
+  });
+  stage.addEventListener('pointerleave', () => { stage.style.setProperty('--ppx', 0); stage.style.setProperty('--ppy', 0); });
+})();
+
 // ---------- relative times ----------
 UI.refreshTimes();
 

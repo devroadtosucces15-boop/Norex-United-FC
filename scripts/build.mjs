@@ -510,7 +510,9 @@ ${CHANNELS.length ? `<div id="watch">${card('📺 Watch NOREX', `<div class="liv
 ${section('Season at a glance', `<div class="stats stats-8">${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}</div>${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}`)}
 ${tacticsTeaser(members, base)}
+${squadCarousel(members, base)}
 ${(sessions[0] || ms.length) ? section('Match reel', `<div class="card-rail reel">${sessions[0] ? sessionCard(sessions[0], base, id) : ''}${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('')}</div>${ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`, { sub: 'last session and recent results · drag to scroll' }) : ''}
+${leadersPodium(members, id, base)}
 ${section('How we play', `<div class="grid2">${card('Team DNA', `<ul class="dna">${dna.map(([k, v, tip]) => `<li data-tip="${esc(tip)}"><span>${k}</span><div class="meter"><i style="--w:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></li>`).join('')}</ul>`)}${card('Goals per match', !recent.length ? emptyState('⚽', 'No goals to chart yet', 'Fills in after the first archived match.') : goalBars(recent.map((m) => ({ for: num(m.clubs[id].goals), against: num(m.clubs[oppOf(m, id)].goals), res: result(m.clubs[id]), tip: `${dateStr(m.timestamp)} · ${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}` }))))}</div>${MEMBER_API ? `<p><a class="btn ghost" href="${base}playstyle.html">🧭 Full Play Style →</a></p>` : ''}`, { sub: 'how NOREX plays, in the numbers' })}
 ${MEMBER_API ? '<div data-flag="hallOfFame" hidden><div class="block" data-hof-teaser hidden></div></div>' : ''}
 <section class="block reveal ending-cta" id="join"><img class="ending-crest" src="${base}assets/crest.png" height="120" alt="">
@@ -858,6 +860,61 @@ function tacticsTeaser(squad, base) {
   const dots = picks.map(({ p, x, y }) =>
     `<a class="pp side0" style="left:${x}%;top:${y}%" href="${pUrl(p, base)}" data-tip="${esc(`${p.name} · ${p.pos} · OVR ${p.ovr || '–'}`)}"><b class="${ratingClass(num(p.main?.ratingAve))}">${p.ovr || '–'}</b><span>${esc(p.name)}</span></a>`).join('');
   return section('The Tactics Table', card('', `<div class="pitch tt-teaser-pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots}</div><p><a class="btn" href="${base}squad.html">🧠 Full squad & Tactics Table →</a></p>`, 'tt-teaser'), { sub: 'starting XI by games played' });
+}
+
+// Full squad 3D card carousel (redesign board 04, part 2). Flat `.card-grid` of real futCard()s always
+// renders (works with JS off, reduced motion, small screens); app.js's "squad carousel" block upgrades it
+// into a draggable ring – the hero coin's drag-to-spin-and-settle idea (board 02), ported to a full circle
+// – with the front card enlarged and flippable to show season stats + last-10 ratings.
+function squadCarousel(squad, base) {
+  if (squad.length < 3) return '';
+  const GROUPS = ['All', 'GK', 'DEF', 'MID', 'FWD'].filter((g) => g === 'All' || squad.some((p) => p.group === g));
+  const data = squad.map((p) => {
+    const s = p.main ?? {};
+    const last10 = [...p.apps].reverse().slice(-10).map((x) => num(x.rating)).filter(Boolean);
+    return {
+      group: p.group || '',
+      front: futCard(p, base),
+      back: `<div class="carousel-back"><b>${esc(p.name)}</b>
+<div class="rsq-row">${last10.length ? last10.map((r) => `<i class="rsq ${ratingClass(r)}" data-tip="${r.toFixed(1)}"></i>`).join('') : '<span class="muted small">No ratings yet</span>'}</div>
+<p class="small muted">${last10.length ? `Last ${last10.length} ratings · ` : ''}${num(s.goals)} G · ${num(s.assists)} A · ${num(s.manOfTheMatch)} MOTM</p>
+<a class="btn small" href="${pUrl(p, base)}">Full profile →</a></div>`,
+    };
+  });
+  return `<section class="block reveal" data-carousel>
+<h2 class="banner-h">Full Squad <small>drag to spin · tap a card to flip</small></h2>
+<div class="chipset carousel-filter" data-carousel-filter>${GROUPS.map((g, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-pos="${g}">${g}</button>`).join('')}</div>
+<div class="card-grid carousel-flat" data-carousel-flat>${squad.map((p) => futCard(p, base)).join('')}</div>
+<div class="carousel-stage" data-carousel-stage hidden tabindex="0"></div>
+<script type="application/json" data-carousel-data>${JSON.stringify(data)}</script>
+</section>`;
+}
+
+// Leaders podium (redesign board 04, part 2). Flat ranked lists (barList, reusing the existing
+// `[data-tabs]`/`.tab-panel` chip switcher already used by the stats-centre leaderboards) always work;
+// app.js's "leaders podium" block grows a 3D-tilted top-3 podium on top when motion is allowed – the
+// hero's mouse-tracked tilt pattern (board 02), ported here as a hover tilt instead of a parallax one.
+function leadersPodium(members, id, base) {
+  const STATS = [
+    ['g', '⚽ Goals', (s) => num(s.goals)],
+    ['a', '🅰️ Assists', (s) => num(s.assists)],
+    ['r', '⭐ Rating', (s) => (num(s.gamesPlayed) >= 3 ? num(s.ratingAve) : 0), (v) => v.toFixed(1)],
+    ['m', '🏅 MOTM', (s) => num(s.manOfTheMatch)],
+  ];
+  const panels = STATS.map(([k, label, f, fmt]) => {
+    const top = members.filter((p) => p.clubStats[id]).map((pl) => ({ pl, v: f(pl.clubStats[id]) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 5);
+    return top.length ? { k, label, top, fmt: fmt ?? ((v) => v) } : null;
+  }).filter(Boolean);
+  if (!panels.length) return '';
+  const data = panels.map(({ k, top, fmt }) => ({ key: k, top3: top.slice(0, 3).map(({ pl, v }) => ({ name: pl.name, href: pUrl(pl, base), v: fmt(v) })) }));
+  return `<section class="block reveal" data-podium>
+<h2 class="banner-h">Leaders Podium <small>top performers this season</small></h2>
+<div class="tabs chipset podium-tabs" data-tabs>${panels.map(({ k, label }, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="pod-${k}">${label}</button>`).join('')}</div>
+${panels.map(({ k, top }, i) => `<div class="tab-panel" id="pod-${k}"${i ? ' hidden' : ''}>${barList(top, { base, fmt: panels[i].fmt })}</div>`).join('')}
+<div class="podium-wrap" data-podium-stage hidden><div class="podium-3d"></div></div>
+<p><a class="btn ghost" href="${base}stats.html">🏆 Full leaders →</a></p>
+<script type="application/json" data-podium-data>${JSON.stringify(data)}</script>
+</section>`;
 }
 
 // ---------- write ----------

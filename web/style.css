@@ -453,6 +453,64 @@ button.chip{cursor:pointer}
 .tt-teaser{max-width:520px;margin:0 auto;text-align:center}
 .tt-teaser-pitch{max-width:420px;margin:0 auto 14px}
 
+/* ---------- Full Squad 3D card carousel (redesign board 04, part 2) ----------
+   Flat `.card-grid` of real futCard()s always renders (works with JS off, reduced motion, small screens);
+   app.js's "squad carousel" block upgrades it into a draggable ring – the hero coin's drag-to-spin-and-
+   settle idea (board 02), ported to a full circle – with the front card enlarged and flippable. */
+.carousel-flat[hidden]{display:none}
+.carousel-stage{position:relative;height:340px;perspective:1400px;touch-action:pan-y;cursor:grab;margin:18px auto 0;max-width:900px;outline:none}
+.carousel-stage.dragging{cursor:grabbing}
+.carousel-ring{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateY(var(--car-rot,0deg));transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.carousel-ring.dragging{transition:none}
+.carousel-card{position:absolute;left:50%;top:50%;width:170px;height:244px;margin:-122px 0 0 -85px;transform-style:preserve-3d;cursor:pointer;
+  transform:rotateY(calc(var(--i) * var(--car-step,0deg))) translateZ(var(--car-radius,280px));transition:opacity .4s,filter .4s,transform .4s}
+/* side cards overlap the front one in screen space at these angles – pointer-events:none keeps hit-testing
+   on the actual front card instead of whichever sibling happens to paint on top; dragging still works
+   because those clicks fall through to the stage itself */
+.carousel-card:not(.front){opacity:.4;filter:brightness(.55) saturate(.7);pointer-events:none;transform:rotateY(calc(var(--i) * var(--car-step,0deg))) translateZ(var(--car-radius,280px)) scale(.82)}
+.carousel-flip{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.carousel-card.flipped .carousel-flip{transform:rotateY(180deg)}
+/* backface-visibility only hides rendering – the flipped-away face still hit-tests as topmost in some
+   engines, so toggle pointer-events explicitly instead of relying on visibility alone */
+.carousel-front,.carousel-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px 16px 22px 22px;pointer-events:none}
+.carousel-front{pointer-events:auto}
+.carousel-card.flipped .carousel-front{pointer-events:none}
+.carousel-card.flipped .carousel-back{pointer-events:auto}
+.carousel-front .fut{width:100%;height:100%}
+.carousel-back{transform:rotateY(180deg);background:linear-gradient(165deg,#232b3a,#12161f);border:2px solid var(--red);box-shadow:0 10px 26px rgba(0,0,0,.45);
+  display:grid;align-content:center;justify-items:center;gap:8px;text-align:center;padding:16px;color:#fff}
+.rsq-row{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;max-width:150px}
+.rsq{width:12px;height:12px;border-radius:3px}
+.rsq.r-low{background:#b91c1c}.rsq.r-mid{background:#c2410c}.rsq.r-good{background:#15803d}.rsq.r-great{background:#059669}.rsq.r-elite{background:linear-gradient(135deg,#b8860b,#f5d061)}
+.carousel-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px}
+.carousel-nav button{background:rgba(0,0,0,.5);border:1px solid var(--line2);color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:14px}
+.carousel-nav button:hover{border-color:var(--red)}
+.carousel-hint{color:var(--muted);font-size:12px}
+@media (max-width:560px){.carousel-stage{height:270px}.carousel-card{width:130px;height:187px;margin:-93px 0 0 -65px}}
+
+/* ---------- Leaders Podium (redesign board 04, part 2) ----------
+   Flat ranked lists (barList, reusing the existing [data-tabs]/.tab-panel chip switcher) always work;
+   app.js's "leaders podium" block grows a 3D-tilted top-3 podium on top when motion is allowed – hovering
+   tilts it toward the pointer (the hero's --px/--py tilt idea, board 02), switching tabs drops the old
+   blocks and grows new ones from the ground. */
+.podium-wrap{position:relative;perspective:1000px;margin-top:18px;padding-top:70px}
+.podium-3d{display:flex;align-items:flex-end;justify-content:center;gap:18px;min-height:190px;transform-style:preserve-3d;
+  transform:rotateX(calc(var(--ppy,0) * -8deg)) rotateY(calc(var(--ppx,0) * 10deg));transition:transform .2s ease-out}
+.pod-block{position:relative;width:120px;border-radius:10px 10px 4px 4px;transform-origin:bottom;transform:scaleY(.05);opacity:0;
+  transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .3s;display:grid;place-items:center;color:#fff;text-decoration:none}
+.pod-block.in{transform:scaleY(1);opacity:1}
+.pod-1{height:190px;background:linear-gradient(180deg,#ff6a5e,var(--red))}
+.pod-2{height:140px;background:linear-gradient(180deg,#cbd5e1,#64748b)}
+.pod-3{height:110px;background:linear-gradient(180deg,#f2b872,#a3651f)}
+.pod-rank{font:700 40px var(--head);opacity:.35}
+.pod-tag{position:absolute;top:-66px;left:50%;translate:-50% 0;display:grid;justify-items:center;gap:4px;width:max-content}
+.pod-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:700 15px var(--head);border:3px solid #fff;background:var(--panel2);margin:0 auto}
+.pod-name{font-size:13px;font-weight:600;color:#fff}
+.pod-v{font-size:11px;color:var(--muted)}
+.pod-block:hover .pod-name{color:var(--red)}
+@media (max-width:560px){.podium-3d{gap:8px}.pod-block{width:90px}.pod-tag{top:-60px}}
+@media (prefers-reduced-motion:reduce){.carousel-ring,.carousel-flip,.carousel-card,.pod-block,.podium-3d{transition:none}}
+
 /* ---------- records ---------- */
 .records{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
 .record{position:relative;display:grid;gap:2px;padding:18px;border-radius:14px;background:linear-gradient(160deg,var(--panel2),var(--ink));border:1px solid var(--line2);overflow:hidden;transition:transform .2s,border-color .2s}
