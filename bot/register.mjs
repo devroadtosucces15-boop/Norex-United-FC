@@ -51,7 +51,7 @@ const commands = [
   {
     name: 'exportcontent', description: 'Owner: DM me pinned + recent messages from guide/rule/playstyle/announcement channels',
     default_member_permissions: String(1 << 28), contexts: [0],
-    options: [{ type: STRING, name: 'channel', description: 'Only this channel (name or part of it) instead of the default guide/rule/playstyle/announce/faq match' }],
+    options: [{ type: STRING, name: 'channel', description: 'Only this channel (name/part of it) instead of the default guide/rule/playstyle/announce match' }],
   },
   { name: 'aispike', description: 'Owner: one-off test of the Workers AI image + text models (P11.1)', default_member_permissions: String(1 << 28), contexts: [0] },
 ];
