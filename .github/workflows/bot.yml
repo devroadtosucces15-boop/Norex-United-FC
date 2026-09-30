@@ -34,10 +34,10 @@ jobs:
         working-directory: bot
         run: npx --yes wrangler@4 d1 migrations apply norex --remote
 
-      - name: Feature flags + stream channels + hype channel (config.json → Worker vars FEATURES, STREAMS, HYPE_CHANNEL)
+      - name: Feature flags + stream channels + hype/voice-recap channels (config.json → Worker vars FEATURES, STREAMS, HYPE_CHANNEL, VOICE_CHANNEL)
         if: env.CLOUDFLARE_API_TOKEN != ''
         # Inserted right under [vars] – appending would land inside the [[d1_databases]] table added above and be ignored.
-        run: node -e 'const fs = require("fs"), c = require("./config.json"), p = "bot/wrangler.toml"; let t = fs.readFileSync(p, "utf8"); for (const [k, v] of [["FEATURES", c.features || {}], ["STREAMS", c.streams || {}], ["HYPE_CHANNEL", c.hype || {}]]) { const f = JSON.stringify(v); t = t.replace("[vars]\n", `[vars]\n${k} = ${JSON.stringify(f)}\n`); console.log(k, f); } fs.writeFileSync(p, t);'
+        run: node -e 'const fs = require("fs"), c = require("./config.json"), p = "bot/wrangler.toml"; let t = fs.readFileSync(p, "utf8"); for (const [k, v] of [["FEATURES", c.features || {}], ["STREAMS", c.streams || {}], ["HYPE_CHANNEL", c.hype || {}], ["VOICE_CHANNEL", c.voiceRecap || {}]]) { const f = JSON.stringify(v); t = t.replace("[vars]\n", `[vars]\n${k} = ${JSON.stringify(f)}\n`); console.log(k, f); } fs.writeFileSync(p, t);'
 
       - name: Deploy to Cloudflare Workers
         if: env.CLOUDFLARE_API_TOKEN != ''

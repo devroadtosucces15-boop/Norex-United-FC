@@ -27,6 +27,7 @@ import { checkUptime } from './monitor.js';
 import { runSpike, spikeReport } from './aispike.js';
 import { checkProfanity, cleanBonus, setupAutoMod } from './profanity.js';
 import { checkHype } from './hype.js';
+import { checkVoiceRecap } from './voicerecap.js';
 import { askAnswer, buildAskContext } from './ask.js';
 import { makeAvatarCard } from './avatarcard.js';
 
@@ -42,6 +43,7 @@ export default {
     ctx.waitUntil(mediaCron(env).catch((e) => console.log('media guard failed', e.message))); // P6.1b R2 storage guard (hourly)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
     ctx.waitUntil(checkHype(env, (file) => load(site, file, ctx)).catch((e) => console.log('hype poster failed', e.message))); // P11.6/P11.7 auto hype poster
+    ctx.waitUntil(checkVoiceRecap(env, (file) => load(site, file, ctx)).catch((e) => console.log('voice recap failed', e.message))); // P11.13 voice clip → quote card
     if (flagOn(env, { role: 'owner' }, 'insights')) ctx.waitUntil(insightsCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('insights cron failed', e.message))); // weekly Club Intelligence DM
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
