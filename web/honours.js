@@ -69,7 +69,8 @@ ${d.predictions ? `<div class="card mx-board"><h3>🔮 Predictions</h3>${bars(d.
   // ---------- P4.6 legends + moments ----------
   const lg = $('[data-hof-legends]');
   const tl = $('[data-hof-timeline]');
-  if (!lg || !flagOn('hallOfFame')) return;
+  const teaser = $('[data-hof-teaser]');
+  if ((!lg && !teaser) || !flagOn('hallOfFame')) return;
   let S = null;
   let playersP;
   const players = () => (playersP ??= fetch(`${BASE}api/players.json`).then((r) => r.json()).catch(() => []));
@@ -78,6 +79,19 @@ ${d.predictions ? `<div class="card mx-board"><h3>🔮 Predictions</h3>${bars(d.
 <small>${esc(x.title || 'Club legend')}</small>${x.text ? `<p>${esc(x.text)}</p>` : ''}<div class="lg-meta">Inducted ${x.date ? nice(x.date) : ''}</div>
 ${S.canManage ? `<button type="button" class="btn sm ghost hof-x" data-rm="${x.id}" aria-label="Remove ${esc(x.n)}">✕ Remove</button>` : ''}</article>`;
   const momentLi = (x) => `<li class="hof-ev moment" data-date="${esc(x.date)}" data-mid="${x.id}"><time datetime="${esc(x.date)}">${nice(x.date)}</time><span class="hof-ic">📜</span><div><b>${esc(x.n)}</b>${S.canManage ? `<button type="button" class="btn sm ghost hof-x" data-rm="${x.id}" aria-label="Remove">✕</button>` : ''}<p>${esc(x.text || '')}</p></div></li>`;
+
+  // Home page teaser (board 04, part 1): one legend card + a link to the full page. Independent of `lg`
+  // so it also works on index.html, which has no full legends/timeline UI.
+  if (teaser) {
+    call('/api/hof').then((d) => {
+      const x = d.legends?.[0];
+      if (!x) return;
+      S = d;
+      teaser.innerHTML = `${legendCard(x)}<p><a class="btn ghost" href="${BASE}halloffame.html">🏛️ Enter the Hall →</a></p>`;
+      teaser.hidden = false;
+    }).catch(() => {});
+  }
+  if (!lg) return;
 
   function render() {
     lg.innerHTML = `${S.canManage ? `<div class="hof-tools"><button type="button" class="btn sm" data-add="legend">🌟 Induct a legend</button><button type="button" class="btn sm ghost" data-add="moment">📜 Add a history moment</button></div>` : ''}

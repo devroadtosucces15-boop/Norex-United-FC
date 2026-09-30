@@ -27,7 +27,9 @@ t('no unescaped template leftovers', html.every((f) => !/\$\{|undefined<|>undefi
 // P1.1 stat drill-downs
 const res = fs.existsSync(SITE + 'results.html') ? read(SITE + 'results.html') : '';
 t('P1.1 results.html has all 8 drill-down panels', ['played', 'won', 'drawn', 'lost', 'goals', 'conceded', 'cleansheets', 'winrate'].every((f) => res.includes(`id="f-${f}"`)));
-t('P1.1 home stat cards link to drill-downs', /class="stat link" href="results\.html\?f=won"/.test(index) && /href="results\.html\?f=cleansheets"/.test(index));
+// board 04 part 1: home's "Season at a glance" is 8 even tiles (won…goal diff) – clean sheets dropped
+// from the home row to fix the old 9-tile wrap; it still has its own drill-down panel on results.html.
+t('P1.1 home stat cards link to drill-downs', /class="stat link" href="results\.html\?f=won"/.test(index) && /href="results\.html\?f=winrate"/.test(index));
 t('P1.1 results page has League/Rush switch', res.includes('data-rush="results"'));
 const clubPages = files.filter((f) => /clubs\/\d+\.html$/.test(f));
 t('P1.1 other clubs link to their own drill-down (if archived)', clubPages.every((f) => { const h = read(f); const m = h.match(/href="(\d+-results\.html)\?f=played"/); return !m || fs.existsSync(SITE + 'clubs/' + m[1]); }) && clubPages.some((f) => /-results\.html\?f=won/.test(read(f))));

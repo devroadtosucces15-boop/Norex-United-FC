@@ -470,6 +470,13 @@ function clubBody(id, base, isHome) {
   const heroChips = `<div class="chips">${o.currentDivision ? `<span class="chip strong">Division ${esc(o.currentDivision)}</span>` : ''}${o.skillRating ? `<span class="chip">Skill rating ${esc(o.skillRating)}</span>` : ''}${num(o.promotions) ? `<span class="chip">⬆ ${esc(o.promotions)} promotions</span>` : ''}${c?.info?.customKit?.stadName ? `<span class="chip">🏟 ${esc(c.info.customKit.stadName)}</span>` : ''}${num(o.wstreak) > 1 ? `<span class="chip hot">🔥 ${esc(o.wstreak)} win streak</span>` : ''}</div>`;
   const heroForm = ms.length ? `<div class="form big"><span class="form-label">Form</span>${formStrip(ms, id, base)}</div>` : '';
   const heroSpots = isHome && (mvp || scorer) ? `<div class="hero-spot">${mvp ? `<a class="spot" href="${pUrl(mvp.pl, base)}"><small>Top rated</small><b>${esc(mvp.pl.name)}</b>${ratingPill(mvp.v)}</a>` : ''}${scorer ? `<a class="spot" href="${pUrl(scorer.pl, base)}"><small>Top scorer</small><b>${esc(scorer.pl.name)}</b><span class="rp r-great">${scorer.v} ⚽</span></a>` : ''}</div>` : '';
+  // Ending section (redesign board 04, part 1): the trial/Discord/stream links that used to live in the
+  // nav's "feat" panel and the Watch section, gathered into one closing invitation at the foot of the home page.
+  const endingLinks = [
+    RECRUIT.open ? `<a class="btn big" href="${base}apply.html">👑 Apply for a trial</a>` : '',
+    DISCORD ? `<a class="btn discord big" href="${esc(DISCORD)}" target="_blank" rel="noopener">${DISCORD_SVG}<span>Join our Discord</span></a>` : '',
+    ...CHANNELS.map(([k, label, svg]) => `<a class="btn ghost big" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg}<span>${label}</span></a>`),
+  ].filter(Boolean).join('');
 
   return `
 ${isHome ? `
@@ -494,7 +501,23 @@ ${heroSpots ? `<div class="sh-plane sh-spots" style="--depth:16">${heroSpots}</d
 ${brand.motto ? `<div class="sh-plane sh-fg" style="--depth:28"><p class="ribbon-banner"><span>${esc(brand.motto)}</span></p></div>` : ''}
 <button class="sh-motion" type="button" data-motion-toggle aria-pressed="true"><span data-motion-label>Motion: on</span></button>
 </section>
-${MEMBER_API ? '<div data-next-event hidden></div><div data-hotw hidden></div><div data-feed-public hidden></div><div data-news data-flag="docs" hidden></div>' : ''}` : `
+${MEMBER_API ? '<div data-hotw hidden></div><div data-feed-public hidden></div><div data-news data-flag="docs" hidden></div>' : ''}
+${section('This week', `<div class="grid3">
+${MEMBER_API ? '<div data-next-event hidden></div>' : ''}
+${card('Latest result', ms.length ? poster(ms[0], base) + `<button class="btn dl-poster" type="button" data-for="poster-${ms[0].matchId}">⬇ Download result graphic</button>` : emptyState('🗂️', 'No matches yet', 'Results land here once the first match is archived.'), 'flush')}
+${CHANNELS.length ? `<div id="watch">${card('📺 Watch NOREX', `<div class="live-embed" hidden></div><div class="watch-grid">${CHANNELS.map(([k, label, svg, sub]) => `<a class="watch-card ${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener"><span class="wc-ic">${svg}</span><span><b>${label}</b><small>${sub}</small></span><span class="wc-go">Follow →</span></a>`).join('')}</div>`)}</div>` : ''}
+</div>`, { sub: 'next up, last time out, and where to watch' })}
+${section('Season at a glance', `<div class="stats stats-8">${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
+    .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}</div>${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}`)}
+${tacticsTeaser(members, base)}
+${(sessions[0] || ms.length) ? section('Match reel', `<div class="card-rail reel">${sessions[0] ? sessionCard(sessions[0], base, id) : ''}${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('')}</div>${ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`, { sub: 'last session and recent results · drag to scroll' }) : ''}
+${section('How we play', `<div class="grid2">${card('Team DNA', `<ul class="dna">${dna.map(([k, v, tip]) => `<li data-tip="${esc(tip)}"><span>${k}</span><div class="meter"><i style="--w:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></li>`).join('')}</ul>`)}${card('Goals per match', !recent.length ? emptyState('⚽', 'No goals to chart yet', 'Fills in after the first archived match.') : goalBars(recent.map((m) => ({ for: num(m.clubs[id].goals), against: num(m.clubs[oppOf(m, id)].goals), res: result(m.clubs[id]), tip: `${dateStr(m.timestamp)} · ${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}` }))))}</div>${MEMBER_API ? `<p><a class="btn ghost" href="${base}playstyle.html">🧭 Full Play Style →</a></p>` : ''}`, { sub: 'how NOREX plays, in the numbers' })}
+${MEMBER_API ? `<div data-flag="hallOfFame" hidden>${section('Hall of Fame', '<div data-hof-teaser hidden></div>', { sub: 'the players who defined the club' })}</div>` : ''}
+<section class="block reveal ending-cta" id="join"><img class="ending-crest" src="${base}assets/crest.png" height="120" alt="">
+<h2 class="banner-h ending-h">${esc(brand.motto || 'One club. One crown.')}</h2>
+<p class="muted ending-sub">${esc(config.siteTitle)} is always looking for committed players who want to compete. Come find out what we're about.</p>
+<div class="ending-links">${endingLinks}</div></section>
+${MEMBER_API ? `<link rel="stylesheet" href="${base}assets/honours.css"><script src="${base}assets/honours.js" defer></script>` : ''}` : `
 <section class="hero club-hero reveal">
 <div class="hero-crest">${crest(id, 180, base, 'big-crest')}</div>
 <div class="hero-text">
@@ -503,7 +526,7 @@ ${heroKicker}
 ${heroChips}
 ${heroForm}
 </div>
-</section>`}
+</section>
 <section class="stats reveal">
 ${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}
@@ -518,14 +541,13 @@ ${card('Season split', `<div class="donut-wrap">${donut([{ label: 'Won', value: 
 ${card('Team DNA', `<ul class="dna">${dna.map(([k, v, tip]) => `<li data-tip="${esc(tip)}"><span>${k}</span><div class="meter"><i style="--w:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></li>`).join('')}</ul>`)}
 ${card('Average team rating', teamRatings.length > 1 ? lineChart(teamRatings, { min: 5, max: 10, ref: 7, id: `tr${id}` }) : emptyState('📈', 'Trend needs two matches', 'The rating line appears once two matches are archived.'))}
 </div>`)}
-${members.length ? section('The squad', `<div class="card-rail">${[...members].sort((a, b) => num(b.clubStats[id]?.gamesPlayed) - num(a.clubStats[id]?.gamesPlayed)).slice(0, 14).map((p) => futCard(p, base)).join('')}</div>${isHome ? `<p><a class="btn" href="${base}squad.html">Full squad →</a></p>` : ''}`, { sub: `${members.length} players` }) : ''}
+${members.length ? section('The squad', `<div class="card-rail">${[...members].sort((a, b) => num(b.clubStats[id]?.gamesPlayed) - num(a.clubStats[id]?.gamesPlayed)).slice(0, 14).map((p) => futCard(p, base)).join('')}</div>`, { sub: `${members.length} players` }) : ''}
 ${members.length ? section('Club leaders', `<div class="grid4">
 ${card('Top scorers', barList(top((s) => num(s.goals)), { base }))}${card('Assists', barList(top((s) => num(s.assists)), { base }))}
 ${card('Avg rating', barList(top((s) => (num(s.gamesPlayed) >= 2 ? num(s.ratingAve) : 0)), { base, fmt: (v) => v.toFixed(1) }))}${card('Man of the match', barList(top((s) => num(s.manOfTheMatch)), { base }))}
 </div>`) : ''}
-${isHome && CHANNELS.length ? section('📺 Watch NOREX', `<div class="live-embed" hidden></div><div class="watch-grid">${CHANNELS.map(([k, label, svg, sub]) => `<a class="watch-card ${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener"><span class="wc-ic">${svg}</span><span><b>${label}</b><small>${sub}</small></span><span class="wc-go">Follow →</span></a>`).join('')}</div>`, { sub: 'streams & highlights', id: 'watch' }) : ''}
-${section('Recent results', `<div class="fixtures">${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('') || emptyState('🗂️', 'No matches archived yet', 'EA only shares the last five games, so the archive starts on the first update after a club is tracked. Results land here automatically.')}</div>${isHome && ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`)}
-${!isHome && members.length ? section('Squad table', squadTable(members, id, base, `squad-${id}`)) : ''}`;
+${section('Recent results', `<div class="fixtures">${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('') || emptyState('🗂️', 'No matches archived yet', 'EA only shares the last five games, so the archive starts on the first update after a club is tracked. Results land here automatically.')}</div>`)}
+${members.length ? section('Squad table', squadTable(members, id, base, `squad-${id}`)) : ''}`}`;
 }
 
 function squadTable(members, id, base, tid) {
@@ -817,6 +839,25 @@ function tacticsTable(squad, base) {
 <p class="muted small">Real squad, real formation, from EA's own numbers – no invented heat maps. Works without 3D too: reduced motion or a smaller screen keeps the board flat with the same numbers.</p>
 <script type="application/json" data-tt-data>${JSON.stringify(data)}</script>
 </section>`;
+}
+
+// Compact home-page teaser for the tactics table (board 04, part 1). Deliberately static – app.js's
+// tactics-table upgrade looks up `[data-tactics]` as a singleton, so a second orbitable copy on the home
+// page would fight the real one on squad.html. Same XI-picking logic, same `.pitch`/`.pp` dots, no 3D.
+function tacticsTeaser(squad, base) {
+  const CAP = { GK: 1, DEF: 4, MID: 4, FWD: 2 };
+  const XPOS = { GK: 8, DEF: 27, MID: 56, FWD: 83 };
+  const byGroup = {};
+  for (const p of squad) { if (!p.group) continue; (byGroup[p.group] ??= []).push(p); }
+  const picks = [];
+  for (const g of ['GK', 'DEF', 'MID', 'FWD']) {
+    const arr = (byGroup[g] || []).sort((a, b) => num(b.main?.gamesPlayed) - num(a.main?.gamesPlayed)).slice(0, CAP[g] || 0);
+    arr.forEach((p, i) => picks.push({ p, x: XPOS[g], y: ((i + 1) * 100) / (arr.length + 1) }));
+  }
+  if (picks.length < 3) return '';
+  const dots = picks.map(({ p, x, y }) =>
+    `<a class="pp side0" style="left:${x}%;top:${y}%" href="${pUrl(p, base)}" data-tip="${esc(`${p.name} · ${p.pos} · OVR ${p.ovr || '–'}`)}"><b class="${ratingClass(num(p.main?.ratingAve))}">${p.ovr || '–'}</b><span>${esc(p.name)}</span></a>`).join('');
+  return section('The squad', card('', `<div class="pitch tt-teaser-pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots}</div><p><a class="btn" href="${base}squad.html">🧠 Full squad & Tactics Table →</a></p>`, 'tt-teaser'), { sub: 'starting XI by games played' });
 }
 
 // ---------- write ----------
