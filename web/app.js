@@ -979,8 +979,16 @@ if (MAPI) (() => {
   if (!session) ls.set(KEY, null);
   const logout = () => { ls.set(KEY, null); ls.set('norex_me', null); location.href = `${BASE}index.html`; };
   const loginUrl = () => `${MAPI}/auth/login?return=${encodeURIComponent(location.href.split('#')[0])}`;
+  // BE5 – Boardroom "preview as": a manager/owner can add ?previewAs=member (…claimed / guest) to any URL
+  // to see the site (and the member API) as that lower role. Never lets them escalate. The Worker
+  // enforces this for real for every API call via the same `x-view-as` header, the query param only
+  // drives the client's own rendering (nav, flagOn() gates) to match.
+  const VIEW_RANK = ['guest', 'member', 'claimed', 'manager', 'owner'];
+  const realRole = session && (session.role ?? (session.adm ? 'manager' : 'member'));
+  const previewAsRaw = new URLSearchParams(location.search).get('previewAs');
+  const previewAs = previewAsRaw && realRole && VIEW_RANK.includes(previewAsRaw) && VIEW_RANK.indexOf(previewAsRaw) <= VIEW_RANK.indexOf(realRole) && VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? previewAsRaw : null;
   const call = async (path, body) => {
-    const r = await fetch(MAPI + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: { Authorization: `Bearer ${session?.token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    const r = await fetch(MAPI + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: { Authorization: `Bearer ${session?.token}`, ...(previewAs ? { 'x-view-as': previewAs } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
     const d = await r.json().catch(() => ({}));
     if (r.status === 401) { ls.set(KEY, null); location.reload(); }
     if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
@@ -989,11 +997,19 @@ if (MAPI) (() => {
   const toast = (msg, bad) => UI.toast(msg, bad ? 'bad' : 'ok');
   const loadTrials = () => new Promise((ok, no) => (window.NXTrials ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/trials.js`, onload: ok, onerror: no }))));
   // Role badge (tiers from bot/roles.js). Sessions from before roles existed only carry `adm`.
-  const ROLE = { owner: ['👑 Owner', 'owner'], manager: ['🛡️ Manager', 'home'], claimed: ['✅ Verified player', 'ok'], member: ['NOREX member', ''] };
+  const ROLE = { owner: ['👑 Owner', 'owner'], manager: ['🛡️ Manager', 'home'], claimed: ['✅ Verified player', 'ok'], member: ['NOREX member', ''], guest: ['Guest', ''] };
   const roleTag = (r) => { const [l, c] = ROLE[r] || ROLE.member; return `<span class="tag ${c}">${l}</span>`; };
-  const baseRole = session && (session.role ?? (session.adm ? 'manager' : 'member'));
+  const baseRole = previewAs || session && (session.role ?? (session.adm ? 'manager' : 'member'));
   const ago = UI.time;
   if (session) { applyFlags(baseRole); viewerRole = baseRole; }
+  const previewUrl = (role) => { const u = new URL(location.href); role ? u.searchParams.set('previewAs', role) : u.searchParams.delete('previewAs'); return u.pathname + u.search + u.hash; };
+  const exitPreviewUrl = () => previewUrl(null);
+  if (previewAs) {
+    const bar = document.createElement('div');
+    bar.className = 'preview-bar';
+    bar.innerHTML = `👁️ Previewing as <b>${esc(ROLE[previewAs]?.[0] || previewAs)}</b> <a href="${esc(exitPreviewUrl())}">Exit preview</a>`;
+    document.body.prepend(bar);
+  }
   if (err) toast(err === 'not_member' ? 'Members only – you need to be in the NOREX Discord server.' : err === 'cancelled' ? 'Login cancelled.' : 'Discord login failed – try again.', true);
 
   // ---------- Member profiles: hover cards everywhere + member.html (P2.1 / P2.2) ----------
@@ -1012,7 +1028,8 @@ if (MAPI) (() => {
     slot.innerHTML = `<div class="acct"><button class="me-btn" type="button" aria-haspopup="true" aria-expanded="false"><img src="${esc(session.a)}" alt=""><span>${esc(session.n)}</span><i>▾</i></button>
 <div class="acct-menu" hidden><div class="acct-head"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><small>${ROLE[myRole][0]}</small></div></div>
 ${flagOn('feed', baseRole) ? `<a href="${BASE}feed.html">📰 Club feed</a>` : ''}<a href="${hub}#me">👤 My profile</a>${flagOn('myStats', baseRole) ? `<a href="${hub}#stats">📊 My stats</a>` : ''}${profilesOn ? `<a href="${BASE}member.html?u=${encodeURIComponent(session.u)}">🪪 My public profile</a>` : ''}${cached?.player ? `<a href="${BASE}players/${encodeURIComponent(cached.player)}.html">🪪 My player page</a>` : ''}
-${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notifications</a>` : ''}${flagOn('docs', baseRole) ? `<a href="${BASE}docs.html">📚 Club docs</a>` : ''}${flagOn('playStyle', baseRole) ? `<a href="${BASE}playstyle.html">🧠 Play Style</a>` : ''}${flagOn('suggestions', baseRole) ? `<a href="${hub}#ideas">💡 Ideas</a>` : ''}${flagOn('awards', baseRole) ? `<a href="${hub}#awards">🏆 Awards</a>` : ''}${flagOn('rushSquads', baseRole) ? `<a href="${hub}#squads">🤝 Rush squads</a>` : ''}${flagOn('starRatings', baseRole) ? `<a href="${hub}#ratings">🌟 Star ratings</a>` : ''}${flagOn('predictions', baseRole) ? `<a href="${hub}#predict">🔮 Predictions</a>` : ''}${flagOn('recommendations', baseRole) ? `<a href="${hub}#teamup">🎯 Who to play with</a>` : ''}${flagOn('feedback', baseRole) ? `<a href="${hub}#feedback">💌 Feedback</a>` : ''}${flagOn('events', baseRole) ? `<a href="${hub}#schedule">🗓️ Schedule</a>` : ''}<a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a>${flagOn('rushLog', baseRole) ? `<a href="${hub}#rush">⚡ Log Rush result</a>` : ''}${session.adm ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
+${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notifications</a>` : ''}${flagOn('docs', baseRole) ? `<a href="${BASE}docs.html">📚 Club docs</a>` : ''}${flagOn('playStyle', baseRole) ? `<a href="${BASE}playstyle.html">🧠 Play Style</a>` : ''}${flagOn('suggestions', baseRole) ? `<a href="${hub}#ideas">💡 Ideas</a>` : ''}${flagOn('awards', baseRole) ? `<a href="${hub}#awards">🏆 Awards</a>` : ''}${flagOn('rushSquads', baseRole) ? `<a href="${hub}#squads">🤝 Rush squads</a>` : ''}${flagOn('starRatings', baseRole) ? `<a href="${hub}#ratings">🌟 Star ratings</a>` : ''}${flagOn('predictions', baseRole) ? `<a href="${hub}#predict">🔮 Predictions</a>` : ''}${flagOn('recommendations', baseRole) ? `<a href="${hub}#teamup">🎯 Who to play with</a>` : ''}${flagOn('feedback', baseRole) ? `<a href="${hub}#feedback">💌 Feedback</a>` : ''}${flagOn('events', baseRole) ? `<a href="${hub}#schedule">🗓️ Schedule</a>` : ''}<a href="${hub}#availability">📅 Availability</a><a href="${hub}#votes">⭐ MOTM votes</a>${flagOn('rushLog', baseRole) ? `<a href="${hub}#rush">⚡ Log Rush result</a>` : ''}${VIEW_RANK.indexOf(baseRole) >= VIEW_RANK.indexOf('manager') ? `<a href="${hub}#manager">🛡️ Manager portal</a>` : ''}
+${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acct-sep"></div><small class="acct-lbl">👁️ Preview as</small>${VIEW_RANK.filter((r) => VIEW_RANK.indexOf(r) <= VIEW_RANK.indexOf(realRole)).map((r) => `<a href="${esc(previewUrl(r === realRole ? null : r))}"${baseRole === r ? ' class="on"' : ''}>${ROLE[r][0]}</a>`).join('')}` : ''}
 <button type="button" class="acct-out">↩ Log out</button></div></div>`;
     const btn = $('.me-btn', slot), menu = $('.acct-menu', slot);
     btn.onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute('aria-expanded', !menu.hidden); };
@@ -1144,6 +1161,7 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
         if (S.admin.events?.length) await loadEvents().catch(() => {});
         if (S.adminTab === 'submissions') await loadSubmissions();
         if (S.adminTab === 'reports') await loadReports();
+        if (S.adminTab === 'health') await loadHealth();
       }
       if (tab === S.tab) draw();
     } catch (e) { toast(e.message, true); }
@@ -1171,6 +1189,13 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
     draw();
     try { S.reports = (await call('/api/admin/reports')).items; } catch (e) { toast(e.message, true); S.reports = []; }
     if (S.adminTab === 'reports') draw();
+  }
+  // BE6 – Cloudflare Worker analytics + GitHub Actions status.
+  async function loadHealth() {
+    S.health = undefined;
+    draw();
+    try { S.health = await call('/api/admin/health'); } catch (e) { toast(e.message, true); S.health = null; }
+    if (S.adminTab === 'health') draw();
   }
   const draw = () => { panel.innerHTML = ({ me: viewMe, availability: viewAvail, votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', ideas: () => '<div id="ideas-panel"></div>', schedule: () => '<div id="schedule-panel"></div>', awards: () => '<div id="awards-panel"></div>', squads: () => '<div id="squads-panel"></div>', ratings: () => '<div id="ratings-panel"></div>', predict: () => '<div id="predict-panel"></div>', teamup: () => '<div id="teamup-panel"></div>', feedback: () => '<div id="feedback-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
 
@@ -1319,6 +1344,7 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
   // ----- Manager portal -----
   const ACT = { login: '🔑', claim: '🪪', 'claim-cancel': '↩', 'claim-approved': '✅', 'claim-rejected': '⛔', 'claim-unlinked': '🔓', profile: '✏️', availability: '📅', vote: '⭐', 'vote-remove': '☆', 'rush-submit': '⚡', 'rush-logged': '⚡', 'rush-confirmed': '✅', 'rush-rejected': '⛔', 'rush-removed': '🗑', 'rush-withdraw': '↩' };
   const ACT_TXT = { login: 'logged in', claim: 'claimed', 'claim-cancel': 'cancelled their claim', 'claim-approved': 'approved claim', 'claim-rejected': 'rejected claim', 'claim-unlinked': 'unlinked', profile: 'updated profile', availability: 'set availability', vote: 'voted MOTM', 'vote-remove': 'removed MOTM vote', 'rush-submit': 'sent a Rush result', 'rush-logged': 'logged a Rush result', 'rush-confirmed': 'confirmed Rush result', 'rush-rejected': 'rejected Rush result', 'rush-removed': 'removed Rush result', 'rush-withdraw': 'withdrew a Rush result' };
+  const FLAG_LEVELS = ['off', 'owner', 'managers', 'members', 'public']; // must match bot/roles.js FLAG_LEVELS
   const FLAG_ICON = { off: '⛔', owner: '👑', managers: '🛡️', members: '👥', public: '🌍' };
   const FLAG_WHO = { off: 'Nobody', owner: 'Owner only', managers: 'Managers + owner', members: 'Every logged-in member', public: 'Everyone, no login needed' };
   function viewManager() {
@@ -1333,7 +1359,8 @@ ${mine.length ? `<div class="rush-list">${mine.map((m) => `<div class="rush-item
     const rq = S.rush?.pending || [];
     const notesOn = flagOn('managerNotes', baseRole);
     const canSubm = S.me?.user?.perms?.includes('submissions.view'), canReports = S.me?.user?.perms?.includes('reports.view');
-    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(canSubm ? [['submissions', '📋 Submissions']] : []), ...(canReports ? [['reports', `🚩 Reports${S.reports?.length ? ` (${S.reports.length})` : ''}`]] : []), ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('requests', baseRole) ? [['requests', '📨 Requests']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(flagOn('proBuilds', baseRole) && S.me?.user?.perms?.includes('builds.squad') ? [['builds', '🧬 Builds']] : []), ...(A.flags ? [['bot', '🤖 Bot settings'], ['flags', '🚩 Flags']] : [])];
+    const canHealth = S.me?.user?.perms?.includes('health.view');
+    const sub = [['claims', `Claims${pending.length ? ` (${pending.length})` : ''}`], ...(flagOn('rushLog', baseRole) ? [['rush', `⚡ Rush${rq.length ? ` (${rq.length})` : ''}`]] : []), ['members', `Members (${users.length})`], ['week', 'Squad week'], ['votes', 'Votes'], ['activity', 'Activity'], ...(canSubm ? [['submissions', '📋 Submissions']] : []), ...(canReports ? [['reports', `🚩 Reports${S.reports?.length ? ` (${S.reports.length})` : ''}`]] : []), ...(flagOn('trials', baseRole) ? [['trials', '🧭 Trials']] : []), ...(notesOn ? [['notes', '📝 Notes']] : []), ...(flagOn('requests', baseRole) ? [['requests', '📨 Requests']] : []), ...(flagOn('gameRules', baseRole) && S.me?.user?.perms?.includes('game.edit') ? [['game', '🎮 Game rules']] : []), ...(flagOn('proBuilds', baseRole) && S.me?.user?.perms?.includes('builds.squad') ? [['builds', '🧬 Builds']] : []), ...(A.flags ? [['bot', '🤖 Bot settings'], ['flags', '🚩 Flags']] : []), ...(canHealth ? [['health', '📈 Health']] : [])];
     if (!sub.some(([k]) => k === S.adminTab)) S.adminTab = 'claims';
     const body = {
       claims: () => `<h3>Waiting for approval</h3>${pending.length ? `<div class="claim-list">${pending.map((c) => `<div class="claim-row card"><img src="${esc(c.a)}" alt=""><div><b>${esc(c.n)}</b> wants <a href="${BASE}players/${encodeURIComponent(c.player)}.html">${esc(c.playerName)}</a><small class="muted">${ago(c.at)}</small></div><div class="row"><button class="btn sm" data-claim="approve" data-u="${c.user}" type="button">Approve</button><button class="btn ghost sm" data-claim="reject" data-u="${c.user}" type="button">Reject</button></div></div>`).join('')}</div>` : UI.empty({ icon: '🎉', title: 'Nothing waiting', text: 'New player claims show up here for approval.' })}
@@ -1371,9 +1398,21 @@ ${items === null ? UI.skeleton('rows', 4) : items.length ? `<div class="claim-li
       game: () => `<div id="game-admin">${UI.skeleton('rows', 4)}</div>`, // PB.1 – drawn by assets/game.js
       bot: () => `<div id="bot-admin">${UI.skeleton('rows', 4)}</div>`, // P7.5 – drawn by assets/settings.js
       builds: () => `<div id="builds-admin">${UI.skeleton('rows', 4)}</div>`, // PB.4 – drawn by assets/probuilds.js
-      // Owner only: read-only view of the live flags (the Worker's copy). Change them in config.json → features.
-      flags: () => `<h3>🚩 Feature flags</h3><p class="muted small">New features start as <b>Owner</b> (only you see them) and get switched on at the QA checkpoints. Levels: off · owner · managers · members · public.</p>
-${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature</th><th>Level</th><th>Who sees it</th><th>Site copy</th></tr></thead><tbody>${Object.entries(A.flags).map(([k, v]) => `<tr><td><code>${esc(k)}</code></td><td>${UI.pill(v, { emoji: FLAG_ICON[v], tone: v === 'public' ? 'win' : v === 'off' ? 'loss' : v === 'owner' ? 'gold' : 'draw' })}</td><td>${esc(FLAG_WHO[v] || '–')}</td><td>${FLAGS[k] === v ? '✅' : `<span class="tag" data-tip="The site updates on its next build">${esc(FLAGS[k] || 'missing')}</span>`}</td></tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '🚩', title: 'No flags yet' })}`,
+      // BE5 – live D1-backed flags. Owner can edit the level here and it's live on the next request, no
+      // deploy; "Site copy" still shows config.json's committed level (what a fresh build/deploy ships).
+      flags: () => `<h3>🚩 Feature flags</h3><p class="muted small">New features start as <b>Owner</b> (only you see them) and get switched on at the QA checkpoints. Levels: off · owner · managers · members · public.${A.canEditFlags ? ' Changes here are live immediately – no deploy needed.' : ''}</p>
+${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature</th><th>Level</th><th>Who sees it</th><th>Committed</th>${A.canEditFlags ? '<th></th>' : ''}</tr></thead><tbody>${Object.entries(A.flags).map(([k, v]) => `<tr><td><code>${esc(k)}</code></td><td>${A.canEditFlags ? `<select data-flag-set="${esc(k)}">${FLAG_LEVELS.map((l) => `<option value="${l}"${l === v ? ' selected' : ''}>${FLAG_ICON[l]} ${l}</option>`).join('')}</select>` : UI.pill(v, { emoji: FLAG_ICON[v], tone: v === 'public' ? 'win' : v === 'off' ? 'loss' : v === 'owner' ? 'gold' : 'draw' })}</td><td>${esc(FLAG_WHO[v] || '–')}</td><td>${FLAGS[k] === v ? '✅' : `<span class="tag" data-tip="Overridden live – a fresh deploy would ship ${esc(FLAGS[k] || 'missing')}">${esc(FLAGS[k] || 'missing')}</span>`}</td>${A.canEditFlags ? `<td>${FLAGS[k] !== v ? `<button class="btn ghost sm" type="button" data-flag-reset="${esc(k)}" data-tip="Back to the committed level">↺</button>` : ''}</td>` : ''}</tr>`).join('')}</tbody></table></div>` : UI.empty({ icon: '🚩', title: 'No flags yet' })}`,
+      // BE6 – Cloudflare Worker analytics (24h) + GitHub Actions run status, owner only.
+      health: () => {
+        const h = S.health;
+        if (h === undefined) return UI.skeleton('rows', 4);
+        if (h === null) return UI.empty({ icon: '📈', title: 'Could not load health data', text: 'Try refreshing.' });
+        const a = h.analytics, runs = h.actions?.runs || [];
+        const RUN_ICON = { success: '✅', failure: '⛔', cancelled: '◽', in_progress: '⏳', queued: '⏳' };
+        return `<h3>☁️ Cloudflare Worker · last 24h</h3>${a?.ready ? `<div class="grid4"><div class="stat"><span>Requests</span><b>${a.requests.toLocaleString()}</b></div><div class="stat"><span>Errors</span><b>${a.errors.toLocaleString()}</b></div><div class="stat"><span>CPU p50</span><b>${a.cpuP50}ms</b></div><div class="stat"><span>CPU p99</span><b>${a.cpuP99}ms</b></div></div>`
+          : `<p class="muted small">⚠️ ${esc(a?.error || 'Not available yet.')}${a?.error?.includes('token') ? ' Add a Cloudflare Analytics token – see the chat for click-by-click steps.' : ''}</p>`}
+<h3 style="margin-top:20px">⚙️ GitHub Actions</h3>${runs.length ? `<div class="tbl"><table><thead><tr><th>Workflow</th><th>Branch</th><th>Status</th><th>When</th><th></th></tr></thead><tbody>${runs.map((r) => `<tr><td>${esc(r.name)}</td><td><code>${esc(r.branch)}</code></td><td>${RUN_ICON[r.conclusion || r.status] || '•'} ${esc(r.conclusion || r.status)}</td><td>${ago(r.at)}</td><td><a class="btn ghost sm" href="${esc(r.url)}" target="_blank" rel="noopener">Open</a></td></tr>`).join('')}</tbody></table></div>` : `<p class="muted small">⚠️ ${esc(h.actions?.error || 'No runs found.')}</p>`}`;
+      },
     };
     return `<div class="chipset sub-tabs">${sub.map(([k, l]) => `<button class="chip${S.adminTab === k ? ' on' : ''}" type="button" data-sub="${k}">${l}</button>`).join('')}<button class="chip" type="button" data-refresh>↻ Refresh</button></div><div class="card mgr">${body[S.adminTab]()}</div>`;
   }
@@ -1482,6 +1521,8 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
   Object.assign(ACT_TXT, { announce: 'sent an announcement', 'notify-ack': 'acknowledged an announcement', request: 'sent a request', 'request-approved': 'approved a request', 'request-rejected': 'rejected a request', 'request-undone': 'undid a request' });
   Object.assign(ACT, { 'post-report': '🚩', 'post-unreport': '✅', 'message-remove': '🗑', 'message-unreport': '✅', warn: '⚠️', mute: '🔇', unmute: '🔊', 'role-change': '🔀' }); // P8.3
   Object.assign(ACT_TXT, { 'post-report': 'reported a feed post', 'post-unreport': 'cleared a report', 'message-remove': 'removed a message', 'message-unreport': 'cleared a message report', warn: 'warned a member', mute: 'muted a member', unmute: 'unmuted a member', 'role-change': 'changed role' });
+  Object.assign(ACT, { 'flag-change': '🚩' }); // BE5
+  Object.assign(ACT_TXT, { 'flag-change': 'changed a feature flag' });
   const trialsCtx = () => ({ call, toast, role: S.me?.user?.role ?? baseRole, perms: S.me?.user?.perms ?? [], me: { u: session.u, n: session.n, a: session.a }, admin: S.admin, players: Array.isArray(S.players) ? S.players : [], flagTrials: flagOn('trials', baseRole) });
   const withTrials = (fn) => loadTrials().then(() => fn(window.NXTrials, trialsCtx())).catch(() => toast('Could not load this part – try again', true));
   function bind() {
@@ -1517,6 +1558,10 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
         S.adminTab = d.sub; draw();
         if (d.sub === 'submissions' && S.subm.rows === null) loadSubmissions();
         if (d.sub === 'reports' && S.reports === null) loadReports();
+        if (d.sub === 'health' && S.health === undefined) loadHealth();
+      }
+      if (d.flagReset) {
+        try { S.admin.flags = (await call('/api/admin/flags/reset', { name: d.flagReset })).flags; draw(); toast(`${d.flagReset}: back to committed`); } catch (er) { toast(er.message, true); }
       }
       if (t.id === 'subm-search') loadSubmissions(S.subm.type, $('#subm-q').value.trim());
       if (t.id === 'subm-csv' && S.subm.rows?.length) exportCSV(S.subm.rows, S.subm.type);
@@ -1542,10 +1587,14 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
         decide(d.u, d.claim);
       }
     };
-    panel.onchange = (e) => {
+    panel.onchange = async (e) => {
       if (e.target.id === 'act-filter') { S.actFilter = e.target.value; draw(); }
       if (e.target.id === 'subm-type') loadSubmissions(e.target.value, S.subm.q);
       if (e.target.dataset.f === 'k') { const g = $('[data-f="n"]', e.target.parentElement); g.hidden = e.target.value !== '__guest'; if (!g.hidden) g.focus(); }
+      if (e.target.dataset.flagSet) {
+        const name = e.target.dataset.flagSet, level = e.target.value;
+        try { S.admin.flags = (await call('/api/admin/flags', { name, level })).flags; draw(); toast(`${name} → ${level}`); } catch (er) { toast(er.message, true); draw(); }
+      }
     };
     const pe = $('#profile-editor', panel);
     if (pe) loadProfile().then(() => NXProfile.editor(pe, profileCtx({ onSaved: (p) => { S.me.profile = p; } }), S.me.profile)).catch(() => toast('Could not load the profile editor', true));

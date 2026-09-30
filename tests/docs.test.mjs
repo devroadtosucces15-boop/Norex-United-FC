@@ -109,6 +109,13 @@ t('real change with ack → everyone acknowledges again', (await call(member, '/
 t('member cannot load Discord targets', (await call(member, '/api/docs/discord')).s === 403);
 const tg = (await call(mgr, '/api/docs/discord')).d;
 t('Discord targets: text + announcement channels, roles without bots, @everyone named', tg.ready && tg.channels.map((c) => c.id).join() === '70002,70001' && tg.roles.some((r) => r.id === '9' && r.name === '@everyone') && !tg.roles.some((r) => r.id === '80002'));
+// BE6 – dry-run preview: same embed shape as the real post, but never actually posts (no new mock post).
+const postsBefore = posts.length;
+const preview = await call(mgr, '/api/docs/discord', { id: annId, preview: true, role: '80001' });
+t('preview: 200, embed matches, pings a role, never actually posts', preview.s === 200 && preview.d.preview.embeds[0].title.includes('Season kick-off') && preview.d.preview.ping === 'a role' && posts.length === postsBefore);
+t('member cannot preview either', (await call(member, '/api/docs/discord', { id: annId, preview: true })).s === 403);
+t('preview of a removed/missing doc 404s', (await call(mgr, '/api/docs/discord', { id: 999999, preview: true })).s === 404);
+
 const dc = await call(mgr, '/api/docs/discord', { id: annId, channel: '70002', role: '80001' });
 const p0 = posts.at(-1);
 t('post to Discord: embed, role ping only that role, link back', dc.s === 200 && p0.channel === '70002' && p0.content === '<@&80001>' && p0.allowed_mentions.roles[0] === '80001' && p0.embeds[0].title.includes('Season kick-off') && p0.embeds[0].url.endsWith(`docs.html#d-${annId}`));

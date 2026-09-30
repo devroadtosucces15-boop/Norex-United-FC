@@ -85,6 +85,9 @@ export const PERMS = {
   'reports.view': 'manager', // P8.3 – unified reported-content queue (posts, feedback, messages)
   'moderation.manage': 'manager', // P8.3 – warn / mute members
   'points.view': 'member', // P11.3 – point system: my total/breakdown + leaderboard
+  'flags.manage': 'owner', // BE5 – Boardroom: live-edit feature flag levels (flag_overrides table)
+  'preview.viewAs': 'manager', // BE5 – Boardroom: preview the site/API as a lower role
+  'health.view': 'owner', // BE6 – Boardroom: Cloudflare Analytics + GitHub Actions health/usage dashboard
 };
 
 export function can(user, action) {
@@ -130,3 +133,34 @@ export function flagOn(env, user, name) {
   return level !== 'off' && atLeast(user?.role ?? 'guest', FLAG_MIN[level]);
 }
 export const featuresFor = (env, user) => Object.keys(flags(env)).filter((f) => flagOn(env, user, f));
+
+// ---------- BE5: live D1 overrides on top of config.json's committed flags ----------
+// A manager/owner edit in the Boardroom's 🚩 Flags tab writes one row here. `handleMembers` calls this
+// once per request and layers the result over the static FEATURES var (see `flags()` above), so every
+// route/flagOn() check downstream sees the live value with no code changes and no broadcast plumbing –
+// the next request after an edit already reads the new level from D1.
+export async function loadFlagOverrides(env) {
+  if (!env.DB) return {};
+  try {
+    const { results } = await env.DB.prepare('SELECT name, level FROM flag_overrides').all();
+    return Object.fromEntries((results || []).map((r) => [r.name, r.level]));
+  } catch { return {}; }
+}
+// Returns a NEW env with FEATURES merged (never mutates the one passed in – the Worker's `env` binding is
+// shared across requests within an isolate, so mutating it in place would leak one request's override into
+// the next). `handleMembers` reassigns its own local `env` to the result; the caller's object is untouched.
+export function withFlagOverrides(env, overrides) {
+  const committed = flags(env);
+  return { ...env, _committedFlags: committed, ...(overrides && Object.keys(overrides).length ? { FEATURES: JSON.stringify({ ...committed, ...overrides }) } : {}) };
+}
+// The map as config.json → features shipped it, ignoring any live D1 override – used by the Flags tab's
+// "reset to committed" and to validate flag names against the real, deployed set.
+export const committedFlags = (env) => env._committedFlags ?? flags(env);
+
+// ---------- BE5: preview-as-role ----------
+// A manager/owner request may carry an `x-view-as` header asking to be treated as a lower role for that
+// one request (Boardroom "preview as"). Never lets anyone escalate – only ranks at or below their own.
+export function viewAsRole(real, requested) {
+  if (!requested || !ROLES.includes(requested) || !atLeast(real, 'manager')) return real;
+  return atLeast(real, requested) ? requested : real;
+}

@@ -162,15 +162,12 @@ export async function postEmbed(env, channel, role, message) {
   await run(env, "INSERT INTO meta (key, value) VALUES ('announce_channel', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", channel);
   return { ok: true, id: res.id };
 }
-// Posts one docs item as a rich embed. Never throws – returns { ok } or { ok: false, error } for the UI.
-async function postDoc(env, me, id, target, log) {
-  if (!can(me, 'announce.discord')) return { ok: false, error: 'Managers only.' };
-  const channel = String(target.channel ?? ''), role = String(target.role ?? '');
-  const d = await one(env, 'SELECT * FROM docs WHERE id = ? AND removed_at IS NULL', id);
-  if (!d) return { ok: false, error: 'That item no longer exists.' };
+// The rich embed for one docs item – shared by the real post and BE6's dry-run preview, so what a manager
+// previews is pixel-for-pixel what gets sent.
+function docEmbed(env, me, d) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
   const img = d.body.split('\n').map((l) => l.trim()).find((l) => IMG_LINE.test(l));
-  const res = await postEmbed(env, channel, role, {
+  return {
     embeds: [{
       title: `${{ announce: '📣', rules: '📜', requirements: '✅', faq: '❓', glossary: '📖', playstyle: '🧠' }[d.area] ?? '📣'} ${d.title}`.slice(0, 250),
       description: plain(d.body, true).slice(0, 3900) || undefined,
@@ -179,7 +176,15 @@ async function postDoc(env, me, id, target, log) {
       author: { name: me.n }, footer: { text: 'NOREX UNITED · club announcements' },
     }],
     components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Open on the site', url: `${site}docs.html#d-${d.id}` }] }],
-  });
+  };
+}
+// Posts one docs item as a rich embed. Never throws – returns { ok } or { ok: false, error } for the UI.
+async function postDoc(env, me, id, target, log) {
+  if (!can(me, 'announce.discord')) return { ok: false, error: 'Managers only.' };
+  const channel = String(target.channel ?? ''), role = String(target.role ?? '');
+  const d = await one(env, 'SELECT * FROM docs WHERE id = ? AND removed_at IS NULL', id);
+  if (!d) return { ok: false, error: 'That item no longer exists.' };
+  const res = await postEmbed(env, channel, role, docEmbed(env, me, d));
   if (!res.ok) return res;
   await run(env, 'UPDATE docs SET discord_channel = ?, discord_msg = ?, discord_at = ? WHERE id = ?', channel, res.id ?? null, Date.now(), d.id);
   await log(env, me, 'doc-discord', `${d.title}${role ? ` · ping ${role === env.DISCORD_GUILD_ID ? '@everyone' : 'role'}` : ''}`);
@@ -237,6 +242,13 @@ async function docsRoute(p, method, body, me, env, log, url) {
   if (p === '/api/docs/discord') {
     if (!can(me, 'announce.discord')) return fail('Managers only.', 403);
     if (method === 'GET') return json(await discordTargets(env));
+    if (body.preview) { // BE6 – dry-run: build the exact embed without posting it
+      const d = await one(env, 'SELECT * FROM docs WHERE id = ? AND removed_at IS NULL', Number(body.id) || 0);
+      if (!d) return fail('That item no longer exists.', 404);
+      const role = String(body.role ?? '');
+      const everyone = role && role === env.DISCORD_GUILD_ID;
+      return json({ preview: { ...docEmbed(env, me, d), ping: role ? (everyone ? '@everyone' : 'a role') : null } });
+    }
     const res = await postDoc(env, me, Number(body.id) || 0, body, log);
     return res.ok ? json({ discord: res, ...(await docsList(env, me)) }) : fail(res.error, 400);
   }

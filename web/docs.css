@@ -76,6 +76,16 @@
 .dx-dc-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
 .dx-dc-row label{display:grid;gap:5px;font:600 13px var(--body)}
 .dx-dc-row select{padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:14px var(--body);color-scheme:dark}
+/* BE6 – Discord embed dry-run preview (announcement/rule posts) */
+.dx-preview-card{display:flex;gap:0;border-radius:10px;overflow:hidden;background:#2b2d31;color:#dbdee1;font:13px/1.5 var(--body)}
+.dx-preview-bar{width:4px;background:var(--red);flex:none}
+.dx-preview-body{padding:10px 14px;min-width:0;flex:1}
+.dx-preview-ping{margin:0 0 4px;color:#f0b232;font-weight:600}
+.dx-preview-author{margin:0;color:#fff;font-weight:600;font-size:12px}
+.dx-preview-title{margin:2px 0 4px;color:#00a8fc;font-weight:600}
+.dx-preview-desc{margin:0 0 6px;color:#dbdee1;white-space:pre-wrap}
+.dx-preview-img{max-width:100%;border-radius:6px;margin:4px 0}
+.dx-preview-footer{margin:6px 0 0;color:#949ba4;font-size:11px}
 .dx-hist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .dx-hist details{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
 .dx-hist summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:8px;align-items:center}

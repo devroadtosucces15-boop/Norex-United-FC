@@ -91,14 +91,34 @@ ${fields.map((x) => x.html ?? `<label class="dx-check"><input type="checkbox" na
   const discordTargets = () => (targets ??= call('/api/docs/discord').catch((e) => ({ ready: false, error: e.message })));
   const pickers = (t) => (t.ready ? `<div class="dx-dc-row"><label>Channel<select name="channel">${t.channels.map((c) => `<option value="${esc(c.id)}"${c.id === t.last ? ' selected' : ''}>${c.news ? '📢' : '#'} ${esc(c.name)}</option>`).join('')}</select></label>
 <label>Ping<select name="role"><option value="">Nobody</option>${t.roles.map((r) => `<option value="${esc(r.id)}">${esc(r.name.startsWith('@') ? r.name : `@${r.name}`)}</option>`).join('')}</select></label></div>` : `<p class="muted small">⚠️ ${esc(t.error)}</p>`);
+  // BE6 – dry-run preview card: renders exactly the embed `/api/docs/discord?preview` would post, so a
+  // manager can check it before it actually goes out.
+  const previewCard = (p) => {
+    if (!p) return '<div class="dx-preview-card"><p class="muted small">Loading preview…</p></div>';
+    const e = p.embeds[0];
+    return `<div class="dx-preview-card"><div class="dx-preview-bar"></div><div class="dx-preview-body">
+${p.ping ? `<p class="dx-preview-ping">📣 pings ${esc(p.ping)}</p>` : ''}
+<p class="dx-preview-author">${esc(e.author.name)}</p>
+<p class="dx-preview-title">${esc(e.title)}</p>
+${e.description ? `<p class="dx-preview-desc">${esc(e.description).replace(/\n/g, '<br>')}</p>` : ''}
+${e.image ? `<img class="dx-preview-img" src="${esc(e.image.url)}" alt="">` : ''}
+<p class="dx-preview-footer">${esc(e.footer.text)}</p></div></div>`;
+  };
   async function toDiscord(item, onDone) {
     const t = await discordTargets();
-    let f = {};
+    let f = {}, preview = null;
+    const refreshPreview = async (d) => {
+      const el = $('.dx-preview-card', d);
+      if (!el) return;
+      try { preview = (await call('/api/docs/discord', { id: item.id, preview: true, role: f.role })).preview; } catch { preview = null; }
+      el.outerHTML = previewCard(preview);
+    };
     const v = await UI.modal({
-      title: `Post to Discord · ${item.title}`, icon: '📣',
-      body: `${item.discord ? `<p class="muted small">Already posted ${UI.time(item.discord.at)} – this posts it again.</p>` : ''}${pickers(t)}<p class="muted small">The bot posts it as a card with a link back here. It needs View Channel, Send Messages and Embed Links in that channel (and Mention Everyone for pings).</p>`,
+      title: `Post to Discord · ${item.title}`, icon: '📣', wide: true,
+      body: `${item.discord ? `<p class="muted small">Already posted ${UI.time(item.discord.at)} – this posts it again.</p>` : ''}${pickers(t)}<p class="muted small">The bot posts it as a card with a link back here. It needs View Channel, Send Messages and Embed Links in that channel (and Mention Everyone for pings).</p>
+<h4 style="margin:14px 0 6px">👁️ Preview</h4>${previewCard(null)}`,
       actions: t.ready ? [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: '📣 Post', value: 'ok' }] : undefined,
-      onOpen: (d) => { const rd = () => { f = { channel: $('[name=channel]', d)?.value, role: $('[name=role]', d)?.value }; }; rd(); d.addEventListener('change', rd); },
+      onOpen: (d) => { const rd = () => { f = { channel: $('[name=channel]', d)?.value, role: $('[name=role]', d)?.value }; refreshPreview(d); }; rd(); d.addEventListener('change', rd); },
     });
     if (v !== 'ok') return;
     try { onDone(await call('/api/docs/discord', { id: item.id, ...f })); toast('Posted to Discord 📣'); } catch (e) { toast(e.message, true); }

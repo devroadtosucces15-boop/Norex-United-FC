@@ -52,10 +52,12 @@ jobs:
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           node -e '
             const s = {};
-            for (const k of ["GH_DISPATCH_TOKEN", "DISCORD_CLIENT_SECRET", "DISCORD_BOT_TOKEN", "VAPID_PRIVATE_KEY"]) if (process.env[k]) s[k] = process.env[k];
+            for (const k of ["GH_DISPATCH_TOKEN", "DISCORD_CLIENT_SECRET", "DISCORD_BOT_TOKEN", "VAPID_PRIVATE_KEY", "CLOUDFLARE_ANALYTICS_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync("secrets.json", JSON.stringify(s));
             console.log("Uploading:", Object.keys(s).join(", ") || "none");
           '

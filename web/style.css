@@ -748,6 +748,12 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px}
 .acct-menu a,.acct-out{display:block;padding:9px 10px;border-radius:8px;font:500 14px var(--body);color:#dfe3ea;text-align:left;background:none;border:0;cursor:pointer}
 .acct-menu a:hover,.acct-out:hover{background:var(--panel2);color:#fff}
 .acct-out{border-top:1px solid var(--line);margin-top:4px;border-radius:0 0 8px 8px}
+/* BE5 – Boardroom preview-as-role */
+.acct-sep{border-top:1px solid var(--line);margin:4px 0}
+.acct-lbl{display:block;padding:6px 10px 2px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.acct-menu a.on{background:var(--panel2);color:#fff;font-weight:600}
+.preview-bar{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 14px;background:var(--red);color:#fff;font:600 13px var(--body);text-align:center}
+.preview-bar a{color:#fff;text-decoration:underline}
 /* hub */
 .hub-tabs{margin:4px 0}
 .hub-tabs .chip,.sub-tabs .chip{padding:9px 16px;font-size:14px}

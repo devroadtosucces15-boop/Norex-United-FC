@@ -37,7 +37,8 @@ import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { crawlRoute } from './crawl.js';
 import { awardPoints, pointsRoute } from './points.js';
-import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
+import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
+import { healthRoute } from './health.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -67,7 +68,7 @@ const siteOrigin = (env) => new URL(env.SITE_URL).origin;
 function cors(env, res) {
   const h = new Headers(res.headers);
   h.set('Access-Control-Allow-Origin', siteOrigin(env));
-  h.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  h.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-View-As'); // X-View-As: BE5 preview-as-role
   h.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   h.set('Cache-Control', 'no-store');
   h.set('Vary', 'Origin');
@@ -288,6 +289,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
 
   try {
     await migrateKV(env);
+    env = withFlagOverrides(env, await loadFlagOverrides(env)); // BE5 – live D1 flag edits win over the committed FEATURES var (a fresh env copy – never mutates the shared binding)
     if (url.pathname === '/auth/callback') return callback(url, env);
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
     if (url.pathname === '/api/rush' && request.method === 'GET') return cors(env, json(await getRushPublic(env)));
@@ -304,12 +306,12 @@ export async function handleMembers(request, env, ctx, loadSite) {
       return chatSocket(request, env, who, Number(wsChat[1]));
     }
     if (url.pathname === '/api/live' && request.method === 'GET') { // P1.3 – public once the flag is 'public'
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'liveBanner')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await getLive(env)));
     }
     if (url.pathname === '/api/contacts' || url.pathname === '/api/trials/apply') { // P1.4 / P1.5 – public, behind the trials flag
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'trials')) return cors(env, fail('Not available yet.', 404));
       if (request.method === 'POST' && url.pathname === '/api/trials/apply') {
         const res = await applyRoute(request, env, me, loadSite, log);
@@ -319,31 +321,31 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (request.method === 'GET' && url.pathname === '/api/contacts') return cors(env, json(await getContacts(env)));
     }
     if (url.pathname === '/api/hof' && request.method === 'GET') { // P4.6 – public legends + moments, behind the hallOfFame flag
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'hallOfFame')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await getHof(env, me)));
     }
     if (request.method === 'GET' && ['/api/probuilds', '/api/probuilds/get', '/api/probuilds/player'].includes(url.pathname)) { // PB.3 / PB.4 – public to read
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       return cors(env, await probuildsPublic(url.pathname, env, me, url));
     }
     if (url.pathname === '/api/events/public' && request.method === 'GET') { // P3.1 – "next match night" strip on the home page
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'events')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await publicEvents(env)));
     }
     if (url.pathname === '/api/awards/player' && request.method === 'GET') { // P4.1 – trophy cabinet on public player pages
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'awards')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await trophies(env, url.searchParams.get('k'))));
     }
     if (url.pathname === '/api/hotw/public' && request.method === 'GET') { // P6.2 – highlight of the week on the home page, behind the hotw flag
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'hotw')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await hotwPublic(env)));
     }
     if (url.pathname === '/api/insights/player' && request.method === 'GET') { // P11.14 – AI read on player cards/profiles/compare/portal
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'aiInsights')) return cors(env, fail('Not available yet.', 404));
       const k = url.searchParams.get('k');
       if (!k) return cors(env, fail('Missing player.'));
@@ -351,23 +353,23 @@ export async function handleMembers(request, env, ctx, loadSite) {
       return cors(env, json(await playerInsights(env, k, { squad, players })));
     }
     if (url.pathname === '/api/feed/public' && request.method === 'GET') { // P6.1c – posts a member marked public, on the home page
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'feed')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await feedPublic(env)));
     }
     if (url.pathname === '/api/docs' && request.method === 'GET') { // P5.2 – guests see items marked public, behind the docs flag
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'docs')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await docsList(env, me)));
     }
     if (url.pathname === '/api/overrides' || url.pathname === '/api/requests/public') { // P5.6 – build overrides + public "hide me"
-      if (me) me.role = await currentRole(env, me);
+      if (me) me.role = await currentRole(env, me, request);
       return cors(env, await publicRequestRoute(request, env, me, loadSite, log));
     }
     if (url.pathname === '/api/bot/settings/public') return cors(env, await botSettingsPublicRoute(request, env)); // P7.5 – fetch.mjs reads before posting
     if (url.pathname === '/api/crawl') return cors(env, await crawlRoute(request, env)); // P9.1 – fetch.mjs's resumable club-ID crawl checkpoint
     if (!me) return cors(env, fail('Please log in again.', 401));
-    me.role = await currentRole(env, me);
+    me.role = await currentRole(env, me, request);
     const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)
     if (ctx?.waitUntil) ctx.waitUntil(seen); else await seen;
     if (url.pathname === '/api/feed/upload' && request.method === 'POST') return cors(env, await mediaUploadRoute(request, me, env, url)); // P6.1b – raw file body
@@ -479,10 +481,13 @@ async function callback(url, env) {
 }
 
 // Role from the session (Discord roles at login) + `claimed` if the member's claim is approved right now.
-export async function currentRole(env, me) {
+export async function currentRole(env, me, request) {
   const role = sessionRole(env, me);
-  if (role !== 'member') return role;
-  return (await one(env, 'SELECT status FROM claims WHERE user_id = ?', me.u))?.status === 'approved' ? 'claimed' : role;
+  const real = role !== 'member' ? role : (await one(env, 'SELECT status FROM claims WHERE user_id = ?', me.u))?.status === 'approved' ? 'claimed' : role;
+  // BE5 – a manager/owner request carrying x-view-as is answered as that lower role for this one request.
+  const view = viewAsRole(real, request?.headers?.get('x-view-as'));
+  if (view !== real) me.realRole = real;
+  return view;
 }
 
 // ---------- API ----------
@@ -490,7 +495,13 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (!can(me, 'hub.use')) return fail('Members only.', 403);
   if (p === '/api/me' && method === 'GET') {
     const [claim, profile] = await Promise.all([getClaim(env, me.u), one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)]);
-    const user = { id: me.u, name: me.n, avatar: me.a, admin: can(me, 'portal.view'), role: me.role, roleLabel: ROLE_LABEL[me.role], perms: permsFor(me.role), features: featuresFor(env, me) };
+    // BE5 – when previewing as a lower role, `me.role` is already the preview role (see currentRole());
+    // `me.realRole` is the manager/owner's actual tier, so the UI can show a "previewing as…" banner
+    // and offer only the roles at or below it.
+    const user = {
+      id: me.u, name: me.n, avatar: me.a, admin: can(me, 'portal.view'), role: me.role, roleLabel: ROLE_LABEL[me.role], perms: permsFor(me.role), features: featuresFor(env, me),
+      ...(me.realRole ? { realRole: me.realRole, realRoleLabel: ROLE_LABEL[me.realRole], viewAsOptions: ROLES.filter((r) => atLeast(me.realRole, r)) } : can(me, 'preview.viewAs') ? { viewAsOptions: ROLES.filter((r) => atLeast(me.role, r)) } : {}),
+    };
     return json({ user, claim, profile: profileOut(profile) ?? null });
   }
 
@@ -729,9 +740,33 @@ async function route(p, method, body, me, env, loadSite, url) {
         activity: activity.map((x) => ({ at: x.at, u: x.user_id, n: x.name, a: x.avatar, type: x.type, detail: x.detail })),
         availability: dates.map((d) => ({ date: d, byUser: avail[d] })),
         votes: recent.map((m, i) => ({ id: m.id, opp: m.opp, gf: m.gf, ga: m.ga, res: m.res, voters: Object.entries(votes[i]).map(([id, v]) => ({ id, ...v, pn: (m.ps || []).find((x) => x.k === v.p)?.n })) })),
-        ...(can(me, 'settings.bot') ? { flags: flags(env) } : {}),
+        ...(can(me, 'settings.bot') ? { flags: flags(env), canEditFlags: can(me, 'flags.manage') } : {}), // BE5 – flags is now live (D1 overrides), canEditFlags gates the portal's edit controls
         ...(flagOn(env, me, 'events') ? { events: await weekEvents(env, me) } : {}), // P3.2 – squad week by event
       });
+    }
+    if (p === '/api/admin/flags' && method === 'POST') { // BE5 – Boardroom: live-edit one flag's level
+      if (!can(me, 'flags.manage')) return fail('Owner only.', 403);
+      const name = String(body.name || '').trim();
+      const level = String(body.level || '');
+      if (!(name in committedFlags(env))) return fail('Unknown flag.', 404);
+      if (!FLAG_LEVELS.includes(level)) return fail('Bad level.', 400);
+      await run(env, `INSERT INTO flag_overrides (name, level, by_name, at) VALUES (?, ?, ?, ?)
+        ON CONFLICT (name) DO UPDATE SET level = excluded.level, by_name = excluded.by_name, at = excluded.at`, name, level, me.n, Date.now());
+      await log(env, me, 'flag-change', `${name} → ${level}`);
+      return json({ flags: { ...flags(env), [name]: level } });
+    }
+    if (p === '/api/admin/flags/reset' && method === 'POST') { // BE5 – drop the override, back to config.json's committed level
+      if (!can(me, 'flags.manage')) return fail('Owner only.', 403);
+      const name = String(body.name || '').trim();
+      const committed = committedFlags(env);
+      if (!(name in committed)) return fail('Unknown flag.', 404);
+      await run(env, 'DELETE FROM flag_overrides WHERE name = ?', name);
+      await log(env, me, 'flag-change', `${name} → reset to committed`);
+      return json({ flags: { ...flags(env), [name]: committed[name] } });
+    }
+    if (p === '/api/admin/health' && method === 'GET') { // BE6 – Boardroom: Cloudflare Analytics + GitHub Actions status
+      const res = await healthRoute(me, env);
+      return res.ok ? json(res) : fail(res.error, 403);
     }
   }
 

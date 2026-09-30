@@ -48,4 +48,40 @@ t('bot settings: public endpoint needs the key', (await W('/api/bot/settings/pub
 // QA1: FEATURES/STREAMS must go under [vars] – appended after ensure-resources' [[d1_databases]] they were silently ignored
 const deployStep = fs.readFileSync(ROOT + '.github/workflows/bot.yml', 'utf8').split('\n').find((l) => l.includes('FEATURES') && l.includes('run:')) ?? '';
 t('bot.yml writes flags under [vars], not at the end of wrangler.toml', deployStep.includes('[vars]') && !deployStep.includes('appendFileSync'));
+
+// ----- BE5: live D1 flag overrides (Boardroom 🚩 Flags tab) -----
+env.FEATURES = JSON.stringify({ rushLog: 'owner', demo: 'members' });
+t('flags.manage: manager forbidden', (await call(mgr, '/api/admin/flags', { name: 'rushLog', level: 'public' })).s === 403);
+t('flags.manage: unknown flag rejected', (await call(owner, '/api/admin/flags', { name: 'nope', level: 'public' })).s === 404);
+t('flags.manage: bad level rejected', (await call(owner, '/api/admin/flags', { name: 'rushLog', level: 'sometimes' })).s === 400);
+const setRes = await call(owner, '/api/admin/flags', { name: 'rushLog', level: 'public' });
+t('flags.manage: owner override takes effect in the response', setRes.s === 200 && setRes.d.flags.rushLog === 'public');
+t('override is live on the very next request – member can now reach rushLog', (await call(member, '/api/rush/queue')).s === 200);
+t('override is committed to D1, survives past the FEATURES var', (await call(owner, '/api/admin/overview')).d.flags.rushLog === 'public');
+const afterOverride = await call(owner, '/api/admin/overview');
+t('overview still reports canEditFlags for owner', afterOverride.d.canEditFlags === true);
+t('audit log recorded the flag change', (await call(owner, '/api/admin/overview')).d.activity.some((a) => a.type === 'flag-change' && a.detail === 'rushLog → public'));
+const resetRes = await call(owner, '/api/admin/flags/reset', { name: 'rushLog' });
+t('flags.manage: reset restores the committed level', resetRes.s === 200 && resetRes.d.flags.rushLog === 'owner');
+t('after reset, member is locked out again', (await call(member, '/api/rush/queue')).s === 404);
+t('flags.manage: reset on unknown flag 404s', (await call(owner, '/api/admin/flags/reset', { name: 'nope' })).s === 404);
+env.FEATURES = JSON.stringify({ rushLog: 'members' });
+
+// ----- BE5: preview-as-role (x-view-as header) -----
+const viewAs = async (tok, role) => { const r = await W('/api/me', { headers: { Authorization: 'Bearer ' + tok, 'x-view-as': role } }); return { s: r.status, d: await r.json().catch(() => null) }; };
+t('owner previewing as member gets a member-shaped /api/me', (await viewAs(owner, 'member')).d.user.role === 'member');
+t('preview response exposes the real role too', (await viewAs(owner, 'member')).d.user.realRole === 'owner');
+t('manager previewing as guest 403s on /api/me – that route itself is member-gated, by design', (await viewAs(mgr, 'guest')).s === 403);
+t('member cannot use x-view-as to escalate – stays a member', (await viewAs(member, 'owner')).d.user.role === 'member');
+t('member gets no realRole/viewAsOptions – preview is manager+ only', (await viewAs(member, 'owner')).d.user.realRole === undefined);
+t('owner sees every role in viewAsOptions', (await call(owner, '/api/me')).d.user.viewAsOptions.join() === 'guest,member,claimed,manager,owner');
+t('manager is capped at manager in viewAsOptions', (await call(mgr, '/api/me')).d.user.viewAsOptions.join() === 'guest,member,claimed,manager');
+t('member gets no viewAsOptions at all', (await call(member, '/api/me')).d.user.viewAsOptions === undefined);
+
+// ----- BE6: health dashboard (Cloudflare Analytics + GitHub Actions) -----
+t('health.view: manager forbidden', (await call(mgr, '/api/admin/health')).s === 403);
+const health = await call(owner, '/api/admin/health');
+t('health.view: owner allowed', health.s === 200);
+t('health degrades gracefully with no analytics token in this env', health.d.analytics.ready === false && /token/.test(health.d.analytics.error));
+t('GitHub Actions status degrades gracefully with no GITHUB_REPO in this env', health.d.actions.ready === false && /GITHUB_REPO/.test(health.d.actions.error));
 done();
