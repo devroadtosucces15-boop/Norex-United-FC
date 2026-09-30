@@ -287,6 +287,7 @@ button.chip{cursor:pointer}
 
 /* ---------- FUT player cards ---------- */
 .card-rail{display:grid;grid-auto-flow:column;grid-auto-columns:170px;gap:14px;overflow-x:auto;padding:6px 4px 18px;scroll-snap-type:x mandatory;scrollbar-width:thin}
+.card-rail[hidden]{display:none}
 .card-rail .fut{scroll-snap-align:start}
 /* board 04 match reel: last session + recent results, one row, drag/scroll (P1 of the home reorder) */
 .card-rail.reel{grid-auto-columns:min(88vw,320px)}
@@ -510,6 +511,37 @@ button.chip{cursor:pointer}
 .pod-block:hover .pod-name{color:var(--red)}
 @media (max-width:560px){.podium-3d{gap:8px}.pod-block{width:90px}.pod-tag{top:-60px}}
 @media (prefers-reduced-motion:reduce){.carousel-ring,.carousel-flip,.carousel-card,.pod-block,.podium-3d{transition:none}}
+
+/* ---------- Match reel cover-flow (redesign board 05, part 1) ----------
+   Flat `.card-rail.reel` of real fixture() cards always renders (works with JS off/reduced motion – the
+   chips are plain #anchor links, so jumping the reel works without JS too). app.js's "match reel
+   cover-flow" block upgrades it into a draggable 3D coverflow (a translateX+rotateY variant of the squad
+   carousel's ring, board 04 part 2 – same drag/snap mechanics), enlarging the centred card and flipping
+   its score in digit-by-digit. */
+.reel-chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.rchip{padding:6px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line2);color:var(--muted);font:600 13px var(--head);text-transform:uppercase;letter-spacing:.04em;transition:border-color .15s,color .15s,background .15s}
+.rchip:hover{color:#fff}
+.rchip.on{background:var(--red);border-color:var(--red);color:#fff}
+.reel-stage[hidden]{display:none}
+.reel-stage{position:relative;height:440px;perspective:1400px;touch-action:pan-y;cursor:grab;margin:0 auto;max-width:1000px;outline:none}
+.reel-stage.dragging{cursor:grabbing}
+.reel-stage.dragging .reel-card{transition:none}
+.reel-card{position:absolute;left:50%;top:50%;width:min(78vw,320px);transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .4s,filter .4s;cursor:pointer}
+.reel-card:not(.front){opacity:.5;filter:brightness(.6) saturate(.75);pointer-events:none}
+.reel-card .poster{height:100%;box-sizing:border-box}
+.reel-card:not(.front) .po-team small,.reel-card:not(.front) .po-motm,.reel-card:not(.front) .reel-dl{display:none}
+.reel-dl{display:block;margin:14px auto 0;pointer-events:none}
+.reel-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.reel-nav button{background:rgba(0,0,0,.5);border:1px solid var(--line2);color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:14px}
+.reel-nav button:hover{border-color:var(--red)}
+.reel-hint{color:var(--muted);font-size:12px}
+@media (max-width:700px){.reel-stage{height:540px}.reel-card{width:min(84vw,300px)}}
+
+/* split-flap score digits – a 0-9 strip per digit, translated into place (stadium scoreboard reveal) */
+.flap{display:inline-block;overflow:hidden;height:1em;line-height:1;vertical-align:top}
+.flap-strip{display:flex;flex-direction:column;transform:translateY(0);transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.flap-strip b{height:1em;line-height:1;font:inherit;font-style:normal}
+@media (prefers-reduced-motion:reduce){.reel-card,.flap-strip{transition:none}}
 
 /* ---------- records ---------- */
 .records{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}

@@ -555,6 +555,138 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
   matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', updateMode);
 })();
 
+// ---------- match reel cover-flow (redesign board 05, part 1) ----------
+// The flat `.card-rail.reel` from build.mjs (real fixture() cards; the session chips are plain #anchor
+// links into it) always works – no-JS and reduced-motion both get it. This upgrades it into a draggable
+// 3D coverflow: a translateX+rotateY variant of the squad carousel's ring above, same
+// drag/snap/getBoundingClientRect-hit-testing mechanics (ring>card>flip nesting broke e.target hit-
+// testing there; this scene has one 3D layer, but the same outer-stage-math approach still applies),
+// with the centred card enlarged and its score flipping in digit-by-digit (the flap spans build.mjs
+// wrote into that card's poster()).
+(() => {
+  const root = $('[data-reel-flat]')?.closest('.block');
+  if (!root) return;
+  let matches = [];
+  try { matches = JSON.parse($('[data-reel-data]', root)?.textContent || '[]'); } catch {}
+  if (!matches.length) return;
+
+  const flat = $('[data-reel-flat]', root), stage = $('[data-reel-stage]', root);
+  const chipsWrap = $('[data-reel-chips]', root), nav = $('.reel-nav', root);
+  const prevBtn = $('.rn-prev', root), nextBtn = $('.rn-next', root), hintEl = $('.reel-hint', root);
+  const STEP = 150, ANGLE = 34, MAXV = 3.2;
+  let cards = [], pos = matches.length - 1, front = -1, built = false;
+  let dragStart = null, dragPosStart = 0, moved = false, lastT = 0, lastX = 0, vel = 0;
+
+  function inRect(r, x, y) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+
+  function place(animate) {
+    stage.classList.toggle('dragging', !animate);
+    cards.forEach((c, i) => {
+      const off = Math.max(-MAXV, Math.min(MAXV, i - pos));
+      c.style.zIndex = String(100 - Math.round(Math.abs(off) * 10));
+      c.style.transform = `translate(-50%,-50%) translateX(${off * STEP}px) rotateY(${off * -ANGLE}deg) scale(${(1 / (1 + Math.abs(off) * 0.28)).toFixed(3)})`;
+    });
+  }
+
+  function unreveal(card) {
+    delete card.dataset.revealed;
+    $$('.flap-strip', card).forEach((s) => { s.style.transition = 'none'; s.style.transform = 'translateY(0)'; });
+  }
+  function reveal(card) {
+    if (!card || card.dataset.revealed) return;
+    card.dataset.revealed = 'true';
+    const flaps = $$('.flap', card);
+    flaps.forEach((f) => { const s = $('.flap-strip', f); s.style.transition = 'none'; s.style.transform = 'translateY(0)'; });
+    requestAnimationFrame(() => flaps.forEach((f, i) => {
+      const s = $('.flap-strip', f);
+      setTimeout(() => { s.style.transition = ''; s.style.transform = `translateY(-${f.dataset.d}em)`; }, i * 70);
+    }));
+  }
+
+  function updateFront(animate) {
+    place(animate);
+    const i = Math.round(pos);
+    cards.forEach((c, ci) => c.classList.toggle('front', ci === i));
+    if (i === front) return;
+    if (front >= 0 && cards[front]) unreveal(cards[front]);
+    front = i;
+    reveal(cards[front]);
+    if (hintEl) hintEl.textContent = `Drag the reel · match ${front + 1} of ${cards.length}`;
+    $$('.rchip', chipsWrap).forEach((ch) => ch.classList.toggle('on', Number(ch.dataset.idx) === front));
+  }
+
+  function goTo(i) { pos = Math.max(0, Math.min(cards.length - 1, i)); updateFront(true); }
+
+  function build() {
+    matches.forEach((m) => {
+      const c = document.createElement('div');
+      c.className = 'reel-card';
+      c.dataset.href = m.href;
+      c.innerHTML = m.html;
+      stage.append(c);
+      cards.push(c);
+    });
+    place(false);
+    updateFront(false);
+
+    stage.addEventListener('pointerdown', (e) => {
+      dragStart = e.clientX; dragPosStart = pos; moved = false; lastT = performance.now(); lastX = e.clientX; vel = 0;
+      stage.setPointerCapture(e.pointerId);
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (dragStart == null) return;
+      const dx = e.clientX - dragStart;
+      if (Math.abs(dx) > 4) moved = true;
+      const now = performance.now(), dt = now - lastT;
+      if (dt > 0) vel = (e.clientX - lastX) / dt;
+      lastT = now; lastX = e.clientX;
+      pos = Math.max(-0.6, Math.min(cards.length - 1 + 0.6, dragPosStart - dx / STEP));
+      place(false);
+    });
+    const endDrag = () => {
+      if (dragStart == null) return;
+      dragStart = null;
+      goTo(Math.round(pos - vel * 90 / STEP)); // a flick keeps coasting a little further before it snaps
+    };
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+    stage.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(Math.round(pos) - 1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); goTo(Math.round(pos) + 1); }
+    });
+    // Deeply-nested 3D transforms don't always hit-test at their projected screen position (see the squad
+    // carousel above) – drive the front card's link and its download button from getBoundingClientRect()
+    // math on the outer stage rather than trusting e.target.
+    stage.addEventListener('click', (e) => {
+      if (moved) return;
+      const card = cards[Math.round(pos)];
+      if (!card || !inRect(card.getBoundingClientRect(), e.clientX, e.clientY)) return;
+      const dl = $('.dl-poster', card);
+      if (dl && inRect(dl.getBoundingClientRect(), e.clientX, e.clientY)) { dl.click(); return; }
+      if (card.dataset.href) location.href = card.dataset.href;
+    });
+  }
+
+  prevBtn?.addEventListener('click', () => goTo(Math.round(pos) - 1));
+  nextBtn?.addEventListener('click', () => goTo(Math.round(pos) + 1));
+  chipsWrap?.addEventListener('click', (e) => {
+    if (!canUse3D()) return; // plain #anchor jump handles it when the flat rail is showing
+    const a = e.target.closest('.rchip');
+    if (!a) return;
+    e.preventDefault();
+    goTo(Number(a.dataset.idx));
+  });
+
+  const canUse3D = () => !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function updateMode() {
+    const on = canUse3D();
+    flat.hidden = on; stage.hidden = !on; if (nav) nav.hidden = !on;
+    if (on && !built) { build(); built = true; }
+  }
+  updateMode();
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', updateMode);
+})();
+
 // ---------- leaders podium (redesign board 04, part 2) ----------
 // Flat ranked lists (barList, driven by the existing [data-tabs]/.tab-panel chip switcher) always work.
 // This grows a 3D-tilted top-3 podium on top when motion is allowed – hovering tilts it toward the pointer
@@ -654,7 +786,11 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------- result graphic download ----------
-$$('.dl-poster').forEach((btn) => btn.addEventListener('click', async () => {
+// Delegated (not a per-button listener bound at parse time) so buttons the match reel cover-flow builds
+// later – see "match reel cover-flow" below – get the same handler without re-wiring anything.
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.dl-poster');
+  if (!btn) return;
   const p = document.getElementById(btn.dataset.for);
   if (!p) return;
   const d = p.dataset, W = 1080, H = 1350;
@@ -708,7 +844,7 @@ $$('.dl-poster').forEach((btn) => btn.addEventListener('click', async () => {
   a.download = `${d.home}-${d.score}-${d.away}.png`.replace(/[^\w.-]+/g, '_');
   a.href = c.toDataURL('image/png');
   a.click();
-}));
+});
 
 // ---------- compare tool ----------
 const cmpOut = $('#cmp-out');

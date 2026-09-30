@@ -56,6 +56,10 @@ const groupOf = (label) => (label === 'GK' ? 'GK' : ['CB', 'LB', 'RB', 'LWB', 'R
 const ratingClass = (r) => (r >= 9 ? 'r-elite' : r >= 8 ? 'r-great' : r >= 7 ? 'r-good' : r >= 6 ? 'r-mid' : 'r-low');
 const dateStr = (ts) => new Date(ts * 1000).toISOString().slice(0, 10);
 const niceDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const chipDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
+// One flap per digit: a 0-9 strip app.js translates into place (stadium-scoreboard reveal, board 05).
+const flapDigit = (d) => `<span class="flap" data-d="${d}"><span class="flap-strip">${'0123456789'.split('').map((x) => `<b>${x}</b>`).join('')}</span></span>`;
+const flapDigits = (n) => [...String(n)].map(flapDigit).join('');
 
 function write(rel, html) {
   const file = path.join(OUT, rel);
@@ -284,10 +288,10 @@ function formStrip(ms, id, base) {
   return ms.slice(0, 10).reverse().map((m) => `<a href="${base}matches/${m.matchId}.html" data-tip="${esc(`${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}`)}">${resPill(result(m.clubs[id]))}</a>`).join('');
 }
 
-function fixture(m, id, base) {
+function fixture(m, id, base, anchor) {
   const o = oppOf(m, id), us = m.clubs[id], them = m.clubs[o];
   const scorers = Object.values(m.players?.[id] || {}).filter((p) => num(p.goals) > 0).map((p) => `${esc(p.playername)}${num(p.goals) > 1 ? ` ×${p.goals}` : ''}`).join(', ');
-  return `<a class="fixture ${result(us)}" href="${base}matches/${m.matchId}.html" data-day="${dateStr(m.timestamp)}" data-id="${m.matchId}">
+  return `<a class="fixture ${result(us)}"${anchor ? ` id="${anchor}"` : ''} href="${base}matches/${m.matchId}.html" data-day="${dateStr(m.timestamp)}" data-id="${m.matchId}">
 <span class="fx-date">${niceDate(m.timestamp)}</span>${resPill(result(us))}
 <span class="fx-team">${crest(id, 28, base)}<span>${esc(clubName(id))}</span></span>
 <span class="fx-score">${esc(us.goals)}<i>–</i>${esc(them.goals)}</span>
@@ -317,6 +321,52 @@ function poster(m, base, { link = true } = {}) {
 </div>
 ${motm ? `<div class="po-motm">⭐ Man of the match <b>${pLinkByName(motm.playername, base)}</b> ${ratingPill(num(motm.rating))}</div>` : ''}
 </div>`;
+}
+
+// Match reel cover-flow (redesign board 05, part 1). Session chips replace the old separate "Last
+// session" + "recent results" pairing: each chip is a match night (from sessionsFor, restricted to nights
+// covered by the reel's own matches), tapping one jumps the reel to that night's last match. The flat
+// `.card-rail.reel` of real fixture() cards always renders (works with JS off/reduced motion – tapping a
+// chip still jumps it via a plain #anchor, no JS needed); app.js's "match reel cover-flow" block upgrades
+// it into a draggable 3D coverflow – a translateX+rotateY variant of the squad carousel's ring (board 04
+// part 2, same drag/coast/snap mechanics) – and adds the split-flap score reveal + download button to
+// whichever card is centred. No "next match" chip: there's no public next-fixture data yet (see BE11).
+function matchReel(ms, sessions, id, base) {
+  if (!ms.length) return '';
+  const recent = ms.slice(0, 10); // newest → oldest
+  const cards = [...recent].reverse(); // oldest → newest, left → right (drag forward = newer)
+  const recentIds = new Set(recent.map((m) => m.matchId));
+  const chips = chunkChips(sessions, cards, recentIds);
+  const data = cards.map((m) => {
+    const us = num(m.clubs[id].goals), them = num(m.clubs[oppOf(m, id)].goals);
+    // Rename the poster's id so it doesn't collide with the "Latest result" card above, which renders
+    // the same match's poster() when ms[0] is within the reel's own window, and swap its plain score
+    // text for split-flap digits (app.js reveals them, staggered, once this card reaches the middle).
+    const html = poster(m, base, { link: false })
+      .replace(`id="poster-${m.matchId}"`, `id="rc-poster-${m.matchId}"`)
+      .replace(`>${us}<i>:</i>${them}<`, `>${flapDigits(us)}<i>:</i>${flapDigits(them)}<`)
+      + `<button class="btn dl-poster reel-dl" type="button" data-for="rc-poster-${m.matchId}">⬇ Download result graphic</button>`;
+    return { id: m.matchId, href: `${base}matches/${m.matchId}.html`, html };
+  });
+  return `${section('Match reel', `
+<div class="reel-chips" data-reel-chips>${chips.map((c) => `<a href="#rc-${c.matchId}" class="rchip" data-idx="${c.idx}">${esc(c.day)}${c.rec ? ` · ${esc(c.rec)}` : ''}</a>`).join('')}</div>
+<div class="card-rail reel" data-reel-flat>${cards.map((m) => fixture(m, id, base, `rc-${m.matchId}`)).join('')}</div>
+<div class="reel-stage" data-reel-stage hidden tabindex="0"></div>
+<div class="reel-nav"><button type="button" class="rn-prev" aria-label="Previous match">◀</button><span class="reel-hint muted small">Drag the reel · tap a card for the full match</span><button type="button" class="rn-next" aria-label="Next match">▶</button><a class="btn ghost small" href="${base}matches/index.html">🗓 Calendar</a></div>
+<script type="application/json" data-reel-data>${JSON.stringify(data)}</script>
+`, { sub: 'tap a chip to jump to a match night' })}${ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`;
+}
+// Sessions that touch the reel's own matches, each chip pointing at its last match's card index.
+function chunkChips(sessions, cards, recentIds) {
+  return sessions
+    .filter((s) => s.ms.some((m) => recentIds.has(m.matchId)))
+    .map((s) => {
+      const last = [...s.ms].reverse().find((m) => recentIds.has(m.matchId));
+      const idx = cards.findIndex((m) => m.matchId === last.matchId);
+      return { idx, matchId: last.matchId, day: chipDate(s.start), rec: s.ms.length > 1 ? `${s.w}W ${s.l}L` : '' };
+    })
+    .filter((c) => c.idx >= 0)
+    .reverse(); // sessionsFor() returns newest-first; flip to match the reel's oldest → newest order
 }
 
 // ---------- sessions (play nights) ----------
@@ -511,7 +561,7 @@ ${section('Season at a glance', `<div class="stats stats-8">${[['Played', gp, 'p
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}</div>${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}`)}
 ${tacticsTeaser(members, base)}
 ${squadCarousel(members, base)}
-${(sessions[0] || ms.length) ? section('Match reel', `<div class="card-rail reel">${sessions[0] ? sessionCard(sessions[0], base, id) : ''}${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('')}</div>${ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`, { sub: 'last session and recent results · drag to scroll' }) : ''}
+${matchReel(ms, sessions, id, base)}
 ${leadersPodium(members, id, base)}
 ${section('How we play', `<div class="grid2">${card('Team DNA', `<ul class="dna">${dna.map(([k, v, tip]) => `<li data-tip="${esc(tip)}"><span>${k}</span><div class="meter"><i style="--w:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></li>`).join('')}</ul>`)}${card('Goals per match', !recent.length ? emptyState('⚽', 'No goals to chart yet', 'Fills in after the first archived match.') : goalBars(recent.map((m) => ({ for: num(m.clubs[id].goals), against: num(m.clubs[oppOf(m, id)].goals), res: result(m.clubs[id]), tip: `${dateStr(m.timestamp)} · ${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}` }))))}</div>${MEMBER_API ? `<p><a class="btn ghost" href="${base}playstyle.html">🧭 Full Play Style →</a></p>` : ''}`, { sub: 'how NOREX plays, in the numbers' })}
 ${MEMBER_API ? '<div data-flag="hallOfFame" hidden><div class="block" data-hof-teaser hidden></div></div>' : ''}
