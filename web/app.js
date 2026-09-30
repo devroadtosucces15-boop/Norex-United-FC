@@ -17,38 +17,79 @@ window.NXViewer = { get role() { return viewerRole; }, flagOn: (name) => flagOn(
 let apiCache;
 const api = () => (apiCache ??= Promise.all(['players', 'clubs'].map((f) => fetch(`${BASE}api/${f}.json`).then((r) => r.json()))));
 
-// ---------- mobile menu ----------
-const menuBtn = $('.menu-btn');
-menuBtn?.addEventListener('click', () => {
-  const open = $('nav').classList.toggle('open');
-  menuBtn.setAttribute('aria-expanded', open);
-});
+// ---------- grouped mega menu (redesign board 01) ----------
+// One shared .mega panel: any .grp button opens/closes it; whichever button was used gets the highlighted
+// column (`.focus`), defaulting to the page's own group so the current section is always marked.
+(() => {
+  const nav = $('.grpnav');
+  if (!nav) return;
+  const mega = $('.mega', nav), btns = $$('.grp', nav);
+  const cols = $$('.col', mega);
+  const setFocus = (id) => cols.forEach((c) => c.classList.toggle('focus', c.dataset.group === id));
+  setFocus(document.body.dataset.group || '');
+  const openMega = (id) => {
+    mega.hidden = false;
+    btns.forEach((b) => b.setAttribute('aria-expanded', String(b.dataset.group === id)));
+    setFocus(id);
+  };
+  const closeMega = () => {
+    mega.hidden = true;
+    btns.forEach((b) => b.setAttribute('aria-expanded', 'false'));
+    setFocus(document.body.dataset.group || '');
+  };
+  const canHover = () => matchMedia('(hover:hover)').matches;
+  btns.forEach((b) => {
+    b.addEventListener('click', () => (mega.hidden || b.getAttribute('aria-expanded') !== 'true' ? openMega(b.dataset.group) : closeMega()));
+    b.addEventListener('mouseenter', () => canHover() && openMega(b.dataset.group));
+  });
+  nav.addEventListener('mouseleave', () => canHover() && closeMega());
+  document.addEventListener('click', (e) => { if (!mega.hidden && !nav.contains(e.target)) closeMega(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !mega.hidden) closeMega(); });
+})();
 
-// ---------- header fit: tighten the links, then fall back to ☰ when they still don't fit ----------
-// More links appear as feature flags switch on (and the 🔔 bell / account menu arrive after login), so fixed breakpoints
-// can't know the width needed – measure instead. Above 1100px only; below it the CSS hamburger always applies.
-const bar = $('.bar');
-function fitNav() {
-  const root = document.documentElement;
-  if (!bar || innerWidth <= 1100) { root.classList.remove('nav-tight', 'nav-collapse'); return; }
-  // Recheck needs to strip the classes to measure the natural width, which would otherwise flash the
-  // uncollapsed nav open for a frame – hide the bar for that instant so nothing is ever painted mid-measure.
-  const restore = bar.style.visibility;
-  bar.style.visibility = 'hidden';
-  root.classList.remove('nav-tight', 'nav-collapse');
-  const over = () => bar.scrollWidth > bar.clientWidth + 1;
-  if (over()) root.classList.add('nav-tight');
-  if (over()) { root.classList.remove('nav-tight'); root.classList.add('nav-collapse'); }
-  bar.style.visibility = restore;
-}
-if (bar) {
-  let t;
-  const later = () => { clearTimeout(t); t = setTimeout(fitNav, 60); };
-  addEventListener('resize', later);
-  new MutationObserver(later).observe(bar, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
-  document.fonts?.ready.then(fitNav);
-  fitNav();
-}
+// ---------- mobile: bottom tab bar + slide-up sheet (hamburger goes away below 860px) ----------
+(() => {
+  const bar = $('.tabbar');
+  if (!bar) return;
+  const sheet = $('.sheet'), backdrop = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'sheet-backdrop' }));
+  backdrop.hidden = true;
+  const groups = (() => { try { return JSON.parse($('#nav-data')?.textContent || '[]'); } catch { return []; } })();
+  const active = document.body.dataset.active || '', activeGroup = document.body.dataset.group || '';
+  const linkHtml = (l) => `<a class="lk${l.id === active ? ' hov' : ''}" href="${BASE}${l.href}"${l.flag ? ` data-flag="${l.flag}" hidden` : ''}><div class="ic">${l.icon}</div><div><b>${esc(l.label)}</b><small>${esc(l.desc)}</small></div></a>`;
+  const body = $('.sheet-body', sheet);
+  const openSheet = () => { sheet.hidden = false; backdrop.hidden = false; requestAnimationFrame(() => { sheet.classList.add('open'); backdrop.classList.add('open'); }); };
+  const closeSheet = () => {
+    sheet.classList.remove('open'); backdrop.classList.remove('open');
+    setTimeout(() => {
+      sheet.hidden = true; backdrop.hidden = true;
+      // the "Me" tab moves the real .auth-slot node in (to keep its live login/logout listeners) – put it back.
+      if (authHome) { const slot = $('.auth-slot'); if (slot) authHome.after(slot); authHome.remove(); authHome = null; }
+    }, 250);
+  };
+  let authHome = null;
+  backdrop.addEventListener('click', closeSheet);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheet.classList.contains('open')) closeSheet(); });
+  $$('.tab[data-group]', bar).forEach((tab) => {
+    if (tab.dataset.group === 'me') return; // wired separately below – it moves the live auth slot in, not a copy
+    tab.addEventListener('click', (e) => {
+      if (tab.dataset.group !== activeGroup) return; // different section: let the link navigate normally
+      e.preventDefault();
+      const g = groups.find((x) => x.id === tab.dataset.group);
+      if (!g) return;
+      body.innerHTML = `<h4><span>${g.icon}</span>${esc(g.label)}</h4>${g.links.map(linkHtml).join('')}`;
+      applyFlags(viewerRole);
+      openSheet();
+    });
+  });
+  const meTab = $('.tab.me-tab', bar);
+  meTab?.addEventListener('click', () => {
+    const slot = $('.auth-slot');
+    body.innerHTML = '<h4><span>👤</span>Me</h4>';
+    if (slot) { authHome = document.createComment('auth-slot-home'); slot.after(authHome); body.appendChild(slot); const menu = $('.acct-menu', slot); if (menu) menu.hidden = false; }
+    else body.insertAdjacentHTML('beforeend', '<p class="muted">Loading…</p>');
+    openSheet();
+  });
+})();
 
 // ---------- reveal on scroll + animated counters ----------
 function countUp(el) {
@@ -246,12 +287,14 @@ async function openPalette() {
   renderPal();
 }
 function closePalette() { pal.hidden = true; }
+const navPages = (() => { try { return JSON.parse($('#nav-data')?.textContent || '[]').flatMap((g) => g.links.map((l) => ({ label: l.label, sub: `${g.icon} ${g.label} · ${l.desc}`, href: `${BASE}${l.href}` }))); } catch { return []; } })();
 async function renderPal() {
   const [pl, cl] = await api();
   const q = palIn.value.trim().toLowerCase();
   const items = [
     ...pl.map((p) => ({ label: p.n, sub: `${p.pos} · ${p.c.slice(0, 2).join(', ')}`, href: `${BASE}players/${encodeURIComponent(p.k)}.html`, home: p.home, score: p.home ? 2 : 0 })),
     ...cl.map((c) => ({ label: c.n, sub: `Club · ${c.t}`, href: c.t === 'home' ? `${BASE}index.html` : `${BASE}clubs/${c.id}.html`, score: c.t === 'home' ? 3 : 1 })),
+    ...navPages.map((n) => ({ ...n, score: 1 })),
   ];
   results = (q ? items.filter((i) => i.label.toLowerCase().includes(q)).sort((a, b) => (a.label.toLowerCase().startsWith(q) ? -1 : 0) - (b.label.toLowerCase().startsWith(q) ? -1 : 0) || b.score - a.score) : items.filter((i) => i.home || i.score === 3)).slice(0, 12);
   sel = 0;

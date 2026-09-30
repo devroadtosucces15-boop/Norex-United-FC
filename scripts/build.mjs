@@ -356,34 +356,84 @@ ${s.mvp ? `<div class="se-mvp">🏅 Session MVP <b>${pLink(s.mvp.pid, base, s.mv
 const homeKit = clubs.get(homeId)?.info?.customKit ?? {};
 const RED = brand.red ?? hex(homeKit.kitColor2, '#c8352c');
 const INK = brand.ink ?? hex(homeKit.kitColor1, '#0b0f16');
-const NAV = [
-  ['home', 'index.html', 'Club'], ['squad', 'squad.html', 'Squad'], ['matches', 'matches/index.html', 'Matches'],
-  ['stats', 'stats.html', 'Stats'], ['compare', 'compare.html', 'Compare'], ['players', 'players/index.html', 'Players'],
-  ['leaders', 'leaders.html', 'Leaders'], ['clubs', 'clubs/index.html', 'Clubs'],
-  ['feed', 'feed.html', 'Feed', 'feed'], ['messages', 'messages.html', 'Messages', 'messages'], ['updates', 'updates.html', 'Updates'], ['builder', 'builder.html', 'Builder', 'builder'], ['probuilds', 'probuilds.html', 'Pro Builds', 'proBuilds'],
+// Grouped navigation (redesign board 01): 4 named groups replace the old flat link row, so every page –
+// including what used to live only in the footer – is one click away. `id` matches a page()'s `active`.
+// `flag` (optional) hides the link until FEATURES unlocks it for the viewer's role, same as the old NAV.
+const NAV_GROUPS = [
+  { id: 'club', icon: '🛡️', label: 'Club', links: [
+    { id: 'home', href: 'index.html', icon: '🏠', label: 'Club home', desc: 'Crest, form, next match' },
+    { id: 'squad', href: 'squad.html', icon: '👥', label: 'Squad', desc: 'Every player, cards' },
+    { id: 'fame', href: 'halloffame.html', icon: '🏛️', label: 'Hall of Fame', desc: 'Legends and records' },
+    ...(MEMBER_API ? [{ id: 'feed', href: 'feed.html', icon: '📰', label: 'Club feed', desc: 'Latest posts', flag: 'feed' }] : []),
+    ...(MEMBER_API ? [{ id: 'docs', href: 'docs.html', icon: '📜', label: 'Club docs', desc: 'Rules and announcements', flag: 'docs' }] : []),
+    ...(MEMBER_API ? [{ id: 'playstyle', href: 'playstyle.html', icon: '🧭', label: 'Play Style', desc: 'How we play', flag: 'playStyle' }] : []),
+    ...(MEMBER_API ? [{ id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages', desc: 'Team chat', flag: 'messages' }] : []),
+    { id: 'about', href: 'about.html', icon: 'ℹ️', label: 'About', desc: 'Our story' },
+  ] },
+  { id: 'matches', icon: '⚽', label: 'Matches', links: [
+    { id: 'matches', href: 'matches/index.html', icon: '🏁', label: 'Match nights & results', desc: 'Sessions, every game, League ⇄ Rush' },
+    { id: 'clubs', href: 'clubs/index.html', icon: '🏟️', label: 'Opponents', desc: 'Every club we have faced' },
+  ] },
+  { id: 'stats', icon: '📊', label: 'Stats', links: [
+    { id: 'stats', href: 'stats.html', icon: '📈', label: 'Club stats', desc: 'Totals, splits, DNA' },
+    { id: 'leaders', href: 'leaders.html', icon: '🥇', label: 'Leaders', desc: 'Top scorers, assists, MOTM, world leaderboard' },
+    { id: 'players', href: 'players/index.html', icon: '🧑‍🤝‍🧑', label: 'Players', desc: 'Every profile, searchable' },
+    { id: 'compare', href: 'compare.html', icon: '⚖️', label: 'Compare', desc: 'Any two players, radar' },
+  ] },
+  { id: 'tactics', icon: '🧠', label: 'Tactics', links: [
+    { id: 'builder', href: 'builder.html', icon: '🧩', label: 'Builder', desc: 'Plan your pro', flag: 'builder' },
+    { id: 'probuilds', href: 'probuilds.html', icon: '⭐', label: 'Pro Builds', desc: 'Squad builds that work', flag: 'proBuilds' },
+    { id: 'updates', href: 'updates.html', icon: '📰', label: 'Game updates', desc: 'Patch notes, level cap' },
+  ] },
 ];
+const NAV_BY_ID = new Map(NAV_GROUPS.flatMap((g) => g.links.map((l) => [l.id, g.id])));
 
+// Mega menu: every group's links render together (mockup board 01) – opening any group button shows the
+// same panel, with that group's column highlighted; the page's own group stays marked with `.lk.hov`.
+function megaCol(g, base, active) {
+  return `<div class="col" data-group="${g.id}"><h4><span>${g.icon}</span>${esc(g.label)}</h4>${g.links.map((l) => `<a class="lk${l.id === active ? ' hov' : ''}" href="${base}${l.href}"${l.id === active ? ' aria-current="page"' : ''}${l.flag ? ` data-flag="${esc(l.flag)}" hidden` : ''}><div class="ic">${l.icon}</div><div><b>${esc(l.label)}</b><small>${esc(l.desc)}</small></div></a>`).join('')}</div>`;
+}
+function grpNav(base, active, activeGroup) {
+  const watch = CHANNELS.length ? `<div class="osw small feat-label">Watch NOREX</div><div class="watch">${CHANNELS.map(([k, label, svg]) => `<a class="${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div>` : '';
+  const feat = `<div class="feat"><div class="osw small feat-label">Right now</div><div class="nm"><div class="t">${RECRUIT.open ? '👑' : '🛡️'}</div><div><b class="osw">${RECRUIT.open ? 'Applications open' : 'Squad set'}</b><small class="muted">${esc(config.siteTitle)}</small></div></div>${watch}${RECRUIT.open ? `<a class="btn small feat-apply" href="${base}apply.html">👑 Apply for a trial</a>` : ''}</div>`;
+  return `<nav class="grpnav" aria-label="Main"><div class="grpbtns">${NAV_GROUPS.map((g) => `<button type="button" class="grp${g.id === activeGroup ? ' on' : ''}" data-group="${g.id}" aria-haspopup="true" aria-expanded="false"><span class="e">${g.icon}</span>${esc(g.label)}</button>`).join('')}</div>
+<div class="mega" hidden>${NAV_GROUPS.map((g) => megaCol(g, base, active)).join('')}${feat}</div>
+<button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? '<span class="auth-slot"></span>' : ''}</nav>`;
+}
+// Sticky sub-tabs: siblings within the current page's group, one tap away on every page in that section.
+function subTabs(base, active, activeGroup) {
+  const g = NAV_GROUPS.find((x) => x.id === activeGroup);
+  if (!g) return '';
+  return `<div class="subtabs"><div class="wrap subtabs-in"><span class="crumb"><span class="e">${g.icon}</span>${esc(g.label)}</span>${g.links.map((l) => `<a href="${base}${l.href}"${l.id === active ? ' aria-current="page"' : ''}${l.flag ? ` data-flag="${esc(l.flag)}" hidden` : ''}>${esc(l.label)}</a>`).join('')}</div></div>`;
+}
+// Mobile bottom tab bar (thumb reach) + a sheet that lists a group's pages, filled by app.js from #nav-data.
+function tabBar(base, activeGroup) {
+  return `<nav class="tabbar" aria-label="Sections">${NAV_GROUPS.map((g) => `<a href="${base}${g.links[0].href}" class="tab${g.id === activeGroup ? ' on' : ''}" data-group="${g.id}"><span>${g.icon}</span>${esc(g.label)}</a>`).join('')}<button type="button" class="tab me-tab" data-group="me"><span>👤</span>Me</button></nav>
+<div class="sheet" hidden><div class="sheet-grab"></div><div class="sheet-body"></div></div>`;
+}
 function page({ title, base, active, body, description, image }) {
+  const activeGroup = NAV_BY_ID.get(active) ?? '';
   return `<!doctype html>
-<html lang="en"><head><script>(function(w){if(w>1100&&w<=1320)document.documentElement.classList.add('nav-collapse')})(innerWidth)</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title><meta name="description" content="${esc(description ?? `${config.siteTitle} – Pro Clubs stats, results and player cards, updated automatically.`)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description ?? `${config.siteTitle} – Pro Clubs stats, results and player cards.`)}"><meta property="og:site_name" content="${esc(config.siteTitle)}"><meta property="og:type" content="website"><meta property="og:image" content="${esc(image ?? `${SITE}assets/crest.png`)}"><meta name="twitter:card" content="summary"><meta name="theme-color" content="${INK}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${base}assets/style.css"><style>:root{--red:${RED};--ink:${INK};--accent:${RED}}</style>
 <link rel="icon" href="${base}assets/favicon.png">
-</head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}">
+</head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}" data-group="${activeGroup}" data-active="${esc(active ?? '')}">
 <div class="bg" aria-hidden="true"></div>
+<script type="application/json" id="nav-data">${JSON.stringify(NAV_GROUPS.map((g) => ({ id: g.id, icon: g.icon, label: g.label, links: g.links.map((l) => ({ id: l.id, href: l.href, icon: l.icon, label: l.label, desc: l.desc, flag: l.flag })) })))}</script>
 <header class="top"><div class="wrap bar">
 <a class="brand" href="${base}index.html"><img src="${base}assets/crest.png" height="44" alt=""><span><b>NOREX</b><small>UNITED</small></span></a>
-<button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><i></i><i></i><i></i></button>
-<nav>${NAV.map(([k, href, label, flag]) => `<a href="${base}${href}"${k === active ? ' aria-current="page"' : ''}${flag ? ` data-flag="${flag}" hidden` : ''}>${label}</a>`).join('')}
-<button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? '<span class="auth-slot"></span>' : ''}</nav></div></header>
+${grpNav(base, active, activeGroup)}</div></header>
+${activeGroup ? subTabs(base, active, activeGroup) : ''}
 ${CHANNELS.length && MEMBER_API ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
 <footer class="foot"><div class="wrap foot-in"><img src="${base}assets/crest.png" height="70" alt="">
-<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links"><a href="${base}halloffame.html">🏛️ Hall of Fame</a>${MEMBER_API ? `<a href="${base}docs.html" data-flag="docs" hidden>📚 Club docs</a><a href="${base}playstyle.html" data-flag="playStyle" hidden>🧠 Play Style</a>` : ''}${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}${CHANNELS.map(([k, label, svg]) => `<a class="foot-${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
-<div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players and clubs…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
+<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · Not affiliated with EA.</small></div></div></footer>
+<div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players, clubs, pages…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
+${tabBar(base, activeGroup)}
 <script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script></body></html>`;
 }
 
