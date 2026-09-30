@@ -50,6 +50,12 @@
 .aw-front small{font:700 11px var(--body);text-transform:uppercase;letter-spacing:.1em}
 .aw-front b{font:700 20px/1.1 var(--head);text-transform:uppercase}
 .aw-front em{font-style:normal;font-size:12px;font-weight:700}
+/* P11.8 weekly pack: foil tier by how many awards the winner swept that week – bronze/silver/gold/legendary, same palette as the site's FUT cards (.tier-* in style.css). */
+.aw-foil{position:absolute;top:8px;right:8px;font-size:16px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.aw-card.tier-bronze .aw-front{background:linear-gradient(160deg,#d69a6a,#7a4524);color:#1f0f05;border-color:#e8b48a}
+.aw-card.tier-silver .aw-front{background:linear-gradient(160deg,#e3e8ee,#8d97a5);color:#141a22;border-color:#f4f7fa}
+.aw-card.tier-gold .aw-front{background:linear-gradient(160deg,#f3d98b,#a8802b);color:#2a1d05;border-color:#ffe8a3}
+.aw-card.tier-legendary .aw-front{background:linear-gradient(160deg,var(--red),#1a0606);color:#fff;border-color:#ffd27a;box-shadow:0 10px 30px rgba(200,53,44,.5),0 0 24px 4px rgba(255,190,60,.4)}
 .aw-hint{text-align:center;margin:10px 0 0}
 .aw-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .aw-confetti i{position:absolute;top:-10px;left:var(--x);width:7px;height:12px;background:var(--c);border-radius:2px;animation:awFall var(--d) ease-in var(--delay) forwards}

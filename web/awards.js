@@ -27,18 +27,27 @@
     setTimeout(() => box.remove(), 2600);
   }
 
+  // ---------- P11.8 weekly pack: foil tier by how many awards a winner swept that week (1=bronze, 2=silver, 3=gold, 4+=legendary) ----------
+  const PACK_TIER = { 1: ['bronze', '🥉'], 2: ['silver', '🥈'], 3: ['gold', '🥇'], 4: ['legendary', '💎'] };
+  const packTier = (n) => PACK_TIER[Math.min(n, 4)];
+
   // ---------- the reveal ----------
   async function reveal(last) {
     const byAward = new Map();
     for (const w of last.winners) (byAward.get(String(w.award)) ?? byAward.set(String(w.award), { ...w, names: [] }).get(String(w.award))).names.push(w.n);
     const cards = [...byAward.values()].filter((a) => a.k);
     if (!cards.length) return UI.modal({ title: `${wk(last.week)} awards`, icon: '🏆', body: UI.empty({ icon: '🏆', title: 'No winners that week', text: 'Nobody voted and nobody played – vote for this week in the ballot.' }) });
+    const sweeps = new Map(); // player key → how many awards they won this week (across every category, not just this card's names)
+    for (const w of last.winners) if (w.k) sweeps.set(w.k, (sweeps.get(w.k) ?? 0) + 1);
     ls.set(`norex_reveal_${last.week}`, '1');
     let i = 0, timer;
     const v = UI.modal({
       title: `${wk(last.week)} · the awards`, icon: '🏆', wide: true,
-      body: `<div class="aw-stage"><div class="aw-spot" aria-hidden="true"></div><div class="aw-cards">${cards.map((c, n) => `<div class="aw-card" data-i="${n}" tabindex="0" aria-label="${esc(c.name)}"><div class="aw-flip"><div class="aw-back"><span>${esc(c.icon)}</span><b>${esc(c.name)}</b><small>Tap to reveal</small></div>
-<div class="aw-front"><span class="aw-ic">${esc(c.icon)}</span><small>${esc(c.name)}</small><b>${c.names.map(esc).join(' &amp; ')}</b>${c.stat ? `<em>${esc(String(c.value))}</em>` : `<em>${c.value} vote${c.value === 1 ? '' : 's'}</em>`}</div></div></div>`).join('')}</div>
+      body: `<div class="aw-stage"><div class="aw-spot" aria-hidden="true"></div><div class="aw-cards">${cards.map((c, n) => {
+        const [tier, foil] = packTier(sweeps.get(c.k) ?? 1);
+        return `<div class="aw-card tier-${tier}" data-i="${n}" tabindex="0" aria-label="${esc(c.name)}"><div class="aw-flip"><div class="aw-back"><span>${esc(c.icon)}</span><b>${esc(c.name)}</b><small>Tap to reveal</small></div>
+<div class="aw-front"><span class="aw-foil" aria-label="${tier} pack">${foil}</span><span class="aw-ic">${esc(c.icon)}</span><small>${esc(c.name)}</small><b>${c.names.map(esc).join(' &amp; ')}</b>${c.stat ? `<em>${esc(String(c.value))}</em>` : `<em>${c.value} vote${c.value === 1 ? '' : 's'}</em>`}</div></div></div>`;
+      }).join('')}</div>
 <p class="muted small aw-hint">${reduced() ? 'Tap each card to reveal it.' : 'Revealing… tap a card to skip ahead.'}</p></div>`,
       actions: [{ label: 'Close', value: null, kind: 'ghost' }],
       onOpen: (d) => {
