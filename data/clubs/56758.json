@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-09-30T16:44:25.301Z",
+ "fetchedAt": "2026-09-30T16:51:01.971Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -187,42 +187,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "Tha Last Irish",
-   "gamesPlayed": "5",
-   "winRate": "60",
-   "goals": "0",
-   "assists": "5",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "43",
-   "passSuccessRate": "64",
-   "ratingAve": "6.9",
-   "tacklesMade": "2",
-   "tackleSuccessRate": "100",
-   "proName": "IRISH",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "167",
-   "proNationality": "180",
-   "proOverall": "78",
-   "proOverallStr": "78",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "ocularAbyss",
@@ -1272,7 +1236,7 @@
  "positionCount": {
   "midfielder": 8,
   "goalkeeper": 1,
-  "forward": 16,
+  "forward": 15,
   "defender": 6
  },
  "career": [
@@ -1308,17 +1272,6 @@
    "ratingAve": "7.9",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "Tha Last Irish",
-   "proPos": "25",
-   "gamesPlayed": "131",
-   "goals": "66",
-   "assists": "98",
-   "manOfTheMatch": "9",
-   "ratingAve": "7.6",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "ocularAbyss",
