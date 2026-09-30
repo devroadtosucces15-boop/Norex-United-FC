@@ -1,6 +1,7 @@
 // Creates the Cloudflare resources the Worker needs (once) and binds them in wrangler.toml for this deploy:
-// KV namespace `norex-members` (public cache), D1 database `norex` (member data, migrations in bot/migrations) and the
-// R2 bucket `norex-media` (feed photos/clips).
+// KV namespace `norex-members` (public cache), D1 database `norex` (member data, migrations in bot/migrations), the
+// R2 bucket `norex-media` (feed photos/clips) and the `norex-jobs` Queue (BE0 – background jobs: BE9's insight
+// writer calls, BE8's presence "wave" ping). All free tier; Queue needs the API token to have "Workers Queues: Edit".
 import fs from 'node:fs';
 const { CLOUDFLARE_API_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: account } = process.env;
 const TITLE = 'norex-members';
@@ -66,5 +67,26 @@ if (!r2.success) {
     if (!rule.success) console.log(`::warning title=R2 lifecycle::could not set the 365-day rule – ${why(rule)} (the Worker's hourly guard still removes old files)`);
     if (!fs.readFileSync(file, 'utf8').includes('binding = "MEDIA"')) fs.appendFileSync(file, `\n[[r2_buckets]]\nbinding = "MEDIA"\nbucket_name = "${BUCKET}"\n`);
     console.log('::notice title=R2 ready::✅ bucket', BUCKET, 'bound as MEDIA');
+  }
+}
+
+// Queue for background jobs (BE0 – platform for BE9's insight writer, BE8's presence "wave" ping). Producer
+// binding only for now: nothing consumes it yet, so no [[queues.consumers]]/queue() handler until whichever
+// of BE8/BE9 ships first adds one. Never fails the deploy – without the binding, code that would enqueue a
+// job just has to run inline instead (same fallback shape as MEDIA above).
+const QUEUE = 'norex-jobs';
+const queues = await cf('/queues?per_page=100');
+if (!queues.success) {
+  console.log(`::warning title=Queue not ready::❌ ${why(queues)} – background jobs stay off (the API token needs "Workers Queues: Edit")`);
+} else {
+  let q = (queues.result ?? []).find((x) => x.queue_name === QUEUE);
+  if (!q) {
+    const made = await cf('/queues', { method: 'POST', body: JSON.stringify({ queue_name: QUEUE }) });
+    if (made.success) { q = made.result; console.log('Created queue', QUEUE); }
+    else console.log(`::warning title=Queue create::❌ could not create ${QUEUE} – ${why(made)}`);
+  }
+  if (q) {
+    if (!fs.readFileSync(file, 'utf8').includes('binding = "JOBS"')) fs.appendFileSync(file, `\n[[queues.producers]]\nbinding = "JOBS"\nqueue = "${QUEUE}"\n`);
+    console.log('::notice title=Queue ready::✅', QUEUE, 'bound as JOBS (producer only)');
   }
 }

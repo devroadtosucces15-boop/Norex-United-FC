@@ -15,6 +15,9 @@ ADMIN_IDS = "1322770005535756290"
 MEMBER_ROLE_ID = ""
 ADMIN_ROLE_ID = "1371389857649393684"
 OWNER_ROLE_ID = "1451571867579322422"
+# BE0: Web Push (RFC 8292). Public half of the VAPID keypair – safe to commit, sent to browsers on purpose.
+# The private half is VAPID_PRIVATE_KEY, a Worker secret uploaded from the GH Actions secret of the same name.
+VAPID_PUBLIC_KEY = "BHlk5h_Pk73q6Puq3GZBlD2N11-0XNiDukORC4i62w98wxnFxWgoT1V145xhFihpafT1RTwJKFdyFwncyxKru_s"
 
 # P11.1: Workers AI (free 10,000 neurons/day on this account) – image + text models for Phase 11
 [ai]
