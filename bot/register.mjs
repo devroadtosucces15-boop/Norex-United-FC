@@ -6,7 +6,7 @@ if (!app || !token) {
   process.exit(1);
 }
 
-const SUB = 1, STRING = 3, INTEGER = 4, USER = 6, CHANNEL = 7;
+const SUB = 1, STRING = 3, INTEGER = 4, USER = 6, CHANNEL = 7, ATTACHMENT = 11;
 const player = (name, description) => ({ type: STRING, name, description, required: true, autocomplete: true });
 const commands = [
   { name: 'club', description: 'Club record, division and form' },
@@ -45,6 +45,10 @@ const commands = [
   { name: 'profile', description: "A member's profile – player, positions, platforms", options: [{ type: USER, name: 'member', description: 'Whose profile (default: yours)' }] },
   { name: 'awards', description: "This week's award ballot and last week's winners" },
   { name: 'points', description: 'Your total points + breakdown by category (P11.3)' },
+  {
+    name: 'avatarcard', description: 'Upload your avatar for an AI-styled club background (P11.5)',
+    options: [{ type: ATTACHMENT, name: 'image', description: 'Your avatar image (PNG/JPG/WEBP, 8 MB max)', required: true }],
+  },
   // P2.5 – only shown to people with Discord's Manage Roles permission (server owner can widen it in Server Settings → Integrations).
   // Club Intelligence – same visibility as /syncroles; the Worker still checks the manager role + `insights` flag.
   { name: 'insights', description: 'Managers: Club Intelligence – server + club analysis with recommendations', default_member_permissions: String(1 << 28), contexts: [0] },

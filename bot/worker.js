@@ -27,6 +27,7 @@ import { checkUptime } from './monitor.js';
 import { runSpike, spikeReport } from './aispike.js';
 import { checkProfanity, cleanBonus, setupAutoMod } from './profanity.js';
 import { checkHype } from './hype.js';
+import { makeAvatarCard } from './avatarcard.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
@@ -88,6 +89,7 @@ export default {
     if (i.type === 2 && i.data.name === 'exportcontent') return exportContentCommand(i, env, ctx, who);
     if (i.type === 2 && i.data.name === 'aispike') return aiSpikeCommand(i, env, ctx, who);
     if (i.type === 2 && i.data.name === 'profanitysetup') return profanitySetupCommand(i, env, ctx, who);
+    if (i.type === 2 && i.data.name === 'avatarcard') return avatarCardCommand(i, env, ctx, who, new URL(request.url).origin);
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
       try { return json(await eventButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
     }
@@ -218,6 +220,32 @@ function profanitySetupCommand(i, env, ctx, who) {
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
     }).catch((e) => console.log('profanitysetup reply failed', e.message));
+  })());
+  return json({ type: 5, data: { flags: 64 } });
+}
+
+// ---------- /avatarcard (members): P11.5 upload an avatar → AI background + stored photo, both served via /media ----------
+function avatarCardCommand(i, env, ctx, who, origin) {
+  const optId = flatOptions(i.data.options).find((o) => o.name === 'image')?.value;
+  const attachment = i.data.resolved?.attachments?.[optId];
+  if (!attachment) return json({ type: 4, data: { content: '⚠️ Attach an image.', flags: 64 } });
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      const { photoKey, bgKey } = await makeAvatarCard(env, who.u, attachment);
+      content = [
+        '🎨 **Your club card art is ready!**',
+        `📷 Your photo: ${origin}/media/${photoKey}`,
+        `🖼️ AI background: ${origin}/media/${bgKey}`,
+        "Discord doesn't let bots set another member's avatar for them – download whichever you want and set it yourself (User Settings → Edit Profile).",
+        'An interactive web card combining both is coming in a follow-up.',
+      ].join('\n');
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    }).catch((e) => console.log('avatarcard reply failed', e.message));
   })());
   return json({ type: 5, data: { flags: 64 } });
 }
