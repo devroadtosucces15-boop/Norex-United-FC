@@ -2,6 +2,7 @@
 //   GET  /api/events                 members: upcoming (60 days) + recent (14 days) events with everyone's answers,
 //                                    my "usually on at this time" hints (P2.2 play times)            (flag `events`)
 //   GET  /api/events/public          anyone: the next public events – home page "next match night" strip
+//   GET  /api/events/calendar?month=YYYY-MM  members: one month's events + my answers + type colours, one call (BE11)
 //   POST /api/events                 managers: create (optionally repeat weekly, notify, post to Discord) or edit
 //   POST /api/events/cancel          managers: cancel { id, reason } – people who said yes/maybe are told
 //   POST /api/events/rsvp            members: { ids: [...], status: yes | maybe | no | clear } – bulk, like day availability
@@ -24,7 +25,11 @@ import { getBotSettings } from './settings.js';
 const REMIND = ['dm', 'mention', 'off'];
 
 const MIN = 60e3, HOUR = 3600e3, DAY = 86400e3;
-export const EVENT_TYPES = { league: ['🏆', 'League night'], rush: ['⚡', 'Rush session'], playoffs: ['🥇', 'Playoffs'], friendly: ['🤝', 'Friendly'], trial: ['🧭', 'Trial session'], training: ['🎯', 'Training'] };
+// 3rd element (BE11) is a per-type calendar colour, on-theme with the crest red.
+export const EVENT_TYPES = {
+  league: ['🏆', 'League night', '#c8352c'], rush: ['⚡', 'Rush session', '#e08a1e'], playoffs: ['🥇', 'Playoffs', '#caa63b'],
+  friendly: ['🤝', 'Friendly', '#3f8f5f'], trial: ['🧭', 'Trial session', '#3a7bd5'], training: ['🎯', 'Training', '#7a5fc9'],
+};
 const STATUSES = ['yes', 'maybe', 'no'];
 const RED = 0xc8352c;
 
@@ -105,6 +110,17 @@ async function listFor(env, me) {
 }
 // Squad week in the manager portal (P3.2): the next 7 days' events as columns.
 export const weekEvents = (env, me) => load(env, "start > ? AND start < ? AND status = 'scheduled'", [Date.now() - 6 * HOUR, Date.now() + 7 * DAY], me);
+// BE11: single-call month view for a calendar grid – events + my own answer + type colours, one round trip.
+export async function calendarMonth(env, me, month) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month ?? '')) return { error: 'Bad month.' };
+  const [y, m] = month.split('-').map(Number);
+  const start = Date.UTC(y, m - 1, 1), end = Date.UTC(y, m, 1);
+  const events = await load(env, 'start >= ? AND start < ?', [start, end], me);
+  return {
+    events: events.map((e) => ({ ...e, mine: e.rsvps.find((r) => r.id === me.u)?.s ?? null })),
+    types: Object.fromEntries(Object.entries(EVENT_TYPES).map(([k, [emoji, label, colour]]) => [k, { emoji, label, colour }])),
+  };
+}
 export async function publicEvents(env) {
   const rows = await all(env, "SELECT id, type, title, start, duration, tz FROM events WHERE public = 1 AND status = 'scheduled' AND start + duration * 60000 > ? ORDER BY start LIMIT 3", Date.now());
   return { events: rows.map((r) => ({ id: r.id, type: r.type, title: opt(r.title), start: r.start, duration: r.duration, tz: r.tz })) };
@@ -478,6 +494,10 @@ export async function eventsRoute(p, method, body, me, env, log, loadSite, url) 
   if (!can(me, 'events.view')) return fail('Members only.', 403);
   if (['/api/events/checkin', '/api/events/report', '/api/events/report/post'].includes(p)) return nightRoute(p, method, body, me, env, log, loadSite, url);
   if (p === '/api/events' && method === 'GET') return json(await listFor(env, me));
+  if (p === '/api/events/calendar' && method === 'GET') {
+    const out = await calendarMonth(env, me, url.searchParams.get('month'));
+    return out.error ? fail(out.error) : json(out);
+  }
   if (p === '/api/events/discord' && method === 'GET') return can(me, 'announce.discord') ? json(await discordTargets(env)) : fail('Managers only.', 403);
   if (['/api/events/lineup', '/api/events/templates', '/api/events/templates/delete'].includes(p)) { // P3.4 (+ P3.7 quick lineup)
     if (!can(me, 'events.manage')) return fail('Managers only.', 403);

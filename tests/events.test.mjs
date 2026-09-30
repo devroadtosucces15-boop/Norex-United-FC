@@ -81,6 +81,16 @@ t('portal squad week gets this week’s events with answers', Array.isArray(ov.e
 const guestStrip = await (await W('/api/events/public')).json();
 t('public strip: next public events, no answers leaked', guestStrip.events.length >= 1 && guestStrip.events[0].id === e1 && !('rsvps' in guestStrip.events[0]) && !('notes' in guestStrip.events[0]));
 
+// ----- BE11 calendar month view -----
+const monthStr = new Date(evs[0].start).toISOString().slice(0, 7);
+const cal = await call(member, `/api/events/calendar?month=${monthStr}`);
+t('calendar: one call gets the month\'s events + my answer + type colours', cal.s === 200
+  && cal.d.events.some((e) => e.id === e1 && e.mine === 'yes') && cal.d.events.some((e) => e.id === e2 && e.mine === null)
+  && cal.d.types.league.colour === '#c8352c' && cal.d.types.league.emoji === '🏆');
+t('calendar: bad month refused', (await call(member, '/api/events/calendar?month=2026-13')).s === 400
+  && (await call(member, '/api/events/calendar')).s === 400);
+t('calendar: guests/logged-out kept out', (await call(null, `/api/events/calendar?month=${monthStr}`)).s === 401);
+
 // ----- edit + cancel -----
 const moved = await call(mgr, '/api/events', { ...base, id: e1, time: '21:00' });
 t('moving the time tells people who said yes / maybe', moved.s === 200 && moved.d.notified === 2 && (await call(member2, '/api/notify')).d.items.some((n) => /^Time changed/.test(n.title)));
