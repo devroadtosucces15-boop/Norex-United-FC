@@ -16,6 +16,10 @@ MEMBER_ROLE_ID = ""
 ADMIN_ROLE_ID = "1371389857649393684"
 OWNER_ROLE_ID = "1451571867579322422"
 
+# P11.1: Workers AI (free 10,000 neurons/day on this account) – image + text models for Phase 11
+[ai]
+binding = "AI"
+
 # P6.3b live chat: one Durable Object per chat room (SQLite-backed class = Workers Free plan)
 [[durable_objects.bindings]]
 name = "CHAT_ROOM"

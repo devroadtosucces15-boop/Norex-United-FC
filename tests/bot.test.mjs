@@ -31,6 +31,8 @@ const sample = {
   syncroles: null, // deferred reply – tested in discord.test.mjs (P2.5)
   schedule: null, availability: null, lineup: null, rush: null, me: null, leaderboard: null, profile: null, awards: null, // P7.4/P7.5 – need the member DB: tests/wave8.test.mjs / tests/wave13.test.mjs
   insights: null, // deferred reply – tested in insights.test.mjs (Club Intelligence)
+  exportcontent: null, // deferred reply, owner only – DMs guide/rule/playstyle/announcement channels
+  aispike: null, // deferred reply, owner only – needs the real Workers AI binding (P11.1)
 };
 for (const name of Object.keys(sample)) {
   if (!registered.includes(name) || !sample[name]) continue;

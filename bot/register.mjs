@@ -48,6 +48,12 @@ const commands = [
   // Club Intelligence – same visibility as /syncroles; the Worker still checks the manager role + `insights` flag.
   { name: 'insights', description: 'Managers: Club Intelligence – server + club analysis with recommendations', default_member_permissions: String(1 << 28), contexts: [0] },
   { name: 'syncroles', description: 'Managers: give/remove the ✅ Verified role for every player claim', default_member_permissions: String(1 << 28), contexts: [0] },
+  {
+    name: 'exportcontent', description: 'Owner: DM me pinned + recent messages from guide/rule/playstyle/announcement channels',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [{ type: STRING, name: 'channel', description: 'Only this channel (name or part of it) instead of the default guide/rule/playstyle/announce/faq match' }],
+  },
+  { name: 'aispike', description: 'Owner: one-off test of the Workers AI image + text models (P11.1)', default_member_permissions: String(1 << 28), contexts: [0] },
 ];
 
 const res = await fetch(`https://discord.com/api/v10/applications/${app}/commands`, {
