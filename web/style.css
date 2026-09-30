@@ -342,6 +342,13 @@ button.chip{cursor:pointer}
 .tier-bronze{--t1:#d69a6a;--t2:#7a4524;--tx:#1f0f05;--edge:#e8b48a}
 .tier-icon{--t1:var(--red);--t2:#1a0606;--tx:#fff;--edge:#ffd27a}
 .tier-plain{--t1:#2d3440;--t2:#151a22;--tx:#fff;--edge:#3b4556}
+/* P11.9 seasonal aura: an ambient glow on top of whichever tier colour the card already has, driven by real recent form. */
+.fut-aura{position:absolute;top:8px;right:8px;z-index:3;font-size:15px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.aura-hot{animation:auraHot 2.6s ease-in-out infinite}
+.aura-cold{animation:auraCold 2.6s ease-in-out infinite}
+@keyframes auraHot{0%,100%{box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 10px 1px rgba(255,120,30,.5)}50%{box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 22px 6px rgba(255,170,40,.85)}}
+@keyframes auraCold{0%,100%{box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 10px 1px rgba(70,170,255,.45)}50%{box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 22px 6px rgba(130,210,255,.8)}}
+@media (prefers-reduced-motion:reduce){.aura-hot,.aura-cold{animation:none;box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 16px 3px rgba(255,150,40,.6)}.aura-cold{box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 16px 3px rgba(100,190,255,.6)}}
 .fut-top{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:6px;align-items:start}
 .fut-ovr{font:700 34px/0.9 var(--head)}
 .fut-pos{grid-column:1;font:600 14px var(--head);letter-spacing:.08em}

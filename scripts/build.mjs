@@ -223,6 +223,15 @@ const clubLink = (id, base) => (clubHref(id, base) ? `<a href="${clubHref(id, ba
 
 // ---------- components ----------
 const tier = (ovr) => (ovr >= 88 ? 'icon' : ovr >= 80 ? 'gold' : ovr >= 70 ? 'silver' : ovr > 0 ? 'bronze' : 'plain');
+// P11.9 seasonal aura: card glow shifts with real recent form (last 3 league games) – no AI model, pure data.
+// `apps` is stored newest-first (see the players.json `tr` field below, which reverses it to get oldest→newest).
+const AURA_HOT = 7.6, AURA_COLD = 6.0;
+function aura(pl) {
+  const recent = (pl.apps ?? []).slice(0, 3).map((x) => x.rating).filter((r) => r > 0);
+  if (recent.length < 2) return null;
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  return avg >= AURA_HOT ? 'hot' : avg <= AURA_COLD ? 'cold' : null;
+}
 const SILHOUETTE = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="33" r="19"/><path d="M10 100c2-25 19-37 40-37s38 12 40 37z"/></svg>`;
 const STARS = '<span class="stars" aria-hidden="true">★★★★★</span>';
 
@@ -233,8 +242,10 @@ function futCard(pl, base, { big = false } = {}) {
     ['GLS', s.goals ?? '–'], ['AST', s.assists ?? '–'], ['RAT', s.ratingAve ?? '–'],
     ['PAS', s.passSuccessRate !== undefined ? s.passSuccessRate + '%' : '–'], ['TKL', s.tackleSuccessRate !== undefined ? s.tackleSuccessRate + '%' : '–'], ['GP', gp || '–'],
   ];
-  return `<a class="fut tier-${tier(pl.ovr)}${big ? ' big' : ''}" href="${pUrl(pl, base)}" data-pos="${pl.group}">
+  const au = aura(pl);
+  return `<a class="fut tier-${tier(pl.ovr)}${au ? ` aura-${au}` : ''}${big ? ' big' : ''}" href="${pUrl(pl, base)}" data-pos="${pl.group}">
 <span class="fut-shine"></span>
+${au ? `<span class="fut-aura" aria-label="${au === 'hot' ? 'On a hot streak' : 'In a cold spell'}">${au === 'hot' ? '🔥' : '🧊'}</span>` : ''}
 <span class="fut-top"><b class="fut-ovr">${pl.ovr || '–'}</b><span class="fut-pos">${esc(pl.pos || '—')}</span>${pl.mainClub ? crest(pl.mainClub, 28, base, 'fut-crest') : ''}</span>
 <span class="fut-face">${SILHOUETTE}</span>
 <span class="fut-name">${esc(pl.name)}</span>
