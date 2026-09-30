@@ -1,28 +1,26 @@
-// P11.1 – AI verification spike. Owner-only /aispike: exercises the Workers AI text model and the img2img
+// P11.1 – AI verification spike. Owner-only /aispike: exercises the Workers AI text model and the image
 // model once each and reports latency + success, so real findings (model id, speed, failure rate) can be
 // written back into PLANNING/ROADMAP.md before the rest of Phase 11 is built on top of them. The mock server
 // can't emulate Workers AI, so this has to be run against the real deployed Worker – it's a throwaway tool,
 // not meant to stay a permanent command once P11.1 is closed out.
+//
+// Found 2026-09-29 (first run): `@cf/meta/llama-3.1-8b-instruct` is deprecated, and true image-to-image
+// (`@cf/runwayml/stable-diffusion-v1-5-img2img`) is gone from Workers AI entirely – this account can't reach
+// it, and it's no longer in Cloudflare's model catalog (only `stable-diffusion-v1-5-inpainting`, a masked
+// editor, remains under "image-to-image"). P11.5's avatar card pivots to: AI text-to-image background/frame
+// art + the member's real uploaded photo composited on top in SVG – not an AI restyle of the photo itself.
 import { can } from './roles.js';
 
-export const TEXT_MODEL = '@cf/meta/llama-3.1-8b-instruct';
-export const IMAGE_MODEL = '@cf/runwayml/stable-diffusion-v1-5-img2img';
+export const TEXT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fp8';
+export const IMAGE_MODEL = '@cf/black-forest-labs/flux-1-schnell'; // text-to-image only – no img2img available
 
-// An 8x8 solid PNG – content doesn't matter, it just needs to be a real decodable image for img2img's input.
-const PLACEHOLDER_PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFUlEQVR4nGP8z8DwHwAFVQIBAADm/g8Yf7WjfQAAAABJRU5ErkJggg==';
-
-function toBytes(b64) {
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
-
-// Workers AI image models can hand back a ReadableStream, an ArrayBuffer or a Uint8Array depending on version.
+// Workers AI image models hand back a ReadableStream/ArrayBuffer/Uint8Array of raw bytes, or (Flux) a JSON
+// object with a base64 `image` field – handle whichever shows up.
 async function bytesOf(result) {
   if (result instanceof ReadableStream) return new Uint8Array(await new Response(result).arrayBuffer());
   if (result instanceof ArrayBuffer) return new Uint8Array(result);
   if (result instanceof Uint8Array) return result;
+  if (typeof result?.image === 'string') return new Uint8Array(atob(result.image).split('').map((c) => c.charCodeAt(0)));
   return null;
 }
 
@@ -36,14 +34,13 @@ async function testText(env) {
   }
 }
 
-// Retries once – the model is beta and occasionally returns a near-empty/black image.
+// Retries once – beta image models occasionally return a near-empty/failed image.
 async function testImage(env) {
-  const image = [...toBytes(PLACEHOLDER_PNG_B64)];
   let last;
   for (let attempt = 1; attempt <= 2; attempt++) {
     const start = Date.now();
     try {
-      const out = await bytesOf(await env.AI.run(IMAGE_MODEL, { prompt: 'club crest emblem, bold graphic style', image, strength: 0.8 }));
+      const out = await bytesOf(await env.AI.run(IMAGE_MODEL, { prompt: 'club crest emblem, bold graphic style, ink black and red' }));
       const ok = !!out && out.length > 500; // a failed/black result comes back tiny
       last = { ok, ms: Date.now() - start, bytes: out?.length ?? 0, attempt };
     } catch (e) {
