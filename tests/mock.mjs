@@ -76,6 +76,7 @@ export const env = {
   SITE_URL: SITE, DISCORD_APP_ID: '1', DISCORD_CLIENT_SECRET: 'shh', DISCORD_GUILD_ID: '9',
   ADMIN_IDS: '111', ADMIN_ROLE_ID: 'mgr', OWNER_ROLE_ID: 'founder', NOREX_KV: KV, DB, MEDIA: R2,
   FEATURES: JSON.stringify(config.features ?? {}),
+  HYPE_CHANNEL: JSON.stringify(config.hype ?? {}),
 };
 
 // Legacy KV documents (pre-D1) – the Worker copies them into D1 on first request.
