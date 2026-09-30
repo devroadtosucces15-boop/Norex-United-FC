@@ -21,6 +21,7 @@ import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
 import { eventsRoute, publicEvents, weekEvents } from './events.js';
 import { awardsRoute, trophies } from './awards.js';
+import { playerInsights } from './aiinsights.js';
 import { squadsRoute } from './squads.js';
 import { ratingsRoute } from './ratings.js';
 import { feedbackRoute } from './feedback.js';
@@ -340,6 +341,14 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (me) me.role = await currentRole(env, me);
       if (!flagOn(env, me, 'hotw')) return cors(env, fail('Not available yet.', 404));
       return cors(env, json(await hotwPublic(env)));
+    }
+    if (url.pathname === '/api/insights/player' && request.method === 'GET') { // P11.14 – AI read on player cards/profiles/compare/portal
+      if (me) me.role = await currentRole(env, me);
+      if (!flagOn(env, me, 'aiInsights')) return cors(env, fail('Not available yet.', 404));
+      const k = url.searchParams.get('k');
+      if (!k) return cors(env, fail('Missing player.'));
+      const [squad, players] = await Promise.all([loadSite('squad'), loadSite('players')]);
+      return cors(env, json(await playerInsights(env, k, { squad, players })));
     }
     if (url.pathname === '/api/feed/public' && request.method === 'GET') { // P6.1c – posts a member marked public, on the home page
       if (me) me.role = await currentRole(env, me);

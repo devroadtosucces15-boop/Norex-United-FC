@@ -1043,6 +1043,12 @@ ${flagOn('notifications', baseRole) ? `<a href="${hub}#alerts">🔔 Notification
     el.after(box);
     (window.NXScout ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/scout.js`, onload: ok, onerror: no })))).then(() => NXScout.section(box, { k: el.dataset.player })).catch(() => box.remove());
   });
+  // ---------- 🤖 AI player insights (P11.14): same slot as the scout report – player cards, profiles, compare, portal – assets/aiinsights.js ----------
+  if (flagOn('aiInsights', baseRole || 'guest')) $$('.member-badge[data-player]').forEach((el) => {
+    const box = document.createElement('div');
+    el.after(box);
+    (window.NXAI ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/aiinsights.js`, onload: ok, onerror: no })))).then(() => NXAI.section(box, { k: el.dataset.player })).catch(() => box.remove());
+  });
   const nextEl = $('[data-next-event]');
   if (nextEl && flagOn('events', baseRole || 'guest')) loadEvents().then(() => NXEvents.next(nextEl)).catch(() => {});
   // ---------- 🎬 highlight of the week on the home page (P6.2) · 🟢 who's online (P6.4) – assets/hotw.js, assets/presence.js ----------
