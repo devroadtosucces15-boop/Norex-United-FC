@@ -53,6 +53,30 @@ const posOf = (st) => {
   return st?.proPos !== undefined && st?.proPos !== '' && code ? TIDY[code] ?? code : st?.favoritePosition ? posAbbr(st.favoritePosition) : '';
 };
 const groupOf = (label) => (label === 'GK' ? 'GK' : ['CB', 'LB', 'RB', 'LWB', 'RWB', 'DEF'].includes(label) ? 'DEF' : ['CDM', 'CM', 'CAM', 'LM', 'RM', 'MID'].includes(label) ? 'MID' : label ? 'FWD' : '');
+// P11.12 player taglines: a short flavour-text title from real season stats – same "pure data" approach as
+// the P11.9 aura (deterministic, free, no AI model), so it works everywhere the card does. Needs 3+ games.
+function tagline(pl) {
+  const s = pl.main, gp = num(s?.gamesPlayed);
+  if (!s || gp < 3) return null;
+  const grp = pl.group, g = num(s.goals), a = num(s.assists), r = num(s.ratingAve), m = num(s.manOfTheMatch), pss = num(s.passSuccessRate), tkl = num(s.tackleSuccessRate), w = num(s.winRate);
+  const gpg = g / gp, apg = a / gp, motmRate = m / gp;
+  const T = [
+    [grp === 'GK' && r >= 7.8, '🧤 Last Line'],
+    [grp === 'GK' && motmRate >= 0.25, '🧤 Big-Game Keeper'],
+    [grp !== 'GK' && gpg >= 1, '⚽ Goal Machine'],
+    [grp !== 'GK' && apg >= 0.7, '🪄 Playmaker'],
+    [grp !== 'GK' && gpg >= 0.5, '🎯 Clinical Finisher'],
+    [motmRate >= 0.3, '🏅 Big-Game Player'],
+    [grp === 'DEF' && tkl >= 72, '🧱 The Wall'],
+    [grp !== 'GK' && tkl >= 78, '🛡️ Tackle Machine'],
+    [(grp === 'MID' || grp === 'DEF') && pss >= 88, '🎼 Metronome'],
+    [r >= 8, '⭐ Talisman'],
+    [gp >= 50, '📅 Ever-Present'],
+    [w >= 70 && gp >= 10, '🍀 Lucky Charm'],
+  ];
+  const hit = T.find(([c]) => c);
+  return hit ? hit[1] : { GK: '🧤 The Keeper', DEF: '🛡️ Steady Defender', MID: '⚙️ Engine Room', FWD: '🔥 Live Wire' }[grp] ?? '⚽ Squad Player';
+}
 const ratingClass = (r) => (r >= 9 ? 'r-elite' : r >= 8 ? 'r-great' : r >= 7 ? 'r-good' : r >= 6 ? 'r-mid' : 'r-low');
 const dateStr = (ts) => new Date(ts * 1000).toISOString().slice(0, 10);
 const niceDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -176,6 +200,7 @@ for (const pl of players.values()) {
   pl.position = pl.main?.favoritePosition || pl.career?.favoritePosition || pl.apps[0]?.pos || '';
   pl.pos = posOf(pl.main) || posAbbr(pl.position);
   pl.group = groupOf(pl.pos);
+  pl.tag = tagline(pl);
   // Stats rebuilt from archived matches, for guests/ex-members EA no longer lists.
   const apps = pl.apps.filter((x) => x.clubId === (pl.mainClub ?? x.clubId));
   const ag = apps.length;
@@ -249,6 +274,7 @@ ${au ? `<span class="fut-aura" aria-label="${au === 'hot' ? 'On a hot streak' : 
 <span class="fut-top"><b class="fut-ovr">${pl.ovr || '–'}</b><span class="fut-pos">${esc(pl.pos || '—')}</span>${pl.mainClub ? crest(pl.mainClub, 28, base, 'fut-crest') : ''}</span>
 <span class="fut-face">${SILHOUETTE}</span>
 <span class="fut-name">${esc(pl.name)}</span>
+${pl.tag ? `<span class="fut-tag">${esc(pl.tag)}</span>` : ''}
 <span class="fut-stats">${stats.map(([k, v]) => `<span><b>${esc(v)}</b>${k}</span>`).join('')}</span>
 </a>`;
 }
@@ -757,7 +783,7 @@ function playerBody(pl, base) {
 <p class="kicker">${pl.isHome ? `${esc(config.siteTitle)} player` : 'Player profile'}</p>
 <h1>${esc(pl.name)}</h1>
 <div class="member-badge" data-player="${esc(pl.key)}"></div>
-<div class="chips"><span class="chip strong">${esc(pl.pos || '—')}</span>${pl.ovr ? `<span class="chip">OVR ${pl.ovr}</span>` : ''}${s.proHeight ? `<span class="chip">${esc(s.proHeight)} cm</span>` : ''}${otherNames.length ? `<span class="chip">aka ${otherNames.map(esc).join(', ')}</span>` : ''}</div>
+<div class="chips"><span class="chip strong">${esc(pl.pos || '—')}</span>${pl.tag ? `<span class="chip">${esc(pl.tag)}</span>` : ''}${pl.ovr ? `<span class="chip">OVR ${pl.ovr}</span>` : ''}${s.proHeight ? `<span class="chip">${esc(s.proHeight)} cm</span>` : ''}${otherNames.length ? `<span class="chip">aka ${otherNames.map(esc).join(', ')}</span>` : ''}</div>
 <div class="club-chips">${pl.clubIds.map((c) => `<a class="club-chip" href="${clubHref(c, base) ?? '#'}">${crest(c, 22, base)}${esc(clubName(c))}</a>`).join('')}</div>
 ${a.length ? `<div class="form big"><span class="form-label">Form</span>${a.slice(0, 10).reverse().map((x) => `<a href="${base}matches/${x.matchId}.html" data-tip="${esc(`${x.gf}–${x.ga} vs ${clubName(x.oppId)} · ${x.rating.toFixed(1)}`)}">${resPill(x.res)}</a>`).join('')}</div>` : ''}
 <p><a class="btn" href="${base}compare.html?a=${encodeURIComponent(pl.key)}">⚖ Compare with…</a></p>
@@ -1178,7 +1204,7 @@ if (MEMBER_API) buildMessages({ write, page, pageHead, emptyState, config });
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
-  k: pl.key, n: pl.name, home: pl.isHome || pl.playedForHome, pos: pl.pos || '—', ovr: pl.ovr,
+  k: pl.key, n: pl.name, home: pl.isHome || pl.playedForHome, pos: pl.pos || '—', ovr: pl.ovr, tag: pl.tag,
   c: pl.clubIds.map((c) => clubName(c)), cid: pl.mainClub, crest: pl.mainClub ? crestSrc(pl.mainClub, SITE) : null,
   ...(pl.main && num(pl.main.gamesPlayed)
     ? { s: { gp: num(pl.main.gamesPlayed), g: num(pl.main.goals), a: num(pl.main.assists), r: num(pl.main.ratingAve), m: num(pl.main.manOfTheMatch), p: num(pl.main.passSuccessRate), t: num(pl.main.tackleSuccessRate), w: num(pl.main.winRate) }, src: 'club' }
