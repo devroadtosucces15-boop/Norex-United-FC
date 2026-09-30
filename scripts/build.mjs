@@ -512,7 +512,7 @@ ${section('Season at a glance', `<div class="stats stats-8">${[['Played', gp, 'p
 ${tacticsTeaser(members, base)}
 ${(sessions[0] || ms.length) ? section('Match reel', `<div class="card-rail reel">${sessions[0] ? sessionCard(sessions[0], base, id) : ''}${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('')}</div>${ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`, { sub: 'last session and recent results · drag to scroll' }) : ''}
 ${section('How we play', `<div class="grid2">${card('Team DNA', `<ul class="dna">${dna.map(([k, v, tip]) => `<li data-tip="${esc(tip)}"><span>${k}</span><div class="meter"><i style="--w:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></li>`).join('')}</ul>`)}${card('Goals per match', !recent.length ? emptyState('⚽', 'No goals to chart yet', 'Fills in after the first archived match.') : goalBars(recent.map((m) => ({ for: num(m.clubs[id].goals), against: num(m.clubs[oppOf(m, id)].goals), res: result(m.clubs[id]), tip: `${dateStr(m.timestamp)} · ${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}` }))))}</div>${MEMBER_API ? `<p><a class="btn ghost" href="${base}playstyle.html">🧭 Full Play Style →</a></p>` : ''}`, { sub: 'how NOREX plays, in the numbers' })}
-${MEMBER_API ? `<div data-flag="hallOfFame" hidden>${section('Hall of Fame', '<div data-hof-teaser hidden></div>', { sub: 'the players who defined the club' })}</div>` : ''}
+${MEMBER_API ? '<div data-flag="hallOfFame" hidden><div class="block" data-hof-teaser hidden></div></div>' : ''}
 <section class="block reveal ending-cta" id="join"><img class="ending-crest" src="${base}assets/crest.png" height="120" alt="">
 <h2 class="banner-h ending-h">${esc(brand.motto || 'One club. One crown.')}</h2>
 <p class="muted ending-sub">${esc(config.siteTitle)} is always looking for committed players who want to compete. Come find out what we're about.</p>
@@ -857,7 +857,7 @@ function tacticsTeaser(squad, base) {
   if (picks.length < 3) return '';
   const dots = picks.map(({ p, x, y }) =>
     `<a class="pp side0" style="left:${x}%;top:${y}%" href="${pUrl(p, base)}" data-tip="${esc(`${p.name} · ${p.pos} · OVR ${p.ovr || '–'}`)}"><b class="${ratingClass(num(p.main?.ratingAve))}">${p.ovr || '–'}</b><span>${esc(p.name)}</span></a>`).join('');
-  return section('The squad', card('', `<div class="pitch tt-teaser-pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots}</div><p><a class="btn" href="${base}squad.html">🧠 Full squad & Tactics Table →</a></p>`, 'tt-teaser'), { sub: 'starting XI by games played' });
+  return section('The Tactics Table', card('', `<div class="pitch tt-teaser-pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots}</div><p><a class="btn" href="${base}squad.html">🧠 Full squad & Tactics Table →</a></p>`, 'tt-teaser'), { sub: 'starting XI by games played' });
 }
 
 // ---------- write ----------

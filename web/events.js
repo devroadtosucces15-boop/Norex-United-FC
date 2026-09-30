@@ -306,7 +306,11 @@ ${S.canManage ? `<div class="rp-share"><b>📣 Share it</b> <small class="muted"
       const r = await fetch(`${MAPI}/api/events/public`, { cache: 'no-store', headers: s ? { Authorization: `Bearer ${s}` } : {} });
       if (!r.ok) return;
       const e = (await r.json()).events?.[0];
-      if (!e) return;
+      if (!e) {
+        el.innerHTML = `<a class="ev-next ev-next-empty" href="${BASE}members.html#schedule"><span class="ev-next-ic" aria-hidden="true">🗓️</span><span><small>Nothing on the calendar</small><b>No match night scheduled yet</b><em>Check the schedule →</em></span><i aria-hidden="true">→</i></a>`;
+        el.hidden = false;
+        return;
+      }
       const live = Date.now() > e.start && Date.now() < e.start + e.duration * 60000;
       el.innerHTML = `<a class="ev-next${live ? ' live' : ''}" href="${BASE}members.html#schedule"><span class="ev-next-ic" aria-hidden="true">${TYPES[e.type]?.[0] ?? '🗓️'}</span><span><small>${live ? '🔴 Live now' : 'Next match night'}</small><b>${esc(e.title || TYPES[e.type]?.[1] || 'Match night')}</b><em>${esc(fmtWhen(e.start))} your time${live ? '' : ` · ${until(e.start)}`}</em></span><i aria-hidden="true">→</i></a>`;
       el.hidden = false;

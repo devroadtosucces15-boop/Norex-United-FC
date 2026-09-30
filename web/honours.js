@@ -81,13 +81,15 @@ ${S.canManage ? `<button type="button" class="btn sm ghost hof-x" data-rm="${x.i
   const momentLi = (x) => `<li class="hof-ev moment" data-date="${esc(x.date)}" data-mid="${x.id}"><time datetime="${esc(x.date)}">${nice(x.date)}</time><span class="hof-ic">📜</span><div><b>${esc(x.n)}</b>${S.canManage ? `<button type="button" class="btn sm ghost hof-x" data-rm="${x.id}" aria-label="Remove">✕</button>` : ''}<p>${esc(x.text || '')}</p></div></li>`;
 
   // Home page teaser (board 04, part 1): one legend card + a link to the full page. Independent of `lg`
-  // so it also works on index.html, which has no full legends/timeline UI.
+  // so it also works on index.html, which has no full legends/timeline UI. Renders its own heading (rather
+  // than one baked into the page) so the whole section stays invisible until there's a legend to show –
+  // no empty "Hall of Fame" heading floating over nothing before anyone's been inducted.
   if (teaser) {
     call('/api/hof').then((d) => {
       const x = d.legends?.[0];
       if (!x) return;
       S = d;
-      teaser.innerHTML = `${legendCard(x)}<p><a class="btn ghost" href="${BASE}halloffame.html">🏛️ Enter the Hall →</a></p>`;
+      teaser.innerHTML = `<h2 class="banner-h">Hall of Fame <small>the players who defined the club</small></h2>${legendCard(x)}<p><a class="btn ghost" href="${BASE}halloffame.html">🏛️ Enter the Hall →</a></p>`;
       teaser.hidden = false;
     }).catch(() => {});
   }

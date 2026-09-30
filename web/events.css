@@ -92,6 +92,8 @@
   background:linear-gradient(110deg,rgba(232,193,106,.16),var(--panel) 60%);border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));transition:transform .2s,border-color .2s}
 .ev-next:hover{transform:translateY(-2px);border-color:var(--gold)}
 .ev-next.live{background:linear-gradient(110deg,rgba(200,53,44,.3),var(--panel) 60%);border-color:var(--red)}
+.ev-next-empty{opacity:.75;background:var(--panel);border-color:var(--line2)}
+.ev-next-empty small{color:var(--muted)}
 .ev-next-ic{font-size:28px}
 .ev-next>span:nth-child(2){flex:1;min-width:0;display:grid;gap:2px}
 .ev-next small{color:var(--gold);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
