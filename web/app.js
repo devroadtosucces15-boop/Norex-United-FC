@@ -276,6 +276,145 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
   });
 })();
 
+// ---------- tactics table: orbitable CSS-3D pitch (redesign board 03) ----------
+// The flat `.pitch`/`.pp` markup from build.mjs always works (no-JS, reduced motion, small screens).
+// When motion/viewport allow it, this upgrades it into a CSS-3D scene: no WebGL, no library – a tilted,
+// spinnable "table" (rotateZ = orbit, rotateX = tilt) with towers standing up via the classic
+// rotateX(-90deg) "billboard" trick, and player pins counter-rotated so their labels stay readable.
+(() => {
+  const root = $('[data-tactics]');
+  if (!root) return;
+  let data = [];
+  try { data = JSON.parse($('[data-tt-data]', root)?.textContent || '[]'); } catch {}
+  if (!data.length) return;
+
+  const flat = $('[data-tt-flat]', root), stage = $('[data-tt-stage]', root), hint = $('[data-tt-hint]', root);
+  const statBtns = $$('[data-tt-stat] .chip', root);
+  const camWrap = $('[data-tt-cam]', root), camLabel = $('[data-tt-camlabel]', root), camBtns = $$('[data-tt-cam] .chip', root);
+  const zoomWrap = $('[data-tt-zoom]', root);
+  const cardslot = $('[data-tt-cardslot]', root);
+  // rx tilts the flat pitch back and away from the viewer: 0 = full flat top-down rectangle, ~90 = edge-on/low.
+  const CAM = { broadcast: { rx: 58, rz: -16, sc: 1 }, top: { rx: 4, rz: 0, sc: .85 }, goal: { rx: 78, rz: 66, sc: 1.15 } };
+  const STAT_MAX = { g: Math.max(1, ...data.map((p) => p.g)), a: Math.max(1, ...data.map((p) => p.a)), r: Math.max(1, ...data.map((p) => p.r)), m: Math.max(1, ...data.map((p) => p.m)) };
+  let stat = 'g', camName = 'broadcast', built = false;
+  const towers = new Map();
+
+  function heightPx(p) { return 18 + (p[stat] / STAT_MAX[stat]) * 120; }
+  function updateHeights() { for (const [key, el] of towers) el.style.setProperty('--h', `${heightPx(data.find((p) => p.key === key))}px`); }
+
+  function selectPlayer(key) {
+    $$('.tt-card', cardslot).forEach((c) => { c.hidden = c.dataset.ttCard !== key; });
+    $$('.pp', flat).forEach((a) => a.classList.toggle('on', a.dataset.key === key));
+    for (const [k, el] of towers) $('.tt-pin', el)?.classList.toggle('on', k === key);
+  }
+
+  flat.addEventListener('click', (e) => {
+    const a = e.target.closest('.pp[data-key]');
+    if (!a) return;
+    e.preventDefault();
+    selectPlayer(a.dataset.key);
+  });
+
+  function build3D() {
+    const world = document.createElement('div');
+    world.className = 'tt-world';
+    world.innerHTML = '<div class="tt-ground3d"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div></div>';
+    for (const p of data) {
+      const tower = document.createElement('div');
+      tower.className = 'tt-tower';
+      tower.style.left = `${p.x}%`; tower.style.top = `${p.y}%`;
+      tower.style.setProperty('--h', `${heightPx(p)}px`);
+      const pin = document.createElement('button');
+      pin.type = 'button'; pin.className = 'tt-pin'; pin.dataset.key = p.key;
+      pin.innerHTML = `<b>${esc(p.ovr || '–')}</b><span>${esc(p.name)}</span>`;
+      pin.addEventListener('click', () => selectPlayer(p.key));
+      tower.append(Object.assign(document.createElement('i'), { className: 'tt-bar' }), pin);
+      world.append(tower);
+      towers.set(p.key, tower);
+    }
+    stage.append(world);
+
+    // drag to orbit (skip when the pointer started on a player pin – that's a tap, not a drag)
+    let dragging = null;
+    stage.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.tt-pin')) return;
+      dragging = { x: e.clientX, y: e.clientY, rz: parseFloat(getComputedStyle(stage).getPropertyValue('--tt-rz')) || CAM[camName].rz, rx: parseFloat(getComputedStyle(stage).getPropertyValue('--tt-rx')) || CAM[camName].rx };
+      stage.classList.add('dragging');
+      stage.setPointerCapture(e.pointerId);
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      stage.style.setProperty('--tt-rz', `${dragging.rz + (e.clientX - dragging.x) * 0.3}deg`);
+      stage.style.setProperty('--tt-rx', `${Math.min(90, Math.max(0, dragging.rx - (e.clientY - dragging.y) * 0.3))}deg`);
+      camBtns.forEach((b) => b.classList.remove('on'));
+    });
+    const endDrag = () => { dragging = null; stage.classList.remove('dragging'); };
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+
+    // wheel + pinch to zoom
+    const zoom = (delta) => { const sc = Math.min(1.6, Math.max(0.6, (parseFloat(getComputedStyle(stage).getPropertyValue('--tt-sc')) || CAM[camName].sc) + delta)); stage.style.setProperty('--tt-sc', sc); };
+    stage.addEventListener('wheel', (e) => { e.preventDefault(); zoom(e.deltaY < 0 ? 0.08 : -0.08); }, { passive: false });
+    const touches = new Map();
+    stage.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') touches.set(e.pointerId, e); });
+    let pinchDist = null;
+    stage.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'touch' || !touches.has(e.pointerId)) return;
+      touches.set(e.pointerId, e);
+      if (touches.size !== 2) return;
+      const [a, b] = [...touches.values()];
+      const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      if (pinchDist != null) zoom((d - pinchDist) * 0.003);
+      pinchDist = d;
+    });
+    const clearTouch = (e) => { touches.delete(e.pointerId); if (touches.size < 2) pinchDist = null; };
+    stage.addEventListener('pointerup', clearTouch);
+    stage.addEventListener('pointercancel', clearTouch);
+
+    // arrow keys turn the camera (works whether focus is on a pin, the stage, or elsewhere in the widget)
+    root.addEventListener('keydown', (e) => {
+      if (!stage.hidden && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        e.preventDefault();
+        camBtns.forEach((b) => b.classList.remove('on'));
+        if (e.key === 'ArrowLeft') stage.style.setProperty('--tt-rz', `${(parseFloat(getComputedStyle(stage).getPropertyValue('--tt-rz')) || 0) - 8}deg`);
+        if (e.key === 'ArrowRight') stage.style.setProperty('--tt-rz', `${(parseFloat(getComputedStyle(stage).getPropertyValue('--tt-rz')) || 0) + 8}deg`);
+        if (e.key === 'ArrowUp') stage.style.setProperty('--tt-rx', `${Math.max(0, (parseFloat(getComputedStyle(stage).getPropertyValue('--tt-rx')) || 55) - 8)}deg`);
+        if (e.key === 'ArrowDown') stage.style.setProperty('--tt-rx', `${Math.min(90, (parseFloat(getComputedStyle(stage).getPropertyValue('--tt-rx')) || 55) + 8)}deg`);
+      }
+    });
+  }
+
+  function applyCam(name) {
+    camName = name;
+    stage.style.setProperty('--tt-rx', `${CAM[name].rx}deg`);
+    stage.style.setProperty('--tt-rz', `${CAM[name].rz}deg`);
+    stage.style.setProperty('--tt-sc', CAM[name].sc);
+    camBtns.forEach((b) => b.classList.toggle('on', b.dataset.cam === name));
+  }
+
+  statBtns.forEach((b) => b.addEventListener('click', () => {
+    statBtns.forEach((x) => x.classList.toggle('on', x === b));
+    stat = b.dataset.stat;
+    if (built) updateHeights();
+  }));
+  camBtns.forEach((b) => b.addEventListener('click', () => applyCam(b.dataset.cam)));
+  $('[data-zoom=in]', zoomWrap)?.addEventListener('click', () => stage.style.setProperty('--tt-sc', Math.min(1.6, (parseFloat(getComputedStyle(stage).getPropertyValue('--tt-sc')) || 1) + 0.15)));
+  $('[data-zoom=out]', zoomWrap)?.addEventListener('click', () => stage.style.setProperty('--tt-sc', Math.max(0.6, (parseFloat(getComputedStyle(stage).getPropertyValue('--tt-sc')) || 1) - 0.15)));
+  $('[data-tt-reset]', root)?.addEventListener('click', () => applyCam(camName));
+
+  const canUse3D = () => !matchMedia('(prefers-reduced-motion: reduce)').matches && innerWidth >= 760;
+  function updateMode() {
+    const on = canUse3D();
+    flat.hidden = on; stage.hidden = !on; hint.hidden = !on;
+    camWrap.hidden = !on; camLabel.hidden = !on; zoomWrap.hidden = !on;
+    if (on && !built) { build3D(); applyCam('broadcast'); built = true; }
+  }
+  updateMode();
+  let resizeT;
+  addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(updateMode, 200); });
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', updateMode);
+})();
+
 // ---------- relative times ----------
 UI.refreshTimes();
 

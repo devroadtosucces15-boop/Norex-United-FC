@@ -772,6 +772,53 @@ ${dots.map(({ p, side, x, y }) => { const pl = players.get(p.pid); return `<a cl
 ${side(h)}${side(aw)}${ev ? '<p class="muted small">🏃 Drb = dribbles completed, 2nd A = the pass before the assist (from EA\'s match events).</p>' : ''}`;
 }
 
+// ---------- tactics table (redesign board 03) ----------
+// Signature move: the real squad, in a real formation, on a pitch app.js turns into an orbitable 3D
+// scene – tower height = the stat you pick, camera presets, tap a player for their card. This function
+// only picks the XI and lays out the flat, always-works markup (same `.pitch`/`.pp` dots as the match
+// line-up); app.js reads the embedded JSON to build the 3D upgrade on top when motion/viewport allow it.
+// Starting XI = most games played per line, 4-4-2 shape (caps below) – whoever doesn't make the cut is
+// still in the card grid/table underneath, nothing is hidden, just not everyone fits on one pitch.
+function tacticsTable(squad, base) {
+  const CAP = { GK: 1, DEF: 4, MID: 4, FWD: 2 };
+  const XPOS = { GK: 8, DEF: 27, MID: 56, FWD: 83 };
+  const byGroup = {};
+  for (const p of squad) { if (!p.group) continue; (byGroup[p.group] ??= []).push(p); }
+  const picks = [];
+  for (const g of ['GK', 'DEF', 'MID', 'FWD']) {
+    const arr = (byGroup[g] || []).sort((a, b) => num(b.main?.gamesPlayed) - num(a.main?.gamesPlayed)).slice(0, CAP[g] || 0);
+    arr.forEach((p, i) => picks.push({ p, group: g, x: XPOS[g], y: ((i + 1) * 100) / (arr.length + 1) }));
+  }
+  if (picks.length < 3) return ''; // too small a roster to bother – card grid below still shows everyone
+  const statOf = (p, k) => ({ g: num(p.main?.goals), a: num(p.main?.assists), r: num(p.main?.ratingAve), m: num(p.main?.manOfTheMatch) }[k]);
+  const dots = picks.map(({ p, x, y }) =>
+    `<a class="pp side0" style="left:${x}%;top:${y}%" href="${pUrl(p, base)}" data-key="${esc(p.key)}" data-tip="${esc(`${p.name} · ${p.pos} · OVR ${p.ovr || '–'}`)}"><b class="${ratingClass(num(p.main?.ratingAve))}">${p.ovr || '–'}</b><span>${esc(p.name)}</span></a>`).join('');
+  const data = picks.map(({ p, x, y, group }) => ({ key: p.key, name: p.name, pos: p.pos, group, ovr: p.ovr || 0, x, y, g: statOf(p, 'g'), a: statOf(p, 'a'), r: statOf(p, 'r'), m: statOf(p, 'm') }));
+  const cards = picks.map(({ p }) => `<div class="tt-card" data-tt-card="${esc(p.key)}" hidden>${futCard(p, base, { big: true })}</div>`).join('');
+  return `<section class="block reveal tt" data-tactics>
+<h2 class="banner-h">The Tactics Table <small>Starting XI by games played · tap a player</small></h2>
+<div class="tt-wrap">
+<div class="tt-board">
+<div class="pitch tt-ground" data-tt-flat><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots}</div>
+<div class="tt-stage" data-tt-stage hidden></div>
+<div class="tt-hint muted small" data-tt-hint hidden>🖐 Drag to orbit · pinch or ± to zoom · tap a player</div>
+</div>
+<div class="tt-side">
+<div class="tt-controls">
+<div class="osw small feat-label">Tower height shows</div>
+<div class="chipset" data-tt-stat><button class="chip on" type="button" data-stat="g">⚽ Goals</button><button class="chip" type="button" data-stat="a">🅰️ Assists</button><button class="chip" type="button" data-stat="r">⭐ Rating</button><button class="chip" type="button" data-stat="m">🏅 MOTM</button></div>
+<div class="osw small feat-label" data-tt-camlabel hidden>Camera</div>
+<div class="chipset" data-tt-cam hidden><button class="chip on" type="button" data-cam="broadcast">📺 Broadcast</button><button class="chip" type="button" data-cam="top">🗺️ Top down</button><button class="chip" type="button" data-cam="goal">🥅 Behind goal</button></div>
+<div class="chipset" data-tt-zoom hidden><button class="chip" type="button" data-zoom="out" aria-label="Zoom out">−</button><button class="chip" type="button" data-zoom="in" aria-label="Zoom in">+</button><button class="chip" type="button" data-tt-reset>↺ Reset view</button></div>
+</div>
+<div class="tt-cardslot" data-tt-cardslot>${cards}<p class="muted small tt-hint-empty" data-tt-empty>Tap any player above to see their card.</p></div>
+</div>
+</div>
+<p class="muted small">Real squad, real formation, from EA's own numbers – no invented heat maps. Works without 3D too: reduced motion or a smaller screen keeps the board flat with the same numbers.</p>
+<script type="application/json" data-tt-data>${JSON.stringify(data)}</script>
+</section>`;
+}
+
 // ---------- write ----------
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.cpSync(path.join(ROOT, 'web'), path.join(OUT, 'assets'), { recursive: true });
@@ -781,6 +828,7 @@ write('index.html', page({ title: `${config.siteTitle} – Official Pro Clubs hu
 const homeSquad = visiblePlayers.filter((p) => p.isHome).sort((a, b) => num(b.main.gamesPlayed) - num(a.main.gamesPlayed));
 write('squad.html', page({ title: `Squad – ${config.siteTitle}`, base: '', active: 'squad', body: `
 ${pageHead('The Squad', `${homeSquad.length} players · card stats are NOREX totals, OVR from EA`, '')}
+${tacticsTable(homeSquad, '')}
 <div class="toolbar"><div class="chipset" data-posfilter>${['All', 'GK', 'DEF', 'MID', 'FWD'].map((p, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-pos="${p}">${p}</button>`).join('')}</div>
 <div class="chipset" data-view><button class="chip on" type="button" data-v="cards">Cards</button><button class="chip" type="button" data-v="table">Table</button></div></div>
 <div class="view view-cards"><div class="card-grid">${homeSquad.map((p) => futCard(p, '')).join('')}</div></div>
