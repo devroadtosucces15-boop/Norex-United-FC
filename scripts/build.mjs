@@ -416,20 +416,44 @@ function clubBody(id, base, isHome) {
   const mvp = top((s) => (num(s.gamesPlayed) >= 3 ? num(s.ratingAve) : 0), 1)[0];
   const scorer = top((s) => num(s.goals), 1)[0];
 
+  const heroKicker = `<p class="kicker">${isHome ? `${brand.founded ? `Est. ${esc(brand.founded)} · ` : ''}Official club hub` : esc(t ?? 'Club')}${state.clubs[id]?.linkedPlayers ? ` · shares ${state.clubs[id].linkedPlayers.map((n) => pLinkByName(n, base)).join(', ')}` : ''}</p>`;
+  const heroChips = `<div class="chips">${o.currentDivision ? `<span class="chip strong">Division ${esc(o.currentDivision)}</span>` : ''}${o.skillRating ? `<span class="chip">Skill rating ${esc(o.skillRating)}</span>` : ''}${num(o.promotions) ? `<span class="chip">⬆ ${esc(o.promotions)} promotions</span>` : ''}${c?.info?.customKit?.stadName ? `<span class="chip">🏟 ${esc(c.info.customKit.stadName)}</span>` : ''}${num(o.wstreak) > 1 ? `<span class="chip hot">🔥 ${esc(o.wstreak)} win streak</span>` : ''}</div>`;
+  const heroForm = ms.length ? `<div class="form big"><span class="form-label">Form</span>${formStrip(ms, id, base)}</div>` : '';
+  const heroSpots = isHome && (mvp || scorer) ? `<div class="hero-spot">${mvp ? `<a class="spot" href="${pUrl(mvp.pl, base)}"><small>Top rated</small><b>${esc(mvp.pl.name)}</b>${ratingPill(mvp.v)}</a>` : ''}${scorer ? `<a class="spot" href="${pUrl(scorer.pl, base)}"><small>Top scorer</small><b>${esc(scorer.pl.name)}</b><span class="rp r-great">${scorer.v} ⚽</span></a>` : ''}</div>` : '';
+
   return `
-<section class="hero club-hero reveal">
-<div class="hero-crest">${crest(id, isHome ? 260 : 180, base, 'big-crest')}</div>
-<div class="hero-text">
-<p class="kicker">${isHome ? `${brand.founded ? `Est. ${esc(brand.founded)} · ` : ''}Official club hub` : esc(t ?? 'Club')}${state.clubs[id]?.linkedPlayers ? ` · shares ${state.clubs[id].linkedPlayers.map((n) => pLinkByName(n, base)).join(', ')}` : ''}</p>
+${isHome ? `
+<section class="hero club-hero stadium-hero reveal" data-hero>
+<div class="sh-sky" style="--depth:2"></div>
+<div class="sh-pitch" style="--depth:5"></div>
+<div class="sh-plane sh-text" style="--depth:0">
+${heroKicker}
 <h1>${esc(clubName(id))}</h1>
-${isHome ? `${STARS}${brand.motto ? `<p class="motto">${esc(brand.motto)}</p>` : ''}` : ''}
-<div class="chips">${o.currentDivision ? `<span class="chip strong">Division ${esc(o.currentDivision)}</span>` : ''}${o.skillRating ? `<span class="chip">Skill rating ${esc(o.skillRating)}</span>` : ''}${num(o.promotions) ? `<span class="chip">⬆ ${esc(o.promotions)} promotions</span>` : ''}${c?.info?.customKit?.stadName ? `<span class="chip">🏟 ${esc(c.info.customKit.stadName)}</span>` : ''}${num(o.wstreak) > 1 ? `<span class="chip hot">🔥 ${esc(o.wstreak)} win streak</span>` : ''}</div>
-${ms.length ? `<div class="form big"><span class="form-label">Form</span>${formStrip(ms, id, base)}</div>` : ''}
-${isHome && RECRUIT.open ? `<p><a class="btn" href="${base}apply.html">👑 Apply for a trial</a></p>` : ''}
+${STARS}
+${heroChips}
+${heroForm}
+${RECRUIT.open ? `<p><a class="btn" href="${base}apply.html">👑 Apply for a trial</a></p>` : ''}
 </div>
-${isHome && (mvp || scorer) ? `<div class="hero-spot">${mvp ? `<a class="spot" href="${pUrl(mvp.pl, base)}"><small>Top rated</small><b>${esc(mvp.pl.name)}</b>${ratingPill(mvp.v)}</a>` : ''}${scorer ? `<a class="spot" href="${pUrl(scorer.pl, base)}"><small>Top scorer</small><b>${esc(scorer.pl.name)}</b><span class="rp r-great">${scorer.v} ⚽</span></a>` : ''}</div>` : ''}
+<div class="sh-plane sh-coin-wrap" style="--depth:10">
+<div class="sh-coin" tabindex="0" role="button" data-coin aria-label="Drag to spin the club crest, or press Enter to flip it and see trial info">
+<div class="sh-face sh-front">${crest(id, 260, base, 'big-crest')}</div>
+<div class="sh-face sh-back"><b>${RECRUIT.open ? '✅ Applications open' : 'Applications closed'}</b><span>Division ${esc(o.currentDivision ?? '–')} · ${members.length} in the squad</span>${RECRUIT.open ? `<a class="btn small" href="${base}apply.html">Apply for a trial</a>` : ''}</div>
+</div>
+</div>
+${heroSpots ? `<div class="sh-plane sh-spots" style="--depth:16">${heroSpots}</div>` : ''}
+${brand.motto ? `<div class="sh-plane sh-fg" style="--depth:28"><p class="ribbon-banner"><span>${esc(brand.motto)}</span></p></div>` : ''}
+<button class="sh-motion" type="button" data-motion-toggle aria-pressed="true"><span data-motion-label>Motion: on</span></button>
 </section>
-${isHome && MEMBER_API ? '<div data-next-event hidden></div><div data-hotw hidden></div><div data-feed-public hidden></div><div data-news data-flag="docs" hidden></div>' : ''}
+${MEMBER_API ? '<div data-next-event hidden></div><div data-hotw hidden></div><div data-feed-public hidden></div><div data-news data-flag="docs" hidden></div>' : ''}` : `
+<section class="hero club-hero reveal">
+<div class="hero-crest">${crest(id, 180, base, 'big-crest')}</div>
+<div class="hero-text">
+${heroKicker}
+<h1>${esc(clubName(id))}</h1>
+${heroChips}
+${heroForm}
+</div>
+</section>`}
 <section class="stats reveal">
 ${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}

@@ -137,6 +137,50 @@ button.chip{cursor:pointer}
   .spot{min-width:0}
 }
 
+/* ---------- home hero: layered stadium (P2026-redesign board 02) ----------
+   Five depth planes (sky/lights, stands/pitch, crest, stat plaques, ribbon+stars) each carry
+   --depth (px of travel across the full width of the hero); JS (app.js "stadium hero parallax")
+   writes --px/--py (-1..1) on [data-hero] from pointer position. The crest itself is a coin:
+   drag rotates it, it settles face-on, front = crest, back = trial info. */
+.stadium-hero{position:relative;display:block;min-height:420px;padding:40px;isolation:isolate;
+  background:radial-gradient(1100px 500px at 75% -20%,color-mix(in srgb,var(--red) 22%,transparent),transparent 60%),linear-gradient(180deg,#05070b,var(--ink) 60%,#0d1420)}
+.sh-sky,.sh-pitch{position:absolute;inset:0;border-radius:22px;overflow:hidden;transform:translate3d(calc(var(--px,0) * var(--depth,0) * 1px),calc(var(--py,0) * var(--depth,0) * 1px),0)}
+.sh-sky{background:radial-gradient(360px 220px at 18% 10%,rgba(255,255,255,.16),transparent 70%),radial-gradient(360px 220px at 82% 6%,rgba(255,255,255,.16),transparent 70%)}
+.sh-pitch{top:auto;height:46%;background:repeating-linear-gradient(90deg,#123018 0 40px,#173a1d 40px 80px);opacity:.55;-webkit-mask:linear-gradient(180deg,transparent,#000 30%);mask:linear-gradient(180deg,transparent,#000 30%)}
+.sh-plane{position:relative;transform:translate3d(calc(var(--px,0) * var(--depth,0) * 1px),calc(var(--py,0) * var(--depth,0) * 1px),0);transition:transform .25s ease-out}
+.sh-text{max-width:640px}
+.sh-text .motto{display:none}
+.sh-coin-wrap{position:absolute;right:20%;top:50%;translate:0 -50%;perspective:1400px}
+.sh-coin{position:relative;width:260px;height:260px;cursor:grab;touch-action:pan-y;transform-style:preserve-3d;transform:rotateY(var(--spin,0deg));transition:transform .6s cubic-bezier(.22,1,.36,1)}
+.sh-coin.dragging{cursor:grabbing;transition:none}
+.sh-coin:focus-visible{outline:2px solid var(--red);outline-offset:6px;border-radius:50%}
+.sh-face{position:absolute;inset:0;display:grid;place-items:center;backface-visibility:hidden;border-radius:50%;overflow:hidden}
+.sh-face .crest{filter:drop-shadow(0 18px 30px rgba(0,0,0,.6))}
+.sh-back{transform:rotateY(180deg);background:radial-gradient(circle,var(--panel2),var(--panel) 75%);border:1px solid var(--line2);text-align:center;padding:20px 36px;gap:6px;display:grid;align-content:center;justify-items:center;overflow:hidden}
+.sh-back b{font-family:var(--head);text-transform:uppercase;letter-spacing:.02em;font-size:14px}
+.sh-back span{color:var(--muted);font-size:11px;line-height:1.3}
+.sh-back .btn.small{margin-top:4px;padding:6px 14px;font-size:12px}
+.sh-spots{position:absolute;right:1%;top:6%;display:grid;gap:14px;max-width:220px}
+.sh-spots .hero-spot{gap:14px}
+.sh-spots .spot{background:rgba(4,6,10,.72);backdrop-filter:blur(6px)}
+.sh-fg{position:absolute;left:0;right:0;bottom:22px;pointer-events:none}
+.ribbon-banner{margin:0;display:inline-block;position:relative;background:var(--red);color:#fff;font-family:var(--head);text-transform:uppercase;letter-spacing:.1em;font-size:clamp(16px,2.4vw,22px);padding:10px 28px;clip-path:polygon(0 0,100% 0,96% 50%,100% 100%,0 100%,4% 50%)}
+.sh-motion{position:absolute;right:16px;bottom:16px;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.5);border:1px solid var(--line2);color:#cfd5de;font:12px var(--body);cursor:pointer}
+.sh-motion:hover{border-color:var(--red);color:#fff}
+@media (max-width:900px){
+  .stadium-hero{padding:26px 18px;text-align:center}
+  .sh-coin-wrap{position:static;translate:none;margin:18px auto;display:flex;justify-content:center}
+  .sh-coin{width:190px;height:190px}
+  .sh-spots{position:static;justify-items:center;margin-top:14px;max-width:none;width:100%}
+  .sh-spots .hero-spot{width:100%;max-width:360px}
+  .sh-fg{position:static;margin-top:18px}
+  .sh-motion{position:static;margin:14px auto 0;display:block;width:fit-content}
+}
+@media (prefers-reduced-motion:reduce){
+  .sh-sky,.sh-pitch,.sh-plane{transition:none}
+  .sh-coin{transition:none}
+}
+
 /* ---------- stat counters ---------- */
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:18px}
 .stat{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow:hidden}

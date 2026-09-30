@@ -174,6 +174,67 @@ document.addEventListener('pointermove', (e) => {
 });
 function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); }
 
+// ---------- home hero: layered stadium parallax + spinnable crest coin (redesign board 02) ----------
+(() => {
+  const hero = $('[data-hero]');
+  if (!hero) return;
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motionKey = 'norex_hero_motion';
+  let motionOn = (() => { try { return localStorage.getItem(motionKey) !== 'off'; } catch { return true; } })();
+  const toggle = $('[data-motion-toggle]', hero);
+  const label = $('[data-motion-label]', hero);
+  function applyMotionState() {
+    const on = motionOn && !reduced();
+    toggle?.setAttribute('aria-pressed', String(on));
+    if (label) label.textContent = `Motion: ${on ? 'on' : 'off'}`;
+    if (!on) { hero.style.removeProperty('--px'); hero.style.removeProperty('--py'); }
+  }
+  applyMotionState();
+  toggle?.addEventListener('click', () => {
+    motionOn = !motionOn;
+    try { localStorage.setItem(motionKey, motionOn ? 'on' : 'off'); } catch {}
+    applyMotionState();
+  });
+  hero.addEventListener('pointermove', (e) => {
+    if (!motionOn || reduced() || e.pointerType !== 'mouse') return;
+    const r = hero.getBoundingClientRect();
+    hero.style.setProperty('--px', (((e.clientX - r.left) / r.width) - 0.5).toFixed(3));
+    hero.style.setProperty('--py', (((e.clientY - r.top) / r.height) - 0.5).toFixed(3));
+  });
+  hero.addEventListener('pointerleave', () => { hero.style.setProperty('--px', 0); hero.style.setProperty('--py', 0); });
+
+  // drag-to-spin crest coin: drag rotates freely, release settles on the nearest face; a plain
+  // click (no drag) or Enter/Space flips it; arrow keys nudge it a fixed amount.
+  const coin = $('[data-coin]', hero);
+  if (!coin) return;
+  let spin = 0, dragStart = null, dragSpinStart = 0, moved = false;
+  const setSpin = (v, animate) => { coin.classList.toggle('dragging', !animate); coin.style.setProperty('--spin', `${v}deg`); };
+  const settle = () => { spin = Math.round(spin / 180) * 180; setSpin(spin, true); };
+  coin.addEventListener('pointerdown', (e) => {
+    dragStart = e.clientX; dragSpinStart = spin; moved = false;
+    coin.setPointerCapture(e.pointerId);
+  });
+  coin.addEventListener('pointermove', (e) => {
+    if (dragStart == null) return;
+    const dx = e.clientX - dragStart;
+    if (Math.abs(dx) > 4) moved = true;
+    spin = dragSpinStart + dx * 0.6;
+    setSpin(spin, false);
+  });
+  coin.addEventListener('pointerup', () => {
+    if (dragStart == null) return;
+    dragStart = null;
+    if (!moved) spin += 180; // plain click/tap flips it
+    settle();
+  });
+  coin.addEventListener('pointercancel', () => { dragStart = null; settle(); });
+  coin.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); spin += 180; settle(); }
+    else if (e.key === 'ArrowLeft') { spin -= 30; settle(); }
+    else if (e.key === 'ArrowRight') { spin += 30; settle(); }
+  });
+})();
+
 // ---------- relative times ----------
 UI.refreshTimes();
 
