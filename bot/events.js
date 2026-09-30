@@ -21,6 +21,7 @@ import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
+import { recommendRoute } from './lineuprec.js';
 
 const REMIND = ['dm', 'mention', 'off'];
 
@@ -503,6 +504,7 @@ export async function eventsRoute(p, method, body, me, env, log, loadSite, url) 
     if (!can(me, 'events.manage')) return fail('Managers only.', 403);
     return lineupRoute(p, method, body, me, env, log);
   }
+  if (p === '/api/events/recommend') return recommendRoute(p, method, body, me, env, log, loadSite); // P11.15 AI lineup recommender
   if (method !== 'POST') return fail('Not found', 404);
   if (p === '/api/events') return saveEvent(body, me, env, log);
   if (p === '/api/events/rsvp') return rsvp(body, me, env, log);

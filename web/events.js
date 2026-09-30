@@ -186,6 +186,7 @@ ${targets?.ready ? `<label class="dx-check"><input type="checkbox" name="discord
       const rank = (p) => (p.s === 'yes' ? 2 : 0) + (p.on ? 1 : 0); // said yes first, then checked in
       const chip = (p) => `<button type="button" class="lu-chip${pick === p.id ? ' sel' : ''}${p.s === 'yes' ? '' : ' soft'}" draggable="true" data-p="${esc(p.id)}">${UI.avatar(p.a, p.n, 24)}<span><b>${esc(p.n)}</b><small>${p.on ? '🟢 on · ' : ''}${p.s ? `${ICON[p.s]} ` : ''}${esc((p.pos || []).slice(0, 3).join('/'))}${p.trial ? ` · 🧪 ${esc(p.trial)}` : ''}</small></span></button>`;
       const body = () => `<div class="lu-bar"><label>Formation <select data-f>${[['', '📋 Quick list (no pitch)'], ...Object.keys(S.formations).map((k) => [k, k])].map(([k, l]) => `<option value="${k}"${k === formation ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+<button type="button" class="btn sm ghost" data-suggest>✨ Suggest lineup</button>
 ${formation ? `<label>Template <select data-tpl><option value="">${templates ? (templates.length ? 'Load a saved lineup…' : 'No templates yet') : 'Loading…'}</option>${(templates || []).map((t) => `<option value="${t.id}">${esc(t.name)} · ${esc(t.formation)}</option>`).join('')}</select></label>
 <span class="lu-save"><input data-tplname maxlength="40" placeholder="Template name" value="${esc(tplName)}"><button type="button" class="btn sm ghost" data-savetpl>💾 Save</button></span>` : ''}</div>
 ${formation ? `${pitchHtml(S.formations, formation, Object.fromEntries(Object.entries(slots).map(([slot, id]) => [slot, who.get(id) ?? { id, n: 'Member' }])), { editable: true })}
@@ -212,6 +213,13 @@ ${formation ? `${pitchHtml(S.formations, formation, Object.fromEntries(Object.en
             if (ev.target.closest('[data-savetpl]')) {
               if (tplName.trim().length < 2) return ctx.toast('Give the template a name', true);
               try { templates = (await ctx.call('/api/events/templates', { name: tplName, formation, slots })).templates; ctx.toast(`Template “${tplName}” saved`); paint(); } catch (er) { ctx.toast(er.message, true); }
+            }
+            if (ev.target.closest('[data-suggest]')) {
+              try {
+                const r = await ctx.call('/api/events/recommend', { id: e.id, formation: formation || null });
+                formation = r.formation; slots = { ...r.lineup }; pick = null; paint();
+                ctx.toast(Object.keys(r.lineup).length ? '✨ Suggested a lineup from who said yes – review before publishing' : 'Nobody has said yes yet – nothing to suggest');
+              } catch (er) { ctx.toast(er.message, true); }
             }
           });
           root.addEventListener('change', (ev) => {
