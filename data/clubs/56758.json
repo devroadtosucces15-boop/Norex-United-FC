@@ -1,7 +1,7 @@
 {
  "id": "56758",
- "tier": "discovered",
- "fetchedAt": "2026-09-30T09:10:44.955Z",
+ "tier": "linked",
+ "fetchedAt": "2026-09-30T09:13:40.211Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -1686,5 +1686,10 @@
    "prevGoals": "2",
    "favoritePosition": "forward"
   }
- ]
+ ],
+ "leaderboard": {
+  "currentDivision": "3",
+  "bestDivision": "2",
+  "points": "81"
+ }
 }
