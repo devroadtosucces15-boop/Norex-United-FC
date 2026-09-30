@@ -35,6 +35,7 @@ import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.
 import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { crawlRoute } from './crawl.js';
+import { awardPoints, pointsRoute } from './points.js';
 import { ROLE_LABEL, atLeast, can, discordRole, featuresFor, flagOn, flags, permsFor, sessionRole } from './roles.js';
 
 const enc = new TextEncoder();
@@ -85,7 +86,8 @@ const opt = (v) => v ?? undefined; // NULL columns → key left out of the JSON,
 
 const parseWarnings = (s) => { try { return JSON.parse(s || '[]'); } catch { return []; } };
 const userOut = (r) => ({ n: r.name, a: r.avatar, tag: r.tag, admin: !!r.admin, role: r.role, first: r.first_at, last: r.last_at, logins: r.logins,
-  mutedUntil: r.muted_until > Date.now() ? r.muted_until : undefined, warnings: parseWarnings(r.warnings) }); // P8.3
+  mutedUntil: r.muted_until > Date.now() ? r.muted_until : undefined, warnings: parseWarnings(r.warnings), // P8.3
+  points: r.points ?? 0, profanityStrikes: r.profanity_strikes ?? 0 }); // P11.3 / P11.4
 const claimOut = (r, history = []) => ({
   player: r.player, playerName: r.player_name, status: r.status, at: r.at, n: r.name, a: r.avatar,
   decidedBy: opt(r.decided_by), decidedAt: opt(r.decided_at), history,
@@ -566,6 +568,7 @@ async function route(p, method, body, me, env, loadSite, url) {
           ON CONFLICT (match_id, user_id) DO UPDATE SET player = excluded.player, name = excluded.name, avatar = excluded.avatar, at = excluded.at`,
         String(m.id), me.u, pl.k, me.n, me.a, Date.now());
         await log(env, me, 'vote', `${pl.n} · vs ${m.opp}`);
+        if (!cur) await awardPoints(env, me.u, 'community', 2, `MOTM vote · vs ${m.opp}`); // P11.3 – only on a first vote, not switching picks
       }
     }
     const docs = await votesByMatch(env, recent);
@@ -620,6 +623,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (cht) return cht;
   const bst = await botSettingsRoute(p, method, body, me, env, log); // P7.5 bot personalisation
   if (bst) return bst;
+  const pts = await pointsRoute(p, method, body, me, env); // P11.3 point system
+  if (pts) return pts;
 
   if (p.startsWith('/api/admin/')) {
     if (!can(me, 'portal.view')) return fail('Managers only.', 403);

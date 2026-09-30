@@ -30,9 +30,11 @@ const sample = {
   top: [{ name: 'stat', value: 'rating' }],
   syncroles: null, // deferred reply – tested in discord.test.mjs (P2.5)
   schedule: null, availability: null, lineup: null, rush: null, me: null, leaderboard: null, profile: null, awards: null, // P7.4/P7.5 – need the member DB: tests/wave8.test.mjs / tests/wave13.test.mjs
+  points: null, // P11.3 – needs the member DB: tests/points.test.mjs
   insights: null, // deferred reply – tested in insights.test.mjs (Club Intelligence)
   exportcontent: null, // deferred reply, owner only – DMs guide/rule/playstyle/announcement channels
   aispike: null, // deferred reply, owner only – needs the real Workers AI binding (P11.1)
+  profanitysetup: null, // deferred reply, owner only – calls the real Discord AutoMod API (P11.4)
 };
 for (const name of Object.keys(sample)) {
   if (!registered.includes(name) || !sample[name]) continue;

@@ -6,6 +6,7 @@
 // Rolling = the last 8 weeks, each week weighted 0.85^age, so recent form counts most. Can't rate yourself.
 import { can, flagOn } from './roles.js';
 import { weekOf } from './awards.js';
+import { awardPoints } from './points.js';
 
 const WEEK = 7 * 86400e3, WINDOW = 8, DECAY = 0.85, TREND = 12;
 export const MIN_RATERS = 3;
@@ -100,9 +101,11 @@ export async function ratingsRoute(p, method, body, me, env, loadSite, log, url)
     if ((await one(env, "SELECT player FROM claims WHERE user_id = ? AND status = 'approved'", me.u))?.player === pl.k) return fail('No rating yourself 😉');
     if (!stars) await run(env, 'DELETE FROM star_ratings WHERE week = ? AND user_id = ? AND player = ?', week.key, me.u, pl.k);
     else {
+      const already = await one(env, 'SELECT 1 FROM star_ratings WHERE week = ? AND user_id = ? AND player = ?', week.key, me.u, pl.k);
       await run(env, `INSERT INTO star_ratings (week, user_id, player, stars, name, at) VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT (week, user_id, player) DO UPDATE SET stars = excluded.stars, at = excluded.at`, week.key, me.u, pl.k, stars, me.n, Date.now());
       await log(env, me, 'star-rate', `${pl.n} · ${stars}★`);
+      if (!already) await awardPoints(env, me.u, 'community', 2, `Rated ${pl.n}`); // P11.3 – only a first rating this week, not changing stars
     }
     return json(await state(env, me, loadSite));
   }

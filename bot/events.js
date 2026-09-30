@@ -18,6 +18,7 @@ import { can, flagOn, flags } from './roles.js';
 import { notify, notifyMembers, safely } from './notify.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
+import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
 
 const REMIND = ['dm', 'mention', 'off'];
@@ -337,8 +338,12 @@ async function nightRoute(p, method, body, me, env, log, loadSite, url) {
     const trial = body.trial ? String(body.trial) : null;
     if (trial && !POSITIONS.includes(trial)) return fail('Pick a real position to try.');
     if (body.on === false) await run(env, 'DELETE FROM event_checkins WHERE event_id = ? AND user_id = ?', row.id, me.u);
-    else await run(env, `INSERT INTO event_checkins (event_id, user_id, name, avatar, trial, at) VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT (event_id, user_id) DO UPDATE SET trial = excluded.trial, name = excluded.name, avatar = excluded.avatar`, row.id, me.u, me.n, me.a ?? null, trial, Date.now());
+    else {
+      const already = await one(env, 'SELECT 1 FROM event_checkins WHERE event_id = ? AND user_id = ?', row.id, me.u);
+      await run(env, `INSERT INTO event_checkins (event_id, user_id, name, avatar, trial, at) VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT (event_id, user_id) DO UPDATE SET trial = excluded.trial, name = excluded.name, avatar = excluded.avatar`, row.id, me.u, me.n, me.a ?? null, trial, Date.now());
+      if (!already) await awardPoints(env, me.u, 'attendance', 5, `Checked in · ${label(row)}`); // P11.3 – only the first check-in for this night
+    }
     await log(env, me, 'event-checkin', `${body.on === false ? 'left' : 'on'}${trial ? ` · trying ${trial}` : ''} · ${label(row)}`);
     return json(await listFor(env, me));
   }

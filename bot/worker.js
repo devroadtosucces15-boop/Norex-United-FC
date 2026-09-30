@@ -25,6 +25,7 @@ import { mediaCron, serveMedia } from './media.js';
 import { exportContent } from './exportcontent.js';
 import { checkUptime } from './monitor.js';
 import { runSpike, spikeReport } from './aispike.js';
+import { checkProfanity, cleanBonus, setupAutoMod } from './profanity.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
@@ -33,6 +34,7 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
     ctx.waitUntil(checkUptime(env).catch((e) => console.log('uptime monitor failed', e.message))); // P11.2 24/7 monitor
+    ctx.waitUntil(checkProfanity(env).then(() => cleanBonus(env)).catch((e) => console.log('profanity check failed', e.message))); // P11.4
     ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => hotwDue(env)).then(() => scoreDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, P4.1 awards, P6.2 highlight of the week, P3.8 predictions, then P7.1 DMs + reminders
     ctx.waitUntil(mediaCron(env).catch((e) => console.log('media guard failed', e.message))); // P6.1b R2 storage guard (hourly)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
@@ -83,6 +85,7 @@ export default {
     if (i.type === 2 && i.data.name === 'syncroles') return syncRolesCommand(i, env, ctx, site, who);
     if (i.type === 2 && i.data.name === 'exportcontent') return exportContentCommand(i, env, ctx, who);
     if (i.type === 2 && i.data.name === 'aispike') return aiSpikeCommand(i, env, ctx, who);
+    if (i.type === 2 && i.data.name === 'profanitysetup') return profanitySetupCommand(i, env, ctx, who);
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
       try { return json(await eventButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
     }
@@ -194,6 +197,25 @@ function aiSpikeCommand(i, env, ctx, who) {
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
     }).catch((e) => console.log('aispike reply failed', e.message));
+  })());
+  return json({ type: 5, data: { flags: 64 } });
+}
+
+// ---------- /profanitysetup (owner): P11.4 create/update the Discord AutoMod rule + alert channel ----------
+function profanitySetupCommand(i, env, ctx, who) {
+  if (!can(who, 'settings.bot')) return json({ type: 4, data: { content: '🔒 Owner only.', flags: 64 } });
+  const channel = flatOptions(i.data.options).find((o) => o.name === 'channel')?.value;
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      await setupAutoMod(env, who, channel);
+      content = `✅ AutoMod profanity rule is set – alerts go to <#${channel}>, and the 10-min cron now turns them into strikes (3 = auto-warning, 5 = 24h auto-mute). If this fails silently, check the bot's role has **Manage Server** in Server Settings → Roles.`;
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    }).catch((e) => console.log('profanitysetup reply failed', e.message));
   })());
   return json({ type: 5, data: { flags: 64 } });
 }

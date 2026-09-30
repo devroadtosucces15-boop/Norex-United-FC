@@ -8,6 +8,7 @@
 import { can, flagOn } from './roles.js';
 import { notify, safely } from './notify.js';
 import { EVENT_TYPES, localDate } from './events.js';
+import { awardPoints } from './points.js';
 
 const MIN = 60e3, DAY = 86400e3;
 export const LEAGUE_TYPES = ['league', 'playoffs', 'friendly'];
@@ -75,6 +76,7 @@ export async function scoreDue(env, loadSite = (f) => siteJson(env, f)) {
     const ins = await run(env, "INSERT OR IGNORE INTO prediction_results (event_id, status, gf, ga, opp, match_ref, at) VALUES (?, 'scored', ?, ?, ?, ?, ?)", ev.id, r.gf, r.ga, r.opp ?? null, r.ref, at);
     if (!ins.meta?.changes) continue; // someone else scored it first
     await env.DB.batch(pts.map(([u, n]) => env.DB.prepare('UPDATE predictions SET points = ? WHERE event_id = ? AND user_id = ?').bind(n, ev.id, u)));
+    await Promise.all(pts.filter(([, n]) => n > 0).map(([u, n]) => awardPoints(env, u, 'community', n, 'Correct prediction'))); // P11.3
     scored++;
     const title = ev.title || EVENT_TYPES[ev.type]?.[1] || 'Match night';
     for (const n of [3, 2, 1, 0]) {

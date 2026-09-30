@@ -84,6 +84,7 @@ export const PERMS = {
   'submissions.view': 'manager', // P8.1 – portal: feedback, ratings, award votes, predictions, suggestions, builds in one place
   'reports.view': 'manager', // P8.3 – unified reported-content queue (posts, feedback, messages)
   'moderation.manage': 'manager', // P8.3 – warn / mute members
+  'points.view': 'member', // P11.3 – point system: my total/breakdown + leaderboard
 };
 
 export function can(user, action) {

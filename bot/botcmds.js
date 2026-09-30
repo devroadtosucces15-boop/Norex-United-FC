@@ -13,8 +13,9 @@ import { can, flagOn } from './roles.js';
 import { answerEvents, EVENT_TYPES, eventMessage } from './events.js';
 import { submitRush } from './members.js';
 import { state as awardsState } from './awards.js';
+import { CATEGORIES } from './points.js';
 
-export const MEMBER_COMMANDS = new Set(['schedule', 'availability', 'lineup', 'rush', 'me', 'leaderboard', 'profile', 'awards']);
+export const MEMBER_COMMANDS = new Set(['schedule', 'availability', 'lineup', 'rush', 'me', 'leaderboard', 'profile', 'awards', 'points']);
 const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results);
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const parse = (s, fb) => { try { return JSON.parse(s) ?? fb; } catch { return fb; } };
@@ -164,6 +165,22 @@ export async function memberCommand(i, env, who, site, h) {
       ],
       footer: { text: 'NOREX UNITED · vote in the Squad Hub' },
     }], allowed_mentions: { parse: [] } } };
+  }
+  if (name === 'points') {
+    if (!flagOn(env, who, 'points')) return say('🔒 The point system is not switched on for you yet.');
+    const u = await one(env, 'SELECT points FROM users WHERE id = ?', me.u);
+    const rows = await all(env, 'SELECT category, SUM(delta) AS pts FROM points_log WHERE user_id = ? GROUP BY category', me.u);
+    const by = Object.fromEntries(CATEGORIES.map((c) => [c, 0]));
+    for (const r of rows) by[r.category] = r.pts;
+    const rank = 1 + (await one(env, 'SELECT COUNT(*) AS n FROM users WHERE points > ?', u?.points ?? 0))?.n;
+    const ICON = { match: '🎮', attendance: '🗓️', community: '💬', behaviour: '🤝' };
+    const LABEL = { match: 'Match performance', attendance: 'Attendance', community: 'Community', behaviour: 'Behaviour' };
+    return { type: 4, data: { embeds: [{
+      title: `⭐ ${me.n}'s points`, url: `${site}members.html#points`, color: RED,
+      description: `**${u?.points ?? 0}** total · #${rank} on the club leaderboard`,
+      fields: CATEGORIES.map((c) => ({ name: `${ICON[c]} ${LABEL[c]}`, value: `${by[c] ?? 0}`, inline: true })),
+      footer: { text: 'NOREX UNITED · full breakdown + leaderboard in the Squad Hub' },
+    }], flags: 64 } };
   }
   return say('Unknown command.');
 }
