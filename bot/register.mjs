@@ -19,6 +19,10 @@ const commands = [
     options: [{ type: STRING, name: 'stat', description: 'Which leaderboard', choices: ['goals', 'assists', 'ga', 'rating', 'motm', 'games'].map((v) => ({ name: v === 'ga' ? 'goals + assists' : v, value: v })) }],
   },
   { name: 'site', description: 'Link to the club website' },
+  {
+    name: 'ask', description: 'Ask the club chatbot a question about our stats (P11.11)',
+    options: [{ type: STRING, name: 'question', description: 'e.g. who has the most assists this season?', required: true, max_length: 300 }],
+  },
   // P7.4 – commands that read the member database (bot/botcmds.js)
   { name: 'schedule', description: 'Upcoming match nights – answer ✅ ❔ ❌ right here' },
   { name: 'availability', description: "Who's in for the next event and which positions are missing" },

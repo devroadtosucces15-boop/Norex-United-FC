@@ -27,6 +27,7 @@ import { checkUptime } from './monitor.js';
 import { runSpike, spikeReport } from './aispike.js';
 import { checkProfanity, cleanBonus, setupAutoMod } from './profanity.js';
 import { checkHype } from './hype.js';
+import { askAnswer, buildAskContext } from './ask.js';
 import { makeAvatarCard } from './avatarcard.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
@@ -90,6 +91,7 @@ export default {
     if (i.type === 2 && i.data.name === 'aispike') return aiSpikeCommand(i, env, ctx, who);
     if (i.type === 2 && i.data.name === 'profanitysetup') return profanitySetupCommand(i, env, ctx, who);
     if (i.type === 2 && i.data.name === 'avatarcard') return avatarCardCommand(i, env, ctx, who, new URL(request.url).origin);
+    if (i.type === 2 && i.data.name === 'ask') return askCommand(i, env, ctx, site, who);
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
       try { return json(await eventButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
     }
@@ -246,6 +248,27 @@ function avatarCardCommand(i, env, ctx, who, origin) {
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
     }).catch((e) => console.log('avatarcard reply failed', e.message));
+  })());
+  return json({ type: 5, data: { flags: 64 } });
+}
+
+// ---------- /ask (public, flag-gated): P11.11 AI club chatbot – site JSON stats as context for the text model ----------
+function askCommand(i, env, ctx, site, who) {
+  if (!flagOn(env, who, 'ask')) return json({ type: 4, data: { content: '🔒 The /ask chatbot is not switched on for you yet.', flags: 64 } });
+  if (!env.AI) return json({ type: 4, data: { content: '⚠️ The AI binding is not connected.', flags: 64 } });
+  const question = flatOptions(i.data.options).find((o) => o.name === 'question')?.value;
+  if (!question) return json({ type: 4, data: { content: '⚠️ Ask a question.', flags: 64 } });
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      const [club, players] = await Promise.all([load(site, 'club', ctx), load(site, 'players', ctx)]);
+      content = (await askAnswer(env, question, buildAskContext(club, players))) ?? "🤔 Couldn't come up with an answer to that – try rephrasing.";
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    }).catch((e) => console.log('ask reply failed', e.message));
   })());
   return json({ type: 5, data: { flags: 64 } });
 }

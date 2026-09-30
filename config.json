@@ -82,6 +82,8 @@
     "predictions": "members",
     "recommendations": "members",
     "scoutReport": "public",
+    "ask": "owner",
+    "aiInsights": "owner",
     "insights": "owner",
     "feed": "owner",
     "hotw": "owner",
