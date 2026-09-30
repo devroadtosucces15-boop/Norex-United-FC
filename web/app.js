@@ -2,6 +2,7 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const BASE = document.body.dataset.base || '';
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 // Feature flags (P0.7): config.json → features, levels off | owner | managers | members | public.
 // Parts marked [data-flag="name"] only show for roles the flag unlocks. Hiding is cosmetic – the Worker enforces.
@@ -183,12 +184,38 @@ $$('[data-view]').forEach((g) => chipGroup(g, (b) => {
 $$('[data-tierfilter]').forEach((g) => chipGroup(g, (b) => {
   $$('.club-card').forEach((c) => (c.hidden = b.dataset.tier !== 'all' && c.dataset.tier !== b.dataset.tier));
 }));
-$$('[data-tabs]').forEach((g) => chipGroup(g, (b) => {
-  $$('.tab-panel', g.parentElement).forEach((p) => {
-    p.hidden = p.id !== b.dataset.tab;
-    if (!p.hidden) { p.classList.remove('in'); void p.offsetWidth; p.classList.add('in'); }
+// Red pill slides between chips, panel content slides over (redesign board 05 part 2).
+$$('[data-tabs]').forEach((g) => {
+  const pill = document.createElement('span');
+  pill.className = 'chip-pill';
+  pill.setAttribute('aria-hidden', 'true');
+  g.prepend(pill);
+  g.classList.add('has-pill');
+  const movePill = (btn, animate) => {
+    if (!btn) return;
+    pill.style.transition = animate && !reducedMotion() ? '' : 'none';
+    pill.style.width = `${btn.offsetWidth}px`;
+    pill.style.transform = `translateX(${btn.offsetLeft}px)`;
+  };
+  movePill($('button.chip.on', g), false);
+  addEventListener('resize', () => movePill($('button.chip.on', g), false));
+  chipGroup(g, (b) => {
+    movePill(b, true);
+    const panels = $$('.tab-panel', g.parentElement);
+    const oldIdx = panels.findIndex((p) => !p.hidden);
+    const newIdx = panels.findIndex((p) => p.id === b.dataset.tab);
+    const dir = newIdx > oldIdx ? 'r' : 'l';
+    panels.forEach((p, i) => {
+      p.classList.remove('in', 'enter-r', 'enter-l');
+      p.hidden = i !== newIdx;
+      if (i === newIdx) {
+        p.classList.add(`enter-${dir}`);
+        void p.offsetWidth;
+        requestAnimationFrame(() => { p.classList.remove('enter-r', 'enter-l'); p.classList.add('in'); });
+      }
+    });
   });
-}));
+});
 $$('.tab-panel:not([hidden])').forEach((p) => p.classList.add('in'));
 // Stat drill-downs (P1.1): ?f=won opens that tab; switching tabs updates the URL so it can be shared.
 $$('[data-drill]').forEach((g) => {
@@ -200,11 +227,12 @@ $$('[data-drill]').forEach((g) => {
   });
 });
 
-// ---------- 3D tilt on player cards ----------
+// ---------- 3D tilt + shine on hover cards (board 05 part 2 generalizes the .fut tilt to more card types) ----------
+const TILT_SEL = '.fut, .record, .club-card';
 document.addEventListener('pointermove', (e) => {
-  const card = e.target.closest?.('.fut');
-  $$('.fut.tilting').forEach((c) => c !== card && reset(c));
-  if (!card || e.pointerType !== 'mouse') return;
+  const card = e.target.closest?.(TILT_SEL);
+  $$('.tilting', document).forEach((c) => c !== card && reset(c));
+  if (!card || e.pointerType !== 'mouse' || reducedMotion()) return;
   const r = card.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
   card.classList.add('tilting');
@@ -214,6 +242,48 @@ document.addEventListener('pointermove', (e) => {
   card.style.setProperty('--my', `${y * 100}%`);
 });
 function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); }
+
+// ---------- ribbon-wipe page transitions (redesign board 05 part 2) ----------
+// One family, used everywhere: any plain click on a same-origin, same-tab link plays a ribbon sweep + crest
+// stamp while the browser navigates (navigation itself is never delayed for the animation's sake), and the
+// inline script in <head> flips html.nx-covered on before the next page's first paint so there's no flash of
+// unwiped content – this then plays the reveal wipe once that page has settled in.
+(() => {
+  const html = document.documentElement;
+  const NAV_KEY = 'nxnav';
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest?.('a[href]');
+    if (!a) return;
+    const raw = a.getAttribute('href');
+    if (!raw || raw.startsWith('#') || a.hasAttribute('download')) return;
+    if (a.target && a.target !== '_self') return;
+    let url;
+    try { url = new URL(a.href, location.href); } catch { return; }
+    if (url.origin !== location.origin) return;
+    e.preventDefault();
+    try { sessionStorage.setItem(NAV_KEY, '1'); } catch {}
+    html.classList.add('nx-leaving');
+    location.href = a.href;
+  });
+  function reveal() {
+    let flagged = false;
+    try { flagged = sessionStorage.getItem(NAV_KEY); sessionStorage.removeItem(NAV_KEY); } catch {}
+    html.classList.remove('nx-leaving');
+    if (!flagged) { html.classList.remove('nx-covered'); return; }
+    html.classList.add('nx-covered');
+    // A plain setTimeout (not rAF) flushes the covered paint even in a background/inactive tab, so a page
+    // that finishes loading before the user switches to it still reveals correctly once they do.
+    setTimeout(() => {
+      html.classList.remove('nx-covered');
+      html.classList.add('nx-revealing');
+      setTimeout(() => html.classList.remove('nx-revealing'), 500);
+    }, 30);
+  }
+  // pageshow (not DOMContentLoaded) also fires on bfcache restores (e.g. the back button), which need the
+  // same clean-up so a page never gets stuck mid-transition.
+  addEventListener('pageshow', reveal);
+})();
 
 // ---------- home hero: layered stadium parallax + spinnable crest coin (redesign board 02) ----------
 (() => {

@@ -471,8 +471,10 @@ function page({ title, base, active, body, description, image }) {
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${base}assets/style.css"><style>:root{--red:${RED};--ink:${INK};--accent:${RED}}</style>
 <link rel="icon" href="${base}assets/favicon.png">
+<script>try{if(sessionStorage.getItem('nxnav'))document.documentElement.classList.add('nx-covered')}catch(e){}</script>
 </head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}" data-group="${activeGroup}" data-active="${esc(active ?? '')}">
 <div class="bg" aria-hidden="true"></div>
+<div class="pxwipe" aria-hidden="true"><span class="pxwipe-ribbon"></span><img class="pxwipe-crest" src="${base}assets/crest.png" alt=""></div>
 <script type="application/json" id="nav-data">${JSON.stringify(NAV_GROUPS.map((g) => ({ id: g.id, icon: g.icon, label: g.label, links: g.links.map((l) => ({ id: l.id, href: l.href, icon: l.icon, label: l.label, desc: l.desc, flag: l.flag })) })))}</script>
 <header class="top"><div class="wrap bar">
 <a class="brand" href="${base}index.html"><img src="${base}assets/crest.png" height="44" alt=""><span><b>NOREX</b><small>UNITED</small></span></a>
@@ -997,7 +999,7 @@ const clubList = [...clubs.values()].sort((a, b) => (tierOrder[state.clubs[a.id]
 write('clubs/index.html', page({ title: `Clubs – ${config.siteTitle}`, base: '../', active: 'clubs', body: `
 ${pageHead('Clubs', 'Found automatically. Every opponent is tracked, and any club where one of our players also plays is <b>linked</b> and fully archived. A background crawler keeps scanning for more.', '../', false)}
 <div class="toolbar"><div class="chipset" data-tierfilter>${['all', 'home', 'linked', 'manual', 'discovered'].map((t, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tier="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div><input class="filter" type="search" placeholder="Search clubs…" data-cardfilter=".club-card"></div>
-<div class="club-grid">${clubList.map((c) => { const o = { ...(c.overall ?? {}), ...(c.leaderboard ?? {}) }; const tr = state.clubs[c.id]?.tier ?? 'archived'; return `<a class="club-card tier-${esc(tr)}" data-tier="${esc(tr)}" href="${clubHref(c.id, '../')}">${crest(c.id, 72, '../')}<b>${esc(clubName(c.id))}</b><span class="tag">${esc(tr)}</span><small>${esc(o.wins ?? 0)}W · ${esc(o.ties ?? 0)}D · ${esc(o.losses ?? 0)}L</small><small class="muted">SR ${esc(o.skillRating ?? '–')}${o.currentDivision ? ` · Div ${esc(o.currentDivision)}` : ''}</small></a>`; }).join('')}</div>` }));
+<div class="club-grid">${clubList.map((c) => { const o = { ...(c.overall ?? {}), ...(c.leaderboard ?? {}) }; const tr = state.clubs[c.id]?.tier ?? 'archived'; return `<a class="club-card tier-${esc(tr)}" data-tier="${esc(tr)}" href="${clubHref(c.id, '../')}"><span class="fut-shine"></span>${crest(c.id, 72, '../')}<b>${esc(clubName(c.id))}</b><span class="tag">${esc(tr)}</span><small>${esc(o.wins ?? 0)}W · ${esc(o.ties ?? 0)}D · ${esc(o.losses ?? 0)}L</small><small class="muted">SR ${esc(o.skillRating ?? '–')}${o.currentDivision ? ` · Div ${esc(o.currentDivision)}` : ''}</small></a>`; }).join('')}</div>` }));
 
 for (const m of allMatches) {
   const [a, b] = Object.keys(m.clubs);
@@ -1036,7 +1038,7 @@ const bigWin = [...homeMatches].sort((a, b) => margin(b) - margin(a))[0];
 const bigLoss = [...homeMatches].sort((a, b) => margin(a) - margin(b))[0];
 let streak = 0, bestStreak = 0;
 for (const m of [...homeMatches].reverse()) { streak = result(m.clubs[homeId]) === 'W' ? streak + 1 : 0; bestStreak = Math.max(bestStreak, streak); }
-const record = (icon, title, value, sub, href) => `<a class="record"${href ? ` href="${href}"` : ''}><span class="rec-icon">${icon}</span><small>${title}</small><b>${value}</b><span>${sub}</span></a>`;
+const record = (icon, title, value, sub, href) => `<a class="record"${href ? ` href="${href}"` : ''}><span class="fut-shine"></span><span class="rec-icon">${icon}</span><small>${title}</small><b>${value}</b><span>${sub}</span></a>`;
 const hatTricks = allApps.filter((x) => num(x.p.goals) >= 3);
 const scoreOf = (m) => `${m.clubs[homeId].goals}–${m.clubs[oppOf(m, homeId)].goals}`;
 const recs = homeMatches.length ? [
