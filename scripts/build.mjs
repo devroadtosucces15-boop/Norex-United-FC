@@ -1224,6 +1224,12 @@ write('api/squad.json', JSON.stringify({
     .map((x) => [x.ts, x.res, x.goals, x.assists, x.rating, x.mom ? 1 : 0, x.shots, x.passes, x.passAtt, x.tackles, x.tackleAtt, x.saves, x.gf, x.ga, GRP[x.pos] ?? '', x.dribbles, x.sa])]).filter(([, l]) => l.length)),
 }));
 write('api/clubs.json', JSON.stringify([...clubs.values()].map((c) => ({ id: c.id, n: clubName(c.id), t: state.clubs[c.id]?.tier ?? 'archived', ...(clubKit(c.id)?.crestAssetId ? { cr: crestSrc(c.id, SITE) } : {}) }))));
+// P11.16 /history: League-only head-to-head record per opponent, same numbers as the Stats Centre's own
+// "Head to head" table – exposed here so the Discord command doesn't need to scrape the HTML.
+write('api/h2h.json', JSON.stringify([...h2h.values()].map((e) => ({
+  o: e.o, n: clubName(e.o), p: e.p, w: e.w, d: e.d, l: e.l, gf: e.gf, ga: e.ga,
+  lastId: e.last.matchId, lastRes: result(e.last.clubs[homeId]), lastScore: scoreOf(e.last),
+})).sort((a, b) => b.p - a.p)));
 const ho = { ...(homeC?.overall ?? {}), ...(homeC?.leaderboard ?? {}) };
 write('api/club.json', JSON.stringify({
   name: clubName(homeId), url: SITE, crest: `${SITE}assets/crest.png`, color: RED, division: ho.currentDivision, skill: ho.skillRating,

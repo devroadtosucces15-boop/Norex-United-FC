@@ -37,6 +37,7 @@ const sample = {
   profanitysetup: null, // deferred reply, owner only – calls the real Discord AutoMod API (P11.4)
   avatarcard: null, // deferred reply, needs a resolved attachment – tests/avatarcard.test.mjs (P11.5)
   ask: null, // deferred reply, flag-gated + needs the real Workers AI binding – tests/ask.test.mjs (P11.11)
+  nextevent: null, feedback: null, suggest: null, announce: null, trial: null, motm: null, history: null, // P11.16 – need the member DB: tests/quickcommands.test.mjs
 };
 for (const name of Object.keys(sample)) {
   if (!registered.includes(name) || !sample[name]) continue;

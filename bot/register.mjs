@@ -6,7 +6,7 @@ if (!app || !token) {
   process.exit(1);
 }
 
-const SUB = 1, STRING = 3, INTEGER = 4, USER = 6, CHANNEL = 7, ATTACHMENT = 11;
+const SUB = 1, STRING = 3, INTEGER = 4, BOOLEAN = 5, USER = 6, CHANNEL = 7, ATTACHMENT = 11;
 const player = (name, description) => ({ type: STRING, name, description, required: true, autocomplete: true });
 const commands = [
   { name: 'club', description: 'Club record, division and form' },
@@ -68,6 +68,41 @@ const commands = [
     default_member_permissions: String(1 << 28), contexts: [0],
     options: [{ type: CHANNEL, name: 'channel', description: 'Where AutoMod should send violation alerts', required: true }],
   },
+  // P11.16 – quick wrappers around features that already exist in the Squad Hub
+  { name: 'nextevent', description: 'The single next match night – answer ✅ ❔ ❌ right here' },
+  {
+    name: 'feedback', description: 'Send praise, a tip or a concern to a verified teammate (they never see who sent it)',
+    options: [
+      { type: USER, name: 'to', description: 'A verified teammate', required: true },
+      { type: STRING, name: 'kind', description: 'What kind of message', required: true, choices: [['praise', 'Praise'], ['tip', 'Tip'], ['concern', 'Concern']].map(([value, name]) => ({ name, value })) },
+      { type: STRING, name: 'text', description: 'Your message (10+ characters, kept clean)', required: true, min_length: 10, max_length: 500 },
+    ],
+  },
+  {
+    name: 'suggest', description: 'Drop an idea in the suggestion box',
+    options: [
+      { type: STRING, name: 'title', description: 'Short title for the idea', required: true, min_length: 4, max_length: 100 },
+      { type: STRING, name: 'body', description: 'More detail (optional)', max_length: 1000 },
+      { type: BOOLEAN, name: 'anon', description: "Hide your name from other members (managers still see it)" },
+    ],
+  },
+  {
+    name: 'announce', description: 'Managers: send an announcement to every member (Squad Hub bell + Discord DM)',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: STRING, name: 'title', description: 'Announcement title', required: true, min_length: 3, max_length: 200 },
+      { type: STRING, name: 'text', description: 'The message', max_length: 1000 },
+      { type: BOOLEAN, name: 'ack', description: 'Require everyone to acknowledge it' },
+      { type: STRING, name: 'audience', description: 'Who gets it (default: everyone)', choices: ['all', 'managers'].map((v) => ({ name: v === 'all' ? 'Everyone' : 'Managers only', value: v })) },
+    ],
+  },
+  {
+    name: 'trial', description: 'Managers: current trial cards, or search by gamertag',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [{ type: STRING, name: 'gamertag', description: 'Only cards matching this gamertag' }],
+  },
+  { name: 'motm', description: 'Current Man of the Match vote standing for the latest match' },
+  { name: 'history', description: 'Our record against a past opponent', options: [{ type: STRING, name: 'opponent', description: "Opponent club name (or part of it)", required: true }] },
 ];
 
 const res = await fetch(`https://discord.com/api/v10/applications/${app}/commands`, {

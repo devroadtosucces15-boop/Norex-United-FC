@@ -104,7 +104,7 @@ const trialOut = (r, events, notes) => ({
   events: events.map((e) => ({ kind: e.kind, status: opt(e.status), date: opt(e.date), result: opt(e.result), rating: opt(e.rating), detail: opt(e.detail), by: opt(e.by_name), at: e.at })),
   notes,
 });
-async function trialsState(env, me) {
+export async function trialsState(env, me) {
   const rows = await all(env, `SELECT * FROM trials WHERE status IN (${marks(OPEN.length)}) OR updated_at > ? ORDER BY updated_at DESC LIMIT 300`, ...OPEN, Date.now() - 180 * DAY);
   if (!rows.length) return { trials: [], canNotes: canNotes(env, me) };
   const ids = rows.map((r) => r.id);

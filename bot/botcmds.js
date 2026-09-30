@@ -11,11 +11,17 @@
 // Replies that are about "me" are ephemeral (flags 64) – only the person who asked sees them.
 import { can, flagOn } from './roles.js';
 import { answerEvents, EVENT_TYPES, eventMessage } from './events.js';
-import { submitRush } from './members.js';
+import { currentRole, log, submitRush, voteView, votesByMatch } from './members.js';
 import { state as awardsState } from './awards.js';
 import { CATEGORIES } from './points.js';
+import { feedbackRoute, KINDS as FEEDBACK_KINDS } from './feedback.js';
+import { knowledgeRoute } from './docs.js';
+import { notifyRouteAll } from './notify.js';
+import { trialsState } from './trials.js';
 
-export const MEMBER_COMMANDS = new Set(['schedule', 'availability', 'lineup', 'rush', 'me', 'leaderboard', 'profile', 'awards', 'points']);
+// P11.16: quick one-line wrappers around features that already exist – reuse the same route
+// functions the Squad Hub calls, rather than duplicating their validation/limits here.
+export const MEMBER_COMMANDS = new Set(['schedule', 'availability', 'lineup', 'rush', 'me', 'leaderboard', 'profile', 'awards', 'points', 'nextevent', 'feedback', 'suggest', 'announce', 'trial', 'motm', 'history']);
 const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results);
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const parse = (s, fb) => { try { return JSON.parse(s) ?? fb; } catch { return fb; } };
@@ -25,12 +31,16 @@ const label = (e) => e.title || EVENT_TYPES[e.type]?.[1] || 'Event';
 const ts = (ms, f = 'F') => `<t:${Math.floor(ms / 1000)}:${f}>`;
 const flag = (c) => (/^[A-Z]{2}$/.test(c ?? '') ? String.fromCodePoint(...[...c].map((x) => 0x1f1a5 + x.charCodeAt(0))) : '');
 
-// The Discord user behind an interaction as a member ("me" in the member API): id, display name, avatar URL, role.
-function memberOf(i, who, env) {
+// The Discord user behind an interaction as a member ("me" in the member API): id, display name, avatar URL,
+// role – elevated to 'claimed' when they have an approved player claim, same as a web session (P11.16: some
+// wrapped routes, e.g. feedback.send, gate on 'claimed' and Discord's own roles never reach that tier).
+async function memberOf(i, who, env) {
   const u = i.member?.user ?? i.user ?? {};
   const avatar = i.member?.avatar && env.DISCORD_GUILD_ID ? `https://cdn.discordapp.com/guilds/${env.DISCORD_GUILD_ID}/users/${u.id}/avatars/${i.member.avatar}.png?size=128`
     : u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=128` : null;
-  return { u: u.id, n: String(i.member?.nick || u.global_name || u.username || 'Member').slice(0, 40), a: avatar, role: who.role };
+  const me = { u: u.id, n: String(i.member?.nick || u.global_name || u.username || 'Member').slice(0, 40), a: avatar, role: who.role };
+  me.role = await currentRole(env, me);
+  return me;
 }
 const nextEvents = (env, n = 5) => all(env, "SELECT * FROM events WHERE status = 'scheduled' AND start + duration * 60000 > ? ORDER BY start LIMIT ?", Date.now(), n);
 const rsvpsOf = (env, id) => all(env, 'SELECT r.status, r.name, r.user_id, p.positions, p.rush_positions FROM event_rsvps r LEFT JOIN profiles p ON p.user_id = r.user_id WHERE r.event_id = ? ORDER BY r.at', id);
@@ -42,7 +52,7 @@ export async function eventButton(i, env, who) {
   if (!can(who, 'events.rsvp')) return say('🔒 Members of the NOREX server only.');
   const [, , id, status] = i.data.custom_id.split(':');
   if (!['yes', 'maybe', 'no'].includes(status)) return say('⚠️ Unknown answer.');
-  const me = memberOf(i, who, env);
+  const me = await memberOf(i, who, env);
   const rows = await answerEvents(env, me, [Number(id)], status);
   if (!rows.length) return say('⌛ This event is over or was cancelled.');
   const e = await one(env, 'SELECT * FROM events WHERE id = ?', Number(id));
@@ -56,7 +66,7 @@ export async function eventButton(i, env, who) {
 export async function memberCommand(i, env, who, site, h) {
   const name = i.data.name, opts = Object.fromEntries(flatOptions(i.data.options).map((o) => [o.name, o.value]));
   if (!env.DB) return say('⚠️ The member database is not connected.');
-  const me = memberOf(i, who, env);
+  const me = await memberOf(i, who, env);
   const events = ['schedule', 'availability', 'lineup'].includes(name);
   if (events && !flagOn(env, who, 'events')) return say('🔒 The schedule is not switched on yet.');
 
@@ -181,6 +191,66 @@ export async function memberCommand(i, env, who, site, h) {
       fields: CATEGORIES.map((c) => ({ name: `${ICON[c]} ${LABEL[c]}`, value: `${by[c] ?? 0}`, inline: true })),
       footer: { text: 'NOREX UNITED · full breakdown + leaderboard in the Squad Hub' },
     }], flags: 64 } };
+  }
+  if (name === 'nextevent') {
+    if (!flagOn(env, who, 'events')) return say('🔒 The schedule is not switched on yet.');
+    const [e] = await nextEvents(env, 1);
+    if (!e) return say('🗓️ Nothing scheduled yet.', { flags: 0 });
+    const msg = eventMessage(env, e, await rsvpsOf(env, e.id), 'Next up · ');
+    return { type: 4, data: { embeds: msg.embeds, components: msg.components, allowed_mentions: { parse: [] } } };
+  }
+  if (name === 'feedback') {
+    if (!flagOn(env, who, 'feedback')) return say('🔒 Feedback is not switched on yet.');
+    const res = await feedbackRoute('/api/feedback/send', 'POST', { to: String(opts.to), kind: opts.kind, text: opts.text }, me, env, log);
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return say(`⚠️ ${d.error ?? 'Could not send that.'}`);
+    return say(`${FEEDBACK_KINDS[opts.kind][0]} Sent anonymously. ${d.left} left today.`);
+  }
+  if (name === 'suggest') {
+    if (!flagOn(env, who, 'suggestions')) return say('🔒 The suggestion box is not switched on yet.');
+    const res = await knowledgeRoute('/api/suggestions', 'POST', { title: opts.title, body: opts.body, anon: !!opts.anon }, me, env, log);
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return say(`⚠️ ${d.error ?? 'Could not add that.'}`);
+    return say(`💡 Added to the board: **${opts.title}** – vote it up in the Squad Hub: ${site}members.html#suggestions`);
+  }
+  if (name === 'announce') {
+    if (!can(who, 'notify.announce')) return say('🔒 Managers only.');
+    const res = await notifyRouteAll('/api/notify/announce', 'POST', { title: opts.title, body: opts.text, ack: !!opts.ack, audience: opts.audience ?? 'all' }, me, env, h.load, log);
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return say(`⚠️ ${d.error ?? 'Could not send that.'}`);
+    return say(`📣 Sent **${opts.title}** to ${d.sent} member${d.sent === 1 ? '' : 's'}.`);
+  }
+  if (name === 'trial') {
+    if (!can(who, 'trials.manage')) return say('🔒 Managers only.');
+    const { trials } = await trialsState(env, me);
+    const q = String(opts.gamertag ?? '').toLowerCase();
+    const rows = (q ? trials.filter((t) => t.ea.toLowerCase().includes(q)) : trials).slice(0, 15);
+    if (!rows.length) return say(q ? `🤷 No trial cards match "${opts.gamertag}".` : '📋 No open trial cards right now.');
+    const ICON = { recommended: '💡', applied: '📨', trialling: '⚽', signed: '✍️', released: '👋', declined: '❌' };
+    return { type: 4, data: { embeds: [{ title: '📋 Trial cards', url: `${site}members.html#trials`, color: RED,
+      description: rows.map((t) => `${ICON[t.status] ?? '•'} **${t.ea}** — ${t.status}${t.positions.length ? ` · ${t.positions.join('/')}` : ''}`).join('\n'),
+      footer: { text: 'NOREX UNITED · full detail + decisions in the Squad Hub' },
+    }], flags: 64 } };
+  }
+  if (name === 'motm') {
+    const club = await h.load('club');
+    const m = club.matches[0];
+    if (!m) return say('🤷 No matches yet.', { flags: 0 });
+    const [doc] = await votesByMatch(env, [m]);
+    const v = voteView(m, doc, me);
+    const ranked = Object.entries(v.tally).sort((a, b) => b[1] - a[1]);
+    const nameOf = (k) => v.players.find((p) => p.k === k)?.n ?? k;
+    const board = ranked.length ? ranked.map(([k, n], i) => `${['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`} **${nameOf(k)}** — ${n} vote${n === 1 ? '' : 's'}`).join('\n') : 'No votes yet.';
+    return { type: 4, data: { embeds: [{ title: `🌟 MOTM · vs ${m.opp}`, url: `${site}members.html#vote`, color: RED, description: board, footer: { text: 'NOREX UNITED · vote in the Squad Hub' } }], allowed_mentions: { parse: [] } } };
+  }
+  if (name === 'history') {
+    // Full League archive (not just the last 25 in api/club.json) – same numbers as the Stats Centre's own
+    // "Head to head" table (scripts/build.mjs), so /history and the site never disagree.
+    const q = String(opts.opponent ?? '').toLowerCase();
+    const e = (await h.load('h2h')).find((x) => x.n.toLowerCase().includes(q));
+    if (!e) return say(`🤷 No matches found against "${opts.opponent}".`, { flags: 0 });
+    const gd = e.gf - e.ga;
+    return say(`⚔️ Vs **${e.n}**: ${e.p} game${e.p === 1 ? '' : 's'} — **${e.w}W ${e.d}D ${e.l}L**, ${e.gf}–${e.ga} goals (${gd >= 0 ? '+' : ''}${gd}). Last: ${e.lastRes} ${e.lastScore}.`, { flags: 0 });
   }
   return say('Unknown command.');
 }

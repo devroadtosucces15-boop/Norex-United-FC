@@ -195,7 +195,7 @@ async function reportsQueue(env) {
   ].sort((a, b) => b.at - a.at);
 }
 
-async function log(env, me, type, detail) {
+export async function log(env, me, type, detail) {
   await env.DB.batch([
     env.DB.prepare('INSERT INTO activity (at, user_id, name, avatar, type, detail) VALUES (?, ?, ?, ?, ?, ?)').bind(Date.now(), me.u, me.n, me.a, type, detail),
     env.DB.prepare('DELETE FROM activity WHERE id <= (SELECT MAX(id) FROM activity) - 5000'),
@@ -479,7 +479,7 @@ async function callback(url, env) {
 }
 
 // Role from the session (Discord roles at login) + `claimed` if the member's claim is approved right now.
-async function currentRole(env, me) {
+export async function currentRole(env, me) {
   const role = sessionRole(env, me);
   if (role !== 'member') return role;
   return (await one(env, 'SELECT status FROM claims WHERE user_id = ?', me.u))?.status === 'approved' ? 'claimed' : role;
@@ -746,7 +746,7 @@ async function availByDate(env, dates) {
   return out;
 }
 // [ { uid: {p, n, a, at} } ] in the order of `matches`
-async function votesByMatch(env, matches) {
+export async function votesByMatch(env, matches) {
   if (!matches.length) return [];
   const ids = matches.map((m) => String(m.id));
   const rows = await all(env, `SELECT * FROM votes WHERE match_id IN (${marks(ids.length)}) ORDER BY at`, ...ids);
@@ -755,7 +755,7 @@ async function votesByMatch(env, matches) {
   return out;
 }
 
-function voteView(m, doc, me) {
+export function voteView(m, doc, me) {
   const tally = {};
   for (const v of Object.values(doc)) tally[v.p] = (tally[v.p] || 0) + 1;
   return { id: m.id, opp: m.opp, gf: m.gf, ga: m.ga, res: m.res, ts: m.ts, players: m.ps || [], tally, mine: doc[me.u]?.p ?? null, total: Object.keys(doc).length };
