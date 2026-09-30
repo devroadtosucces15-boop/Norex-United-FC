@@ -598,7 +598,7 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (rec) return rec;
   const hon = await honoursRoute(p, method, body, me, env, loadSite, log, url); // P4.5 squad boards · P4.6 hall of fame
   if (hon) return hon;
-  const bld = await buildsRoute(p, method, body, me, env, log, url); // PB.2 saved builds, fork
+  const bld = await buildsRoute(p, method, body, me, env, log, url, loadSite); // PB.2 saved builds, fork · BE12 impact
   if (bld) return bld;
   const ntf = await notifyRouteAll(p, method, body, me, env, loadSite, log); // P7.1 notifications · P5.6 requests
   if (ntf) return ntf;

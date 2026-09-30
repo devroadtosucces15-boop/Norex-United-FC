@@ -29,19 +29,20 @@ export async function latestGame(env, loadSite) {
 }
 
 // A stored version's dataset: D1 row, or the seed the site ships.
-async function versionData(env, loadSite, version) {
+export async function versionData(env, loadSite, version) {
   const r = env.DB && (await env.DB.prepare('SELECT * FROM game_versions WHERE version = ?').bind(version).first());
   if (r) return outRow(r);
   const seed = await loadSite('game');
   return seed.version === version ? seed : null;
 }
 
+const same = (x, y) => JSON.stringify(x ?? null) === JSON.stringify(y ?? null);
+const byId = (l) => new Map((l || []).map((x) => [x.id, x]));
+
 // "What changed" between two dataset versions → short plain-text lines (never EA's text, only our own fields).
 export function gameDiff(a, b) {
   const items = [];
   const add = (icon, text) => items.push({ icon, text });
-  const same = (x, y) => JSON.stringify(x ?? null) === JSON.stringify(y ?? null);
-  const byId = (l) => new Map((l || []).map((x) => [x.id, x]));
   const names = (l) => l.map((x) => x.name || x.id).join(', ');
   const ca = a.levelCap?.value, cb = b.levelCap?.value;
   if (ca !== cb) add(cb > ca ? '🔝' : '🔻', `Max level ${ca ?? '–'} → ${cb ?? '–'}`);
@@ -74,6 +75,45 @@ export async function gameChanges(env, loadSite, from) {
   const old = await versionData(env, loadSite, v);
   if (!old) return { from: v, to: now.version, cap: [null, now.levelCap?.value ?? null], items: [], unknown: true };
   return gameDiff(old, now);
+}
+
+// BE12: does one archetype's own definition still exist / still match, between two dataset versions?
+function archStatus(a, b, id) {
+  const before = byId(a.archetypes)?.get(id), after = byId(b.archetypes)?.get(id);
+  if (!after) return 'removed';
+  if (!before) return null; // predates archetypes being tracked – nothing to compare
+  return same({ ...before, source: 0 }, { ...after, source: 0 }) ? null : 'updated';
+}
+// Per-build impact of a dataset change (roadmap BE12): archetype-specific (removed/updated) plus the generic
+// changes that touch every build regardless of archetype (points per level, upgrade costs, attribute list, cap).
+function oneBuildImpact(r, old, now) {
+  const changes = [];
+  let breaking = false;
+  const add = (icon, text, isBreaking = false) => { changes.push({ icon, text }); if (isBreaking) breaking = true; };
+  const arch = archStatus(old, now, r.arch);
+  if (arch === 'removed') add('➖', 'Your archetype no longer exists – pick a new one', true);
+  else if (arch === 'updated') add('✏️', 'Your archetype’s values changed');
+  if (old.levelCap?.value !== now.levelCap?.value) add(now.levelCap.value > old.levelCap?.value ? '🔝' : '🔻', `Max level ${old.levelCap?.value ?? '–'} → ${now.levelCap.value}`, true);
+  if (!same(old.apPerLevel, now.apPerLevel)) add('🪙', 'Archetype points per level changed', true);
+  if (!same(old.apCosts, now.apCosts)) add('💸', 'Attribute upgrade costs changed', true);
+  const la = (old.attributeGroups || []).flatMap((x) => x.attributes), lb = (now.attributeGroups || []).flatMap((x) => x.attributes);
+  if (!same(la, lb)) add('🧩', 'Attribute list changed – check your points', true);
+  if (!same(old.body, now.body)) add('📏', 'Height / weight modifiers changed');
+  return { id: r.id, title: r.title, arch: r.arch, fromVersion: r.version, toVersion: now.version, breaking, changes };
+}
+// GET /api/builds/impact (members) – across all my saved builds, what a dataset bump actually changed for each one.
+export async function buildsImpact(env, loadSite, me) {
+  const now = await latestGame(env, loadSite);
+  const rows = (await env.DB.prepare('SELECT id, title, arch, version FROM builds WHERE user_id = ? AND removed_at IS NULL').bind(me.u).all()).results;
+  const cache = new Map();
+  const out = [];
+  for (const r of rows) {
+    if (!r.version || r.version === now.version) { out.push({ id: r.id, title: r.title, arch: r.arch, current: true, breaking: false, changes: [] }); continue; }
+    if (!cache.has(r.version)) cache.set(r.version, await versionData(env, loadSite, r.version));
+    const old = cache.get(r.version);
+    out.push(old ? { current: false, ...oneBuildImpact(r, old, now) } : { id: r.id, title: r.title, arch: r.arch, current: false, unknown: true, breaking: false, changes: [] });
+  }
+  return { current: now.version, builds: out, breaking: out.filter((b) => b.breaking).length, changed: out.filter((b) => b.changes?.length).length };
 }
 
 // After a publish: members with builds on older versions hear how many need a look; everyone else gets the headline.

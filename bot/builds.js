@@ -2,11 +2,13 @@
 // share-link string, so the site decodes it with the same maths as a shared URL (web/build-math.js).
 //   GET  /api/builds              members – my builds (newest first)
 //   GET  /api/builds/get?id=      one build: mine, or a posted one (PB.3) – for opening / comparing / forking
+//   GET  /api/builds/impact       members – across all my builds, what the latest dataset bump changed (BE12)
 //   POST /api/builds              save a new build, or update my own ({ id })
 //   POST /api/builds/delete       remove one of mine (also unposts it and clears it as my League/Rush build)
 //   POST /api/builds/fork         copy a build I can see into my builds (forked_from keeps the trail)
 // All behind the `builder` flag; saving needs the builds.save permission (member).
 import { can, flagOn } from './roles.js';
+import { buildsImpact } from './game.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -48,7 +50,7 @@ export function buildInput(body) {
   return { code, arch, level, version: VERSION_RE.test(version) ? version : null, title };
 }
 
-export async function buildsRoute(p, method, body, me, env, log, url) {
+export async function buildsRoute(p, method, body, me, env, log, url, loadSite) {
   if (p !== '/api/builds' && !p.startsWith('/api/builds/')) return null;
   if (!flagOn(env, me, 'builder')) return fail('Not available yet.', 404);
   if (!can(me, 'builds.save')) return fail('Members only.', 403);
@@ -58,6 +60,7 @@ export async function buildsRoute(p, method, body, me, env, log, url) {
     const r = await visible(env, me, url?.searchParams.get('id'));
     return r ? json({ build: out(r, me) }) : fail('Build not found.', 404);
   }
+  if (p === '/api/builds/impact' && method === 'GET') return json(await buildsImpact(env, loadSite, me));
   if (method !== 'POST') return fail('Not found', 404);
 
   if (p === '/api/builds') {

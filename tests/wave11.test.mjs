@@ -37,8 +37,16 @@ t('public changes since the seed: cap, AP, PlayStyles', c1.s === 200 && c1.d.fro
   && c1.d.items.some((x) => x.text === `Max level ${seed.levelCap.value} → ${cap}`) && c1.d.items.some((x) => x.text.startsWith('PlayStyles added')));
 t('unknown old version → unknown flag, no crash', (await changes('fc27-gone')).d.unknown === true);
 
+// ---------- BE12 builds impact ----------
+const imp1 = await call(builder, '/api/builds/impact');
+t('impact: outdated build flagged breaking (AP per level changed)', imp1.s === 200 && imp1.d.current === 'fc27-w11' && imp1.d.breaking === 1
+  && imp1.d.builds[0].id === s1.d.saved && imp1.d.builds[0].current === false && imp1.d.builds[0].breaking === true
+  && imp1.d.builds[0].changes.some((c) => c.text === 'Archetype points per level changed'));
+
 const up = await call(builder, '/api/builds', { id: s1.d.saved, title: 'Old poacher', code: `a=finisher&l=${cap}&p=3x4&v=fc27-w11` });
 t('upgrading a build = saving it on the live version at MAX', up.s === 200 && up.d.builds[0].version === 'fc27-w11' && up.d.builds[0].level === cap);
+const imp2 = await call(builder, '/api/builds/impact');
+t('impact: after upgrading, build reads current with nothing to fix', imp2.d.builds[0].current === true && imp2.d.builds[0].breaking === false && imp2.d.breaking === 0);
 const quiet = await call(owner, '/api/game/publish', { version: 'fc27-w11b', levelCap: cap, notify: false });
 t('publish with "tell members" off → nobody told', quiet.s === 200 && quiet.d.told === 0);
 const c2 = await changes('fc27-w11');
@@ -48,6 +56,15 @@ const A = { version: 'a', levelCap: { value: 40 }, archetypes: [{ id: 'x', name:
 const B = { version: 'b', levelCap: { value: 40, verified: true }, archetypes: [{ id: 'x', name: 'X', base: { Pace: 60 } }, { id: 'z', name: 'Z' }], attributeGroups: [{ attributes: ['Pace', 'Agility'] }] };
 const d = gameDiff(A, B).items.map((x) => x.text);
 t('diff: cap confirmed, archetype added/removed/updated, attribute list', d.includes('Max level 40 confirmed by EA') && d.includes('Archetypes added: Z') && d.includes('Archetypes removed: Y') && d.includes('Archetypes updated: X') && d.some((x) => x.startsWith('Attribute list changed')));
+
+// ---------- BE12: a build's own archetype dropped from the dataset ----------
+const builder2 = await login('703', [], 'Builder Zo');
+const s2 = await call(builder2, '/api/builds', { title: 'GK build', code: `a=shot-stopper&l=${cap}&p=1&v=fc27-w11` });
+t('second build saved on fc27-w11', s2.s === 200);
+await call(owner, '/api/game/publish', { version: 'fc27-w11c', levelCap: cap, changes: { archetypes: seed.archetypes.filter((a) => a.id !== 'shot-stopper') }, notify: false });
+const imp3 = await call(builder2, '/api/builds/impact');
+t('impact: archetype dropped from the dataset → breaking, own line', imp3.s === 200 && imp3.d.breaking === 1
+  && imp3.d.builds[0].breaking === true && imp3.d.builds[0].changes.some((c) => c.icon === '➖' && /no longer exists/.test(c.text)));
 
 // ---------- PB.5 (b): visuals + build check ----------
 const S = globalThis.NXScout;
