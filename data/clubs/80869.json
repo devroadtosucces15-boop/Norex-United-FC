@@ -1,7 +1,7 @@
 {
  "id": "80869",
  "tier": "home",
- "fetchedAt": "2026-10-01T03:45:16.772Z",
+ "fetchedAt": "2026-10-01T03:50:52.619Z",
  "info": {
   "name": "NOREX UNITED FC",
   "clubId": 80869,
@@ -330,6 +330,42 @@
    "prevGoals8": "0",
    "prevGoals9": "1",
    "prevGoals10": "2",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "Alysalsa_",
+   "gamesPlayed": "15",
+   "winRate": "86",
+   "goals": "10",
+   "assists": "17",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "47",
+   "passesMade": "199",
+   "passSuccessRate": "76",
+   "ratingAve": "8.3",
+   "tacklesMade": "31",
+   "tackleSuccessRate": "31",
+   "proName": "Aly",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "168",
+   "proNationality": "83",
+   "proOverall": "78",
+   "proOverallStr": "78",
+   "manOfTheMatch": "4",
+   "redCards": "1",
+   "prevGoals": "1",
+   "prevGoals1": "1",
+   "prevGoals2": "0",
+   "prevGoals3": "1",
+   "prevGoals4": "2",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
    "favoritePosition": "forward"
   },
   {
@@ -1200,7 +1236,7 @@
  "positionCount": {
   "midfielder": 4,
   "goalkeeper": 0,
-  "forward": 3,
+  "forward": 4,
   "defender": 3
  },
  "career": [
@@ -1262,7 +1298,7 @@
   {
    "name": "KyleMeansBiznes",
    "proPos": "14",
-   "gamesPlayed": "51",
+   "gamesPlayed": "52",
    "goals": "10",
    "assists": "22",
    "manOfTheMatch": "4",
@@ -1338,14 +1374,14 @@
   },
   {
    "name": "miranda2omeezy",
-   "proPos": "14",
-   "gamesPlayed": "56",
+   "proPos": "25",
+   "gamesPlayed": "57",
    "goals": "15",
-   "assists": "14",
-   "manOfTheMatch": "7",
+   "assists": "16",
+   "manOfTheMatch": "8",
    "ratingAve": "7.6",
    "prevGoals": "0",
-   "favoritePosition": "midfielder"
+   "favoritePosition": "forward"
   },
   {
    "name": "IM_Trash_Broski",
@@ -1438,9 +1474,9 @@
   {
    "name": "Billy_McBurney30",
    "proPos": "25",
-   "gamesPlayed": "66",
-   "goals": "51",
-   "assists": "33",
+   "gamesPlayed": "67",
+   "goals": "52",
+   "assists": "34",
    "manOfTheMatch": "13",
    "ratingAve": "7.8",
    "prevGoals": "1",
@@ -1456,6 +1492,17 @@
    "ratingAve": "7.5",
    "prevGoals": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "Alysalsa_",
+   "proPos": "5",
+   "gamesPlayed": "96",
+   "goals": "85",
+   "assists": "73",
+   "manOfTheMatch": "27",
+   "ratingAve": "8.1",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "NUTT1E18",
