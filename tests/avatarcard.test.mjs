@@ -4,6 +4,7 @@ import { call, env, login } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
 import { makeAvatarCard, myAvatarCard } from '../bot/avatarcard.js';
 import { serveMedia } from '../bot/media.js';
+import worker from '../bot/worker.js';
 
 const UID = '901000000000000001';
 const wrapped = globalThis.fetch;
@@ -55,6 +56,23 @@ t('owner with a card gets its photo/bg keys', r.s === 200 && r.d.card.photoKey &
 
 setFlags({ avatarCard: 'members' });
 t('members see their own card once the flag opens up', (await call(member, '/api/avatarcard')).s === 200);
+
+// ---------- /avatarcard Discord command respects the flag too (not just the web route) ----------
+const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+env.DISCORD_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', kp.publicKey)).toString('hex');
+env.DISCORD_BOT_TOKEN = 'bot';
+async function send(payload) {
+  const body = JSON.stringify(payload), ts = String(Date.now());
+  const sig = Buffer.from(await crypto.subtle.sign('Ed25519', kp.privateKey, new TextEncoder().encode(ts + body))).toString('hex');
+  const res = await worker.fetch(new Request('https://bot/', { method: 'POST', body, headers: { 'X-Signature-Ed25519': sig, 'X-Signature-Timestamp': ts } }), env, { waitUntil() {} });
+  return { s: res.status, d: await res.json().catch(() => null) };
+}
+const slash = (id) => ({ type: 2, token: 'tok', member: { user: { id }, roles: [] }, data: { name: 'avatarcard', options: [] } });
+
+setFlags({ avatarCard: 'owner' });
+t('/avatarcard locked for a member while the flag is owner-only', /Not switched on/.test((await send(slash('500'))).d.data.content));
+setFlags({ avatarCard: 'members' });
+t('/avatarcard reachable for a member once the flag opens up (missing attachment → prompts for one, not locked)', /Attach an image/.test((await send(slash('500'))).d.data.content));
 
 globalThis.fetch = wrapped;
 done();

@@ -85,17 +85,17 @@
     "predictions": "members",
     "recommendations": "members",
     "scoutReport": "public",
-    "ask": "owner",
-    "aiInsights": "owner",
-    "lineupRec": "owner",
+    "ask": "members",
+    "aiInsights": "members",
+    "lineupRec": "managers",
     "insights": "owner",
     "feed": "owner",
     "hotw": "owner",
     "presence": "owner",
     "mentions": "owner",
     "messages": "owner",
-    "points": "owner",
-    "avatarCard": "owner",
+    "points": "members",
+    "avatarCard": "members",
     "locker": "owner"
   }
 }

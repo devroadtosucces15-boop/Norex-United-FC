@@ -230,6 +230,7 @@ function profanitySetupCommand(i, env, ctx, who) {
 
 // ---------- /avatarcard (members): P11.5 upload an avatar → AI background + stored photo, both served via /media ----------
 function avatarCardCommand(i, env, ctx, who, origin) {
+  if (!flagOn(env, who, 'avatarCard')) return json({ type: 4, data: { content: '🔒 Not switched on yet.', flags: 64 } });
   const optId = flatOptions(i.data.options).find((o) => o.name === 'image')?.value;
   const attachment = i.data.resolved?.attachments?.[optId];
   if (!attachment) return json({ type: 4, data: { content: '⚠️ Attach an image.', flags: 64 } });
