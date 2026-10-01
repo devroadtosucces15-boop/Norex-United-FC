@@ -38,7 +38,7 @@ const guild = {
   members: [
     { user: { id: '111' }, roles: ['mgr'], joined_at: joined(200) },
     { user: { id: 'u1' }, roles: ['mgr'], joined_at: joined(90) },
-    { user: { id: 'u2' }, roles: [], joined_at: joined(3) },
+    { user: { id: 'u2' }, roles: [], joined_at: joined(0) }, // 0 days ago, not 3 – guarantees the "current month" history bucket near a month boundary
     { user: { id: 'u3' }, roles: [], joined_at: joined(40) },
     { user: { id: 'u4' }, roles: [], joined_at: joined(20) },
     { user: { id: 'u5' }, roles: [], joined_at: joined(100) },
