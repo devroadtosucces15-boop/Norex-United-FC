@@ -216,6 +216,7 @@ export async function serveMedia(request, env, key) {
   h.set('X-Content-Type-Options', 'nosniff');
   h.set('Content-Security-Policy', "default-src 'none'; sandbox");
   h.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  h.set('Access-Control-Allow-Origin', '*'); // keys are random + content is public anyway – lets canvas compositing (P11.5) read it cross-origin
   h.set('Cache-Control', 'public, max-age=31536000, immutable');
   if (!('body' in obj) || !obj.body) return new Response(null, { status: 304, headers: h });
   if (ranged && obj.range) {

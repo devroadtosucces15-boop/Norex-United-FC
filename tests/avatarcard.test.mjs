@@ -1,6 +1,6 @@
 // Avatar card backend (P11.5, Discord side only – the web card page is a follow-up, see the roadmap):
 // upload validation, AI background generation, R2 storage under the feed's key scheme, and re-upload (upsert).
-import { env } from './mock.mjs';
+import { call, env, login } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
 import { makeAvatarCard, myAvatarCard } from '../bot/avatarcard.js';
 import { serveMedia } from '../bot/media.js';
@@ -38,6 +38,23 @@ await tt('uploading again replaces the row rather than adding a second one', asy
   const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM avatar_cards WHERE user_id = ?').bind(UID).first('n');
   return count === 1 && second.photo_key !== first.photo_key;
 });
+
+// ---------- web half: GET /api/avatarcard (P11.5) ----------
+const owner = await login('111', [], 'Founder 👑');
+const member = await login('500', [], 'Winger');
+const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
+
+setFlags({ avatarCard: 'owner' });
+t('hidden from members while the flag is owner-only', (await call(member, '/api/avatarcard')).s === 404);
+let r = await call(owner, '/api/avatarcard');
+t('owner with no card yet gets card: null', r.s === 200 && r.d.card === null);
+
+await makeAvatarCard(env, '111', attach());
+r = await call(owner, '/api/avatarcard');
+t('owner with a card gets its photo/bg keys', r.s === 200 && r.d.card.photoKey && r.d.card.bgKey);
+
+setFlags({ avatarCard: 'members' });
+t('members see their own card once the flag opens up', (await call(member, '/api/avatarcard')).s === 200);
 
 globalThis.fetch = wrapped;
 done();
