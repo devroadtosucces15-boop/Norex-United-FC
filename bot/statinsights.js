@@ -1,0 +1,256 @@
+// BE9 Insights engine (board 12, flag `statInsights`) – a registry of per-stat fact packs (club form,
+// the latest match, every home-squad player's season) → an LLM writer → a number checker that rejects
+// any figure the model writes that isn't actually in the fact pack. Persisted in D1 (`stat_insights`),
+// keyed by a fingerprint of the facts, so an unchanged stat never triggers a re-write.
+//
+// Do not confuse this with `bot/insights.js` (Club Intelligence, board 13, flag `insights` – server/
+// site health scores for managers) or `bot/aiinsights.js` (P11.14, flag `aiInsights` – a single
+// Workers-AI narrative per player card, cached in KV, no persistence/number-checker/follow-up).
+//
+//   GET  /api/insights?keys=club,match.latest,player.<k>   tier-gated per row (public/member/private)
+//   POST /api/insights/ask      { key, question }          member+, 10/day, answered only from the
+//                                 same fact pack the stored insight was written from
+//   POST /api/insights/feedback { key, vote: 1|-1 }        member+
+//
+// refreshStatInsights(env, loadSite) (cron, see worker.js) walks the registry every run; a changed
+// fingerprint goes to the JOBS queue (BE0) when it's bound, else writes inline – same graceful
+// degrade as the rest of BE0's platform pieces. Needs the Worker secret ANTHROPIC_API_KEY; without it
+// the writer just logs and skips, so the feature never fails the cron or a request.
+import { atLeast } from './roles.js';
+
+const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
+const WRITER_MODEL = (env) => env.STAT_INSIGHTS_MODEL || 'claude-sonnet-5'; // templated, fact-bounded copy – Sonnet 5 holds quality here for a fraction of Opus's cost on a job that runs per changed stat
+
+const WRITER_SYSTEM = 'You write short, upbeat analyst copy for NOREX UNITED FC, an amateur EA FC Pro Clubs team. '
+  + 'Club voice: confident, plain-English, a little cheeky, never corporate. No hashtags, no emoji, no markdown. '
+  + "Never invent a number, name or event that is not in the facts you're given – if you're unsure, say something "
+  + 'qualitative instead of guessing a figure. Reply with ONLY a JSON object, nothing else.';
+const ASK_SYSTEM = 'You answer a club member\'s follow-up question about NOREX UNITED FC using ONLY the facts given. '
+  + "If the facts don't cover the question, say so plainly instead of guessing. Plain-English, no markdown. "
+  + 'Reply with ONLY a JSON object, nothing else.';
+
+// ---------- fact packs ----------
+async function clubFacts(loadSite) {
+  const c = await loadSite('club');
+  const games = c.gp ?? (c.w ?? 0) + (c.d ?? 0) + (c.l ?? 0);
+  const winRatePct = games ? Math.round(((c.w ?? 0) / games) * 1000) / 10 : 0;
+  return {
+    title: 'NOREX UNITED – club form',
+    facts: {
+      gamesPlayed: games, wins: c.w ?? 0, draws: c.d ?? 0, losses: c.l ?? 0, winRatePct,
+      goalsFor: c.gf ?? 0, goalsAgainst: c.ga ?? 0, goalDiff: (c.gf ?? 0) - (c.ga ?? 0),
+      streak: c.streak ?? null, last5Results: (c.matches ?? []).slice(0, 5).map((m) => m.res).join(''),
+    },
+  };
+}
+async function matchFacts(loadSite) {
+  const c = await loadSite('club');
+  const m = c.matches?.[0];
+  if (!m) return null;
+  const top = [...(m.ps ?? [])].sort((a, b) => (b.r ?? 0) - (a.r ?? 0))[0];
+  return {
+    title: `Match vs ${m.opp}`,
+    facts: {
+      opponent: m.opp, result: m.res, goalsFor: m.gf, goalsAgainst: m.ga,
+      scorers: (m.scorers ?? []).map((s) => `${s.n} (${s.g})`), motm: m.motm ?? null,
+      topRated: top ? `${top.n} (${top.r})` : null,
+    },
+  };
+}
+async function playerFacts(loadSite, k) {
+  const p = (await loadSite('players')).find((x) => x.k === k && x.home);
+  if (!p) return null;
+  const s = p.s ?? {};
+  return {
+    title: `${p.n} – season`,
+    facts: {
+      position: p.pos, games: s.gp ?? 0, goals: s.g ?? 0, assists: s.a ?? 0, avgRating: s.r ?? null,
+      motmCount: s.m ?? 0, passAccuracyPct: s.p ?? null, tacklesPerGame: s.t ?? null, winRatePct: s.w ?? null,
+    },
+  };
+}
+// Every key the registry currently covers. Board 12 wants every tile/column/chart/profile stat –
+// this first slice covers club form, the latest match, and every home-squad player's season; more
+// fact-pack builders (compare, leaders boards, …) register here the same way when they're scoped.
+export async function registryKeys(loadSite) {
+  const players = await loadSite('players');
+  return ['club', 'match.latest', ...players.filter((p) => p.home).map((p) => `player.${p.k}`)];
+}
+export async function factPackFor(key, loadSite) {
+  if (key === 'club') return { tier: 'public', ...(await clubFacts(loadSite)) };
+  if (key === 'match.latest') { const f = await matchFacts(loadSite); return f && { tier: 'public', ...f }; }
+  const pm = /^player\.(.+)$/.exec(key);
+  if (pm) { const f = await playerFacts(loadSite, pm[1]); return f && { tier: 'member', ...f }; }
+  return null;
+}
+
+// ---------- fingerprint + number checker ----------
+async function fingerprint(facts) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(facts)));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+export function extractNumbers(text) {
+  return [...String(text ?? '').matchAll(/\d+(?:\.\d+)?/g)].map(Number);
+}
+function allowedNumbers(facts) {
+  const out = new Set();
+  const walk = (v) => {
+    if (typeof v === 'number' && Number.isFinite(v)) { out.add(v); out.add(Math.round(v)); out.add(Math.round(v * 10) / 10); }
+    else if (typeof v === 'string') extractNumbers(v).forEach((n) => out.add(n));
+    else if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === 'object') Object.values(v).forEach(walk);
+  };
+  walk(facts);
+  return out;
+}
+// Exported for tests: true only if every number in `text` is within 0.1 of some fact pack value.
+export function numbersOk(text, allowed) {
+  return extractNumbers(text).every((n) => [...allowed].some((a) => Math.abs(a - n) < 0.1));
+}
+
+// ---------- the writer (Anthropic Messages API – zero npm deps, raw fetch) ----------
+async function callModel(env, { system, prompt, facts, parse, label }) {
+  if (!env.ANTHROPIC_API_KEY) { console.log(`statInsights: ANTHROPIC_API_KEY not set – skipping ${label}`); return null; }
+  const allowed = allowedNumbers(facts);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let res;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: WRITER_MODEL(env), max_tokens: 500,
+          system: attempt ? `${system} Your last reply used a number that was not in the given facts – this time use ONLY the exact figures given, or none at all.` : system,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) { console.log(`statInsights: ${label} call failed`, e.message); return null; }
+    if (!res.ok) { console.log(`statInsights: ${label} HTTP`, res.status, await res.text().catch(() => '')); return null; }
+    const data = await res.json().catch(() => null);
+    const text = data?.content?.find((b) => b.type === 'text')?.text;
+    const parsed = parse(text);
+    if (parsed && Object.values(parsed).every((v) => numbersOk(v, allowed))) return parsed;
+    console.log(`statInsights: ${label} rejected${parsed ? ' an invented number' : ' an unparsable reply'}, retrying`);
+  }
+  return null;
+}
+function parseWriter(text) {
+  try {
+    const j = JSON.parse(String(text ?? '').match(/\{[\s\S]*\}/)?.[0] ?? text);
+    if (!j || typeof j.headline !== 'string' || typeof j.body !== 'string') return null;
+    return { headline: j.headline.slice(0, 100), body: j.body.slice(0, 500), watch: typeof j.watch === 'string' ? j.watch.slice(0, 200) : '' };
+  } catch { return null; }
+}
+function parseAsk(text) {
+  try {
+    const j = JSON.parse(String(text ?? '').match(/\{[\s\S]*\}/)?.[0] ?? text);
+    return typeof j?.answer === 'string' ? { answer: j.answer.slice(0, 500) } : null;
+  } catch { return null; }
+}
+function writerPrompt(pack) {
+  return `${pack.title}\nFacts (JSON – the ONLY numbers you may use): ${JSON.stringify(pack.facts)}\n`
+    + 'Reply with exactly: {"headline": "<=70 chars, punchy", "body": "2-3 sentences expanding on the headline using only the facts above", '
+    + '"watch": "<=140 chars, one thing to watch for next time, grounded in the facts or a qualitative read – no new numbers"}';
+}
+function askPrompt(facts, question) {
+  return `Facts (JSON – the ONLY numbers you may use): ${JSON.stringify(facts)}\nQuestion: ${question}\n`
+    + 'Reply with exactly: {"answer": "1-3 sentences, plain-English"}';
+}
+
+// Writes (or overwrites) the stored insight for `key` from a freshly-built fact pack. Returns true on success.
+export async function writeInsight(env, key, pack) {
+  const out = await callModel(env, { system: WRITER_SYSTEM, prompt: writerPrompt(pack), facts: pack.facts, parse: parseWriter, label: `writer:${key}` });
+  if (!out) return false;
+  const hash = await fingerprint(pack.facts);
+  await env.DB.prepare(`INSERT INTO stat_insights (key, hash, headline, body, watch, sources, tier, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (key) DO UPDATE SET hash = excluded.hash, headline = excluded.headline, body = excluded.body,
+      watch = excluded.watch, sources = excluded.sources, tier = excluded.tier, at = excluded.at`)
+    .bind(key, hash, out.headline, out.body, out.watch, JSON.stringify(pack.facts), pack.tier, Date.now()).run();
+  return true;
+}
+
+// Walks the registry; a key whose fact pack changed since the stored hash goes to the Queue (or runs
+// inline if JOBS isn't bound – mock server / a token without Queues access). Cheap: no fact pack is
+// built twice, and an unchanged stat never calls the writer.
+export async function refreshStatInsights(env, loadSite) {
+  if (!env.DB) return;
+  for (const key of await registryKeys(loadSite)) {
+    const pack = await factPackFor(key, loadSite);
+    if (!pack) continue;
+    const hash = await fingerprint(pack.facts);
+    if ((await one(env, 'SELECT hash FROM stat_insights WHERE key = ?', key))?.hash === hash) continue;
+    if (env.JOBS) {
+      try { await env.JOBS.send({ type: 'statInsight', key }); continue; } catch (e) { console.log('statInsights: queue send failed, writing inline', e.message); }
+    }
+    await writeInsight(env, key, pack).catch((e) => console.log('statInsights: write failed', key, e.message));
+  }
+}
+// Called from worker.js's queue() consumer – rebuilds the fact pack (the message only carries the key).
+export async function handleStatInsightJob(env, loadSite, key) {
+  const pack = await factPackFor(key, loadSite);
+  if (pack) await writeInsight(env, key, pack);
+}
+
+// ---------- routes (wired in members.js) ----------
+async function claimedPlayerOf(env, uid) {
+  return uid ? (await one(env, "SELECT player FROM claims WHERE user_id = ? AND status = 'approved'", uid))?.player ?? null : null;
+}
+function visibleRow(row, role, claimedPlayer) {
+  if (row.tier === 'public') return true;
+  if (row.tier === 'member') return atLeast(role, 'member');
+  if (atLeast(role, 'manager')) return true; // private tier – coach's note: only that player + managers
+  const pm = /^player\.(.+)$/.exec(row.key);
+  return !!pm && claimedPlayer === pm[1];
+}
+export async function statInsightsRoute(env, keys, me) {
+  if (!keys.length) return { insights: [] };
+  const placeholders = keys.map(() => '?').join(',');
+  const rows = (await env.DB.prepare(`SELECT key, headline, body, watch, tier, at FROM stat_insights WHERE key IN (${placeholders})`).bind(...keys).all()).results ?? [];
+  const claimedPlayer = rows.some((r) => r.tier === 'private') ? await claimedPlayerOf(env, me?.u) : null;
+  const role = me?.role ?? 'guest';
+  return { insights: rows.filter((r) => visibleRow(r, role, claimedPlayer)).map(({ key, headline, body, watch, at }) => ({ key, headline, body, watch, at })) };
+}
+export async function statAskRoute(env, me, body) {
+  const key = String(body?.key ?? ''), question = String(body?.question ?? '').trim().slice(0, 300);
+  if (!key || !question) return { error: 'Missing key or question.' };
+  const row = await one(env, 'SELECT * FROM stat_insights WHERE key = ?', key);
+  if (!row) return { error: 'No insight for that yet.' };
+  const role = me.role ?? 'guest';
+  const claimedPlayer = row.tier === 'private' ? await claimedPlayerOf(env, me.u) : null;
+  if (!visibleRow(row, role, claimedPlayer)) return { error: 'Not available yet.' };
+  const since = Date.now() - 24 * 60 * 60 * 1000;
+  const asked = (await one(env, 'SELECT COUNT(*) AS n FROM stat_insight_asks WHERE user_id = ? AND at > ?', me.u, since))?.n ?? 0;
+  if (asked >= 10) return { error: 'Too many questions today – try again tomorrow.' };
+  let facts = {};
+  try { facts = JSON.parse(row.sources); } catch { /* unreachable: written by writeInsight itself */ }
+  const out = await callModel(env, { system: ASK_SYSTEM, prompt: askPrompt(facts, question), facts, parse: parseAsk, label: `ask:${key}` });
+  await env.DB.prepare('INSERT INTO stat_insight_asks (user_id, key, question, at) VALUES (?, ?, ?, ?)').bind(me.u, key, question, Date.now()).run();
+  return out ? { answer: out.answer } : { error: "Couldn't answer that from what's known right now." };
+}
+export async function statFeedbackRoute(env, me, body) {
+  const key = String(body?.key ?? '');
+  const vote = body?.vote === 1 || body?.vote === -1 ? body.vote : null;
+  if (!key || vote === null) return { error: 'Missing key or vote (1 or -1).' };
+  await env.DB.prepare(`INSERT INTO stat_insight_feedback (key, user_id, vote, at) VALUES (?, ?, ?, ?)
+    ON CONFLICT (key, user_id) DO UPDATE SET vote = excluded.vote, at = excluded.at`).bind(key, me.u, vote, Date.now()).run();
+  return { ok: true };
+}
+
+// ---------- weekly "Insight of the week" (Discord, reuses docs.js's postEmbed + announce_channel) ----------
+const weekKey = (now) => { const d = new Date(now); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString().slice(0, 10); };
+export async function statInsightWeekly(env, postEmbed, now = Date.now()) {
+  if (!env.DB) return;
+  const d = new Date(now);
+  if (d.getUTCDay() !== 1 || d.getUTCHours() < 10) return; // after BE10's 09:00 UTC Club Intelligence DM
+  const wk = weekKey(now);
+  if ((await one(env, "SELECT value FROM meta WHERE key = 'stat_insight_week'"))?.value === wk) return;
+  const row = await one(env, "SELECT * FROM stat_insights WHERE key = 'club'");
+  const channel = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
+  if (row && channel) {
+    await postEmbed(env, channel, '', { embeds: [{
+      title: `✨ Insight of the week – ${row.headline}`, description: `${row.body}\n\n👀 ${row.watch}`.slice(0, 3900),
+      color: 0xc8352c, footer: { text: 'NOREX UNITED · weekly insight' },
+    }] });
+  }
+  await env.DB.prepare("INSERT INTO meta (key, value) VALUES ('stat_insight_week', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(wk).run();
+}

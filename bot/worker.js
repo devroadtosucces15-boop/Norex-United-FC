@@ -30,6 +30,8 @@ import { checkHype } from './hype.js';
 import { checkVoiceRecap } from './voicerecap.js';
 import { askAnswer, buildAskContext } from './ask.js';
 import { makeAvatarCard } from './avatarcard.js';
+import { postEmbed } from './docs.js';
+import { refreshStatInsights, handleStatInsightJob, statInsightWeekly } from './statinsights.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
@@ -45,6 +47,10 @@ export default {
     ctx.waitUntil(checkHype(env, (file) => load(site, file, ctx)).catch((e) => console.log('hype poster failed', e.message))); // P11.6/P11.7 auto hype poster
     ctx.waitUntil(checkVoiceRecap(env, (file) => load(site, file, ctx)).catch((e) => console.log('voice recap failed', e.message))); // P11.13 voice clip → quote card
     if (flagOn(env, { role: 'owner' }, 'insights')) ctx.waitUntil(insightsCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('insights cron failed', e.message))); // weekly Club Intelligence DM
+    if (flagOn(env, { role: 'owner' }, 'statInsights')) {
+      const loadSite = (file) => load(site, file, ctx);
+      ctx.waitUntil(refreshStatInsights(env, loadSite).then(() => statInsightWeekly(env, postEmbed)).catch((e) => console.log('stat insights cron failed', e.message))); // BE9
+    }
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
       method: 'POST',
@@ -125,6 +131,19 @@ export default {
       }
     }
     return new Response('Unhandled', { status: 400 });
+  },
+
+  // BE9's background jobs (JOBS queue, BE0) – currently just the insight writer; refreshStatInsights()
+  // only enqueues a key whose fact pack actually changed, so this rebuilds the pack and writes it.
+  async queue(batch, env, ctx) {
+    const site = (env.SITE_URL || '').replace(/\/?$/, '/');
+    const loadSite = (file) => load(site, file, ctx);
+    for (const msg of batch.messages) {
+      try {
+        if (msg.body?.type === 'statInsight') await handleStatInsightJob(env, loadSite, msg.body.key);
+        msg.ack();
+      } catch (e) { console.log('queue job failed', msg.body?.type, e.message); msg.retry(); }
+    }
   },
 };
 

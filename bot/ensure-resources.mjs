@@ -70,10 +70,10 @@ if (!r2.success) {
   }
 }
 
-// Queue for background jobs (BE0 – platform for BE9's insight writer, BE8's presence "wave" ping). Producer
-// binding only for now: nothing consumes it yet, so no [[queues.consumers]]/queue() handler until whichever
-// of BE8/BE9 ships first adds one. Never fails the deploy – without the binding, code that would enqueue a
-// job just has to run inline instead (same fallback shape as MEDIA above).
+// Queue for background jobs (BE0 – platform for BE9's insight writer, BE8's presence "wave" ping). BE9
+// ships the first consumer (worker.js's queue() handler), so both producer and consumer bindings are
+// wired here. Never fails the deploy – without the binding, code that would enqueue a job just runs
+// inline instead (same fallback shape as MEDIA above).
 const QUEUE = 'norex-jobs';
 const queues = await cf('/queues?per_page=100');
 if (!queues.success) {
@@ -87,6 +87,7 @@ if (!queues.success) {
   }
   if (q) {
     if (!fs.readFileSync(file, 'utf8').includes('binding = "JOBS"')) fs.appendFileSync(file, `\n[[queues.producers]]\nbinding = "JOBS"\nqueue = "${QUEUE}"\n`);
-    console.log('::notice title=Queue ready::✅', QUEUE, 'bound as JOBS (producer only)');
+    if (!fs.readFileSync(file, 'utf8').includes('[[queues.consumers]]')) fs.appendFileSync(file, `\n[[queues.consumers]]\nqueue = "${QUEUE}"\n`);
+    console.log('::notice title=Queue ready::✅', QUEUE, 'bound as JOBS (producer + consumer)');
   }
 }

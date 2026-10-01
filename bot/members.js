@@ -24,6 +24,7 @@ import { lockerRoute } from './locker.js';
 import { intelRoute } from './insights.js';
 import { awardsRoute, trophies } from './awards.js';
 import { playerInsights } from './aiinsights.js';
+import { statInsightsRoute, statAskRoute, statFeedbackRoute } from './statinsights.js';
 import { squadsRoute } from './squads.js';
 import { ratingsRoute } from './ratings.js';
 import { feedbackRoute } from './feedback.js';
@@ -358,6 +359,14 @@ export async function handleMembers(request, env, ctx, loadSite) {
       const [squad, players] = await Promise.all([loadSite('squad'), loadSite('players')]);
       return cors(env, json(await playerInsights(env, k, { squad, players })));
     }
+    if (url.pathname === '/api/insights' && request.method === 'GET') { // BE9 – per-stat fact-pack insights, tier-filtered (public/member/private)
+      if (me) me.role = await currentRole(env, me, request);
+      if (!flagOn(env, me, 'statInsights')) return cors(env, fail('Not available yet.', 404));
+      const keys = (url.searchParams.get('keys') || '').split(',').map((k) => k.trim()).filter(Boolean).slice(0, 20);
+      const res = cors(env, json(await statInsightsRoute(env, keys, me)));
+      res.headers.set('Cache-Control', 'public, max-age=120');
+      return res;
+    }
     if (url.pathname === '/api/feed/public' && request.method === 'GET') { // P6.1c – posts a member marked public, on the home page
       if (me) me.role = await currentRole(env, me, request);
       if (!flagOn(env, me, 'feed')) return cors(env, fail('Not available yet.', 404));
@@ -510,6 +519,15 @@ async function route(p, method, body, me, env, loadSite, url) {
       ...(me.realRole ? { realRole: me.realRole, realRoleLabel: ROLE_LABEL[me.realRole], viewAsOptions: ROLES.filter((r) => atLeast(me.realRole, r)) } : can(me, 'preview.viewAs') ? { viewAsOptions: ROLES.filter((r) => atLeast(me.role, r)) } : {}),
     };
     return json({ user, claim, profile: profileOut(profile) ?? null });
+  }
+
+  if (p === '/api/insights/ask' && method === 'POST') { // BE9 – follow-up question, answered only from the stored fact pack
+    if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
+    return json(await statAskRoute(env, me, body));
+  }
+  if (p === '/api/insights/feedback' && method === 'POST') { // BE9 – 👍/👎 on a stat insight
+    if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
+    return json(await statFeedbackRoute(env, me, body));
   }
 
   if (p === '/api/claim' && method === 'POST') {
