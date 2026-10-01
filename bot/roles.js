@@ -88,6 +88,8 @@ export const PERMS = {
   'flags.manage': 'owner', // BE5 – Boardroom: live-edit feature flag levels (flag_overrides table)
   'preview.viewAs': 'manager', // BE5 – Boardroom: preview the site/API as a lower role
   'health.view': 'owner', // BE6 – Boardroom: Cloudflare Analytics + GitHub Actions health/usage dashboard
+  'plays.view': 'member', // BE1 – Tactics Studio: view published plays, mark learned, take the quiz
+  'plays.manage': 'manager', // BE1 – create/edit/publish/assign/archive plays, restore old versions
 };
 
 export function can(user, action) {
