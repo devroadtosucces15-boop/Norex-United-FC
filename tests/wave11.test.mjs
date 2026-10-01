@@ -25,7 +25,7 @@ t('publish tells members (count returned)', pub.s === 200 && pub.d.told >= 2);
 const nb = (await call(builder, '/api/notify')).d;
 const gb = (nb.items ?? nb.list ?? nb.notifications ?? []).find((n) => n.type === 'game');
 t('builder gets a game notification with the cap change', gb && gb.title.includes(`${seed.levelCap.value} → ${cap}`) && gb.title.includes('fc27-w11'));
-t('…with how many builds need upgrading + upgrade link', gb && /1 of your builds is on an older version/.test(gb.body) && gb.link === 'builder.html?upgrade=1');
+t('…with how many builds need upgrading + upgrade link', gb && /1 of your builds needs attention \(archetype or points changed\)/.test(gb.body) && gb.link === 'builder.html?upgrade=1');
 t('…and the what-changed lines', gb && gb.body.includes('PlayStyles added: Finesse Shot') && gb.body.includes('Archetype points per level'));
 const nf = (await call(fan, '/api/notify')).d;
 const gf = (nf.items ?? nf.list ?? nf.notifications ?? []).find((n) => n.type === 'game');
@@ -51,6 +51,13 @@ const quiet = await call(owner, '/api/game/publish', { version: 'fc27-w11b', lev
 t('publish with "tell members" off → nobody told', quiet.s === 200 && quiet.d.told === 0);
 const c2 = await changes('fc27-w11');
 t('same cap, no data change → empty diff', c2.s === 200 && c2.d.items.length === 0);
+
+// ---------- BE12: a non-breaking bump (cosmetic only) keeps the plain "older version" phrasing ----------
+await call(owner, '/api/game/publish', { version: 'fc27-w11b2', levelCap: cap, changes: { masteries: ['New mastery'] } });
+const nb2 = (await call(builder, '/api/notify')).d;
+const gb2 = (nb2.items ?? nb2.list ?? nb2.notifications ?? []).find((n) => n.type === 'game' && n.title.includes('fc27-w11b2'));
+t('non-breaking bump: plain "on an older version" phrasing, not "needs attention"', gb2 && /1 of your builds is on an older version/.test(gb2.body) && !/needs attention/.test(gb2.body));
+await call(builder, '/api/builds', { id: s1.d.saved, title: 'Old poacher', code: `a=finisher&l=${cap}&p=3x4&v=fc27-w11b2` }); // back to current, so later checks aren't thrown off
 
 const A = { version: 'a', levelCap: { value: 40 }, archetypes: [{ id: 'x', name: 'X', base: {} }, { id: 'y', name: 'Y' }], attributeGroups: [{ attributes: ['Pace'] }] };
 const B = { version: 'b', levelCap: { value: 40, verified: true }, archetypes: [{ id: 'x', name: 'X', base: { Pace: 60 } }, { id: 'z', name: 'Z' }], attributeGroups: [{ attributes: ['Pace', 'Agility'] }] };

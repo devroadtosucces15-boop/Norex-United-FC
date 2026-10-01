@@ -117,16 +117,37 @@ export async function buildsImpact(env, loadSite, me) {
 }
 
 // After a publish: members with builds on older versions hear how many need a look; everyone else gets the headline.
-async function tellMembers(env, prev, next) {
+// BE12: distinguishes "breaking" (archetype gone, cap/points/attribute-list change – the build is actually wrong
+// now) from a plain version bump, same per-build logic as GET /api/builds/impact, so the notification tells a
+// member whether they need to act or can ignore it.
+async function tellMembers(env, loadSite, prev, next) {
   const d = gameDiff(prev, next);
   const cap = d.cap[0] !== d.cap[1] ? `max level ${d.cap[0] ?? '–'} → ${d.cap[1]}` : `max level ${d.cap[1]}`;
   const title = `🎮 New game rules ${next.version}: ${cap}`;
   const lines = d.items.slice(0, 6).map((x) => `${x.icon} ${x.text}`).join('\n');
-  const rows = (await env.DB.prepare('SELECT user_id, COUNT(*) n FROM builds WHERE removed_at IS NULL AND (version IS NULL OR version != ?) GROUP BY user_id').bind(next.version).all()).results;
-  const counts = new Map();
-  for (const r of rows) (counts.get(r.n) ?? counts.set(r.n, []).get(r.n)).push(r.user_id);
+  const rows = (await env.DB.prepare('SELECT user_id, id, title, arch, version FROM builds WHERE removed_at IS NULL AND (version IS NULL OR version != ?)').bind(next.version).all()).results;
+  const cache = new Map();
+  const byUser = new Map();
+  for (const r of rows) {
+    let breaking = false;
+    if (r.version) {
+      if (!cache.has(r.version)) cache.set(r.version, await versionData(env, loadSite, r.version));
+      const old = cache.get(r.version);
+      if (old) breaking = oneBuildImpact(r, old, next).breaking;
+    }
+    const u = byUser.get(r.user_id) ?? { n: 0, breaking: 0 };
+    u.n++; if (breaking) u.breaking++;
+    byUser.set(r.user_id, u);
+  }
+  const groups = new Map();
+  for (const [uid, c] of byUser) { const k = `${c.n}:${c.breaking}`; (groups.get(k) ?? groups.set(k, { ...c, ids: [] }).get(k)).ids.push(uid); }
   let sent = 0;
-  for (const [n, ids] of counts) sent += await notify(env, ids, { type: 'game', icon: '🎮', title, body: `${lines}${lines ? '\n' : ''}⬆ ${n} of your builds ${n === 1 ? 'is' : 'are'} on an older version – upgrade to the new MAX in one click.`, link: 'builder.html?upgrade=1' });
+  for (const { n, breaking, ids } of groups.values()) {
+    const upgrade = breaking
+      ? `⚠️ ${breaking} of your builds ${breaking === 1 ? 'needs' : 'need'} attention (archetype or points changed)${breaking < n ? ` · ${n} total on an older version` : ''} – upgrade to the new MAX in one click.`
+      : `⬆ ${n} of your builds ${n === 1 ? 'is' : 'are'} on an older version – upgrade to the new MAX in one click.`;
+    sent += await notify(env, ids, { type: 'game', icon: '🎮', title, body: `${lines}${lines ? '\n' : ''}${upgrade}`, link: 'builder.html?upgrade=1' });
+  }
   const builders = new Set(rows.map((r) => r.user_id));
   const users = (await env.DB.prepare('SELECT id FROM users WHERE last_at > ?').bind(Date.now() - 180 * 86400e3).all()).results.map((u) => u.id).filter((id) => !builders.has(id));
   sent += await notify(env, users, { type: 'game', icon: '🎮', title, body: lines || null, link: 'builder.html' });
@@ -188,7 +209,7 @@ export async function gameRoute(p, method, body, me, env, loadSite, log) {
       .bind(version, cap, verified ? 1 : 0, source ?? (verified ? 'ea-notes' : 'unverified'), data, note, current.version, me.u, me.n, at)];
     if (hit) stmts.push(env.DB.prepare('INSERT OR REPLACE INTO game_decisions (hit_id, status, version, by_name, at) VALUES (?, ?, ?, ?, ?)').bind(hit, 'applied', version, me.n, at));
     await env.DB.batch(stmts);
-    const told = body.notify === false ? 0 : (await safely(tellMembers(env, current, await latestGame(env, loadSite)))) ?? 0;
+    const told = body.notify === false ? 0 : (await safely(tellMembers(env, loadSite, current, await latestGame(env, loadSite)))) ?? 0;
     await log(env, me, 'game-publish', `${version} · max level ${cap}${verified ? ' ✓' : ''}`);
     return json({ ...(await adminState(env, loadSite)), told });
   }

@@ -132,13 +132,22 @@
     if (await needLogin('see your builds')) return;
     const m = UI.modal({ title: 'My builds', icon: '📂', wide: true, body: '<div data-mb>' + (UI.skeleton ? UI.skeleton('rows', 3) : '<p class="muted">Loading…</p>') + '</div>' });
     const box = m.el.querySelector('[data-mb]');
+    let impact = new Map(); // BE12 – id → { breaking, changes } from GET /api/builds/impact, once it loads
     const paint = () => {
       const old = saved.filter(outdated);
-      box.innerHTML = saved.length ? `<p class="muted small">${saved.length} saved · open one to keep editing, or compare it with what’s on screen.</p>${old.length ? `<div class="bd-mig-all"><span>⚠️ <b>${old.length}</b> ${old.length === 1 ? 'build is' : 'builds are'} on older game rules – now <code>${esc(g.version)}</code>, max level ${M.capOf(g)}.</span><button type="button" class="btn sm" data-upall>⬆ Upgrade ${old.length === 1 ? 'it' : `all ${old.length}`} to MAX</button></div>` : ''}<ul class="bd-list">${saved.map((x) => `<li${cur?.id === x.id ? ' class="on"' : ''}><div><b>${esc(x.title)}</b><small class="muted">${esc(archName(x.arch))} · L${x.level}${x.forkedFrom ? ' · 🍴 fork' : ''}${x.posted ? ' · 📣 posted' : ''}${MODES.filter(([k]) => picks[k] === x.id).map(([, ic, l]) => ` · ${ic} my ${l} build`).join('')} · ${UI.ago ? UI.ago(x.updated) : new Date(x.updated).toLocaleDateString()}${outdated(x) ? ` · <span class="bd-old" title="Made on ${esc(x.version)}">⚠ older rules</span>` : ''}</small></div>
-<span class="bd-li-acts">${outdated(x) ? `<button type="button" class="btn sm" data-up="${x.id}" title="Move to ${esc(g.version)} at MAX (L${M.capOf(g)})">⬆ Upgrade</button>` : ''}<button type="button" class="btn sm" data-open="${x.id}">Open</button><button type="button" class="btn ghost sm" data-cmp="${x.id}" title="Compare with the build on screen">⚖️</button><button type="button" class="btn ghost sm" data-copy="${x.id}" title="Duplicate (fork)">🍴</button><button type="button" class="btn ghost sm" data-del="${x.id}" title="Delete" aria-label="Delete ${esc(x.title)}">🗑️</button></span></li>`).join('')}</ul>`
+      const breaking = old.filter((x) => impact.get(x.id)?.breaking);
+      box.innerHTML = saved.length ? `<p class="muted small">${saved.length} saved · open one to keep editing, or compare it with what’s on screen.</p>${old.length ? `<div class="bd-mig-all"><span>${breaking.length ? `⚠️ <b>${breaking.length}</b> ${breaking.length === 1 ? 'build needs' : 'builds need'} attention (archetype or points changed) · ` : '⚠️ '}<b>${old.length}</b> ${old.length === 1 ? 'build is' : 'builds are'} on older game rules – now <code>${esc(g.version)}</code>, max level ${M.capOf(g)}.</span><button type="button" class="btn sm" data-upall>⬆ Upgrade ${old.length === 1 ? 'it' : `all ${old.length}`} to MAX</button></div>` : ''}<ul class="bd-list">${saved.map((x) => {
+        const imp = impact.get(x.id);
+        const badge = outdated(x) ? (imp?.breaking
+          ? ` · <span class="bd-old bd-break" title="${esc(imp.changes.map((c) => c.text).join(' · '))}">⚠ ${esc(imp.changes[0]?.text ?? 'needs attention')}</span>`
+          : ` · <span class="bd-old" title="Made on ${esc(x.version)}">⚠ older rules</span>`) : '';
+        return `<li${cur?.id === x.id ? ' class="on"' : ''}><div><b>${esc(x.title)}</b><small class="muted">${esc(archName(x.arch))} · L${x.level}${x.forkedFrom ? ' · 🍴 fork' : ''}${x.posted ? ' · 📣 posted' : ''}${MODES.filter(([k]) => picks[k] === x.id).map(([, ic, l]) => ` · ${ic} my ${l} build`).join('')} · ${UI.ago ? UI.ago(x.updated) : new Date(x.updated).toLocaleDateString()}${badge}</small></div>
+<span class="bd-li-acts">${outdated(x) ? `<button type="button" class="btn sm" data-up="${x.id}" title="Move to ${esc(g.version)} at MAX (L${M.capOf(g)})">⬆ Upgrade</button>` : ''}<button type="button" class="btn sm" data-open="${x.id}">Open</button><button type="button" class="btn ghost sm" data-cmp="${x.id}" title="Compare with the build on screen">⚖️</button><button type="button" class="btn ghost sm" data-copy="${x.id}" title="Duplicate (fork)">🍴</button><button type="button" class="btn ghost sm" data-del="${x.id}" title="Delete" aria-label="Delete ${esc(x.title)}">🗑️</button></span></li>`;
+      }).join('')}</ul>`
         : (UI.empty ? UI.empty({ icon: '📂', title: 'No saved builds yet', text: 'Press 💾 Save on any build and it lands here.' }) : '<p class="muted">No saved builds yet.</p>');
     };
     try { await loadMine(); paint(); } catch (e) { box.innerHTML = `<p class="muted">${esc(e.message)}</p>`; return; }
+    call('/api/builds/impact').then((r) => { impact = new Map((r.builds ?? []).map((x) => [x.id, x])); paint(); }).catch(() => {}); // BE12 – best-effort, the version-only badge above already works without it
     box.addEventListener('click', async (e) => {
       const t = e.target.closest('button'); if (!t) return;
       if ('upall' in t.dataset) {

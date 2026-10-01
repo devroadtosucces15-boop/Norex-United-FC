@@ -130,6 +130,7 @@
 .bd-list li b{display:block}
 .bd-li-acts{display:flex;gap:6px}
 .bd-old{color:var(--gold)}
+.bd-old.bd-break{color:var(--red)}
 .bd-cmp-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:12px}
 .bd-cmp-pick select,.bd-cmp-pick input:not([type]){flex:1;min-width:180px;padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);color:#fff;font:inherit}
 .bd-cmp{width:100%;border-collapse:collapse;font-size:14px}
