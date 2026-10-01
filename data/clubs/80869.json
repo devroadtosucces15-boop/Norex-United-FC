@@ -1,7 +1,7 @@
 {
  "id": "80869",
  "tier": "home",
- "fetchedAt": "2026-10-01T03:10:53.506Z",
+ "fetchedAt": "2026-10-01T03:17:35.507Z",
  "info": {
   "name": "NOREX UNITED FC",
   "clubId": 80869,
@@ -331,6 +331,42 @@
    "prevGoals9": "1",
    "prevGoals10": "2",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "Slug17-_-",
+   "gamesPlayed": "6",
+   "winRate": "83",
+   "goals": "4",
+   "assists": "1",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "66",
+   "passesMade": "106",
+   "passSuccessRate": "82",
+   "ratingAve": "8.2",
+   "tacklesMade": "11",
+   "tackleSuccessRate": "50",
+   "proName": "B. Slug",
+   "proPos": "14",
+   "proStyle": "0",
+   "proHeight": "186",
+   "proNationality": "83",
+   "proOverall": "74",
+   "proOverallStr": "74",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "2",
+   "prevGoals6": "2",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "Itzponchordz_",
@@ -1162,7 +1198,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 3,
+  "midfielder": 4,
   "goalkeeper": 0,
   "forward": 3,
   "defender": 3
@@ -1463,6 +1499,17 @@
    "manOfTheMatch": "0",
    "ratingAve": "5.9",
    "prevGoals": "0",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "Slug17-_-",
+   "proPos": "25",
+   "gamesPlayed": "112",
+   "goals": "99",
+   "assists": "82",
+   "manOfTheMatch": "28",
+   "ratingAve": "8.1",
+   "prevGoals": "1",
    "favoritePosition": "forward"
   },
   {
