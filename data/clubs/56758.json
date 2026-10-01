@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-01T00:26:58.282Z",
+ "fetchedAt": "2026-10-01T00:31:06.125Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -138,6 +138,42 @@
    "proOverall": "75",
    "proOverallStr": "75",
    "manOfTheMatch": "3",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
+  },
+  {
+   "name": "ASLweezy81",
+   "gamesPlayed": "1",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "14",
+   "passSuccessRate": "77",
+   "ratingAve": "7.1",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "D. Wilson",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "188",
+   "proNationality": "95",
+   "proOverall": "79",
+   "proOverallStr": "79",
+   "manOfTheMatch": "0",
    "redCards": "0",
    "prevGoals": "0",
    "prevGoals1": "0",
@@ -1381,7 +1417,7 @@
   "midfielder": 14,
   "goalkeeper": 1,
   "forward": 13,
-  "defender": 6
+  "defender": 7
  },
  "career": [
   {
@@ -1405,6 +1441,17 @@
    "ratingAve": "7.9",
    "prevGoals": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "ASLweezy81",
+   "proPos": "14",
+   "gamesPlayed": "60",
+   "goals": "27",
+   "assists": "24",
+   "manOfTheMatch": "11",
+   "ratingAve": "8.0",
+   "prevGoals": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "XxEL_AXEL_ONExX",
@@ -1640,9 +1687,9 @@
   {
    "name": "PulviTheGoat",
    "proPos": "25",
-   "gamesPlayed": "54",
+   "gamesPlayed": "55",
    "goals": "17",
-   "assists": "18",
+   "assists": "19",
    "manOfTheMatch": "4",
    "ratingAve": "7.4",
    "prevGoals": "0",
