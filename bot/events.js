@@ -12,6 +12,8 @@
 //   GET  /api/events/report?id=      members: session report – results that night (League from EA, confirmed Rush),
 //                                    team + player grades A+–F, position trials vs season average, attendance
 //   POST /api/events/report/post     managers: share the report (notify who came, optional Discord post)
+//   POST /api/events/report/poster?id=  managers, raw PNG body: upload the client-rendered report poster to R2
+//                                    (BE11) – the report embed's Discord image once uploaded
 // P3.3: the Discord post carries ✅ ❔ ❌ buttons (bot/worker.js → eventButton) that write the same answers, its counts
 // stay live (refreshEventPost after every answer), and eventReminders() – run by the 10-minute cron – posts T-24h / T-2h
 // reminders and nudges members who haven't answered (event.remind: dm = bell + DM · mention = @ in the channel · off).
@@ -22,6 +24,7 @@ import { discordTargets, postEmbed } from './docs.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
 import { recommendRoute } from './lineuprec.js';
+import { hex } from './media.js';
 
 const REMIND = ['dm', 'mention', 'off'];
 
@@ -97,6 +100,7 @@ const eventOut = (r, rs, cs, profiles, manager, people = new Map()) => ({
   lineupPeople: Object.fromEntries(Object.keys(parse(r.lineup, {})).filter((id) => !rs.some((x) => x.user_id === id) && !cs.some((x) => x.user_id === id) && people.has(id)).map((id) => [id, people.get(id)])),
   ready: manager ? readyCheck(parse(r.lineup, {}), r.formation, rs, cs, people) : undefined, // BE3 – managers only
   reportAt: opt(r.report_at), remind: r.remind ?? 'dm', formation: opt(r.formation), lineupAt: opt(r.lineup_at), ...(manager ? { posted: !!r.discord_msg } : {}),
+  reportPoster: opt(r.report_poster), // BE11 – R2 key of the uploaded report poster, if any
 });
 async function load(env, where, args, me) {
   const rows = await all(env, `SELECT * FROM events WHERE ${where} ORDER BY start LIMIT 120`, ...args);
@@ -337,12 +341,13 @@ export async function sessionReport(env, id, loadSite) {
     attendance: { came: came.length, saidYes: yes.length, noShow: ev.rsvps.filter((x) => x.s === 'yes' && !came.includes(x.id)).map((x) => ({ id: x.id, n: x.n, a: x.a })), walkIns: ev.checkins.filter((x) => !yes.includes(x.id)).map((x) => ({ id: x.id, n: x.n, a: x.a })) },
   };
 }
-function reportEmbed(env, rep) {
+function reportEmbed(env, rep, origin) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), e = rep.event, t = rep.team;
   const icon = { W: '🟩', D: '🟨', L: '🟥' };
   return {
     embeds: [{
       title: `📋 Session report · ${label(e)} · Grade ${t.grade ?? '–'}`.slice(0, 250), url: `${site}members.html#schedule`, color: RED, timestamp: new Date(e.start).toISOString(),
+      ...(e.reportPoster && origin ? { image: { url: `${origin}/media/${e.reportPoster}` } } : {}), // BE11 – client-rendered poster, if uploaded
       description: [
         t.games ? `**${t.w}W ${t.d}D ${t.l}L** · ${t.gf}–${t.ga}` : 'No results logged for this night yet.',
         rep.results.map((r) => `${icon[r.res]} ${r.mode === 'rush' ? '⚡ ' : ''}**${r.gf}–${r.ga}** vs ${r.opp}`).join('\n'),
@@ -385,7 +390,7 @@ async function nightRoute(p, method, body, me, env, log, loadSite, url) {
   if (p === '/api/events/report/post') {
     const rep = await sessionReport(env, row.id, loadSite);
     const out = {};
-    if (body.channel) out.discord = await postEmbed(env, body.channel, body.role, reportEmbed(env, rep));
+    if (body.channel) out.discord = await postEmbed(env, body.channel, body.role, reportEmbed(env, rep, url?.origin));
     const people = [...new Set([...rep.event.checkins.map((x) => x.id), ...rep.event.rsvps.filter((x) => x.s === 'yes').map((x) => x.id)])];
     out.notified = await safely(notify(env, people, { type: 'event', icon: '📋', title: `Session report: ${label(row)} · Grade ${rep.team.grade ?? '–'}`, body: rep.team.games ? `${rep.team.w}W ${rep.team.d}D ${rep.team.l}L · ${rep.team.gf}–${rep.team.ga}${rep.mvp ? ` · ⭐ ${rep.mvp.n}` : ''}` : null, link: 'members.html#schedule' })) ?? 0;
     await run(env, 'UPDATE events SET report_at = ? WHERE id = ?', Date.now(), row.id);
@@ -393,6 +398,28 @@ async function nightRoute(p, method, body, me, env, log, loadSite, url) {
     return json({ ...out, ...(await listFor(env, me)) });
   }
   return fail('Not found', 404);
+}
+
+// BE11 – raw PNG body (client-rendered report poster, same canvas technique as the result-card poster PNG).
+// Dispatched before JSON body parsing, same shape as mediaUploadRoute (bot/media.js).
+export async function reportPosterRoute(request, me, env, url) {
+  if (!flagOn(env, me, 'matchNight')) return fail('Not available yet.', 404);
+  if (!can(me, 'events.manage')) return fail('Managers only.', 403);
+  if (!env.MEDIA) return fail('Poster storage isn’t switched on yet.', 503);
+  const id = Number(url.searchParams.get('id')) || 0;
+  const row = await one(env, 'SELECT id FROM events WHERE id = ?', id);
+  if (!row) return fail('That event no longer exists.', 404);
+  const type = (request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+  if (type !== 'image/png') return fail('PNG only.', 415);
+  const len = Number(request.headers.get('Content-Length')) || 0;
+  if (!len || !request.body) return fail('That image is empty.', 411);
+  if (len > 3e6) return fail('Poster image is too large – under 3 MB please.', 413);
+  const buf = new Uint8Array(await request.arrayBuffer());
+  if (!(buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47)) return fail('That doesn’t look like a real PNG.', 415);
+  const key = `i/${hex(16)}.png`;
+  await env.MEDIA.put(key, buf, { httpMetadata: { contentType: 'image/png', cacheControl: 'public, max-age=31536000, immutable' } });
+  await run(env, 'UPDATE events SET report_poster = ? WHERE id = ?', key, id);
+  return json({ key, url: `${url.origin}/media/${key}` });
 }
 
 // ---------- P3.4 lineup builder ----------

@@ -86,6 +86,7 @@
 .rp-share{margin-top:12px;padding:12px;border-radius:12px;border:1px dashed var(--line2);display:grid;gap:8px}
 .rp-share label{display:grid;gap:5px;font:600 13px var(--body)}
 .rp-share select{padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:14px var(--body);color-scheme:dark}
+.rp-poster{display:flex;align-items:center;gap:10px;margin:2px 0 0}
 
 /* home page strip */
 .ev-next{display:flex;align-items:center;gap:14px;margin:0 0 22px;padding:14px 18px;border-radius:var(--radius);text-decoration:none;color:#fff;

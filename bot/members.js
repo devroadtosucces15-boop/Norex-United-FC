@@ -19,7 +19,7 @@ import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute,
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
-import { eventsRoute, localDate, publicEvents, weekEvents } from './events.js';
+import { eventsRoute, localDate, publicEvents, weekEvents, reportPosterRoute } from './events.js';
 import { lockerRoute } from './locker.js';
 import { awardsRoute, trophies } from './awards.js';
 import { playerInsights } from './aiinsights.js';
@@ -377,6 +377,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)
     if (ctx?.waitUntil) ctx.waitUntil(seen); else await seen;
     if (url.pathname === '/api/feed/upload' && request.method === 'POST') return cors(env, await mediaUploadRoute(request, me, env, url)); // P6.1b – raw file body
+    if (url.pathname === '/api/events/report/poster' && request.method === 'POST') return cors(env, await reportPosterRoute(request, me, env, url)); // BE11 – raw PNG body
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
     const res = await route(url.pathname, request.method, body, me, env, loadSite, url);
     if (takeKick()) ctx?.waitUntil?.(deliverDMs(env).catch((e) => console.log('DM delivery failed', e.message))); // P7.1 – DMs right away

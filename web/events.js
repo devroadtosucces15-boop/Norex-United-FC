@@ -244,6 +244,40 @@ ${formation ? `${pitchHtml(S.formations, formation, Object.fromEntries(Object.en
         if (r.discord && !r.discord.ok) ctx.toast(`Discord: ${r.discord.error}`, true);
       } catch (er) { ctx.toast(er.message, true); }
     }
+    // BE11 – renders the same kind of canvas poster as the match-reel result cards (web/app.js's .dl-poster
+    // technique), but for a whole session report: grade, record, each result, MVP. Returns a PNG Blob.
+    async function reportPosterBlob(e, r) {
+      const t = r.team, W = 1080, H = 1350;
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const g = c.getContext('2d');
+      const red = getComputedStyle(document.documentElement).getPropertyValue('--red').trim() || '#c8352c';
+      await document.fonts?.ready;
+      const bg = g.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, '#1d0d0e'); bg.addColorStop(0.6, '#0b0f16'); bg.addColorStop(1, '#07090d');
+      g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      g.save(); g.globalAlpha = 0.05; g.fillStyle = '#fff';
+      for (let x = -H; x < W; x += 60) { g.beginPath(); g.moveTo(x, H); g.lineTo(x + 6, H); g.lineTo(x + 6 + H * 0.47, 0); g.lineTo(x + H * 0.47, 0); g.fill(); }
+      g.restore();
+      const band = g.createLinearGradient(0, 0, 0, H);
+      band.addColorStop(0, red); band.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = band; g.fillRect(W * 0.33, 0, W * 0.34, H);
+      g.textAlign = 'center'; g.fillStyle = '#fff';
+      g.font = '600 36px Oswald, Impact, sans-serif';
+      g.fillText(`${(TYPES[e.type]?.[1] || e.type)} · ${fmtDay(e.start)}`.toUpperCase(), W / 2, 100);
+      g.font = '700 220px Oswald, Impact, sans-serif';
+      g.fillText(t.grade ?? '–', W / 2, 340);
+      g.font = '600 46px Oswald, Impact, sans-serif';
+      g.fillText(t.games ? `${t.w}W ${t.d}D ${t.l}L · ${t.gf}–${t.ga}` : 'No results logged', W / 2, 430);
+      g.font = '500 32px Inter, sans-serif'; g.fillStyle = '#e5e7eb';
+      let y = 530;
+      for (const m of r.results.slice(0, 5)) { g.fillText(`${m.res === 'W' ? '🟩' : m.res === 'L' ? '🟥' : '🟨'} ${m.mode === 'rush' ? '⚡' : '🏆'} ${m.gf}–${m.ga} vs ${m.opp}`.slice(0, 60), W / 2, y); y += 50; }
+      if (r.mvp) { y += 20; g.fillStyle = '#f5d061'; g.font = '600 38px Inter, sans-serif'; g.fillText(`⭐ Player of the night: ${r.mvp.n} · ${r.mvp.avg} avg`, W / 2, y); }
+      g.fillStyle = '#9aa3b2'; g.font = '500 28px Inter, sans-serif';
+      g.fillText(`👥 ${r.attendance.came} checked in · ${r.attendance.saidYes} said yes`, W / 2, H - 70);
+      g.fillStyle = red; g.fillRect(0, H - 14, W, 14);
+      return new Promise((res) => c.toBlob(res, 'image/png'));
+    }
     async function report(e) {
       let r;
       try { r = await ctx.call(`/api/events/report?id=${e.id}`); } catch (er) { return ctx.toast(er.message, true); }
@@ -257,9 +291,31 @@ ${r.results.length ? `<ul class="rp-results">${r.results.map((m) => `<li><span c
 ${r.players.length ? `<div class="tbl"><table class="rp-table"><thead><tr><th>Player</th><th class="n">GP</th><th class="n">G</th><th class="n">A</th><th class="n">Avg</th><th>Grade</th><th>Position trial</th></tr></thead><tbody>${r.players.map((p) => `<tr><td>${p.user ? UI.member({ id: p.user.id, n: p.n, a: p.user.a }, { size: 22 }) : esc(p.n)}${p.motm ? ' ⭐' : ''}</td><td class="n">${p.games}</td><td class="n">${p.g}</td><td class="n">${p.a}</td><td class="n">${p.avg ?? '–'}</td><td><span class="rp-g ${gradeCls(p.grade)}">${esc(p.grade ?? '–')}</span></td><td>${p.trial ? `🧪 ${esc(p.trial.pos)}${p.trial.diff != null ? ` <b class="${p.trial.diff >= 0 ? 'up' : 'down'}">${p.trial.diff >= 0 ? '▲ +' : '▼ '}${p.trial.diff}</b> <small class="muted">vs usual ${p.trial.season}</small>` : ''}` : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
 <p class="muted small">👥 ${r.attendance.came} checked in · ${r.attendance.saidYes} said yes${r.attendance.noShow.length ? ` · no-shows: ${r.attendance.noShow.map((x) => esc(x.n)).join(', ')}` : ''}${r.attendance.walkIns.length ? ` · walk-ins: ${r.attendance.walkIns.map((x) => esc(x.n)).join(', ')}` : ''}</p>
 <p class="muted small">Grades: team = 75 % points per game + 25 % goal difference (like the site’s session cards) · players by average rating (8.5+ A+, 8 A, 7.3 B, 6.7 C, 6 D).</p>
-${S.canManage ? `<div class="rp-share"><b>📣 Share it</b> <small class="muted">– everyone who came or said yes gets a notification${targets?.ready ? '; optionally post it to Discord' : ''}.</small>${targets?.ready ? `<div class="ev-grid"><label>Channel<select name="channel"><option value="">Don’t post to Discord</option>${targets.channels.map((c) => `<option value="${esc(c.id)}"${c.id === share.channel ? ' selected' : ''}>${c.news ? '📢' : '#'} ${esc(c.name)}</option>`).join('')}</select></label><label>Ping<select name="role"><option value="">Nobody</option>${targets.roles.map((x) => `<option value="${esc(x.id)}">${esc(x.name.startsWith('@') ? x.name : `@${x.name}`)}</option>`).join('')}</select></label></div>` : ''}${e.reportAt ? `<small class="muted">Shared ${UI.ago(e.reportAt)} already.</small>` : ''}</div>` : ''}`,
+${S.canManage ? `<div class="rp-share"><b>📣 Share it</b> <small class="muted">– everyone who came or said yes gets a notification${targets?.ready ? '; optionally post it to Discord' : ''}.</small>${targets?.ready ? `<div class="ev-grid"><label>Channel<select name="channel"><option value="">Don’t post to Discord</option>${targets.channels.map((c) => `<option value="${esc(c.id)}"${c.id === share.channel ? ' selected' : ''}>${c.news ? '📢' : '#'} ${esc(c.name)}</option>`).join('')}</select></label><label>Ping<select name="role"><option value="">Nobody</option>${targets.roles.map((x) => `<option value="${esc(x.id)}">${esc(x.name.startsWith('@') ? x.name : `@${x.name}`)}</option>`).join('')}</select></label></div>` : ''}${e.reportAt ? `<small class="muted">Shared ${UI.ago(e.reportAt)} already.</small>` : ''}
+<p class="rp-poster"><button type="button" class="btn sm ghost" data-poster>🖼️ ${r.event.reportPoster ? 'Replace poster' : 'Generate poster'}</button> <small class="muted" data-poster-status>${r.event.reportPoster ? 'Poster ready – it goes on the Discord post.' : 'Renders an image for the Discord post (optional).'}</small></p>
+</div>` : ''}`,
         actions: S.canManage ? [{ label: 'Close', value: null, kind: 'ghost' }, { label: '📣 Share report', value: 'share' }] : undefined,
-        onOpen: (d) => d.addEventListener('change', () => { share = { channel: $('[name=channel]', d)?.value, role: $('[name=role]', d)?.value }; }),
+        onOpen: (d) => {
+          d.addEventListener('change', () => { share = { channel: $('[name=channel]', d)?.value, role: $('[name=role]', d)?.value }; });
+          $('[data-poster]', d)?.addEventListener('click', async (ev) => {
+            const btn = ev.target, status = $('[data-poster-status]', d);
+            btn.disabled = true; status.textContent = 'Rendering…';
+            try {
+              const blob = await reportPosterBlob(e, r);
+              status.textContent = 'Uploading…';
+              const res = await fetch(`${MAPI}/api/events/report/poster?id=${e.id}`, {
+                method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('norex_session') || ''}`, 'Content-Type': 'image/png' }, body: blob,
+              });
+              const d2 = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(d2.error || 'Upload failed');
+              r.event.reportPoster = d2.key;
+              btn.textContent = '🖼️ Replace poster';
+              status.textContent = 'Poster ready – it goes on the Discord post.';
+              ctx.toast('Poster ready');
+            } catch (er) { status.textContent = er.message; ctx.toast(er.message, true); }
+            btn.disabled = false;
+          });
+        },
       });
       if (v !== 'share') return;
       try {

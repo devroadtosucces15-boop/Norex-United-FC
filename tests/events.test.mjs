@@ -1,6 +1,6 @@
 // Match operations: P3.1 scheduling, P3.2 availability per event, P3.7 check-in, quick lineup and session report.
 import fs from 'node:fs';
-import { call, env, login, ROOT, siteJson, sqlite, W } from './mock.mjs';
+import { call, env, login, r2objects, ROOT, siteJson, sqlite, W } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
 import { localDate, playerGrade, teamGrade, usuallyOn, zonedToUtc } from '../bot/events.js';
 
@@ -151,6 +151,22 @@ t('report: attendance – no-shows and walk-ins', rep.d.attendance.came === 1 &&
 t('member cannot share the report', (await call(member, '/api/events/report/post', { id: evId })).s === 403);
 const shared = await call(mgr, '/api/events/report/post', { id: evId, channel: '70001' });
 t('manager shares: Discord post + attendees notified + marked', shared.s === 200 && shared.d.discord?.ok && /Session report/.test(posts.at(-1).embeds[0].title) && shared.d.notified === 2 && (await call(member2, '/api/notify')).d.items.some((n) => /^Session report/.test(n.title)));
+
+// ----- BE11 report poster (R2) -----
+const PNG = (n = 200) => { const b = new Uint8Array(n); b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]); return b; };
+const posterUp = async (tok, bytes, type = 'image/png', id = evId) => {
+  const r = await W(`/api/events/report/poster?id=${id}`, { method: 'POST', headers: { ...(tok ? { Authorization: 'Bearer ' + tok } : {}), 'Content-Type': type, 'Content-Length': String(bytes.length) }, body: bytes });
+  return { s: r.status, d: await r.json().catch(() => null) };
+};
+t('report poster: members cannot upload', (await posterUp(member, PNG())).s === 403);
+t('report poster: non-PNG refused', (await posterUp(mgr, PNG(), 'image/jpeg')).s === 415);
+t('report poster: a file that isn’t really a PNG is refused (sniffed)', (await posterUp(mgr, Buffer.from('<html></html>'))).s === 415);
+t('report poster: unknown event refused', (await posterUp(mgr, PNG(), 'image/png', 999999)).s === 404);
+const posted = await posterUp(mgr, PNG());
+t('report poster: manager uploads, stored in R2, key saved on the event', posted.s === 200 && !!posted.d.key && r2objects.has(posted.d.key) && posted.d.url.endsWith(`/media/${posted.d.key}`));
+const repAfter = await call(mgr, `/api/events/report?id=${evId}`);
+t('report poster: the key round-trips through the report + the share embed carries it as the image', repAfter.d.event.reportPoster === posted.d.key
+  && (await call(mgr, '/api/events/report/post', { id: evId, channel: '70001' })).d.discord?.ok && posts.at(-1).embeds[0].image?.url?.endsWith(`/media/${posted.d.key}`));
 
 // ----- BE4 nudge a short position -----
 await call(member2, '/api/profile', { positions: ['GK'] });
