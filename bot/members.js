@@ -21,6 +21,7 @@ import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
 import { eventsRoute, localDate, publicEvents, weekEvents, reportPosterRoute } from './events.js';
 import { lockerRoute } from './locker.js';
+import { intelRoute } from './insights.js';
 import { awardsRoute, trophies } from './awards.js';
 import { playerInsights } from './aiinsights.js';
 import { squadsRoute } from './squads.js';
@@ -33,6 +34,7 @@ import { hotwPublic, hotwRoute } from './hotw.js';
 import { socialRoute, touch } from './social.js';
 import { chatRoute, chatSocket } from './chat.js';
 import { mediaUploadRoute } from './media.js';
+import { playsRoute } from './plays.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
@@ -634,6 +636,10 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (evt) return evt;
   const lkr = await lockerRoute(p, method, me, env); // BE2 Locker Room: next event + vote + unread + achievements, one call
   if (lkr) return lkr;
+  const ply = await playsRoute(p, method, body, me, env, log); // BE1 Tactics Studio: plays, versions, assignment, quiz
+  if (ply) return ply;
+  const itl = await intelRoute(p, method, body, me, env, loadSite, log); // BE10 Club Intelligence: report + act/remind on a recommendation
+  if (itl) return itl;
   const awd = await awardsRoute(p, method, body, me, env, loadSite, log, url); // P4.1 weekly awards
   if (awd) return awd;
   const sqd = await squadsRoute(p, method, body, me, env, log); // P3.5 Rush squad builder

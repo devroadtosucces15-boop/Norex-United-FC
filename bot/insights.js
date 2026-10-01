@@ -8,7 +8,15 @@
 // Discord needs DISCORD_BOT_TOKEN plus, in the Discord Developer Portal, **Server Members Intent** (member list)
 // and the bot's View Channels + Read Message History permissions (chat activity). Message text is never read –
 // only who posted and when. Anything the bot can't see is skipped and explained in the report.
-// D1 meta: `insights` (latest report), `insights_hist` (weekly key numbers for trends), `insights_job`, `insights_week`.
+// D1 meta: `insights` (latest report), `insights_hist` (weekly key numbers for trends), `insights_job`, `insights_week`,
+// `insights_acted` (recommendations a manager marked done – BE10, see intelRoute below).
+//
+//   GET  /api/intel          managers: the same report as /insights, plus each recommendation's acted state
+//   POST /api/intel/act      managers: { id, undo? } mark a recommendation handled (or undo that)
+//   POST /api/intel/remind   managers: { id } DM the other managers the recommendation's text as a nudge
+
+import { can, flagOn } from './roles.js';
+import { notifyManagers, safely } from './notify.js';
 
 const API = 'https://discord.com/api/v10';
 const DAY = 86400e3;
@@ -120,7 +128,7 @@ const score = (parts) => { const w = parts.reduce((t, [, x]) => t + x, 0); retur
 export function analyse({ job, db, club, players, prev = null, now = Date.now() }) {
   const b = job.base, m = b.members;
   const recs = [];
-  const rec = (sev, area, text) => recs.push({ sev, area, text });
+  const rec = (sev, area, kind, text) => recs.push({ sev, area, kind, id: `${area}.${kind}`, text });
   const humans = m?.humans ?? b.total;
 
   // --- Discord server ---
@@ -228,38 +236,38 @@ export function analyse({ job, db, club, players, prev = null, now = Date.now() 
   });
 
   // --- recommendations: 1 urgent · 2 important · 3 nice to fix · 4 good news ---
-  if (!m) rec(1, 'setup', "I can't see the member list. **Discord Developer Portal → your app → Bot → Privileged Gateway Intents → Server Members Intent → on**, then run /insights again.");
-  if (server.unread.length) rec(2, 'setup', `I can't read ${server.unread.length} channel(s) (${server.unread.slice(0, 3).map((n) => '#' + n).join(', ')}). Give the bot **View Channel + Read Message History** there to include them.`);
-  if (oldest > 7) rec(1, 'admin', `A request has waited **${Math.round(oldest)} days**. Clear the queue in the Manager portal (claims ${pc.length} · requests ${pr.length} · Rush results ${prush.length}).`);
-  else if (backlog >= 3) rec(2, 'admin', `**${backlog}** items waiting for a manager (claims ${pc.length} · requests ${pr.length} · Rush ${prush.length} · old trial cards ${staleTrials.length}). Try to clear the portal once a day.`);
-  if (resp != null && resp > 48) rec(2, 'admin', `Managers take **${Math.round(resp / 2.4) / 10} days** on average to decide. Aim for under 24 h – turn on Discord DMs for "Manager to-dos" in 🔔 settings.`);
-  if (decided.length >= 5 && topShare > 0.8 && (staffN ?? 2) >= 2) rec(2, 'admin', `One manager made **${pct(topShare, 1)}%** of all decisions in 90 days. Share the load: pick a manager per area (claims, Rush, trials).`);
-  if (staleTrials.length) rec(2, 'admin', `**${staleTrials.length}** trial / scouting card(s) untouched for 7+ days. Reply or mark them declined so applicants aren't left waiting.`);
-  if (admin.eventsUsed && !upcoming) rec(2, 'admin', 'No match night scheduled in the next 7 days. Schedule one in the Squad Hub (🗓️ Schedule) so members can answer early.');
-  if (staffN && humans / staffN > 20) rec(3, 'admin', `1 manager per **${Math.round(humans / staffN)}** members. Consider promoting a trusted regular.`);
-  if (m && posting < 0.15) rec(2, 'server', `Only **${job.p7.length} of ${humans}** members posted this week. Start a weekly thread (MOTM debate, clip of the week) and @-mention the squad before games.`);
-  if (m && m.noRole / Math.max(1, humans) > 0.2) rec(2, 'server', `**${m.noRole}** members have no role. Give new members a role (or set up **Server Settings → Onboarding**) so they see the right channels.`);
-  if (m && m.joins30 === 0) rec(2, 'server', 'No new members in 30 days. Share the Apply to Join link on stream, in clips and on the Trials page.');
-  if (dead.length) rec(3, 'server', `${dead.length} channel(s) silent for 30+ days: ${dead.slice(0, 4).map((c) => '#' + c.name).join(', ')}. Archive or merge them to keep chat in one place.`);
-  if (unused.length >= 2) rec(3, 'server', `${unused.length} roles nobody has: ${unused.slice(0, 4).map((r) => r.name).join(', ')}. Delete or start using them.`);
-  if (!b.verification) rec(3, 'server', 'Server verification is off. **Server Settings → Safety Setup → Verification level → Low** keeps spam accounts out.');
-  if (!b.rules) rec(3, 'server', 'No rules channel is set. **Server Settings → Safety Setup** (or Community settings) → pick a **Rules channel**.');
-  if (staffN && reads.length && !staff7) rec(3, 'server', "Managers haven't posted in chat this week. A quick weekly update from the staff keeps members engaged.");
-  if (site.adoption < 50) rec(2, 'site', `Only **${site.adoption}%** of Discord members have logged in to the site. Pin the Squad Hub login link in #welcome and mention it after games.`);
-  if (squad.length && squadClaimed / squad.length < 0.6) rec(2, 'site', `**${squad.length - squadClaimed} of ${squad.length}** squad players haven't claimed their EA player${site.missing.length ? ` (e.g. ${site.missing.slice(0, 3).join(', ')})` : ''}. Claimed players get badges, stats and the ✅ Verified role.`);
-  if (active30 >= 3 && availUsers / active30 < 0.3) rec(3, 'site', `Only **${availUsers}** members set availability for the coming week. Remind the squad to tick their days in the Squad Hub.`);
-  if (lineup && votesAvg / lineup < 0.3) rec(3, 'site', `MOTM votes are low (${site.votesAvg} per match). Post the vote link with each result.`);
-  if (db.dmOff >= 2) rec(3, 'site', `**${db.dmOff}** members block DMs from the bot, so they miss alerts. Ask them to turn on **Server name → Privacy Settings → Direct Messages**.`);
-  if (club.gp >= 5 && gdpg < 0) rec(2, 'team', `We concede more than we score (${team.gdpg} goal difference per game). Review defending shape and look at the tackle % leaders.`);
-  if (form.length >= 5 && form.filter((r) => r === 'W').length <= 1) rec(2, 'team', 'One win or fewer in the last 5. Try a settled line-up and a short tactics chat before the next session.');
-  if (team.scorer && team.scorer.share > 45 && goals >= 10) rec(3, 'team', `**${team.scorer.n}** scores ${team.scorer.share}% of our goals. Create chances for others so we're not predictable.`);
-  if (regulars < 11 && club.gp >= 10) rec(3, 'team', `Only **${regulars}** players have 3+ games. Recruit to cover every position (Trials page).`);
+  if (!m) rec(1, 'setup', 'memberIntent', "I can't see the member list. **Discord Developer Portal → your app → Bot → Privileged Gateway Intents → Server Members Intent → on**, then run /insights again.");
+  if (server.unread.length) rec(2, 'setup', 'channelAccess', `I can't read ${server.unread.length} channel(s) (${server.unread.slice(0, 3).map((n) => '#' + n).join(', ')}). Give the bot **View Channel + Read Message History** there to include them.`);
+  if (oldest > 7) rec(1, 'admin', 'oldestWait', `A request has waited **${Math.round(oldest)} days**. Clear the queue in the Manager portal (claims ${pc.length} · requests ${pr.length} · Rush results ${prush.length}).`);
+  else if (backlog >= 3) rec(2, 'admin', 'backlog', `**${backlog}** items waiting for a manager (claims ${pc.length} · requests ${pr.length} · Rush ${prush.length} · old trial cards ${staleTrials.length}). Try to clear the portal once a day.`);
+  if (resp != null && resp > 48) rec(2, 'admin', 'slowResponse', `Managers take **${Math.round(resp / 2.4) / 10} days** on average to decide. Aim for under 24 h – turn on Discord DMs for "Manager to-dos" in 🔔 settings.`);
+  if (decided.length >= 5 && topShare > 0.8 && (staffN ?? 2) >= 2) rec(2, 'admin', 'topShare', `One manager made **${pct(topShare, 1)}%** of all decisions in 90 days. Share the load: pick a manager per area (claims, Rush, trials).`);
+  if (staleTrials.length) rec(2, 'admin', 'staleTrials', `**${staleTrials.length}** trial / scouting card(s) untouched for 7+ days. Reply or mark them declined so applicants aren't left waiting.`);
+  if (admin.eventsUsed && !upcoming) rec(2, 'admin', 'noUpcoming', 'No match night scheduled in the next 7 days. Schedule one in the Squad Hub (🗓️ Schedule) so members can answer early.');
+  if (staffN && humans / staffN > 20) rec(3, 'admin', 'managerRatio', `1 manager per **${Math.round(humans / staffN)}** members. Consider promoting a trusted regular.`);
+  if (m && posting < 0.15) rec(2, 'server', 'lowPosting', `Only **${job.p7.length} of ${humans}** members posted this week. Start a weekly thread (MOTM debate, clip of the week) and @-mention the squad before games.`);
+  if (m && m.noRole / Math.max(1, humans) > 0.2) rec(2, 'server', 'noRole', `**${m.noRole}** members have no role. Give new members a role (or set up **Server Settings → Onboarding**) so they see the right channels.`);
+  if (m && m.joins30 === 0) rec(2, 'server', 'noNewMembers', 'No new members in 30 days. Share the Apply to Join link on stream, in clips and on the Trials page.');
+  if (dead.length) rec(3, 'server', 'deadChannels', `${dead.length} channel(s) silent for 30+ days: ${dead.slice(0, 4).map((c) => '#' + c.name).join(', ')}. Archive or merge them to keep chat in one place.`);
+  if (unused.length >= 2) rec(3, 'server', 'unusedRoles', `${unused.length} roles nobody has: ${unused.slice(0, 4).map((r) => r.name).join(', ')}. Delete or start using them.`);
+  if (!b.verification) rec(3, 'server', 'verificationOff', 'Server verification is off. **Server Settings → Safety Setup → Verification level → Low** keeps spam accounts out.');
+  if (!b.rules) rec(3, 'server', 'noRulesChannel', 'No rules channel is set. **Server Settings → Safety Setup** (or Community settings) → pick a **Rules channel**.');
+  if (staffN && reads.length && !staff7) rec(3, 'server', 'staffSilent', "Managers haven't posted in chat this week. A quick weekly update from the staff keeps members engaged.");
+  if (site.adoption < 50) rec(2, 'site', 'lowAdoption', `Only **${site.adoption}%** of Discord members have logged in to the site. Pin the Squad Hub login link in #welcome and mention it after games.`);
+  if (squad.length && squadClaimed / squad.length < 0.6) rec(2, 'site', 'unclaimedSquad', `**${squad.length - squadClaimed} of ${squad.length}** squad players haven't claimed their EA player${site.missing.length ? ` (e.g. ${site.missing.slice(0, 3).join(', ')})` : ''}. Claimed players get badges, stats and the ✅ Verified role.`);
+  if (active30 >= 3 && availUsers / active30 < 0.3) rec(3, 'site', 'lowAvailability', `Only **${availUsers}** members set availability for the coming week. Remind the squad to tick their days in the Squad Hub.`);
+  if (lineup && votesAvg / lineup < 0.3) rec(3, 'site', 'lowVotes', `MOTM votes are low (${site.votesAvg} per match). Post the vote link with each result.`);
+  if (db.dmOff >= 2) rec(3, 'site', 'dmBlocked', `**${db.dmOff}** members block DMs from the bot, so they miss alerts. Ask them to turn on **Server name → Privacy Settings → Direct Messages**.`);
+  if (club.gp >= 5 && gdpg < 0) rec(2, 'team', 'poorDefense', `We concede more than we score (${team.gdpg} goal difference per game). Review defending shape and look at the tackle % leaders.`);
+  if (form.length >= 5 && form.filter((r) => r === 'W').length <= 1) rec(2, 'team', 'poorForm', 'One win or fewer in the last 5. Try a settled line-up and a short tactics chat before the next session.');
+  if (team.scorer && team.scorer.share > 45 && goals >= 10) rec(3, 'team', 'oneDimensional', `**${team.scorer.n}** scores ${team.scorer.share}% of our goals. Create chances for others so we're not predictable.`);
+  if (regulars < 11 && club.gp >= 10) rec(3, 'team', 'thinSquad', `Only **${regulars}** players have 3+ games. Recruit to cover every position (Trials page).`);
   const good = [];
   if (resp != null && resp <= 24) good.push(`decisions within ${Math.max(1, Math.round(resp))} h`);
   if (m && posting >= 0.3) good.push('a busy chat');
   if (team.streak >= 3) good.push(`a ${team.streak}-game win streak`);
   if (site.adoption >= 70) good.push(`${site.adoption}% of members on the site`);
-  if (good.length) rec(4, 'good', `Keep it up: ${good.join(', ')}.`);
+  if (good.length) rec(4, 'good', 'goodNews', `Keep it up: ${good.join(', ')}.`);
   recs.sort((x, y) => x.sev - y.sev);
 
   const scores = { server: server.score, site: site.score, admin: admin.score, team: team.score };
@@ -386,4 +394,45 @@ async function dmOwners(env, report) {
     await post(`/channels/${ch.id}/messages`, { content: '📬 **Your weekly Club Intelligence report** – run **/insights** in the server any time for a fresh one.', embeds: reportEmbeds(report, site), allowed_mentions: { parse: [] } })
       .catch((e) => console.log('insights DM failed', e.message));
   }
+}
+
+// ---------- site API (BE10) ----------
+const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
+const fail = (msg, status = 400) => json({ error: msg }, status);
+
+function withActed(report, acted) {
+  return { ...report, recs: report.recs.map((r) => ({ ...r, acted: acted[r.id] ?? null })) };
+}
+
+export async function intelRoute(p, method, body, me, env, loadSite, log) {
+  if (!p.startsWith('/api/intel')) return null;
+  if (!flagOn(env, me, 'insights')) return fail('Not available yet.', 404);
+  if (!can(me, 'insights.view')) return fail('Managers only.', 403);
+
+  if (p === '/api/intel' && method === 'GET') {
+    const [report, acted] = await Promise.all([insightsNow(env, loadSite), getMeta(env, 'insights_acted')]);
+    return json(withActed(report, acted ?? {}));
+  }
+
+  if (p === '/api/intel/act' && method === 'POST') {
+    const report = await getMeta(env, 'insights');
+    const r = report?.recs.find((x) => x.id === String(body.id ?? ''));
+    if (!r) return fail('That recommendation is no longer current – refresh the report.', 404);
+    const acted = (await getMeta(env, 'insights_acted')) ?? {};
+    if (body.undo) delete acted[r.id]; else acted[r.id] = { at: Date.now(), by: me.n };
+    await setMeta(env, 'insights_acted', acted);
+    await log(env, me, body.undo ? 'intel-unact' : 'intel-act', r.text.replace(/\*\*/g, '').slice(0, 140));
+    return json(withActed(report, acted));
+  }
+
+  if (p === '/api/intel/remind' && method === 'POST') {
+    const report = await getMeta(env, 'insights');
+    const r = report?.recs.find((x) => x.id === String(body.id ?? ''));
+    if (!r) return fail('That recommendation is no longer current – refresh the report.', 404);
+    const notified = await safely(notifyManagers(env, { icon: '🧠', title: 'Club Intelligence reminder', body: r.text, link: 'members.html#manager' }, me.u)) ?? 0;
+    await log(env, me, 'intel-remind', r.text.replace(/\*\*/g, '').slice(0, 140));
+    return json({ notified });
+  }
+
+  return fail('Not found', 404);
 }
