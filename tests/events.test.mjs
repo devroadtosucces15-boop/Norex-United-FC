@@ -114,6 +114,18 @@ t('check out', (await call(member2, '/api/events/checkin', { id: liveId, on: fal
 t('member cannot set the lineup', (await call(member, '/api/events/lineup', { id: liveId, lineup: { 500: 'CB' } })).s === 403);
 t('bad lineup position refused', (await call(mgr, '/api/events/lineup', { id: liveId, lineup: { 500: 'QB' } })).s === 400);
 t('manager sets a quick lineup', (await call(mgr, '/api/events/lineup', { id: liveId, lineup: { 500: 'CB', 501: '' } })).d.events.find((e) => e.id === liveId).lineup['500'] === 'CB');
+
+// ----- BE3 ready check -----
+await call(member, '/api/events/rsvp', { ids: [liveId], status: 'yes' });
+await call(member2, '/api/events/rsvp', { ids: [liveId], status: 'yes' });
+const readyForm = await call(mgr, '/api/events/lineup', { id: liveId, formation: '4-3-3', lineup: { 500: 'LCB', 502: 'GK' } });
+const readyEv = readyForm.d.events.find((e) => e.id === liveId);
+t('ready check: slots sorted by formation, each with its answer + check-in', readyEv.ready.slots.length === 2 && readyEv.ready.slots[0].slot === 'GK' && readyEv.ready.slots[1].slot === 'LCB'
+  && readyEv.ready.slots.find((s) => s.id === '500').status === 'yes' && readyEv.ready.slots.find((s) => s.id === '500').checkedIn === true
+  && readyEv.ready.slots.find((s) => s.id === '502').status === 'unanswered' && readyEv.ready.slots.find((s) => s.id === '502').checkedIn === false);
+t('ready check: subs = said yes but not in the lineup', readyEv.ready.subs.some((s) => s.id === '501') && !readyEv.ready.subs.some((s) => s.id === '500'));
+t('ready check: counts tally the slots', readyEv.ready.counts.yes === 1 && readyEv.ready.counts.unanswered === 1);
+t('ready check hidden from members (manager-only field)', (await call(member, '/api/events')).d.events.find((e) => e.id === liveId)?.ready === undefined);
 setFlags({ matchNight: 'owner' });
 t('match night flag gates check-in', (await call(member, '/api/events/checkin', { id: liveId, on: true })).s === 404);
 setFlags({ matchNight: 'members' });
@@ -140,8 +152,17 @@ t('member cannot share the report', (await call(member, '/api/events/report/post
 const shared = await call(mgr, '/api/events/report/post', { id: evId, channel: '70001' });
 t('manager shares: Discord post + attendees notified + marked', shared.s === 200 && shared.d.discord?.ok && /Session report/.test(posts.at(-1).embeds[0].title) && shared.d.notified === 2 && (await call(member2, '/api/notify')).d.items.some((n) => /^Session report/.test(n.title)));
 
+// ----- BE4 nudge a short position -----
+await call(member2, '/api/profile', { positions: ['GK'] });
+const nudged = await call(mgr, '/api/events/nudge', { id: e2, position: 'GK' });
+t('manager nudges members who play a short position and have not answered', nudged.s === 200 && nudged.d.notified === 1
+  && (await call(member2, '/api/notify')).d.items.some((n) => n.type === 'event' && /short on GK/.test(n.title)));
+t('member cannot nudge', (await call(member, '/api/events/nudge', { id: e2, position: 'GK' })).s === 403);
+t('nudging a position nobody plays fails', (await call(mgr, '/api/events/nudge', { id: e2, position: 'RW' })).s === 409);
+t('unknown position refused', (await call(mgr, '/api/events/nudge', { id: e2, position: 'QB' })).s === 400);
+
 await tt('activity log records the night', async () => {
   const types = sqlite.prepare("SELECT DISTINCT type FROM activity WHERE type LIKE 'event-%'").all().map((r) => r.type);
-  return ['event-new', 'event-edit', 'event-cancel', 'event-rsvp', 'event-checkin', 'event-lineup', 'event-report'].every((x) => types.includes(x));
+  return ['event-new', 'event-edit', 'event-cancel', 'event-rsvp', 'event-checkin', 'event-lineup', 'event-report', 'event-nudge'].every((x) => types.includes(x));
 });
 done();

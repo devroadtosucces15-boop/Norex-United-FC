@@ -11,8 +11,14 @@ import { notify, notifyManagers, safely } from './notify.js';
 const DAY = 86400e3;
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
 const PLATFORMS = ['PS5', 'Xbox', 'PC'];
-export const TRIAL_STATUSES = ['recommended', 'applied', 'trialling', 'signed', 'released', 'declined'];
-const OPEN = ['recommended', 'applied', 'trialling'];
+// BE4: the Dugout squad board wants an explicit funnel (applied → booked → played → signed | rejected) –
+// added `booked`/`played` as finer steps inside the existing `trialling` stage rather than renaming anything
+// (old cards sitting in `trialling` still read fine; `trial_events` already logs every status change, so no
+// separate `trial_stage_history` table is needed – it would just duplicate that log).
+export const TRIAL_STATUSES = ['recommended', 'applied', 'booked', 'trialling', 'played', 'signed', 'released', 'declined'];
+const OPEN = ['recommended', 'applied', 'booked', 'trialling', 'played'];
+// Sort order for the Dugout funnel view (STAGE_ORDER.indexOf unknown = -1, sorts first – fine, those are rare).
+export const STAGE_ORDER = TRIAL_STATUSES;
 const NOTE_KINDS = ['member', 'player', 'trial'];
 const NOTE_TAGS = ['strength', 'issue', 'trial', 'general'];
 const FORM_PER_IP = 3; // public applications per IP per day

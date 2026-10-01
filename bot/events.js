@@ -72,6 +72,22 @@ const rsvpOut = (r, profiles, mode) => {
   const pf = profiles.get(r.user_id);
   return { id: r.user_id, n: r.name, a: opt(r.avatar), s: r.status, pos: parse(mode === 'rush' ? pf?.rush_positions : pf?.positions, []) };
 };
+// BE3: ready-check breakdown for a published lineup – each slot's answer (yes/maybe/no/unanswered) + check-in,
+// plus "subs" (said yes but not in the lineup). Learned % per play needs the Tactics Studio (BE1, not built yet).
+function readyCheck(lineup, formation, rs, cs, people) {
+  if (!Object.keys(lineup).length) return undefined;
+  const order = (FORMATIONS[formation] ?? []).map((x) => x[0]);
+  const byId = new Map(rs.map((r) => [r.user_id, r]));
+  const checkedIn = new Set(cs.map((c) => c.user_id));
+  const nameOf = (uid) => byId.get(uid)?.name ?? people.get(uid)?.n ?? 'Member';
+  const avatarOf = (uid) => byId.get(uid)?.avatar ?? people.get(uid)?.a;
+  const slots = Object.entries(lineup).sort((a, b) => order.indexOf(a[1]) - order.indexOf(b[1]))
+    .map(([uid, slot]) => ({ slot, pos: POS_OF(slot), id: uid, n: nameOf(uid), a: opt(avatarOf(uid)), status: byId.get(uid)?.status ?? 'unanswered', checkedIn: checkedIn.has(uid) }));
+  const subs = rs.filter((r) => r.status === 'yes' && !lineup[r.user_id]).map((r) => ({ id: r.user_id, n: r.name, a: opt(r.avatar) }));
+  const counts = { yes: 0, maybe: 0, no: 0, unanswered: 0 };
+  for (const s of slots) counts[s.status]++;
+  return { slots, subs, counts };
+}
 const eventOut = (r, rs, cs, profiles, manager, people = new Map()) => ({
   id: r.id, type: r.type, title: opt(r.title), start: r.start, duration: r.duration, end: r.start + r.duration * MIN, tz: r.tz,
   notes: opt(r.notes), needs: parse(r.needs, {}), public: !!r.public, status: r.status, cancelReason: opt(r.cancel_reason),
@@ -79,6 +95,7 @@ const eventOut = (r, rs, cs, profiles, manager, people = new Map()) => ({
   rsvps: rs.map((x) => rsvpOut(x, profiles, r.type)), checkins: cs.map((x) => ({ id: x.user_id, n: x.name, a: opt(x.avatar), trial: opt(x.trial), at: x.at })),
   // P3.4: names for lineup players who haven't answered / checked in (e.g. withdrew after being picked)
   lineupPeople: Object.fromEntries(Object.keys(parse(r.lineup, {})).filter((id) => !rs.some((x) => x.user_id === id) && !cs.some((x) => x.user_id === id) && people.has(id)).map((id) => [id, people.get(id)])),
+  ready: manager ? readyCheck(parse(r.lineup, {}), r.formation, rs, cs, people) : undefined, // BE3 – managers only
   reportAt: opt(r.report_at), remind: r.remind ?? 'dm', formation: opt(r.formation), lineupAt: opt(r.lineup_at), ...(manager ? { posted: !!r.discord_msg } : {}),
 });
 async function load(env, where, args, me) {
@@ -454,6 +471,25 @@ async function lineupRoute(p, method, body, me, env, log) {
   return json({ ...out, ...(await listFor(env, me)) });
 }
 
+// ---------- BE4: nudge a short position ----------
+// Managers, from the Dugout squad view: DM/push only the members who play a short position and haven't
+// answered yet – a targeted version of the T-24h/T-2h cron reminder (eventReminders), fired on demand.
+async function nudgeRoute(body, me, env, log) {
+  if (!can(me, 'events.manage')) return fail('Managers only.', 403);
+  const row = await one(env, "SELECT * FROM events WHERE id = ? AND status = 'scheduled'", Number(body.id) || 0);
+  if (!row) return fail('That event is not on.', 404);
+  const position = String(body.position ?? '');
+  if (!POSITIONS.includes(position)) return fail('Pick a position.');
+  const answered = new Set((await all(env, 'SELECT user_id FROM event_rsvps WHERE event_id = ?', row.id)).map((r) => r.user_id));
+  const col = row.type === 'rush' ? 'rush_positions' : 'positions';
+  const rows = await all(env, `SELECT p.user_id, p.${col} AS pos FROM profiles p JOIN users u ON u.id = p.user_id WHERE u.last_at > ?`, Date.now() - 120 * DAY);
+  const ids = rows.filter((r) => !answered.has(r.user_id) && parse(r.pos, []).includes(position)).map((r) => r.user_id);
+  if (!ids.length) return fail('Nobody to nudge – everyone who plays there has answered, or nobody has that position set.', 409);
+  const notified = await safely(notify(env, ids, { type: 'event', icon: '📣', title: `Can you make it? ${label(row)} – short on ${position}`, body: when(row), link: 'members.html#schedule' })) ?? 0;
+  await log(env, me, 'event-nudge', `${label(row)} · ${position} · ${notified} nudged`);
+  return json({ notified, ...(await listFor(env, me)) });
+}
+
 // ---------- P3.3 reminders (10-minute cron) ----------
 // T-24h and T-2h: a reminder in the event's Discord channel ("7 ✅ – need a GK", with the answer buttons) and a nudge for
 // members who haven't answered yet – bell + DM (remind = dm) or an @mention in that channel (remind = mention).
@@ -508,6 +544,7 @@ export async function eventsRoute(p, method, body, me, env, log, loadSite, url) 
   if (method !== 'POST') return fail('Not found', 404);
   if (p === '/api/events') return saveEvent(body, me, env, log);
   if (p === '/api/events/rsvp') return rsvp(body, me, env, log);
+  if (p === '/api/events/nudge') return nudgeRoute(body, me, env, log); // BE4 – nudge a short position
   if (p === '/api/events/cancel') {
     if (!can(me, 'events.manage')) return fail('Managers only.', 403);
     const row = await one(env, "SELECT * FROM events WHERE id = ? AND status = 'scheduled'", Number(body.id) || 0);

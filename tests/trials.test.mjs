@@ -50,6 +50,16 @@ tr = await call(mgr, '/api/trials/add', { ea: sq.n, platform: 'Xbox', positions:
 const known = tr.d.trials.find((x) => x.ea === sq.n);
 t('manager adds a Discord applicant; known gamertag links the player page', tr.s === 200 && known.source === 'discord' && known.player === sq.k);
 t('manual duplicate → 409', (await call(mgr, '/api/trials/add', { ea: sq.n, platform: 'Xbox', positions: ['CB'] })).s === 409);
+
+// ----- BE4: explicit funnel (applied → booked → played → signed | rejected) -----
+tr = await call(mgr, '/api/trials/update', { id: known.id, status: 'booked' });
+t('applied → booked', tr.d.trials.find((x) => x.id === known.id).status === 'booked');
+tr = await call(mgr, '/api/trials/update', { id: known.id, status: 'played' });
+t('booked → played', tr.d.trials.find((x) => x.id === known.id).status === 'played');
+t('new stages count as "open" (not auto-expired from the board)', (await call(mgr, '/api/trials')).d.trials.some((x) => x.id === known.id));
+tr = await call(mgr, '/api/trials/update', { id: known.id, status: 'declined' });
+t('played → declined (the funnel\'s "rejected" end)', tr.d.trials.find((x) => x.id === known.id).status === 'declined');
+
 tr = await call(mgr, '/api/trials/update', { id: card.id, status: 'trialling' });
 t('status → trialling', tr.d.trials.find((x) => x.id === card.id).status === 'trialling');
 t('same status again → 409', (await call(mgr, '/api/trials/update', { id: card.id, status: 'trialling' })).s === 409);

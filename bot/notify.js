@@ -178,7 +178,7 @@ const itemOut = (r) => ({
   id: r.id, type: r.type, icon: opt(r.icon), title: r.title, body: opt(r.body), link: opt(r.link), at: r.at,
   read: !!r.read_at, ack: r.ack ? (r.ack_at ? 'done' : 'due') : undefined, dm: opt(r.dm),
 });
-async function counts(env, me) {
+export async function counts(env, me) {
   const [u, a] = await Promise.all([
     one(env, 'SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL', me.u),
     one(env, 'SELECT id, icon, title FROM notifications WHERE user_id = ? AND ack = 1 AND ack_at IS NULL ORDER BY id LIMIT 1', me.u),

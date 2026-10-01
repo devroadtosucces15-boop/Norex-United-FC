@@ -19,7 +19,8 @@ import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute,
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
-import { eventsRoute, publicEvents, weekEvents } from './events.js';
+import { eventsRoute, localDate, publicEvents, weekEvents } from './events.js';
+import { lockerRoute } from './locker.js';
 import { awardsRoute, trophies } from './awards.js';
 import { playerInsights } from './aiinsights.js';
 import { squadsRoute } from './squads.js';
@@ -37,6 +38,7 @@ import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { crawlRoute } from './crawl.js';
 import { awardPoints, pointsRoute } from './points.js';
+import { myAvatarCard } from './avatarcard.js';
 import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
 import { healthRoute } from './health.js';
 
@@ -90,9 +92,10 @@ const parseWarnings = (s) => { try { return JSON.parse(s || '[]'); } catch { ret
 const userOut = (r) => ({ n: r.name, a: r.avatar, tag: r.tag, admin: !!r.admin, role: r.role, first: r.first_at, last: r.last_at, logins: r.logins,
   mutedUntil: r.muted_until > Date.now() ? r.muted_until : undefined, warnings: parseWarnings(r.warnings), // P8.3
   points: r.points ?? 0, profanityStrikes: r.profanity_strikes ?? 0 }); // P11.3 / P11.4
-const claimOut = (r, history = []) => ({
+const claimOut = (r, history = [], taken) => ({
   player: r.player, playerName: r.player_name, status: r.status, at: r.at, n: r.name, a: r.avatar,
   decidedBy: opt(r.decided_by), decidedAt: opt(r.decided_at), history,
+  taken: opt(taken), // BE4 – pre-computed check: this player already has a different approved claim
 });
 const histOut = (h) => ({ action: h.action, player: h.player, by: h.by_name, at: h.at });
 
@@ -109,7 +112,8 @@ async function getClaims(env) {
   ]);
   const byUser = {};
   for (const h of hist) (byUser[h.user_id] ??= []).push(histOut(h));
-  return Object.fromEntries(rows.map((r) => [r.user_id, claimOut(r, (byUser[r.user_id] ?? []).slice(-20))]));
+  const approvedBy = new Map(rows.filter((r) => r.status === 'approved').map((r) => [r.player, r.name])); // BE4: already claimed?
+  return Object.fromEntries(rows.map((r) => [r.user_id, claimOut(r, (byUser[r.user_id] ?? []).slice(-20), r.status === 'pending' && approvedBy.has(r.player) ? approvedBy.get(r.player) : undefined)]));
 }
 
 // P8.2 – manager portal drill-down: everything one member has done, in one call.
@@ -548,6 +552,12 @@ async function route(p, method, body, me, env, loadSite, url) {
     return card ? json(card) : fail('Member not found', 404);
   }
 
+  if (p === '/api/avatarcard' && method === 'GET') { // P11.5 – web half of the AI club card made by /avatarcard in Discord
+    if (!flagOn(env, me, 'avatarCard')) return fail('Not available yet.', 404);
+    const row = await myAvatarCard(env, me.u);
+    return json({ card: row ? { photoKey: row.photo_key, bgKey: row.bg_key, at: row.at } : null });
+  }
+
   if (p === '/api/availability') {
     const dates = days7();
     if (method === 'POST') {
@@ -621,6 +631,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (kno) return kno;
   const evt = await eventsRoute(p, method, body, me, env, log, loadSite, url); // P3.1 events · P3.2 RSVPs · P3.7 match night
   if (evt) return evt;
+  const lkr = await lockerRoute(p, method, me, env); // BE2 Locker Room: next event + vote + unread + achievements, one call
+  if (lkr) return lkr;
   const awd = await awardsRoute(p, method, body, me, env, loadSite, log, url); // P4.1 weekly awards
   if (awd) return awd;
   const sqd = await squadsRoute(p, method, body, me, env, log); // P3.5 Rush squad builder
@@ -743,6 +755,27 @@ async function route(p, method, body, me, env, loadSite, url) {
         ...(can(me, 'settings.bot') ? { flags: flags(env), canEditFlags: can(me, 'flags.manage') } : {}), // BE5 – flags is now live (D1 overrides), canEditFlags gates the portal's edit controls
         ...(flagOn(env, me, 'events') ? { events: await weekEvents(env, me) } : {}), // P3.2 – squad week by event
       });
+    }
+    if (p === '/api/admin/squadweek' && method === 'GET') { // BE4 – Dugout: 7 days of availability + event RSVPs merged, "can we field 9?" per day
+      const dates = days7();
+      const [avail, events] = await Promise.all([availByDate(env, dates), flagOn(env, me, 'events') ? weekEvents(env, me) : []]);
+      const days = dates.map((d) => {
+        const yes = new Map(), maybe = new Map();
+        for (const [uid, v] of Object.entries(avail[d] ?? {})) {
+          if (v.s === 'yes') yes.set(uid, { n: v.n, a: v.a });
+          else if (v.s === 'maybe') maybe.set(uid, { n: v.n, a: v.a });
+        }
+        for (const e of events) {
+          if (e.status !== 'scheduled' || localDate(e.start, e.tz) !== d) continue;
+          for (const r of e.rsvps) {
+            if (r.s === 'yes') yes.set(r.id, { n: r.n, a: r.a });
+            else if (r.s === 'maybe' && !yes.has(r.id)) maybe.set(r.id, { n: r.n, a: r.a });
+          }
+        }
+        for (const id of yes.keys()) maybe.delete(id);
+        return { date: d, yes: [...yes].map(([id, p]) => ({ id, ...p })), maybe: [...maybe].map(([id, p]) => ({ id, ...p })), canField9: yes.size >= 9 };
+      });
+      return json({ days });
     }
     if (p === '/api/admin/flags' && method === 'POST') { // BE5 – Boardroom: live-edit one flag's level
       if (!can(me, 'flags.manage')) return fail('Owner only.', 403);

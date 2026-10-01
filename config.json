@@ -94,6 +94,8 @@
     "presence": "owner",
     "mentions": "owner",
     "messages": "owner",
-    "points": "owner"
+    "points": "owner",
+    "avatarCard": "owner",
+    "locker": "owner"
   }
 }
