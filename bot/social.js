@@ -29,6 +29,9 @@ export const touch = (env, me) => (env.DB && me?.u
   ? run(env, 'UPDATE users SET seen_at = ?1 WHERE id = ?2 AND (seen_at IS NULL OR seen_at < ?1 - ?3)', Date.now(), me.u, TOUCH_MS).catch(() => {})
   : Promise.resolve());
 
+// BE8 – the Hub's site-wide "online now" count reuses this instead of a second presence query.
+export const onlineCount = (env) => one(env, 'SELECT COUNT(*) AS n FROM users WHERE seen_at > ? AND presence_hidden = 0', Date.now() - ONLINE_MS).then((r) => r?.n ?? 0);
+
 const personOut = (r) => ({ id: r.id, n: r.name, a: opt(r.avatar), tag: opt(r.tag), at: r.seen_at });
 async function presence(env, me) {
   const now = Date.now();

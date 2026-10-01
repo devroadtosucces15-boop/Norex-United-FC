@@ -90,6 +90,8 @@ export const PERMS = {
   'health.view': 'owner', // BE6 – Boardroom: Cloudflare Analytics + GitHub Actions health/usage dashboard
   'plays.view': 'member', // BE1 – Tactics Studio: view published plays, mark learned, take the quiz
   'plays.manage': 'manager', // BE1 – create/edit/publish/assign/archive plays, restore old versions
+  'hubroom.view': 'member', // BE8 – Hub: online count, live "who's here" roster
+  'hubroom.wave': 'member', // BE8 – Hub: wave at another member
 };
 
 export function can(user, action) {

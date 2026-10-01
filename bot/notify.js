@@ -44,6 +44,7 @@ export const TYPES = {
   queue: { icon: '🛡️', label: 'Manager to-dos (new claims, trials, Rush results, requests)', def: 'site', role: 'manager' },
   moderation: { icon: '🛡️', label: 'Warnings and mutes from the managers', def: 'dm' }, // P8.3
   play: { icon: '📋', label: 'New plays assigned to me', def: 'dm' }, // BE1
+  wave: { icon: '👋', label: 'Waves from teammates in the Hub', def: 'site' }, // BE8
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },
 };
 const MODES = ['dm', 'site', 'off'];

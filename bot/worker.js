@@ -32,6 +32,7 @@ import { askAnswer, buildAskContext } from './ask.js';
 import { makeAvatarCard } from './avatarcard.js';
 import { postEmbed } from './docs.js';
 import { refreshStatInsights, handleStatInsightJob, statInsightWeekly } from './statinsights.js';
+import { handleHubWaveJob } from './hub.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
@@ -141,6 +142,7 @@ export default {
     for (const msg of batch.messages) {
       try {
         if (msg.body?.type === 'statInsight') await handleStatInsightJob(env, loadSite, msg.body.key);
+        if (msg.body?.type === 'hubWave') await handleHubWaveJob(env, msg.body.to, msg.body.from);
         msg.ack();
       } catch (e) { console.log('queue job failed', msg.body?.type, e.message); msg.retry(); }
     }
@@ -489,3 +491,4 @@ function playerEmbed(p, club, site, footer) {
   };
 }
 export { ChatRoom } from './chatroom.js'; // P6.3b live chat rooms (Durable Object)
+export { HubRoom } from './hubroom.js'; // BE8 Hub live presence/waves (Durable Object)

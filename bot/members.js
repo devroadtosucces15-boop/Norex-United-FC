@@ -21,6 +21,7 @@ import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
 import { eventsRoute, localDate, publicEvents, weekEvents, reportPosterRoute } from './events.js';
 import { lockerRoute } from './locker.js';
+import { hubRoute, hubSocket } from './hub.js';
 import { intelRoute } from './insights.js';
 import { awardsRoute, trophies } from './awards.js';
 import { playerInsights } from './aiinsights.js';
@@ -311,6 +312,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
       const who = await unseal(env, url.searchParams.get('t'));
       if (who) who.role = await currentRole(env, who);
       return chatSocket(request, env, who, Number(wsChat[1]));
+    }
+    if (url.pathname === '/api/hub/ws') { // BE8 – live "who's in the Hub" roster + waves, same ?t= shape as chat
+      const who = await unseal(env, url.searchParams.get('t'));
+      if (who) who.role = await currentRole(env, who);
+      return hubSocket(request, env, who);
     }
     if (url.pathname === '/api/live' && request.method === 'GET') { // P1.3 – public once the flag is 'public'
       if (me) me.role = await currentRole(env, me, request);
@@ -654,6 +660,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (evt) return evt;
   const lkr = await lockerRoute(p, method, me, env); // BE2 Locker Room: next event + vote + unread + achievements, one call
   if (lkr) return lkr;
+  const hub = await hubRoute(p, method, body, me, env, log); // BE8 Hub: online count + waves (live roster is the HUB_ROOM socket)
+  if (hub) return hub;
   const ply = await playsRoute(p, method, body, me, env, log); // BE1 Tactics Studio: plays, versions, assignment, quiz
   if (ply) return ply;
   const itl = await intelRoute(p, method, body, me, env, loadSite, log); // BE10 Club Intelligence: report + act/remind on a recommendation

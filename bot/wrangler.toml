@@ -28,6 +28,15 @@ binding = "AI"
 name = "CHAT_ROOM"
 class_name = "ChatRoom"
 
+# BE8 Hub: one shared Durable Object for the whole club's live "who's here" roster + waves
+[[durable_objects.bindings]]
+name = "HUB_ROOM"
+class_name = "HubRoom"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["ChatRoom"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["HubRoom"]
