@@ -37,7 +37,7 @@ const run = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).run();
 const marks = (n) => Array(n).fill('?').join(',');
 const opt = (v) => v ?? undefined;
 export const mb = (n) => (!n ? '0 MB' : n >= GB ? `${(n / GB).toFixed(2)} GB` : `${Math.max(0.1, n / MB).toFixed(n < 10 * MB ? 1 : 0)} MB`);
-const hex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, '0')).join('');
+export const hex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, '0')).join('');
 const dim = (v) => { const n = Math.round(Number(v)); return n > 0 && n <= 20000 ? n : null; };
 const getMeta = async (env, k) => { const r = await one(env, 'SELECT value FROM meta WHERE key = ?', k); try { return r ? JSON.parse(r.value) : null; } catch { return null; } };
 const setMeta = (env, k, v) => run(env, 'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', k, JSON.stringify(v));
