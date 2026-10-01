@@ -359,7 +359,7 @@
   "51769": {
    "tier": "linked",
    "firstSeen": "2026-09-29T11:31:10.703Z",
-   "lastFetched": "2026-10-01T23:31:02.694Z",
+   "lastFetched": "2026-10-01T23:40:57.367Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "741879",
@@ -522,7 +522,7 @@
   "56758": {
    "tier": "linked",
    "firstSeen": "2026-09-30T04:53:34.259Z",
-   "lastFetched": "2026-10-01T23:31:02.694Z",
+   "lastFetched": "2026-10-01T23:40:57.367Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "418301",
@@ -810,6 +810,14 @@
    "depth": 19,
    "discoveredVia": "70853"
   },
+  "75608": {
+   "tier": "discovered",
+   "firstSeen": "2026-10-01T23:40:57.367Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 19,
+   "discoveredVia": "424287"
+  },
   "75984": {
    "tier": "discovered",
    "firstSeen": "2026-10-01T21:31:16.486Z",
@@ -848,7 +856,7 @@
   "80869": {
    "tier": "home",
    "firstSeen": "2026-09-28T01:09:15.486Z",
-   "lastFetched": "2026-10-01T23:31:02.694Z",
+   "lastFetched": "2026-10-01T23:40:57.367Z",
    "fails": 0,
    "depth": 0,
    "name": "NOREX UNITED FC"
@@ -885,6 +893,14 @@
    "fails": 0,
    "depth": 19,
    "discoveredVia": "58975"
+  },
+  "142875": {
+   "tier": "discovered",
+   "firstSeen": "2026-10-01T23:40:57.367Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 8,
+   "discoveredVia": "337871"
   },
   "148067": {
    "tier": "discovered",
@@ -984,7 +1000,7 @@
   "189496": {
    "tier": "linked",
    "firstSeen": "2026-09-28T01:13:37.021Z",
-   "lastFetched": "2026-10-01T23:31:02.694Z",
+   "lastFetched": "2026-10-01T23:40:57.367Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "61188",
@@ -1178,7 +1194,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-30T04:20:47.418Z",
    "lastFetched": null,
-   "fails": 271,
+   "fails": 272,
    "depth": 15,
    "discoveredVia": "318901"
   },
@@ -1232,14 +1248,6 @@
    "depth": 1,
    "discoveredVia": "56758",
    "name": "batesandfriends"
-  },
-  "337871": {
-   "tier": "discovered",
-   "firstSeen": "2026-10-01T23:31:02.694Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 7,
-   "discoveredVia": "521466"
   },
   "338096": {
    "tier": "discovered",
@@ -1332,14 +1340,6 @@
    "depth": 19,
    "discoveredVia": "24098"
   },
-  "390107": {
-   "tier": "discovered",
-   "firstSeen": "2026-10-01T23:31:02.694Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 7,
-   "discoveredVia": "120149"
-  },
   "393151": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T01:09:15.486Z",
@@ -1381,14 +1381,6 @@
    "depth": 19,
    "discoveredVia": "316329"
   },
-  "424287": {
-   "tier": "discovered",
-   "firstSeen": "2026-10-01T09:31:03.008Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 18,
-   "discoveredVia": "233323"
-  },
   "424981": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T05:11:04.785Z",
@@ -1397,14 +1389,6 @@
    "depth": 1,
    "discoveredVia": "189496",
    "name": "Misfit"
-  },
-  "425911": {
-   "tier": "discovered",
-   "firstSeen": "2026-10-01T10:50:49.270Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 18,
-   "discoveredVia": "383789"
   },
   "426612": {
    "tier": "discovered",
@@ -1503,6 +1487,14 @@
    "depth": 18,
    "discoveredVia": "150911"
   },
+  "432036": {
+   "tier": "discovered",
+   "firstSeen": "2026-10-01T23:40:57.367Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 19,
+   "discoveredVia": "425911"
+  },
   "432526": {
    "tier": "discovered",
    "firstSeen": "2026-10-01T19:01:38.892Z",
@@ -1551,6 +1543,14 @@
    "depth": 1,
    "discoveredVia": "80869",
    "name": "Shuggar Fc"
+  },
+  "476375": {
+   "tier": "discovered",
+   "firstSeen": "2026-10-01T23:40:57.367Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 8,
+   "discoveredVia": "390107"
   },
   "476867": {
    "tier": "discovered",
@@ -1808,7 +1808,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-29T11:58:33.902Z",
    "lastFetched": null,
-   "fails": 456,
+   "fails": 457,
    "depth": 12,
    "discoveredVia": "897482"
   },
@@ -1954,7 +1954,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-29T09:02:47.770Z",
    "lastFetched": null,
-   "fails": 454,
+   "fails": 455,
    "depth": 12,
    "discoveredVia": "81919"
   },
@@ -2491,7 +2491,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-29T02:29:00.894Z",
    "lastFetched": null,
-   "fails": 541,
+   "fails": 542,
    "depth": 10,
    "discoveredVia": "569635"
   },
@@ -2847,7 +2847,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-28T07:59:06.403Z",
    "lastFetched": null,
-   "fails": 719,
+   "fails": 720,
    "depth": 5,
    "discoveredVia": "220025"
   },
@@ -2952,7 +2952,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-28T18:32:21.739Z",
    "lastFetched": null,
-   "fails": 614,
+   "fails": 615,
    "depth": 8,
    "discoveredVia": "318664"
   },
@@ -3050,7 +3050,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-29T08:13:42.259Z",
    "lastFetched": null,
-   "fails": 441,
+   "fails": 442,
    "depth": 12,
    "discoveredVia": "2078"
   },
@@ -3074,7 +3074,7 @@
    "tier": "discovered",
    "firstSeen": "2026-10-01T01:34:42.816Z",
    "lastFetched": null,
-   "fails": 44,
+   "fails": 45,
    "depth": 17,
    "discoveredVia": "775856"
   },
@@ -6247,6 +6247,7 @@
   "337683": "2026-09-29",
   "337770": "2026-09-29",
   "337829": "2026-09-29",
+  "337871": "2026-10-01",
   "337996": "2026-09-28",
   "338280": "2026-09-30",
   "338315": "2026-09-30",
@@ -6484,6 +6485,7 @@
   "388194": "2026-10-01",
   "389285": "2026-09-30",
   "389345": "2026-09-29",
+  "390107": "2026-10-01",
   "390649": "2026-09-30",
   "392879": "2026-09-29",
   "393884": "2026-09-28",
@@ -6654,6 +6656,7 @@
   "423974": "2026-09-29",
   "424176": "2026-09-28",
   "424204": "2026-09-28",
+  "424287": "2026-10-01",
   "424600": "2026-09-28",
   "424894": "2026-09-30",
   "425084": "2026-09-28",
@@ -6665,6 +6668,7 @@
   "425807": "2026-09-30",
   "425814": "2026-09-28",
   "425862": "2026-09-28",
+  "425911": "2026-10-01",
   "425932": "2026-09-29",
   "426030": "2026-09-29",
   "426065": "2026-09-29",
