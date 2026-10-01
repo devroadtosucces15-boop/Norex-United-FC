@@ -139,6 +139,6 @@ const feedHtml = fs.readFileSync(ROOT + 'site/feed.html', 'utf8'), home = fs.rea
 t('pages: feed loads social.js before feed.js', feedHtml.indexOf('assets/social.js') > 0 && feedHtml.indexOf('assets/social.js') < feedHtml.indexOf('assets/feed.js'));
 t('pages: home page has the highlight-of-the-week slot', home.includes('<div data-hotw hidden></div>'));
 t('pages: new assets shipped', ['social.js', 'social.css', 'presence.js', 'hotw.js'].every((f) => fs.existsSync(ROOT + 'site/assets/' + f)));
-t('flags: hotw, presence, mentions ship as owner', ['hotw', 'presence', 'mentions'].every((f) => config.features[f] === 'owner'));
+t('flags: hotw, presence, mentions are on for members', ['hotw', 'presence', 'mentions'].every((f) => config.features[f] === 'members'));
 
 done();

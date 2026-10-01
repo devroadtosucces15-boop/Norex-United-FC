@@ -9,6 +9,7 @@ const m1 = await login('500', [], 'Player One');
 const m2 = await login('501', [], 'Player Two');
 const m3 = await login('502', [], 'Player Three');
 
+setFlags({ messages: 'owner' });
 t('chats: 404 while owner-only and I am a member', (await call(m1, '/api/chats')).s === 404);
 setFlags({ messages: 'members' });
 t('chats: guests refused', [401, 404].includes((await call(null, '/api/chats')).s));
