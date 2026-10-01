@@ -142,6 +142,21 @@ env.CHAT_ROOM.get = () => ({ fetch: async () => { throw new Error('room down'); 
 t('push: a broken room never fails the send', (await call(m1, `/api/chats/${dmId}/messages`, { text: 'still works' })).s === 200);
 delete env.CHAT_ROOM;
 
+// ---------- QA5 security pass: reporter stays hidden, sending is rate-limited ----------
+r = await call(m1, `/api/chats/${dmId}/messages`, { text: 'spicy take' });
+const spicyId = r.d.message.id;
+await call(m2, `/api/chats/${dmId}/messages/${spicyId}/report`, { reason: 'Targeted at me' });
+const seen = (await call(m1, `/api/chats/${dmId}/messages`)).d.messages.find((x) => x.id === spicyId);
+t('chats: members see that a message was reported, never who or why', seen.reported === true);
+t('chats: managers still see the reporter and reason', (await call(mgr, '/api/chats/reports')).d.reports.some((x) => x.id === spicyId && x.reported.by === '501' && x.reported.reason === 'Targeted at me'));
+const spam = await login('700', [], 'Spammer');
+await login('701', [], 'Target');
+const spamDm = (await call(spam, '/api/chats', { kind: 'dm', user: '701' })).d.chat.id;
+let okSends = 0;
+for (let i = 0; i < 20; i++) if ((await call(spam, `/api/chats/${spamDm}/messages`, { text: `m${i}` })).s === 200) okSends++;
+t('chats: 20 messages a minute go through', okSends === 20);
+t('chats: the 21st in a minute is refused', (await call(spam, `/api/chats/${spamDm}/messages`, { text: 'one more' })).s === 429);
+
 const { ChatRoom } = await import('../bot/chatroom.js');
 const sockets = [];
 const fakeWs = (who) => { const w = { who, sent: [], send(d) { this.sent.push(d); }, deserializeAttachment: () => who, close() {} }; sockets.push(w); return w; };
@@ -156,5 +171,11 @@ await room.webSocketMessage(a, JSON.stringify({ t: 'msg', message: { text: 'forg
 t('room: clients cannot forge pushes', b.sent.length === 1);
 await room.fetch(new Request('https://room/push', { method: 'POST', body: '{"t":"removed","id":1}' }));
 t('room: /push fans out to every socket', [a, b, o].every((w) => w.sent.at(-1) === '{"t":"removed","id":1}'));
+const closed = [];
+const kws = (u) => ({ who: { u }, close(code) { closed.push([u, code]); } });
+const k1 = kws('500'), k2 = kws('501');
+const room2 = new ChatRoom({ getWebSockets: (tag) => [k1, k2].filter((w) => !tag || w.who.u === tag), setWebSocketAutoResponse() {} }, {});
+await room2.fetch(new Request('https://room/kick', { method: 'POST', body: '{"u":"500"}' }));
+t('room: /kick closes only that member\'s sockets', closed.length === 1 && closed[0][0] === '500' && closed[0][1] === 4403);
 
 done();

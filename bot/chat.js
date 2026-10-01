@@ -25,6 +25,8 @@ import { notify, notifyManagers, safely } from './notify.js';
 
 const GROUP_EMOJI = ['💬', '⚽', '🔥', '🎮', '🏆', '🤝', '📣', '⚡'];
 const GROUP_MAX = 16;
+export const MSG_PER_MIN = 20;
+export const CHATS_PER_DAY = 20;
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
 const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results);
@@ -34,6 +36,15 @@ const marks = (n) => Array(n).fill('?').join(',');
 const opt = (v) => v ?? undefined;
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u0009\u000b-\u001f<>]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
 const excerpt = (s, n = 90) => { const t = String(s).replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
+
+// Closes a removed/departed member's live sockets so they stop receiving the room's pushes.
+async function kickRoom(env, id, uid) {
+  if (!env.CHAT_ROOM) return;
+  try {
+    const room = env.CHAT_ROOM.get(env.CHAT_ROOM.idFromName(`chat:${id}`));
+    await room.fetch('https://room/kick', { method: 'POST', body: JSON.stringify({ u: uid }) });
+  } catch (e) { console.log('chat kick failed', e.message); }
+}
 
 // Fan an event out to everyone connected to this chat's room. Never fails the request that triggered it.
 async function pushRoom(env, id, evt) {
@@ -57,10 +68,12 @@ export async function chatSocket(request, env, me, id) {
   return room.fetch(new Request(`https://room/ws?${q}`, { headers: request.headers }));
 }
 
-const msgOut = (r) => ({
+// Only managers see who reported a message and why; everyone else just sees that it was reported.
+const msgOut = (r, mod = false) => ({
   id: r.id, chatId: r.chat_id, text: r.text, at: r.at, by: { id: r.user_id, n: r.name, a: opt(r.avatar) },
-  reported: r.reported_at ? { at: r.reported_at, by: r.reported_by, reason: r.reported_reason } : false,
+  reported: r.reported_at ? (mod ? { at: r.reported_at, by: r.reported_by, reason: r.reported_reason } : true) : false,
 });
+const chatsToday = (env, uid) => one(env, 'SELECT COUNT(*) AS n FROM chats WHERE created_by = ? AND created_at > ?', uid, Date.now() - 86400e3);
 
 // The chat + my membership row (or `mine: null` if I only have owner read-all access).
 async function access(env, me, id) {
@@ -123,6 +136,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
       const key = [me.u, uid].sort().join(':');
       let chat = await one(env, 'SELECT * FROM chats WHERE dm_key = ?', key);
       if (!chat) {
+        if ((await chatsToday(env, me.u)).n >= CHATS_PER_DAY) return fail(`That’s ${CHATS_PER_DAY} new chats today – more tomorrow.`, 429);
         const at = Date.now();
         const r = await run(env, `INSERT INTO chats (kind, dm_key, created_by, created_at, last_at) VALUES ('dm', ?, ?, ?, ?)`, key, me.u, at, at);
         const id = r.meta.last_row_id;
@@ -149,6 +163,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
       if (memberIds.length >= GROUP_MAX) return fail(`Groups top out at ${GROUP_MAX} members.`);
       const rows = await all(env, `SELECT id, name, avatar FROM users WHERE id IN (${marks(memberIds.length)})`, ...memberIds);
       if (rows.length !== memberIds.length) return fail('One of those members was not found.');
+      if ((await chatsToday(env, me.u)).n >= CHATS_PER_DAY) return fail(`That’s ${CHATS_PER_DAY} new chats today – more tomorrow.`, 429);
       const at = Date.now();
       const r = await run(env, `INSERT INTO chats (kind, name, emoji, created_by, created_at, last_at) VALUES ('group', ?, ?, ?, ?, ?)`, name, emoji, me.u, at, at);
       const id = r.meta.last_row_id;
@@ -190,7 +205,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     if (!can(me, 'messages.reported')) return fail('Managers only.', 403);
     const rows = await all(env, `SELECT m.*, c.kind, c.name AS chat_name, c.emoji AS chat_emoji FROM chat_messages m
       JOIN chats c ON c.id = m.chat_id WHERE m.reported_at IS NOT NULL AND m.removed = 0 ORDER BY m.reported_at DESC LIMIT 100`);
-    return json({ reports: rows.map((r) => ({ ...msgOut(r), chatKind: r.kind, chatName: r.kind === 'dm' ? 'DM' : (r.chat_name || 'Group') })) });
+    return json({ reports: rows.map((r) => ({ ...msgOut(r, true), chatKind: r.kind, chatName: r.kind === 'dm' ? 'DM' : (r.chat_name || 'Group') })) });
   }
   if (p.startsWith('/api/chats/reports/') && method === 'POST') {
     if (!can(me, 'messages.reported')) return fail('Managers only.', 403);
@@ -269,6 +284,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     const target = await one(env, 'SELECT * FROM chat_members WHERE chat_id = ? AND user_id = ?', id, uid);
     if (!target) return fail('That member is not in this chat.', 404);
     await run(env, 'DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?', id, uid);
+    await kickRoom(env, id, uid);
     await log(env, me, 'chat-remove-member', `${acc.chat.emoji || '💬'} ${acc.chat.name} · -${target.name}`);
     const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
     const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
@@ -285,12 +301,13 @@ export async function chatRoute(p, method, body, me, env, log, url) {
   if (m[3] === 'messages' && method === 'GET') {
     const before = Number(url.searchParams.get('before')) || 0;
     const rows = await all(env, `SELECT * FROM chat_messages WHERE chat_id = ? AND removed = 0 ${before ? 'AND id < ?' : ''} ORDER BY id DESC LIMIT 50`, id, ...(before ? [before] : []));
-    return json({ messages: rows.reverse().map(msgOut), more: rows.length === 50, readonly: !acc.mine });
+    return json({ messages: rows.reverse().map((m) => msgOut(m)), more: rows.length === 50, readonly: !acc.mine });
   }
   if (m[3] === 'messages' && method === 'POST') {
     if (!acc.mine) return fail('You can only read this chat.', 403);
     const mutedUntil = await muted(env, me.u);
     if (mutedUntil) return fail(`You’re muted until ${new Date(mutedUntil).toLocaleString()}.`, 403);
+    if ((await one(env, 'SELECT COUNT(*) AS n FROM chat_messages WHERE user_id = ? AND at > ?', me.u, Date.now() - 60e3)).n >= MSG_PER_MIN) return fail('Slow down – too many messages in a minute.', 429);
     const text = clean(body.text, 2000);
     if (!text) return fail('Write a message.');
     const at = Date.now();
@@ -318,6 +335,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     if (!acc.mine) return fail('You can only read this chat.', 403);
     if (acc.chat.kind === 'dm') return fail("DMs can't be left – just stop replying.");
     await run(env, 'DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?', id, me.u);
+    await kickRoom(env, id, me.u);
     await log(env, me, 'chat-leave', acc.chat.name || 'group');
     return json({ ok: true });
   }

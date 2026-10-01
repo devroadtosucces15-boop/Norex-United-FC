@@ -18,6 +18,12 @@ export class ChatRoom {
       for (const ws of this.ctx.getWebSockets()) { try { ws.send(data); } catch { /* closing */ } }
       return new Response('ok');
     }
+    if (url.pathname === '/kick' && request.method === 'POST') {
+      let u = '';
+      try { u = String(JSON.parse(await request.text()).u ?? ''); } catch { /* bad body */ }
+      if (u) for (const ws of this.ctx.getWebSockets(u)) { try { ws.close(4403, 'removed'); } catch { /* closing */ } }
+      return new Response('ok');
+    }
     if (url.pathname === '/ws' && request.headers.get('Upgrade') === 'websocket') {
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
