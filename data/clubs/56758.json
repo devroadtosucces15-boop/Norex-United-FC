@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-02T04:10:45.985Z",
+ "fetchedAt": "2026-10-02T04:20:48.822Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -294,42 +294,6 @@
    "prevGoals8": "1",
    "prevGoals9": "1",
    "prevGoals10": "1",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "sa3dawi11",
-   "gamesPlayed": "2",
-   "winRate": "0",
-   "goals": "1",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "33",
-   "passesMade": "24",
-   "passSuccessRate": "64",
-   "ratingAve": "7.1",
-   "tacklesMade": "3",
-   "tackleSuccessRate": "42",
-   "proName": "Sa3",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "129",
-   "proOverall": "79",
-   "proOverallStr": "79",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "1",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
    "favoritePosition": "forward"
   },
   {
@@ -1452,7 +1416,7 @@
  "positionCount": {
   "midfielder": 8,
   "goalkeeper": 1,
-  "forward": 19,
+  "forward": 18,
   "defender": 8
  },
  "career": [
@@ -1523,17 +1487,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "sa3dawi11",
-   "proPos": "25",
-   "gamesPlayed": "26",
-   "goals": "18",
-   "assists": "11",
-   "manOfTheMatch": "2",
-   "ratingAve": "7.3",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Robin_PMK",
    "proPos": "25",
    "gamesPlayed": "28",
@@ -1602,12 +1555,12 @@
   {
    "name": "LARA FADES",
    "proPos": "25",
-   "gamesPlayed": "81",
-   "goals": "25",
-   "assists": "33",
-   "manOfTheMatch": "11",
+   "gamesPlayed": "82",
+   "goals": "27",
+   "assists": "35",
+   "manOfTheMatch": "12",
    "ratingAve": "7.1",
-   "prevGoals": "0",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
