@@ -1,0 +1,7 @@
+agents:
+  chatgpt: {roles: [architecture, planning, specification, impact_analysis, documentation]}
+  claude: {roles: [large_implementation, frontend, backend, test_creation, continuous_engineering]}
+  codex: {roles: [targeted_implementation, debugging, review, refactoring]}
+routing:
+  principle: capability_cost_quality_availability
+  deterministic_execution: [build, lint, typecheck, unit_tests, integration_tests, e2e_tests, security_scans]
