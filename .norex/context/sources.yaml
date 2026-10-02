@@ -6,3 +6,9 @@ sources:
     path: .norex/context/ND-001_REPOSITORY_INVENTORY.md
     branch_evidence: main
     purpose: "Current architecture, implementation history, QA, persistence, design, and risk baseline."
+
+  - id: ND-003
+    type: design_system
+    path: .norex/context/NOREX_DESIGN_SYSTEM.md
+    branch_evidence: main
+    purpose: "Canonical extracted Norex visual, responsive, interaction, motion, and accessibility contract."
