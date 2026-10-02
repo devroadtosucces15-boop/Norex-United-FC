@@ -16,9 +16,9 @@ tasks:
   - {id: ND-007, title: "Schemas: task/discovery/experiment/evidence", status: DONE, size: M, primary: Claude, evidence: [".norex/schemas/task.schema.json", ".norex/schemas/discovery.schema.json", ".norex/schemas/experiment.schema.json", ".norex/schemas/evidence.schema.json"]}
   - {id: ND-008, title: "Capability Registry", status: DONE, size: M, primary: ChatGPT/Claude, evidence: [".norex/agents/registry.yaml"]}
   - {id: ND-009, title: "Task/event/handoff model", status: DONE, size: L, primary: ChatGPT/Claude, evidence: [".norex/project/TASK_EVENT_MODEL.md", ".norex/handoffs/HANDOFF_TEMPLATE.md"]}
-  - {id: ND-010, title: "Context Compiler v1", status: BACKLOG, size: L, primary: Claude}
-  - {id: ND-011, title: "Portable Intelligence Core", status: BACKLOG, size: L, primary: Claude}
-  - {id: ND-012, title: "Local persistence", status: BACKLOG, size: M, primary: Claude}
+  - {id: ND-010, title: "Context Compiler v1", status: DONE, size: L, primary: Claude, evidence: [".norex/context/CONTEXT_COMPILER.md"]}
+  - {id: ND-011, title: "Portable Intelligence Core", status: DONE, size: L, primary: Claude, evidence: [".norex/project/INTELLIGENCE_CORE.md"]}
+  - {id: ND-012, title: "Local persistence", status: DONE, size: M, primary: Claude, evidence: [".norex/project/LOCAL_PERSISTENCE.md"]}
   - {id: ND-013, title: "Git/filesystem/terminal services", status: BACKLOG, size: L, primary: Claude}
   - {id: ND-014, title: "Credential/permission broker", status: BACKLOG, size: L, primary: Claude}
   - {id: ND-015, title: "On-demand browser", status: BACKLOG, size: L, primary: Claude}
