@@ -47,6 +47,13 @@ if (!league.length) { t('fixture needs at least one archived home match', false)
 const evm = league[0];
 for (const list of Object.values(evm.players)) for (const p of Object.values(list)) Object.assign(p, { dribbles: '7', secondassists: '1' });
 fs.writeFileSync(path.join(DATA, 'matches', `${evm.matchId}.json`), JSON.stringify(evm));
+// Keep one explicit pre-event-data fixture. Production data eventually ages past this transition, so the
+// test must not depend on a naturally old archive row continuing to exist forever.
+const olderFixture = league.find((m) => m.matchId !== evm.matchId);
+if (olderFixture) {
+  for (const list of Object.values(olderFixture.players || {})) for (const p of Object.values(list)) { delete p.dribbles; delete p.secondassists; }
+  fs.writeFileSync(path.join(DATA, 'matches', `${olderFixture.matchId}.json`), JSON.stringify(olderFixture));
+}
 // A friendly: copy of the oldest match, new id, a day later, with a 9–0 score nobody could miss.
 const fr = JSON.parse(JSON.stringify(league.at(-1)));
 fr.matchId = '999000111'; fr.matchType = 'friendlyMatch'; fr.timestamp = league[0].timestamp + 86400;
@@ -78,7 +85,7 @@ t('player page has a Friendly log for a friendly player', /data-mode="friendly"/
 // Dribbles / second assists
 const evPage = page(`matches/${evm.matchId}.html`);
 t('match page shows Drb + 2nd A columns when EA sent them', />Drb</.test(evPage) && />2nd A</.test(evPage) && /<span>Dribbles<\/span>/.test(evPage));
-const older = league.find((m) => m.matchId !== evm.matchId);
+const older = olderFixture;
 t('older matches keep their old columns', !older || !/>Drb</.test(page(`matches/${older.matchId}.html`)));
 const evPid = Object.keys(evm.players[home])[0];
 t('player page counts dribbles with a "since" note', /<span>Dribbles<\/span>/.test(page(`players/${evPid}.html`)) && /only in games archived since/.test(page(`players/${evPid}.html`)));
