@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-02T06:31:06.571Z",
+ "fetchedAt": "2026-10-02T06:40:45.596Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -151,42 +151,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "XxEL_AXEL_ONExX",
-   "gamesPlayed": "20",
-   "winRate": "40",
-   "goals": "9",
-   "assists": "10",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "40",
-   "passesMade": "265",
-   "passSuccessRate": "84",
-   "ratingAve": "7.2",
-   "tacklesMade": "11",
-   "tackleSuccessRate": "13",
-   "proName": "AXELINHO",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "83",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "2",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "1",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "1",
-   "favoritePosition": "forward"
   },
   {
    "name": "AGGRESSOR-CB",
@@ -1128,7 +1092,7 @@
  "positionCount": {
   "midfielder": 6,
   "goalkeeper": 1,
-  "forward": 14,
+  "forward": 13,
   "defender": 8
  },
  "career": [
@@ -1153,17 +1117,6 @@
    "ratingAve": "7.9",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "XxEL_AXEL_ONExX",
-   "proPos": "25",
-   "gamesPlayed": "153",
-   "goals": "104",
-   "assists": "80",
-   "manOfTheMatch": "21",
-   "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "AGGRESSOR-CB",
