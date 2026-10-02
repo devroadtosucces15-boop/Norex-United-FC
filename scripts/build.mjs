@@ -9,6 +9,7 @@ import { buildProBuilds } from './probuilds-page.mjs';
 import { buildDocs } from './docs-page.mjs';
 import { buildFeed } from './feed-page.mjs';
 import { buildMessages } from './messages-page.mjs';
+import { buildTactics } from './tactics-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 
 const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
@@ -470,6 +471,7 @@ const NAV_GROUPS = [
   { id: 'tactics', icon: '🧠', label: 'Tactics', links: [
     { id: 'builder', href: 'builder.html', icon: '🧩', label: 'Builder', desc: 'Plan your pro', flag: 'builder' },
     { id: 'probuilds', href: 'probuilds.html', icon: '⭐', label: 'Pro Builds', desc: 'Squad builds that work', flag: 'proBuilds' },
+    ...(MEMBER_API ? [{ id: 'tactics-studio', href: 'tactics.html', icon: '🧠', label: 'Tactics Studio', desc: 'Club playbook and drills', flag: 'tactics' }] : []),
     { id: 'updates', href: 'updates.html', icon: '📰', label: 'Game updates', desc: 'Patch notes, level cap' },
   ] },
 ];
@@ -1201,6 +1203,7 @@ if (MEMBER_API) buildDocs({ write, page, pageHead, esc, emptyState, config });
 // Club feed (P6.1) – feed-page.mjs, client in web/feed.js (+ web/docs-md.js for links and embeds).
 if (MEMBER_API) buildFeed({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildMessages({ write, page, pageHead, emptyState, config });
+if (MEMBER_API) buildTactics({ write, page, pageHead, emptyState, config });
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
