@@ -7,7 +7,7 @@ lanes:
 statuses: [BACKLOG, READY, IN_PROGRESS, BLOCKED, REVIEW, VALIDATION, MIKE_REVIEW, DONE, DEFERRED, SUPERSEDED, CANCELLED]
 tasks:
   - {id: ND-000, title: "Isolation contract + skeleton", status: READY, size: S, primary: Claude}
-  - {id: ND-001, title: "Full repo/current-state inventory", status: BACKLOG, size: M, primary: Claude, review: ChatGPT}
+  - {id: ND-001, title: "Full repo/current-state inventory", status: DONE, size: M, primary: Claude, review: ChatGPT, evidence: [".norex/context/ND-001_REPOSITORY_INVENTORY.md"]}
   - {id: ND-002, title: "Reconcile FE + BE roadmaps into Master Roadmap", status: BACKLOG, size: M, primary: ChatGPT}
   - {id: ND-003, title: "Extract existing Norex Design System", status: BACKLOG, size: L, primary: Claude}
   - {id: ND-004, title: "Constitution + Product Vision", status: BACKLOG, size: M, primary: ChatGPT}
