@@ -19,9 +19,9 @@ tasks:
   - {id: ND-010, title: "Context Compiler v1", status: DONE, size: L, primary: Claude, evidence: [".norex/context/CONTEXT_COMPILER.md"]}
   - {id: ND-011, title: "Portable Intelligence Core", status: DONE, size: L, primary: Claude, evidence: [".norex/project/INTELLIGENCE_CORE.md"]}
   - {id: ND-012, title: "Local persistence", status: DONE, size: M, primary: Claude, evidence: [".norex/project/LOCAL_PERSISTENCE.md"]}
-  - {id: ND-013, title: "Git/filesystem/terminal services", status: BACKLOG, size: L, primary: Claude}
-  - {id: ND-014, title: "Credential/permission broker", status: BACKLOG, size: L, primary: Claude}
-  - {id: ND-015, title: "On-demand browser", status: BACKLOG, size: L, primary: Claude}
+  - {id: ND-013, title: "Git/filesystem/terminal services", status: REVIEW, size: L, primary: Claude, evidence: [".norex/project/LOCAL_SERVICES.md"], note: "Phase-I contracts complete; executable services deferred to adoption/implementation."}
+  - {id: ND-014, title: "Credential/permission broker", status: REVIEW, size: L, primary: Claude, evidence: [".norex/constitution/CREDENTIAL_PERMISSION_BROKER.md"], note: "Security contract complete; implementation requires local runtime."}
+  - {id: ND-015, title: "On-demand browser", status: REVIEW, size: L, primary: Claude, evidence: [".norex/project/ON_DEMAND_BROWSER.md"], note: "Browser lifecycle/policy specified; executable integration deferred."}
   - {id: ND-016, title: "Claude integration", status: BACKLOG, size: M, primary: Claude}
   - {id: ND-017, title: "OpenAI/Codex integration", status: BACKLOG, size: M, primary: Codex/Claude}
   - {id: ND-018, title: "MCP interoperability", status: BACKLOG, size: M, primary: Claude}
