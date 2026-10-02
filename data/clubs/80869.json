@@ -1,7 +1,7 @@
 {
  "id": "80869",
  "tier": "home",
- "fetchedAt": "2026-10-02T00:31:12.725Z",
+ "fetchedAt": "2026-10-02T00:41:00.516Z",
  "info": {
   "name": "NOREX UNITED FC",
   "clubId": 80869,
@@ -223,42 +223,6 @@
    "prevGoals9": "0",
    "prevGoals10": "1",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "OutcastNick",
-   "gamesPlayed": "4",
-   "winRate": "100",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "16",
-   "passSuccessRate": "84",
-   "ratingAve": "5.8",
-   "tacklesMade": "1",
-   "tackleSuccessRate": "25",
-   "proName": "N. Outcast",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "186",
-   "proNationality": "83",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "derbrecki",
@@ -1273,7 +1237,7 @@
   "midfielder": 3,
   "goalkeeper": 2,
   "forward": 4,
-  "defender": 5
+  "defender": 4
  },
  "career": [
   {
@@ -1385,17 +1349,6 @@
    "ratingAve": "7.7",
    "prevGoals": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "OutcastNick",
-   "proPos": "5",
-   "gamesPlayed": "54",
-   "goals": "32",
-   "assists": "39",
-   "manOfTheMatch": "6",
-   "ratingAve": "7.8",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "MX-420-",
