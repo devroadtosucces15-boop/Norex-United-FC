@@ -8,7 +8,7 @@ const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((f) => (f
 const files = walk(SITE);
 const html = files.filter((f) => f.endsWith('.html'));
 const read = (f) => fs.readFileSync(f, 'utf8');
-for (const p of ['index.html', 'squad.html', 'stats.html', 'compare.html', 'matches/index.html', 'players/index.html', 'clubs/index.html', 'about.html', 'apply.html', 'members.html'])
+for (const p of ['index.html', 'squad.html', 'stats.html', 'compare.html', 'matches/index.html', 'players/index.html', 'clubs/index.html', 'about.html', 'apply.html', 'members.html', 'tactics.html'])
   t(`page ${p}`, fs.existsSync(SITE + p));
 t('JSON API files parse', ['players', 'club', 'clubs'].every((f) => JSON.parse(read(`${SITE}api/${f}.json`))));
 const index = read(SITE + 'index.html');
@@ -41,3 +41,8 @@ const early = new Set(html.flatMap((f) => { const h = read(f); const ui = h.inde
 t('QA1 page scripts before ui.js never touch UI at load', [...early].every((js) => { const src = fs.existsSync(SITE + 'assets/' + js) ? read(SITE + 'assets/' + js) : ''; return !/\bUI\./.test(src) || /DOMContentLoaded|window\.UI/.test(src); }));
 t('QA1 hub grid column can shrink (no phone overflow)', /\.hub\{display:grid;grid-template-columns:minmax\(0,1fr\)/.test(read(SITE + 'assets/style.css')));
 done();
+
+// BE1 production integration: backend assignments link here, so the static build must always ship the member surface.
+const tactics = read(SITE + 'tactics.html');
+t('BE1 tactics page is built behind the tactics flag', tactics.includes('data-flag="tactics"') && tactics.includes('assets/tactics.js') && tactics.includes('assets/tactics.css'));
+t('BE1 tactics page is in grouped navigation', index.includes('href="tactics.html"') && index.includes('data-flag="tactics"'));
