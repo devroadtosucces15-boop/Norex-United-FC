@@ -14,8 +14,8 @@ tasks:
   - {id: ND-005, title: "Intelligence/Discovery/Research Doctrine", status: DONE, size: M, primary: ChatGPT, evidence: [".norex/constitution/INTELLIGENCE_DOCTRINE.md", ".norex/schemas/discovery.schema.json"]}
   - {id: ND-006, title: "Surface/device + QA taxonomy", status: DONE, size: M, primary: ChatGPT/Claude, evidence: [".norex/constitution/QA_SURFACES.md", ".norex/tasks/templates/TASK_TEMPLATE.yaml"]}
   - {id: ND-007, title: "Schemas: task/discovery/experiment/evidence", status: DONE, size: M, primary: Claude, evidence: [".norex/schemas/task.schema.json", ".norex/schemas/discovery.schema.json", ".norex/schemas/experiment.schema.json", ".norex/schemas/evidence.schema.json"]}
-  - {id: ND-008, title: "Capability Registry", status: BACKLOG, size: M, primary: ChatGPT/Claude}
-  - {id: ND-009, title: "Task/event/handoff model", status: BACKLOG, size: L, primary: ChatGPT/Claude}
+  - {id: ND-008, title: "Capability Registry", status: DONE, size: M, primary: ChatGPT/Claude, evidence: [".norex/agents/registry.yaml"]}
+  - {id: ND-009, title: "Task/event/handoff model", status: DONE, size: L, primary: ChatGPT/Claude, evidence: [".norex/project/TASK_EVENT_MODEL.md", ".norex/handoffs/HANDOFF_TEMPLATE.md"]}
   - {id: ND-010, title: "Context Compiler v1", status: BACKLOG, size: L, primary: Claude}
   - {id: ND-011, title: "Portable Intelligence Core", status: BACKLOG, size: L, primary: Claude}
   - {id: ND-012, title: "Local persistence", status: BACKLOG, size: M, primary: Claude}
