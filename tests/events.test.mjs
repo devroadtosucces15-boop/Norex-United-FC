@@ -131,6 +131,9 @@ t('match night flag gates check-in', (await call(member, '/api/events/checkin', 
 setFlags({ matchNight: 'members' });
 
 // Session report for a real archived night: an event around the newest League match + a Rush result that day.
+// Isolate this report from Rush fixtures created by earlier cases; otherwise a real newest match dated today can
+// make unrelated same-day fixture rows leak into the report and change its totals.
+sqlite.exec('DELETE FROM rush_players; DELETE FROM rush_matches;');
 const m0 = siteJson('club').matches[0], p0 = m0.ps[0];
 const start = m0.ts * 1000 - 10 * 60e3, day = new Date(start).toISOString().slice(0, 10);
 const evId = Number(sqlite.prepare("INSERT INTO events (type, start, duration, tz, at) VALUES ('league', ?, 120, 'UTC', ?)").run(start, Date.now()).lastInsertRowid);
