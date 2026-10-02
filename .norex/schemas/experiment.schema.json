@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Norex Experiment",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "hypothesis",
+    "spawned_from",
+    "timebox_minutes",
+    "success_criteria",
+    "production_changes",
+    "status",
+    "results"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^EXP-[0-9]+$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "hypothesis": {
+      "type": "string"
+    },
+    "spawned_from": {
+      "type": "string"
+    },
+    "timebox_minutes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "success_criteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failure_criteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "production_changes": {
+      "const": false
+    },
+    "status": {
+      "enum": [
+        "PLANNED",
+        "RUNNING",
+        "PASSED",
+        "FAILED",
+        "INCONCLUSIVE",
+        "CANCELLED"
+      ]
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "resulting_discoveries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "resulting_decisions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
