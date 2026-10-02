@@ -1,14 +1,14 @@
 version: 1
 phase: SHADOW_FOUNDATION
 lanes:
-  FE: {name: "Frontend Redesign", current_state: VERIFY_FROM_REPO_AND_ORIGINAL_ROADMAP}
-  BE: {name: "Backend / Existing Development", current_state: VERIFY_FROM_REPO_AND_ORIGINAL_ROADMAP}
+  FE: {name: "Frontend Redesign", current_state: ACTIVE_PARTIALLY_IMPLEMENTED, evidence: ".norex/project/FE_BE_RECONCILIATION.yaml"}
+  BE: {name: "Backend / Existing Development", current_state: IMPLEMENTED_WITH_GATED_ROLLOUT_AND_VALIDATION, evidence: ".norex/project/FE_BE_RECONCILIATION.yaml"}
   ND: {name: "Norex Dev OS / Shadow Foundation", current_state: ACTIVE}
 statuses: [BACKLOG, READY, IN_PROGRESS, BLOCKED, REVIEW, VALIDATION, MIKE_REVIEW, DONE, DEFERRED, SUPERSEDED, CANCELLED]
 tasks:
   - {id: ND-000, title: "Isolation contract + skeleton", status: READY, size: S, primary: Claude}
   - {id: ND-001, title: "Full repo/current-state inventory", status: DONE, size: M, primary: Claude, review: ChatGPT, evidence: [".norex/context/ND-001_REPOSITORY_INVENTORY.md"]}
-  - {id: ND-002, title: "Reconcile FE + BE roadmaps into Master Roadmap", status: BACKLOG, size: M, primary: ChatGPT}
+  - {id: ND-002, title: "Reconcile FE + BE roadmaps into Master Roadmap", status: DONE, size: M, primary: ChatGPT, evidence: [".norex/project/FE_BE_RECONCILIATION.yaml"]}
   - {id: ND-003, title: "Extract existing Norex Design System", status: BACKLOG, size: L, primary: Claude}
   - {id: ND-004, title: "Constitution + Product Vision", status: BACKLOG, size: M, primary: ChatGPT}
   - {id: ND-005, title: "Intelligence/Discovery/Research Doctrine", status: BACKLOG, size: M, primary: ChatGPT}
