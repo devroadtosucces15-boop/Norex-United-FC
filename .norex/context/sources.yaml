@@ -1,3 +1,8 @@
 version: 1
-note: "Populate from repository evidence during ND-001. Do not invent sources."
-sources: []
+note: "Evidence sources promoted during Shadow Foundation inventory."
+sources:
+  - id: ND-001
+    type: repository_inventory
+    path: .norex/context/ND-001_REPOSITORY_INVENTORY.md
+    branch_evidence: main
+    purpose: "Current architecture, implementation history, QA, persistence, design, and risk baseline."
