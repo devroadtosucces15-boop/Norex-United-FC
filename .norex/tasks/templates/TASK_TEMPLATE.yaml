@@ -9,11 +9,37 @@ active_model: null
 started_at: null
 handoff_state: null
 surfaces: []
-shared_service_impact: []
+test_identity:
+  form_factors: []
+  os: []
+  browsers_or_builds: []
+  devices: []
+  viewports: []
+  orientations: []
+  environments: []
+  routes_or_screens: []
+  roles: []
+shared_impact:
+  backend_api: false
+  database: false
+  web_desktop: false
+  web_mobile: false
+  ios: false
+  android: false
+  discord: false
+  dev_os: false
+  infrastructure_ci: false
+  security_auth: false
+  design_system: false
 dependencies: []
-context_budget: {must_read: [], optional: [], do_not_load: []}
+context_budget:
+  must_read: []
+  optional: []
+  do_not_load: []
 definition_of_ready: []
 definition_of_done: []
-validation: []
+validation:
+  targeted_first: []
+  shared_regression: []
 evidence: []
 discoveries: []
