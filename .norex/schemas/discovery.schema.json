@@ -1,1 +1,125 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"Norex Discovery","type":"object","required":["id","title","spawned_from_task","discovered_by","evidence","confidence","value","risks"],"properties":{"id":{"type":"string"},"title":{"type":"string"},"spawned_from_task":{"type":"string"},"discovered_by":{"type":"string"},"evidence":{"type":"array","items":{"type":"string"}},"confidence":{"enum":["LOW","MEDIUM","HIGH"]},"value":{"type":"string"},"cost":{"type":"string"},"risks":{"type":"array","items":{"type":"string"}},"affected_systems":{"type":"array","items":{"type":"string"}},"related_discoveries":{"type":"array","items":{"type":"string"}},"experiments":{"type":"array","items":{"type":"string"}},"resulting_decisions":{"type":"array","items":{"type":"string"}}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Norex Discovery",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "category",
+    "spawned_from_task",
+    "discovered_by",
+    "evidence",
+    "confidence",
+    "value",
+    "risks",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^D-[0-9]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "enum": [
+        "REQUIRED",
+        "RISK",
+        "OPTIMIZATION",
+        "OPPORTUNITY",
+        "RESEARCH",
+        "NICE_TO_HAVE"
+      ]
+    },
+    "status": {
+      "enum": [
+        "CAPTURED",
+        "RESEARCHING",
+        "VERIFIED",
+        "EXPERIMENTING",
+        "DECISION_PENDING",
+        "ADOPTED",
+        "REJECTED",
+        "DEFERRED"
+      ]
+    },
+    "spawned_from_task": {
+      "type": "string"
+    },
+    "discovered_by": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "value": {
+      "type": "string"
+    },
+    "cost": {
+      "type": "string"
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "affected_systems": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_discoveries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "experiments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "resulting_decisions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "resulting_tasks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dependency_disposition": {
+      "enum": [
+        "USE",
+        "WRAP",
+        "FORK",
+        "LEARN",
+        "REJECT",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
