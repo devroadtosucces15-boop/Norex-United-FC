@@ -1,0 +1,16 @@
+# Handoff
+- Task:
+- From:
+- To:
+- Status:
+- Branch/checkpoint:
+- Objective:
+- Completed:
+- Remaining:
+- Decisions/ADRs:
+- Discoveries:
+- Files changed:
+- Deterministic validation:
+- Failures/risks:
+- Context required next:
+- Approval required:
