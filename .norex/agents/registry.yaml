@@ -1,7 +1,72 @@
+version: 1
+principle: capability_cost_quality_availability
+providers_are_adapters: true
+
 agents:
-  chatgpt: {roles: [architecture, planning, specification, impact_analysis, documentation]}
-  claude: {roles: [large_implementation, frontend, backend, test_creation, continuous_engineering]}
-  codex: {roles: [targeted_implementation, debugging, review, refactoring]}
-routing:
-  principle: capability_cost_quality_availability
-  deterministic_execution: [build, lint, typecheck, unit_tests, integration_tests, e2e_tests, security_scans]
+  chatgpt:
+    roles: [architecture, planning, specification, impact_analysis, documentation, roadmap_decomposition]
+    strengths: [cross_system_reasoning, product_context, structured_specification]
+  claude:
+    roles: [large_implementation, frontend, backend, test_creation, continuous_engineering]
+    strengths: [large_change_sets, implementation_continuity, ui_engineering]
+  codex:
+    roles: [targeted_implementation, debugging, review, refactoring]
+    strengths: [focused_code_reasoning, review, isolated_fixes]
+    usage_policy: conserve_when_equivalent_lower_cost_route_exists
+  local:
+    roles: [classification, summarization, context_compression, simple_transformations]
+    availability: future_optional
+
+capabilities:
+  requirements_product_planning: {preferred: [chatgpt, claude]}
+  architecture: {preferred: [chatgpt, claude, codex]}
+  roadmap_decomposition: {preferred: [chatgpt, claude]}
+  ui_ux_exploration: {preferred: [claude, chatgpt, codex]}
+  frontend_implementation: {preferred: [claude, codex]}
+  large_feature_implementation: {preferred: [claude, codex]}
+  backend_implementation: {preferred: [claude, codex]}
+  small_isolated_implementation: {preferred: [codex, claude]}
+  difficult_bug_investigation: {preferred: [codex, claude]}
+  code_review: {preferred: [codex, claude]}
+  refactoring: {preferred: [codex, claude]}
+  documentation: {preferred: [chatgpt, claude]}
+  impact_analysis: {preferred: [chatgpt, claude]}
+  test_creation: {preferred: [claude, chatgpt, codex]}
+  deterministic_execution: {preferred: [local_ci]}
+
+deterministic_execution:
+  - build
+  - lint
+  - typecheck
+  - unit_tests
+  - integration_tests
+  - e2e_tests
+  - database_checks
+  - security_scans
+
+billing_modes:
+  SUBSCRIPTION_EXISTING_ACCESS: allowed_when_verified
+  LOCAL_OFFLINE: allowed
+  VERIFIED_FREE: allowed
+  METERED_API: blocked_without_mike_approval
+  UNKNOWN_BILLING: blocked
+
+routing_inputs:
+  - required_capabilities
+  - quality
+  - task_size
+  - volume
+  - complexity
+  - urgency
+  - availability
+  - historical_performance
+  - allowance
+  - monetary_cost
+  - security_permission
+  - provider_specific_superpowers
+
+rules:
+  - "Do not route deterministic execution to AI when local/CI can perform it."
+  - "Do not assume a subscription covers API/CLI/MCP billing; verify provider mode."
+  - "A provider-specific enhancement may be used without making it the portable core."
+  - "If the next viable route is metered/unknown, block and request Mike approval."
