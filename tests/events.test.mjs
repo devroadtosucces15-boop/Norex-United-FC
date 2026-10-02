@@ -144,7 +144,7 @@ const inWin = siteJson('club').matches.filter((m) => m.ts * 1000 >= start - 30 *
 const p0lines = inWin.flatMap((m) => m.ps.filter((x) => x.k === p0.k));
 const me0 = rep.d.players.find((p) => p.k === p0.k);
 t('report: League match from EA + confirmed Rush that day', rep.s === 200 && rep.d.results.some((r) => r.mode === 'league' && r.gf === m0.gf) && rep.d.results.some((r) => r.mode === 'rush' && r.opp === 'Rush FC'));
-t('report: team grade + totals (every League match in the window + the Rush result)', inWin.length >= 1 && rep.d.team.games === inWin.length + 1 && rep.d.team.gf === inWin.reduce((a, m) => a + m.gf, 0) + 3 && rep.d.team.grade === teamGrade(rep.d.team.w, rep.d.team.d, 2, rep.d.team.gf, rep.d.team.ga));
+t('report: team grade + totals (every League match in the window + the Rush result)', inWin.length >= 1 && rep.d.team.games === inWin.length + 1 && rep.d.team.gf === inWin.reduce((a, m) => a + m.gf, 0) + 3 && rep.d.team.grade === teamGrade(rep.d.team.w, rep.d.team.d, rep.d.team.l, rep.d.team.gf, rep.d.team.ga));
 t('report: player lines merge League + Rush, graded', me0 && me0.games === p0lines.length + 1 && me0.g === p0lines.reduce((a, x) => a + x.g, 0) + 2 && me0.grade === playerGrade(me0.avg) && me0.user?.id === '500');
 t('report: position trial compared with the season average', me0.trial?.pos === 'CB' && (me0.trial.season == null || me0.trial.diff === Math.round((me0.avg - me0.trial.season) * 10) / 10));
 t('report: attendance – no-shows and walk-ins', rep.d.attendance.came === 1 && rep.d.attendance.noShow.some((x) => x.id === '501') && rep.d.attendance.walkIns.some((x) => x.id === '500'));
