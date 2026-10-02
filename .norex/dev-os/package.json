@@ -1,0 +1,1 @@
+{"name":"@norex/dev-os-shadow","private":true,"version":"0.1.0","type":"module","scripts":{"start":"node server.mjs","check":"node --check server.mjs && node --check app.js"},"engines":{"node":">=22"}}
