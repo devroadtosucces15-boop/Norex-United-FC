@@ -22,11 +22,11 @@ tasks:
   - {id: ND-013, title: "Git/filesystem/terminal services", status: REVIEW, size: L, primary: Claude, evidence: [".norex/project/LOCAL_SERVICES.md"], note: "Phase-I contracts complete; executable services deferred to adoption/implementation."}
   - {id: ND-014, title: "Credential/permission broker", status: REVIEW, size: L, primary: Claude, evidence: [".norex/constitution/CREDENTIAL_PERMISSION_BROKER.md"], note: "Security contract complete; implementation requires local runtime."}
   - {id: ND-015, title: "On-demand browser", status: REVIEW, size: L, primary: Claude, evidence: [".norex/project/ON_DEMAND_BROWSER.md"], note: "Browser lifecycle/policy specified; executable integration deferred."}
-  - {id: ND-016, title: "Claude integration", status: BACKLOG, size: M, primary: Claude}
-  - {id: ND-017, title: "OpenAI/Codex integration", status: BACKLOG, size: M, primary: Codex/Claude}
-  - {id: ND-018, title: "MCP interoperability", status: BACKLOG, size: M, primary: Claude}
-  - {id: ND-019, title: "Cost-aware Capability Broker", status: BACKLOG, size: L, primary: ChatGPT/Claude}
-  - {id: ND-020, title: "Deterministic CI dispatcher", status: BACKLOG, size: L, primary: Claude}
+  - {id: ND-016, title: "Claude integration", status: REVIEW, size: M, primary: Claude, evidence: [".norex/integration/CLAUDE_ADAPTER.md"], note: "Provider contract complete; executable adapter awaits local runtime and verified access mode."}
+  - {id: ND-017, title: "OpenAI/Codex integration", status: REVIEW, size: M, primary: Codex/Claude, evidence: [".norex/integration/OPENAI_CODEX_ADAPTER.md"], note: "Provider contract complete; executable adapter awaits local runtime and verified access mode."}
+  - {id: ND-018, title: "MCP interoperability", status: REVIEW, size: M, primary: Claude, evidence: [".norex/integration/mcp/INTEROPERABILITY.md"], note: "Interoperability contract complete; executable adapters await runtime."}
+  - {id: ND-019, title: "Cost-aware Capability Broker", status: REVIEW, size: L, primary: ChatGPT/Claude, evidence: [".norex/project/CAPABILITY_BROKER.md", ".norex/agents/registry.yaml"], note: "Routing/billing contract complete; runtime broker awaits implementation."}
+  - {id: ND-020, title: "Deterministic CI dispatcher", status: REVIEW, size: L, primary: Claude, evidence: [".norex/project/CI_DISPATCHER.md"], note: "Dispatcher contract complete and existing harness identified; executable dispatcher awaits runtime."}
   - {id: ND-021, title: "Norex-design-system Dev OS shell", status: BACKLOG, size: XL, primary: Claude}
   - {id: ND-022, title: "Preview/diff/test/browser/terminal artifacts", status: BACKLOG, size: L, primary: Claude}
   - {id: ND-023, title: "Usage/observability", status: BACKLOG, size: M, primary: Claude}
