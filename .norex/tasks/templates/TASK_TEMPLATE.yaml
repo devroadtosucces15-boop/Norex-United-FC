@@ -1,0 +1,19 @@
+id: ""
+title: ""
+lane: ""
+status: BACKLOG
+risk: R0
+primary_model: ""
+fallback_model: ""
+active_model: null
+started_at: null
+handoff_state: null
+surfaces: []
+shared_service_impact: []
+dependencies: []
+context_budget: {must_read: [], optional: [], do_not_load: []}
+definition_of_ready: []
+definition_of_done: []
+validation: []
+evidence: []
+discoveries: []
