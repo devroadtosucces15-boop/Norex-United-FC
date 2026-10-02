@@ -6,7 +6,7 @@ lanes:
   ND: {name: "Norex Dev OS / Shadow Foundation", current_state: ACTIVE}
 statuses: [BACKLOG, READY, IN_PROGRESS, BLOCKED, REVIEW, VALIDATION, MIKE_REVIEW, DONE, DEFERRED, SUPERSEDED, CANCELLED]
 tasks:
-  - {id: ND-000, title: "Isolation contract + skeleton", status: READY, size: S, primary: Claude}
+  - {id: ND-000, title: "Isolation contract + skeleton", status: DONE, size: S, primary: Claude, evidence: [".norex/README.md", ".norex/migration/merge-plan/README.md"], note: "Shadow skeleton installed only under .norex; diff-level isolation verified."}
   - {id: ND-001, title: "Full repo/current-state inventory", status: DONE, size: M, primary: Claude, review: ChatGPT, evidence: [".norex/context/ND-001_REPOSITORY_INVENTORY.md"]}
   - {id: ND-002, title: "Reconcile FE + BE roadmaps into Master Roadmap", status: DONE, size: M, primary: ChatGPT, evidence: [".norex/project/FE_BE_RECONCILIATION.yaml"]}
   - {id: ND-003, title: "Extract existing Norex Design System", status: DONE, size: L, primary: Claude, evidence: [".norex/context/NOREX_DESIGN_SYSTEM.md"]}
