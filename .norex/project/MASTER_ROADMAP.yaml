@@ -12,7 +12,7 @@ tasks:
   - {id: ND-003, title: "Extract existing Norex Design System", status: DONE, size: L, primary: Claude, evidence: [".norex/context/NOREX_DESIGN_SYSTEM.md"]}
   - {id: ND-004, title: "Constitution + Product Vision", status: DONE, size: M, primary: ChatGPT, evidence: [".norex/constitution/PRODUCT_VISION.md", ".norex/constitution/AUTHORITY.md"]}
   - {id: ND-005, title: "Intelligence/Discovery/Research Doctrine", status: DONE, size: M, primary: ChatGPT, evidence: [".norex/constitution/INTELLIGENCE_DOCTRINE.md", ".norex/schemas/discovery.schema.json"]}
-  - {id: ND-006, title: "Surface/device + QA taxonomy", status: BACKLOG, size: M, primary: ChatGPT/Claude}
+  - {id: ND-006, title: "Surface/device + QA taxonomy", status: DONE, size: M, primary: ChatGPT/Claude, evidence: [".norex/constitution/QA_SURFACES.md", ".norex/tasks/templates/TASK_TEMPLATE.yaml"]}
   - {id: ND-007, title: "Schemas: task/discovery/experiment/evidence", status: BACKLOG, size: M, primary: Claude}
   - {id: ND-008, title: "Capability Registry", status: BACKLOG, size: M, primary: ChatGPT/Claude}
   - {id: ND-009, title: "Task/event/handoff model", status: BACKLOG, size: L, primary: ChatGPT/Claude}
