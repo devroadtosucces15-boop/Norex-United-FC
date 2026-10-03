@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-03T07:00:40.882Z",
+ "fetchedAt": "2026-10-03T07:10:42.286Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -657,6 +657,42 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "OGTheGucci",
+   "gamesPlayed": "4",
+   "winRate": "75",
+   "goals": "7",
+   "assists": "4",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "46",
+   "passesMade": "65",
+   "passSuccessRate": "82",
+   "ratingAve": "8.9",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "Gucci",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "194",
+   "proNationality": "95",
+   "proOverall": "82",
+   "proOverallStr": "82",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "3",
+   "prevGoals1": "3",
+   "prevGoals2": "1",
+   "prevGoals3": "1",
+   "prevGoals4": "2",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "CaptainFluffyCat",
    "gamesPlayed": "20",
    "winRate": "30",
@@ -1272,7 +1308,7 @@
  "positionCount": {
   "midfielder": 6,
   "goalkeeper": 1,
-  "forward": 15,
+  "forward": 16,
   "defender": 10
  },
  "career": [
@@ -1453,6 +1489,17 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "OGTheGucci",
+   "proPos": "25",
+   "gamesPlayed": "68",
+   "goals": "109",
+   "assists": "36",
+   "manOfTheMatch": "23",
+   "ratingAve": "8.2",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "CaptainFluffyCat",
    "proPos": "14",
    "gamesPlayed": "75",
@@ -1631,12 +1678,12 @@
   {
    "name": "Futxpert6",
    "proPos": "25",
-   "gamesPlayed": "99",
+   "gamesPlayed": "100",
    "goals": "66",
    "assists": "72",
    "manOfTheMatch": "18",
    "ratingAve": "7.8",
-   "prevGoals": "2",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   }
  ],
