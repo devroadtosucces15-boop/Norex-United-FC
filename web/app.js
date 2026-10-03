@@ -1066,6 +1066,10 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
     el.after(box);
     (window.NXAI ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/aiinsights.js`, onload: ok, onerror: no })))).then(() => NXAI.section(box, { k: el.dataset.player })).catch(() => box.remove());
   });
+  // ---------- ✨ Insight widget (board 12, BE9): home page club form + latest match, home-squad player profiles – assets/insights.js ----------
+  if (flagOn('statInsights', baseRole || 'guest')) $$('[data-nx-insight]').forEach((el) => {
+    (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(el, el.dataset.nxInsight, { call, toast, session, baseRole })).catch(() => el.remove());
+  });
   const nextEl = $('[data-next-event]');
   if (nextEl && flagOn('events', baseRole || 'guest')) loadEvents().then(() => NXEvents.next(nextEl)).catch(() => {});
   // ---------- 🎬 highlight of the week on the home page (P6.2) · 🟢 who's online (P6.4) – assets/hotw.js, assets/presence.js ----------
@@ -1076,6 +1080,9 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   const feedPubEl = $('[data-feed-public]');
   if (feedPubEl && flagOn('feed', baseRole || 'guest')) loadAsset('feed-public.js', 'NXFeedPublic').then(() => NXFeedPublic.home(feedPubEl)).catch(() => {});
   if (session && flagOn('presence', baseRole)) loadAsset('presence.js', 'NXPresence').then(() => NXPresence.start({ call, toast })).catch(() => {});
+  // ---------- 🔑 the Hub clubhouse (board 10, BE8) – gold entrance tunnel + 3D room map – assets/hub.js ----------
+  const hubworldEl = $('[data-hubworld]');
+  if (hubworldEl && session && flagOn('hub', baseRole)) loadAsset('hub.js', 'NXHub').then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, flagOn: (n) => flagOn(n, baseRole) })).catch(() => {});
 
   // ---------- verified badges (public) ----------
   (async () => {

@@ -8,6 +8,7 @@ import { buildBuilder } from './builder-page.mjs';
 import { buildProBuilds } from './probuilds-page.mjs';
 import { buildDocs } from './docs-page.mjs';
 import { buildFeed } from './feed-page.mjs';
+import { buildHub } from './hub-page.mjs';
 import { buildMessages } from './messages-page.mjs';
 import { buildTactics } from './tactics-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
@@ -487,7 +488,7 @@ function grpNav(base, active, activeGroup) {
   const feat = `<div class="feat"><div class="osw small feat-label">Right now</div><div class="nm"><div class="t">${RECRUIT.open ? '👑' : '🛡️'}</div><div><b class="osw">${RECRUIT.open ? 'Applications open' : 'Squad set'}</b><small class="muted">${esc(config.siteTitle)}</small></div></div>${watch}${RECRUIT.open ? `<a class="btn small feat-apply" href="${base}apply.html">👑 Apply for a trial</a>` : ''}</div>`;
   return `<nav class="grpnav" aria-label="Main"><div class="grpbtns">${NAV_GROUPS.map((g) => `<button type="button" class="grp${g.id === activeGroup ? ' on' : ''}" data-group="${g.id}" aria-haspopup="true" aria-expanded="false"><span class="e">${g.icon}</span>${esc(g.label)}</button>`).join('')}</div>
 <div class="mega" hidden>${NAV_GROUPS.map((g) => megaCol(g, base, active)).join('')}${feat}</div>
-<button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? '<span class="auth-slot"></span>' : ''}</nav>`;
+<button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? `<a class="hubw-key" data-flag="hub" hidden href="${base}hub/index.html">🔑<span>Enter the Hub</span></a><span class="auth-slot"></span>` : ''}</nav>`;
 }
 // Sticky sub-tabs: siblings within the current page's group, one tap away on every page in that section.
 function subTabs(base, active, activeGroup) {
@@ -500,7 +501,14 @@ function tabBar(base, activeGroup) {
   return `<nav class="tabbar" aria-label="Sections">${NAV_GROUPS.map((g) => `<a href="${base}${g.links[0].href}" class="tab${g.id === activeGroup ? ' on' : ''}" data-group="${g.id}"><span>${g.icon}</span>${esc(g.label)}</a>`).join('')}<button type="button" class="tab me-tab" data-group="me"><span>👤</span>Me</button></nav>
 <div class="sheet" hidden><div class="sheet-grab"></div><div class="sheet-body"></div></div>`;
 }
-function page({ title, base, active, body, description, image }) {
+// Gold Hub bar (redesign board 10): replaces the normal club nav on /hub/ pages so members always know
+// they've walked into the separate members-only world, not just another tab of the public site.
+const hubBar = (base) => `<header class="hubw-bar"><div class="wrap hubw-bar-in">
+<a class="hubw-brand" href="index.html"><img src="${base}assets/crest.png" height="38" alt=""><span><b>NOREX HUB</b><small>MEMBERS</small></span></a>
+<div class="hubw-right"><span class="hubw-online" data-hubw-online hidden>🟢 <b>0</b> in the clubhouse</span><a class="hubw-back" href="${base}index.html">← Back to the site</a></div>
+</div></header>`;
+
+function page({ title, base, active, body, description, image, hub }) {
   const activeGroup = NAV_BY_ID.get(active) ?? '';
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -511,20 +519,20 @@ function page({ title, base, active, body, description, image }) {
 <link rel="stylesheet" href="${base}assets/style.css"><style>:root{--red:${RED};--ink:${INK};--accent:${RED}}</style>
 <link rel="icon" href="${base}assets/favicon.png">
 <script>try{if(sessionStorage.getItem('nxnav'))document.documentElement.classList.add('nx-covered')}catch(e){}</script>
-</head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}" data-group="${activeGroup}" data-active="${esc(active ?? '')}">
+</head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}" data-group="${activeGroup}" data-active="${esc(active ?? '')}"${hub ? ' class="hubw-body"' : ''}>
 <div class="bg" aria-hidden="true"></div>
 <div class="pxwipe" aria-hidden="true"><span class="pxwipe-ribbon"></span><img class="pxwipe-crest" src="${base}assets/crest.png" alt=""></div>
 <script type="application/json" id="nav-data">${JSON.stringify(NAV_GROUPS.map((g) => ({ id: g.id, icon: g.icon, label: g.label, links: g.links.map((l) => ({ id: l.id, href: l.href, icon: l.icon, label: l.label, desc: l.desc, flag: l.flag })) })))}</script>
-<header class="top"><div class="wrap bar">
+${hub ? hubBar(base) : `<header class="top"><div class="wrap bar">
 <a class="brand" href="${base}index.html"><img src="${base}assets/crest.png" height="44" alt=""><span><b>NOREX</b><small>UNITED</small></span></a>
 ${grpNav(base, active, activeGroup)}</div></header>
-${activeGroup ? subTabs(base, active, activeGroup) : ''}
-${CHANNELS.length && MEMBER_API ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
+${activeGroup ? subTabs(base, active, activeGroup) : ''}`}
+${CHANNELS.length && MEMBER_API && !hub ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
 <footer class="foot"><div class="wrap foot-in"><img src="${base}assets/crest.png" height="70" alt="">
 <div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · Not affiliated with EA.</small></div></div></footer>
 <div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players, clubs, pages…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
-${tabBar(base, activeGroup)}
+${hub ? '' : tabBar(base, activeGroup)}
 <script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script></body></html>`;
 }
 
@@ -600,6 +608,7 @@ ${CHANNELS.length ? `<div id="watch">${card('📺 Watch NOREX', `<div class="liv
 </div>`, { sub: 'next up, last time out, and where to watch' })}
 ${section('Season at a glance', `<div class="stats stats-8">${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}</div>${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}`)}
+${ms.length ? '<div data-nx-insight="club" hidden></div><div data-nx-insight="match.latest" hidden></div>' : '<div data-nx-insight="club" hidden></div>'}
 ${tacticsTeaser(members, base)}
 ${squadCarousel(members, base)}
 ${matchReel(ms, sessions, id, base)}
@@ -785,6 +794,7 @@ function playerBody(pl, base) {
 <p class="kicker">${pl.isHome ? `${esc(config.siteTitle)} player` : 'Player profile'}</p>
 <h1>${esc(pl.name)}</h1>
 <div class="member-badge" data-player="${esc(pl.key)}"></div>
+${pl.isHome ? `<div data-nx-insight="player.${esc(pl.key)}" hidden></div>` : ''}
 <div class="chips"><span class="chip strong">${esc(pl.pos || '—')}</span>${pl.tag ? `<span class="chip">${esc(pl.tag)}</span>` : ''}${pl.ovr ? `<span class="chip">OVR ${pl.ovr}</span>` : ''}${s.proHeight ? `<span class="chip">${esc(s.proHeight)} cm</span>` : ''}${otherNames.length ? `<span class="chip">aka ${otherNames.map(esc).join(', ')}</span>` : ''}</div>
 <div class="club-chips">${pl.clubIds.map((c) => `<a class="club-chip" href="${clubHref(c, base) ?? '#'}">${crest(c, 22, base)}${esc(clubName(c))}</a>`).join('')}</div>
 ${a.length ? `<div class="form big"><span class="form-label">Form</span>${a.slice(0, 10).reverse().map((x) => `<a href="${base}matches/${x.matchId}.html" data-tip="${esc(`${x.gf}–${x.ga} vs ${clubName(x.oppId)} · ${x.rating.toFixed(1)}`)}">${resPill(x.res)}</a>`).join('')}</div>` : ''}
@@ -1202,6 +1212,7 @@ buildProBuilds({ write, page, pageHead, esc, emptyState, config });
 if (MEMBER_API) buildDocs({ write, page, pageHead, esc, emptyState, config });
 // Club feed (P6.1) – feed-page.mjs, client in web/feed.js (+ web/docs-md.js for links and embeds).
 if (MEMBER_API) buildFeed({ write, page, pageHead, emptyState, config });
+if (MEMBER_API) buildHub({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildMessages({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildTactics({ write, page, pageHead, emptyState, config });
 
