@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-03T01:10:42.705Z",
+ "fetchedAt": "2026-10-03T01:20:41.492Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,42 +80,6 @@
   "leagueAppearances": "147"
  },
  "members": [
-  {
-   "name": "Cane7",
-   "gamesPlayed": "25",
-   "winRate": "84",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "3",
-   "cleanSheetsGK": "1",
-   "shotSuccessRate": "0",
-   "passesMade": "293",
-   "passSuccessRate": "84",
-   "ratingAve": "7.5",
-   "tacklesMade": "39",
-   "tackleSuccessRate": "36",
-   "proName": "CANE",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "186",
-   "proNationality": "56",
-   "proOverall": "75",
-   "proOverallStr": "75",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
   {
    "name": "R3PTILI4N",
    "gamesPlayed": "6",
@@ -1378,23 +1342,12 @@
   }
  ],
  "positionCount": {
-  "midfielder": 7,
+  "midfielder": 6,
   "goalkeeper": 1,
   "forward": 17,
   "defender": 10
  },
  "career": [
-  {
-   "name": "Cane7",
-   "proPos": "14",
-   "gamesPlayed": "100",
-   "goals": "2",
-   "assists": "5",
-   "manOfTheMatch": "9",
-   "ratingAve": "7.5",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
   {
    "name": "R3PTILI4N",
    "proPos": "5",
