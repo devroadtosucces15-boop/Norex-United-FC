@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { createServices } from './local-services.mjs';
+import { planIntent } from './control-plane.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const assets = { '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
@@ -32,6 +33,15 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         if (url.pathname === '/api/files') return send(200, { files: await services.files() });
         if (url.pathname === '/api/file') return send(200, await services.inspect(url.searchParams.get('path')));
       }
+      if (req.method === 'POST' && url.pathname === '/api/plan') {
+        if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON planning required' });
+        let body = '';
+        for await (const chunk of req) { body += chunk; if (body.length > 2048) { send(413, { error: 'Request too large' }); return; } }
+        const data = JSON.parse(body);
+        if (!data || Object.keys(data).join(',') !== 'intent' || typeof data.intent !== 'string') return send(400, { error: 'A single text intent is required' });
+        return send(200, planIntent(data.intent));
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/run') {
         if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON execution required' });
         let body = '';

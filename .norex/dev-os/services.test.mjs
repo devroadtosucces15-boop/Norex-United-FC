@@ -7,17 +7,44 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServices, allowedPath, redact, execute, BRANCH } from './local-services.mjs';
 import { startServer } from './server.mjs';
+import { planIntent } from './control-plane.mjs';
 
 const source = fileURLToPath(new URL('.', import.meta.url));
 async function fixture(fn) {
   const root = await mkdtemp(resolve(tmpdir(), 'norex-service-test-'));
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'app.js', 'services.test.mjs']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     assert.equal((await execute('/usr/bin/git', ['init', '-b', BRANCH], root)).status, 'passed');
     await fn(root);
   } finally { await rm(root, { recursive: true, force: true }); }
 }
+test('Control Plane recognizes ND-025 and gates unsupported intent', () => {
+  const plan = planIntent('Run ND-025 Shadow rehearsal. Create a harmless Shadow-only evidence change under .norex/, inspect the resulting diff, run deterministic validation, record the evidence, and do not modify production files or main.');
+  assert.equal(plan.recognized, true);
+  assert.equal(plan.status, 'PROPOSED');
+  assert.equal(plan.workflow_id, 'ND-025');
+  assert.equal(plan.scope, '.norex/** only');
+  assert.equal(plan.risk, 'R1');
+  assert.equal(plan.requires_approval, true);
+  assert.equal(plan.steps.length, 5);
+  assert.deepEqual(plan.steps.map(step => step.capability), [
+    'git.status',
+    'evidence.write',
+    'git.diff',
+    'ci.shadow',
+    'evidence.record'
+  ]);
+
+  const unknown = planIntent('delete production and deploy everything');
+  assert.equal(unknown.recognized, false);
+  assert.equal(unknown.status, 'GATED');
+
+  assert.throws(() => planIntent(''), /1-1000/);
+  assert.throws(() => planIntent('x'.repeat(1001)), /1-1000/);
+  assert.throws(() => planIntent(null), /text/);
+});
+
 test('path policy rejects traversal, secrets, hidden files, absolute paths and shell paths', () => {
   for (const path of ['../a.md', '/etc/passwd', '.norex/../a.md', '.norex/.env', '.norex/secrets.json', '.norex/key.pem', '.norex/a\\b.md', '.norex//x.md', '.norex/a\0.md', '.norex/a.sh']) assert.equal(allowedPath(path), false, path);
   assert.equal(allowedPath('.norex/project/LOCAL_SERVICES.md'), true);

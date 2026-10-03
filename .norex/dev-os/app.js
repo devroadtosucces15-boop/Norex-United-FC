@@ -67,8 +67,62 @@ async function showArtifact(name) {
   } catch (error) { badge.textContent = 'UNAVAILABLE'; output.textContent = error.message; }
 }
 tabs.forEach(t => t.addEventListener('click', () => showArtifact(t.dataset.artifact)));
-form.addEventListener('submit', event => {
-  event.preventDefault(); const value = input.value.trim(); if (!value) return;
-  showArtifact('session'); const card = element('article', '', 'event mike'); card.append(element('small', 'MIKE'), element('p', value)); stream.append(card); input.value = ''; stream.scrollTop = stream.scrollHeight;
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const value = input.value.trim();
+  if (!value) return;
+
+  showArtifact('session');
+
+  const card = element('article', '', 'event mike');
+  card.append(element('small', 'MIKE'), element('p', value));
+  stream.append(card);
+
+  input.value = '';
+  input.style.height = 'auto';
+  input.disabled = true;
+
+  const response = element('article', '', 'event orchestrator');
+  response.append(element('small', 'ORCHESTRATOR'), element('p', 'Planning locally…'));
+  stream.append(response);
+  stream.scrollTop = stream.scrollHeight;
+
+  try {
+    const plan = await api('plan', { intent: value });
+
+    if (!plan.recognized) {
+      response.replaceChildren(
+        element('small', 'ORCHESTRATOR · GATED'),
+        element('p', plan.message)
+      );
+    } else {
+      const heading = element('p', `${plan.workflow_id} · ${plan.title}`);
+      const meta = element('p', `${plan.status} · ${plan.risk} · ${plan.scope}`, 'artifact-meta');
+      const steps = element('ol');
+
+      for (const step of plan.steps) {
+        steps.append(element('li', `${step.capability} — ${step.action}`));
+      }
+
+      const notice = element('p', plan.message, 'artifact-meta');
+
+      response.replaceChildren(
+        element('small', 'ORCHESTRATOR · LOCAL DETERMINISTIC'),
+        heading,
+        meta,
+        steps,
+        notice
+      );
+    }
+  } catch (error) {
+    response.replaceChildren(
+      element('small', 'ORCHESTRATOR · BLOCKED'),
+      element('p', error.message)
+    );
+  } finally {
+    input.disabled = false;
+    input.focus();
+    stream.scrollTop = stream.scrollHeight;
+  }
 });
 input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 160) + 'px'; });
