@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-03T03:10:40.852Z",
+ "fetchedAt": "2026-10-03T03:20:47.151Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -1303,6 +1303,42 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0"
+  },
+  {
+   "name": "GuzuDemon",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
   }
  ],
  "positionCount": {
@@ -1458,7 +1494,7 @@
   {
    "name": "LightShikigami",
    "proPos": "14",
-   "gamesPlayed": "97",
+   "gamesPlayed": "98",
    "goals": "41",
    "assists": "40",
    "manOfTheMatch": "11",
@@ -1641,6 +1677,17 @@
    "ratingAve": "7.5",
    "prevGoals": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "GuzuDemon",
+   "proPos": "25",
+   "gamesPlayed": "56",
+   "goals": "111",
+   "assists": "92",
+   "manOfTheMatch": "4",
+   "ratingAve": "7.4",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "MAYOROFCALI_510",
