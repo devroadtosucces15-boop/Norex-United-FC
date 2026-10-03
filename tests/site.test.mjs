@@ -8,7 +8,7 @@ const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((f) => (f
 const files = walk(SITE);
 const html = files.filter((f) => f.endsWith('.html'));
 const read = (f) => fs.readFileSync(f, 'utf8');
-for (const p of ['index.html', 'squad.html', 'stats.html', 'compare.html', 'matches/index.html', 'players/index.html', 'clubs/index.html', 'about.html', 'apply.html', 'members.html', 'tactics.html'])
+for (const p of ['index.html', 'squad.html', 'stats.html', 'compare.html', 'matches/index.html', 'players/index.html', 'clubs/index.html', 'about.html', 'apply.html', 'members.html', 'tactics.html', 'hub.html'])
   t(`page ${p}`, fs.existsSync(SITE + p));
 t('JSON API files parse', ['players', 'club', 'clubs'].every((f) => JSON.parse(read(`${SITE}api/${f}.json`))));
 const index = read(SITE + 'index.html');
@@ -46,3 +46,10 @@ done();
 const tactics = read(SITE + 'tactics.html');
 t('BE1 tactics page is built behind the tactics flag', tactics.includes('data-flag="tactics"') && tactics.includes('assets/tactics.js') && tactics.includes('assets/tactics.css'));
 t('BE1 tactics page is in grouped navigation', index.includes('href="tactics.html"') && index.includes('data-flag="tactics"'));
+
+// BE8 production integration: backend is only useful once the member-facing room exists.
+const hubPage = read(SITE + 'hub.html');
+t('BE8 Hub page is built behind the hub flag', hubPage.includes('data-flag="hub"') && hubPage.includes('assets/hub.js') && hubPage.includes('assets/hub.css'));
+t('BE8 Hub page is in grouped navigation', index.includes('href="hub.html"') && index.includes('data-flag="hub"'));
+const hubJs = read(SITE + 'assets/hub.js');
+t('BE8 Hub client uses authenticated room socket + server wave endpoint', hubJs.includes('/api/hub/ws') && hubJs.includes('/api/hub/wave') && hubJs.includes("m.t==='roster'"));

@@ -10,6 +10,7 @@ import { buildDocs } from './docs-page.mjs';
 import { buildFeed } from './feed-page.mjs';
 import { buildMessages } from './messages-page.mjs';
 import { buildTactics } from './tactics-page.mjs';
+import { buildHub } from './hub-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 
 const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
@@ -456,6 +457,7 @@ const NAV_GROUPS = [
     ...(MEMBER_API ? [{ id: 'docs', href: 'docs.html', icon: '📜', label: 'Club docs', desc: 'Rules and announcements', flag: 'docs' }] : []),
     ...(MEMBER_API ? [{ id: 'playstyle', href: 'playstyle.html', icon: '🧭', label: 'Play Style', desc: 'How we play', flag: 'playStyle' }] : []),
     ...(MEMBER_API ? [{ id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages', desc: 'Team chat', flag: 'messages' }] : []),
+    ...(MEMBER_API ? [{ id: 'hub-room', href: 'hub.html', icon: '🏠', label: 'Club Hub', desc: 'Live clubhouse', flag: 'hub' }] : []),
     { id: 'about', href: 'about.html', icon: 'ℹ️', label: 'About', desc: 'Our story' },
   ] },
   { id: 'matches', icon: '⚽', label: 'Matches', links: [
@@ -1204,6 +1206,7 @@ if (MEMBER_API) buildDocs({ write, page, pageHead, esc, emptyState, config });
 if (MEMBER_API) buildFeed({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildMessages({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildTactics({ write, page, pageHead, emptyState, config });
+if (MEMBER_API) buildHub({ write, page, pageHead, emptyState, config });
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
