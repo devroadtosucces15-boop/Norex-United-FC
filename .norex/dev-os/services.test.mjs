@@ -14,8 +14,15 @@ async function fixture(fn) {
   const root = await mkdtemp(resolve(tmpdir(), 'norex-service-test-'));
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
+    for (const file of ['server.mjs', 'local-services.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    await copyFile(
+      resolve(source, '../evidence/ND-025-shadow-rehearsal.md'),
+      resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md')
+    );
     assert.equal((await execute('/usr/bin/git', ['init', '-b', BRANCH], root)).status, 'passed');
+    assert.equal((await execute('/usr/bin/git', ['add', '--', '.norex/dev-os', '.norex/evidence/ND-025-shadow-rehearsal.md'], root)).status, 'passed');
+    assert.equal((await execute('/usr/bin/git', ['-c', 'user.name=Norex Test', '-c', 'user.email=norex-test@localhost', 'commit', '-m', 'test fixture baseline'], root)).status, 'passed');
     await fn(root);
   } finally { await rm(root, { recursive: true, force: true }); }
 }
@@ -89,6 +96,119 @@ test('execution rejects unknown commands, concurrent jobs, altered code and wron
   await execute('/usr/bin/git', ['symbolic-ref', 'HEAD', 'refs/heads/main'], root);
   await assert.rejects(service.run('node-version'), /requires foundation/);
 }));
+test('ND-025 execution is fixed, approval-gated and Shadow-scoped', {
+  skip: process.env.NOREX_WORKFLOW_VALIDATION === '1'
+}, () => fixture(async root => {
+  const service = await createServices(root);
+
+  await assert.rejects(
+    service.executeWorkflow('ND-025', false),
+    /approval/i
+  );
+
+  await assert.rejects(
+    service.executeWorkflow('UNKNOWN', true),
+    /workflow/i
+  );
+
+  const before = await service.status();
+  assert.deepEqual(before.changes, []);
+
+  const result = await service.executeWorkflow('ND-025', true);
+
+  assert.equal(result.workflow_id, 'ND-025');
+  assert.equal(result.branch, BRANCH);
+  assert.equal(result.scope, '.norex/** only');
+  assert.equal(result.status, 'VALIDATED');
+  assert.equal(result.approval, 'explicit-local-ui-action');
+  assert.equal(result.provider_calls, 0);
+  assert.equal(result.steps.length, 5);
+  assert.deepEqual(result.steps.map(step => step.capability), [
+    'git.status',
+    'evidence.write',
+    'git.diff',
+    'ci.shadow',
+    'evidence.record'
+  ]);
+  assert.ok(result.evidence_path.startsWith('.norex/evidence/'));
+  assert.ok(result.evidence_path.endsWith('.md'));
+
+  const evidence = await service.inspect(result.evidence_path);
+  assert.match(evidence.content, /ND-025/);
+  assert.match(evidence.content, /VALIDATED/);
+
+  const after = await service.status();
+  assert.ok(after.changes.length >= 1);
+  assert.ok(after.changes.every(change => change.path.startsWith('.norex/')));
+  assert.ok(after.changes.some(change => change.path === result.evidence_path));
+
+  await assert.rejects(
+    service.executeWorkflow('ND-025', true),
+    /checkpoint|clean/i
+  );
+}));
+
+test('HTTP workflow execution requires exact explicit approval', {
+  skip: process.env.NOREX_WORKFLOW_VALIDATION === '1'
+}, () => fixture(async root => {
+  const server = await startServer({ projectRoot: root, port: 0 });
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  const headers = {
+    'X-Norex-Local': '1',
+    Origin: origin,
+    'Content-Type': 'application/json'
+  };
+
+  const executeWorkflow = (body, requestHeaders = headers) =>
+    fetch(origin + '/api/workflow/execute', {
+      method: 'POST',
+      headers: requestHeaders,
+      body: JSON.stringify(body)
+    });
+
+  try {
+    assert.equal(
+      (await executeWorkflow({ workflow_id: 'ND-025' })).status,
+      400
+    );
+
+    assert.equal(
+      (await executeWorkflow({ workflow_id: 'UNKNOWN', approved: true })).status,
+      400
+    );
+
+    assert.equal(
+      (await executeWorkflow({
+        workflow_id: 'ND-025',
+        approved: true,
+        command: 'touch /tmp/no'
+      })).status,
+      400
+    );
+
+    assert.equal(
+      (await executeWorkflow(
+        { workflow_id: 'ND-025', approved: true },
+        { 'X-Norex-Local': '1', 'Content-Type': 'application/json' }
+      )).status,
+      403
+    );
+
+    const result = await (
+      await executeWorkflow({ workflow_id: 'ND-025', approved: true })
+    ).json();
+
+    assert.equal(result.workflow_id, 'ND-025');
+    assert.equal(result.status, 'VALIDATED');
+    assert.equal(result.approval, 'explicit-local-ui-action');
+    assert.equal(result.provider_calls, 0);
+    assert.ok(result.evidence_path.startsWith('.norex/evidence/'));
+  } finally {
+    server.closeAllConnections();
+    await new Promise(done => server.close(done));
+  }
+}));
+
 test('HTTP enforces host/origin/header/approval, static allowlist and API results', () => fixture(async root => {
   const server = await startServer({ projectRoot: root, port: 0 });
   const origin = 'http://127.0.0.1:' + server.address().port;

@@ -113,6 +113,52 @@ form.addEventListener('submit', async event => {
         steps,
         notice
       );
+
+      if (
+        plan.status === 'PROPOSED' &&
+        plan.requires_approval === true &&
+        plan.workflow_id === 'ND-025'
+      ) {
+        const actions = element('div', '', 'service-controls');
+        const approve = button('Approve ND-025', async () => {
+          approve.disabled = true;
+          approve.textContent = 'Executing ND-025…';
+          notice.textContent = 'Approved. Running fixed local workflow…';
+
+          try {
+            const result = await api('workflow/execute', {
+              workflow_id: 'ND-025',
+              approved: true
+            });
+
+            const execution = element('div', '', 'route');
+            execution.append(
+              element('b', result.status),
+              element('span', result.evidence_path),
+              element('em', result.provider_calls === 0 ? 'FREE' : 'COST')
+            );
+
+            const completed = element(
+              'p',
+              `${result.workflow_id} ${result.status} · ${result.steps.map(step => `${step.capability}:${step.status}`).join(' · ')}`,
+              'artifact-meta'
+            );
+
+            actions.replaceChildren(execution, completed);
+            meta.textContent = `${result.status} · ${result.branch} · ${result.scope}`;
+            notice.textContent = `Evidence recorded at ${result.evidence_path}.`;
+          } catch (error) {
+            approve.disabled = false;
+            approve.textContent = 'Approve ND-025';
+            notice.textContent = `BLOCKED · ${error.message}`;
+          } finally {
+            stream.scrollTop = stream.scrollHeight;
+          }
+        });
+
+        actions.append(approve);
+        response.append(actions);
+      }
     }
   } catch (error) {
     response.replaceChildren(

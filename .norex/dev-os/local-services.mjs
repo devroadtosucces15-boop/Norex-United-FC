@@ -1,4 +1,4 @@
-import { readdir, readFile, lstat, realpath } from 'node:fs/promises';
+import { readdir, readFile, lstat, realpath, writeFile } from 'node:fs/promises';
 import { resolve, relative, sep } from 'node:path';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -24,10 +24,13 @@ export function redact(value) {
     .replace(/\b(?:sk-[\w-]{12,}|gh[pousr]_[\w]{12,}|github_pat_[\w]{12,})/g, '[REDACTED TOKEN]')
     .replace(/((?:authorization|password|secret|api[_-]?key|access[_-]?token)\s*["']?\s*[:=]\s*)[^\r\n]+/gi, '$1[REDACTED]');
 }
-export function execute(binary, args, cwd, { timeout = 15000, limit = LIMIT } = {}) {
+export function execute(binary, args, cwd, { timeout = 15000, limit = LIMIT, workflowValidation = false } = {}) {
   return new Promise(resolveResult => {
     let output = '', size = 0, reason = null;
-    const child = spawn(binary, args, { cwd, env: environment, shell: false, detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    const env = workflowValidation
+      ? { ...environment, NOREX_WORKFLOW_VALIDATION: '1' }
+      : environment;
+    const child = spawn(binary, args, { cwd, env, shell: false, detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
     const stop = why => { reason ||= why; try { process.kill(-child.pid, 'SIGKILL'); } catch {} };
     const timer = setTimeout(() => stop('timeout'), timeout);
     const collect = chunk => { size += chunk.length; if (size > limit) stop('output_limit'); else output += chunk.toString(); };
@@ -109,8 +112,146 @@ export async function createServices(projectRoot) {
       return { request_id: randomUUID(), task_id: 'ND-013', service: 'terminal', operation: commandId, started_at, finished_at: new Date().toISOString(), branch: BRANCH, command: command.command, status: last.status, exit_code: last.exit_code, output: results.map(r => r.output).join('\n'), approval: 'explicit-local-ui-action', persistence: 'in-memory response only' };
     } finally { busy = false; }
   }
+  async function executeWorkflow(workflowId, approved) {
+    if (approved !== true) throw new Error('Explicit workflow approval is required');
+    if (workflowId !== 'ND-025') throw new Error('Workflow is not allowlisted');
+    if (busy) throw new Error('A command is already running');
+
+    busy = true;
+    const started_at = new Date().toISOString();
+
+    try {
+      await guard();
+
+      for (const [path, content] of trusted) {
+        if (await readFile(await safeFile(path), 'utf8') !== content) {
+          throw new Error('Dev OS code changed; review it and restart the server before execution');
+        }
+      }
+
+      const checkpoint = await git([
+        'status', '--porcelain=v1', '-z',
+        '--untracked-files=all', '--no-renames',
+        '--', '.norex/'
+      ]);
+
+      if (checkpoint !== '') {
+        throw new Error('ND-025 requires a clean Shadow checkpoint');
+      }
+
+      const evidencePath = '.norex/evidence/ND-025-shadow-rehearsal.md';
+      const evidenceFile = await safeFile(evidencePath);
+
+      const initialEvidence = [
+        '# ND-025 Shadow Rehearsal',
+        '',
+        'Status: IN_PROGRESS',
+        'Workflow: ND-025',
+        'Branch: ' + BRANCH,
+        'Scope: .norex/** only',
+        'Provider calls: 0',
+        'Approval: explicit-local-ui-action',
+        '',
+        '## Execution',
+        '',
+        '- checkpoint: PASSED',
+        '- evidence.write: PASSED',
+        ''
+      ].join('\n');
+
+      await writeFile(evidenceFile, initialEvidence, {
+        encoding: 'utf8',
+        flag: 'w'
+      });
+
+      const diff = await git([
+        'diff',
+        '--no-ext-diff',
+        '--no-textconv',
+        '--no-renames',
+        '--',
+        evidencePath
+      ]);
+
+      if (
+        !diff.includes('Status: IN_PROGRESS') ||
+        !diff.includes('Workflow: ND-025')
+      ) {
+        throw new Error('Expected ND-025 evidence diff was not produced');
+      }
+
+      const validation = [];
+      for (const args of [
+        ...codeFiles.map(file => ['--check', '.norex/dev-os/' + file]),
+        ['--test', '.norex/dev-os/services.test.mjs']
+      ]) {
+        const result = await execute(process.execPath, args, root, {
+          timeout: 30000,
+          workflowValidation: args[0] === '--test'
+        });
+        validation.push(result);
+        if (result.status !== 'passed') break;
+      }
+
+      const validationPassed =
+        validation.length === codeFiles.length + 1 &&
+        validation.every(result => result.status === 'passed');
+
+      const finalStatus = validationPassed ? 'VALIDATED' : 'FAILED';
+
+      if (!validationPassed) {
+        const failed = validation.find(result => result.status !== 'passed');
+        throw new Error(
+          'ND-025 validation failed: ' +
+          (failed ? failed.status + '\n' + failed.output : 'incomplete validation')
+        );
+      }
+
+      const finalEvidence = initialEvidence + [
+        '- git.diff: PASSED',
+        '- ci.shadow: ' + (validationPassed ? 'PASSED' : 'FAILED'),
+        '- evidence.record: PASSED',
+        '',
+        '## Result',
+        '',
+        'Status: ' + finalStatus,
+        'Finished: ' + new Date().toISOString(),
+        ''
+      ].join('\n');
+
+      await writeFile(evidenceFile, finalEvidence, {
+        encoding: 'utf8',
+        flag: 'w'
+      });
+
+      const steps = [
+        { capability: 'git.status', status: 'PASSED' },
+        { capability: 'evidence.write', status: 'PASSED' },
+        { capability: 'git.diff', status: 'PASSED' },
+        { capability: 'ci.shadow', status: validationPassed ? 'PASSED' : 'FAILED' },
+        { capability: 'evidence.record', status: 'PASSED' }
+      ];
+
+      return {
+        request_id: randomUUID(),
+        workflow_id: 'ND-025',
+        started_at,
+        finished_at: new Date().toISOString(),
+        branch: BRANCH,
+        scope: '.norex/** only',
+        status: finalStatus,
+        approval: 'explicit-local-ui-action',
+        provider_calls: 0,
+        evidence_path: evidencePath,
+        steps
+      };
+    } finally {
+      busy = false;
+    }
+  }
+
   return {
-    files, inspect, run,
+    files, inspect, run, executeWorkflow,
     async status() {
       const output = await git(['status', '--porcelain=v1', '-z', '--untracked-files=all', '--no-renames', '--', '.norex/']);
       return { branch: await branch(), scope: '.norex/', changes: output.split('\0').filter(Boolean).filter(row => allowedPath(row.slice(3))).map(row => ({ status: row.slice(0, 2), path: row.slice(3) })) };

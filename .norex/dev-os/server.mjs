@@ -42,6 +42,26 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         return send(200, planIntent(data.intent));
       }
 
+      if (req.method === 'POST' && url.pathname === '/api/workflow/execute') {
+        if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON workflow execution required' });
+        let body = '';
+        for await (const chunk of req) {
+          body += chunk;
+          if (body.length > 1024) {
+            send(413, { error: 'Request too large' });
+            return;
+          }
+        }
+        const data = JSON.parse(body);
+        if (
+          !data ||
+          Object.keys(data).sort().join(',') !== 'approved,workflow_id' ||
+          data.approved !== true ||
+          data.workflow_id !== 'ND-025'
+        ) return send(400, { error: 'Explicit approval and an allowlisted workflow_id are required' });
+        return send(200, await services.executeWorkflow(data.workflow_id, data.approved));
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/run') {
         if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON execution required' });
         let body = '';
