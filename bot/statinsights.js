@@ -1,7 +1,8 @@
 // BE9 Insights engine (board 12, flag `statInsights`) – a registry of per-stat fact packs (club form,
-// the latest match, every home-squad player's season) → an LLM writer → a number checker that rejects
-// any figure the model writes that isn't actually in the fact pack. Persisted in D1 (`stat_insights`),
-// keyed by a fingerprint of the facts, so an unchanged stat never triggers a re-write.
+// the latest match, every home-squad player's season, the four leaderboards) → an LLM writer → a
+// number checker that rejects any figure the model writes that isn't actually in the fact pack.
+// Persisted in D1 (`stat_insights`), keyed by a fingerprint of the facts, so an unchanged stat
+// never triggers a re-write.
 //
 // Do not confuse this with `bot/insights.js` (Club Intelligence, board 13, flag `insights` – server/
 // site health scores for managers) or `bot/aiinsights.js` (P11.14, flag `aiInsights` – a single
@@ -69,16 +70,34 @@ async function playerFacts(loadSite, k) {
     },
   };
 }
+// Same stat keys the site's own leaderboards (leaders.html) and compare tool (web/app.js's "compare
+// tool" block) already read off each home player's `s` object – mirrored here rather than imported,
+// since those are build-time/client helpers with no shared module to pull from.
+const LEADER_STATS = { goals: 'g', assists: 'a', rating: 'r', motm: 'm' };
+async function leadersFacts(loadSite, stat) {
+  const field = LEADER_STATS[stat];
+  if (!field) return null;
+  const top = (await loadSite('players'))
+    .filter((p) => p.home && (p.s?.[field] ?? 0) > 0)
+    .sort((a, b) => (b.s?.[field] ?? 0) - (a.s?.[field] ?? 0))
+    .slice(0, 5)
+    .map((p) => ({ name: p.n, value: p.s?.[field] ?? 0 }));
+  if (!top.length) return null;
+  return { title: `Leaders – ${stat}`, facts: { stat, top } };
+}
 // Every key the registry currently covers. Board 12 wants every tile/column/chart/profile stat –
-// this first slice covers club form, the latest match, and every home-squad player's season; more
-// fact-pack builders (compare, leaders boards, …) register here the same way when they're scoped.
+// this slice covers club form, the latest match, every home-squad player's season, and the four
+// leaderboards (goals/assists/rating/MOTM); "compare" is still open – see the module comment.
 export async function registryKeys(loadSite) {
   const players = await loadSite('players');
-  return ['club', 'match.latest', ...players.filter((p) => p.home).map((p) => `player.${p.k}`)];
+  return ['club', 'match.latest', ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
+    ...players.filter((p) => p.home).map((p) => `player.${p.k}`)];
 }
 export async function factPackFor(key, loadSite) {
   if (key === 'club') return { tier: 'public', ...(await clubFacts(loadSite)) };
   if (key === 'match.latest') { const f = await matchFacts(loadSite); return f && { tier: 'public', ...f }; }
+  const lm = /^leaders\.(.+)$/.exec(key);
+  if (lm) { const f = await leadersFacts(loadSite, lm[1]); return f && { tier: 'public', ...f }; }
   const pm = /^player\.(.+)$/.exec(key);
   if (pm) { const f = await playerFacts(loadSite, pm[1]); return f && { tier: 'member', ...f }; }
   return null;

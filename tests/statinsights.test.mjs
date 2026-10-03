@@ -20,7 +20,13 @@ t('player fact pack is member-tier with that player\'s own stats', playerPack.ti
 t('unknown key → null', (await factPackFor('nope', loadSite)) === null);
 t('a non-home player key → null (registry only covers the home squad)', (await factPackFor('player.not-a-real-key', loadSite)) === null);
 const keys = await registryKeys(loadSite);
-t('registry covers club + latest match + every home player', keys.includes('club') && keys.includes('match.latest') && siteJson('players').filter((p) => p.home).every((p) => keys.includes(`player.${p.k}`)));
+t('registry covers club + latest match + every home player + the four leaderboards', keys.includes('club') && keys.includes('match.latest') && siteJson('players').filter((p) => p.home).every((p) => keys.includes(`player.${p.k}`)) && ['goals', 'assists', 'rating', 'motm'].every((s) => keys.includes(`leaders.${s}`)));
+
+// ---------- leaders fact packs ----------
+const topScorer = [...siteJson('players')].filter((p) => p.home).sort((a, b) => (b.s?.g ?? 0) - (a.s?.g ?? 0))[0];
+const leadersGoals = await factPackFor('leaders.goals', loadSite);
+t('leaders.goals is public and top-ranks by goals, highest first', leadersGoals.tier === 'public' && leadersGoals.facts.top[0].name === topScorer.n && leadersGoals.facts.top[0].value === topScorer.s.g);
+t('unknown leaders stat → null', (await factPackFor('leaders.nope', loadSite)) === null);
 
 // ---------- number checker ----------
 const allowed = new Set([5, 12, 50]);
