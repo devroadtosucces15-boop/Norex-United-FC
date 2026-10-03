@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-03T19:10:39.246Z",
+ "fetchedAt": "2026-10-03T19:20:38.215Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -801,6 +801,42 @@
    "favoritePosition": "defender"
   },
   {
+   "name": "crystian71597",
+   "gamesPlayed": "20",
+   "winRate": "90",
+   "goals": "6",
+   "assists": "5",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "50",
+   "passesMade": "283",
+   "passSuccessRate": "78",
+   "ratingAve": "7.5",
+   "tacklesMade": "32",
+   "tackleSuccessRate": "28",
+   "proName": "",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "169",
+   "proNationality": "14",
+   "proOverall": "79",
+   "proOverallStr": "79",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "1",
+   "prevGoals3": "0",
+   "prevGoals4": "1",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "2",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "Treego2424",
    "gamesPlayed": "2",
    "winRate": "100",
@@ -1344,7 +1380,7 @@
  "positionCount": {
   "midfielder": 6,
   "goalkeeper": 1,
-  "forward": 16,
+  "forward": 17,
   "defender": 10
  },
  "career": [
@@ -1567,6 +1603,17 @@
    "ratingAve": "6.8",
    "prevGoals": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "crystian71597",
+   "proPos": "25",
+   "gamesPlayed": "42",
+   "goals": "10",
+   "assists": "11",
+   "manOfTheMatch": "4",
+   "ratingAve": "7.7",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "Treego2424",
