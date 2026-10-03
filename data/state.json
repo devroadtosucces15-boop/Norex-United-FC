@@ -417,7 +417,7 @@
   "51769": {
    "tier": "linked",
    "firstSeen": "2026-09-29T11:31:10.703Z",
-   "lastFetched": "2026-10-03T14:50:38.241Z",
+   "lastFetched": "2026-10-03T15:00:38.948Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "741879",
@@ -623,7 +623,7 @@
   "56758": {
    "tier": "linked",
    "firstSeen": "2026-09-30T04:53:34.259Z",
-   "lastFetched": "2026-10-03T14:50:38.241Z",
+   "lastFetched": "2026-10-03T15:00:38.948Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "418301",
@@ -1071,7 +1071,7 @@
   "80869": {
    "tier": "home",
    "firstSeen": "2026-09-28T01:09:15.486Z",
-   "lastFetched": "2026-10-03T14:50:38.241Z",
+   "lastFetched": "2026-10-03T15:00:38.948Z",
    "fails": 0,
    "depth": 0,
    "name": "NOREX UNITED FC"
@@ -1201,7 +1201,7 @@
   "189496": {
    "tier": "linked",
    "firstSeen": "2026-09-28T01:13:37.021Z",
-   "lastFetched": "2026-10-03T14:50:38.241Z",
+   "lastFetched": "2026-10-03T15:00:38.948Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "61188",
@@ -1558,7 +1558,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-30T04:20:47.418Z",
    "lastFetched": null,
-   "fails": 512,
+   "fails": 513,
    "depth": 15,
    "discoveredVia": "318901"
   },
@@ -1984,7 +1984,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-29T11:58:33.902Z",
    "lastFetched": null,
-   "fails": 697,
+   "fails": 698,
    "depth": 12,
    "discoveredVia": "897482"
   },
@@ -2026,7 +2026,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-29T09:02:47.770Z",
    "lastFetched": null,
-   "fails": 695,
+   "fails": 696,
    "depth": 12,
    "discoveredVia": "81919"
   },
@@ -2346,7 +2346,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-29T02:29:00.894Z",
    "lastFetched": null,
-   "fails": 782,
+   "fails": 783,
    "depth": 10,
    "discoveredVia": "569635"
   },
@@ -2390,6 +2390,14 @@
    "depth": 1,
    "discoveredVia": "189496",
    "name": "Griego FC"
+  },
+  "764149": {
+   "tier": "discovered",
+   "firstSeen": "2026-10-03T15:00:38.948Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 20,
+   "discoveredVia": "832469"
   },
   "764940": {
    "tier": "discovered",
@@ -2498,14 +2506,6 @@
    "discoveredVia": "51769",
    "name": "Vincimus FC"
   },
-  "832469": {
-   "tier": "discovered",
-   "firstSeen": "2026-10-02T06:50:46.787Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 19,
-   "discoveredVia": "1049470"
-  },
   "848460": {
    "tier": "discovered",
    "firstSeen": "2026-10-03T12:20:40.718Z",
@@ -2600,7 +2600,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-28T07:59:06.403Z",
    "lastFetched": null,
-   "fails": 960,
+   "fails": 961,
    "depth": 5,
    "discoveredVia": "220025"
   },
@@ -2804,7 +2804,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-28T18:32:21.739Z",
    "lastFetched": null,
-   "fails": 855,
+   "fails": 856,
    "depth": 8,
    "discoveredVia": "318664"
   },
@@ -2951,7 +2951,7 @@
    "tier": "discovered",
    "firstSeen": "2026-09-29T08:13:42.259Z",
    "lastFetched": null,
-   "fails": 682,
+   "fails": 683,
    "depth": 12,
    "discoveredVia": "2078"
   },
@@ -3032,7 +3032,7 @@
    "tier": "discovered",
    "firstSeen": "2026-10-01T01:34:42.816Z",
    "lastFetched": null,
-   "fails": 285,
+   "fails": 286,
    "depth": 17,
    "discoveredVia": "775856"
   },
@@ -3140,7 +3140,7 @@
    "tier": "discovered",
    "firstSeen": "2026-10-01T16:01:39.117Z",
    "lastFetched": null,
-   "fails": 190,
+   "fails": 191,
    "depth": 18,
    "discoveredVia": "979844"
   },
@@ -3148,7 +3148,7 @@
    "tier": "discovered",
    "firstSeen": "2026-10-02T20:20:45.508Z",
    "lastFetched": null,
-   "fails": 113,
+   "fails": 114,
    "depth": 2,
    "discoveredVia": "1151676"
   },
@@ -3262,7 +3262,7 @@
    "tier": "discovered",
    "firstSeen": "2026-10-01T14:41:03.598Z",
    "lastFetched": null,
-   "fails": 187,
+   "fails": 188,
    "depth": 18,
    "discoveredVia": "644227"
   },
@@ -8675,6 +8675,7 @@
   "831049": "2026-09-28",
   "831281": "2026-09-29",
   "831611": "2026-09-28",
+  "832469": "2026-10-03",
   "832905": "2026-10-02",
   "833101": "2026-09-29",
   "833221": "2026-09-28",
