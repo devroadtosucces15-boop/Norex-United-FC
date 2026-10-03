@@ -31,3 +31,12 @@ Commands come from approved project validation registry/task policy, not arbitra
 
 ## GitHub CI
 Remote CI complements local execution. Do not consume remote resources unnecessarily when local deterministic validation is sufficient; use required branch/protection/deployment checks where applicable.
+
+## Controlled Shadow implementation
+
+The local service currently dispatches fixed `shadow-check` and `shadow-tests`
+commands from `.norex/dev-os/local-services.mjs`. These validate the new Dev OS
+slice only. `node tests/run.mjs` remains the full-project harness and is not exposed
+by this registry because its build writes outside the authorized `.norex/` scope.
+No full-project or remote-CI pass is claimed by a Shadow test result. Runtime
+evidence: `.norex/evidence/2026-10-03-local-services.md`.
