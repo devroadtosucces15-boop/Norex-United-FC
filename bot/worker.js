@@ -16,7 +16,7 @@ import { eventReminders } from './events.js';
 import { closeDue } from './awards.js';
 import { hotwDue } from './hotw.js';
 import { scoreDue } from './predict.js';
-import { eventButton, memberCommand, MEMBER_COMMANDS } from './botcmds.js';
+import { eventButton, playButton, memberCommand, MEMBER_COMMANDS } from './botcmds.js';
 import { insightsCron, insightsNow, reportEmbeds } from './insights.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
@@ -103,6 +103,9 @@ export default {
     if (i.type === 2 && i.data.name === 'ask') return askCommand(i, env, ctx, site, who);
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
       try { return json(await eventButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
+    }
+    if (i.type === 3 && /^norex:play:\d+:learned$/.test(i.data?.custom_id ?? '')) { // BE1 ✅ Learned it on a shared play
+      try { return json(await playButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
     }
     if (i.type === 2 && MEMBER_COMMANDS.has(i.data.name)) { // P7.4 commands that read the member database
       try {

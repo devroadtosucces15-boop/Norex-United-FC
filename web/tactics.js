@@ -18,6 +18,24 @@
   let root, me, plays = [], active = null, detail = null, studio = null;
   const manager = () => ['manager', 'owner'].includes(me?.role);
 
+  // ---------- share to Discord (BE1 follow-up) ----------
+  let dcTargets = null;
+  const discordTargets = () => (dcTargets ??= call('/api/plays/discord').catch((e) => ({ ready: false, error: e.message })));
+  const dcPickers = (t) => (t.ready ? `<div class="tx-dc-row"><label>Channel<select name="channel">${t.channels.map((c) => `<option value="${esc(c.id)}"${c.id === t.last ? ' selected' : ''}>${c.news ? '📢' : '#'} ${esc(c.name)}</option>`).join('')}</select></label>
+<label>Ping<select name="role"><option value="">Nobody</option>${t.roles.map((r) => `<option value="${esc(r.id)}">${esc(r.name.startsWith('@') ? r.name : `@${r.name}`)}</option>`).join('')}</select></label></div>` : `<p class="muted small">⚠️ ${esc(t.error)}</p>`);
+  async function shareToDiscord() {
+    const p = detail, t = await discordTargets();
+    let f = {};
+    const v = await UI.modal({
+      title: `Share to Discord · ${p.title}`, icon: '📣',
+      body: `${p.discord ? '<p class="muted small">Already shared – this posts it again.</p>' : ''}${dcPickers(t)}<p class="muted small">Posts a card with "✅ Learned it" and "▶ Open in Studio" buttons.</p>`,
+      actions: t.ready ? [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: '📣 Share', value: 'ok' }] : undefined,
+      onOpen: (d) => { const rd = () => { f = { channel: $('[name=channel]', d)?.value, role: $('[name=role]', d)?.value }; }; rd(); d.addEventListener('change', rd); },
+    });
+    if (v !== 'ok') return;
+    try { detail = await call(`/api/plays/${active}/discord`, f); toast('Shared to Discord 📣'); detailView(); } catch (x) { toast(x.message, true); }
+  }
+
   function card(p) {
     const state = p.mine?.learned ? '<span class="tag tx-done">✓ Learned</span>' : p.mine?.assigned ? '<span class="tag">Assigned</span>' : '';
     const draft = !p.published ? '<span class="tag">Draft</span>' : '';
@@ -49,7 +67,7 @@ ${pitch(d, true)}
     const p = detail;
     if (studio) { root.innerHTML = `<button class="linkish tx-back" type="button" data-back>← All plays</button>${studioView(p)}`; return; }
     const q = p.doc?.quiz || [], steps = p.doc?.steps || [];
-    const manage = manager() ? `<div class="tx-manage card"><h3>Manager controls</h3><div class="tx-actions"><button class="btn sm" data-publish="${p.published ? '0' : '1'}">${p.published ? 'Unpublish' : 'Publish'}</button><button class="btn sm ghost" data-edit>Open studio</button><button class="btn sm ghost" data-restore>Version history</button><button class="btn sm danger" data-archive>Archive</button></div><small class="muted">Server-side validation remains authoritative for every save and quiz.</small></div>` : '';
+    const manage = manager() ? `<div class="tx-manage card"><h3>Manager controls</h3><div class="tx-actions"><button class="btn sm" data-publish="${p.published ? '0' : '1'}">${p.published ? 'Unpublish' : 'Publish'}</button><button class="btn sm ghost" data-edit>Open studio</button><button class="btn sm ghost" data-restore>Version history</button>${p.published ? `<button class="btn sm ghost" data-discord>📣 ${p.discord ? 'Share again' : 'Share to Discord'}</button>` : ''}<button class="btn sm danger" data-archive>Archive</button></div><small class="muted">Server-side validation remains authoritative for every save and quiz.</small></div>` : '';
     const quiz = q.length ? `<form class="tx-quiz card" data-quiz><h3>Knowledge check</h3>${q.map((x, i) => `<fieldset><legend>${i + 1}. ${esc(x.q)}</legend>${x.options.map((o, j) => `<label><input type="radio" name="q${i}" value="${j}" required> <span>${esc(o)}</span></label>`).join('')}</fieldset>`).join('')}<button class="btn" type="submit">Check answers</button></form>` : '';
     root.innerHTML = `<button class="linkish tx-back" type="button" data-back>← All plays</button><div class="tx-title"><div><p class="kicker">${esc(p.category)}</p><h2>${esc(p.title)}</h2><p class="muted">Version ${p.version}${p.mine?.assigned ? ' · assigned to you' : ''}</p></div>${p.mine?.learned ? '<span class="tag tx-done">✓ Learned</span>' : p.published ? '<button class="btn sm ghost" data-learn>Mark learned</button>' : '<span class="tag">Draft</span>'}</div>${pitch(p.doc || {})}<div class="tx-steps">${steps.length ? `<button class="btn sm ghost" type="button" data-play>▶ Play (${steps.length} keyframe${steps.length === 1 ? '' : 's'})</button>` : '<span class="muted">No keyframes in this version yet.</span>'}</div>${quiz}${manage}`;
   }
@@ -193,6 +211,7 @@ ${pitch(d, true)}
       const pub = e.target.closest('[data-publish]'); if (pub) { try { detail = await call(`/api/plays/${active}/publish`, { published: pub.dataset.publish === '1' }); toast(detail.published ? 'Play published.' : 'Play unpublished.'); detailView(); } catch (x) { toast(x.message, true); } return; }
       if (e.target.closest('[data-edit]')) { studio = { doc: structuredClone(detail.doc || STARTER_DOC), tool: 'move', drawColor: COLORS[0], selectedPieceId: null }; detailView(); return; }
       if (e.target.closest('[data-restore]')) { versions(); return; }
+      if (e.target.closest('[data-discord]')) { shareToDiscord(); return; }
       if (e.target.closest('[data-archive]')) { if (!(await UI.confirm({ title: 'Archive this play?', text: 'History is kept; members will no longer see it.', ok: 'Archive', danger: true }))) return; try { await call(`/api/plays/${active}/delete`, {}); toast('Play archived.'); history.replaceState(null, '', location.pathname); await load(); } catch (x) { toast(x.message, true); } }
     });
     root.addEventListener('submit', async (e) => {

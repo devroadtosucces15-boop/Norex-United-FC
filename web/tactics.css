@@ -14,4 +14,7 @@
 .tx-qdel{background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px}
 .tx-qrow-actions{display:flex;gap:8px;margin-top:8px}
 .tx-kflabel{display:block;font:600 13px/1 Inter,sans-serif}.tx-kflabel input{width:100%;margin-top:6px}
+.tx-dc-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.tx-dc-row label{display:grid;gap:5px;font:600 13px var(--body)}
+.tx-dc-row select{padding:10px 12px;border-radius:10px;border:1px solid var(--line2,var(--line));background:var(--ink,var(--card));color:inherit;font:14px var(--body);color-scheme:dark}
 @media(max-width:680px){.tx-head,.tx-title{align-items:flex-start}.tx-form{grid-template-columns:1fr}.tx-card{grid-template-columns:42px minmax(0,1fr) 18px}.tx-tags{grid-column:2/4;justify-content:flex-start}.tx-pitch{border-radius:12px}.tx-piece{width:28px;height:28px}.tx-steps{display:block}.tx-steps small{display:block;margin-top:4px}.tx-toolbar{flex-direction:column;align-items:stretch}}

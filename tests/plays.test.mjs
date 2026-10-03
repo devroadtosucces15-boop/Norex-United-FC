@@ -1,6 +1,7 @@
 // Tactics Studio + Playbook (redesign BE1): plays as a versioned document (pieces/steps/drawings/quiz) in
 // R2, assignment + learned state, quiz scored server-side.
 import { call, env, login } from './mock.mjs';
+import worker from '../bot/worker.js';
 import { t, done } from './lib.mjs';
 
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
@@ -49,6 +50,53 @@ t('a perfect quiz marks the play learned', (await call(member, `/api/plays/${id}
 
 t('a non-assigned member can still self-mark learned on a published play', (await call(member2, `/api/plays/${id}/learned`, { learned: true })).d.learned === true);
 t('member cannot publish/assign/delete', (await call(member, `/api/plays/${id}/delete`, {})).s === 403);
+
+// ================= Discord share (BE1 follow-up) =================
+env.DISCORD_BOT_TOKEN = 'bot';
+const dcPosts = [];
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init = {}) => {
+  const u = String(url);
+  if (u.endsWith('/guilds/9/channels')) return Response.json([{ id: '70001', name: 'tactics-room', type: 0 }]);
+  if (u.endsWith('/guilds/9/roles')) return Response.json([{ id: '9', name: '@everyone' }]);
+  const m = u.match(/\/channels\/(\w+)\/messages$/);
+  if (m) { dcPosts.push({ channel: m[1], ...JSON.parse(init.body) }); return Response.json({ id: `pm${dcPosts.length}` }); }
+  return realFetch(url, init);
+};
+
+t('member cannot see Discord targets', (await call(member, '/api/plays/discord')).s === 403);
+const tg = (await call(manager, '/api/plays/discord')).d;
+t('manager sees channels + roles', tg.channels[0].name === 'tactics-room' && tg.roles[0].name === '@everyone');
+
+const draft = (await call(manager, '/api/plays', { title: 'Unpublished drill', category: 'drill' })).d;
+t('cannot share an unpublished play', (await call(manager, `/api/plays/${draft.id}/discord`, { channel: '70001' })).d.error === 'Publish the play before sharing it.');
+t('member cannot share', (await call(member, `/api/plays/${id}/discord`, { channel: '70001' })).s === 403);
+
+const shared = await call(manager, `/api/plays/${id}/discord`, { channel: '70001' });
+const post = dcPosts.at(-1);
+t('manager shares the play as a card', shared.s === 200 && shared.d.discord?.channel === '70001' && post.embeds[0].title.includes('Corner routine'));
+const btns = post.components[0].components;
+t('card carries a Learned it button + an Open in Studio link', btns[0].custom_id === `norex:play:${id}:learned` && btns[0].style === 3 && btns[1].style === 5 && btns[1].url.includes(`tactics.html#play${id}`));
+t('bad channel id refused', (await call(manager, `/api/plays/${id}/discord`, { channel: 'abc' })).d.error === 'Pick a channel.');
+
+// ----- the "✅ Learned it" button itself, as a real signed Discord interaction -----
+setFlags({ discordRsvp: 'members' });
+const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+env.DISCORD_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', kp.publicKey)).toString('hex');
+async function press(custom_id, id2 = '903') {
+  const body = JSON.stringify({ type: 3, data: { custom_id, component_type: 2 }, member: { user: { id: id2, username: `u${id2}`, global_name: `G${id2}` }, nick: `Nick ${id2}`, roles: [] } });
+  const ts = String(Date.now());
+  const sig = Buffer.from(await crypto.subtle.sign('Ed25519', kp.privateKey, new TextEncoder().encode(ts + body))).toString('hex');
+  const res = await worker.fetch(new Request('https://bot/', { method: 'POST', body, headers: { 'X-Signature-Ed25519': sig, 'X-Signature-Timestamp': ts } }), env, { waitUntil() {} });
+  return res.json();
+}
+const pressed = await press(`norex:play:${id}:learned`);
+t('pressing the button marks it learned, ephemerally', pressed.type === 4 && pressed.data.flags === 64 && /Marked as learned/.test(pressed.data.content));
+t('…and it sticks (visible in the manager\'s assigned list)', (await call(manager, `/api/plays/${id}`)).d.assigned.some((a) => a.user_id === '903' && a.learned === 1));
+setFlags({ tactics: 'off' });
+t('button refuses when the flag is off', /not switched on/.test((await press(`norex:play:${id}:learned`)).data.content));
+setFlags({ tactics: 'members' });
+globalThis.fetch = realFetch;
 
 const before = (await call(manager, `/api/plays/${id}`)).d.version;
 r = await call(manager, `/api/plays/${id}/restore`, { version: 1 });

@@ -13,10 +13,15 @@
 //   POST /api/plays/:id/restore  managers: { version } → make an older version the current one (as a new version)
 //   POST /api/plays/:id/learned  members: { learned } → tick a play as learned myself
 //   POST /api/plays/:id/quiz     members: { answers } → scored against the document's quiz (never trusts the client's score)
+//   GET  /api/plays/discord      managers: channels + roles to post to (shared with P5.3/BE3's own pickers)
+//   POST /api/plays/:id/discord  managers: { channel, role? } → share a published play as a card with
+//                                "✅ Learned it" (writes the same learned state as the site) and
+//                                "▶ Open in Studio" buttons (bot/worker.js → playButton in botcmds.js)
 // Video (Cloudflare Stream) and live co-editing (a ClubRoom-style Durable Object) are still open – see
 // PLANNING/REDESIGN.md BE0/BE1. The document lives in the MEDIA bucket (BE0) under a `play/` prefix.
 import { can, flagOn } from './roles.js';
 import { notify, safely } from './notify.js';
+import { discordTargets, postEmbed } from './docs.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -71,7 +76,7 @@ async function trimVersions(env, playId) {
   await run(env, `DELETE FROM play_versions WHERE play_id = ? AND version IN (${marks(old.length)})`, playId, ...old.map((r) => r.version));
 }
 
-const playOut = (r) => ({ id: r.id, title: r.title, category: r.category, published: !!r.published, version: r.version, updatedAt: r.updated_at, createdAt: r.created_at });
+const playOut = (r) => ({ id: r.id, title: r.title, category: r.category, published: !!r.published, version: r.version, updatedAt: r.updated_at, createdAt: r.created_at, discord: r.discord_msg ? { channel: r.discord_channel } : undefined });
 async function myState(env, playId, uid) {
   const [a, q] = await Promise.all([
     one(env, 'SELECT learned, learned_at FROM play_assign WHERE play_id = ? AND user_id = ?', playId, uid),
@@ -167,7 +172,7 @@ async function publish(env, me, id, body) {
   return getOne(env, me, id);
 }
 
-async function markLearned(env, me, id, body) {
+export async function markLearned(env, me, id, body) {
   const r = await one(env, 'SELECT published FROM plays WHERE id = ? AND archived = 0', id);
   if (!r || !r.published) return fail('Play not found.', 404);
   const now = Date.now();
@@ -202,6 +207,40 @@ async function archive(env, id) {
   return json({ ok: true });
 }
 
+const CAT_ICON = { 'set-piece': '⚽', formation: '🧩', drill: '🏃' };
+// The share card – a summary (no quiz answers), a "✅ Learned it" button (writes the same state as the
+// site, via botcmds.js's playButton) and a link straight into the studio. Shared by the real post and the
+// front end's dry-run preview, so what a manager previews is what gets sent (same pattern as docs.js).
+function playEmbed(env, r, doc) {
+  const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
+  const bits = [`${doc.pieces.length} piece${doc.pieces.length === 1 ? '' : 's'}`, doc.steps.length ? `${doc.steps.length} keyframe${doc.steps.length === 1 ? '' : 's'}` : null, doc.quiz.length ? `${doc.quiz.length}-question quiz` : null].filter(Boolean);
+  return {
+    embeds: [{
+      title: `${CAT_ICON[r.category] ?? '📋'} ${r.title}`.slice(0, 250),
+      description: bits.join(' · ') || 'A new play in the Tactics Studio.',
+      url: `${site}tactics.html#play${r.id}`, color: 0xc8352c, timestamp: new Date(r.updated_at).toISOString(),
+      footer: { text: 'NOREX UNITED · Tactics Studio' },
+    }],
+    components: [{ type: 1, components: [
+      { type: 2, style: 3, label: '✅ Learned it', emoji: { name: '✅' }, custom_id: `norex:play:${r.id}:learned` },
+      { type: 2, style: 5, label: '▶ Open in Studio', url: `${site}tactics.html#play${r.id}` },
+    ] }],
+  };
+}
+// Posts a published play as a rich embed with answer buttons. Never throws – returns { ok } or { ok: false, error }.
+async function postPlay(env, me, id, target, log) {
+  const r = await one(env, 'SELECT * FROM plays WHERE id = ? AND archived = 0', id);
+  if (!r) return { ok: false, error: 'Play not found.' };
+  if (!r.published) return { ok: false, error: 'Publish the play before sharing it.' };
+  const channel = String(target.channel ?? ''), role = String(target.role ?? '');
+  const doc = await getDoc(env, r.doc_key);
+  const res = await postEmbed(env, channel, role, playEmbed(env, r, doc));
+  if (!res.ok) return res;
+  await run(env, 'UPDATE plays SET discord_channel = ?, discord_msg = ? WHERE id = ?', channel, res.id ?? null, id);
+  await log(env, me, 'play-discord', `${r.title}${role ? ` · ping ${role === env.DISCORD_GUILD_ID ? '@everyone' : 'role'}` : ''}`);
+  return { ok: true };
+}
+
 export async function playsRoute(p, method, body, me, env, log) {
   if (!p.startsWith('/api/plays')) return null;
   if (!flagOn(env, me, 'tactics')) return fail('Not available yet.', 404);
@@ -212,7 +251,11 @@ export async function playsRoute(p, method, body, me, env, log) {
     if (method === 'POST') { if (!can(me, 'plays.manage')) return fail('Managers only.', 403); return create(env, me, body); }
     return fail('Not found', 404);
   }
-  const m = /^\/api\/plays\/(\d+)(?:\/(publish|assign|delete|restore|learned|quiz))?$/.exec(p);
+  if (p === '/api/plays/discord') {
+    if (!can(me, 'announce.discord')) return fail('Managers only.', 403);
+    return json(await discordTargets(env));
+  }
+  const m = /^\/api\/plays\/(\d+)(?:\/(publish|assign|delete|restore|learned|quiz|discord))?$/.exec(p);
   if (!m) return fail('Not found', 404);
   const id = Number(m[1]);
   const action = m[2];
@@ -229,5 +272,11 @@ export async function playsRoute(p, method, body, me, env, log) {
   if (action === 'assign') { await assignTo(env, me, id, body.userIds); await log(env, me, 'play-assign', `#${id} · ${(body.userIds ?? []).length} member(s)`); return getOne(env, me, id); }
   if (action === 'delete') { const r = await archive(env, id); await log(env, me, 'play-delete', `#${id}`); return r; }
   if (action === 'restore') { const r = await restore(env, me, id, body); await log(env, me, 'play-restore', `#${id} → v${body.version}`); return r; }
+  if (action === 'discord') {
+    if (!can(me, 'announce.discord')) return fail('Managers only.', 403);
+    const r = await postPlay(env, me, id, body, log);
+    if (!r.ok) return json(r);
+    return getOne(env, me, id);
+  }
   return fail('Not found', 404);
 }

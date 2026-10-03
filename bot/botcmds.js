@@ -1,5 +1,7 @@
 // Discord commands and buttons that need the member database (roadmap P3.3 RSVP buttons, P7.4 more bot commands).
 //   ✅ ❔ ❌ buttons on event posts (custom_id norex:ev:<id>:<status>) → the same answers as the Squad Hub
+//   ✅ Learned it button on a shared play (custom_id norex:play:<id>:learned, BE1) → the same state as the
+//   Tactics Studio's own "Mark learned" button
 //   /schedule      next events, with the answer buttons for the first one       (flag `events`)
 //   /availability  who's in for the next event and which positions are missing (flag `events`)
 //   /lineup        the published lineup for the next event                      (flag `events`)
@@ -18,6 +20,7 @@ import { feedbackRoute, KINDS as FEEDBACK_KINDS } from './feedback.js';
 import { knowledgeRoute } from './docs.js';
 import { notifyRouteAll } from './notify.js';
 import { trialsState } from './trials.js';
+import { markLearned } from './plays.js';
 
 // P11.16: quick one-line wrappers around features that already exist – reuse the same route
 // functions the Squad Hub calls, rather than duplicating their validation/limits here.
@@ -59,6 +62,20 @@ export async function eventButton(i, env, who) {
   const n = (await one(env, "SELECT COUNT(*) AS n FROM event_rsvps WHERE event_id = ? AND status = 'yes'", e.id)).n;
   await env.DB.prepare('INSERT INTO activity (at, user_id, name, avatar, type, detail) VALUES (?, ?, ?, ?, ?, ?)').bind(Date.now(), me.u, me.n, me.a, 'event-rsvp', `${status} · ${label(e)} · Discord`).run();
   return say(`${{ yes: '✅ You’re in', maybe: '❔ Marked as maybe', no: '❌ Marked as can’t make it' }[status]} for **${label(e)}** · ${ts(e.start)} (${ts(e.start, 'R')}). ${n} said yes so far – change it any time with the buttons or in the Squad Hub.`);
+}
+
+// ---------- BE1 "✅ Learned it" button on a shared play ----------
+export async function playButton(i, env, who) {
+  if (!env.DB) return say('⚠️ The member database is not connected.');
+  if (!flagOn(env, who, 'tactics')) return say('🔒 The Tactics Studio is not switched on yet.');
+  if (!can(who, 'plays.view')) return say('🔒 Members of the NOREX server only.');
+  const [, , id] = i.data.custom_id.split(':');
+  const me = await memberOf(i, who, env);
+  const res = await markLearned(env, me, Number(id), { learned: true });
+  const data = await res.json();
+  if (res.status !== 200) return say(`⚠️ ${data.error}`);
+  await env.DB.prepare('INSERT INTO activity (at, user_id, name, avatar, type, detail) VALUES (?, ?, ?, ?, ?, ?)').bind(Date.now(), me.u, me.n, me.a, 'play-learned', 'via Discord').run();
+  return say('✅ Marked as learned – nice work! Open the Tactics Studio any time to revisit it.');
 }
 
 // ---------- P7.4 commands ----------
