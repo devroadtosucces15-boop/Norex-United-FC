@@ -8,7 +8,7 @@ const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((f) => (f
 const files = walk(SITE);
 const html = files.filter((f) => f.endsWith('.html'));
 const read = (f) => fs.readFileSync(f, 'utf8');
-for (const p of ['index.html', 'squad.html', 'stats.html', 'compare.html', 'matches/index.html', 'players/index.html', 'clubs/index.html', 'about.html', 'apply.html', 'members.html', 'tactics.html'])
+for (const p of ['index.html', 'squad.html', 'stats.html', 'compare.html', 'matches/index.html', 'players/index.html', 'clubs/index.html', 'about.html', 'apply.html', 'members.html', 'tactics.html', 'hub/index.html'])
   t(`page ${p}`, fs.existsSync(SITE + p));
 t('JSON API files parse', ['players', 'club', 'clubs'].every((f) => JSON.parse(read(`${SITE}api/${f}.json`))));
 const index = read(SITE + 'index.html');
@@ -46,3 +46,9 @@ done();
 const tactics = read(SITE + 'tactics.html');
 t('BE1 tactics page is built behind the tactics flag', tactics.includes('data-flag="tactics"') && tactics.includes('assets/tactics.js') && tactics.includes('assets/tactics.css'));
 t('BE1 tactics page is in grouped navigation', index.includes('href="tactics.html"') && index.includes('data-flag="tactics"'));
+
+// board 10: the Hub gets its own gold shell (no public nav, its own bar), behind the hub flag, with a key into it.
+const hub = read(SITE + 'hub/index.html');
+t('board-10 hub page has its own gold bar, not the public nav', hub.includes('class="hubw-bar"') && !hub.includes('<header class="top">'));
+t('board-10 hub page is built behind the hub flag', hub.includes('data-flag="hub"') && hub.includes('assets/hub.css'));
+t('board-10 gold key into the Hub is on every page, flag-gated', index.includes('class="hubw-key"') && index.includes('data-flag="hub"') && index.includes('href="hub/index.html"'));

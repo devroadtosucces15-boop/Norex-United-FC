@@ -1,0 +1,71 @@
+/* The Hub (redesign board 10) – gold-on-black everywhere, separate from the club's ink/red theme. */
+[data-flag="hub"]:not([hidden]) ~ .hubw-soon{display:none}
+.hubw-body{background:#05060a}
+.hubw-bar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0b0a06,#0b0a06cc);border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,var(--line))}
+.hubw-bar-in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
+.hubw-brand{display:flex;align-items:center;gap:10px;color:#fff}
+.hubw-brand span{display:flex;flex-direction:column;line-height:1.05}
+.hubw-brand b{font:700 18px/1 var(--head);letter-spacing:.04em;color:var(--gold)}
+.hubw-brand small{font:700 10px/1 var(--body);letter-spacing:.14em;color:var(--muted);margin-top:3px}
+.hubw-right{display:flex;align-items:center;gap:14px}
+.hubw-online{display:flex;align-items:center;gap:6px;font:600 13px var(--body);color:#c8d0dd}
+.hubw-online b{color:var(--gold)}
+.hubw-back{font:600 13px var(--body);color:#c8d0dd;padding:6px 10px;border-radius:8px;border:1px solid var(--line2)}
+.hubw-back:hover{color:#fff;border-color:var(--gold)}
+
+/* ---------- room map: flat grid first (works with JS off / reduced motion / phones) ---------- */
+.hubworld{margin:18px 0 40px}
+.hubw-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.hubw-listview{padding:7px 12px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:#fff;font:600 12px var(--body)}
+.hubw-hint{display:none}
+.hubw-stage{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;perspective:1400px}
+.hubw-room{display:flex;flex-direction:column;gap:4px;padding:18px 16px;border-radius:14px;background:linear-gradient(160deg,#141014,#0b0a06);border:1px solid color-mix(in srgb,var(--gold) 28%,var(--line));color:#fff;transition:transform .2s ease,box-shadow .2s ease}
+.hubw-room:hover,.hubw-room:focus-visible{transform:translateY(-4px);box-shadow:0 10px 24px color-mix(in srgb,var(--gold) 22%,transparent);border-color:var(--gold);outline:none}
+.hubw-room-ic{font-size:26px}
+.hubw-room b{font:700 15px var(--head);letter-spacing:.02em}
+.hubw-room small{color:var(--muted);font:500 12px var(--body)}
+.hubw-room.locked{opacity:.55;cursor:not-allowed}
+.hubw-room.locked:hover{transform:none;box-shadow:none;border-color:color-mix(in srgb,var(--gold) 28%,var(--line))}
+
+/* ---------- 3D isometric upgrade: drag to orbit, same stage-driven hit-testing as the board 04 carousel ---------- */
+@media (min-width:760px){
+  .hubw-stage.hubw-3d:not(.hubw-list){display:block;height:min(62vw,480px);position:relative;touch-action:none;--ry:-28deg;--rx:52deg}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room{position:absolute;width:190px;left:50%;top:46%;transform-style:preserve-3d;transform:translate(-50%,-50%) rotateX(var(--rx)) rotateZ(var(--ry)) translateZ(60px) rotateZ(calc(var(--ry) * -1)) rotateX(calc(var(--rx) * -1))}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room:nth-child(1){transform:translate(-50%,-50%) rotate(0deg) translate(0,-150px) rotate(0deg)}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room:nth-child(2){transform:translate(-50%,-50%) rotate(45deg) translate(0,-150px) rotate(-45deg)}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room:nth-child(3){transform:translate(-50%,-50%) rotate(90deg) translate(0,-150px) rotate(-90deg)}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room:nth-child(4){transform:translate(-50%,-50%) rotate(135deg) translate(0,-150px) rotate(-135deg)}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room:nth-child(5){transform:translate(-50%,-50%) rotate(180deg) translate(0,-150px) rotate(-180deg)}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room:nth-child(6){transform:translate(-50%,-50%) rotate(225deg) translate(0,-150px) rotate(-225deg)}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room:nth-child(7){transform:translate(-50%,-50%) rotate(270deg) translate(0,-150px) rotate(-270deg)}
+  .hubw-stage.hubw-3d:not(.hubw-list) .hubw-room:nth-child(8){transform:translate(-50%,-50%) rotate(315deg) translate(0,-150px) rotate(-315deg)}
+  .hubw-stage.hubw-3d:not(.hubw-list){transform-style:preserve-3d;animation:none}
+  .hubw-stage.hubw-3d:not(.hubw-list){cursor:grab}
+  .hubw-stage.hubw-3d:not(.hubw-list):active{cursor:grabbing}
+  .hubw-hint{display:inline}
+}
+
+/* ---------- players' tunnel entrance: fixed overlay, ~1.2s, skippable, respects prefers-reduced-motion ---------- */
+.hubw-tunnel{position:fixed;inset:0;z-index:999;background:#05060a;display:grid;place-items:center;cursor:pointer}
+.hubw-tunnel-in{position:relative;width:min(90vw,520px);height:min(70vh,360px);display:grid;place-items:center;text-align:center;color:#fff}
+.hubw-tunnel [data-tn]{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .25s ease}
+.hubw-tunnel[data-step="1"] [data-tn="1"]{opacity:1}
+.hubw-tunnel[data-step="2"] [data-tn="2"]{opacity:1}
+.hubw-tunnel[data-step="3"] [data-tn="3"]{opacity:1}
+.hubw-tunnel[data-step="4"] [data-tn="4"]{opacity:1}
+.hubw-tn-key{font:700 20px var(--head);color:var(--gold)}
+.hubw-tn-walk{width:100%;height:100%;background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--gold) 20%,transparent) 0 2px,transparent 2px 40px)}
+.hubw-tn-doors{position:relative}
+.hubw-tn-doors img{width:120px;filter:drop-shadow(0 0 30px color-mix(in srgb,var(--gold) 50%,transparent))}
+.hubw-tn-doors i{position:absolute;top:0;bottom:0;width:52%;background:#0b0a06;border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line))}
+.hubw-tn-doors i.l{left:-2%;animation:hubwDoorL .5s ease forwards}
+.hubw-tn-doors i.r{right:-2%;animation:hubwDoorR .5s ease forwards}
+@keyframes hubwDoorL{to{transform:translateX(-100%)}}
+@keyframes hubwDoorR{to{transform:translateX(100%)}}
+.hubw-tn-title{font:700 34px/1.1 var(--head);color:var(--gold);letter-spacing:.04em}
+.hubw-tn-skip{position:absolute;bottom:18px;right:18px;padding:7px 12px;border-radius:8px;border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line));color:#fff;font:600 12px var(--body);background:transparent}
+@media (prefers-reduced-motion:reduce){
+  .hubw-tunnel{display:none}
+  .hubw-stage.hubw-3d{display:grid!important;height:auto!important}
+  .hubw-stage.hubw-3d .hubw-room{position:static!important;transform:none!important}
+}
