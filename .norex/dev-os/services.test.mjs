@@ -14,6 +14,7 @@ import { routeCapability } from './capability-broker.mjs';
 import { routeWithDurableApproval } from './routing-service.mjs';
 import { probeProviderPresence } from './provider-probe.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
+import { permissionWithDurableGrant, permissionApprovalAction } from './permission-service.mjs';
 import { createPtyService } from './pty-service.mjs';
 import { writeRecoveryBundle, readRecoveryBundle, restoreRecoveryBundle } from './recovery-bundle.mjs';
 import { browserProbe, captureLocalPreview } from './browser-service.mjs';
@@ -24,7 +25,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'permission-broker.mjs', 'permission-service.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -44,6 +45,23 @@ test('Permission Broker requires opaque handles and mandatory high-risk approval
   assert.equal(permissionDecision({ provider: 'github', resource: 'shadow', action: 'push', risk: 'R1', credential_handle: 'credential://github/shadow-push', grant: 'ALLOW_SESSION', exact_grant_match: true }).status, 'ALLOWED');
   assert.equal(permissionDecision({ provider: 'cloud', resource: 'production', action: 'delete', environment: 'PRODUCTION', risk: 'R4', grant: 'ALLOW_ALWAYS_SPECIFIC_ACTION', exact_grant_match: true, destructive: true }).status, 'APPROVAL_REQUIRED');
   assert.equal(permissionDecision({ provider: 'github', resource: 'shadow', action: 'push', risk: 'R1', grant: 'DENY', exact_grant_match: true }).status, 'DENIED');
+});
+
+test('durable permission grants are exact, session-scoped and cannot bypass mandatory approval', async () => {
+  const root = await mkdtemp(resolve(tmpdir(), 'norex-permission-grant-'));
+  try {
+    const store = createRuntimeStore({ dbPath: resolve(root, 'runtime.db') });
+    store.ensureSession({ id: 'permission-session', project: 'Norex United', branch: BRANCH });
+    const action = permissionApprovalAction({ provider: 'github', resource: 'shadow', action: 'push', credential_handle: 'credential://github/shadow-push' });
+    store.recordApproval({ id: 'permission-approval', session_id: 'permission-session', action, scope: 'permission-action', risk: 'R1', decision: 'APPROVED' });
+    const allowed = permissionWithDurableGrant({ store, session_id: 'permission-session', provider: 'github', resource: 'shadow', action: 'push', risk: 'R1', credential_handle: 'credential://github/shadow-push' });
+    assert.equal(allowed.status, 'ALLOWED'); assert.equal(allowed.approval_id, 'permission-approval');
+    const other = permissionWithDurableGrant({ store, session_id: 'permission-session', provider: 'github', resource: 'shadow', action: 'fetch', risk: 'R1', credential_handle: 'credential://github/shadow-push' });
+    assert.equal(other.status, 'APPROVAL_REQUIRED'); assert.equal(other.approval_id, null);
+    const highRisk = permissionWithDurableGrant({ store, session_id: 'permission-session', provider: 'github', resource: 'shadow', action: 'push', environment: 'PRODUCTION', risk: 'R1', credential_handle: 'credential://github/shadow-push' });
+    assert.equal(highRisk.status, 'APPROVAL_REQUIRED');
+    store.close();
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test('Capability Broker enforces deterministic, billing, security and override gates', () => {
