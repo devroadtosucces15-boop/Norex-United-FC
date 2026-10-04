@@ -21,3 +21,7 @@ Promoted runtime export to schema v2 and added bounded execution-output export/r
 ## Canonical integrity serialization — 2026-10-04
 
 Recovery SHA-256 integrity now canonicalizes object keys recursively before serialization, so equivalent runtime state produces the same digest independent of object insertion order. Arrays retain order. Regression coverage verifies an envelope with reordered top-level keys still validates while state tampering remains rejected.
+
+## Repository identity binding — 2026-10-04
+
+Recovery envelope v2 can bind the runtime bundle to an exact repository root, Shadow branch, and commit. The repository identity is covered by the canonical SHA-256 digest. Restore of a bound bundle requires the caller to provide an exact matching repository identity; missing or mismatched identity is rejected before runtime state import. Unbound legacy envelope v1 remains readable for backward compatibility. Credential rebinding and user-facing recovery flow remain gated.

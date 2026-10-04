@@ -29,3 +29,7 @@ Runtime export schema v2 now includes bounded `execution_output` rows. Restore a
 ## Canonical integrity serialization — 2026-10-04
 
 Recovery-envelope integrity hashing now recursively sorts object keys before JSON serialization. This removes insertion-order dependence from the SHA-256 state digest while preserving array order and existing envelope/version semantics.
+
+## Repository identity binding — 2026-10-04
+
+Recovery envelope v2 optionally records repository root, branch and commit alongside runtime state, with both covered by the canonical SHA-256 digest. A repository-bound restore fails closed unless the caller supplies the exact same root, branch and commit. Envelope v1 remains readable for backward compatibility. This implements the repository/commit verification primitive; credential rebinding and a user-facing restore flow remain gated.
