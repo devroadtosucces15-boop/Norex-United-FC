@@ -79,6 +79,32 @@ test('runtime store persists normalized task/execution/event state and rejects s
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('runtime export/restore is versioned, non-secret and marks active executions interrupted', async () => {
+  const root = await mkdtemp(resolve(tmpdir(), 'norex-restore-test-'));
+  try {
+    const sourceStore = createRuntimeStore({ dbPath: resolve(root, 'source.db') });
+    const session = sourceStore.ensureSession({ id: 'restore-session', project: 'Norex United', branch: BRANCH });
+    sourceStore.upsertTask({ id: 'ND-R', session_id: session, title: 'Recovery', status: 'IN_PROGRESS', risk: 'R1' });
+    sourceStore.startExecution({ id: 'active-execution', session_id: session, task_id: 'ND-R', operation: 'recovery-test' });
+    sourceStore.appendEvent({ session_id: session, task_id: 'ND-R', execution_id: 'active-execution', type: 'RecoveryCheckpoint', actor: 'local', payload: { checkpoint: 'before-export' } });
+    const bundle = sourceStore.exportState();
+    sourceStore.close();
+    assert.equal(bundle.format, 'norex-runtime-export');
+    assert.equal(bundle.schema_version, 1);
+    assert.doesNotMatch(JSON.stringify(bundle), /credential:\/\//i);
+    const restored = createRuntimeStore({ dbPath: resolve(root, 'restored.db') });
+    const snapshot = restored.restoreState(bundle);
+    assert.equal(snapshot.sessions, 1);
+    assert.equal(snapshot.executions, 1);
+    assert.equal(restored.exportState().executions[0].status, 'INTERRUPTED');
+    assert.throws(() => restored.restoreState(bundle), /empty/);
+    const incompatible = createRuntimeStore({ dbPath: resolve(root, 'bad.db') });
+    assert.throws(() => incompatible.restoreState({ format: 'norex-runtime-export', schema_version: 999 }), /Unsupported/);
+    incompatible.close();
+    restored.close();
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('Control Plane recognizes ND-025 and gates unsupported intent', () => {
   const plan = planIntent('Run ND-025 Shadow rehearsal. Create a harmless Shadow-only evidence change under .norex/, inspect the resulting diff, run deterministic validation, record the evidence, and do not modify production files or main.');
   assert.equal(plan.recognized, true);
