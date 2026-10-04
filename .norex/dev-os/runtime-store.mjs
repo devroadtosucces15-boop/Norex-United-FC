@@ -64,6 +64,15 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
       db.prepare('INSERT INTO approvals(id,session_id,task_id,action,scope,risk,decision,created_at) VALUES(?,?,?,?,?,?,?,?)').run(id, session_id, task_id, action, scope, risk, decision, now());
       return id;
     },
+    recordArtifact({ id = randomUUID(), session_id, task_id = null, execution_id = null, kind, ref }) {
+      ensureSafe({ kind, ref });
+      db.prepare('INSERT INTO artifacts(id,session_id,task_id,execution_id,kind,ref,created_at) VALUES(?,?,?,?,?,?,?)').run(id, session_id, task_id, execution_id, kind, ref, now());
+      return id;
+    },
+    listArtifacts(session_id, limit = 100) {
+      if (!Number.isInteger(limit) || limit < 1 || limit > 500) throw new Error('Artifact limit must be 1-500');
+      return db.prepare('SELECT id,session_id,task_id,execution_id,kind,ref,created_at FROM artifacts WHERE session_id=? ORDER BY created_at ASC LIMIT ?').all(session_id, limit);
+    },
     recordEvidence({ id = randomUUID(), session_id, task_id = null, subject, result, ref }) {
       ensureSafe({ subject, result, ref });
       db.prepare('INSERT INTO evidence_index(id,session_id,task_id,subject,result,ref,created_at) VALUES(?,?,?,?,?,?,?)').run(id, session_id, task_id, subject, result, ref, now());

@@ -62,7 +62,9 @@ async function showArtifact(name) {
         finally { run.disabled = false; chosen.disabled = false; }
       });
       controls.append(label, proposal, run);
-      output.textContent = history.get(name) || 'Select a fixed command and approve this run. Results stay in this page until reload. No free-form shell is available.';
+      const durable = await api('artifacts');
+      const recent = durable.artifacts.filter(item => item.kind === name).slice(-5).map(item => `${item.created_at} · ${item.ref}`).join('\n');
+      output.textContent = history.get(name) || (recent ? `Durable run references:\n${recent}\n\nRun output is intentionally not persisted yet.` : 'Select a fixed command and approve this run. Output stays in this page; durable run metadata is recorded after execution. No free-form shell is available.');
     }
   } catch (error) { badge.textContent = 'UNAVAILABLE'; output.textContent = error.message; }
 }

@@ -21,6 +21,9 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
       const result = await execute();
       const passed = ['passed', 'VALIDATED'].includes(result.status);
       runtimeStore.finishExecution(executionId, { status: passed ? 'PASSED' : result.status, exit_code: result.exit_code ?? null, summary: passed ? 'Deterministic local execution passed' : 'Deterministic local execution completed' });
+      const artifactKind = operation.startsWith('command:shadow-test') ? 'tests' : operation.startsWith('command:') ? 'terminal' : 'workflow';
+      const artifactId = runtimeStore.recordArtifact({ session_id: sessionId, task_id: taskId, execution_id: executionId, kind: artifactKind, ref: 'execution://' + executionId });
+      runtimeStore.appendEvent({ session_id: sessionId, task_id: taskId, execution_id: executionId, type: 'ArtifactCreated', actor: 'local', payload: { artifact_id: artifactId, kind: artifactKind, ref: 'execution://' + executionId } });
       runtimeStore.appendEvent({ session_id: sessionId, task_id: taskId, execution_id: executionId, type: passed ? 'CIPassed' : 'CIFailed', actor: 'local', payload: { operation, status: result.status } });
       return result;
     } catch (error) {
@@ -48,6 +51,7 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
       if (req.headers['x-norex-local'] !== '1') return send(403, { error: 'Local request header required' });
       if (req.method === 'GET') {
         if (url.pathname === '/api/state') return send(200, { ...(await services.state()), runtime: runtimeStore ? runtimeStore.snapshot() : { status: 'not-attached' } });
+        if (url.pathname === '/api/artifacts') return send(200, { artifacts: runtimeStore ? runtimeStore.listArtifacts(sessionId) : [] });
         if (url.pathname === '/api/git/status') return send(200, await services.status());
         if (url.pathname === '/api/git/diff') return send(200, await services.diff(url.searchParams.get('path')));
         if (url.pathname === '/api/files') return send(200, { files: await services.files() });
