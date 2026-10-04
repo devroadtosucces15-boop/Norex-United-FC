@@ -1,4 +1,4 @@
-import { readdir, readFile, lstat, realpath, writeFile } from 'node:fs/promises';
+import { readdir, readFile, lstat, realpath, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, relative, sep } from 'node:path';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -63,6 +63,23 @@ export async function createServices(projectRoot) {
     if (!actual.startsWith(root + sep) || !(await lstat(actual)).isFile()) throw new Error('Not a scoped file');
     if ((await lstat(actual)).size > LIMIT) throw new Error('File exceeds the size limit');
     return actual;
+  }
+  async function createText(path, content) {
+    if (!allowedPath(path) || typeof content !== 'string' || content.length > LIMIT || content.includes('\0')) throw new Error('Create is outside the scoped text policy');
+    if (/(?:-----BEGIN [^-]*PRIVATE KEY-----|\bsk-[\w-]{12,}|\bgh[pousr]_[\w]{12,}|github_pat_[\w]{12,})/.test(content)) throw new Error('Secret-like content is not writable');
+    await guard();
+    const target = resolve(root, path);
+    if (!target.startsWith(root + sep)) throw new Error('Create path escaped project root');
+    const parent = resolve(target, '..');
+    const parentActual = await realpath(parent);
+    if (!parentActual.startsWith(root + sep)) throw new Error('Create parent escaped project root');
+    let current = root;
+    for (const part of relative(root, parentActual).split(sep).filter(Boolean)) {
+      current = resolve(current, part);
+      if ((await lstat(current)).isSymbolicLink()) throw new Error('Symlink scope is forbidden');
+    }
+    await writeFile(target, content, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
+    return { path, bytes: Buffer.byteLength(content), status: 'created' };
   }
   async function writeText(path, content, { expected = null } = {}) {
     if (!allowedPath(path) || typeof content !== 'string' || content.length > LIMIT || content.includes('\0')) throw new Error('Write is outside the scoped text policy');
@@ -276,7 +293,7 @@ export async function createServices(projectRoot) {
   }
 
   return {
-    files, inspect, writeText, editText, run, cancel, executeWorkflow,
+    files, inspect, createText, writeText, editText, run, cancel, executeWorkflow,
     async status() {
       const output = await git(['status', '--porcelain=v1', '-z', '--untracked-files=all', '--no-renames', '--', '.norex/']);
       return { branch: await branch(), scope: '.norex/', changes: output.split('\0').filter(Boolean).filter(row => allowedPath(row.slice(3))).map(row => ({ status: row.slice(0, 2), path: row.slice(3) })) };

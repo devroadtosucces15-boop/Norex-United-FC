@@ -105,6 +105,17 @@ test('runtime export/restore is versioned, non-secret and marks active execution
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('filesystem create is exclusive, Shadow-scoped and rejects secret-like content', () => fixture(async root => {
+  await mkdir(resolve(root, '.norex/notes'), { recursive: true });
+  const services = await createServices(root);
+  const path = '.norex/notes/new-file.md';
+  assert.equal((await services.createText(path, 'safe\n')).status, 'created');
+  assert.equal((await services.inspect(path)).content, 'safe\n');
+  assert.rejects(() => services.createText(path, 'overwrite'), /EEXIST/);
+  assert.rejects(() => services.createText('.norex/notes/safe.txt', 'github_pat_abcdefghijklmnop'), /Secret-like/);
+  assert.rejects(() => services.createText('../outside.md', 'x'), /scoped/);
+}));
+
 test('filesystem write/edit requires scoped existing text, exact preconditions and no secret-like content', () => fixture(async root => {
   const services = await createServices(root);
   const path = '.norex/notes/write-test.md';
