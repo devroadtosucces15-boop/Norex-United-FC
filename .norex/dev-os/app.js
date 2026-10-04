@@ -216,3 +216,13 @@ async function refreshRuntimePulse() {
   } catch { pulse.textContent = 'Runtime pulse unavailable'; }
 }
 refreshRuntimePulse();
+
+const recoveryExport = document.querySelector('#recovery-export'), recoveryStatus = document.querySelector('#recovery-status');
+if (recoveryExport && recoveryStatus) recoveryExport.addEventListener('click', async () => {
+  recoveryExport.disabled = true; recoveryStatus.textContent = 'Creating and verifying temporary recovery bundle…';
+  try {
+    const result = await api('recovery/export', { approved: true });
+    recoveryStatus.textContent = `${result.status} · v${result.version} ${result.algorithm} · ${result.repository.branch} @ ${result.repository.commit.slice(0, 8)} · ${result.state.sessions} sessions · ${result.state.executions} executions`;
+  } catch (error) { recoveryStatus.textContent = `BLOCKED · ${error.message}`; }
+  finally { recoveryExport.disabled = false; refreshRuntimePulse(); }
+});
