@@ -79,3 +79,7 @@ local code, not untrusted scripts in a kernel-enforced sandbox.
 ## Streaming/cancellation slice — 2026-10-04
 
 The bounded runner now supports redacted incremental output callbacks plus AbortSignal cancellation. Active local runs expose only request ID and accumulated redacted output through the local state surface; `/api/cancel` accepts an exact same-origin request ID and requests process-group termination. Cancellation is covered deterministically. This is stream/cancel plumbing, not a full interactive PTY: stdin, terminal resize, session multiplexing and arbitrary command entry remain gated.
+
+## UI streaming/cancellation binding — 2026-10-04
+
+TESTS/TERMINAL now consume the active-run state during execution, display accumulated redacted output incrementally and expose cancellation only while a request ID is active. Cancellation uses the existing same-origin `/api/cancel` endpoint and process-group termination path. This closes the browser UI binding for fixed-command stream/cancel; it does not expose arbitrary shell input or native PTY resize.

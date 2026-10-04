@@ -27,3 +27,7 @@ Added a dependency-free Linux PTY primitive using the installed util-linux `scri
 Two PTY test iterations failed during implementation (first due to Node REPL invocation exiting, then due to asynchronous close timing); both were corrected immediately and the targeted PTY + ND-025 regressions returned 3/3 PASS. Full validation follows before commit.
 
 Nested ND-025 validation initially became flaky because the PTY lifecycle test launched a nested pseudo-terminal while the workflow test itself was validating the suite. The PTY test is now skipped only under `NOREX_WORKFLOW_VALIDATION=1`, matching the existing recursion guard for ND-025 workflow tests; the normal top-level suite still executes and validates PTY behavior. Full top-level suite: 20/20 PASS.
+
+## UI streaming/cancellation binding — 2026-10-04
+
+TESTS/TERMINAL now poll the local state surface while an approved fixed command is active, render its accumulated redacted output incrementally, capture the active request ID, and expose a Cancel active run control that calls the existing same-origin cancellation endpoint. Controls reset after completion and the runtime pulse refreshes. This remains fixed-command execution; arbitrary shell input is not exposed.

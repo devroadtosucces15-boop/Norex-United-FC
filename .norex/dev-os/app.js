@@ -57,16 +57,34 @@ async function showArtifact(name) {
       const proposal = element('p', '', 'artifact-meta');
       const update = () => { proposal.textContent = available.find(c => c.id === chosen.value).command + ' · fixed arguments · 30-second limit per process'; };
       chosen.addEventListener('change', update); update();
+      let requestId = null, poll = null;
+      const cancel = button('Cancel active run', async () => {
+        if (!requestId) return;
+        cancel.disabled = true;
+        try { await api('cancel', { request_id: requestId }); badge.textContent = 'CANCELLING'; }
+        catch (error) { output.textContent += `\n\nCancel failed: ${error.message}`; cancel.disabled = false; }
+      });
+      cancel.disabled = true;
       const run = button('Approve & run locally', async () => {
-        run.disabled = true; chosen.disabled = true; badge.textContent = 'RUNNING'; output.textContent = 'Running selected local command…';
+        run.disabled = true; chosen.disabled = true; badge.textContent = 'RUNNING'; output.textContent = 'Starting selected local command…';
+        poll = setInterval(async () => {
+          try {
+            const state = await api('state');
+            if (state.active_run) {
+              requestId = state.active_run.request_id; cancel.disabled = false;
+              output.textContent = state.active_run.output || 'Running selected local command…';
+            }
+          } catch {}
+        }, 150);
         try {
           const result = await api('run', { command_id: chosen.value, approved: true });
+          requestId = result.request_id;
           const text = `${result.command}\n${result.status.toUpperCase()} · exit ${result.exit_code}\n${result.started_at} → ${result.finished_at}\nRequest: ${result.request_id}\n\n${result.output || '(no output)'}`;
           history.set(name, text); output.textContent = text; badge.textContent = result.status.toUpperCase();
         } catch (error) { output.textContent = error.message; badge.textContent = 'BLOCKED'; }
-        finally { run.disabled = false; chosen.disabled = false; }
+        finally { clearInterval(poll); poll = null; requestId = null; cancel.disabled = true; run.disabled = false; chosen.disabled = false; refreshRuntimePulse(); }
       });
-      controls.append(label, proposal, run);
+      controls.append(label, proposal, run, cancel);
       const durable = await api('artifacts');
       const recent = durable.artifacts.filter(item => item.kind === name).slice(-5);
       output.textContent = history.get(name) || (recent.length ? `Durable run references:\n${recent.map(item => `${item.created_at} · ${item.ref}`).join('\n')}\n\nSelect a durable run to load its bounded persisted output.` : 'Select a fixed command and approve this run. Durable run metadata and bounded output are recorded after execution. No free-form shell is available.');
