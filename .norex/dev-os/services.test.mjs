@@ -11,6 +11,7 @@ import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
 import { routeCapability } from './capability-broker.mjs';
 import { routeWithDurableApproval } from './routing-service.mjs';
+import { probeProviderPresence } from './provider-probe.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
 import { createPtyService } from './pty-service.mjs';
 import { writeRecoveryBundle, readRecoveryBundle, restoreRecoveryBundle } from './recovery-bundle.mjs';
@@ -22,7 +23,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -60,6 +61,13 @@ test('Capability Broker enforces deterministic, billing, security and override g
     { provider: 'healthy', billing_mode: 'VERIFIED_FREE', available: true, security_permitted: true, rank: 1, health: 'healthy', quality_score: 90, reliability_score: 90, allowance_score: 90 }
   ] });
   assert.equal(ranked.provider, 'healthy');
+});
+
+test('provider presence probe never infers auth, allowance or billing', async () => {
+  const claude = await probeProviderPresence('claude');
+  const codex = await probeProviderPresence('codex');
+  for (const probe of [claude, codex]) { assert.equal(probe.installed, true); assert.equal(probe.auth, 'UNKNOWN'); assert.equal(probe.allowance, 'UNKNOWN'); assert.equal(probe.billing, 'UNKNOWN_BILLING'); }
+  const unknown = await probeProviderPresence('not-a-provider'); assert.equal(unknown.installed, false); assert.equal(unknown.billing, 'UNKNOWN_BILLING');
 });
 
 test('durable approval authorizes only its exact metered route', async () => {

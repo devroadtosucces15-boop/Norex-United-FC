@@ -32,3 +32,7 @@ Added `routing-service.mjs` and exact approval lookup in the runtime store. Regr
 ## Deterministic telemetry ranking follow-up
 
 Eligible non-deterministic routes now receive a deterministic priority derived from declared rank, health, quality, reliability and allowance scores. Billing/security/availability filtering still happens before ranking, explicit owner override still wins only when eligible, and deterministic CI remains local-first. No provider call or paid telemetry source is used.
+
+## Non-secret provider presence probes
+
+Added a provider-presence adapter for the locally observed Claude Code and Codex CLI executables. Presence is deliberately separated from authorization: probe results keep auth, allowance and billing unknown and therefore cannot make a route eligible for subscription or metered execution. No credential files, environment secrets, account endpoints or provider APIs are read/called.

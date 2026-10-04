@@ -48,3 +48,7 @@ A routing service can now resolve an exact durable approval from the runtime sto
 ## Executable ranking slice — 2026-10-03
 
 Among already-eligible routes, the broker now ranks deterministically using declared base rank plus bounded health, quality, reliability and allowance signals, with provider name as a stable tie-breaker. These are normalized candidate inputs rather than live provider probes. Policy eligibility remains a hard prerequisite; ranking cannot make a billing- or security-blocked route eligible.
+
+## Provider presence slice — 2026-10-03
+
+Local executable presence can now be probed without executing a provider. Installed CLI presence is not treated as proof of authentication, allowance or billing mode; all three remain UNKNOWN until a separate trusted adapter can establish them without exposing credentials or causing usage.
