@@ -40,3 +40,9 @@ slice only. `node tests/run.mjs` remains the full-project harness and is not exp
 by this registry because its build writes outside the authorized `.norex/` scope.
 No full-project or remote-CI pass is claimed by a Shadow test result. Runtime
 evidence: `.norex/evidence/2026-10-03-local-services.md`.
+
+## Isolated full-project validation slice — 2026-10-04
+
+`project-tests-isolated` is now a fixed dispatcher target. It copies the checkout to a disposable OS temp directory (excluding `.git`, `site`, and `node_modules`) and runs the canonical `node tests/run.mjs` there. This preserves the Shadow rule: the canonical build may generate `site/`, but only inside the disposable copy, never in the working checkout.
+
+The first rehearsal reached the canonical suite and reported two project-level failing assertions (`events` team grade/totals and `extradata` older-column behavior). The dispatcher therefore remains correctly RED for that project state. It must not relabel project failures as a successful Shadow validation.

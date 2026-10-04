@@ -9,8 +9,9 @@ export const commands = Object.freeze([
   { id: 'node-version', label: 'Node runtime version', command: 'node --version' },
   { id: 'shadow-check', label: 'Dev OS syntax validation', command: 'node --check (fixed Dev OS files)' },
   { id: 'shadow-tests', label: 'Dev OS service regression', command: 'node --test .norex/dev-os/services.test.mjs' },
+  { id: 'project-tests-isolated', label: 'Norex United regression (isolated temp copy)', command: 'node .norex/dev-os/project-validation.mjs' },
 ]);
-const codeFiles = ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs'];
+const codeFiles = ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs'];
 const environment = { PATH: '/usr/bin:/bin', HOME: '/nonexistent', LANG: 'C.UTF-8', TZ: 'UTC', CI: '1', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0' };
 export function allowedPath(path) {
   return typeof path === 'string' && path.length < 512 && path.startsWith('.norex/') &&
@@ -148,7 +149,7 @@ export async function createServices(projectRoot) {
       for (const [path, content] of trusted) {
         if (await readFile(await safeFile(path), 'utf8') !== content) throw new Error('Dev OS code changed; review it and restart the server before execution');
       }
-      const args = commandId === 'node-version' ? [['--version']] : commandId === 'shadow-check' ? codeFiles.map(f => ['--check', '.norex/dev-os/' + f]) : [['--test', '.norex/dev-os/services.test.mjs']];
+      const args = commandId === 'node-version' ? [['--version']] : commandId === 'shadow-check' ? codeFiles.map(f => ['--check', '.norex/dev-os/' + f]) : commandId === 'project-tests-isolated' ? [['.norex/dev-os/project-validation.mjs']] : [['--test', '.norex/dev-os/services.test.mjs']];
       const results = [];
       for (const arg of args) {
         const result = await execute(process.execPath, arg, root, { timeout: 30000, signal: controller.signal, onChunk: text => { activeRun.output += text; } });
