@@ -64,11 +64,15 @@ test('Capability Broker enforces deterministic, billing, security and override g
   assert.equal(ranked.provider, 'healthy');
 });
 
-test('provider presence probe never infers auth, allowance or billing', async () => {
-  const claude = await probeProviderPresence('claude');
-  const codex = await probeProviderPresence('codex');
-  for (const probe of [claude, codex]) { assert.equal(probe.installed, true); assert.equal(probe.auth, 'UNKNOWN'); assert.equal(probe.allowance, 'UNKNOWN'); assert.equal(probe.billing, 'UNKNOWN_BILLING'); }
-  const unknown = await probeProviderPresence('not-a-provider'); assert.equal(unknown.installed, false); assert.equal(unknown.billing, 'UNKNOWN_BILLING');
+test('provider presence probe is deterministic and never infers auth, allowance or billing', async () => {
+  const paths = { claude: ['/fake/claude'], codex: ['/fake/codex'] };
+  const accessFn = async path => { if (path !== '/fake/claude') throw Object.assign(new Error('missing'), { code: 'ENOENT' }); };
+  const claude = await probeProviderPresence('claude', { paths, accessFn });
+  const codex = await probeProviderPresence('codex', { paths, accessFn });
+  assert.equal(claude.installed, true); assert.equal(claude.executable, '/fake/claude');
+  assert.equal(codex.installed, false);
+  for (const probe of [claude, codex]) { assert.equal(probe.auth, 'UNKNOWN'); assert.equal(probe.allowance, 'UNKNOWN'); assert.equal(probe.billing, 'UNKNOWN_BILLING'); }
+  const missing = await probeProviderPresence('not-a-provider', { paths, accessFn }); assert.equal(missing.installed, false); assert.equal(missing.billing, 'UNKNOWN_BILLING');
 });
 
 test('durable approval authorizes only its exact metered route', async () => {

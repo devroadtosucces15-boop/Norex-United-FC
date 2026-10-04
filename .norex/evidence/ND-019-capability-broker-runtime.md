@@ -36,3 +36,7 @@ Eligible non-deterministic routes now receive a deterministic priority derived f
 ## Non-secret provider presence probes
 
 Added a provider-presence adapter for the locally observed Claude Code and Codex CLI executables. Presence is deliberately separated from authorization: probe results keep auth, allowance and billing unknown and therefore cannot make a route eligible for subscription or metered execution. No credential files, environment secrets, account endpoints or provider APIs are read/called.
+
+## Portable provider-presence tests — 2026-10-04
+
+Provider presence probing now accepts injectable path maps and filesystem-access functions while retaining safe production defaults. Regression tests simulate installed and absent providers without depending on Claude/Codex being installed on the test host. Presence still never implies authentication, allowance, or billing state.
