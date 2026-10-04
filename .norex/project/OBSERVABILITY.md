@@ -21,3 +21,7 @@ Durable local executions now capture task/execution identity, operation, provide
 ## Runtime durability hardening — 2026-10-04
 
 The canonical SQLite database is explicitly chmod 0600 after open; WAL/SHM companions are hardened to 0600 when present. Executable server startup now handles SIGINT/SIGTERM with bounded graceful HTTP shutdown followed by runtime-store close, reducing stale runtime state and unflushed lifecycle risk.
+
+## Persisted session pulse — 2026-10-04
+
+`/api/state` now exposes two telemetry views: exact execution/cost aggregation and a session observability pulse. The pulse is computed only from persisted execution rows and normalized events, covering execution failures, provider-selection/failure events, user overrides, Mike approval/rejection events, CI results, artifacts and evidence. Retry/fallback and provider-allowance fields are intentionally not synthesized until executable dispatch records those facts.

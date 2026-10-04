@@ -17,3 +17,7 @@ Runtime state now exposes session-scoped execution telemetry derived from persis
 ## UTF-8 bounded-output hardening — 2026-10-04
 
 Browser capture and durable execution output now share a strict UTF-8 byte-prefix primitive. Truncation backs off only an incomplete trailing code point, so a legitimate U+FFFD replacement character is preserved rather than mistaken for truncation damage. Regression coverage verifies emoji boundaries, exact byte limits, and legitimate replacement characters.
+
+## Persisted session pulse — 2026-10-04
+
+`/api/state` now separates execution cost telemetry from a session observability pulse derived only from persisted runtime facts. The pulse reports execution failures plus recorded provider selections/failures, Mike/user overrides and approval outcomes, CI pass/fail events, artifacts and evidence counts. It does not infer retries, fallbacks, allowance or provider health that the current runtime does not yet record.

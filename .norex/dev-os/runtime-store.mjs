@@ -122,6 +122,12 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
       const total = db.prepare('SELECT count(*) AS executions,coalesce(sum(cost_microunits),0) AS cost_microunits FROM executions WHERE session_id=?').get(session_id);
       return { session_id, executions: Number(total.executions), cost_microunits: Number(total.cost_microunits), groups: rows.map(row => ({ ...row, executions: Number(row.executions), cost_microunits: Number(row.cost_microunits) })) };
     },
+    sessionObservability(session_id) {
+      const rows = db.prepare("SELECT type,count(*) AS n FROM events WHERE session_id=? GROUP BY type ORDER BY type").all(session_id);
+      const counts = Object.fromEntries(rows.map(row => [row.type, Number(row.n)]));
+      const failures = db.prepare("SELECT count(*) AS n FROM executions WHERE session_id=? AND status != 'PASSED'").get(session_id);
+      return { session_id, execution_failures: Number(failures.n), provider_selections: counts.AgentSelected ?? 0, provider_failures: counts.AgentFailed ?? 0, user_overrides: counts.UserOverride ?? 0, approvals: (counts.MikeApproved ?? 0) + (counts.MikeRejected ?? 0), ci_passed: counts.CIPassed ?? 0, ci_failed: counts.CIFailed ?? 0, artifacts: counts.ArtifactCreated ?? 0, evidence_records: counts.EvidenceRecorded ?? 0 };
+    },
     exportState() {
       const rows = table => db.prepare(`SELECT * FROM ${table}`).all();
       return { format: 'norex-runtime-export', schema_version: 2, exported_at: now(), sessions: rows('sessions'), tasks: rows('tasks'), executions: rows('executions'), events: rows('events'), approvals: rows('approvals'), artifacts: rows('artifacts'), execution_output: rows('execution_output'), evidence_index: rows('evidence_index') };

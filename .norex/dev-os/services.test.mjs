@@ -423,6 +423,9 @@ test('HTTP deterministic execution records durable runtime events', () => fixtur
     const state = await (await fetch(origin + '/api/state', { headers: { 'X-Norex-Local': '1' } })).json();
     assert.equal(state.runtime.schema_version, 2);
     assert.equal(state.runtime.executions, 1);
+    assert.equal(state.telemetry.execution.executions, 1);
+    assert.equal(state.telemetry.observability.ci_passed, 1);
+    assert.equal(state.telemetry.observability.ci_failed, 0);
     const snapshot = store.snapshot();
     assert.equal(snapshot.sessions, 1);
     assert.equal(snapshot.tasks, 1);
