@@ -66,7 +66,7 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         const data = JSON.parse(body);
         if (!data || data.approved !== true || Object.keys(data).sort().join(',') !== 'approved') return send(400, { error: 'Explicit preview approval is required' });
         const probe = await browserProbe(); if (probe.status !== 'AVAILABLE') return send(409, probe);
-        const result = await captureLocalPreview(origin + '/');
+        const result = await captureLocalPreview(origin + '/', { allowedOrigin: origin });
         let artifact_id = null, execution_id = null;
         if (runtimeStore) {
           runtimeStore.upsertTask({ id: 'ND-022', session_id: sessionId, title: 'localhost preview capture', status: 'IN_PROGRESS', risk: 'R1', active_model: 'local', started_at: new Date().toISOString() });

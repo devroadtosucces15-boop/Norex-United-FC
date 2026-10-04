@@ -8,9 +8,10 @@ export async function browserProbe() {
   for (const executable of CANDIDATES) { try { await access(executable); return { status: 'AVAILABLE', executable, mode: 'ephemeral-headless', cost: '$0.00' }; } catch {} }
   return { status: 'GATED', reason: 'No supported local Chromium executable' };
 }
-export async function captureLocalPreview(url, { timeoutMs = 10000 } = {}) {
+export async function captureLocalPreview(url, { timeoutMs = 10000, allowedOrigin = null } = {}) {
   const parsed = new URL(url);
   if (parsed.protocol !== 'http:' || !['127.0.0.1','localhost'].includes(parsed.hostname)) throw new Error('Preview navigation is localhost-only');
+  if (allowedOrigin && parsed.origin !== new URL(allowedOrigin).origin) throw new Error('Preview navigation must match the approved origin');
   const probe = await browserProbe(); if (probe.status !== 'AVAILABLE') throw new Error(probe.reason);
   const profile = await mkdtemp(join(tmpdir(), 'norex-browser-'));
   const args = ['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--disable-background-networking','--disable-sync','--metrics-recording-only',`--user-data-dir=${profile}`,'--dump-dom',url];

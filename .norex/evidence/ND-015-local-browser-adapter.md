@@ -19,3 +19,7 @@ The repeated ND-025 flake was diagnosed as the nested full Shadow suite occasion
 ## Ephemeral profile hardening — 2026-10-04
 
 Each local preview capture now creates a unique OS-temporary Chromium user-data directory, uses it as HOME/profile storage, and removes it recursively in a finally block after success, failure or timeout. Runtime state now reports `local-preview` rather than the stale generic `gated` label. Persistent profiles/auth remain gated.
+
+## Exact-origin preview binding — 2026-10-04
+
+The browser capture primitive now supports an explicit approved origin and rejects localhost navigation to any different origin/port. The PREVIEW HTTP route binds capture to its own current origin. Arbitrary localhost-port navigation is therefore no longer available through the approved preview path.

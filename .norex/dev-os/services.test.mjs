@@ -163,6 +163,7 @@ test('browser adapter is local-only and detects installed Chromium', async () =>
   assert.equal(probe.status, 'AVAILABLE');
   assert.match(probe.executable, /chromium|chrome/);
   await assert.rejects(() => captureLocalPreview('https://example.com'), /localhost-only/);
+  await assert.rejects(() => captureLocalPreview('http://127.0.0.1:4000', { allowedOrigin: 'http://127.0.0.1:3000' }), /approved origin/);
 });
 
 test('isolated project validation has a bounded timeout contract', async () => {
