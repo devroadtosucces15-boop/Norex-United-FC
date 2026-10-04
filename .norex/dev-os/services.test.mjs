@@ -1,3 +1,4 @@
+import { runIsolatedProjectValidation } from './project-validation.mjs';
 import test from 'node:test';
 import { request } from 'node:http';
 import assert from 'node:assert/strict';
@@ -158,6 +159,13 @@ test('browser adapter is local-only and detects installed Chromium', async () =>
   assert.equal(probe.status, 'AVAILABLE');
   assert.match(probe.executable, /chromium|chrome/);
   await assert.rejects(() => captureLocalPreview('https://example.com'), /localhost-only/);
+});
+
+test('isolated project validation has a bounded timeout contract', async () => {
+  await fixture(async root => {
+    const result = await runIsolatedProjectValidation(root, { timeoutMs: 1 });
+    assert.equal(result.status, 'timeout');
+  });
 });
 
 test('portable recovery bundle is exclusive, integrity-checked and restorable', async () => {

@@ -13,3 +13,7 @@ These failures are recorded, not hidden or reclassified as passing. Fixing produ
 The earlier `--no-build` experiment was rejected because this checkout has no prebuilt `site/api/club.json`; many tests correctly failed due to missing generated site artifacts. It was replaced immediately by the isolated full-build adapter.
 
 Provider calls: 0. Metered API cost: $0.00.
+
+## Process containment hardening — 2026-10-04
+
+The isolated canonical project harness now has a 60-second default deadline, runs the validation child in a detached process group, kills that group on timeout, and performs a final group cleanup when the child closes. A dedicated regression forces a 1 ms timeout and verifies the `timeout` result. This changes harness containment only; the two known production-level regression assertions remain outside Shadow scope.
