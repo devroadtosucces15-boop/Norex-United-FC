@@ -74,10 +74,17 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
     },
     recordExecutionOutput(execution_id, output) {
       if (typeof output !== 'string') throw new Error('Execution output must be text');
-      const bounded = output.slice(0, 32768);
+      const limit = 32768;
+      const encoded = Buffer.from(output, 'utf8');
+      let bounded = output;
+      if (encoded.length > limit) {
+        bounded = encoded.subarray(0, limit).toString('utf8');
+        if (bounded.endsWith('�')) bounded = bounded.slice(0, -1);
+      }
       ensureSafe(bounded);
-      db.prepare('INSERT OR REPLACE INTO execution_output(execution_id,output,truncated,created_at) VALUES(?,?,?,?)').run(execution_id, bounded, output.length > bounded.length ? 1 : 0, now());
-      return { execution_id, output: bounded, truncated: output.length > bounded.length };
+      const truncated = encoded.length > limit;
+      db.prepare('INSERT OR REPLACE INTO execution_output(execution_id,output,truncated,created_at) VALUES(?,?,?,?)').run(execution_id, bounded, truncated ? 1 : 0, now());
+      return { execution_id, output: bounded, truncated };
     },
     getExecutionOutput(execution_id, session_id = null) {
       const row = session_id

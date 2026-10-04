@@ -19,3 +19,7 @@ Approved localhost PREVIEW captures now create an ND-022 execution, persist boun
 ## Historical output UI — 2026-10-04
 
 TESTS/TERMINAL artifact views can now load bounded persisted output from recent durable execution references. The output lookup is scoped to the current runtime session at the store/API boundary to prevent cross-session execution-ID lookup. Rendering remains text-only.
+
+## UTF-8 byte-bound output — 2026-10-04
+
+The persisted execution-output limit is now a true 32 KiB UTF-8 byte ceiling rather than a JavaScript character-count ceiling. Multibyte truncation removes any incomplete replacement character, and regression coverage verifies emoji-heavy output remains <=32768 bytes without malformed trailing text.

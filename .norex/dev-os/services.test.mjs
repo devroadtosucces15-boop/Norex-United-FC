@@ -107,6 +107,10 @@ test('runtime store persists normalized task/execution/event state and rejects s
     assert.equal(store.getExecutionOutput(execution, 'different-session'), null);
     assert.equal(store.recordExecutionOutput(execution, 'x'.repeat(40000)).truncated, true);
     assert.equal(store.getExecutionOutput(execution).output.length, 32768);
+    const unicode = store.recordExecutionOutput(execution, '😀'.repeat(10000));
+    assert.equal(unicode.truncated, true);
+    assert.ok(Buffer.byteLength(unicode.output, 'utf8') <= 32768);
+    assert.equal(unicode.output.includes('�'), false);
     assert.throws(() => store.recordExecutionOutput(execution, 'password=secret'), /secret-like/);
     assert.deepEqual(store.snapshot(), { schema_version: 2, sessions: 1, tasks: 1, executions: 1, events: 2, approvals: 1, artifacts: 1, execution_output: 1, evidence: 1 });
     assert.throws(() => store.appendEvent({ session_id: session, type: 'CIPassed', actor: 'local', payload: { token: 'secret-value' } }), /secret-like/);
