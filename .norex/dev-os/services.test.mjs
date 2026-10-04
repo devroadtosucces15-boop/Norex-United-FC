@@ -1,7 +1,7 @@
 import test from 'node:test';
 import { request } from 'node:http';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, copyFile, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, copyFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,7 @@ import { createRuntimeStore } from './runtime-store.mjs';
 import { routeCapability } from './capability-broker.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
 import { createPtyService } from './pty-service.mjs';
+import { writeRecoveryBundle, readRecoveryBundle, restoreRecoveryBundle } from './recovery-bundle.mjs';
 
 const source = fileURLToPath(new URL('.', import.meta.url));
 async function fixture(fn) {
@@ -19,7 +20,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -108,6 +109,28 @@ test('runtime export/restore is versioned, non-secret and marks active execution
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('portable recovery bundle is exclusive, integrity-checked and restorable', async () => {
+  const root = await mkdtemp(resolve(tmpdir(), 'norex-recovery-bundle-'));
+  const sourceDb = resolve(root, 'source.db'), restoredDb = resolve(root, 'restored.db'), bundlePath = resolve(root, 'runtime.norex-recovery.json');
+  try {
+    const sourceStore = createRuntimeStore({ dbPath: sourceDb });
+    const session = sourceStore.ensureSession({ id: 'bundle-session', project: 'Norex United', branch: BRANCH });
+    sourceStore.upsertTask({ id: 'ND-024', session_id: session, title: 'Recovery bundle', status: 'IN_PROGRESS', risk: 'R1' });
+    const manifest = await writeRecoveryBundle(sourceStore, bundlePath);
+    assert.equal(manifest.algorithm, 'sha256');
+    await assert.rejects(() => writeRecoveryBundle(sourceStore, bundlePath), /EEXIST/);
+    const state = await readRecoveryBundle(bundlePath);
+    assert.equal(state.tasks.length, 1);
+    const restoredStore = createRuntimeStore({ dbPath: restoredDb });
+    assert.equal((await restoreRecoveryBundle(restoredStore, bundlePath)).tasks, 1);
+    restoredStore.close(); sourceStore.close();
+    const envelope = JSON.parse(await readFile(bundlePath, 'utf8'));
+    envelope.state.tasks[0].title = 'tampered';
+    await writeFile(bundlePath, JSON.stringify(envelope));
+    await assert.rejects(() => readRecoveryBundle(bundlePath), /integrity/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('PTY service supports allowlisted interactive stdin/read/close and explicitly gates resize', { skip: process.env.NOREX_WORKFLOW_VALIDATION === '1' }, async () => {
   const pty = createPtyService({ cwd: tmpdir() });
   assert.throws(() => pty.open('bash'), /allowlisted/);
@@ -129,9 +152,9 @@ test('filesystem create is exclusive, Shadow-scoped and rejects secret-like cont
   const path = '.norex/notes/new-file.md';
   assert.equal((await services.createText(path, 'safe\n')).status, 'created');
   assert.equal((await services.inspect(path)).content, 'safe\n');
-  assert.rejects(() => services.createText(path, 'overwrite'), /EEXIST/);
-  assert.rejects(() => services.createText('.norex/notes/safe.txt', 'github_pat_abcdefghijklmnop'), /Secret-like/);
-  assert.rejects(() => services.createText('../outside.md', 'x'), /scoped/);
+  await assert.rejects(() => services.createText(path, 'overwrite'), /EEXIST/);
+  await assert.rejects(() => services.createText('.norex/notes/safe.txt', 'github_pat_abcdefghijklmnop'), /Secret-like/);
+  await assert.rejects(() => services.createText('../outside.md', 'x'), /scoped/);
 }));
 
 test('filesystem write/edit requires scoped existing text, exact preconditions and no secret-like content', () => fixture(async root => {
@@ -142,12 +165,12 @@ test('filesystem write/edit requires scoped existing text, exact preconditions a
   // Restart service after fixture creation so the path is reviewed as ordinary scoped content.
   const writer = await createServices(root);
   assert.equal((await writer.writeText(path, 'alpha\ngamma\n', { expected: 'alpha\nbeta\n' })).status, 'written');
-  assert.rejects(() => writer.writeText(path, 'bad', { expected: 'stale' }), /precondition/);
+  await assert.rejects(() => writer.writeText(path, 'bad', { expected: 'stale' }), /precondition/);
   await writer.editText(path, 'gamma', 'delta');
   assert.equal((await writer.inspect(path)).content, 'alpha\ndelta\n');
-  assert.rejects(() => writer.editText(path, 'missing', 'x'), /one exact match/);
-  assert.rejects(() => writer.writeText(path, 'sk-abcdefghijklmnop'), /Secret-like/);
-  assert.rejects(() => writer.writeText('../outside.md', 'x'), /scoped/);
+  await assert.rejects(() => writer.editText(path, 'missing', 'x'), /one exact match/);
+  await assert.rejects(() => writer.writeText(path, 'sk-abcdefghijklmnop'), /Secret-like/);
+  await assert.rejects(() => writer.writeText('../outside.md', 'x'), /scoped/);
 }));
 
 test('runner supports cancellation and redacted output streaming', async () => {

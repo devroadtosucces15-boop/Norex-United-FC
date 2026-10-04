@@ -7,3 +7,9 @@ Validated versioned SQLite runtime export/restore, empty-target enforcement, tra
 Remaining: portable bundle file IO, integrity manifest, UI flow, credential rebinding and cross-version migrations.
 
 Validation: `npm run check` PASS; `node --test services.test.mjs` PASS (16/16).
+
+## 2026-10-04 portable bundle follow-up
+
+Added `.norex/dev-os/recovery-bundle.mjs`: exclusive mode-0600 bundle output, SHA-256 integrity manifest, verified read and transactional restore handoff. Test coverage proves duplicate-write rejection, successful restore and tamper rejection.
+
+During validation, pre-existing async test assertions in the new filesystem tests were found to omit `await`, which could race fixture cleanup. They were corrected; the top-level suite is now 21/21 PASS with no async-after-test warning.
