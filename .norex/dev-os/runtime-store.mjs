@@ -67,6 +67,11 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
       db.prepare('INSERT INTO approvals(id,session_id,task_id,action,scope,risk,decision,created_at) VALUES(?,?,?,?,?,?,?,?)').run(id, session_id, task_id, action, scope, risk, decision, now());
       return id;
     },
+    findApproval({ session_id, action, scope, risk, decision = 'APPROVED' }) {
+      ensureSafe({ action, scope, decision });
+      const row = db.prepare('SELECT id,session_id,task_id,action,scope,risk,decision,created_at FROM approvals WHERE session_id=? AND action=? AND scope=? AND risk=? AND decision=? ORDER BY created_at DESC LIMIT 1').get(session_id, action, scope, risk, decision);
+      return row ?? null;
+    },
     recordExecutionOutput(execution_id, output) {
       if (typeof output !== 'string') throw new Error('Execution output must be text');
       const bounded = output.slice(0, 32768);

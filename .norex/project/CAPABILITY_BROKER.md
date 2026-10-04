@@ -40,3 +40,7 @@ Track task class, provider, completion/failure, retries, elapsed time, allowance
 `.norex/dev-os/capability-broker.mjs` now enforces the first executable routing policy slice. Deterministic validation capabilities route directly to `local_ci` / `LOCAL_OFFLINE`. Non-deterministic candidates are filtered by availability, security permission and billing mode; verified subscription/free/local routes may be selected, UNKNOWN_BILLING is blocked, and METERED_API is blocked unless an internal caller supplies an explicit Mike approval state.
 
 The local `/api/route` endpoint intentionally cannot assert metered approval: it always routes with metered approval false and rejects extra approval fields. This prevents a browser request from self-authorizing paid usage before the Credential/Permission Broker implements durable approval authority. Provider availability/auth/allowance probes, historical performance ranking and actual provider dispatch remain gated.
+
+## Durable metered-approval bridge — 2026-10-03
+
+A routing service can now resolve an exact durable approval from the runtime store before permitting a metered override. The approval key binds session, provider, capability, single-route scope and R3 risk; an approval for one capability does not authorize another. This is authorization plumbing only: it does not create approvals, resolve credentials, call a provider or spend money. The browser `/api/route` remains unable to self-authorize metered access.

@@ -24,3 +24,7 @@ Provider availability/auth/allowance probes, durable approval integration, histo
 
 `npm run check`: PASS
 `node --test services.test.mjs`: PASS (14/14)
+
+## Durable approval follow-up
+
+Added `routing-service.mjs` and exact approval lookup in the runtime store. Regression coverage proves a stored approval for `claude/code_review` permits only that exact metered route while `claude/architecture` remains GATED. No provider dispatch or API call is enabled. Metered cost remains $0.00.

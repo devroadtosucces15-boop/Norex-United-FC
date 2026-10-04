@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check local-services.mjs && node --check runtime-store.mjs && node --check capability-broker.mjs && node --check permission-broker.mjs && node --check pty-service.mjs && node --check project-validation.mjs && node --check recovery-bundle.mjs && node --check browser-service.mjs && node --check control-plane.mjs && node --check app.js && node --check services.test.mjs",
+    "check": "node --check server.mjs && node --check local-services.mjs && node --check runtime-store.mjs && node --check capability-broker.mjs && node --check routing-service.mjs && node --check permission-broker.mjs && node --check pty-service.mjs && node --check project-validation.mjs && node --check recovery-bundle.mjs && node --check browser-service.mjs && node --check control-plane.mjs && node --check app.js && node --check services.test.mjs",
     "test": "node --test services.test.mjs"
   },
   "engines": {

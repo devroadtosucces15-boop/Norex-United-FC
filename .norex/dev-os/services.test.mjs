@@ -10,6 +10,7 @@ import { startServer } from './server.mjs';
 import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
 import { routeCapability } from './capability-broker.mjs';
+import { routeWithDurableApproval } from './routing-service.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
 import { createPtyService } from './pty-service.mjs';
 import { writeRecoveryBundle, readRecoveryBundle, restoreRecoveryBundle } from './recovery-bundle.mjs';
@@ -21,7 +22,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -54,6 +55,21 @@ test('Capability Broker enforces deterministic, billing, security and override g
   assert.equal(routeCapability({ capability: 'code_review', candidates, override: 'claude', mike_approved_metered: true }).provider, 'claude');
   assert.equal(routeCapability({ capability: 'architecture', candidates: [{ provider: 'chatgpt', billing_mode: 'UNKNOWN_BILLING', available: true, security_permitted: true }] }).status, 'GATED');
   assert.equal(routeCapability({ capability: 'architecture', candidates: [{ provider: 'chatgpt', billing_mode: 'VERIFIED_FREE', available: true, security_permitted: false }] }).status, 'GATED');
+});
+
+test('durable approval authorizes only its exact metered route', async () => {
+  const root = await mkdtemp(resolve(tmpdir(), 'norex-route-approval-'));
+  try {
+    const store = createRuntimeStore({ dbPath: resolve(root, 'runtime.db') });
+    const session = store.ensureSession({ id: 'route-session', project: 'Norex United', branch: BRANCH });
+    store.recordApproval({ id: 'approval-1', session_id: session, action: 'metered:claude:code_review', scope: 'single-route', risk: 'R3', decision: 'APPROVED' });
+    const candidates = [{ provider: 'claude', billing_mode: 'METERED_API', available: true, security_permitted: true }];
+    const approved = routeWithDurableApproval({ store, session_id: session, capability: 'code_review', candidates, override: 'claude' });
+    assert.equal(approved.status, 'ROUTED'); assert.equal(approved.approval_id, 'approval-1');
+    const other = routeWithDurableApproval({ store, session_id: session, capability: 'architecture', candidates, override: 'claude' });
+    assert.equal(other.status, 'GATED'); assert.equal(other.approval_id, null);
+    store.close();
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test('runtime store persists normalized task/execution/event state and rejects secret-like payloads', async () => {
