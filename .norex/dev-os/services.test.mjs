@@ -55,6 +55,11 @@ test('Capability Broker enforces deterministic, billing, security and override g
   assert.equal(routeCapability({ capability: 'code_review', candidates, override: 'claude', mike_approved_metered: true }).provider, 'claude');
   assert.equal(routeCapability({ capability: 'architecture', candidates: [{ provider: 'chatgpt', billing_mode: 'UNKNOWN_BILLING', available: true, security_permitted: true }] }).status, 'GATED');
   assert.equal(routeCapability({ capability: 'architecture', candidates: [{ provider: 'chatgpt', billing_mode: 'VERIFIED_FREE', available: true, security_permitted: false }] }).status, 'GATED');
+  const ranked = routeCapability({ capability: 'architecture', candidates: [
+    { provider: 'degraded', billing_mode: 'VERIFIED_FREE', available: true, security_permitted: true, rank: 1, health: 'degraded', quality_score: 50 },
+    { provider: 'healthy', billing_mode: 'VERIFIED_FREE', available: true, security_permitted: true, rank: 1, health: 'healthy', quality_score: 90, reliability_score: 90, allowance_score: 90 }
+  ] });
+  assert.equal(ranked.provider, 'healthy');
 });
 
 test('durable approval authorizes only its exact metered route', async () => {

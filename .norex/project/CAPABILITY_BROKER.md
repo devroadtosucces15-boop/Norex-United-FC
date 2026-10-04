@@ -44,3 +44,7 @@ The local `/api/route` endpoint intentionally cannot assert metered approval: it
 ## Durable metered-approval bridge — 2026-10-03
 
 A routing service can now resolve an exact durable approval from the runtime store before permitting a metered override. The approval key binds session, provider, capability, single-route scope and R3 risk; an approval for one capability does not authorize another. This is authorization plumbing only: it does not create approvals, resolve credentials, call a provider or spend money. The browser `/api/route` remains unable to self-authorize metered access.
+
+## Executable ranking slice — 2026-10-03
+
+Among already-eligible routes, the broker now ranks deterministically using declared base rank plus bounded health, quality, reliability and allowance signals, with provider name as a stable tie-breaker. These are normalized candidate inputs rather than live provider probes. Policy eligibility remains a hard prerequisite; ranking cannot make a billing- or security-blocked route eligible.

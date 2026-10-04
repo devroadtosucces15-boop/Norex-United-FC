@@ -10,13 +10,19 @@ export function routeCapability({ capability, candidates = [], override = null, 
     const billingAllowed = candidate.billing_mode === 'LOCAL_OFFLINE' || candidate.billing_mode === 'VERIFIED_FREE' ||
       (candidate.billing_mode === 'SUBSCRIPTION_EXISTING_ACCESS' && candidate.verified === true) ||
       (candidate.billing_mode === 'METERED_API' && mike_approved_metered === true);
-    return { ...candidate, eligible: candidate.available === true && candidate.security_permitted === true && billingAllowed };
+    const health = ['healthy','degraded','unknown'].includes(candidate.health) ? candidate.health : 'unknown';
+    const quality = Number.isFinite(candidate.quality_score) ? Math.max(0, Math.min(100, candidate.quality_score)) : 50;
+    const reliability = Number.isFinite(candidate.reliability_score) ? Math.max(0, Math.min(100, candidate.reliability_score)) : 50;
+    const allowance = Number.isFinite(candidate.allowance_score) ? Math.max(0, Math.min(100, candidate.allowance_score)) : 50;
+    const healthPenalty = health === 'healthy' ? 0 : health === 'degraded' ? 25 : 10;
+    const priority = (candidate.rank ?? 999) * 1000 + healthPenalty * 10 - quality - reliability - allowance;
+    return { ...candidate, health, priority, eligible: candidate.available === true && candidate.security_permitted === true && billingAllowed };
   });
   const requested = override ? normalized.find(candidate => candidate.provider === override) : null;
   if (override && !requested) return { status: 'GATED', capability, provider: override, reason: 'override-route-unavailable', cost_permission: 'BLOCKED' };
   if (requested && requested.eligible) return { status: 'ROUTED', capability, provider: requested.provider, billing_mode: requested.billing_mode, reason: 'mike-override', cost_permission: 'ALLOWED' };
   if (requested && !requested.eligible) return { status: 'GATED', capability, provider: requested.provider, billing_mode: requested.billing_mode, reason: requested.billing_mode === 'METERED_API' && !mike_approved_metered ? 'metered-approval-required' : 'override-route-ineligible', cost_permission: 'BLOCKED' };
-  const eligible = normalized.filter(candidate => candidate.eligible).sort((a,b) => (a.rank ?? 999) - (b.rank ?? 999));
+  const eligible = normalized.filter(candidate => candidate.eligible).sort((a,b) => a.priority - b.priority || a.provider.localeCompare(b.provider));
   if (eligible.length) { const selected = eligible[0]; return { status: 'ROUTED', capability, provider: selected.provider, billing_mode: selected.billing_mode, reason: 'highest-ranked-permitted-route', cost_permission: 'ALLOWED' }; }
   const metered = normalized.find(candidate => candidate.available === true && candidate.security_permitted === true && candidate.billing_mode === 'METERED_API');
   if (metered && !mike_approved_metered) return { status: 'GATED', capability, provider: metered.provider, billing_mode: metered.billing_mode, reason: 'metered-approval-required', cost_permission: 'BLOCKED' };
