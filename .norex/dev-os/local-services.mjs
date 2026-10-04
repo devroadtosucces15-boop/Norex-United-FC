@@ -64,6 +64,23 @@ export async function createServices(projectRoot) {
     if ((await lstat(actual)).size > LIMIT) throw new Error('File exceeds the size limit');
     return actual;
   }
+  async function writeText(path, content, { expected = null } = {}) {
+    if (!allowedPath(path) || typeof content !== 'string' || content.length > LIMIT || content.includes('\0')) throw new Error('Write is outside the scoped text policy');
+    if (/(?:-----BEGIN [^-]*PRIVATE KEY-----|\bsk-[\w-]{12,}|\bgh[pousr]_[\w]{12,}|github_pat_[\w]{12,})/.test(content)) throw new Error('Secret-like content is not writable');
+    await guard();
+    const actual = await safeFile(path);
+    const before = await readFile(actual, 'utf8');
+    if (expected !== null && before !== expected) throw new Error('Write precondition failed');
+    await writeFile(actual, content, { encoding: 'utf8', flag: 'w' });
+    return { path, bytes: Buffer.byteLength(content), status: 'written' };
+  }
+  async function editText(path, before, after) {
+    if (typeof before !== 'string' || !before || typeof after !== 'string') throw new Error('Exact edit text is required');
+    const current = (await inspect(path)).content;
+    const first = current.indexOf(before);
+    if (first < 0 || current.indexOf(before, first + before.length) >= 0) throw new Error('Edit precondition requires one exact match');
+    return writeText(path, current.slice(0, first) + after + current.slice(first + before.length), { expected: current });
+  }
   async function inspect(path) {
     const text = await readFile(await safeFile(path), 'utf8');
     if (text.includes('\0')) throw new Error('Binary files are not readable');
@@ -259,7 +276,7 @@ export async function createServices(projectRoot) {
   }
 
   return {
-    files, inspect, run, cancel, executeWorkflow,
+    files, inspect, writeText, editText, run, cancel, executeWorkflow,
     async status() {
       const output = await git(['status', '--porcelain=v1', '-z', '--untracked-files=all', '--no-renames', '--', '.norex/']);
       return { branch: await branch(), scope: '.norex/', changes: output.split('\0').filter(Boolean).filter(row => allowedPath(row.slice(3))).map(row => ({ status: row.slice(0, 2), path: row.slice(3) })) };

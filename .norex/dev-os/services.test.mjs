@@ -105,6 +105,22 @@ test('runtime export/restore is versioned, non-secret and marks active execution
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('filesystem write/edit requires scoped existing text, exact preconditions and no secret-like content', () => fixture(async root => {
+  const services = await createServices(root);
+  const path = '.norex/notes/write-test.md';
+  await mkdir(resolve(root, '.norex/notes'), { recursive: true });
+  await writeFile(resolve(root, path), 'alpha\nbeta\n');
+  // Restart service after fixture creation so the path is reviewed as ordinary scoped content.
+  const writer = await createServices(root);
+  assert.equal((await writer.writeText(path, 'alpha\ngamma\n', { expected: 'alpha\nbeta\n' })).status, 'written');
+  assert.rejects(() => writer.writeText(path, 'bad', { expected: 'stale' }), /precondition/);
+  await writer.editText(path, 'gamma', 'delta');
+  assert.equal((await writer.inspect(path)).content, 'alpha\ndelta\n');
+  assert.rejects(() => writer.editText(path, 'missing', 'x'), /one exact match/);
+  assert.rejects(() => writer.writeText(path, 'sk-abcdefghijklmnop'), /Secret-like/);
+  assert.rejects(() => writer.writeText('../outside.md', 'x'), /scoped/);
+}));
+
 test('runner supports cancellation and redacted output streaming', async () => {
   const controller = new AbortController();
   const chunks = [];
