@@ -54,7 +54,7 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
       if (req.method === 'GET') {
         if (url.pathname === '/api/state') return send(200, { ...(await services.state()), runtime: runtimeStore ? runtimeStore.snapshot() : { status: 'not-attached' } });
         if (url.pathname === '/api/artifacts') return send(200, { artifacts: runtimeStore ? runtimeStore.listArtifacts(sessionId) : [] });
-        if (url.pathname === '/api/execution/output') return send(200, { output: runtimeStore ? runtimeStore.getExecutionOutput(url.searchParams.get('id')) : null });
+        if (url.pathname === '/api/execution/output') return send(200, { output: runtimeStore ? runtimeStore.getExecutionOutput(url.searchParams.get('id'), sessionId) : null });
         if (url.pathname === '/api/git/status') return send(200, await services.status());
         if (url.pathname === '/api/git/diff') return send(200, await services.diff(url.searchParams.get('path')));
         if (url.pathname === '/api/files') return send(200, { files: await services.files() });

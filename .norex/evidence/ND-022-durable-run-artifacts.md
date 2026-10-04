@@ -15,3 +15,7 @@ Deterministic execution output can now be persisted separately from artifact met
 ## Durable localhost preview — 2026-10-03
 
 Approved localhost PREVIEW captures now create an ND-022 execution, persist bounded DOM output, create a `preview` artifact reference, and emit `ArtifactCreated`. HTTP regression coverage validates the full browser-to-runtime persistence path. The runtime export v2 path therefore also carries these bounded preview outputs through recovery.
+
+## Historical output UI — 2026-10-04
+
+TESTS/TERMINAL artifact views can now load bounded persisted output from recent durable execution references. The output lookup is scoped to the current runtime session at the store/API boundary to prevent cross-session execution-ID lookup. Rendering remains text-only.

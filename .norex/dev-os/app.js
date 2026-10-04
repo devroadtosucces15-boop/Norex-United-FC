@@ -68,8 +68,14 @@ async function showArtifact(name) {
       });
       controls.append(label, proposal, run);
       const durable = await api('artifacts');
-      const recent = durable.artifacts.filter(item => item.kind === name).slice(-5).map(item => `${item.created_at} · ${item.ref}`).join('\n');
-      output.textContent = history.get(name) || (recent ? `Durable run references:\n${recent}\n\nRun output is intentionally not persisted yet.` : 'Select a fixed command and approve this run. Output stays in this page; durable run metadata is recorded after execution. No free-form shell is available.');
+      const recent = durable.artifacts.filter(item => item.kind === name).slice(-5);
+      output.textContent = history.get(name) || (recent.length ? `Durable run references:\n${recent.map(item => `${item.created_at} · ${item.ref}`).join('\n')}\n\nSelect a durable run to load its bounded persisted output.` : 'Select a fixed command and approve this run. Durable run metadata and bounded output are recorded after execution. No free-form shell is available.');
+      for (const item of recent) {
+        if (!item.execution_id) continue;
+        controls.append(button('Load ' + item.execution_id.slice(0, 8), async () => {
+          try { const saved = await api('execution/output?id=' + encodeURIComponent(item.execution_id)); output.textContent = saved.output ? `${item.ref}\n${saved.output.truncated ? 'TRUNCATED · ' : ''}${saved.output.created_at}\n\n${saved.output.output}` : 'No persisted output for this execution.'; } catch (error) { output.textContent = error.message; }
+        }));
+      }
     }
   } catch (error) { badge.textContent = 'UNAVAILABLE'; output.textContent = error.message; }
 }

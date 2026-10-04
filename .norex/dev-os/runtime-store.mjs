@@ -79,8 +79,10 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
       db.prepare('INSERT OR REPLACE INTO execution_output(execution_id,output,truncated,created_at) VALUES(?,?,?,?)').run(execution_id, bounded, output.length > bounded.length ? 1 : 0, now());
       return { execution_id, output: bounded, truncated: output.length > bounded.length };
     },
-    getExecutionOutput(execution_id) {
-      const row = db.prepare('SELECT execution_id,output,truncated,created_at FROM execution_output WHERE execution_id=?').get(execution_id);
+    getExecutionOutput(execution_id, session_id = null) {
+      const row = session_id
+        ? db.prepare('SELECT o.execution_id,o.output,o.truncated,o.created_at FROM execution_output o JOIN executions e ON e.id=o.execution_id WHERE o.execution_id=? AND e.session_id=?').get(execution_id, session_id)
+        : db.prepare('SELECT execution_id,output,truncated,created_at FROM execution_output WHERE execution_id=?').get(execution_id);
       return row ? { ...row, truncated: Boolean(row.truncated) } : null;
     },
     recordArtifact({ id = randomUUID(), session_id, task_id = null, execution_id = null, kind, ref }) {

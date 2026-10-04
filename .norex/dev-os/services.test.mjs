@@ -103,6 +103,8 @@ test('runtime store persists normalized task/execution/event state and rejects s
     assert.equal(store.listArtifacts(session)[0].kind, 'tests');
     assert.equal(store.recordExecutionOutput(execution, 'bounded output').truncated, false);
     assert.equal(store.getExecutionOutput(execution).output, 'bounded output');
+    assert.equal(store.getExecutionOutput(execution, session).output, 'bounded output');
+    assert.equal(store.getExecutionOutput(execution, 'different-session'), null);
     assert.equal(store.recordExecutionOutput(execution, 'x'.repeat(40000)).truncated, true);
     assert.equal(store.getExecutionOutput(execution).output.length, 32768);
     assert.throws(() => store.recordExecutionOutput(execution, 'password=secret'), /secret-like/);
