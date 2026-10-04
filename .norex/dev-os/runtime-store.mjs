@@ -120,6 +120,11 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
       const count = table => Number(db.prepare(`SELECT count(*) AS n FROM ${table}`).get().n);
       return { schema_version: 2, sessions: count('sessions'), tasks: count('tasks'), executions: count('executions'), events: count('events'), approvals: count('approvals'), artifacts: count('artifacts'), execution_output: count('execution_output'), evidence: count('evidence_index') };
     },
+    executionTelemetry(session_id) {
+      const rows = db.prepare('SELECT provider,billing_mode,status,count(*) AS executions,sum(cost_microunits) AS cost_microunits FROM executions WHERE session_id=? GROUP BY provider,billing_mode,status ORDER BY provider,billing_mode,status').all(session_id);
+      const total = db.prepare('SELECT count(*) AS executions,coalesce(sum(cost_microunits),0) AS cost_microunits FROM executions WHERE session_id=?').get(session_id);
+      return { session_id, executions: Number(total.executions), cost_microunits: Number(total.cost_microunits), groups: rows.map(row => ({ ...row, executions: Number(row.executions), cost_microunits: Number(row.cost_microunits) })) };
+    },
     exportState() {
       const rows = table => db.prepare(`SELECT * FROM ${table}`).all();
       return { format: 'norex-runtime-export', schema_version: 2, exported_at: now(), sessions: rows('sessions'), tasks: rows('tasks'), executions: rows('executions'), events: rows('events'), approvals: rows('approvals'), artifacts: rows('artifacts'), execution_output: rows('execution_output'), evidence_index: rows('evidence_index') };

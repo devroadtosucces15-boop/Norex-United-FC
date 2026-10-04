@@ -52,7 +52,7 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
       // A custom header prevents drive-by forms and cross-origin simple requests.
       if (req.headers['x-norex-local'] !== '1') return send(403, { error: 'Local request header required' });
       if (req.method === 'GET') {
-        if (url.pathname === '/api/state') return send(200, { ...(await services.state()), runtime: runtimeStore ? runtimeStore.snapshot() : { status: 'not-attached' } });
+        if (url.pathname === '/api/state') return send(200, { ...(await services.state()), runtime: runtimeStore ? runtimeStore.snapshot() : { status: 'not-attached' }, telemetry: runtimeStore ? runtimeStore.executionTelemetry(sessionId) : { status: 'not-attached' } });
         if (url.pathname === '/api/artifacts') return send(200, { artifacts: runtimeStore ? runtimeStore.listArtifacts(sessionId) : [] });
         if (url.pathname === '/api/execution/output') return send(200, { output: runtimeStore ? runtimeStore.getExecutionOutput(url.searchParams.get('id'), sessionId) : null });
         if (url.pathname === '/api/git/status') return send(200, await services.status());
