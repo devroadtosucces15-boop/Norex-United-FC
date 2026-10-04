@@ -27,3 +27,7 @@ The browser capture primitive now supports an explicit approved origin and rejec
 ## Malformed preview request handling — 2026-10-04
 
 The PREVIEW endpoint now converts malformed JSON into a bounded HTTP 400 response instead of allowing JSON parsing to escape into generic request failure handling. Regression coverage verifies malformed approval input is rejected before browser execution.
+
+## UTF-8 byte-bounded browser output — 2026-10-04
+
+Chromium stdout and stderr capture are now bounded by UTF-8 bytes rather than JavaScript character count: 64 KiB for DOM output and 4 KiB for stderr. Truncation avoids returning a split multibyte replacement character. This aligns browser artifact containment with the byte-bounded durable-output policy.
