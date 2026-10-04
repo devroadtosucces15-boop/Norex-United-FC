@@ -1,11 +1,11 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-04T11:20:33.031Z",
+ "fetchedAt": "2026-10-04T11:30:38.479Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
-  "regionId": 1465209650,
+  "regionId": 4407629,
   "teamId": 1386,
   "customKit": {
    "stadName": "Estadio José Z",
@@ -909,6 +909,42 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "SC4RF4CE01",
+   "gamesPlayed": "7",
+   "winRate": "28",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "1",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "33",
+   "passSuccessRate": "76",
+   "ratingAve": "7.1",
+   "tacklesMade": "6",
+   "tackleSuccessRate": "35",
+   "proName": "Scarface",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "194",
+   "proNationality": "83",
+   "proOverall": "83",
+   "proOverallStr": "83",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "blasterwho",
    "gamesPlayed": "10",
    "winRate": "90",
@@ -1483,13 +1519,49 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0"
+  },
+  {
+   "name": "GuzuDemon",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
   }
  ],
  "positionCount": {
   "midfielder": 9,
   "goalkeeper": 1,
   "forward": 19,
-  "defender": 9
+  "defender": 10
  },
  "career": [
   {
@@ -1746,6 +1818,17 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "SC4RF4CE01",
+   "proPos": "5",
+   "gamesPlayed": "124",
+   "goals": "2",
+   "assists": "11",
+   "manOfTheMatch": "6",
+   "ratingAve": "7.2",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "blasterwho",
    "proPos": "25",
    "gamesPlayed": "57",
@@ -1843,6 +1926,17 @@
    "ratingAve": "7.3",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "GuzuDemon",
+   "proPos": "25",
+   "gamesPlayed": "64",
+   "goals": "129",
+   "assists": "98",
+   "manOfTheMatch": "4",
+   "ratingAve": "7.3",
+   "prevGoals": "3",
+   "favoritePosition": "forward"
   },
   {
    "name": "BALLR-99",
