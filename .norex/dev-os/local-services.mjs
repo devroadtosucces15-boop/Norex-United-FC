@@ -10,7 +10,7 @@ export const commands = Object.freeze([
   { id: 'shadow-check', label: 'Dev OS syntax validation', command: 'node --check (fixed Dev OS files)' },
   { id: 'shadow-tests', label: 'Dev OS service regression', command: 'node --test .norex/dev-os/services.test.mjs' },
 ]);
-const codeFiles = ['server.mjs', 'local-services.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs'];
+const codeFiles = ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs'];
 const environment = { PATH: '/usr/bin:/bin', HOME: '/nonexistent', LANG: 'C.UTF-8', TZ: 'UTC', CI: '1', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0' };
 export function allowedPath(path) {
   return typeof path === 'string' && path.length < 512 && path.startsWith('.norex/') &&
@@ -24,29 +24,34 @@ export function redact(value) {
     .replace(/\b(?:sk-[\w-]{12,}|gh[pousr]_[\w]{12,}|github_pat_[\w]{12,})/g, '[REDACTED TOKEN]')
     .replace(/((?:authorization|password|secret|api[_-]?key|access[_-]?token)\s*["']?\s*[:=]\s*)[^\r\n]+/gi, '$1[REDACTED]');
 }
-export function execute(binary, args, cwd, { timeout = 15000, limit = LIMIT, workflowValidation = false } = {}) {
+export function execute(binary, args, cwd, { timeout = 15000, limit = LIMIT, workflowValidation = false, signal = null, onChunk = null } = {}) {
   return new Promise(resolveResult => {
     let output = '', size = 0, reason = null;
-    const env = workflowValidation
-      ? { ...environment, NOREX_WORKFLOW_VALIDATION: '1' }
-      : environment;
+    const env = workflowValidation ? { ...environment, NOREX_WORKFLOW_VALIDATION: '1' } : environment;
     const child = spawn(binary, args, { cwd, env, shell: false, detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
     const stop = why => { reason ||= why; try { process.kill(-child.pid, 'SIGKILL'); } catch {} };
+    const abort = () => stop('cancelled');
+    if (signal?.aborted) abort(); else signal?.addEventListener('abort', abort, { once: true });
     const timer = setTimeout(() => stop('timeout'), timeout);
-    const collect = chunk => { size += chunk.length; if (size > limit) stop('output_limit'); else output += chunk.toString(); };
+    const collect = chunk => {
+      size += chunk.length;
+      if (size > limit) stop('output_limit');
+      else { const text = redact(chunk.toString()); output += text; onChunk?.(text); }
+    };
     child.stdout.on('data', collect); child.stderr.on('data', collect);
     child.on('error', () => { reason = 'spawn_failed'; });
-    child.on('close', (exit_code, signal) => {
-      clearTimeout(timer);
-      // Kill descendants still in this process group, including children with closed stdio.
+    child.on('close', (exit_code, childSignal) => {
+      clearTimeout(timer); signal?.removeEventListener('abort', abort);
       try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-      resolveResult({ exit_code, signal, status: reason || (exit_code === 0 ? 'passed' : 'failed'), output: redact(output) });
+      resolveResult({ exit_code, signal: childSignal, status: reason || (exit_code === 0 ? 'passed' : 'failed'), output: redact(output) });
     });
   });
 }
+
 export async function createServices(projectRoot) {
   const root = await realpath(projectRoot);
   let busy = false;
+  let activeRun = null;
   async function safeFile(path) {
     if (!allowedPath(path)) throw new Error('Path is outside the readable Shadow policy');
     let current = root;
@@ -90,12 +95,20 @@ export async function createServices(projectRoot) {
   async function guard() { if (await branch() !== BRANCH) throw new Error('Execution requires ' + BRANCH); }
   const trusted = new Map();
   for (const name of codeFiles) { const path = '.norex/dev-os/' + name; trusted.set(path, await readFile(await safeFile(path), 'utf8')); }
+  async function cancel(requestId) {
+    if (!activeRun || activeRun.request_id !== requestId) return { request_id: requestId, status: 'not_running' };
+    activeRun.controller.abort();
+    return { request_id: requestId, status: 'cancellation_requested' };
+  }
   async function run(commandId) {
     const command = commands.find(c => c.id === commandId);
     if (!command) throw new Error('Command is not allowlisted');
     if (busy) throw new Error('A command is already running');
     busy = true;
     const started_at = new Date().toISOString();
+    const request_id = randomUUID();
+    const controller = new AbortController();
+    activeRun = { request_id, controller, output: '' };
     try {
       await guard();
       for (const [path, content] of trusted) {
@@ -104,13 +117,13 @@ export async function createServices(projectRoot) {
       const args = commandId === 'node-version' ? [['--version']] : commandId === 'shadow-check' ? codeFiles.map(f => ['--check', '.norex/dev-os/' + f]) : [['--test', '.norex/dev-os/services.test.mjs']];
       const results = [];
       for (const arg of args) {
-        const result = await execute(process.execPath, arg, root, { timeout: 30000 });
+        const result = await execute(process.execPath, arg, root, { timeout: 30000, signal: controller.signal, onChunk: text => { activeRun.output += text; } });
         results.push(result);
         if (result.status !== 'passed') break;
       }
       const last = results.at(-1);
-      return { request_id: randomUUID(), task_id: 'ND-013', service: 'terminal', operation: commandId, started_at, finished_at: new Date().toISOString(), branch: BRANCH, command: command.command, status: last.status, exit_code: last.exit_code, output: results.map(r => r.output).join('\n'), approval: 'explicit-local-ui-action', persistence: 'in-memory response only' };
-    } finally { busy = false; }
+      return { request_id, task_id: 'ND-013', service: 'terminal', operation: commandId, started_at, finished_at: new Date().toISOString(), branch: BRANCH, command: command.command, status: last.status, exit_code: last.exit_code, output: results.map(r => r.output).join('\n'), approval: 'explicit-local-ui-action', persistence: 'in-memory response only' };
+    } finally { busy = false; activeRun = null; }
   }
   async function executeWorkflow(workflowId, approved) {
     if (approved !== true) throw new Error('Explicit workflow approval is required');
@@ -246,7 +259,7 @@ export async function createServices(projectRoot) {
   }
 
   return {
-    files, inspect, run, executeWorkflow,
+    files, inspect, run, cancel, executeWorkflow,
     async status() {
       const output = await git(['status', '--porcelain=v1', '-z', '--untracked-files=all', '--no-renames', '--', '.norex/']);
       return { branch: await branch(), scope: '.norex/', changes: output.split('\0').filter(Boolean).filter(row => allowedPath(row.slice(3))).map(row => ({ status: row.slice(0, 2), path: row.slice(3) })) };
@@ -258,6 +271,6 @@ export async function createServices(projectRoot) {
       const common = ['--no-ext-diff', '--no-textconv', '--no-renames', '--', path];
       return { path, unstaged: await git(['diff', ...common]), staged: await git(['diff', '--cached', ...common]), note: 'Untracked files have no Git patch; use file inspection.' };
     },
-    async state() { return { branch: await branch(), scope: '.norex/', commands, provider: 'gated', browser: 'gated', budget: '$0.00', busy }; },
+    async state() { return { branch: await branch(), scope: '.norex/', commands, provider: 'gated', browser: 'gated', budget: '$0.00', busy, active_run: activeRun ? { request_id: activeRun.request_id, output: activeRun.output } : null }; },
   };
 }

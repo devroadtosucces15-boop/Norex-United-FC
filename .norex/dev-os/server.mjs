@@ -101,6 +101,14 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         return send(200, result);
       }
 
+      if (req.method === 'POST' && url.pathname === '/api/cancel') {
+        if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON cancellation required' });
+        let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 1024) { send(413, { error: 'Request too large' }); return; } }
+        const data = JSON.parse(body);
+        if (!data || typeof data.request_id !== 'string' || Object.keys(data).sort().join(',') !== 'request_id') return send(400, { error: 'Exact request_id is required' });
+        return send(200, await services.cancel(data.request_id));
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/run') {
         if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON execution required' });
         let body = '';

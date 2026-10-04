@@ -105,6 +105,18 @@ test('runtime export/restore is versioned, non-secret and marks active execution
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('runner supports cancellation and redacted output streaming', async () => {
+  const controller = new AbortController();
+  const chunks = [];
+  const pending = execute(process.execPath, ['-e', "console.log('first'); setTimeout(()=>console.log('second'),5000)"], tmpdir(), { timeout: 10000, signal: controller.signal, onChunk: chunk => chunks.push(chunk) });
+  await new Promise(done => setTimeout(done, 100));
+  controller.abort();
+  const result = await pending;
+  assert.equal(result.status, 'cancelled');
+  assert.match(chunks.join(''), /first/);
+  assert.doesNotMatch(chunks.join(''), /second/);
+});
+
 test('Control Plane recognizes ND-025 and gates unsupported intent', () => {
   const plan = planIntent('Run ND-025 Shadow rehearsal. Create a harmless Shadow-only evidence change under .norex/, inspect the resulting diff, run deterministic validation, record the evidence, and do not modify production files or main.');
   assert.equal(plan.recognized, true);

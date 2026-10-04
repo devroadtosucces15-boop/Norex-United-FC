@@ -75,3 +75,7 @@ its filesystem/network effects and defining the permitted execution scope. The
 existing root `tests/run.mjs` remains the project harness; this slice adds regression
 coverage only for the new Shadow service. The service executes reviewed trusted
 local code, not untrusted scripts in a kernel-enforced sandbox.
+
+## Streaming/cancellation slice — 2026-10-04
+
+The bounded runner now supports redacted incremental output callbacks plus AbortSignal cancellation. Active local runs expose only request ID and accumulated redacted output through the local state surface; `/api/cancel` accepts an exact same-origin request ID and requests process-group termination. Cancellation is covered deterministically. This is stream/cancel plumbing, not a full interactive PTY: stdin, terminal resize, session multiplexing and arbitrary command entry remain gated.
