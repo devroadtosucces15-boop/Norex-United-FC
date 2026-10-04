@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync } from 'node:fs';
+import { chmodSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -18,7 +18,9 @@ const now = () => new Date().toISOString();
 export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.db') } = {}) {
   mkdirSync(dirname(dbPath), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(dbPath);
+  try { chmodSync(dbPath, 0o600); } catch {}
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;');
+  for (const suffix of ['-wal','-shm']) { try { chmodSync(dbPath + suffix, 0o600); } catch {} }
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_version(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL);
     INSERT OR IGNORE INTO schema_version(version, applied_at) VALUES(1, datetime('now'));

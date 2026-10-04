@@ -1,7 +1,7 @@
 import test from 'node:test';
 import { request } from 'node:http';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, copyFile, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, copyFile, rm, symlink, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,6 +60,7 @@ test('runtime store persists normalized task/execution/event state and rejects s
   const dbPath = resolve(root, 'runtime/norex.db');
   try {
     let store = createRuntimeStore({ dbPath });
+    assert.equal((await stat(dbPath)).mode & 0o777, 0o600);
     const session = store.ensureSession({ id: 'session-test', project: 'Norex United', branch: BRANCH });
     store.upsertTask({ id: 'ND-027', session_id: session, title: 'Durable runtime state', status: 'IN_PROGRESS', risk: 'R1', active_model: 'local' });
     const execution = store.startExecution({ session_id: session, task_id: 'ND-027', operation: 'shadow-tests' });

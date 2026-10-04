@@ -132,5 +132,14 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const runtimeStore = createRuntimeStore();
   const server = await startServer({ runtimeStore });
+  let closing = false;
+  const shutdown = signal => {
+    if (closing) return;
+    closing = true;
+    const timer = setTimeout(() => process.exit(1), 3000); timer.unref();
+    server.close(() => { runtimeStore.close(); clearTimeout(timer); process.exit(0); });
+  };
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
   console.log('Norex Dev OS Shadow: http://127.0.0.1:' + server.address().port);
 }
