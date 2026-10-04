@@ -148,6 +148,41 @@ test('ND-025 execution is fixed, approval-gated and Shadow-scoped', {
   );
 }));
 
+test('HTTP planning is same-origin, bounded and exact-shape', () => fixture(async root => {
+  const server = await startServer({ projectRoot: root, port: 0 });
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  const headers = {
+    'X-Norex-Local': '1',
+    Origin: origin,
+    'Content-Type': 'application/json'
+  };
+  const plan = (body, requestHeaders = headers) => fetch(origin + '/api/plan', {
+    method: 'POST',
+    headers: requestHeaders,
+    body: JSON.stringify(body)
+  });
+  try {
+    assert.equal((await plan({})).status, 400);
+    assert.equal((await plan({ intent: 'ND-025', extra: true })).status, 400);
+    assert.equal((await plan({ intent: 25 })).status, 400);
+    assert.equal((await plan({ intent: 'x'.repeat(2100) })).status, 413);
+    assert.equal((await plan(
+      { intent: 'ND-025' },
+      { 'X-Norex-Local': '1', 'Content-Type': 'application/json' }
+    )).status, 403);
+    const recognized = await (await plan({ intent: 'Run ND-025 Shadow rehearsal.' })).json();
+    assert.equal(recognized.recognized, true);
+    assert.equal(recognized.workflow_id, 'ND-025');
+    assert.equal(recognized.requires_approval, true);
+    const gated = await (await plan({ intent: 'deploy production now' })).json();
+    assert.equal(gated.recognized, false);
+    assert.equal(gated.status, 'GATED');
+  } finally {
+    server.closeAllConnections();
+    await new Promise(done => server.close(done));
+  }
+}));
+
 test('HTTP workflow execution requires exact explicit approval', {
   skip: process.env.NOREX_WORKFLOW_VALIDATION === '1'
 }, () => fixture(async root => {
