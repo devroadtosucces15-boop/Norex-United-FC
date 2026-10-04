@@ -42,3 +42,16 @@ Every engineering check-in should report both:
 - Full Norex project progress — FE + BE + Shadow + adoption dimensions under this model.
 
 The full-project percentage must be recomputed when the denominator changes. It is an engineering progress indicator, not a claim of production readiness.
+
+## Baseline score — 2026-10-04
+
+The score is normalized across four lanes so the larger Shadow checklist does not silently erase FE/BE/adoption work. Each lane contributes 25% of the full-project indicator.
+
+- FE: 6/12 complete = 50.0%. All six implementation points are verified; validation points remain open.
+- BE: 13/26 complete = 50.0%. All thirteen implementation points are verified; rollout/production-validation points remain open.
+- Shadow: 91.2% from the current granular ND checklist.
+- Adoption: 15/22 prerequisites currently evidenced = 68.2%. M0=4/4, M1=4/4, M2=2/5, M3=5/5, M4=0/4. This is prerequisite evidence only and does not approve any gate.
+
+Equal-lane full-project baseline: `(50.0 + 50.0 + 91.2 + 68.2) / 4 = 64.85%`, reported as **64.9%**.
+
+The adoption count is conservative: Claude/OpenAI/MCP remain non-executable REVIEW contracts, while M4 migration/reconciliation/regression/owner-adoption actions have not occurred. M3 counts executable prerequisite surfaces, not approval of M3 as a migration gate.
