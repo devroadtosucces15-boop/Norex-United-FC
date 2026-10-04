@@ -13,6 +13,7 @@ import { routeCapability } from './capability-broker.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
 import { createPtyService } from './pty-service.mjs';
 import { writeRecoveryBundle, readRecoveryBundle, restoreRecoveryBundle } from './recovery-bundle.mjs';
+import { browserProbe, captureLocalPreview } from './browser-service.mjs';
 
 const source = fileURLToPath(new URL('.', import.meta.url));
 async function fixture(fn) {
@@ -20,7 +21,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -113,6 +114,13 @@ test('runtime export/restore is versioned, non-secret and marks active execution
     incompatible.close();
     restored.close();
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('browser adapter is local-only and detects installed Chromium', async () => {
+  const probe = await browserProbe();
+  assert.equal(probe.status, 'AVAILABLE');
+  assert.match(probe.executable, /chromium|chrome/);
+  await assert.rejects(() => captureLocalPreview('https://example.com'), /localhost-only/);
 });
 
 test('portable recovery bundle is exclusive, integrity-checked and restorable', async () => {
