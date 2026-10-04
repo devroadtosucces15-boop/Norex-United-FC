@@ -67,7 +67,16 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         if (!data || data.approved !== true || Object.keys(data).sort().join(',') !== 'approved') return send(400, { error: 'Explicit preview approval is required' });
         const probe = await browserProbe(); if (probe.status !== 'AVAILABLE') return send(409, probe);
         const result = await captureLocalPreview(origin + '/');
-        return send(200, { status: result.status, url: result.url, exit_code: result.exit_code, output: result.output.slice(0, 32768) });
+        let artifact_id = null, execution_id = null;
+        if (runtimeStore) {
+          runtimeStore.upsertTask({ id: 'ND-022', session_id: sessionId, title: 'localhost preview capture', status: 'IN_PROGRESS', risk: 'R1', active_model: 'local', started_at: new Date().toISOString() });
+          execution_id = runtimeStore.startExecution({ session_id: sessionId, task_id: 'ND-022', operation: 'preview:localhost' });
+          runtimeStore.finishExecution(execution_id, { status: result.status === 'passed' ? 'PASSED' : 'FAILED', exit_code: result.exit_code, summary: 'Ephemeral localhost DOM preview' });
+          runtimeStore.recordExecutionOutput(execution_id, result.output);
+          artifact_id = runtimeStore.recordArtifact({ session_id: sessionId, task_id: 'ND-022', execution_id, kind: 'preview', ref: 'execution://' + execution_id });
+          runtimeStore.appendEvent({ session_id: sessionId, task_id: 'ND-022', execution_id, type: 'ArtifactCreated', actor: 'local-browser', payload: { artifact_id, kind: 'preview', ref: 'execution://' + execution_id } });
+        }
+        return send(200, { status: result.status, url: result.url, exit_code: result.exit_code, output: result.output.slice(0, 32768), artifact_id, execution_id });
       }
 
       if (req.method === 'POST' && url.pathname === '/api/route') {

@@ -11,3 +11,7 @@ Validation: top-level Shadow suite 20/20 PASS after updating event-count expecta
 ## 2026-10-04 bounded output follow-up
 
 Deterministic execution output can now be persisted separately from artifact metadata, capped at 32 KiB per execution and passed through the runtime secret-like-data guard. Truncation is explicit. A same-origin read-only endpoint resolves output by execution id. Output is deliberately excluded from recovery export v1 until a versioned schema migration is defined.
+
+## Durable localhost preview — 2026-10-03
+
+Approved localhost PREVIEW captures now create an ND-022 execution, persist bounded DOM output, create a `preview` artifact reference, and emit `ArtifactCreated`. HTTP regression coverage validates the full browser-to-runtime persistence path. The runtime export v2 path therefore also carries these bounded preview outputs through recovery.

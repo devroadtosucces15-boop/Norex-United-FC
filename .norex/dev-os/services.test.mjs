@@ -357,6 +357,23 @@ test('HTTP deterministic execution records durable runtime events', () => fixtur
   }
 }));
 
+test('HTTP localhost preview persists durable artifact and bounded output', () => fixture(async root => {
+  const dbPath = resolve(root, 'preview-runtime.db');
+  const store = createRuntimeStore({ dbPath });
+  const server = await startServer({ projectRoot: root, port: 0, runtimeStore: store });
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  try {
+    const response = await fetch(origin + '/api/preview', { method: 'POST', headers: { 'X-Norex-Local': '1', Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ approved: true }) });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.status, 'passed');
+    assert.ok(result.execution_id);
+    const artifacts = store.listArtifacts('shadow-local');
+    assert.equal(artifacts.at(-1).kind, 'preview');
+    assert.match(store.getExecutionOutput(result.execution_id).output, /NOREX DEV/);
+  } finally { server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); store.close(); }
+}));
+
 test('HTTP capability routing never self-approves metered access', () => fixture(async root => {
   const server = await startServer({ projectRoot: root, port: 0 });
   const origin = 'http://127.0.0.1:' + server.address().port;
