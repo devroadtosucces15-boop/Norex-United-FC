@@ -145,7 +145,7 @@ export async function createServices(projectRoot) {
       const initialEvidence = [
         '# ND-025 Shadow Rehearsal',
         '',
-        'Status: IN_PROGRESS',
+        'Started status: IN_PROGRESS',
         'Workflow: ND-025',
         'Branch: ' + BRANCH,
         'Scope: .norex/** only',
@@ -174,8 +174,8 @@ export async function createServices(projectRoot) {
       ]);
 
       if (
-        !diff.includes('Status: IN_PROGRESS') ||
-        !diff.includes('Workflow: ND-025')
+        !diff.includes('Started status: IN_PROGRESS') ||
+        !diff.includes('Approval: explicit-local-ui-action')
       ) {
         throw new Error('Expected ND-025 evidence diff was not produced');
       }
@@ -199,13 +199,7 @@ export async function createServices(projectRoot) {
 
       const finalStatus = validationPassed ? 'VALIDATED' : 'FAILED';
 
-      if (!validationPassed) {
-        const failed = validation.find(result => result.status !== 'passed');
-        throw new Error(
-          'ND-025 validation failed: ' +
-          (failed ? failed.status + '\n' + failed.output : 'incomplete validation')
-        );
-      }
+      const failed = validation.find(result => result.status !== 'passed');
 
       const finalEvidence = initialEvidence + [
         '- git.diff: PASSED',
@@ -214,7 +208,8 @@ export async function createServices(projectRoot) {
         '',
         '## Result',
         '',
-        'Status: ' + finalStatus,
+        'Final status: ' + finalStatus,
+        ...(failed ? ['Failure: ' + failed.status, 'Failure output: ' + failed.output.replace(/\s+/g, ' ').trim()] : []),
         'Finished: ' + new Date().toISOString(),
         ''
       ].join('\n');

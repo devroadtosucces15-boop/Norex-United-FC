@@ -16,9 +16,9 @@ async function fixture(fn) {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
     for (const file of ['server.mjs', 'local-services.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
-    await copyFile(
-      resolve(source, '../evidence/ND-025-shadow-rehearsal.md'),
-      resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md')
+    await writeFile(
+      resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
+      '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
     );
     assert.equal((await execute('/usr/bin/git', ['init', '-b', BRANCH], root)).status, 'passed');
     assert.equal((await execute('/usr/bin/git', ['add', '--', '.norex/dev-os', '.norex/evidence/ND-025-shadow-rehearsal.md'], root)).status, 'passed');
