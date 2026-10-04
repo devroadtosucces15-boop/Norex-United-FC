@@ -2,6 +2,11 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { writeRecoveryBundle, readRecoveryBundle } from './recovery-bundle.mjs';
 import { createServices } from './local-services.mjs';
 import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
@@ -9,6 +14,7 @@ import { routeCapability } from './capability-broker.mjs';
 import { browserProbe, captureLocalPreview } from './browser-service.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
+const execFileAsync = promisify(execFile);
 const assets = { '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
 export async function startServer({ projectRoot = resolve(root, '../..'), port = Number(process.env.PORT || 4177), runtimeStore = null } = {}) {
   const services = await createServices(projectRoot);
@@ -60,6 +66,22 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         if (url.pathname === '/api/files') return send(200, { files: await services.files() });
         if (url.pathname === '/api/file') return send(200, await services.inspect(url.searchParams.get('path')));
       }
+      if (req.method === 'POST' && url.pathname === '/api/recovery/export') {
+        if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON recovery export required' });
+        let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 1024) { send(413, { error: 'Request too large' }); return; } }
+        let data; try { data = JSON.parse(body); } catch { return send(400, { error: 'Valid JSON recovery approval is required' }); }
+        if (!runtimeStore || !data || data.approved !== true || Object.keys(data).sort().join(',') !== 'approved') return send(400, { error: 'Explicit recovery export approval is required' });
+        const branch = (await execFileAsync('/usr/bin/git', ['-C', projectRoot, 'rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' })).stdout.trim();
+        const commit = (await execFileAsync('/usr/bin/git', ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' })).stdout.trim();
+        const dir = await mkdtemp(resolve(tmpdir(), 'norex-recovery-ui-'));
+        const path = resolve(dir, 'runtime.recovery.json');
+        try {
+          const written = await writeRecoveryBundle(runtimeStore, path, { repository: { root: projectRoot, branch, commit } });
+          const verified = await readRecoveryBundle(path);
+          return send(200, { status: 'VERIFIED', format: written.format, version: written.version, algorithm: written.algorithm, digest: written.digest, repository: verified.repository, state: { schema_version: verified.state.schema_version, sessions: verified.state.sessions.length, tasks: verified.state.tasks.length, executions: verified.state.executions.length, events: verified.state.events.length } });
+        } finally { await rm(dir, { recursive: true, force: true }); }
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/preview') {
         if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON preview required' });
         let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 1024) { send(413, { error: 'Request too large' }); return; } }

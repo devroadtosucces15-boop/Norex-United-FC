@@ -448,6 +448,29 @@ test('HTTP deterministic execution records durable runtime events', () => fixtur
   }
 }));
 
+test('HTTP recovery export is approval-gated, repository-bound and integrity-verified', () => fixture(async root => {
+  const dbPath = resolve(root, 'recovery-ui-runtime.db');
+  const store = createRuntimeStore({ dbPath });
+  store.ensureSession({ id: 'recovery-ui', project: 'Norex United', branch: BRANCH });
+  const server = await startServer({ projectRoot: root, port: 0, runtimeStore: store });
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  const headers = { 'X-Norex-Local': '1', Origin: origin, 'Content-Type': 'application/json' };
+  try {
+    const denied = await fetch(origin + '/api/recovery/export', { method: 'POST', headers, body: JSON.stringify({ approved: false }) });
+    assert.equal(denied.status, 400);
+    const response = await fetch(origin + '/api/recovery/export', { method: 'POST', headers, body: JSON.stringify({ approved: true }) });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.status, 'VERIFIED');
+    assert.equal(result.version, 2);
+    assert.equal(result.algorithm, 'sha256');
+    assert.equal(result.repository.root, resolve(root));
+    assert.equal(result.repository.branch, BRANCH);
+    assert.match(result.repository.commit, /^[0-9a-f]{40}$/);
+    assert.ok(result.state.sessions >= 1);
+  } finally { server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); store.close(); }
+}));
+
 test('HTTP localhost preview persists durable artifact and bounded output', () => fixture(async root => {
   const dbPath = resolve(root, 'preview-runtime.db');
   const store = createRuntimeStore({ dbPath });

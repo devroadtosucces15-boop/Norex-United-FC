@@ -25,3 +25,7 @@ Recovery SHA-256 integrity now canonicalizes object keys recursively before seri
 ## Repository identity binding — 2026-10-04
 
 Recovery envelope v2 can bind the runtime bundle to an exact repository root, Shadow branch, and commit. The repository identity is covered by the canonical SHA-256 digest. Restore of a bound bundle requires the caller to provide an exact matching repository identity; missing or mismatched identity is rejected before runtime state import. Unbound legacy envelope v1 remains readable for backward compatibility. Credential rebinding and user-facing recovery flow remain gated.
+
+## Approval-gated recovery export API — 2026-10-04
+
+The local Dev OS now exposes a same-origin JSON recovery export action that requires explicit approval. It creates a mode-0600 temporary v2 bundle, binds it to the exact repository root/branch/commit, reads it back through the integrity verifier, returns only non-secret verification metadata, and removes the temporary bundle before responding. It does not expose an arbitrary filesystem path or restore mutation through HTTP. Deterministic coverage verifies denial without approval plus exact repository identity and SHA-256 verification on approval.

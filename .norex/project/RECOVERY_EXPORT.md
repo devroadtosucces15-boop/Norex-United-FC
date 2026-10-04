@@ -33,3 +33,7 @@ Recovery-envelope integrity hashing now recursively sorts object keys before JSO
 ## Repository identity binding — 2026-10-04
 
 Recovery envelope v2 optionally records repository root, branch and commit alongside runtime state, with both covered by the canonical SHA-256 digest. A repository-bound restore fails closed unless the caller supplies the exact same root, branch and commit. Envelope v1 remains readable for backward compatibility. This implements the repository/commit verification primitive; credential rebinding and a user-facing restore flow remain gated.
+
+## Approval-gated local export API — 2026-10-04
+
+`POST /api/recovery/export` is a same-origin JSON, explicit-approval operation. It writes a repository-bound v2 recovery bundle only into a unique OS temporary directory, verifies that bundle through the canonical reader, returns verification metadata, and removes the temporary file/directory before response completion. Callers cannot choose a path. Restore remains unavailable through the browser/API because it mutates runtime state and still requires a dedicated owner-safe flow plus credential rebinding semantics.
