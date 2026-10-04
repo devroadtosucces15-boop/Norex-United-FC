@@ -34,3 +34,9 @@ Fallback must preserve task/checkpoint/evidence. Do not restart from raw convers
 
 ## Future telemetry
 Track task class, provider, completion/failure, retries, elapsed time, allowance/cost, validation outcome and Mike corrections. Use this to improve routing without allowing telemetry to override explicit authority.
+
+## Implemented routing core — 2026-10-03
+
+`.norex/dev-os/capability-broker.mjs` now enforces the first executable routing policy slice. Deterministic validation capabilities route directly to `local_ci` / `LOCAL_OFFLINE`. Non-deterministic candidates are filtered by availability, security permission and billing mode; verified subscription/free/local routes may be selected, UNKNOWN_BILLING is blocked, and METERED_API is blocked unless an internal caller supplies an explicit Mike approval state.
+
+The local `/api/route` endpoint intentionally cannot assert metered approval: it always routes with metered approval false and rejects extra approval fields. This prevents a browser request from self-authorizing paid usage before the Credential/Permission Broker implements durable approval authority. Provider availability/auth/allowance probes, historical performance ranking and actual provider dispatch remain gated.

@@ -9,6 +9,7 @@ import { createServices, allowedPath, redact, execute, BRANCH } from './local-se
 import { startServer } from './server.mjs';
 import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
+import { routeCapability } from './capability-broker.mjs';
 
 const source = fileURLToPath(new URL('.', import.meta.url));
 async function fixture(fn) {
@@ -16,7 +17,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -27,6 +28,19 @@ async function fixture(fn) {
     await fn(root);
   } finally { await rm(root, { recursive: true, force: true }); }
 }
+test('Capability Broker enforces deterministic, billing, security and override gates', () => {
+  assert.deepEqual(routeCapability({ capability: 'unit_tests' }), { status: 'ROUTED', capability: 'unit_tests', provider: 'local_ci', billing_mode: 'LOCAL_OFFLINE', reason: 'deterministic-local-first', cost_permission: 'ALLOWED' });
+  const candidates = [
+    { provider: 'claude', billing_mode: 'METERED_API', available: true, security_permitted: true, rank: 1 },
+    { provider: 'codex', billing_mode: 'SUBSCRIPTION_EXISTING_ACCESS', verified: true, available: true, security_permitted: true, rank: 2 }
+  ];
+  assert.equal(routeCapability({ capability: 'code_review', candidates }).provider, 'codex');
+  assert.equal(routeCapability({ capability: 'code_review', candidates, override: 'claude' }).reason, 'metered-approval-required');
+  assert.equal(routeCapability({ capability: 'code_review', candidates, override: 'claude', mike_approved_metered: true }).provider, 'claude');
+  assert.equal(routeCapability({ capability: 'architecture', candidates: [{ provider: 'chatgpt', billing_mode: 'UNKNOWN_BILLING', available: true, security_permitted: true }] }).status, 'GATED');
+  assert.equal(routeCapability({ capability: 'architecture', candidates: [{ provider: 'chatgpt', billing_mode: 'VERIFIED_FREE', available: true, security_permitted: false }] }).status, 'GATED');
+});
+
 test('runtime store persists normalized task/execution/event state and rejects secret-like payloads', async () => {
   const root = await mkdtemp(resolve(tmpdir(), 'norex-runtime-test-'));
   const dbPath = resolve(root, 'runtime/norex.db');
@@ -200,6 +214,22 @@ test('HTTP deterministic execution records durable runtime events', () => fixtur
     store.close();
     await rm(runtimeRoot, { recursive: true, force: true });
   }
+}));
+
+test('HTTP capability routing never self-approves metered access', () => fixture(async root => {
+  const server = await startServer({ projectRoot: root, port: 0 });
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  const headers = { 'X-Norex-Local': '1', Origin: origin, 'Content-Type': 'application/json' };
+  const route = body => fetch(origin + '/api/route', { method: 'POST', headers, body: JSON.stringify(body) });
+  try {
+    const local = await (await route({ capability: 'unit_tests', candidates: [] })).json();
+    assert.equal(local.provider, 'local_ci');
+    assert.equal(local.cost_permission, 'ALLOWED');
+    const metered = await (await route({ capability: 'code_review', candidates: [{ provider: 'claude', billing_mode: 'METERED_API', available: true, security_permitted: true }] })).json();
+    assert.equal(metered.status, 'GATED');
+    assert.equal(metered.reason, 'metered-approval-required');
+    assert.equal((await route({ capability: 'code_review', candidates: [], mike_approved_metered: true })).status, 400);
+  } finally { server.closeAllConnections(); await new Promise(done => server.close(done)); }
 }));
 
 test('HTTP planning is same-origin, bounded and exact-shape', () => fixture(async root => {

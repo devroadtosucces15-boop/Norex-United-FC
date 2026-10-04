@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { createServices } from './local-services.mjs';
 import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
+import { routeCapability } from './capability-broker.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const assets = { '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
@@ -52,6 +53,15 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         if (url.pathname === '/api/files') return send(200, { files: await services.files() });
         if (url.pathname === '/api/file') return send(200, await services.inspect(url.searchParams.get('path')));
       }
+      if (req.method === 'POST' && url.pathname === '/api/route') {
+        if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON routing required' });
+        let body = '';
+        for await (const chunk of req) { body += chunk; if (body.length > 4096) { send(413, { error: 'Request too large' }); return; } }
+        const data = JSON.parse(body);
+        if (!data || typeof data.capability !== 'string' || !Array.isArray(data.candidates) || Object.keys(data).some(key => !['capability','candidates','override'].includes(key))) return send(400, { error: 'A bounded capability route request is required' });
+        return send(200, routeCapability({ capability: data.capability, candidates: data.candidates, override: data.override ?? null, mike_approved_metered: false }));
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/plan') {
         if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON planning required' });
         let body = '';
