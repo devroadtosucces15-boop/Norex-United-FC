@@ -3,6 +3,7 @@ import { chmodSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { randomUUID } from 'node:crypto';
+import { utf8Prefix } from './utf8.mjs';
 
 const EVENT_TYPES = new Set([
   'MikeMessage','UserOverride','OrchestratorAnalysis','TaskCreated','TaskStatusChanged',
@@ -76,11 +77,7 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
       if (typeof output !== 'string') throw new Error('Execution output must be text');
       const limit = 32768;
       const encoded = Buffer.from(output, 'utf8');
-      let bounded = output;
-      if (encoded.length > limit) {
-        bounded = encoded.subarray(0, limit).toString('utf8');
-        if (bounded.endsWith('�')) bounded = bounded.slice(0, -1);
-      }
+      const bounded = encoded.length > limit ? utf8Prefix(encoded, limit) : output;
       ensureSafe(bounded);
       const truncated = encoded.length > limit;
       db.prepare('INSERT OR REPLACE INTO execution_output(execution_id,output,truncated,created_at) VALUES(?,?,?,?)').run(execution_id, bounded, truncated ? 1 : 0, now());

@@ -2,16 +2,10 @@ import { access, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
+import { appendUtf8Bounded } from './utf8.mjs';
 
 const CANDIDATES = ['/usr/bin/chromium','/usr/bin/google-chrome'];
 const OUTPUT_LIMIT = 65536, STDERR_LIMIT = 4096;
-function appendUtf8Bounded(current, chunk, limit) {
-  const joined = Buffer.concat([Buffer.from(current, 'utf8'), Buffer.from(chunk)]);
-  if (joined.length <= limit) return joined.toString('utf8');
-  let text = joined.subarray(0, limit).toString('utf8');
-  if (text.endsWith('�')) text = text.slice(0, -1);
-  return text;
-}
 export async function browserProbe() {
   for (const executable of CANDIDATES) { try { await access(executable); return { status: 'AVAILABLE', executable, mode: 'ephemeral-headless', cost: '$0.00' }; } catch {} }
   return { status: 'GATED', reason: 'No supported local Chromium executable' };
