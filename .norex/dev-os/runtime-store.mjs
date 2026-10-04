@@ -31,6 +31,7 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
     CREATE INDEX IF NOT EXISTS events_session_time ON events(session_id, id);
     CREATE TABLE IF NOT EXISTS approvals(id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id), task_id TEXT REFERENCES tasks(id), action TEXT NOT NULL, scope TEXT NOT NULL, risk TEXT NOT NULL, decision TEXT NOT NULL, created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS artifacts(id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id), task_id TEXT REFERENCES tasks(id), execution_id TEXT REFERENCES executions(id), kind TEXT NOT NULL, ref TEXT NOT NULL, created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS execution_output(execution_id TEXT PRIMARY KEY REFERENCES executions(id), output TEXT NOT NULL, truncated INTEGER NOT NULL, created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS evidence_index(id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id), task_id TEXT REFERENCES tasks(id), subject TEXT NOT NULL, result TEXT NOT NULL, ref TEXT NOT NULL, created_at TEXT NOT NULL);
   `);
   const ensureSafe = value => {
@@ -65,6 +66,17 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
       ensureSafe({ action, scope, decision });
       db.prepare('INSERT INTO approvals(id,session_id,task_id,action,scope,risk,decision,created_at) VALUES(?,?,?,?,?,?,?,?)').run(id, session_id, task_id, action, scope, risk, decision, now());
       return id;
+    },
+    recordExecutionOutput(execution_id, output) {
+      if (typeof output !== 'string') throw new Error('Execution output must be text');
+      const bounded = output.slice(0, 32768);
+      ensureSafe(bounded);
+      db.prepare('INSERT OR REPLACE INTO execution_output(execution_id,output,truncated,created_at) VALUES(?,?,?,?)').run(execution_id, bounded, output.length > bounded.length ? 1 : 0, now());
+      return { execution_id, output: bounded, truncated: output.length > bounded.length };
+    },
+    getExecutionOutput(execution_id) {
+      const row = db.prepare('SELECT execution_id,output,truncated,created_at FROM execution_output WHERE execution_id=?').get(execution_id);
+      return row ? { ...row, truncated: Boolean(row.truncated) } : null;
     },
     recordArtifact({ id = randomUUID(), session_id, task_id = null, execution_id = null, kind, ref }) {
       ensureSafe({ kind, ref });

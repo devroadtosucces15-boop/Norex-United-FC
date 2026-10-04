@@ -71,6 +71,11 @@ test('runtime store persists normalized task/execution/event state and rejects s
     store.recordEvidence({ session_id: session, task_id: 'ND-027', subject: 'runtime persistence', result: 'PASSED', ref: '.norex/evidence/runtime.md' });
     store.recordArtifact({ session_id: session, task_id: 'ND-027', execution_id: execution, kind: 'tests', ref: 'execution://' + execution });
     assert.equal(store.listArtifacts(session)[0].kind, 'tests');
+    assert.equal(store.recordExecutionOutput(execution, 'bounded output').truncated, false);
+    assert.equal(store.getExecutionOutput(execution).output, 'bounded output');
+    assert.equal(store.recordExecutionOutput(execution, 'x'.repeat(40000)).truncated, true);
+    assert.equal(store.getExecutionOutput(execution).output.length, 32768);
+    assert.throws(() => store.recordExecutionOutput(execution, 'password=secret'), /secret-like/);
     assert.deepEqual(store.snapshot(), { schema_version: 1, sessions: 1, tasks: 1, executions: 1, events: 2, approvals: 1, artifacts: 1, evidence: 1 });
     assert.throws(() => store.appendEvent({ session_id: session, type: 'CIPassed', actor: 'local', payload: { token: 'secret-value' } }), /secret-like/);
     assert.throws(() => store.appendEvent({ session_id: session, type: 'MadeUpEvent', actor: 'local' }), /Unknown event/);
