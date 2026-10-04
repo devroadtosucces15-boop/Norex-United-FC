@@ -30,3 +30,9 @@ Show exact provider/resource/action/environment/risk and explicitly state that t
 
 ## Forbidden
 Reveal/print secret; send secret to model; write secret to repository; persist raw secret in runtime DB/log; silently broaden a credential's scope.
+
+## Implemented permission-decision slice — 2026-10-03
+
+`.norex/dev-os/permission-broker.mjs` now validates opaque `credential://...` handles and evaluates action permission independently from secret resolution. R0 non-sensitive metadata may proceed without a credential; credential-bearing or higher-risk actions require a matching explicit grant. DENY is terminal. R4, PRODUCTION, destructive and security-critical actions always return APPROVAL_REQUIRED even when a persistent grant is presented.
+
+This slice deliberately does **not** resolve credentials or read a keychain. It cannot reveal a secret because it only accepts opaque handles. Durable grant lookup/session consumption and secure OS-vault resolution remain required before ND-014 can be DONE.
