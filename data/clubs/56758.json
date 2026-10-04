@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-04T19:00:38.732Z",
+ "fetchedAt": "2026-10-04T19:10:34.500Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -763,6 +763,42 @@
    "prevGoals9": "0",
    "prevGoals10": "1",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "NejR1996",
+   "gamesPlayed": "1",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "16",
+   "passSuccessRate": "94",
+   "ratingAve": "8.5",
+   "tacklesMade": "2",
+   "tackleSuccessRate": "100",
+   "proName": "SCHOFIELD",
+   "proPos": "14",
+   "proStyle": "0",
+   "proHeight": "182",
+   "proNationality": "68",
+   "proOverall": "78",
+   "proOverallStr": "78",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "eldonwilly1995",
@@ -1702,7 +1738,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 9,
+  "midfielder": 10,
   "goalkeeper": 1,
   "forward": 20,
   "defender": 10
@@ -1927,6 +1963,17 @@
    "ratingAve": "7.7",
    "prevGoals": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "NejR1996",
+   "proPos": "14",
+   "gamesPlayed": "122",
+   "goals": "2",
+   "assists": "12",
+   "manOfTheMatch": "22",
+   "ratingAve": "7.3",
+   "prevGoals": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "eldonwilly1995",
