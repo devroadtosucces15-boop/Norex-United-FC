@@ -306,6 +306,6 @@ export async function createServices(projectRoot) {
       const common = ['--no-ext-diff', '--no-textconv', '--no-renames', '--', path];
       return { path, unstaged: await git(['diff', ...common]), staged: await git(['diff', '--cached', ...common]), note: 'Untracked files have no Git patch; use file inspection.' };
     },
-    async state() { return { branch: await branch(), scope: '.norex/', commands, provider: 'gated', browser: 'gated', budget: '$0.00', busy, active_run: activeRun ? { request_id: activeRun.request_id, output: activeRun.output } : null }; },
+    async state() { return { branch: await branch(), scope: '.norex/', commands, provider: 'gated', browser: 'local-preview', budget: '$0.00', busy, active_run: activeRun ? { request_id: activeRun.request_id, output: activeRun.output } : null }; },
   };
 }

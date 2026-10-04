@@ -15,3 +15,7 @@ The same-origin `/api/preview` endpoint now requires an exact `{approved:true}` 
 Validation note: one full-suite run showed the previously observed ND-025 nested-workflow timing flake. The exact failing test passed immediately in isolation and the subsequent complete suite passed 22/22, so no unrelated behavior was masked or changed.
 
 The repeated ND-025 flake was diagnosed as the nested full Shadow suite occasionally exceeding its 30-second outer workflow timeout as the suite grew. The nested test-validation timeout is now 60 seconds while individual fixed command limits remain unchanged. This is a bounded deterministic fix, not a skip or pass override.
+
+## Ephemeral profile hardening — 2026-10-04
+
+Each local preview capture now creates a unique OS-temporary Chromium user-data directory, uses it as HOME/profile storage, and removes it recursively in a finally block after success, failure or timeout. Runtime state now reports `local-preview` rather than the stale generic `gated` label. Persistent profiles/auth remain gated.
