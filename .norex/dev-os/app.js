@@ -25,7 +25,12 @@ async function showArtifact(name) {
   output.setAttribute('aria-live', 'polite'); output.setAttribute('tabindex', '0');
   artifact.replaceChildren(head, meta, controls, output);
   try {
-    if (name === 'preview') { meta.textContent = 'Browser and provider adapters remain gated.'; output.textContent = 'No browser automation or provider calls are enabled.'; return; }
+    if (name === 'preview') {
+      badge.textContent = 'LOCAL'; meta.textContent = 'Ephemeral Chromium · localhost only · no persistent profile · $0.00';
+      output.textContent = 'Preview is approval-gated and may inspect only this local Dev OS origin.';
+      const run = button('Approve local preview', async () => { run.disabled = true; badge.textContent = 'RUNNING'; try { const result = await api('preview', { approved: true }); output.textContent = `${result.status.toUpperCase()} · ${result.url} · exit ${result.exit_code}\n\n${result.output}`; badge.textContent = result.status.toUpperCase(); } catch (error) { output.textContent = error.message; badge.textContent = 'BLOCKED'; } finally { run.disabled = false; } });
+      controls.append(run); return;
+    }
     const state = await api('state');
     if (version !== generation) return;
     meta.textContent = state.branch + ' · .norex/ only · ' + state.budget + ' metered spend';

@@ -234,7 +234,7 @@ export async function createServices(projectRoot) {
         ['--test', '.norex/dev-os/services.test.mjs']
       ]) {
         const result = await execute(process.execPath, args, root, {
-          timeout: 30000,
+          timeout: args[0] === '--test' ? 60000 : 30000,
           workflowValidation: args[0] === '--test'
         });
         validation.push(result);

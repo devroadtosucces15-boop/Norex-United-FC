@@ -6,6 +6,7 @@ import { createServices } from './local-services.mjs';
 import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
 import { routeCapability } from './capability-broker.mjs';
+import { browserProbe, captureLocalPreview } from './browser-service.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const assets = { '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
@@ -59,6 +60,16 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         if (url.pathname === '/api/files') return send(200, { files: await services.files() });
         if (url.pathname === '/api/file') return send(200, await services.inspect(url.searchParams.get('path')));
       }
+      if (req.method === 'POST' && url.pathname === '/api/preview') {
+        if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON preview required' });
+        let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 1024) { send(413, { error: 'Request too large' }); return; } }
+        const data = JSON.parse(body);
+        if (!data || data.approved !== true || Object.keys(data).sort().join(',') !== 'approved') return send(400, { error: 'Explicit preview approval is required' });
+        const probe = await browserProbe(); if (probe.status !== 'AVAILABLE') return send(409, probe);
+        const result = await captureLocalPreview(origin + '/');
+        return send(200, { status: result.status, url: result.url, exit_code: result.exit_code, output: result.output.slice(0, 32768) });
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/route') {
         if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON routing required' });
         let body = '';
