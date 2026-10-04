@@ -3,7 +3,12 @@ import { createHash } from 'node:crypto';
 
 const FORMAT = 'norex-recovery-bundle';
 const VERSION = 1;
-const canonical = value => JSON.stringify(value);
+function canonicalize(value) {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonicalize(value[key])]));
+  return value;
+}
+const canonical = value => JSON.stringify(canonicalize(value));
 const digest = value => createHash('sha256').update(canonical(value)).digest('hex');
 
 export async function writeRecoveryBundle(store, path) {

@@ -25,3 +25,7 @@ The Dev OS now writes an exclusive (`wx`), mode-0600 JSON recovery envelope cont
 ## Runtime export schema v2 — 2026-10-03
 
 Runtime export schema v2 now includes bounded `execution_output` rows. Restore accepts both v1 and v2 bundles: v1 restores without execution output, while v2 restores it after executions so foreign-key integrity is preserved. The outer recovery-envelope format remains v1 because its envelope structure and SHA-256 verification semantics did not change.
+
+## Canonical integrity serialization — 2026-10-04
+
+Recovery-envelope integrity hashing now recursively sorts object keys before JSON serialization. This removes insertion-order dependence from the SHA-256 state digest while preserving array order and existing envelope/version semantics.

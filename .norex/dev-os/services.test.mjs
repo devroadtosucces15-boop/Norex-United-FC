@@ -184,6 +184,10 @@ test('portable recovery bundle is exclusive, integrity-checked and restorable', 
     assert.equal((await restoreRecoveryBundle(restoredStore, bundlePath)).tasks, 1);
     restoredStore.close(); sourceStore.close();
     const envelope = JSON.parse(await readFile(bundlePath, 'utf8'));
+    const reorderedPath = resolve(root, 'reordered.norex-recovery.json');
+    const reordered = { state: envelope.state, digest: envelope.digest, algorithm: envelope.algorithm, version: envelope.version, format: envelope.format };
+    await writeFile(reorderedPath, JSON.stringify(reordered), { mode: 0o600 });
+    assert.deepEqual(await readRecoveryBundle(reorderedPath), envelope.state);
     envelope.state.tasks[0].title = 'tampered';
     await writeFile(bundlePath, JSON.stringify(envelope));
     await assert.rejects(() => readRecoveryBundle(bundlePath), /integrity/);

@@ -17,3 +17,7 @@ During validation, pre-existing async test assertions in the new filesystem test
 ## Runtime schema v2 follow-up
 
 Promoted runtime export to schema v2 and added bounded execution-output export/restore. Backward compatibility with schema v1 is retained. Regression validation confirms recoverable output survives export/restore and active executions are still converted to INTERRUPTED.
+
+## Canonical integrity serialization — 2026-10-04
+
+Recovery SHA-256 integrity now canonicalizes object keys recursively before serialization, so equivalent runtime state produces the same digest independent of object insertion order. Arrays retain order. Regression coverage verifies an envelope with reordered top-level keys still validates while state tampering remains rejected.
