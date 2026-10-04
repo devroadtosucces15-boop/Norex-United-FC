@@ -63,7 +63,8 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
       if (req.method === 'POST' && url.pathname === '/api/preview') {
         if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON preview required' });
         let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 1024) { send(413, { error: 'Request too large' }); return; } }
-        const data = JSON.parse(body);
+        let data;
+        try { data = JSON.parse(body); } catch { return send(400, { error: 'Valid JSON preview approval is required' }); }
         if (!data || data.approved !== true || Object.keys(data).sort().join(',') !== 'approved') return send(400, { error: 'Explicit preview approval is required' });
         const probe = await browserProbe(); if (probe.status !== 'AVAILABLE') return send(409, probe);
         const result = await captureLocalPreview(origin + '/', { allowedOrigin: origin });

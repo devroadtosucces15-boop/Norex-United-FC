@@ -23,3 +23,7 @@ Each local preview capture now creates a unique OS-temporary Chromium user-data 
 ## Exact-origin preview binding — 2026-10-04
 
 The browser capture primitive now supports an explicit approved origin and rejects localhost navigation to any different origin/port. The PREVIEW HTTP route binds capture to its own current origin. Arbitrary localhost-port navigation is therefore no longer available through the approved preview path.
+
+## Malformed preview request handling — 2026-10-04
+
+The PREVIEW endpoint now converts malformed JSON into a bounded HTTP 400 response instead of allowing JSON parsing to escape into generic request failure handling. Regression coverage verifies malformed approval input is rejected before browser execution.

@@ -415,6 +415,8 @@ test('HTTP localhost preview persists durable artifact and bounded output', () =
   const server = await startServer({ projectRoot: root, port: 0, runtimeStore: store });
   const origin = 'http://127.0.0.1:' + server.address().port;
   try {
+    const malformed = await fetch(origin + '/api/preview', { method: 'POST', headers: { 'X-Norex-Local': '1', Origin: origin, 'Content-Type': 'application/json' }, body: '{' });
+    assert.equal(malformed.status, 400);
     const response = await fetch(origin + '/api/preview', { method: 'POST', headers: { 'X-Norex-Local': '1', Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ approved: true }) });
     assert.equal(response.status, 200);
     const result = await response.json();
