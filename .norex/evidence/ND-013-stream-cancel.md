@@ -19,3 +19,11 @@ Validation after follow-up: 18/18 tests PASS.
 Validated exclusive (`wx`) creation of new Shadow text files inside already-existing, real, non-symlink parent directories. Creation inherits branch/path/size/secret policy and cannot overwrite existing files.
 
 An initial regression run exposed a test fixture conflict with the sensitive-name policy and therefore caused ND-025 nested validation to fail as designed. The fixture was corrected immediately; targeted regression returned 3/3 PASS before the full validation below.
+
+## PTY follow-up
+
+Added a dependency-free Linux PTY primitive using the installed util-linux `script` binary with a fixed allowlisted Node REPL. Interactive stdin, bounded/redacted output, lifecycle read/close and session identity are validated. Native resize is explicitly returned as GATED because util-linux `script` does not expose safe resize control through this adapter; no fake resize success is reported.
+
+Two PTY test iterations failed during implementation (first due to Node REPL invocation exiting, then due to asynchronous close timing); both were corrected immediately and the targeted PTY + ND-025 regressions returned 3/3 PASS. Full validation follows before commit.
+
+Nested ND-025 validation initially became flaky because the PTY lifecycle test launched a nested pseudo-terminal while the workflow test itself was validating the suite. The PTY test is now skipped only under `NOREX_WORKFLOW_VALIDATION=1`, matching the existing recursion guard for ND-025 workflow tests; the normal top-level suite still executes and validates PTY behavior. Full top-level suite: 20/20 PASS.

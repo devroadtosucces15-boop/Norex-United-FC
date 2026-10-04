@@ -10,7 +10,7 @@ export const commands = Object.freeze([
   { id: 'shadow-check', label: 'Dev OS syntax validation', command: 'node --check (fixed Dev OS files)' },
   { id: 'shadow-tests', label: 'Dev OS service regression', command: 'node --test .norex/dev-os/services.test.mjs' },
 ]);
-const codeFiles = ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs'];
+const codeFiles = ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs'];
 const environment = { PATH: '/usr/bin:/bin', HOME: '/nonexistent', LANG: 'C.UTF-8', TZ: 'UTC', CI: '1', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0' };
 export function allowedPath(path) {
   return typeof path === 'string' && path.length < 512 && path.startsWith('.norex/') &&

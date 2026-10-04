@@ -11,6 +11,7 @@ import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
 import { routeCapability } from './capability-broker.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
+import { createPtyService } from './pty-service.mjs';
 
 const source = fileURLToPath(new URL('.', import.meta.url));
 async function fixture(fn) {
@@ -18,7 +19,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'permission-broker.mjs', 'pty-service.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -103,6 +104,21 @@ test('runtime export/restore is versioned, non-secret and marks active execution
     incompatible.close();
     restored.close();
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('PTY service supports allowlisted interactive stdin/read/close and explicitly gates resize', { skip: process.env.NOREX_WORKFLOW_VALIDATION === '1' }, async () => {
+  const pty = createPtyService({ cwd: tmpdir() });
+  assert.throws(() => pty.open('bash'), /allowlisted/);
+  const opened = pty.open('node-repl');
+  await new Promise(done => setTimeout(done, 100));
+  pty.write(opened.session_id, "console.log('interactive-ok')\n");
+  await new Promise(done => setTimeout(done, 100));
+  const state = pty.read(opened.session_id);
+  assert.match(state.output, /interactive-ok/);
+  assert.equal(pty.resize(opened.session_id, 100, 30).status, 'GATED');
+  assert.match(pty.close(opened.session_id).status, /CLOSING|CLOSED|EXITED/);
+  for (let i = 0; i < 20 && pty.read(opened.session_id).status === 'CLOSING'; i++) await new Promise(done => setTimeout(done, 50));
+  assert.match(pty.read(opened.session_id).status, /CLOSED|EXITED/);
 });
 
 test('filesystem create is exclusive, Shadow-scoped and rejects secret-like content', () => fixture(async root => {
