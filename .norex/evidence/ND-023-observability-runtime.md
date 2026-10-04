@@ -21,3 +21,7 @@ Browser capture and durable execution output now share a strict UTF-8 byte-prefi
 ## Persisted session pulse — 2026-10-04
 
 `/api/state` now separates execution cost telemetry from a session observability pulse derived only from persisted runtime facts. The pulse reports execution failures plus recorded provider selections/failures, Mike/user overrides and approval outcomes, CI pass/fail events, artifacts and evidence counts. It does not infer retries, fallbacks, allowance or provider health that the current runtime does not yet record.
+
+## UI runtime pulse — 2026-10-04
+
+The Dev OS cost-guard rail now loads persisted `/api/state` telemetry and displays exact recorded metered cost plus execution, CI-pass/fail and artifact counts. Failure to load telemetry degrades to an explicit unavailable state rather than fabricated values.

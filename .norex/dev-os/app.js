@@ -185,3 +185,16 @@ form.addEventListener('submit', async event => {
   }
 });
 input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 160) + 'px'; });
+
+async function refreshRuntimePulse() {
+  const cost = document.querySelector('#runtime-cost'), pulse = document.querySelector('#runtime-pulse');
+  if (!cost || !pulse) return;
+  try {
+    const state = await api('state');
+    const execution = state.telemetry?.execution, obs = state.telemetry?.observability;
+    if (!execution || !obs) throw new Error('Runtime telemetry unavailable');
+    cost.textContent = '$' + (execution.cost_microunits / 1000000).toFixed(2);
+    pulse.textContent = `${execution.executions} runs · ${obs.ci_passed} CI pass · ${obs.ci_failed} CI fail · ${obs.artifacts} artifacts`;
+  } catch { pulse.textContent = 'Runtime pulse unavailable'; }
+}
+refreshRuntimePulse();
