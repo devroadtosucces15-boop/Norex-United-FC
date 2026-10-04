@@ -4,11 +4,30 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { createServices } from './local-services.mjs';
 import { planIntent } from './control-plane.mjs';
+import { createRuntimeStore } from './runtime-store.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const assets = { '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
-export async function startServer({ projectRoot = resolve(root, '../..'), port = Number(process.env.PORT || 4177) } = {}) {
+export async function startServer({ projectRoot = resolve(root, '../..'), port = Number(process.env.PORT || 4177), runtimeStore = null } = {}) {
   const services = await createServices(projectRoot);
+  const sessionId = runtimeStore?.ensureSession({ id: 'shadow-local', project: 'Norex United', branch: 'foundation/norex-dev-shadow' });
+  const runRecorded = async (taskId, operation, execute) => {
+    if (!runtimeStore) return execute();
+    runtimeStore.upsertTask({ id: taskId, session_id: sessionId, title: operation, status: 'IN_PROGRESS', risk: 'R1', active_model: 'local', started_at: new Date().toISOString() });
+    const executionId = runtimeStore.startExecution({ session_id: sessionId, task_id: taskId, operation });
+    runtimeStore.appendEvent({ session_id: sessionId, task_id: taskId, execution_id: executionId, type: 'CIRunStarted', actor: 'local', payload: { operation } });
+    try {
+      const result = await execute();
+      const passed = ['passed', 'VALIDATED'].includes(result.status);
+      runtimeStore.finishExecution(executionId, { status: passed ? 'PASSED' : result.status, exit_code: result.exit_code ?? null, summary: passed ? 'Deterministic local execution passed' : 'Deterministic local execution completed' });
+      runtimeStore.appendEvent({ session_id: sessionId, task_id: taskId, execution_id: executionId, type: passed ? 'CIPassed' : 'CIFailed', actor: 'local', payload: { operation, status: result.status } });
+      return result;
+    } catch (error) {
+      runtimeStore.finishExecution(executionId, { status: 'FAILED', summary: 'Local execution failed' });
+      runtimeStore.appendEvent({ session_id: sessionId, task_id: taskId, execution_id: executionId, type: 'CIFailed', actor: 'local', payload: { operation, status: 'FAILED' } });
+      throw error;
+    }
+  };
   const server = createServer(async (req, res) => {
     const send = (status, value, type = 'application/json') => {
       res.writeHead(status, { 'Content-Type': type + '; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'", 'Referrer-Policy': 'no-referrer' });
@@ -59,7 +78,17 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
           data.approved !== true ||
           data.workflow_id !== 'ND-025'
         ) return send(400, { error: 'Explicit approval and an allowlisted workflow_id are required' });
-        return send(200, await services.executeWorkflow(data.workflow_id, data.approved));
+        if (runtimeStore) {
+          runtimeStore.upsertTask({ id: 'ND-025', session_id: sessionId, title: 'workflow:ND-025', status: 'IN_PROGRESS', risk: 'R1', active_model: 'local', started_at: new Date().toISOString() });
+          runtimeStore.recordApproval({ session_id: sessionId, task_id: 'ND-025', action: 'execute ND-025', scope: '.norex/** only', risk: 'R1', decision: 'APPROVED' });
+          runtimeStore.appendEvent({ session_id: sessionId, task_id: null, type: 'MikeApproved', actor: 'mike', payload: { workflow_id: 'ND-025', scope: '.norex/** only' } });
+        }
+        const result = await runRecorded('ND-025', 'workflow:ND-025', () => services.executeWorkflow(data.workflow_id, data.approved));
+        if (runtimeStore && result.evidence_path) {
+          runtimeStore.recordEvidence({ session_id: sessionId, task_id: 'ND-025', subject: 'ND-025 Shadow rehearsal', result: result.status, ref: result.evidence_path });
+          runtimeStore.appendEvent({ session_id: sessionId, task_id: 'ND-025', type: 'EvidenceRecorded', actor: 'local', payload: { ref: result.evidence_path, result: result.status } });
+        }
+        return send(200, result);
       }
 
       if (req.method === 'POST' && url.pathname === '/api/run') {
@@ -68,7 +97,7 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
         for await (const chunk of req) { body += chunk; if (body.length > 1024) { send(413, { error: 'Request too large' }); return; } }
         const data = JSON.parse(body);
         if (!data || Object.keys(data).sort().join(',') !== 'approved,command_id' || data.approved !== true) return send(400, { error: 'Explicit approval and a fixed command_id are required' });
-        return send(200, await services.run(data.command_id));
+        return send(200, await runRecorded('ND-020', 'command:' + data.command_id, () => services.run(data.command_id)));
       }
       send(404, { error: 'Unknown local operation' });
     } catch (error) { send(400, { error: error.code ? 'Local resource unavailable' : error.message }); }
@@ -79,6 +108,7 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
   return server;
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const server = await startServer();
+  const runtimeStore = createRuntimeStore();
+  const server = await startServer({ runtimeStore });
   console.log('Norex Dev OS Shadow: http://127.0.0.1:' + server.address().port);
 }

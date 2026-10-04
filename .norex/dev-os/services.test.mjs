@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { createServices, allowedPath, redact, execute, BRANCH } from './local-services.mjs';
 import { startServer } from './server.mjs';
 import { planIntent } from './control-plane.mjs';
+import { createRuntimeStore } from './runtime-store.mjs';
 
 const source = fileURLToPath(new URL('.', import.meta.url));
 async function fixture(fn) {
@@ -15,7 +16,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -26,6 +27,32 @@ async function fixture(fn) {
     await fn(root);
   } finally { await rm(root, { recursive: true, force: true }); }
 }
+test('runtime store persists normalized task/execution/event state and rejects secret-like payloads', async () => {
+  const root = await mkdtemp(resolve(tmpdir(), 'norex-runtime-test-'));
+  const dbPath = resolve(root, 'runtime/norex.db');
+  try {
+    let store = createRuntimeStore({ dbPath });
+    const session = store.ensureSession({ id: 'session-test', project: 'Norex United', branch: BRANCH });
+    store.upsertTask({ id: 'ND-027', session_id: session, title: 'Durable runtime state', status: 'IN_PROGRESS', risk: 'R1', active_model: 'local' });
+    const execution = store.startExecution({ session_id: session, task_id: 'ND-027', operation: 'shadow-tests' });
+    store.appendEvent({ session_id: session, task_id: 'ND-027', execution_id: execution, type: 'CIRunStarted', actor: 'local', payload: { command_id: 'shadow-tests' }, correlation_id: 'corr-1' });
+    store.finishExecution(execution, { status: 'PASSED', exit_code: 0, summary: '10 tests passed' });
+    store.appendEvent({ session_id: session, task_id: 'ND-027', execution_id: execution, type: 'CIPassed', actor: 'local', payload: { tests: 10 }, causation_id: 'corr-1' });
+    store.recordApproval({ session_id: session, task_id: 'ND-027', action: 'execute local validation', scope: '.norex/** only', risk: 'R1', decision: 'APPROVED' });
+    store.recordEvidence({ session_id: session, task_id: 'ND-027', subject: 'runtime persistence', result: 'PASSED', ref: '.norex/evidence/runtime.md' });
+    assert.deepEqual(store.snapshot(), { schema_version: 1, sessions: 1, tasks: 1, executions: 1, events: 2, approvals: 1, artifacts: 0, evidence: 1 });
+    assert.throws(() => store.appendEvent({ session_id: session, type: 'CIPassed', actor: 'local', payload: { token: 'secret-value' } }), /secret-like/);
+    assert.throws(() => store.appendEvent({ session_id: session, type: 'MadeUpEvent', actor: 'local' }), /Unknown event/);
+    store.close();
+    store = createRuntimeStore({ dbPath });
+    const events = store.listEvents(session);
+    assert.equal(events.length, 2);
+    assert.equal(events[0].type, 'CIRunStarted');
+    assert.deepEqual(events[1].payload, { tests: 10 });
+    store.close();
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('Control Plane recognizes ND-025 and gates unsupported intent', () => {
   const plan = planIntent('Run ND-025 Shadow rehearsal. Create a harmless Shadow-only evidence change under .norex/, inspect the resulting diff, run deterministic validation, record the evidence, and do not modify production files or main.');
   assert.equal(plan.recognized, true);
@@ -146,6 +173,33 @@ test('ND-025 execution is fixed, approval-gated and Shadow-scoped', {
     service.executeWorkflow('ND-025', true),
     /checkpoint|clean/i
   );
+}));
+
+test('HTTP deterministic execution records durable runtime events', () => fixture(async root => {
+  const runtimeRoot = await mkdtemp(resolve(tmpdir(), 'norex-http-runtime-'));
+  const store = createRuntimeStore({ dbPath: resolve(runtimeRoot, 'norex.db') });
+  const server = await startServer({ projectRoot: root, port: 0, runtimeStore: store });
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  try {
+    const response = await fetch(origin + '/api/run', {
+      method: 'POST',
+      headers: { 'X-Norex-Local': '1', Origin: origin, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command_id: 'node-version', approved: true })
+    });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).status, 'passed');
+    const snapshot = store.snapshot();
+    assert.equal(snapshot.sessions, 1);
+    assert.equal(snapshot.tasks, 1);
+    assert.equal(snapshot.executions, 1);
+    assert.equal(snapshot.events, 2);
+    assert.deepEqual(store.listEvents('shadow-local').map(event => event.type), ['CIRunStarted', 'CIPassed']);
+  } finally {
+    server.closeAllConnections();
+    await new Promise(done => server.close(done));
+    store.close();
+    await rm(runtimeRoot, { recursive: true, force: true });
+  }
 }));
 
 test('HTTP planning is same-origin, bounded and exact-shape', () => fixture(async root => {

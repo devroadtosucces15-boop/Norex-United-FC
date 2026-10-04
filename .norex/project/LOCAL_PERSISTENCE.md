@@ -40,3 +40,11 @@ Local project/runtime material stays local unless the Context Compiler selects i
 
 ## Portability
 Provide export/restore of non-secret runtime state later, but never make local runtime export a prerequisite for reconstructing canonical project decisions.
+
+## Implemented runtime slice — 2026-10-03
+
+`.norex/dev-os/runtime-store.mjs` now provides a dependency-free SQLite v1 runtime store using Node's built-in `node:sqlite`. The executable Dev OS startup opens `~/.norex/norex.db`, enables foreign keys and WAL, and creates versioned tables for sessions, tasks/runtime leases, executions, events, approvals, artifacts and evidence index.
+
+The local HTTP execution path records deterministic command/workflow executions and normalized CI events when a runtime store is attached. ND-025 approval/evidence metadata is indexed without storing evidence contents in SQLite. Runtime payloads reject common secret-like material; this is a defense-in-depth guard and does not replace the Credential Broker.
+
+Tests use disposable SQLite databases outside the repository and verify close/reopen durability, event ordering, normalized task/execution state, approval/evidence indexes, secret-like payload rejection and HTTP execution event recording. Provider adapters, credential resolution, export/restore, artifact file storage and full observability remain separate gated work.

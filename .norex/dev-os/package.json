@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check local-services.mjs && node --check control-plane.mjs && node --check app.js && node --check services.test.mjs",
+    "check": "node --check server.mjs && node --check local-services.mjs && node --check runtime-store.mjs && node --check control-plane.mjs && node --check app.js && node --check services.test.mjs",
     "test": "node --test services.test.mjs"
   },
   "engines": {
