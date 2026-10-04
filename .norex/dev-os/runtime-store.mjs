@@ -104,17 +104,17 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
     },
     snapshot() {
       const count = table => Number(db.prepare(`SELECT count(*) AS n FROM ${table}`).get().n);
-      return { schema_version: 1, sessions: count('sessions'), tasks: count('tasks'), executions: count('executions'), events: count('events'), approvals: count('approvals'), artifacts: count('artifacts'), evidence: count('evidence_index') };
+      return { schema_version: 2, sessions: count('sessions'), tasks: count('tasks'), executions: count('executions'), events: count('events'), approvals: count('approvals'), artifacts: count('artifacts'), execution_output: count('execution_output'), evidence: count('evidence_index') };
     },
     exportState() {
       const rows = table => db.prepare(`SELECT * FROM ${table}`).all();
-      return { format: 'norex-runtime-export', schema_version: 1, exported_at: now(), sessions: rows('sessions'), tasks: rows('tasks'), executions: rows('executions'), events: rows('events'), approvals: rows('approvals'), artifacts: rows('artifacts'), evidence_index: rows('evidence_index') };
+      return { format: 'norex-runtime-export', schema_version: 2, exported_at: now(), sessions: rows('sessions'), tasks: rows('tasks'), executions: rows('executions'), events: rows('events'), approvals: rows('approvals'), artifacts: rows('artifacts'), execution_output: rows('execution_output'), evidence_index: rows('evidence_index') };
     },
     restoreState(bundle) {
-      if (!bundle || bundle.format !== 'norex-runtime-export' || bundle.schema_version !== 1) throw new Error('Unsupported runtime export');
+      if (!bundle || bundle.format !== 'norex-runtime-export' || ![1,2].includes(bundle.schema_version)) throw new Error('Unsupported runtime export');
       ensureSafe(bundle);
       const current = store.snapshot();
-      if (current.sessions || current.tasks || current.executions || current.events || current.approvals || current.artifacts || current.evidence) throw new Error('Restore target must be empty');
+      if (current.sessions || current.tasks || current.executions || current.events || current.approvals || current.artifacts || current.execution_output || current.evidence) throw new Error('Restore target must be empty');
       db.exec('BEGIN IMMEDIATE');
       try {
         for (const row of bundle.sessions ?? []) db.prepare('INSERT INTO sessions(id,project,branch,created_at,updated_at) VALUES(?,?,?,?,?)').run(row.id,row.project,row.branch,row.created_at,row.updated_at);
@@ -122,6 +122,7 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
         for (const row of bundle.executions ?? []) db.prepare('INSERT INTO executions(id,session_id,task_id,operation,status,started_at,finished_at,exit_code,summary,provider,billing_mode,cost_microunits) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.session_id,row.task_id,row.operation,row.status === 'IN_PROGRESS' ? 'INTERRUPTED' : row.status,row.started_at,row.status === 'IN_PROGRESS' ? now() : row.finished_at,row.exit_code,row.summary,row.provider,row.billing_mode,row.cost_microunits);
         for (const row of bundle.approvals ?? []) db.prepare('INSERT INTO approvals(id,session_id,task_id,action,scope,risk,decision,created_at) VALUES(?,?,?,?,?,?,?,?)').run(row.id,row.session_id,row.task_id,row.action,row.scope,row.risk,row.decision,row.created_at);
         for (const row of bundle.artifacts ?? []) db.prepare('INSERT INTO artifacts(id,session_id,task_id,execution_id,kind,ref,created_at) VALUES(?,?,?,?,?,?,?)').run(row.id,row.session_id,row.task_id,row.execution_id,row.kind,row.ref,row.created_at);
+        if (bundle.schema_version >= 2) for (const row of bundle.execution_output ?? []) db.prepare('INSERT INTO execution_output(execution_id,output,truncated,created_at) VALUES(?,?,?,?)').run(row.execution_id,row.output,row.truncated,row.created_at);
         for (const row of bundle.evidence_index ?? []) db.prepare('INSERT INTO evidence_index(id,session_id,task_id,subject,result,ref,created_at) VALUES(?,?,?,?,?,?,?)').run(row.id,row.session_id,row.task_id,row.subject,row.result,row.ref,row.created_at);
         for (const row of bundle.events ?? []) db.prepare('INSERT INTO events(id,event_id,session_id,task_id,execution_id,type,actor,payload_json,causation_id,correlation_id,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(row.id,row.event_id,row.session_id,row.task_id,row.execution_id,row.type,row.actor,row.payload_json,row.causation_id,row.correlation_id,row.created_at);
         db.exec('COMMIT');

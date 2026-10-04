@@ -21,3 +21,7 @@ This is the recovery engine primitive, not yet a user-facing backup feature. Wri
 ## Portable bundle + integrity slice — 2026-10-04
 
 The Dev OS now writes an exclusive (`wx`), mode-0600 JSON recovery envelope containing the non-secret runtime export plus a SHA-256 integrity digest. Restore verifies format/version/algorithm and digest before passing state to the transactional restore engine. Tampered bundles are rejected. This primitive is not yet exposed as an unrestricted browser write endpoint.
+
+## Runtime export schema v2 — 2026-10-03
+
+Runtime export schema v2 now includes bounded `execution_output` rows. Restore accepts both v1 and v2 bundles: v1 restores without execution output, while v2 restores it after executions so foreign-key integrity is preserved. The outer recovery-envelope format remains v1 because its envelope structure and SHA-256 verification semantics did not change.

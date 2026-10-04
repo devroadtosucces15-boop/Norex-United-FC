@@ -77,7 +77,7 @@ test('runtime store persists normalized task/execution/event state and rejects s
     assert.equal(store.recordExecutionOutput(execution, 'x'.repeat(40000)).truncated, true);
     assert.equal(store.getExecutionOutput(execution).output.length, 32768);
     assert.throws(() => store.recordExecutionOutput(execution, 'password=secret'), /secret-like/);
-    assert.deepEqual(store.snapshot(), { schema_version: 1, sessions: 1, tasks: 1, executions: 1, events: 2, approvals: 1, artifacts: 1, evidence: 1 });
+    assert.deepEqual(store.snapshot(), { schema_version: 2, sessions: 1, tasks: 1, executions: 1, events: 2, approvals: 1, artifacts: 1, execution_output: 1, evidence: 1 });
     assert.throws(() => store.appendEvent({ session_id: session, type: 'CIPassed', actor: 'local', payload: { token: 'secret-value' } }), /secret-like/);
     assert.throws(() => store.appendEvent({ session_id: session, type: 'MadeUpEvent', actor: 'local' }), /Unknown event/);
     store.close();
@@ -98,16 +98,18 @@ test('runtime export/restore is versioned, non-secret and marks active execution
     sourceStore.upsertTask({ id: 'ND-R', session_id: session, title: 'Recovery', status: 'IN_PROGRESS', risk: 'R1' });
     sourceStore.startExecution({ id: 'active-execution', session_id: session, task_id: 'ND-R', operation: 'recovery-test' });
     sourceStore.appendEvent({ session_id: session, task_id: 'ND-R', execution_id: 'active-execution', type: 'RecoveryCheckpoint', actor: 'local', payload: { checkpoint: 'before-export' } });
+    sourceStore.recordExecutionOutput('active-execution', 'recoverable output');
     const bundle = sourceStore.exportState();
     sourceStore.close();
     assert.equal(bundle.format, 'norex-runtime-export');
-    assert.equal(bundle.schema_version, 1);
+    assert.equal(bundle.schema_version, 2);
     assert.doesNotMatch(JSON.stringify(bundle), /credential:\/\//i);
     const restored = createRuntimeStore({ dbPath: resolve(root, 'restored.db') });
     const snapshot = restored.restoreState(bundle);
     assert.equal(snapshot.sessions, 1);
     assert.equal(snapshot.executions, 1);
     assert.equal(restored.exportState().executions[0].status, 'INTERRUPTED');
+    assert.equal(restored.getExecutionOutput('active-execution').output, 'recoverable output');
     assert.throws(() => restored.restoreState(bundle), /empty/);
     const incompatible = createRuntimeStore({ dbPath: resolve(root, 'bad.db') });
     assert.throws(() => incompatible.restoreState({ format: 'norex-runtime-export', schema_version: 999 }), /Unsupported/);
@@ -335,7 +337,7 @@ test('HTTP deterministic execution records durable runtime events', () => fixtur
     assert.equal(response.status, 200);
     assert.equal((await response.json()).status, 'passed');
     const state = await (await fetch(origin + '/api/state', { headers: { 'X-Norex-Local': '1' } })).json();
-    assert.equal(state.runtime.schema_version, 1);
+    assert.equal(state.runtime.schema_version, 2);
     assert.equal(state.runtime.executions, 1);
     const snapshot = store.snapshot();
     assert.equal(snapshot.sessions, 1);
