@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-04T03:00:37.115Z",
+ "fetchedAt": "2026-10-04T03:10:36.647Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,42 +80,6 @@
   "leagueAppearances": "160"
  },
  "members": [
-  {
-   "name": "R3PTILI4N",
-   "gamesPlayed": "6",
-   "winRate": "50",
-   "goals": "0",
-   "assists": "2",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "86",
-   "passSuccessRate": "80",
-   "ratingAve": "7.8",
-   "tacklesMade": "9",
-   "tackleSuccessRate": "45",
-   "proName": "REPTILIAN",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "178",
-   "proNationality": "21",
-   "proOverall": "75",
-   "proOverallStr": "75",
-   "manOfTheMatch": "3",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
   {
    "name": "ASLweezy81",
    "gamesPlayed": "4",
@@ -1597,20 +1561,9 @@
   "midfielder": 10,
   "goalkeeper": 1,
   "forward": 20,
-  "defender": 10
+  "defender": 9
  },
  "career": [
-  {
-   "name": "R3PTILI4N",
-   "proPos": "5",
-   "gamesPlayed": "87",
-   "goals": "6",
-   "assists": "14",
-   "manOfTheMatch": "15",
-   "ratingAve": "7.9",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
-  },
   {
    "name": "ASLweezy81",
    "proPos": "5",
@@ -1625,12 +1578,12 @@
   {
    "name": "XxEL_AXEL_ONExX",
    "proPos": "25",
-   "gamesPlayed": "176",
+   "gamesPlayed": "177",
    "goals": "118",
-   "assists": "89",
+   "assists": "90",
    "manOfTheMatch": "28",
    "ratingAve": "7.4",
-   "prevGoals": "1",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
@@ -1713,12 +1666,12 @@
   {
    "name": "JayyZun-",
    "proPos": "14",
-   "gamesPlayed": "203",
-   "goals": "94",
-   "assists": "74",
+   "gamesPlayed": "204",
+   "goals": "95",
+   "assists": "76",
    "manOfTheMatch": "15",
    "ratingAve": "7.2",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "midfielder"
   },
   {
@@ -1746,12 +1699,12 @@
   {
    "name": "CGM Splash",
    "proPos": "14",
-   "gamesPlayed": "143",
-   "goals": "49",
+   "gamesPlayed": "144",
+   "goals": "50",
    "assists": "55",
    "manOfTheMatch": "11",
    "ratingAve": "7.5",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "midfielder"
   },
   {
