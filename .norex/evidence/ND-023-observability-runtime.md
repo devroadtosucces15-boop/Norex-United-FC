@@ -25,3 +25,7 @@ Browser capture and durable execution output now share a strict UTF-8 byte-prefi
 ## UI runtime pulse — 2026-10-04
 
 The Dev OS cost-guard rail now loads persisted `/api/state` telemetry and displays exact recorded metered cost plus execution, CI-pass/fail and artifact counts. Failure to load telemetry degrades to an explicit unavailable state rather than fabricated values.
+
+## Failure-state semantics — 2026-10-04
+
+Session observability now counts only explicit terminal execution failure states (`FAILED`, `TIMEOUT`, `SPAWN_FAILED`, `OUTPUT_LIMIT`). `IN_PROGRESS` is no longer misclassified as an execution failure. A deterministic regression test verifies an active execution contributes zero failures and a completed `FAILED` execution contributes one.

@@ -25,3 +25,5 @@ The canonical SQLite database is explicitly chmod 0600 after open; WAL/SHM compa
 ## Persisted session pulse — 2026-10-04
 
 `/api/state` now exposes two telemetry views: exact execution/cost aggregation and a session observability pulse. The pulse is computed only from persisted execution rows and normalized events, covering execution failures, provider-selection/failure events, user overrides, Mike approval/rejection events, CI results, artifacts and evidence. Retry/fallback and provider-allowance fields are intentionally not synthesized until executable dispatch records those facts.
+
+Failure telemetry is terminal-state specific: active `IN_PROGRESS` executions are not failures; `FAILED`, `TIMEOUT`, `SPAWN_FAILED`, and `OUTPUT_LIMIT` are counted as execution failures.

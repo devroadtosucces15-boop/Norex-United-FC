@@ -125,7 +125,7 @@ export function createRuntimeStore({ dbPath = resolve(homedir(), '.norex/norex.d
     sessionObservability(session_id) {
       const rows = db.prepare("SELECT type,count(*) AS n FROM events WHERE session_id=? GROUP BY type ORDER BY type").all(session_id);
       const counts = Object.fromEntries(rows.map(row => [row.type, Number(row.n)]));
-      const failures = db.prepare("SELECT count(*) AS n FROM executions WHERE session_id=? AND status != 'PASSED'").get(session_id);
+      const failures = db.prepare("SELECT count(*) AS n FROM executions WHERE session_id=? AND UPPER(status) IN ('FAILED','TIMEOUT','SPAWN_FAILED','OUTPUT_LIMIT')").get(session_id);
       return { session_id, execution_failures: Number(failures.n), provider_selections: counts.AgentSelected ?? 0, provider_failures: counts.AgentFailed ?? 0, user_overrides: counts.UserOverride ?? 0, approvals: (counts.MikeApproved ?? 0) + (counts.MikeRejected ?? 0), ci_passed: counts.CIPassed ?? 0, ci_failed: counts.CIFailed ?? 0, artifacts: counts.ArtifactCreated ?? 0, evidence_records: counts.EvidenceRecorded ?? 0 };
     },
     exportState() {

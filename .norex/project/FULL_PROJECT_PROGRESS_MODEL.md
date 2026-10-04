@@ -31,7 +31,7 @@ FE implementation is verified for all six reconciled items. Validation is PARTIA
 
 BE implementation is verified for all thirteen reconciled items. Rollout labels describe exposure state, not proof of production validation; therefore rollout/production-validation points remain open until explicit evidence is reconciled.
 
-Shadow percentage is tracked from validated implementation slices, currently approximately 91.2%. This is intentionally more granular than DONE-only roadmap status.
+Shadow percentage is tracked from validated implementation slices. After terminal failure-state telemetry hardening, the current estimate is approximately 91.4%. This is intentionally more granular than DONE-only roadmap status.
 
 Adoption evidence overlaps underlying engineering evidence, but adoption is a separate readiness dimension: M0-M3 can gain sub-item completion as their prerequisites become executable/validated; M4 remains explicitly owner-gated.
 
@@ -49,9 +49,9 @@ The score is normalized across four lanes so the larger Shadow checklist does no
 
 - FE: 6/12 complete = 50.0%. All six implementation points are verified; validation points remain open.
 - BE: 13/26 complete = 50.0%. All thirteen implementation points are verified; rollout/production-validation points remain open.
-- Shadow: 91.2% from the current granular ND checklist.
+- Shadow: 91.4% from the current granular ND checklist.
 - Adoption: 15/22 prerequisites currently evidenced = 68.2%. M0=4/4, M1=4/4, M2=2/5, M3=5/5, M4=0/4. This is prerequisite evidence only and does not approve any gate.
 
-Equal-lane full-project baseline: `(50.0 + 50.0 + 91.2 + 68.2) / 4 = 64.85%`, reported as **64.9%**.
+Equal-lane full-project baseline: `(50.0 + 50.0 + 91.4 + 68.2) / 4 = 64.9%`, reported as **64.9%**.
 
 The adoption count is conservative: Claude/OpenAI/MCP remain non-executable REVIEW contracts, while M4 migration/reconciliation/regression/owner-adoption actions have not occurred. M3 counts executable prerequisite surfaces, not approval of M3 as a migration gate.
