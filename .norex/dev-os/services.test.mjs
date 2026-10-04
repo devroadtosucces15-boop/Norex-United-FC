@@ -214,6 +214,9 @@ test('HTTP deterministic execution records durable runtime events', () => fixtur
     });
     assert.equal(response.status, 200);
     assert.equal((await response.json()).status, 'passed');
+    const state = await (await fetch(origin + '/api/state', { headers: { 'X-Norex-Local': '1' } })).json();
+    assert.equal(state.runtime.schema_version, 1);
+    assert.equal(state.runtime.executions, 1);
     const snapshot = store.snapshot();
     assert.equal(snapshot.sessions, 1);
     assert.equal(snapshot.tasks, 1);
