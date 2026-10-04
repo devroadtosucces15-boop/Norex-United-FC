@@ -28,7 +28,7 @@ async function showArtifact(name) {
     if (name === 'preview') {
       badge.textContent = 'LOCAL'; meta.textContent = 'Ephemeral Chromium · localhost only · no persistent profile · $0.00';
       output.textContent = 'Preview is approval-gated and may inspect only this local Dev OS origin.';
-      const run = button('Approve local preview', async () => { run.disabled = true; badge.textContent = 'RUNNING'; try { const result = await api('preview', { approved: true }); output.textContent = `${result.status.toUpperCase()} · ${result.url} · exit ${result.exit_code}\n\n${result.output}`; badge.textContent = result.status.toUpperCase(); } catch (error) { output.textContent = error.message; badge.textContent = 'BLOCKED'; } finally { run.disabled = false; } });
+      const run = button('Approve local preview', async () => { run.disabled = true; badge.textContent = 'RUNNING'; try { const result = await api('preview', { approved: true }); output.textContent = `${result.status.toUpperCase()} · ${result.url} · exit ${result.exit_code}\n\n${result.output}`; badge.textContent = result.status.toUpperCase(); } catch (error) { output.textContent = error.message; badge.textContent = 'BLOCKED'; } finally { run.disabled = false; refreshRuntimePulse(); } });
       controls.append(run); return;
     }
     const state = await api('state');
