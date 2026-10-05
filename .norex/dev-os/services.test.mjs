@@ -262,6 +262,18 @@ test('PTY output is UTF-8 byte bounded and overflow terminates the process group
   assert.ok(state.output.endsWith('€') || !state.output.includes('€'));
 });
 
+test('PTY sessions enforce timeout and bounded active-session count', { skip: process.env.NOREX_WORKFLOW_VALIDATION === '1' }, async () => {
+  assert.throws(() => createPtyService({ cwd: tmpdir(), timeoutMs: 0 }), /timeout rejected/);
+  const pty = createPtyService({ cwd: tmpdir(), timeoutMs: 50, maxSessions: 1 });
+  const opened = pty.open('node-repl');
+  assert.throws(() => pty.open('node-repl'), /session limit reached/);
+  for (let i = 0; i < 20 && pty.read(opened.session_id).status === 'RUNNING'; i++) await new Promise(done => setTimeout(done, 25));
+  assert.equal(pty.read(opened.session_id).status, 'TIMEOUT');
+  const replacement = pty.open('node-repl');
+  assert.equal(replacement.status, 'RUNNING');
+  pty.close(replacement.session_id);
+});
+
 test('filesystem create is exclusive, Shadow-scoped and rejects secret-like content', () => fixture(async root => {
   await mkdir(resolve(root, '.norex/notes'), { recursive: true });
   const services = await createServices(root);

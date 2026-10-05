@@ -35,3 +35,7 @@ TESTS/TERMINAL now poll the local state surface while an approved fixed command 
 ## PTY UTF-8/output-limit hardening — 2026-10-04
 
 The allowlisted PTY now applies the shared UTF-8 byte-bounded append helper at the 128 KiB output ceiling. Crossing the ceiling preserves a complete UTF-8 prefix, records `OUTPUT_LIMIT`, and terminates the detached PTY process group instead of silently continuing to execute while discarding output. The close handler preserves the terminal limit state. A deterministic multibyte regression validates both the byte ceiling and termination behavior. Native resize and unrestricted terminal input remain gated.
+
+## PTY lifecycle bounds — 2026-10-04
+
+Allowlisted PTY sessions now have a validated bounded lifetime (five-minute default, configurable only within a 1 ms–30 minute guard), a bounded active-session count (eight by default, max 32), terminal-session pruning before replacement, and explicit `TIMEOUT` process-group termination. Spawn errors are normalized to `SPAWN_FAILED` with bounded/redacted diagnostics. Regression coverage validates timeout, active-session refusal and safe replacement after a terminal state.
