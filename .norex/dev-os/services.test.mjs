@@ -14,6 +14,7 @@ import { routeCapability } from './capability-broker.mjs';
 import { routeWithDurableApproval } from './routing-service.mjs';
 import { probeProviderPresence, classifyProviderAuthStatus } from './provider-probe.mjs';
 import { planProviderDispatch } from './provider-adapter.mjs';
+import { dispatchCodexReadOnly } from './codex-dispatch.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
 import { permissionWithDurableGrant, permissionApprovalAction } from './permission-service.mjs';
 import { createPtyService } from './pty-service.mjs';
@@ -28,7 +29,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'provider-adapter.mjs', 'permission-broker.mjs', 'permission-service.mjs', 'pty-service.mjs', 'native-pty-service.mjs', 'mcp-adapter.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'utf8.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'provider-adapter.mjs', 'codex-dispatch.mjs', 'permission-broker.mjs', 'permission-service.mjs', 'pty-service.mjs', 'native-pty-service.mjs', 'mcp-adapter.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'utf8.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -127,6 +128,16 @@ test('provider adapters remain gated until auth, allowance, billing, route and p
   assert.equal(planProviderDispatch({ provider: 'codex', presence: { ...base, billing: 'UNKNOWN_BILLING' }, route, permission: { status: 'ALLOWED' } }).reason, 'billing-not-verified-included');
   assert.equal(planProviderDispatch({ provider: 'codex', presence: base, route, permission: { status: 'APPROVAL_REQUIRED' } }).reason, 'security-permission-required');
   assert.throws(() => planProviderDispatch({ provider: 'unknown' }), /rejected/);
+});
+
+test('Codex dispatch adapter requires READY subscription route and enforces read-only ephemeral flags', async () => {
+  const readiness = { status: 'READY', provider: 'codex', billing_mode: 'SUBSCRIPTION_EXISTING_ACCESS', executable: '/home/mrsuccess/.local/bin/codex' };
+  let observed;
+  const execFileAsync = async (file, args, options) => { observed = { file, args, options }; return { stdout: 'NOREX_READY\n', stderr: '' }; };
+  const result = await dispatchCodexReadOnly({ prompt: 'review only', projectRoot: '/tmp/project', readiness, execFileAsync });
+  assert.equal(result.status, 'PASSED'); assert.equal(result.output, 'NOREX_READY\n');
+  assert.deepEqual(observed.args.slice(0, 7), ['exec', '--ephemeral', '--sandbox', 'read-only', '--ignore-user-config', '--color', 'never']);
+  await assert.rejects(() => dispatchCodexReadOnly({ prompt: 'x', projectRoot: '/tmp/project', readiness: { ...readiness, status: 'GATED' }, execFileAsync }), /readiness/);
 });
 
 test('MCP adapter is provider-neutral and refuses unverified billing/security/route mismatches', () => {

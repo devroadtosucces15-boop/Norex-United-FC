@@ -23,3 +23,7 @@ Credentials are resolved by the Credential Broker and never injected into model-
 ## Executable readiness gate — 2026-10-04
 
 The shared local `provider-adapter.mjs` now implements deterministic dispatch-readiness policy for Codex without invoking Codex. It requires installed presence plus separately VERIFIED auth, AVAILABLE allowance, verified included/free billing, an exact Capability Broker route and an ALLOWED permission decision. The current presence probe intentionally reports auth/allowance/billing as UNKNOWN, so real Codex dispatch remains GATED and cannot spend money.
+
+## Read-only executable adapter — 2026-10-04
+
+`.norex/dev-os/codex-dispatch.mjs` implements the first bounded executable worker path. It accepts only an already-READY Codex subscription route, pins the trusted local executable, limits prompt/output size and timeout, and forces `exec --ephemeral --sandbox read-only --ignore-user-config`. Browser exposure and generalized write-capable agent execution remain separate policy decisions.
