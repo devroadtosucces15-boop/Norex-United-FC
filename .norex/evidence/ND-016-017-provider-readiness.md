@@ -18,3 +18,7 @@ After owner approval to cross the provider gate, Codex was invoked once through 
 ## Codex read-only dispatch adapter — 2026-10-04
 
 A bounded executable Codex adapter now requires a READY provider plan bound specifically to Codex `SUBSCRIPTION_EXISTING_ACCESS`, the exact trusted CLI path, a non-empty <=16 KiB prompt, and runs only ephemeral/read-only/no-user-config Codex execution with a 120-second timeout and 128 KiB output ceiling. Deterministic tests inject the process runner and prove the exact safety flags plus fail-closed behavior without consuming provider allowance. This adapter is not yet exposed as an unrestricted browser endpoint.
+
+## Claude subscription dispatch verification — 2026-10-04
+
+Claude Code now reports authenticated through `claude.ai` with a Pro subscription. An owner-approved plan-mode sentinel invocation returned exactly `NOREX_CLAUDE_READY`, exit 0. A bounded executable adapter now requires a READY Claude `SUBSCRIPTION_EXISTING_ACCESS` route, exact trusted CLI path, <=16 KiB prompt, 120-second timeout and 128 KiB output ceiling, and forces non-interactive `--permission-mode plan`. It does not enable write-capable Claude execution or API-key billing.

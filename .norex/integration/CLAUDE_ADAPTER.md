@@ -30,3 +30,7 @@ No raw credential in prompt/context/event/log. Credential Broker resolves any au
 ## Executable readiness gate — 2026-10-04
 
 The shared local `provider-adapter.mjs` now implements deterministic dispatch-readiness policy for Claude without invoking Claude. It requires installed presence plus separately VERIFIED auth, AVAILABLE allowance, verified included/free billing, an exact Capability Broker route and an ALLOWED permission decision. The current presence probe intentionally reports auth/allowance/billing as UNKNOWN, so real Claude dispatch remains GATED and cannot spend money.
+
+## Plan-only executable adapter — 2026-10-04
+
+Claude Code is now verified on the user's existing Claude Pro subscription. `.norex/dev-os/claude-dispatch.mjs` provides a bounded executable worker path that accepts only an already-READY subscription route and forces non-interactive plan permission mode. General write-capable execution and browser exposure remain separate policy decisions; no Anthropic Console/API-key billing path is enabled.
