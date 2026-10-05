@@ -69,7 +69,62 @@ ${pitch(d, true)}
     const q = p.doc?.quiz || [], steps = p.doc?.steps || [];
     const manage = manager() ? `<div class="tx-manage card"><h3>Manager controls</h3><div class="tx-actions"><button class="btn sm" data-publish="${p.published ? '0' : '1'}">${p.published ? 'Unpublish' : 'Publish'}</button><button class="btn sm ghost" data-edit>Open studio</button><button class="btn sm ghost" data-restore>Version history</button>${p.published ? `<button class="btn sm ghost" data-discord>📣 ${p.discord ? 'Share again' : 'Share to Discord'}</button>` : ''}<button class="btn sm danger" data-archive>Archive</button></div><small class="muted">Server-side validation remains authoritative for every save and quiz.</small></div>` : '';
     const quiz = q.length ? `<form class="tx-quiz card" data-quiz><h3>Knowledge check</h3>${q.map((x, i) => `<fieldset><legend>${i + 1}. ${esc(x.q)}</legend>${x.options.map((o, j) => `<label><input type="radio" name="q${i}" value="${j}" required> <span>${esc(o)}</span></label>`).join('')}</fieldset>`).join('')}<button class="btn" type="submit">Check answers</button></form>` : '';
-    root.innerHTML = `<button class="linkish tx-back" type="button" data-back>← All plays</button><div class="tx-title"><div><p class="kicker">${esc(p.category)}</p><h2>${esc(p.title)}</h2><p class="muted">Version ${p.version}${p.mine?.assigned ? ' · assigned to you' : ''}</p></div>${p.mine?.learned ? '<span class="tag tx-done">✓ Learned</span>' : p.published ? '<button class="btn sm ghost" data-learn>Mark learned</button>' : '<span class="tag">Draft</span>'}</div>${pitch(p.doc || {})}<div class="tx-steps">${steps.length ? `<button class="btn sm ghost" type="button" data-play>▶ Play (${steps.length} keyframe${steps.length === 1 ? '' : 's'})</button>` : '<span class="muted">No keyframes in this version yet.</span>'}</div>${quiz}${manage}`;
+    root.innerHTML = `<button class="linkish tx-back" type="button" data-back>← All plays</button><div class="tx-title"><div><p class="kicker">${esc(p.category)}</p><h2>${esc(p.title)}</h2><p class="muted">Version ${p.version}${p.mine?.assigned ? ' · assigned to you' : ''}</p></div>${p.mine?.learned ? '<span class="tag tx-done">✓ Learned</span>' : p.published ? '<button class="btn sm ghost" data-learn>Mark learned</button>' : '<span class="tag">Draft</span>'}</div>${pitch(p.doc || {})}<div class="tx-steps">${steps.length ? `<button class="btn sm ghost" type="button" data-play>▶ Play (${steps.length} keyframe${steps.length === 1 ? '' : 's'})</button>` : '<span class="muted">No keyframes in this version yet.</span>'}</div>${quiz}${manage}<div class="tx-media card" data-media-card></div>`;
+    loadMedia();
+  }
+  // ---- recordings (BE1): tab-capture video + voice-over, uploaded raw to R2 by managers, played back by members ----
+  let rec = null;
+  const RECORDABLE = { video: 'video/webm', voice: 'audio/webm' };
+  const recordControls = () => rec
+    ? `<div class="tx-rec"><span class="tx-rec-dot"></span> Recording ${rec.kind === 'video' ? 'the board' : 'voice-over'}… <button class="btn sm danger" type="button" data-rec-stop>■ Stop</button></div>`
+    : `<div class="tx-actions"><button class="btn sm ghost" type="button" data-rec-start="video">🎥 Record video (pick this tab)</button><button class="btn sm ghost" type="button" data-rec-start="voice">🎙 Record voice-over</button></div>`;
+  async function loadMedia() {
+    const box = root.querySelector('[data-media-card]'); if (!box) return;
+    let media = [];
+    try { media = (await call(`/api/plays/${active}/media`)).media || []; } catch { box.remove(); return; }
+    const row = (m) => `<div class="tx-media-row"><span>${m.kind === 'video' ? '🎬 Video' : '🎙 Voice-over'}</span><small class="muted">${new Date(m.at).toLocaleDateString()} · ${(m.size / 1e6).toFixed(1)} MB</small><button class="btn sm ghost" type="button" data-watch="${m.id}" data-kind="${m.kind}">${m.kind === 'video' ? '▶ Watch' : '🔊 Listen'}</button>${manager() ? `<button class="btn sm danger" type="button" data-hide-media="${m.id}">Hide</button>` : ''}</div>`;
+    box.innerHTML = `<h3>Recordings</h3>${media.length ? media.map(row).join('') : '<p class="muted">No video or voice-over yet.</p>'}<div class="tx-media-player"></div>${manager() ? recordControls() : ''}`;
+  }
+  async function watch(mid, kind) {
+    const player = root.querySelector('.tx-media-player'); if (!player) return;
+    const s = session();
+    const r = await fetch(`${API}/api/plays/${active}/media/${mid}`, { headers: { Authorization: `Bearer ${s?.token}` }, cache: 'no-store' });
+    if (!r.ok) throw new Error('Could not load that recording.');
+    const url = URL.createObjectURL(await r.blob());
+    player.innerHTML = kind === 'video' ? `<video controls playsinline src="${url}"></video>` : `<audio controls src="${url}"></audio>`;
+  }
+  async function startRec(kind) {
+    if (rec) return;
+    try {
+      const stream = kind === 'video'
+        ? await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false, preferCurrentTab: true })
+        : await navigator.mediaDevices.getUserMedia({ audio: true });
+      const chunks = [];
+      const mime = MediaRecorder.isTypeSupported(RECORDABLE[kind]) ? RECORDABLE[kind] : '';
+      const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      recorder.onstop = () => finishRec(kind, chunks);
+      stream.getTracks().forEach((tr) => tr.addEventListener('ended', stopRec));
+      rec = { kind, recorder, stream };
+      recorder.start(1000);
+      loadMedia();
+    } catch (x) { toast(x.name === 'NotAllowedError' ? 'Recording was cancelled or blocked.' : x.message, true); }
+  }
+  function stopRec() { if (rec && rec.recorder.state !== 'inactive') rec.recorder.stop(); }
+  async function finishRec(kind, chunks) {
+    const cur = rec; rec = null;
+    cur.stream.getTracks().forEach((tr) => tr.stop());
+    const blob = new Blob(chunks, { type: RECORDABLE[kind] });
+    if (!blob.size) { toast('Nothing was recorded.', true); return loadMedia(); }
+    toast('Uploading…');
+    try {
+      const s = session();
+      const r = await fetch(`${API}/api/plays/${active}/media?kind=${kind}`, { method: 'POST', headers: { Authorization: `Bearer ${s?.token}`, 'Content-Type': blob.type }, body: blob });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+      toast(`${kind === 'video' ? 'Video' : 'Voice-over'} saved.`);
+    } catch (x) { toast(x.message, true); }
+    loadMedia();
   }
   async function load(openId) {
     root.innerHTML = UI.skeleton('rows', 5);
@@ -207,6 +262,10 @@ ${pitch(d, true)}
       const o = e.target.closest('[data-open]'); if (o) { try { await open(o.dataset.open); } catch (x) { toast(x.message, true); } return; }
       if (e.target.closest('[data-back]')) { history.replaceState(null, '', location.pathname); await load(); return; }
       if (e.target.closest('[data-play]')) { playback(); return; }
+      const rs = e.target.closest('[data-rec-start]'); if (rs) { startRec(rs.dataset.recStart); return; }
+      if (e.target.closest('[data-rec-stop]')) { stopRec(); return; }
+      const wt = e.target.closest('[data-watch]'); if (wt) { try { await watch(wt.dataset.watch, wt.dataset.kind); } catch (x) { toast(x.message, true); } return; }
+      const hd = e.target.closest('[data-hide-media]'); if (hd) { if (!(await UI.confirm({ title: 'Hide this recording?', text: 'It disappears for members; the file is kept.', ok: 'Hide', danger: true }))) return; try { await call(`/api/plays/${active}/media/${hd.dataset.hideMedia}/delete`, {}); toast('Recording hidden.'); loadMedia(); } catch (x) { toast(x.message, true); } return; }
       if (e.target.closest('[data-learn]')) { try { await call(`/api/plays/${active}/learned`, { learned: true }); detail.mine.learned = true; toast('Marked learned.'); detailView(); } catch (x) { toast(x.message, true); } return; }
       const pub = e.target.closest('[data-publish]'); if (pub) { try { detail = await call(`/api/plays/${active}/publish`, { published: pub.dataset.publish === '1' }); toast(detail.published ? 'Play published.' : 'Play unpublished.'); detailView(); } catch (x) { toast(x.message, true); } return; }
       if (e.target.closest('[data-edit]')) { studio = { doc: structuredClone(detail.doc || STARTER_DOC), tool: 'move', drawColor: COLORS[0], selectedPieceId: null }; detailView(); return; }

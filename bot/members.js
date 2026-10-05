@@ -37,6 +37,7 @@ import { socialRoute, touch } from './social.js';
 import { chatRoute, chatSocket } from './chat.js';
 import { mediaUploadRoute } from './media.js';
 import { playsRoute } from './plays.js';
+import { playMediaRoute, playMediaUpload } from './playmedia.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
@@ -394,6 +395,8 @@ export async function handleMembers(request, env, ctx, loadSite) {
     const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)
     if (ctx?.waitUntil) ctx.waitUntil(seen); else await seen;
     if (url.pathname === '/api/feed/upload' && request.method === 'POST') return cors(env, await mediaUploadRoute(request, me, env, url)); // P6.1b – raw file body
+    const pmu = /^\/api\/plays\/(\d+)\/media$/.exec(url.pathname);
+    if (pmu && request.method === 'POST') return cors(env, await playMediaUpload(request, me, env, url, Number(pmu[1]), log)); // BE1 – Tactics Studio recording, raw body
     if (url.pathname === '/api/events/report/poster' && request.method === 'POST') return cors(env, await reportPosterRoute(request, me, env, url)); // BE11 – raw PNG body
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
     const res = await route(url.pathname, request.method, body, me, env, loadSite, url);
@@ -662,6 +665,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (lkr) return lkr;
   const hub = await hubRoute(p, method, body, me, env, log); // BE8 Hub: online count + waves (live roster is the HUB_ROOM socket)
   if (hub) return hub;
+  const pmr = await playMediaRoute(p, method, me, env); // BE1 recordings: list + file (before playsRoute, which 404s unknown sub-paths)
+  if (pmr) return pmr;
   const ply = await playsRoute(p, method, body, me, env, log); // BE1 Tactics Studio: plays, versions, assignment, quiz
   if (ply) return ply;
   const itl = await intelRoute(p, method, body, me, env, loadSite, log); // BE10 Club Intelligence: report + act/remind on a recommendation
