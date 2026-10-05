@@ -41,5 +41,10 @@ sqlite.prepare("INSERT INTO achievements (user_id, id, at, seen) VALUES ('800', 
 r = await call(member, '/api/locker');
 t('achievements: only unseen ones, with icon/name/tier', r.d.achievements.length === 1 && r.d.achievements[0].id === 'debut' && r.d.achievements[0].icon === '👟' && r.d.achievements[0].tier === 'common');
 
+// ----- front end: the hub tab is wired to the route -----
+import { readFileSync } from 'node:fs';
+const appJs = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+t('hub: Locker Room tab is flag-gated and loads /api/locker', appJs.includes("['locker', '🎽 Locker Room']") && appJs.includes("call('/api/locker')") && appJs.includes('viewLocker'));
+
 t('no login → 401', (await call(null, '/api/locker')).s === 401);
 done();
