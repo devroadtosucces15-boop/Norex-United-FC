@@ -28,6 +28,7 @@ export const TYPES = {
   announce: { icon: '📣', label: 'Announcements & rules', def: 'dm', mute: false },
   claim: { icon: '🪪', label: 'Player claim decisions', def: 'dm' },
   trial: { icon: '🔭', label: 'My scouting tips', def: 'dm' },
+  trialstage: { icon: '🏟️', label: 'Trial stage changes – my trial and the Dugout board', def: 'off' }, // BE4 (opt-in)
   rush: { icon: '⚡', label: 'My Rush results', def: 'site' },
   badge: { icon: '🎖️', label: 'Badges & achievements I get', def: 'site' },
   request: { icon: '📨', label: 'My club & privacy requests', def: 'dm' },

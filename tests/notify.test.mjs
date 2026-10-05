@@ -128,6 +128,33 @@ t('managers get pending Rush results', (await list(mgr)).items.some((n) => n.tit
 await call(mgr, '/api/rush/decide', { id: r.d.id, action: 'confirm' });
 t('submitter hears the Rush result was confirmed', (await list(member)).items.some((n) => n.type === 'rush' && n.title.includes('confirmed')));
 
+// ----- BE4: trial stage changes (opt-in DMs for the player and the Dugout) -----
+const stagePlayer = await login('502', [], 'Stage Player');
+sqlite.prepare("INSERT OR REPLACE INTO claims (user_id, player, player_name, status, at) VALUES ('502', ?, 'Stage Player', 'approved', ?)").run(pl[1].k, Date.now());
+await call(mgr, '/api/trials/add', { ea: 'Stage_Lad', platform: 'PS5', positions: ['CM'], status: 'applied' });
+const stageCard = (await call(mgr, '/api/trials')).d.trials.find((x) => x.ea === 'Stage_Lad');
+await call(mgr, '/api/trials/update', { id: stageCard.id, player: pl[1].k });
+const stageItems = async (tok) => (await list(tok)).items.filter((n) => n.type === 'trialstage');
+t('BE4 default off: booking a trial sends the player nothing', (await stageItems(stagePlayer)).length === 0);
+await call(mgr, '/api/trials/update', { id: stageCard.id, status: 'booked' });
+t('BE4 default off: still nothing after a stage change', (await stageItems(stagePlayer)).length === 0);
+t('BE4 default off: managers see no Dugout stage DM either', (await stageItems(mgr)).length === 0);
+await call(stagePlayer, '/api/notify/prefs', { prefs: { trialstage: 'dm' } });
+await call(mgr, '/api/trials/update', { id: stageCard.id, status: 'played' });
+t('BE4 opt-in: player hears the stage change', (await stageItems(stagePlayer)).some((n) => n.title === 'Trial update: Stage_Lad has played a trial session'));
+await deliverDMs(env);
+t('BE4 opt-in dm: the player gets a Discord DM', dms.some((x) => x.to === '502' && x.embeds[0].title.includes('Trial update: Stage_Lad')));
+await call(stagePlayer, '/api/notify/prefs', { prefs: { trialstage: 'off' } });
+const beforeOff = (await stageItems(stagePlayer)).length;
+await call(mgr, '/api/trials/update', { id: stageCard.id, status: 'trialling' });
+t("BE4 respects the player switching it off", (await stageItems(stagePlayer)).length === beforeOff);
+await call(mgr, '/api/notify/prefs', { prefs: { trialstage: 'site' } });
+await call(owner, '/api/trials/update', { id: stageCard.id, status: 'signed' });
+t('BE4 Dugout: an opted-in manager sees the stage change', (await stageItems(mgr)).some((n) => n.title === 'Dugout: Trial update: Stage_Lad signed for NOREX ✍️'));
+t('BE4 Dugout: the acting manager is not told about their own change', (await stageItems(mgr)).length === 1);
+await call(mgr, '/api/notify/prefs', { prefs: { trialstage: 'off' } });
+t('BE4 is listed in the settings with its default', (await list(stagePlayer)).types.find((x) => x.k === 'trialstage')?.mode === 'off');
+
 // ----- P5.6 requests -----
 const home = siteJson('clubs').find((x) => x.t === 'home');
 const other = siteJson('clubs').find((x) => x.t === 'discovered');

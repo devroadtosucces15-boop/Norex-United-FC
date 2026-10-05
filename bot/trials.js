@@ -102,6 +102,20 @@ export async function applyRoute(request, env, me, loadSite, log) {
   return json({ ok: true });
 }
 
+// BE4 – optional DM when a trial moves stage (type `trialstage`, default off). The player hears it only when
+// they're a linked member (approved claim on that player page); the managers' Dugout gets it the same way.
+const STAGE_NEWS = { applied: 'is on the trial list', booked: 'has a trial session booked 📅', trialling: 'is now on trial ⚽', played: 'has played a trial session', signed: 'signed for NOREX ✍️', released: 'was released after the trial', declined: 'was declined' };
+export async function notifyStage(env, r, status, me) {
+  const word = STAGE_NEWS[status];
+  if (!word) return null;
+  const title = `Trial update: ${r.ea_id} ${word}`;
+  const player = r.player ? await one(env, "SELECT user_id FROM claims WHERE player = ? AND status = 'approved'", r.player) : null;
+  return Promise.all([
+    player ? safely(notify(env, [player.user_id], { type: 'trialstage', title, body: `Updated by ${me.n}.`, link: 'members.html#alerts' })) : null,
+    safely(notifyManagers(env, { type: 'trialstage', icon: '🏟️', title: `Dugout: ${title}`, body: `Updated by ${me.n}.`, link: 'members.html#manager' }, me.u)),
+  ]);
+}
+
 // ---------- trial cards (managers) ----------
 const trialOut = (r, events, notes) => ({
   id: r.id, source: r.source, ea: r.ea_id, discord: opt(r.discord), platform: opt(r.platform), positions: JSON.parse(r.positions || '[]'),
@@ -154,10 +168,13 @@ async function trialsRoute(p, method, body, me, env, loadSite, log) {
       add('INSERT INTO trial_events (trial_id, kind, status, detail, by_name, at) VALUES (?, ?, ?, ?, ?, ?)', r.id, 'status', body.status, clean(body.reason, 200) || null, me.n, at);
       logs.push(['trial-status', `${r.ea_id} → ${body.status}`]);
       // P7.1 – the member who recommended this player hears how their tip is going
-      if (r.source === 'scout' && r.by_id && r.by_id !== me.u) {
-        const word = { applied: 'is on the trial list', trialling: 'is now on trial ⚽', signed: 'signed for NOREX ✍️', released: 'was released after the trial', declined: 'was declined' }[body.status];
-        tell = () => safely(notify(env, [r.by_id], { type: 'trial', title: `Your tip ${r.ea_id} ${word}`, body: `Thanks for scouting! Updated by ${me.n}.`, link: 'members.html#scout' }));
-      }
+      const scoutWord = { applied: 'is on the trial list', trialling: 'is now on trial ⚽', signed: 'signed for NOREX ✍️', released: 'was released after the trial', declined: 'was declined' }[body.status];
+      tell = () => Promise.all([
+        r.source === 'scout' && r.by_id && r.by_id !== me.u && scoutWord
+          ? safely(notify(env, [r.by_id], { type: 'trial', title: `Your tip ${r.ea_id} ${scoutWord}`, body: `Thanks for scouting! Updated by ${me.n}.`, link: 'members.html#scout' }))
+          : null,
+        notifyStage(env, r, body.status, me), // BE4 – opt-in DMs (trialstage)
+      ]);
     }
     if (body.player !== undefined) {
       let key = null;
