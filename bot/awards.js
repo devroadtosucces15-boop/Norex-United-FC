@@ -10,6 +10,7 @@
 // rolls finished months into Player of the Month, tells the winners, posts the results to Discord.
 import { can, flagOn } from './roles.js';
 import { notify, notifyMembers, safely } from './notify.js';
+import { broadcastRoom } from './clubroom.js';
 import { postEmbed } from './docs.js';
 import { getBotSettings } from './settings.js';
 
@@ -208,6 +209,7 @@ export async function awardsRoute(p, method, body, me, env, loadSite, log, url) 
     if (!cat) return fail('Pick an award.');
     if (body.player == null || body.player === '') {
       await run(env, 'DELETE FROM award_votes WHERE week = ? AND category_id = ? AND user_id = ?', week.key, cat.id, me.u);
+      await broadcastRoom(env, 'locker', { t: 'locker', why: 'vote', to: [me.u] });
       return json(await state(env, me, loadSite));
     }
     const pl = (await loadSite('players')).find((x) => x.k === String(body.player) && x.home);
@@ -215,6 +217,7 @@ export async function awardsRoute(p, method, body, me, env, loadSite, log, url) 
     if ((await one(env, "SELECT player FROM claims WHERE user_id = ? AND status = 'approved'", me.u))?.player === pl.k) return fail('No voting for yourself 😉');
     await run(env, `INSERT INTO award_votes (week, category_id, user_id, player, at) VALUES (?, ?, ?, ?, ?)
       ON CONFLICT (week, category_id, user_id) DO UPDATE SET player = excluded.player, at = excluded.at`, week.key, cat.id, me.u, pl.k, Date.now());
+    await broadcastRoom(env, 'locker', { t: 'locker', why: 'vote', to: [me.u] });
     await log(env, me, 'award-vote', `${cat.name} → ${pl.n}`);
     return json(await state(env, me, loadSite));
   }

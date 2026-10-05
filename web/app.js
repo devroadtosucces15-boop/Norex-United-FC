@@ -1191,6 +1191,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
     if (/^schedule-\d+$/.test(tab)) { tab = 'schedule'; push = false; } // link to one event
     if (!TABS.some(([k]) => k === tab)) tab = 'me';
     S.tab = tab;
+    if (tab !== 'locker') lockerLive(false);
     if (push) history.replaceState(null, '', `#${tab}`);
     $$('.hub-tabs .chip').forEach((c) => c.classList.toggle('on', c.dataset.tab === tab));
     draw();
@@ -1199,7 +1200,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   async function load(tab) {
     try {
       if (tab === 'availability') S.avail = await call('/api/availability');
-      if (tab === 'locker') S.locker = await call('/api/locker');
+      if (tab === 'locker') { S.locker = await call('/api/locker'); lockerLive(true); }
       if (tab === 'votes') S.votes = await call('/api/vote');
       if ((tab === 'rush' || tab === 'manager') && flagOn('rushLog', baseRole)) S.rush = await call('/api/rush/queue');
       if (tab === 'manager') {
@@ -1266,6 +1267,31 @@ ${profilesOn ? '<div class="card" id="profile-editor" style="grid-column:1/-1"><
   }
 
   // ----- Availability (multi-day select + bulk) -----
+  // BE2 Locker Room – live refresh: a socket on /api/locker/ws gets a ping whenever something it shows changes
+  // (RSVP, vote, a notification for me). The ping carries no data, so the page just re-reads /api/locker.
+  // While the socket is down, a 60 s timer keeps the tab fresh instead.
+  let lockerWs = null, lockerWsPing = null, lockerWsRetry = null, lockerTimer = null, lockerReload = null;
+  const lockerRefresh = () => {
+    clearTimeout(lockerReload);
+    lockerReload = setTimeout(() => call('/api/locker').then((d) => { S.locker = d; if (S.tab === 'locker') draw(); }).catch(() => {}), 150);
+  };
+  function lockerLive(on) {
+    clearTimeout(lockerWsRetry); clearInterval(lockerWsPing); clearInterval(lockerTimer);
+    if (lockerWs) { lockerWs.onclose = null; try { lockerWs.close(1000); } catch { /* already closed */ } lockerWs = null; }
+    if (!on || !session || !MAPI || !window.WebSocket) return;
+    lockerTimer = setInterval(() => { if (S.tab === 'locker' && document.visibilityState === 'visible' && !(lockerWs?.readyState === 1)) lockerRefresh(); }, 60000);
+    let sock;
+    try { sock = new WebSocket(`${MAPI.replace(/^http/, 'ws')}/api/locker/ws?t=${encodeURIComponent(session.token)}`); } catch { return; }
+    lockerWs = sock;
+    sock.onopen = () => { lockerWsPing = setInterval(() => { if (sock.readyState === 1) sock.send('ping'); }, 30000); };
+    sock.onmessage = (e) => { if (e.data !== 'pong') lockerRefresh(); };
+    sock.onclose = () => {
+      clearInterval(lockerWsPing);
+      if (lockerWs !== sock) return;
+      lockerWs = null;
+      if (S.tab === 'locker') lockerWsRetry = setTimeout(() => { if (S.tab === 'locker') lockerLive(true); }, 8000);
+    };
+  }
   // BE2 Locker Room – one /api/locker call: next match + RSVP + who's in, weekly award vote, unread alerts, new achievements.
   function viewLocker() {
     if (!S.locker) return UI.skeleton('cards', 3);

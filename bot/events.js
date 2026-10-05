@@ -280,6 +280,7 @@ async function rsvp(body, me, env, log) {
   if (!ids.length || !(STATUSES.includes(status) || status === 'clear')) return fail('Bad answer.');
   const rows = await answerEvents(env, me, ids, status);
   if (!rows.length) return fail('Those events are over or cancelled.', 409);
+  await broadcastRoom(env, 'locker', { t: 'locker', why: 'rsvp' }); // BE2: "who's in" changed for everyone
   for (const r of rows) if (hasLineup(r)) await pushLineup(env, r.id, 'rsvp'); // BE3: the ready check moved
   await log(env, me, 'event-rsvp', `${status} · ${rows.length} event${rows.length > 1 ? 's' : ''}`);
   return json(await listFor(env, me));

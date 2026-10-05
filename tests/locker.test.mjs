@@ -3,6 +3,9 @@
 import { call, env, login, sqlite } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import { weekOf } from '../bot/awards.js';
+import { ClubRoom, broadcastRoom } from '../bot/clubroom.js';
+import { notify } from '../bot/notify.js';
+import { W } from './mock.mjs';
 
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
 setFlags({ locker: 'members', events: 'members', notifications: 'members', awards: 'members' });
@@ -26,7 +29,7 @@ t('maybe is not counted as "in"', !r.d.next.in.some((p) => p.id === '801'));
 const week = weekOf(Date.now());
 r = await call(member, '/api/locker');
 t('vote: this week, closes at the week end, not voted yet', r.d.vote.week === week.key && r.d.vote.closes === week.end && r.d.vote.voted === false);
-const cat = sqlite.prepare('SELECT id FROM award_categories LIMIT 1').get();
+const cat = sqlite.prepare('SELECT id FROM award_categories WHERE active = 1 LIMIT 1').get();
 sqlite.prepare("INSERT INTO award_votes (week, category_id, user_id, player, at) VALUES (?, ?, '800', 'somekey', ?)").run(week.key, cat.id, Date.now());
 t('vote: voted flips true after a ballot', (await call(member, '/api/locker')).d.vote.voted === true);
 t('vote: per-member, not shared', (await call(member2, '/api/locker')).d.vote.voted === false);
@@ -45,6 +48,72 @@ t('achievements: only unseen ones, with icon/name/tier', r.d.achievements.length
 import { readFileSync } from 'node:fs';
 const appJs = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
 t('hub: Locker Room tab is flag-gated and loads /api/locker', appJs.includes("['locker', '🎽 Locker Room']") && appJs.includes("call('/api/locker')") && appJs.includes('viewLocker'));
+
+// ----- live refresh (BE2): broadcasts + socket route -----
+const pushes = [], sockets = [];
+env.CLUB_ROOM = {
+  idFromName: (n) => n,
+  get: (name) => ({ fetch: async (req, init) => {
+    const url = typeof req === 'string' ? req : req.url;
+    if (url.includes('/push')) pushes.push({ room: name, ...JSON.parse(init.body) });
+    else sockets.push({ room: name, u: new URL(url).searchParams.get('u') });
+    return new Response('ok');
+  } }),
+};
+const last = () => pushes[pushes.length - 1];
+
+t('broadcast: unknown room names are refused, nothing sent', (await broadcastRoom(env, 'bogus', { t: 'x' })) === false && pushes.length === 0);
+t('broadcast: no binding (local dev) is a quiet no-op', (await broadcastRoom({ ...env, CLUB_ROOM: undefined }, 'locker', {})) === false);
+
+pushes.length = 0;
+await call(member, '/api/events/rsvp', { id: evId, status: 'no' });
+t('rsvp: pings the locker for everyone (no `to`)', last()?.t === 'locker' && last().why === 'rsvp' && last().to === undefined && last().room === 'locker');
+
+pushes.length = 0;
+await call(member, '/api/awards/vote', { category: cat.id, player: null });
+const votePing = pushes.find((p) => p.why === 'vote');
+t('vote: pings only the voter (to = my id)', votePing && JSON.stringify(votePing.to) === '["800"]');
+
+pushes.length = 0;
+await notify(env, ['800', '801'], { type: 'event', title: 'Locker ping test' });
+t('notify: unread ping goes to the members who got a row', last()?.why === 'unread' && last().to.includes('800') && last().to.includes('801'));
+
+pushes.length = 0;
+await call(member, '/api/notify/read', { all: true });
+t('notify read: pings only me', last()?.why === 'unread' && JSON.stringify(last().to) === '["800"]');
+
+// the Durable Object itself: `to` limits delivery, and the id list is not forwarded to clients
+{
+  const got = { a: [], b: [] };
+  const ws = (u, bucket) => ({ deserializeAttachment: () => ({ u }), send: (d) => bucket.push(d) });
+  const ctx = { getWebSockets: () => [ws('800', got.a), ws('801', got.b)], setWebSocketAutoResponse() {} };
+  const room = new ClubRoom(ctx, env);
+  const post = (body) => room.fetch(new Request('https://room/push', { method: 'POST', body: JSON.stringify(body) }));
+  await post({ t: 'locker', why: 'unread', to: ['800'] });
+  t('room: targeted event reaches only the named member', got.a.length === 1 && got.b.length === 0);
+  t('room: `to` is stripped before it reaches clients', !('to' in JSON.parse(got.a[0])) && JSON.parse(got.a[0]).why === 'unread');
+  await post({ t: 'locker', why: 'rsvp' });
+  t('room: untargeted event reaches everyone', got.a.length === 2 && got.b.length === 1);
+  t('room: bad body → 400', (await room.fetch(new Request('https://room/push', { method: 'POST', body: 'nope' }))).status === 400);
+}
+
+// socket route: session checked first, then the flag; the room is only reached with a real member
+const sock = (tok, extra = {}) => W('/api/locker/ws?t=' + encodeURIComponent(tok), { headers: { Upgrade: 'websocket' }, ...extra });
+sockets.length = 0;
+t('socket: no token → 404, room never reached', (await sock('garbage')).status === 404 && sockets.length === 0);
+t('socket: plain GET (no upgrade) → 426', (await W('/api/locker/ws?t=' + member)).status === 426);
+setFlags({ locker: 'off' });
+t('socket: flag off → 404, room never reached', (await sock(member)).status === 404 && sockets.length === 0);
+setFlags({ locker: 'members' });
+const up = await sock(member);
+t('socket: member is routed into the locker room as me', up.status === 200 && sockets.length === 1 && sockets[0].room === 'locker' && sockets[0].u === '800');
+env.CLUB_ROOM = undefined;
+t('socket: no binding → 503', (await sock(member)).status === 503);
+env.CLUB_ROOM = { idFromName: (n) => n, get: () => ({ fetch: async () => new Response('ok') }) };
+
+// ----- front end: live refresh is wired to the socket, poll stays as the fallback -----
+t('front end: Locker tab opens /api/locker/ws and closes it on other tabs', appJs.includes('/api/locker/ws?t=') && appJs.includes("if (tab === 'locker') { S.locker = await call('/api/locker'); lockerLive(true); }") && appJs.includes("if (tab !== 'locker') lockerLive(false);"));
+t('front end: refresh on ping, 60 s fallback while the socket is down', appJs.includes("e.data !== 'pong') lockerRefresh()") && appJs.includes('}, 60000);') && appJs.includes('lockerLive'));
 
 t('no login → 401', (await call(null, '/api/locker')).s === 401);
 done();

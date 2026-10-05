@@ -22,6 +22,7 @@ import { docsList, knowledgeRoute } from './docs.js';
 import { eventsRoute, lineupSocket, localDate, publicEvents, weekEvents, reportPosterRoute } from './events.js';
 import { lockerRoute } from './locker.js';
 import { hubRoute, hubSocket } from './hub.js';
+import { lockerSocket } from './locker.js';
 import { intelRoute } from './insights.js';
 import { awardsRoute, trophies } from './awards.js';
 import { playerInsights } from './aiinsights.js';
@@ -325,6 +326,11 @@ export async function handleMembers(request, env, ctx, loadSite) {
       const who = await unseal(env, url.searchParams.get('t'));
       if (who) who.role = await currentRole(env, who);
       return hubSocket(request, env, who);
+    }
+    if (url.pathname === '/api/locker/ws') { // BE2 – live Locker Room refresh pings, same ?t= shape as the hub; session + flag checked in lockerSocket
+      const who = await unseal(env, url.searchParams.get('t'));
+      if (who) who.role = await currentRole(env, who);
+      return lockerSocket(request, env, who);
     }
     if (url.pathname === '/api/live' && request.method === 'GET') { // P1.3 – public once the flag is 'public'
       if (me) me.role = await currentRole(env, me, request);

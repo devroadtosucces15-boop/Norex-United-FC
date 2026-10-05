@@ -14,6 +14,7 @@
 // Discord DMs: rows are queued (dm = 'queued') and sent right after the request (ctx.waitUntil) or by the cron.
 // Needs the Worker secret DISCORD_BOT_TOKEN; without it DMs are skipped and notifications stay on the site.
 import { can, flagOn } from './roles.js';
+import { broadcastRoom } from './clubroom.js';
 
 const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
@@ -85,7 +86,7 @@ export async function notify(env, ids, n) {
   if (!ids.length || !env.DB) return 0;
   const rows = await all(env, `SELECT u.id, u.role, p.prefs FROM users u LEFT JOIN notify_prefs p ON p.user_id = u.id WHERE u.id IN (${marks(ids.length)})`, ...ids);
   const at = Date.now();
-  const stmts = [];
+  const stmts = [], told = [];
   for (const r of rows) {
     if (!flagOn(env, { role: r.role }, 'notifications')) continue;
     const mode = modeOf(parsePrefs(r.prefs), n.type);
@@ -94,8 +95,10 @@ export async function notify(env, ids, n) {
     if (dm) kick = true;
     stmts.push(env.DB.prepare('INSERT INTO notifications (user_id, type, icon, title, body, link, ack, at, dm, ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(r.id, n.type, n.icon ?? TYPES[n.type]?.icon ?? '🔔', clean(n.title, 140), n.body ? cleanText(n.body, 1500) : null, safeLink(n.link), n.ack ? 1 : 0, at, dm, n.ref ?? null));
+    told.push(String(r.id));
   }
   for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
+  if (told.length) await broadcastRoom(env, 'locker', { t: 'locker', why: 'unread', to: told }); // BE2: their 🔔 count changed
   return stmts.length;
 }
 // Everyone who logged in within 180 days (or only managers + owner) – announcements, rules (P7.1 / P5.2).
@@ -211,12 +214,14 @@ async function notifyRoute(p, method, body, me, env, log) {
     if (body.all) await run(env, 'UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL', Date.now(), me.u);
     else if (ids.length) await run(env, `UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL AND id IN (${marks(ids.length)})`, Date.now(), me.u, ...ids);
     else return fail('Nothing to mark');
+    await broadcastRoom(env, 'locker', { t: 'locker', why: 'unread', to: [me.u] });
     return json(await state(env, me));
   }
   if (p === '/api/notify/ack') {
     const id = Number(body.id) || 0;
     const r = await run(env, 'UPDATE notifications SET ack_at = ?, read_at = COALESCE(read_at, ?) WHERE id = ? AND user_id = ? AND ack = 1 AND ack_at IS NULL', Date.now(), Date.now(), id, me.u);
     if (!r.meta?.changes) return fail('Already acknowledged.', 409);
+    await broadcastRoom(env, 'locker', { t: 'locker', why: 'unread', to: [me.u] });
     // P5.2: "Got it" on a rules notification counts as acknowledging that rules version (docs.js reads doc_acks).
     const rules = /^rules:(\d+)$/.exec((await one(env, 'SELECT ref FROM notifications WHERE id = ?', id))?.ref ?? '');
     if (rules) await run(env, 'INSERT OR IGNORE INTO doc_acks (user_id, version, name, avatar, at) VALUES (?, ?, ?, ?, ?)', me.u, Number(rules[1]), me.n, me.a ?? null, Date.now());

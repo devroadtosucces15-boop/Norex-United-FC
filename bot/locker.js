@@ -36,6 +36,17 @@ async function newAchievements(env, me) {
   return rows.filter((r) => ACH[r.id]).map((r) => ({ id: r.id, icon: ACH[r.id].icon, name: ACH[r.id].name, tier: ACH[r.id].tier, at: r.at }));
 }
 
+// WebSocket upgrade for the Locker room – called from members.js with the session already unsealed from `?t=`.
+// Same shape as hubSocket/chatSocket: the session and the flag are checked before anything is opened.
+export async function lockerSocket(request, env, me) {
+  if (request.headers.get('Upgrade') !== 'websocket') return fail('Expected a WebSocket.', 426);
+  if (!env.CLUB_ROOM) return fail('The Locker Room is not set up yet.', 503);
+  if (!me || !flagOn(env, me, 'locker')) return fail('Not available yet.', 404);
+  const q = new URLSearchParams({ u: me.u, n: me.n || 'Member' });
+  const room = env.CLUB_ROOM.get(env.CLUB_ROOM.idFromName('locker'));
+  return room.fetch(new Request(`https://room/ws?${q}`, { headers: request.headers }));
+}
+
 // Logged-in route – called from members.js route() for paths it doesn't own.
 export async function lockerRoute(p, method, me, env) {
   if (p !== '/api/locker') return null;
