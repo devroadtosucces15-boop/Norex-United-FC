@@ -916,6 +916,33 @@ document.addEventListener('click', async (e) => {
   a.click();
 });
 
+// ---------- world compare (P9.2): NOREX vs any club in EA's world top 100 ----------
+$$('[data-worldcmp]').forEach((box) => {
+  const data = JSON.parse(box.querySelector('[data-worldcmp-data]').textContent);
+  const pick = box.querySelector('[data-worldcmp-pick]'), out = box.querySelector('[data-worldcmp-out]');
+  const per = (v, gp) => (gp ? v / gp : NaN);
+  const fmt = (v, d = 0) => (v == null || Number.isNaN(v) ? '–' : d ? v.toFixed(d) : String(v));
+  // [label, value, decimals, pct?] – a bar shows who leads on each line
+  const lines = (c) => [
+    ['SR', c.sr, 0], ['Games', c.gp, 0], ['Wins', c.w, 0],
+    ['Win %', per(c.w, c.gp) * 100, 0, true], ['Goals / game', per(c.gf, c.gp), 2], ['Goals against / game', per(c.ga, c.gp), 2], ['Clean sheets', c.cs, 0],
+  ];
+  const render = () => {
+    const b = data.clubs.find((c) => c.id === pick.value) ?? data.clubs[0], a = data.home;
+    const la = lines(a), lb = lines(b);
+    const head = (c) => `<b>${c.rank ? `#${c.rank} ` : ''}${esc(c.name)}</b>`;
+    out.innerHTML = `<p class="world-cmp-head">${head(a)} <span class="muted">vs</span> ${head(b)}</p>
+<ul class="compare-bars">${la.map(([l, x, dec, isPct], i) => {
+      const y = lb[i][1], xv = +x || 0, yv = +y || 0, t = xv + yv || 1;
+      const show = (v) => (isPct ? (Number.isNaN(v) ? '–' : `${Math.round(v)}%`) : fmt(v, dec));
+      return `<li><b class="${xv > yv ? 'lead' : ''}">${show(x)}</b><span>${l}</span><b class="${yv > xv ? 'lead' : ''}">${show(y)}</b><div class="duel"><i class="l" style="--w:${xv / t * 100}%"></i><i class="r" style="--w:${yv / t * 100}%"></i></div></li>`;
+    }).join('')}</ul>
+<p class="small muted">Division: ${fmt(a.div)} vs ${fmt(b.div)} · W-D-L ${fmt(a.w)}-${fmt(a.d)}-${fmt(a.l)} vs ${fmt(b.w)}-${fmt(b.d)}-${fmt(b.l)}. Squad size isn't in EA's world table, so it isn't compared.</p>`;
+  };
+  pick.addEventListener('change', render);
+  render();
+});
+
 // ---------- compare tool ----------
 const cmpOut = $('#cmp-out');
 if (cmpOut) (async () => {

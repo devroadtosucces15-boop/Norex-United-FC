@@ -12,6 +12,7 @@ import { buildHub } from './hub-page.mjs';
 import { buildMessages } from './messages-page.mjs';
 import { buildTactics } from './tactics-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
+import { buildRankings } from './rankings.mjs';
 
 const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
 const config = loadConfig();
@@ -1117,7 +1118,24 @@ function worldHtml() {
 <p class="world-verdict">${me ? `🌍 <b>${esc(config.siteTitle)}</b> is <b>#${me.rank}</b> in the world – ${me.sr - cut} SR above the cut-off.` : `🎯 <b>${Math.max(0, cut - sr + 1)} SR</b> to break into the world top 100 (we're on ${sr}, #100 has ${cut}).`}</p>
 ${table('world-top', ['#Rank', 'Club', '#SR', '#GP', 'W-D-L', '#Win %', '#Goals/gm', '#Clean sh.', '#Div'], w.clubs.map((c) =>
     `<tr${c.id === homeId ? ' class="world-me"' : ''}>${td(c.rank, true)}${td(`${logo(c)} ${name(c)}`, false, c.name.toLowerCase())}${td(`<b>${c.sr}</b>`, true, c.sr)}${td(c.gp, true)}${td(`${c.w}-${c.d}-${c.l}`, false, c.w)}${td(pct(c.w, c.gp) + '%', true, pct(c.w, c.gp))}${td(c.gp ? (c.gf / c.gp).toFixed(2) : '–', true, c.gp ? c.gf / c.gp : 0)}${td(c.cs, true)}${td(c.div ?? '–', true, c.div ?? 99)}</tr>`), { filter: 'Search clubs…' })}
+${worldCompareHtml(w, me, sr)}
 <p class="muted small">All-time skill rating from EA, updated ${esc(new Date(w.fetchedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }))}. Every platform of this generation in one table.</p>`;
+}
+
+// P9.2: pick any club in the world top 100 and compare it with NOREX on the same numbers. The club list is
+// embedded as JSON; app.js's "world compare" block draws the bars, so there's no extra request.
+function worldCompareHtml(w, me, sr) {
+  const pickable = (c) => ({ id: c.id, name: c.name, rank: c.rank, sr: c.sr, gp: c.gp, w: c.w, d: c.d, l: c.l, gf: c.gf, ga: c.ga, cs: c.cs, div: c.div ?? null });
+  const home = me ? { ...pickable(me), name: config.siteTitle } : { id: homeId, name: config.siteTitle, rank: null, sr, gp: null, w: null, d: null, l: null, gf: null, ga: null, cs: null, div: null };
+  const defaultId = me && me.rank > 1 ? w.clubs.find((c) => c.rank === me.rank - 1)?.id : w.clubs[1]?.id ?? w.clubs[0].id;
+  const data = JSON.stringify({ home, clubs: w.clubs.map(pickable) }).replace(/</g, '\\u003c');
+  const options = w.clubs.map((c) => `<option value="${esc(c.id)}"${c.id === defaultId ? ' selected' : ''}>#${c.rank} ${esc(c.name)}</option>`).join('');
+  return `<div class="card world-cmp" data-worldcmp>
+<h3>⚔️ Compare with any world top 100 club</h3>
+<label class="world-cmp-pick small muted">Club <select data-worldcmp-pick>${options}</select></label>
+<div class="world-cmp-out" data-worldcmp-out></div>
+<script type="application/json" data-worldcmp-data>${data}</script>
+</div>`;
 }
 const LH = { write, page, pageHead, section, modes, esc, emptyState, pLink, clubName, config, brand, MEMBER_API, STARS, leaderboard: homeC?.leaderboard, world: worldHtml(), evSince: EV_SINCE };
 const lm = leagueMatches({ homeMatches, homeId, isHidden: (pid) => !!players.get(pid)?.hidden, oppOf, result });
@@ -1238,6 +1256,8 @@ write('api/squad.json', JSON.stringify({
     .map((x) => [x.ts, x.res, x.goals, x.assists, x.rating, x.mom ? 1 : 0, x.shots, x.passes, x.passAtt, x.tackles, x.tackleAtt, x.saves, x.gf, x.ga, GRP[x.pos] ?? '', x.dribbles, x.sa])]).filter(([, l]) => l.length)),
 }));
 write('api/clubs.json', JSON.stringify([...clubs.values()].map((c) => ({ id: c.id, n: clubName(c.id), t: state.clubs[c.id]?.tier ?? 'archived', ...(clubKit(c.id)?.crestAssetId ? { cr: crestSrc(c.id, SITE) } : {}) }))));
+// P9.2: global rankings – EA's world top 100 with Norex's rank, the cut-off and per-club rates (scripts/rankings.mjs)
+write('api/rankings.json', JSON.stringify(buildRankings(readJson(path.join(DATA, 'world.json'), null), homeId, num(homeC?.overall?.skillRating) || null)));
 // P11.16 /history: League-only head-to-head record per opponent, same numbers as the Stats Centre's own
 // "Head to head" table – exposed here so the Discord command doesn't need to scrape the HTML.
 write('api/h2h.json', JSON.stringify([...h2h.values()].map((e) => ({
