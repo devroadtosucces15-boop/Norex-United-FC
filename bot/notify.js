@@ -15,6 +15,7 @@
 // Needs the Worker secret DISCORD_BOT_TOKEN; without it DMs are skipped and notifications stay on the site.
 import { can, flagOn } from './roles.js';
 import { broadcastRoom } from './clubroom.js';
+import { encryptPayload, safeEndpoint, sendPush } from './webpush.js';
 
 const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
@@ -86,20 +87,45 @@ export async function notify(env, ids, n) {
   if (!ids.length || !env.DB) return 0;
   const rows = await all(env, `SELECT u.id, u.role, p.prefs FROM users u LEFT JOIN notify_prefs p ON p.user_id = u.id WHERE u.id IN (${marks(ids.length)})`, ...ids);
   const at = Date.now();
-  const stmts = [], told = [];
+  const stmts = [], told = [], pushTo = [];
   for (const r of rows) {
     if (!flagOn(env, { role: r.role }, 'notifications')) continue;
     const mode = modeOf(parsePrefs(r.prefs), n.type);
     if (mode === 'off') continue;
     const dm = mode === 'dm' ? 'queued' : null;
     if (dm) kick = true;
+    if (dm && flagOn(env, { role: r.role }, 'push')) pushTo.push(String(r.id)); // BE0: "dm" is the tier where a member asked to be told – push goes there too
     stmts.push(env.DB.prepare('INSERT INTO notifications (user_id, type, icon, title, body, link, ack, at, dm, ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(r.id, n.type, n.icon ?? TYPES[n.type]?.icon ?? '🔔', clean(n.title, 140), n.body ? cleanText(n.body, 1500) : null, safeLink(n.link), n.ack ? 1 : 0, at, dm, n.ref ?? null));
     told.push(String(r.id));
   }
   for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
   if (told.length) await broadcastRoom(env, 'locker', { t: 'locker', why: 'unread', to: told }); // BE2: their 🔔 count changed
+  if (pushTo.length) await safely(sendWebPush(env, pushTo, n));
   return stmts.length;
+}
+
+// BE0 Web Push: encrypted and sent to every browser the opted-in members subscribed. Best effort – a dead
+// endpoint (404/410) is forgotten; any other failure is only logged. Capped so one announcement can't exhaust
+// the Worker's subrequest budget.
+const PUSH_MAX = 40;
+async function sendWebPush(env, userIds, n) {
+  if (!env.VAPID_PRIVATE_KEY || !env.VAPID_PUBLIC_KEY) return 0;
+  const subs = await all(env, `SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id IN (${marks(userIds.length)}) LIMIT ${PUSH_MAX}`, ...userIds);
+  const payload = JSON.stringify({
+    title: clean(n.title, 140),
+    body: n.body ? cleanText(n.body, 140) : '',
+    link: safeLink(n.link) ?? 'members.html',
+    tag: `norex-${n.ref ?? n.type}`,
+  });
+  await Promise.allSettled(subs.map(async (s) => {
+    const endpoint = safeEndpoint(s.endpoint);
+    if (!endpoint) return;
+    const status = await sendPush(endpoint, await encryptPayload(payload, s), env);
+    if (status === 404 || status === 410) await run(env, 'DELETE FROM push_subs WHERE endpoint = ?', s.endpoint);
+    else if (status >= 400) console.log('web push refused', status);
+  }));
+  return subs.length;
 }
 // Everyone who logged in within 180 days (or only managers + owner) – announcements, rules (P7.1 / P5.2).
 export async function notifyMembers(env, n, audience = 'all') {
@@ -192,15 +218,17 @@ export async function counts(env, me) {
   return { unread: u.n, ack: a ? { id: a.id, icon: opt(a.icon), title: a.title } : null };
 }
 async function state(env, me) {
-  const [rows, p, c] = await Promise.all([
+  const [rows, p, c, devices] = await Promise.all([
     all(env, 'SELECT * FROM notifications WHERE user_id = ? ORDER BY (ack = 1 AND ack_at IS NULL) DESC, id DESC LIMIT 60', me.u),
     one(env, 'SELECT prefs, dm_failed_at FROM notify_prefs WHERE user_id = ?', me.u),
     counts(env, me),
+    one(env, 'SELECT COUNT(*) AS n FROM push_subs WHERE user_id = ?', me.u),
   ]);
   const prefs = parsePrefs(p?.prefs);
   const types = Object.entries(TYPES).filter(([, t]) => !t.hidden && (!t.role || can(me, 'portal.view')))
     .map(([k, t]) => ({ k, icon: t.icon, label: t.label, mode: modeOf(prefs, k), mute: t.mute !== false }));
-  return { items: rows.map(itemOut), ...c, types, dmBlocked: !!p?.dm_failed_at && Date.now() - p.dm_failed_at < 14 * DAY, dmReady: !!env.DISCORD_BOT_TOKEN, canAnnounce: can(me, 'notify.announce') };
+  return { items: rows.map(itemOut), ...c, types, dmBlocked: !!p?.dm_failed_at && Date.now() - p.dm_failed_at < 14 * DAY, dmReady: !!env.DISCORD_BOT_TOKEN, canAnnounce: can(me, 'notify.announce'),
+    push: { key: env.VAPID_PRIVATE_KEY && env.VAPID_PUBLIC_KEY && flagOn(env, me, 'push') ? env.VAPID_PUBLIC_KEY : null, devices: devices?.n ?? 0 } }; // BE0
 }
 
 async function notifyRoute(p, method, body, me, env, log) {

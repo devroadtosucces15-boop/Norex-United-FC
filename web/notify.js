@@ -143,7 +143,8 @@ ${shown.length ? `<ul class="nt-items">${shown.map((n) => `<li class="nf${n.read
 <p class="muted small">💬 <b>Site + DM</b> also sends a Discord DM from the NOREX bot · 🔔 <b>Site only</b> shows it here · 🔕 <b>Off</b> mutes it.</p>
 ${!s.dmReady ? '<p class="nt-warn">💬 Discord DMs switch on as soon as the bot token is connected – until then everything shows on the site.</p>' : s.dmBlocked ? '<p class="nt-warn">⚠️ Discord refused our last DM. In Discord: right-click the NOREX server → <b>Privacy Settings</b> → turn on <b>Direct Messages</b>, then send a test.</p>' : ''}
 <div class="nt-prefs">${s.types.map((t) => `<div class="nt-pref"><span><i aria-hidden="true">${esc(t.icon)}</i>${esc(t.label)}</span><div class="seg" role="radiogroup" aria-label="${esc(t.label)}">${MODES.filter(([m]) => m !== 'off' || t.mute).map(([m, l]) => `<button type="button" role="radio" aria-checked="${t.mode === m}" class="${t.mode === m ? 'on' : ''}" data-pref="${t.k}" data-mode="${m}">${l}</button>`).join('')}</div></div>`).join('')}</div>
-<button class="btn sm ghost" type="button" data-test>🧪 Send me a test</button></section>
+<button class="btn sm ghost" type="button" data-test>🧪 Send me a test</button>
+${s.push?.key ? `<div class="nt-push"><button class="btn sm" type="button" data-push>🔔 Push to this device</button><p class="muted small">${s.push.devices ? `${s.push.devices} device${s.push.devices === 1 ? '' : 's'} on` : 'Off on this device'} · pushes go out for “Site + DM” types.</p></div>` : ''}</section>
 ${s.canAnnounce ? `<section class="card nt-announce"><h3>📣 Send an announcement</h3><p class="muted small">Goes to every member's 🔔 (and Discord DM if they chose it). Tick <b>must acknowledge</b> for rules – it stays on their screen and re-sends a DM daily (up to 3×) until they tap “Got it”.</p>
 <form id="announce-form"><label>Title<input name="title" maxlength="120" required placeholder="New match-night rules"></label>
 <label>Message<textarea name="body" maxlength="1500" rows="4" placeholder="What everyone needs to know…"></textarea></label>
@@ -155,6 +156,20 @@ ${s.canAnnounce ? `<section class="card nt-announce"><h3>📣 Send an announceme
       if (location.hash === '#alerts-settings') $('#alerts-settings', el)?.scrollIntoView({ block: 'start' });
     };
     const load = async () => { N.state = await ctx.call('/api/notify'); N.count = { unread: N.state.unread, ack: N.state.ack }; emit(); };
+    // BE0 Web Push: ask once, register the service worker (sw.js at the site root), subscribe this browser, tell the Worker.
+    const enablePush = async (ctx, key) => {
+      try {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return ctx.toast('This browser can’t receive push notifications.', true);
+        if ((await Notification.requestPermission()) !== 'granted') return ctx.toast('Notifications are blocked – allow them for this site in the browser settings.', true);
+        const reg = await navigator.serviceWorker.register(new URL('sw.js', location.href));
+        const b64 = key.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (key.length % 4)) % 4);
+        const applicationServerKey = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey }));
+        await ctx.call('/api/push/subscribe', { subscription: sub.toJSON() });
+        ctx.toast('🔔 This device will get pushes now.');
+        await load();
+      } catch (e) { ctx.toast(e.message, true); }
+    };
     N.listeners.add(draw);
     el.innerHTML = UI.skeleton('rows', 4);
     try { await load(); } catch (e) { el.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; return; }
@@ -173,6 +188,7 @@ ${s.canAnnounce ? `<section class="card nt-announce"><h3>📣 Send an announceme
         tp.mode = d.mode; draw(); // optimistic
         try { N.state = await ctx.call('/api/notify/prefs', { prefs: { [d.pref]: d.mode } }); emit(); ctx.toast('Saved'); } catch (er) { tp.mode = old; draw(); ctx.toast(er.message, true); }
       }
+      if (d.push !== undefined) enablePush(ctx, N.state.push.key);
       if (d.test !== undefined) {
         t.disabled = true;
         try {

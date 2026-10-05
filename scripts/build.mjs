@@ -1022,6 +1022,7 @@ ${panels.map(({ k, top }, i) => `<div class="tab-panel" id="pod-${k}"${i ? ' hid
 // ---------- write ----------
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.cpSync(path.join(ROOT, 'web'), path.join(OUT, 'assets'), { recursive: true });
+fs.copyFileSync(path.join(ROOT, 'web', 'sw.js'), path.join(OUT, 'sw.js')); // BE0 push receiver: must sit at the site root
 
 write('index.html', page({ title: `${config.siteTitle} – Official Pro Clubs hub`, base: '', active: 'home', body: clubBody(homeId, '', true) }));
 

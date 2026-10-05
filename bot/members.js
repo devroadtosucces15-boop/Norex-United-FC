@@ -16,6 +16,7 @@ import { applyRoute, getContacts, recruitRoute } from './trials.js';
 import { getHof, honoursRoute } from './honours.js';
 import { buildsRoute } from './builds.js';
 import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute, safely, takeKick } from './notify.js';
+import { safeEndpoint } from './webpush.js';
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
@@ -671,6 +672,22 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (bld) return bld;
   const ntf = await notifyRouteAll(p, method, body, me, env, loadSite, log); // P7.1 notifications · P5.6 requests
   if (ntf) return ntf;
+  // BE0 Web Push: this browser asks for pushes (or stops). Only the push service's own https endpoint is stored.
+  if (p === '/api/push/subscribe' && method === 'POST') {
+    if (!can(me, 'notify.use') || !flagOn(env, me, 'push')) return fail('Members only.', 403);
+    const s = body.subscription ?? {};
+    const endpoint = safeEndpoint(s.endpoint);
+    const p256dh = String(s.keys?.p256dh ?? ''), auth = String(s.keys?.auth ?? '');
+    if (!endpoint || !/^[A-Za-z0-9_-]{80,100}$/.test(p256dh) || !/^[A-Za-z0-9_-]{16,32}$/.test(auth)) return fail('That browser’s push details don’t look right – try again.');
+    await run(env, `INSERT INTO push_subs (endpoint, user_id, p256dh, auth, at) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT (endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth, at = excluded.at`, endpoint, me.u, p256dh, auth, Date.now());
+    return json({ ok: true });
+  }
+  if (p === '/api/push/unsubscribe' && method === 'POST') {
+    if (!can(me, 'notify.use') || !flagOn(env, me, 'push')) return fail('Members only.', 403);
+    await run(env, 'DELETE FROM push_subs WHERE user_id = ? AND endpoint = ?', me.u, String(body.endpoint ?? ''));
+    return json({ ok: true });
+  }
   const pro = await probuildsRoute(p, method, body, me, env, log); // PB.3 Pro Builds board · PB.4 my build
   if (pro) return pro;
   const bdg = await badgesRoute(p, method, body, me, env, loadSite, log, url); // P2.3 badges · P2.3/P4.3 achievements
