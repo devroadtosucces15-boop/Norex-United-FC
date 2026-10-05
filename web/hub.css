@@ -22,6 +22,8 @@
 .hubw-room{display:flex;flex-direction:column;gap:4px;padding:18px 16px;border-radius:14px;background:linear-gradient(160deg,#141014,#0b0a06);border:1px solid color-mix(in srgb,var(--gold) 28%,var(--line));color:#fff;transition:transform .2s ease,box-shadow .2s ease}
 .hubw-room:hover,.hubw-room:focus-visible{transform:translateY(-4px);box-shadow:0 10px 24px color-mix(in srgb,var(--gold) 22%,transparent);border-color:var(--gold);outline:none}
 .hubw-room-ic{font-size:26px}
+.hubw-room{position:relative}
+.hubw-badge{position:absolute;top:8px;right:8px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#c8352c;color:#fff;font:700 12px/22px Inter,sans-serif;font-style:normal;text-align:center;box-shadow:0 0 0 2px #0b0f16}
 .hubw-room b{font:700 15px var(--head);letter-spacing:.02em}
 .hubw-room small{color:var(--muted);font:500 12px var(--body)}
 .hubw-room.locked{opacity:.55;cursor:not-allowed}

@@ -1,6 +1,7 @@
 // Hub (roadmap BE8, board 10) – a shared clubhouse space. The front end (board 10's 3D room, players'-tunnel
 // entrance) is next-session scoping work; this is the backend it'll call.
 //   GET  /api/hub              members: site-wide "online now" count (reuses P6.4 presence) + can-wave
+//   GET  /api/hub/badges       members: per-room live badges for the tiles (counts only, no names)
 //   POST /api/hub/wave { to }  members: 👋 another member – delivered live if they're in the Hub room
 //                              right now (bot/hubroom.js), else queued as a bell/DM notification (BE0's
 //                              JOBS queue when bound, else written inline – same fallback shape as BE9)
@@ -9,6 +10,8 @@
 import { can, flagOn } from './roles.js';
 import { notify, safely } from './notify.js';
 import { onlineCount } from './social.js';
+import { weekOf } from './awards.js';
+import { counts as notifyCounts } from './notify.js';
 
 const WAVES_PER_DAY = 20;
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
@@ -41,12 +44,32 @@ export async function hubSocket(request, env, me) {
   return room.fetch(new Request(`https://room/ws?${q}`, { headers: request.headers }));
 }
 
+// Room badges (the mockup's vote/RSVP/alert numbers). Each is one cheap COUNT, all in parallel.
+async function roomBadges(env, me) {
+  const week = weekOf(Date.now());
+  const soon = Date.now() + 7 * 86400e3;
+  const [rsvp, vote, alerts, ach] = await Promise.all([
+    one(env, "SELECT COUNT(*) AS n FROM events e WHERE e.status = 'scheduled' AND e.start BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = e.id AND r.user_id = ?)", Date.now(), soon, me.u),
+    one(env, 'SELECT COUNT(*) AS n FROM award_votes WHERE week = ? AND user_id = ?', week.key, me.u),
+    notifyCounts(env, me),
+    one(env, 'SELECT COUNT(*) AS n FROM achievements WHERE user_id = ? AND seen = 0', me.u),
+  ]);
+  return {
+    locker: ach?.n ?? 0,                       // achievements unlocked and not yet seen
+    matchnight: rsvp?.n ?? 0,                  // scheduled events this week I haven't answered
+    trophy: vote?.n > 0 ? 0 : 1,               // this week's award vote still open for me
+    notice: alerts?.unread ?? 0,               // unread notifications
+  };
+}
+
 export async function hubRoute(p, method, body, me, env, log) {
-  if (p !== '/api/hub' && p !== '/api/hub/wave') return null;
+  if (p !== '/api/hub' && p !== '/api/hub/wave' && p !== '/api/hub/badges') return null;
   if (!flagOn(env, me, 'hub')) return fail('Not available yet.', 404);
   if (!can(me, 'hubroom.view')) return fail('Members only.', 403);
 
   if (p === '/api/hub' && method === 'GET') return json({ online: await onlineCount(env), canWave: can(me, 'hubroom.wave') });
+
+  if (p === '/api/hub/badges' && method === 'GET') return json({ badges: await roomBadges(env, me) });
 
   if (p === '/api/hub/wave' && method === 'POST') {
     if (!can(me, 'hubroom.wave')) return fail('Members only.', 403);

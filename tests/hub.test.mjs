@@ -66,4 +66,15 @@ t('room: /count reflects open sockets', (await (await room.fetch(new Request('ht
 const noOne = await room.fetch(new Request('https://room/wave', { method: 'POST', body: JSON.stringify({ to: '999', from: { id: '901', n: 'x' } }) }));
 t('room: /wave to nobody connected reports not delivered', (await noOne.json()).delivered === false);
 
+// ---------- room badges (GET /api/hub/badges) ----------
+setFlags({ hub: 'off' });
+t('badges: flag off → 404', (await call(m1, '/api/hub/badges')).s === 404);
+setFlags({ hub: 'members' });
+r = await call(m1, '/api/hub/badges');
+const keys = r.d && r.d.badges ? Object.keys(r.d.badges).sort().join(',') : '';
+t('badges: one count per room (locker, matchnight, notice, trophy)', r.s === 200 && keys === 'locker,matchnight,notice,trophy');
+t('badges: all counts are non-negative numbers', Object.values(r.d.badges).every((n) => typeof n === 'number' && n >= 0));
+t('badges: an unread wave shows on the notice board', (await call(m2, '/api/hub/badges')).d.badges.notice >= 1);
+t('badges: an open award vote shows on the trophy room', r.d.badges.trophy === 1);
+
 done();

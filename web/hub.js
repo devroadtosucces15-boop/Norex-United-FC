@@ -18,7 +18,7 @@
   // so members know the room exists. Target pages are the real, already-built surfaces (no new rooms built here).
   const RANK = { guest: 0, member: 1, claimed: 2, manager: 3, owner: 4 };
   const ROOMS = [
-    { id: 'locker', icon: '🎽', name: 'Locker Room', desc: 'Me · stats · builds', href: `${BASE}members.html#me` },
+    { id: 'locker', icon: '🎽', name: 'Locker Room', desc: 'Me · stats · builds', href: `${BASE}members.html#locker` },
     { id: 'matchnight', icon: '🗓️', name: 'Match Night Centre', desc: 'Schedule · RSVP · reports', href: `${BASE}members.html#schedule`, flag: 'events' },
     { id: 'tactics', icon: '🧠', name: 'Tactics Room', desc: 'Studio · Playbook', href: `${BASE}tactics.html`, flag: 'tactics' },
     { id: 'trophy', icon: '🏅', name: 'Trophy Room', desc: 'Achievements · badges · HoF', href: `${BASE}members.html#awards`, flag: 'awards' },
@@ -94,7 +94,20 @@
       const paint = () => { stage.classList.toggle('hubw-list', listMode); listBtn.setAttribute('aria-pressed', String(listMode)); listBtn.textContent = listMode ? '🧊 3D view' : '☰ List view'; if (!listMode) build3D(stage, rooms); };
       listBtn.addEventListener('click', () => { listMode = !listMode; try { localStorage.setItem('hub_listview', listMode ? '1' : '0'); } catch {} paint(); });
       paint();
+      paintBadges();
     };
+    // Per-room badges (vote / RSVP / alert numbers). Kept in `badges` so a re-render repaints them.
+    let badges = {};
+    const paintBadges = () => {
+      root.querySelectorAll('[data-room]').forEach((el) => {
+        const n = badges[el.dataset.room] ?? 0;
+        let b = el.querySelector('.hubw-badge');
+        if (!n) { b?.remove(); return; }
+        if (!b) { b = document.createElement('i'); b.className = 'hubw-badge'; el.appendChild(b); }
+        b.textContent = n > 99 ? '99+' : String(n);
+      });
+    };
+    ctx.call('/api/hub/badges').then((d) => { badges = d.badges || {}; paintBadges(); }).catch(() => {});
     ctx.call('/api/hub').then((d) => {
       const pill = $('[data-hubw-online]');
       if (pill) { pill.hidden = false; $('b', pill).textContent = d.online ?? 0; }
