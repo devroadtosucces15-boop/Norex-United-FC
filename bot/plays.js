@@ -17,11 +17,14 @@
 //   POST /api/plays/:id/discord  managers: { channel, role? } → share a published play as a card with
 //                                "✅ Learned it" (writes the same learned state as the site) and
 //                                "▶ Open in Studio" buttons (bot/worker.js → playButton in botcmds.js)
-// Video (Cloudflare Stream) and live co-editing (a ClubRoom-style Durable Object) are still open – see
-// PLANNING/REDESIGN.md BE0/BE1. The document lives in the MEDIA bucket (BE0) under a `play/` prefix.
+//   GET  /api/plays/:id/ws       managers: live co-editing socket on room studio:<id> (bot/clubroom.js)
+//   POST /api/plays/:id/op       managers: { op } → one live change (piece move, chalk stroke, keyframe) relayed
+//                                to the room. Not stored – the next save (a new version) is still the only source of truth.
+// Video is in playmedia.js. The document lives in the MEDIA bucket (BE0) under a `play/` prefix.
 import { can, flagOn } from './roles.js';
 import { notify, safely } from './notify.js';
 import { discordTargets, postEmbed } from './docs.js';
+import { broadcastRoom } from './clubroom.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -51,7 +54,7 @@ function cleanDoc(doc) {
     .map((s) => ({ at: s.at, pieces: Object.fromEntries(Object.entries(s.pieces).filter(([id, pos]) => pieceIds.has(id) && inPitch(pos)).map(([id, pos]) => [id, { x: pos.x, y: pos.y }])) }));
   const drawings = (Array.isArray(doc.drawings) ? doc.drawings : []).slice(0, 40)
     .filter((d) => Array.isArray(d?.points) && d.points.length >= 2)
-    .map((d) => ({ points: d.points.slice(0, 60).filter((pt) => Array.isArray(pt) && inPitch({ x: pt[0], y: pt[1] })).map((pt) => [pt[0], pt[1]]), color: /^#[0-9a-f]{6}$/i.test(d.color ?? '') ? d.color : '#c8352c' }));
+    .map((d) => ({ id: clean(d.id, 24) || crypto.randomUUID().slice(0, 8), points: d.points.slice(0, 60).filter((pt) => Array.isArray(pt) && inPitch({ x: pt[0], y: pt[1] })).map((pt) => [pt[0], pt[1]]), color: /^#[0-9a-f]{6}$/i.test(d.color ?? '') ? d.color : '#c8352c' }));
   const quiz = (Array.isArray(doc.quiz) ? doc.quiz : []).slice(0, 20)
     .filter((q) => clean(q?.q, 200) && Array.isArray(q.options) && q.options.length >= 2 && q.options.length <= 6 && Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length)
     .map((q) => ({ q: clean(q.q, 200), options: q.options.slice(0, 6).map((o) => clean(o, 80)), answer: q.answer }));
@@ -139,7 +142,71 @@ async function save(env, me, id, body) {
   await run(env, 'UPDATE plays SET title = ?, category = ?, version = ?, doc_key = ?, updated_at = ?, updated_by = ? WHERE id = ?', title, category, version, key, now, me.u, id);
   await run(env, 'INSERT INTO play_versions (play_id, version, key, created_by, created_at) VALUES (?, ?, ?, ?, ?)', id, version, key, me.u, now);
   await trimVersions(env, id);
+  // Tell anyone editing this play live that a new version exists (the server says it, so a client can't fake it).
+  await broadcastRoom(env, `studio:${id}`, { t: 'studio', id, op: { k: 'saved', version }, by: me.u, n: me.n || 'Manager', at: now });
   return getOne(env, me, id);
+}
+
+// ---------- BE1 live co-editing ----------
+// Managers only. Each change is relayed through the ClubRoom DO 'studio:<id>', which is broadcast-only: sockets can't
+// send, so every op goes through this POST route. The route stamps `by`/`n` from the session (never from the body, so a
+// client can't send as another member) and `at` from the server, which the clients use for last-write-wins per piece,
+// stroke or keyframe. Nothing is written to D1/R2 here.
+const OP_MAX_BYTES = 4_000;
+const STROKE_MAX = 60;
+const okTeam = (t) => ['us', 'opp', 'ball'].includes(t);
+const okColor = (c) => (/^#[0-9a-f]{6}$/i.test(c ?? '') ? c : '#c8352c');
+const pts = (list) => (Array.isArray(list) ? list.slice(0, STROKE_MAX).filter((pt) => Array.isArray(pt) && inPitch({ x: pt[0], y: pt[1] })).map((pt) => [pt[0], pt[1]]) : []);
+// Only these shapes are relayed; anything else (or any out-of-pitch coordinate) is refused, never passed through.
+function cleanOp(op) {
+  if (!op || typeof op !== 'object') return null;
+  if (op.k === 'piece') {
+    const id = clean(op.id, 24);
+    if (!id || !okTeam(op.team) || !inPitch(op)) return null;
+    return { k: 'piece', id, team: op.team, x: op.x, y: op.y, label: op.label ? clean(op.label, 20) : undefined };
+  }
+  if (op.k === 'pieceDel') { const id = clean(op.id, 24); return id ? { k: 'pieceDel', id } : null; }
+  if (op.k === 'stroke') {
+    const sid = clean(op.sid, 24), points = pts(op.points);
+    return sid && points.length >= 2 ? { k: 'stroke', sid, color: okColor(op.color), points } : null;
+  }
+  if (op.k === 'strokeDel') { const sid = clean(op.sid, 24); return sid ? { k: 'strokeDel', sid } : null; }
+  if (op.k === 'chalkClear') return { k: 'chalkClear' };
+  if (op.k === 'key') {
+    if (!Number.isFinite(op.at) || op.at < 0 || op.at > 60_000 || !op.pieces || typeof op.pieces !== 'object') return null;
+    const pieces = {};
+    for (const [rawId, pos] of Object.entries(op.pieces).slice(0, 40)) {
+      const id = clean(rawId, 24);
+      if (id && inPitch(pos)) pieces[id] = { x: pos.x, y: pos.y };
+    }
+    return { k: 'key', at: Math.round(op.at), pieces };
+  }
+  if (op.k === 'keyDel') return Number.isFinite(op.at) ? { k: 'keyDel', at: Math.round(op.at) } : null;
+  return null;
+}
+
+async function studioOp(env, me, id, body) {
+  const r = await one(env, 'SELECT id FROM plays WHERE id = ? AND archived = 0', id);
+  if (!r) return fail('Play not found.', 404);
+  if (!env.CLUB_ROOM) return fail('Live updates are not set up yet.', 503);
+  if (JSON.stringify(body?.op ?? null).length > OP_MAX_BYTES) return fail('That change is too large.', 413);
+  const op = cleanOp(body?.op);
+  if (!op) return fail('Unknown change.');
+  const sent = await broadcastRoom(env, `studio:${id}`, { t: 'studio', id, op, by: me.u, n: (me.n || 'Manager').slice(0, 40), at: Date.now() });
+  return json({ ok: sent });
+}
+
+// Live socket for the studio: same ?t= shape as the Dugout socket. Managers only, since only managers can save.
+export async function studioSocket(request, env, me, id) {
+  if (request.headers.get('Upgrade') !== 'websocket') return fail('Expected a WebSocket.', 426);
+  if (!me || !flagOn(env, me, 'tactics')) return fail('Not available yet.', 404);
+  if (!can(me, 'plays.manage')) return fail('Managers only.', 403);
+  if (!env.CLUB_ROOM) return fail('Live updates are not set up yet.', 503);
+  if (!/^\d{1,9}$/.test(String(id)) || Number(id) < 1) return fail('Not found', 404);
+  if (!(await one(env, 'SELECT id FROM plays WHERE id = ? AND archived = 0', Number(id)))) return fail('Play not found.', 404);
+  const q = new URLSearchParams({ u: me.u, n: (me.n || 'Manager').slice(0, 40) });
+  const room = env.CLUB_ROOM.get(env.CLUB_ROOM.idFromName(`studio:${id}`));
+  return room.fetch(new Request(`https://room/ws?${q}`, { headers: request.headers }));
 }
 
 async function restore(env, me, id, body) {
@@ -255,7 +322,7 @@ export async function playsRoute(p, method, body, me, env, log) {
     if (!can(me, 'announce.discord')) return fail('Managers only.', 403);
     return json(await discordTargets(env));
   }
-  const m = /^\/api\/plays\/(\d+)(?:\/(publish|assign|delete|restore|learned|quiz|discord))?$/.exec(p);
+  const m = /^\/api\/plays\/(\d+)(?:\/(publish|assign|delete|restore|learned|quiz|discord|op))?$/.exec(p);
   if (!m) return fail('Not found', 404);
   const id = Number(m[1]);
   const action = m[2];
@@ -272,6 +339,7 @@ export async function playsRoute(p, method, body, me, env, log) {
   if (action === 'assign') { await assignTo(env, me, id, body.userIds); await log(env, me, 'play-assign', `#${id} · ${(body.userIds ?? []).length} member(s)`); return getOne(env, me, id); }
   if (action === 'delete') { const r = await archive(env, id); await log(env, me, 'play-delete', `#${id}`); return r; }
   if (action === 'restore') { const r = await restore(env, me, id, body); await log(env, me, 'play-restore', `#${id} → v${body.version}`); return r; }
+  if (action === 'op') return studioOp(env, me, id, body); // not logged: a drag would flood the audit log
   if (action === 'discord') {
     if (!can(me, 'announce.discord')) return fail('Managers only.', 403);
     const r = await postPlay(env, me, id, body, log);

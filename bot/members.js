@@ -38,7 +38,7 @@ import { hotwPublic, hotwRoute } from './hotw.js';
 import { socialRoute, touch } from './social.js';
 import { chatRoute, chatSocket } from './chat.js';
 import { mediaUploadRoute } from './media.js';
-import { playsRoute } from './plays.js';
+import { playsRoute, studioSocket } from './plays.js';
 import { playMediaRoute, playMediaUpload } from './playmedia.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
@@ -322,6 +322,12 @@ export async function handleMembers(request, env, ctx, loadSite) {
       const who = await unseal(env, url.searchParams.get('t'));
       if (who) who.role = await currentRole(env, who);
       return lineupSocket(request, env, who, wsLineup[1]);
+    }
+    const wsStudio = url.pathname.match(/^\/api\/plays\/(\d{1,9})\/ws$/); // BE1 live Tactics Studio – managers only, same ?t= shape
+    if (wsStudio) {
+      const who = await unseal(env, url.searchParams.get('t'));
+      if (who) who.role = await currentRole(env, who);
+      return studioSocket(request, env, who, wsStudio[1]);
     }
     if (url.pathname === '/api/hub/ws') { // BE8 – live "who's in the Hub" roster + waves, same ?t= shape as chat
       const who = await unseal(env, url.searchParams.get('t'));

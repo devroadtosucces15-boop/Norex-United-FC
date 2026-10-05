@@ -18,6 +18,70 @@
   let root, me, plays = [], active = null, detail = null, studio = null;
   const manager = () => ['manager', 'owner'].includes(me?.role);
 
+  // ---------- live co-editing (BE1) ----------
+  // Managers editing one play together. Each change is one small op, relayed by the Worker to room studio:<id>
+  // (the Worker stamps who sent it). Pieces, chalk strokes and keyframes are last-write-wins per key: a local change
+  // stamps its key with this device's clock, a remote one with the server's time, and ties go to the larger member id.
+  // Saving is still the only thing that makes a version: the next Save posts this whole document.
+  let live = null, liveOn = false, liveDown = false, pendingRender = false, lww = new Map();
+  const wins = (key, at, by) => { const cur = lww.get(key); return !cur || at > cur.at || (at === cur.at && String(by) > String(cur.by)); };
+  const stamp = (key, at, by) => lww.set(key, { at, by });
+  // A remote change never redraws over a drag, a chalk stroke or a field someone is typing in; it waits.
+  const busy = () => !!studio?.gesture || (!!root && root.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+  function refresh() { if (!studio) return; if (busy()) { pendingRender = true; return; } pendingRender = false; detailView(); }
+  const paintLive = () => { const el = root?.querySelector('[data-live]'); if (el) { el.textContent = liveOn ? '● Live' : '○ Offline'; el.classList.toggle('on', liveOn); } };
+  function sendOp(op, key) {
+    if (key) stamp(key, Date.now(), me.u);
+    if (!studio || liveDown) return;
+    call(`/api/plays/${active}/op`, { op }).catch((x) => { if (/not set up/i.test(x.message)) liveDown = true; });
+  }
+  const sendPiece = (p) => sendOp({ k: 'piece', id: p.id, team: p.team, x: p.x, y: p.y, label: p.label }, `p:${p.id}`);
+  function upsertPiece(op) {
+    const d = studio.doc, cur = d.pieces.find((x) => x.id === op.id);
+    if (cur) Object.assign(cur, { team: op.team, x: op.x, y: op.y, label: op.label }); // in place: a drag may hold this object
+    else if (d.pieces.length < 40) d.pieces.push({ id: op.id, team: op.team, x: op.x, y: op.y, label: op.label });
+  }
+  function applyRemote(msg) {
+    if (!studio || !msg?.op) return;
+    const { op, by, n, at } = msg, d = studio.doc;
+    if (op.k === 'saved') { if (detail) detail.version = Math.max(detail.version || 0, op.version); if (by !== me.u) toast(`${n || 'Someone'} saved v${op.version}`); return refresh(); }
+    if (op.k === 'chalkClear') { if (!wins('chalk', at, by)) return; stamp('chalk', at, by); d.drawings = d.drawings.filter((x) => (lww.get(`s:${x.id}`)?.at ?? 0) > at); return refresh(); }
+    const key = op.k.startsWith('piece') ? `p:${op.id}` : op.k.startsWith('stroke') ? `s:${op.sid}` : op.k.startsWith('key') ? `k:${op.at}` : null;
+    if (!key || !wins(key, at, by)) return;
+    if (op.k.startsWith('stroke') && (lww.get('chalk')?.at ?? 0) > at) return; // drawn before a clear
+    stamp(key, at, by);
+    if (op.k === 'piece') upsertPiece(op);
+    else if (op.k === 'pieceDel') { d.pieces = d.pieces.filter((x) => x.id !== op.id); d.steps.forEach((st) => { delete st.pieces[op.id]; }); if (studio.selectedPieceId === op.id) studio.selectedPieceId = null; }
+    else if (op.k === 'stroke') { const dr = { id: op.sid, points: op.points, color: op.color }; const i = d.drawings.findIndex((x) => x.id === op.sid); if (i >= 0) d.drawings[i] = dr; else { d.drawings.push(dr); if (d.drawings.length > 40) d.drawings.shift(); } }
+    else if (op.k === 'strokeDel') d.drawings = d.drawings.filter((x) => x.id !== op.sid);
+    else if (op.k === 'key') { const st = { at: op.at, pieces: op.pieces }; const i = d.steps.findIndex((x) => x.at === op.at); if (i >= 0) d.steps[i] = st; else d.steps.push(st); d.steps.sort((a, b) => a.at - b.at); }
+    else if (op.k === 'keyDel') d.steps = d.steps.filter((x) => x.at !== op.at);
+    refresh();
+  }
+  // Socket to the play's room (same shape as the Dugout's). Returns a closer; the editor still works without it.
+  function openStudioLive(id, onOp, onState) {
+    const tok = session()?.token;
+    if (!tok || !window.WebSocket) return null;
+    let sock = null, ping = null, retry = null, closed = false, opened = false;
+    const base = (API || location.origin).replace(/^http/, 'ws');
+    const connect = () => {
+      try { sock = new WebSocket(`${base}/api/plays/${id}/ws?t=${encodeURIComponent(tok)}`); } catch { return; }
+      sock.onopen = () => { opened = true; onState(true); ping = setInterval(() => { if (sock.readyState === 1) sock.send('ping'); }, 30000); };
+      sock.onmessage = (m) => { if (m.data !== 'pong') { try { onOp(JSON.parse(m.data)); } catch { /* ignore junk */ } } };
+      sock.onclose = () => { clearInterval(ping); if (!closed) onState(false); if (opened && !closed) retry = setTimeout(connect, 8000); };
+    };
+    connect();
+    return () => { closed = true; clearInterval(ping); clearTimeout(retry); try { sock?.close(); } catch { /* already closed */ } };
+  }
+  function startStudio() {
+    studio = { doc: structuredClone(detail.doc || STARTER_DOC), tool: 'move', drawColor: COLORS[0], selectedPieceId: null, gesture: false };
+    studio.doc.drawings.forEach((dr) => { if (!dr.id) dr.id = crypto.randomUUID().slice(0, 8); });
+    lww = new Map(); liveOn = false; liveDown = false;
+    live = openStudioLive(active, applyRemote, (on) => { liveOn = on; paintLive(); });
+    detailView();
+  }
+  function leaveStudio() { live?.(); live = null; studio = null; liveOn = false; }
+
   // ---------- share to Discord (BE1 follow-up) ----------
   let dcTargets = null;
   const discordTargets = () => (dcTargets ??= call('/api/plays/discord').catch((e) => ({ ready: false, error: e.message })));
@@ -57,7 +121,7 @@
   function studioView(p) {
     const d = studio.doc;
     const tool = (name, label) => `<button class="btn sm ghost${studio.tool === name ? ' active' : ''}" type="button" data-tool="${name}">${label}</button>`;
-    return `<div class="tx-title"><div><p class="kicker">${esc(p.category)}</p><h2>Studio: ${esc(p.title)}</h2><p class="muted">Arrange pieces, chalk the board, capture keyframes, then save a new version.</p></div><div class="tx-actions"><button class="btn sm ghost" type="button" data-cancel-edit>Cancel</button><button class="btn sm" type="button" data-save-doc>Save new version</button></div></div>
+    return `<div class="tx-title"><div><p class="kicker">${esc(p.category)}</p><h2>Studio: ${esc(p.title)}</h2><p class="muted">Arrange pieces, chalk the board, capture keyframes, then save a new version.</p></div><div class="tx-actions"><span class="tx-live${liveOn ? ' on' : ''}" data-live aria-live="polite">${liveOn ? '● Live' : '○ Offline'}</span><button class="btn sm ghost" type="button" data-cancel-edit>Cancel</button><button class="btn sm" type="button" data-save-doc>Save new version</button></div></div>
 <div class="tx-toolbar"><div class="tx-tools">${tool('move', '🖱 Move')}${tool('add-us', '+ Us')}${tool('add-opp', '+ Opponent')}${tool('add-ball', '+ Ball')}${tool('chalk', '✏️ Chalk')}${studio.selectedPieceId ? '<button class="btn sm danger" type="button" data-remove-piece>Remove selected</button>' : ''}${d.drawings.length ? '<button class="btn sm ghost" type="button" data-clear-chalk>Clear chalk</button>' : ''}<button class="btn sm ghost" type="button" data-json-edit>Edit as JSON</button></div>${studio.tool === 'chalk' ? `<div class="tx-colors">${COLORS.map((c) => `<button class="tx-swatch${studio.drawColor === c ? ' on' : ''}" type="button" style="background:${c}" data-color="${c}" aria-label="Chalk colour ${c}"></button>`).join('')}</div>` : ''}</div>
 ${pitch(d, true)}
 <div class="tx-keyframes"><b>Keyframes</b><div class="tx-kf-list">${d.steps.length ? d.steps.map((s, i) => `<button class="tx-kf" type="button" data-kf="${i}">⏱ ${(s.at / 1000).toFixed(1)}s<i class="tx-kf-del" data-del-kf="${i}">×</i></button>`).join('') : '<span class="muted">None yet — arrange pieces, then add one.</span>'}</div><button class="btn sm ghost" type="button" data-add-kf>+ Add keyframe at current positions</button></div>
@@ -134,7 +198,7 @@ ${pitch(d, true)}
     active = null; detail = null; listView();
   }
   async function open(id) {
-    active = +id; detail = await call(`/api/plays/${active}`); studio = null;
+    leaveStudio(); active = +id; detail = await call(`/api/plays/${active}`);
     history.replaceState(null, '', `#play${active}`); detailView();
   }
   function pitchPoint(e, pitchEl) {
@@ -145,21 +209,26 @@ ${pitch(d, true)}
     const id = pieceEl.dataset.pieceId, p = studio.doc.pieces.find((x) => x.id === id);
     if (!p) return;
     const startX = e.clientX, startY = e.clientY;
-    let moved = false;
+    let moved = false, lastSent = 0;
+    studio.gesture = true;
     const onMove = (ev) => {
       const pt = pitchPoint(ev, pitchEl);
       p.x = pt.x; p.y = pt.y;
       pieceEl.style.left = `${pt.x / 10}%`; pieceEl.style.top = `${pt.y / 6.4}%`;
       if (Math.abs(ev.clientX - startX) > 3 || Math.abs(ev.clientY - startY) > 3) moved = true;
+      if (moved && Date.now() - lastSent > 120) { lastSent = Date.now(); sendPiece(p); }
     };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp);
+      studio.gesture = false;
       if (!moved) studio.selectedPieceId = studio.selectedPieceId === id ? null : id;
+      else sendPiece(p);
       detailView();
     };
     document.addEventListener('pointermove', onMove); document.addEventListener('pointerup', onUp);
   }
   function startChalk(pitchEl, pt) {
+    studio.gesture = true;
     const svg = pitchEl.querySelector('.tx-draw');
     const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
     poly.setAttribute('fill', 'none'); poly.setAttribute('stroke', studio.drawColor); poly.setAttribute('stroke-width', '6'); poly.setAttribute('stroke-linecap', 'round'); poly.setAttribute('stroke-linejoin', 'round');
@@ -170,7 +239,12 @@ ${pitch(d, true)}
     const onMove = (ev) => { if (points.length >= 60) return; const p = pitchPoint(ev, pitchEl); points.push([p.x, p.y]); update(); };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp);
-      if (points.length >= 2) { studio.doc.drawings.push({ points, color: studio.drawColor }); if (studio.doc.drawings.length > 40) studio.doc.drawings.shift(); }
+      studio.gesture = false;
+      if (points.length >= 2) {
+        const sid = crypto.randomUUID().slice(0, 8);
+        studio.doc.drawings.push({ id: sid, points, color: studio.drawColor }); if (studio.doc.drawings.length > 40) studio.doc.drawings.shift();
+        sendOp({ k: 'stroke', sid, color: studio.drawColor, points }, `s:${sid}`);
+      }
       detailView();
     };
     document.addEventListener('pointermove', onMove); document.addEventListener('pointerup', onUp);
@@ -184,6 +258,7 @@ ${pitch(d, true)}
     const i = studio.doc.steps.findIndex((s) => s.at === at);
     if (i >= 0) studio.doc.steps[i] = { at, pieces: snapshot }; else studio.doc.steps.push({ at, pieces: snapshot });
     studio.doc.steps.sort((a, b) => a.at - b.at);
+    sendOp({ k: 'key', at, pieces: snapshot }, `k:${at}`);
     detailView();
   }
   async function editJson() {
@@ -216,6 +291,7 @@ ${pitch(d, true)}
     });
   }
   function wire() {
+    root.addEventListener('focusout', () => setTimeout(() => { if (pendingRender && !busy()) refresh(); }, 0));
     root.addEventListener('pointerdown', (e) => {
       if (!studio) return;
       const pitchEl = e.target.closest('[data-studio-pitch]'); if (!pitchEl) return;
@@ -225,7 +301,7 @@ ${pitch(d, true)}
       if (pieceEl && studio.tool === 'move') { startDrag(e, pitchEl, pieceEl); return; }
       if (studio.tool.startsWith('add-') && !pieceEl) {
         const team = studio.tool.slice(4);
-        if (studio.doc.pieces.length < 40) studio.doc.pieces.push({ id: crypto.randomUUID().slice(0, 8), team, x: pt.x, y: pt.y, label: team === 'us' ? 'N' : team === 'opp' ? 'O' : undefined });
+        if (studio.doc.pieces.length < 40) { const np = { id: crypto.randomUUID().slice(0, 8), team, x: pt.x, y: pt.y, label: team === 'us' ? 'N' : team === 'opp' ? 'O' : undefined }; studio.doc.pieces.push(np); sendPiece(np); }
         detailView();
       }
     });
@@ -243,21 +319,21 @@ ${pitch(d, true)}
     });
     root.addEventListener('click', async (e) => {
       if (studio) {
-        if (e.target.closest('[data-cancel-edit]')) { studio = null; detailView(); return; }
-        if (e.target.closest('[data-save-doc]')) { try { detail = await call(`/api/plays/${active}`, { doc: studio.doc }); studio = null; toast('New version saved.'); detailView(); } catch (x) { toast(x.message || 'Could not save.', true); } return; }
+        if (e.target.closest('[data-cancel-edit]')) { leaveStudio(); detailView(); return; }
+        if (e.target.closest('[data-save-doc]')) { try { detail = await call(`/api/plays/${active}`, { doc: studio.doc }); leaveStudio(); toast('New version saved.'); detailView(); } catch (x) { toast(x.message || 'Could not save.', true); } return; }
         const tool = e.target.closest('[data-tool]'); if (tool) { studio.tool = tool.dataset.tool; detailView(); return; }
         const col = e.target.closest('[data-color]'); if (col) { studio.drawColor = col.dataset.color; detailView(); return; }
-        if (e.target.closest('[data-remove-piece]')) { const id = studio.selectedPieceId; studio.doc.pieces = studio.doc.pieces.filter((p) => p.id !== id); studio.doc.steps.forEach((s) => { delete s.pieces[id]; }); studio.selectedPieceId = null; detailView(); return; }
-        if (e.target.closest('[data-clear-chalk]')) { studio.doc.drawings = []; detailView(); return; }
+        if (e.target.closest('[data-remove-piece]')) { const id = studio.selectedPieceId; studio.doc.pieces = studio.doc.pieces.filter((p) => p.id !== id); studio.doc.steps.forEach((s) => { delete s.pieces[id]; }); studio.selectedPieceId = null; if (id) sendOp({ k: 'pieceDel', id }, `p:${id}`); detailView(); return; }
+        if (e.target.closest('[data-clear-chalk]')) { studio.doc.drawings = []; sendOp({ k: 'chalkClear' }, 'chalk'); detailView(); return; }
         if (e.target.closest('[data-json-edit]')) { editJson(); return; }
         if (e.target.closest('[data-add-kf]')) { addKeyframe(); return; }
-        const delKf = e.target.closest('[data-del-kf]'); if (delKf) { studio.doc.steps.splice(+delKf.dataset.delKf, 1); detailView(); return; }
-        const kf = e.target.closest('[data-kf]'); if (kf) { const s = studio.doc.steps[+kf.dataset.kf]; for (const [id, pos] of Object.entries(s.pieces)) { const pc = studio.doc.pieces.find((x) => x.id === id); if (pc) { pc.x = pos.x; pc.y = pos.y; } } detailView(); return; }
+        const delKf = e.target.closest('[data-del-kf]'); if (delKf) { const di = +delKf.dataset.delKf, at = studio.doc.steps[di]?.at; studio.doc.steps.splice(di, 1); if (at !== undefined) sendOp({ k: 'keyDel', at }, `k:${at}`); detailView(); return; }
+        const kf = e.target.closest('[data-kf]'); if (kf) { const s = studio.doc.steps[+kf.dataset.kf]; for (const [id, pos] of Object.entries(s.pieces)) { const pc = studio.doc.pieces.find((x) => x.id === id); if (pc) { pc.x = pos.x; pc.y = pos.y; sendPiece(pc); } } detailView(); return; }
         if (e.target.closest('[data-add-q]')) { if (studio.doc.quiz.length < 20) studio.doc.quiz.push({ q: '', options: ['', ''], answer: 0 }); detailView(); return; }
         const delQ = e.target.closest('[data-del-q]'); if (delQ) { studio.doc.quiz.splice(+delQ.closest('[data-q]').dataset.q, 1); detailView(); return; }
         const addOpt = e.target.closest('[data-add-opt]'); if (addOpt) { const q = studio.doc.quiz[+addOpt.closest('[data-q]').dataset.q]; if (q.options.length < 6) q.options.push(''); detailView(); return; }
         const delOpt = e.target.closest('[data-del-opt]'); if (delOpt) { const qd = delOpt.closest('[data-q]'); const q = studio.doc.quiz[+qd.dataset.q]; const j = +delOpt.dataset.delOpt; if (q.options.length > 2) { q.options.splice(j, 1); if (q.answer >= q.options.length) q.answer = 0; else if (q.answer > j) q.answer--; } detailView(); return; }
-        const back = e.target.closest('[data-back]'); if (back) { studio = null; history.replaceState(null, '', location.pathname); await load(); } return;
+        const back = e.target.closest('[data-back]'); if (back) { leaveStudio(); history.replaceState(null, '', location.pathname); await load(); } return;
       }
       const o = e.target.closest('[data-open]'); if (o) { try { await open(o.dataset.open); } catch (x) { toast(x.message, true); } return; }
       if (e.target.closest('[data-back]')) { history.replaceState(null, '', location.pathname); await load(); return; }
@@ -268,7 +344,7 @@ ${pitch(d, true)}
       const hd = e.target.closest('[data-hide-media]'); if (hd) { if (!(await UI.confirm({ title: 'Hide this recording?', text: 'It disappears for members; the file is kept.', ok: 'Hide', danger: true }))) return; try { await call(`/api/plays/${active}/media/${hd.dataset.hideMedia}/delete`, {}); toast('Recording hidden.'); loadMedia(); } catch (x) { toast(x.message, true); } return; }
       if (e.target.closest('[data-learn]')) { try { await call(`/api/plays/${active}/learned`, { learned: true }); detail.mine.learned = true; toast('Marked learned.'); detailView(); } catch (x) { toast(x.message, true); } return; }
       const pub = e.target.closest('[data-publish]'); if (pub) { try { detail = await call(`/api/plays/${active}/publish`, { published: pub.dataset.publish === '1' }); toast(detail.published ? 'Play published.' : 'Play unpublished.'); detailView(); } catch (x) { toast(x.message, true); } return; }
-      if (e.target.closest('[data-edit]')) { studio = { doc: structuredClone(detail.doc || STARTER_DOC), tool: 'move', drawColor: COLORS[0], selectedPieceId: null }; detailView(); return; }
+      if (e.target.closest('[data-edit]')) { startStudio(); return; }
       if (e.target.closest('[data-restore]')) { versions(); return; }
       if (e.target.closest('[data-discord]')) { shareToDiscord(); return; }
       if (e.target.closest('[data-archive]')) { if (!(await UI.confirm({ title: 'Archive this play?', text: 'History is kept; members will no longer see it.', ok: 'Archive', danger: true }))) return; try { await call(`/api/plays/${active}/delete`, {}); toast('Play archived.'); history.replaceState(null, '', location.pathname); await load(); } catch (x) { toast(x.message, true); } }
