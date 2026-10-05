@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-05T06:43:24.630Z",
+ "fetchedAt": "2026-10-05T06:51:05.320Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -1377,6 +1377,42 @@
    "prevGoals10": "0"
   },
   {
+   "name": "notmotional",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
+  },
+  {
    "name": "Delandon19",
    "gamesPlayed": "0",
    "favoritePosition": "",
@@ -1729,12 +1765,12 @@
   {
    "name": "CaptainFluffyCat",
    "proPos": "25",
-   "gamesPlayed": "103",
-   "goals": "75",
+   "gamesPlayed": "104",
+   "goals": "77",
    "assists": "49",
    "manOfTheMatch": "20",
    "ratingAve": "7.5",
-   "prevGoals": "0",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
@@ -1758,6 +1794,17 @@
    "ratingAve": "7.6",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "notmotional",
+   "proPos": "25",
+   "gamesPlayed": "69",
+   "goals": "97",
+   "assists": "43",
+   "manOfTheMatch": "24",
+   "ratingAve": "8.3",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "Jorge15chivas",
@@ -1927,7 +1974,7 @@
   {
    "name": "Louig_28",
    "proPos": "25",
-   "gamesPlayed": "65",
+   "gamesPlayed": "66",
    "goals": "38",
    "assists": "39",
    "manOfTheMatch": "19",
