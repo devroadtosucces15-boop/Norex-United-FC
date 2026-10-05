@@ -42,6 +42,7 @@ import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.
 import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { crawlRoute } from './crawl.js';
+import { clubLookup } from './clublookup.js';
 import { awardPoints, pointsRoute } from './points.js';
 import { myAvatarCard } from './avatarcard.js';
 import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
@@ -390,6 +391,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     }
     if (url.pathname === '/api/bot/settings/public') return cors(env, await botSettingsPublicRoute(request, env)); // P7.5 – fetch.mjs reads before posting
     if (url.pathname === '/api/crawl') return cors(env, await crawlRoute(request, env)); // P9.1 – fetch.mjs's resumable club-ID crawl checkpoint
+    if (url.pathname === '/api/clubs/lookup' && request.method === 'GET') return cors(env, await clubLookup(env, url.searchParams.get('q'))); // P9.4 – find any club, indexing it live if needed
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me, request);
     const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)
