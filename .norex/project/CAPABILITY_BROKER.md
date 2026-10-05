@@ -52,3 +52,7 @@ Among already-eligible routes, the broker now ranks deterministically using decl
 ## Provider presence slice — 2026-10-03
 
 Local executable presence can now be probed without executing a provider. Installed CLI presence is not treated as proof of authentication, allowance or billing mode; all three remain UNKNOWN until a separate trusted adapter can establish them without exposing credentials or causing usage.
+
+## Trusted non-generative auth-status slice — 2026-10-04
+
+Local CLI status output can now be normalized without reading credentials or invoking a model. The observed Codex CLI status is `Logged in using ChatGPT`, which establishes the supported ChatGPT authentication path and `SUBSCRIPTION_EXISTING_ACCESS`; allowance remains UNKNOWN and therefore dispatch remains gated. Claude reports not logged in, so its auth is NOT_AUTHENTICATED and billing/allowance remain UNKNOWN. This status check caused no provider usage or metered spend.

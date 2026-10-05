@@ -12,7 +12,7 @@ import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
 import { routeCapability } from './capability-broker.mjs';
 import { routeWithDurableApproval } from './routing-service.mjs';
-import { probeProviderPresence } from './provider-probe.mjs';
+import { probeProviderPresence, classifyProviderAuthStatus } from './provider-probe.mjs';
 import { planProviderDispatch } from './provider-adapter.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
 import { permissionWithDurableGrant, permissionApprovalAction } from './permission-service.mjs';
@@ -94,6 +94,14 @@ test('provider presence probe is deterministic and never infers auth, allowance 
   assert.equal(codex.installed, false);
   for (const probe of [claude, codex]) { assert.equal(probe.auth, 'UNKNOWN'); assert.equal(probe.allowance, 'UNKNOWN'); assert.equal(probe.billing, 'UNKNOWN_BILLING'); }
   const missing = await probeProviderPresence('not-a-provider', { paths, accessFn }); assert.equal(missing.installed, false); assert.equal(missing.billing, 'UNKNOWN_BILLING');
+});
+
+test('provider auth status classification is non-secret and does not infer allowance', () => {
+  const codex = classifyProviderAuthStatus('codex', 'Logged in using ChatGPT');
+  assert.deepEqual(codex, { auth: 'VERIFIED', allowance: 'UNKNOWN', billing: 'SUBSCRIPTION_EXISTING_ACCESS', auth_method: 'CHATGPT' });
+  const claude = classifyProviderAuthStatus('claude', JSON.stringify({ loggedIn: false, authMethod: 'none' }));
+  assert.equal(claude.auth, 'NOT_AUTHENTICATED'); assert.equal(claude.allowance, 'UNKNOWN'); assert.equal(claude.billing, 'UNKNOWN_BILLING');
+  const unknown = classifyProviderAuthStatus('codex', 'unexpected'); assert.equal(unknown.auth, 'UNKNOWN'); assert.equal(unknown.billing, 'UNKNOWN_BILLING');
 });
 
 test('durable approval authorizes only its exact metered route', async () => {
