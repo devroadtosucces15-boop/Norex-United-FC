@@ -273,3 +273,18 @@ export async function statInsightWeekly(env, postEmbed, now = Date.now()) {
   }
   await env.DB.prepare("INSERT INTO meta (key, value) VALUES ('stat_insight_week', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(wk).run();
 }
+
+// ---------- /insight (Discord, flag `statInsights`): one stored insight as an embed, same tier gate as the site ----------
+export const DISCORD_INSIGHT_KEYS = { club: 'club', match: 'match.latest', goals: 'leaders.goals', assists: 'leaders.assists', rating: 'leaders.rating', motm: 'leaders.motm' };
+export async function discordInsightEmbed(env, stat, role = 'guest') {
+  const key = DISCORD_INSIGHT_KEYS[stat];
+  if (!key) return { error: 'Pick one of the listed insights.' };
+  if (!env.DB) return { error: 'Insights need the member database, which is not connected here.' };
+  const row = await one(env, 'SELECT key, headline, body, watch, tier, at FROM stat_insights WHERE key = ?', key);
+  if (!row) return { error: 'No insight for that yet – it appears after the next data refresh.' };
+  if (!visibleRow(row, role, null)) return { error: '🔒 That insight is for members only – log in on the site to see it.' };
+  return { embed: {
+    title: `✨ ${row.headline}`, description: `${row.body}\n\n👀 ${row.watch}`.slice(0, 3900),
+    color: 0xc8352c, footer: { text: 'NOREX UNITED · insight' }, timestamp: new Date(row.at).toISOString(),
+  } };
+}

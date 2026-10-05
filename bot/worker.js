@@ -31,7 +31,7 @@ import { checkVoiceRecap } from './voicerecap.js';
 import { askAnswer, buildAskContext } from './ask.js';
 import { makeAvatarCard } from './avatarcard.js';
 import { postEmbed } from './docs.js';
-import { refreshStatInsights, handleStatInsightJob, statInsightWeekly } from './statinsights.js';
+import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordInsightEmbed } from './statinsights.js';
 import { handleHubWaveJob } from './hub.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
@@ -101,6 +101,7 @@ export default {
     if (i.type === 2 && i.data.name === 'profanitysetup') return profanitySetupCommand(i, env, ctx, who);
     if (i.type === 2 && i.data.name === 'avatarcard') return avatarCardCommand(i, env, ctx, who, new URL(request.url).origin);
     if (i.type === 2 && i.data.name === 'ask') return askCommand(i, env, ctx, site, who);
+    if (i.type === 2 && i.data.name === 'insight') return insightCommand(i, env, who); // BE9
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
       try { return json(await eventButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
     }
@@ -277,6 +278,15 @@ function avatarCardCommand(i, env, ctx, who, origin) {
     }).catch((e) => console.log('avatarcard reply failed', e.message));
   })());
   return json({ type: 5, data: { flags: 64 } });
+}
+
+// ---------- /insight (public, flag `statInsights`): BE9's stored stat insight as an embed – read-only, no writer call ----------
+async function insightCommand(i, env, who) {
+  if (!flagOn(env, who, 'statInsights')) return json({ type: 4, data: { content: '🔒 Club insights are not switched on for you yet.', flags: 64 } });
+  const stat = flatOptions(i.data.options).find((o) => o.name === 'stat')?.value ?? 'club';
+  const out = await discordInsightEmbed(env, stat, who.role).catch((e) => ({ error: `⚠️ ${e.message}` }));
+  if (out.error) return json({ type: 4, data: { content: out.error, flags: 64 } });
+  return json({ type: 4, data: { embeds: [out.embed] } });
 }
 
 // ---------- /ask (public, flag-gated): P11.11 AI club chatbot – site JSON stats as context for the text model ----------

@@ -123,4 +123,18 @@ posted = null;
 await statInsightWeekly(env, fakePostEmbed, new Date('2026-10-06T10:00:00Z').getTime()); // a Tuesday
 t('no post on a non-Monday', posted === null);
 
+// ---------- /insight Discord embed (read-only, same tier gate as the site) ----------
+const { discordInsightEmbed } = await import('../bot/statinsights.js');
+await DB.exec('DELETE FROM stat_insights');
+await DB.prepare('INSERT INTO stat_insights (key, hash, headline, body, watch, sources, tier, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+  .bind('club', 'h', 'Unbeaten at home', 'Form is solid.', 'Keep it tight.', '{}', 'public', Date.now()).run();
+await DB.prepare('INSERT INTO stat_insights (key, hash, headline, body, watch, sources, tier, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+  .bind('leaders.goals', 'h', 'Goals race', 'Close at the top.', 'Watch the striker.', '{}', 'member', Date.now()).run();
+const ok = await discordInsightEmbed(env, 'club', 'guest');
+t('/insight club → embed in club red with the stored headline', ok.embed?.title === '✨ Unbeaten at home' && ok.embed.color === 0xc8352c);
+t('/insight member-tier row → gated for a guest', /members only/.test((await discordInsightEmbed(env, 'goals', 'guest')).error ?? ''));
+t('/insight member-tier row → shown to a member', (await discordInsightEmbed(env, 'goals', 'member')).embed?.title === '✨ Goals race');
+t('/insight with no stored row → friendly error', /No insight/.test((await discordInsightEmbed(env, 'match', 'owner')).error ?? ''));
+t('/insight unknown stat → error', !!(await discordInsightEmbed(env, 'nope', 'owner')).error);
+
 done();

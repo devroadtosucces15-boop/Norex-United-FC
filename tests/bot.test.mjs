@@ -36,6 +36,7 @@ const sample = {
   aispike: null, // deferred reply, owner only – needs the real Workers AI binding (P11.1)
   profanitysetup: null, // deferred reply, owner only – calls the real Discord AutoMod API (P11.4)
   avatarcard: null, // deferred reply, needs a resolved attachment – tests/avatarcard.test.mjs (P11.5)
+  insight: null, // BE9 stored insight, flag-gated (owner) – embed + tier gate tested in tests/statinsights.test.mjs
   ask: null, // deferred reply, flag-gated + needs the real Workers AI binding – tests/ask.test.mjs (P11.11)
   nextevent: null, feedback: null, suggest: null, announce: null, trial: null, motm: null, history: null, // P11.16 – need the member DB: tests/quickcommands.test.mjs
 };

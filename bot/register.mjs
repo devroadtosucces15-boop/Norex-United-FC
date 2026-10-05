@@ -23,6 +23,13 @@ const commands = [
     name: 'ask', description: 'Ask the club chatbot a question about our stats (P11.11)',
     options: [{ type: STRING, name: 'question', description: 'e.g. who has the most assists this season?', required: true, max_length: 300 }],
   },
+  {
+    name: 'insight', description: "The club's latest stat insight (✨ BE9)",
+    options: [{ type: STRING, name: 'stat', description: 'Which insight (default: club form)', choices: [
+      { name: 'Club form', value: 'club' }, { name: 'Latest match', value: 'match' }, { name: 'Goals leaders', value: 'goals' },
+      { name: 'Assists leaders', value: 'assists' }, { name: 'Rating leaders', value: 'rating' }, { name: 'MOTM leaders', value: 'motm' },
+    ] }],
+  },
   // P7.4 – commands that read the member database (bot/botcmds.js)
   { name: 'schedule', description: 'Upcoming match nights – answer ✅ ❔ ❌ right here' },
   { name: 'availability', description: "Who's in for the next event and which positions are missing" },
