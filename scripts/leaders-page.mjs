@@ -38,6 +38,7 @@ export function advancedSection(h, lm) {
 export function buildLeaders(h, lm) {
   const { write, page, pageHead, section, modes, config, MEMBER_API } = h;
   const body = `${pageHead('🏆 Leaderboards', 'Monthly and season tables for goals, assists, rating and MOTM – with the Player of the Month and a Best XI for every month, plus where we stand in the world. League numbers come from archived EA matches; Rush from results logged by members.', '')}
+<div data-nx-insight="leaders.goals" hidden></div><div data-nx-insight="leaders.rating" hidden></div>
 ${modes(section('Month by month', M.leadersHtml(ctxFor(h, '', 'lg'), lm, { seasonLabel: 'Season' }), { sub: `${lm.length} archived games`, id: 'months' }), 'months', 'Pick a month, or the whole season')}
 ${section('🌍 World top 100', h.world, { sub: 'EA all-time skill rating · updated daily', id: 'world' })}
 ${MEMBER_API ? `<div data-flag="leaders" hidden>${section('Squad boards', '<div data-leaders-members></div>', { sub: 'attendance, MOTM votes, awards, predictions – members only', id: 'squad-boards' })}</div>` : ''}
