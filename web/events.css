@@ -143,3 +143,19 @@ button.lu-slot:hover .lu-dot,button.lu-slot:focus-visible .lu-dot{transform:scal
 @media (max-width:560px){.lu-slot{width:60px;font-size:10px}.lu-dot{width:34px;height:34px}.lu-save input{width:120px}}
 .lu-slot.warn .lu-dot{border-color:var(--loss);box-shadow:0 0 0 3px rgba(239,68,68,.3)}
 .lu-slot.warn small::after{content:" ⚠️"}
+
+.rc-view{margin-top:8px}
+.rc-view summary{cursor:pointer;font:600 13px var(--head);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.rc-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.rc-row{display:flex;align-items:center;gap:8px;font:500 13px var(--body)}
+.rc-row b{min-width:34px;font:600 12px var(--head);color:var(--muted)}
+.rc-row.unanswered{opacity:.6}
+.rc-row.no{opacity:.7;text-decoration:line-through}
+.rc-st,.rc-in{margin-left:auto}
+.ev-nudge{border:0;background:none;cursor:pointer;font-size:14px;padding:0 2px}
+.dw-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px}
+.dw-day{display:grid;gap:4px;padding:10px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.dw-day.ok{border-color:rgba(34,197,94,.45)}
+.dw-day.short{border-color:rgba(239,68,68,.45)}
+.dw-day b{font:600 13px var(--head);text-transform:uppercase}
+.dw-day span{font:600 13px var(--body)}

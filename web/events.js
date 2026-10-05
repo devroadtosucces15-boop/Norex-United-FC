@@ -76,9 +76,9 @@ ${ph === 'live' ? UI.pill(Date.now() < e.start ? 'Starting soon' : Date.now() < 
 ${e.lineupAt && e.lineup?.[ctx.me.u] ? UI.pill(`You’re starting at ${POS_OF(e.lineup[ctx.me.u])}`, { emoji: '🧩', tone: 'win' }) : ''}
 ${e.usual !== undefined && !my && ph !== 'past' ? UI.pill(e.usual ? 'You’re usually on' : 'Outside your usual times', { emoji: e.usual ? '🟢' : '🌙', tone: e.usual ? 'win' : '', tip: 'From the play times on your profile' }) : ''}</header>
 ${e.cancelReason ? `<p class="muted small">🚫 ${esc(e.cancelReason)}</p>` : ''}${e.notes ? `<p class="ev-notes">${esc(e.notes).replace(/\n/g, '<br>')}</p>` : ''}
-${cov.length && ph !== 'cancelled' ? `<div class="ev-needs">${cov.map((c) => `<span class="ev-need${c.short ? ' short' : ''}" data-tip="${c.k === 'players' ? `${c.have} said yes` : `${c.have} first-choice ${c.k} said yes${c.could > c.have ? ` · ${c.could} can play it` : ''}`}">${c.k === 'players' ? '👥' : esc(c.k)} <b>${c.have}/${c.n}</b></span>`).join('')}</div>` : ''}
+${cov.length && ph !== 'cancelled' ? `<div class="ev-needs">${cov.map((c) => `<span class="ev-need${c.short ? ' short' : ''}" data-tip="${c.k === 'players' ? `${c.have} said yes` : `${c.have} first-choice ${c.k} said yes${c.could > c.have ? ` · ${c.could} can play it` : ''}`}">${c.k === 'players' ? '👥' : esc(c.k)} <b>${c.have}/${c.n}</b></span>${S.canManage && c.short && c.k !== 'players' && ph !== 'past' ? `<button type="button" class="ev-nudge" data-nudge="${esc(c.k)}" data-tip="Nudge members who play ${esc(c.k)} and haven’t answered">📣</button>` : ''}`).join('')}</div>` : ''}
 <div class="ev-who"><span class="count-row"><span>✅ ${by('yes').length}</span><span>❔ ${by('maybe').length}</span><span>❌ ${by('no').length}</span></span><span class="faces">${faces(by('yes'))}${faces(by('maybe'), 'maybe')}</span></div>
-${lineupView(e)}${live ? liveBox(e, me) : ''}
+${lineupView(e)}${S.canManage ? readyView(e) : ''}${live ? liveBox(e, me) : ''}
 <footer>${ph === 'soon' || ph === 'live' ? `<div class="pick" role="group" aria-label="Can you make it?">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="${my === s ? 'on' : ''}" data-rsvp="${s}" aria-pressed="${my === s}" aria-label="${s}">${ICON[s]}</button>`).join('')}</div>` : ''}
 <span class="grow"></span>${ph === 'past' && S.matchNight ? `<button type="button" class="btn sm${e.reportAt ? ' ghost' : ''}" data-report>📋 Session report</button>` : ''}
 ${S.canManage && ph !== 'past' && ph !== 'cancelled' ? `<button type="button" class="btn sm ghost" data-lineup>🧩 Lineup</button><button type="button" class="btn sm ghost" data-edit>✏️</button><button type="button" class="btn sm ghost" data-cancel aria-label="Cancel event">🚫</button>` : ''}</footer></article>`;
@@ -173,6 +173,19 @@ ${targets?.ready ? `<label class="dx-check"><input type="checkbox" name="discord
         return `<details class="lu-view"${e.lineup[ctx.me.u] ? ' open' : ''}><summary>🧩 Lineup · ${esc(e.formation)} <small class="muted">published ${UI.ago(e.lineupAt)}</small></summary>${pitchHtml(S.formations, e.formation, slots, { me: ctx.me.u })}<p class="small"><a href="${BASE}playstyle.html#league-positions">🧠 Play Style for every position</a></p></details>`;
       }
       return `<p class="small">🧩 ${ids.map((id) => `${esc(who.get(id)?.n ?? 'Member')} <b>${esc(POS_OF(e.lineup[id]))}</b>`).join(' · ')}</p>`;
+    }
+    // BE3 manager-only: each lineup slot's answer + check-in, plus subs who said yes but weren't picked.
+    function readyView(e) {
+      const r = e.ready;
+      if (!r) return '';
+      const st = { yes: ['✅', 'said yes'], maybe: ['❔', 'maybe'], no: ['❌', 'can’t make it'], unanswered: ['⏳', 'no answer yet'] };
+      const rows = r.slots.map((s) => {
+        const [ic, txt] = st[s.status] || st.unanswered;
+        return `<li class="rc-row ${esc(s.status)}"><b>${esc(s.slot)}</b>${UI.avatar(s.a, s.n, 22)}<span>${esc(s.n)}</span><span class="rc-st" title="${txt}">${ic}</span>${s.checkedIn ? '<span class="rc-in" title="checked in">🟢</span>' : ''}</li>`;
+      }).join('');
+      const subs = r.subs.length ? `<p class="small"><b>Subs</b> (said yes, not picked): ${r.subs.map((x) => esc(x.n)).join(', ')}</p>` : '';
+      const c = r.counts;
+      return `<details class="rc-view"><summary>🚦 Ready check · ${c.yes} yes · ${c.maybe} maybe · ${c.no} no · ${c.unanswered} waiting</summary><ul class="rc-list">${rows}</ul>${subs}</details>`;
     }
     // P3.4 builder: pick a formation, tap a player then a slot (or drag), tap a filled slot to send them back to the bench.
     async function lineupModal(e) {
@@ -343,6 +356,10 @@ ${S.canManage ? `<div class="rp-share"><b>📣 Share it</b> <small class="muted"
       if (d.bulk) { const ids = [...sel]; sel = new Set(); answer(ids, d.bulk); return ctx.toast(`${ids.length} event${ids.length > 1 ? 's' : ''} updated`); }
       if (d.usual !== undefined) { const ids = S.events.filter((x) => x.usual && !mine(x) && phase(x) === 'soon').map((x) => x.id); answer(ids, 'yes'); return ctx.toast(`✅ Yes to ${ids.length} – change any of them below`); }
       if (!ev) return;
+      if (d.nudge) {
+        try { const r = await ctx.call('/api/events/nudge', { id: ev.id, position: d.nudge }); S = r; paint(); ctx.toast(`📣 ${r.notified} nudged for ${d.nudge}`); } catch (er) { ctx.toast(er.message, true); }
+        return;
+      }
       if (d.rsvp) answer([ev.id], mine(ev) === d.rsvp ? 'clear' : d.rsvp);
       if (d.edit !== undefined) editor(ev);
       if (d.cancel !== undefined) {
