@@ -28,7 +28,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'provider-adapter.mjs', 'permission-broker.mjs', 'permission-service.mjs', 'pty-service.mjs', 'mcp-adapter.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'utf8.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'provider-adapter.mjs', 'permission-broker.mjs', 'permission-service.mjs', 'pty-service.mjs', 'native-pty-service.mjs', 'mcp-adapter.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'utf8.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -263,6 +263,15 @@ test('portable recovery bundle is exclusive, integrity-checked and restorable', 
     await writeFile(bundlePath, JSON.stringify(envelope));
     await assert.rejects(() => readRecoveryBundle(bundlePath), /integrity/);
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('native PTY adapter supports bounded lifecycle and real resize', { skip: process.env.NOREX_WORKFLOW_VALIDATION === '1' }, async () => {
+  const { createNativePtyService } = await import('./native-pty-service.mjs');
+  const service = createNativePtyService({ cwd: tmpdir(), timeoutMs: 2000 });
+  const opened = service.open('node-repl', { cols: 80, rows: 24 });
+  assert.deepEqual(service.resize(opened.session_id, 100, 30), { session_id: opened.session_id, status: 'RUNNING', cols: 100, rows: 30 });
+  assert.throws(() => service.resize(opened.session_id, 1, 1), /dimensions rejected/);
+  service.close(opened.session_id);
 });
 
 test('PTY service supports allowlisted interactive stdin/read/close and explicitly gates resize', { skip: process.env.NOREX_WORKFLOW_VALIDATION === '1' }, async () => {

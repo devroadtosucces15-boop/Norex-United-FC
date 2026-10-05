@@ -39,3 +39,9 @@ The allowlisted PTY now applies the shared UTF-8 byte-bounded append helper at t
 ## PTY lifecycle bounds — 2026-10-04
 
 Allowlisted PTY sessions now have a validated bounded lifetime (five-minute default, configurable only within a 1 ms–30 minute guard), a bounded active-session count (eight by default, max 32), terminal-session pruning before replacement, and explicit `TIMEOUT` process-group termination. Spawn errors are normalized to `SPAWN_FAILED` with bounded/redacted diagnostics. Regression coverage validates timeout, active-session refusal and safe replacement after a terminal state.
+
+## Native PTY adapter — 2026-10-04
+
+Mike approved continuing across the native PTY dependency gate. `node-pty@1.1.0` (MIT, Microsoft repository) was pinned in the Shadow-only Dev OS package after reviewing its install scripts. npm reported zero known vulnerabilities. The native module was rebuilt successfully for the local Node runtime and a smoke test exited 0 with `PTY_OK`.
+
+A bounded native adapter now preserves the existing allowlisted `node-repl`, 128 KiB UTF-8/redacted output ceiling, timeout/session caps and input/dimension guards while adding real native terminal resize. Deterministic Shadow validation passes 35/35 including bounded native lifecycle and resize. The existing UI/runtime path is not silently switched yet; native adapter wiring and unrestricted input policy remain separate controlled work.
