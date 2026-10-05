@@ -212,7 +212,7 @@ async function refreshRuntimePulse() {
     const execution = state.telemetry?.execution, obs = state.telemetry?.observability;
     if (!execution || !obs) throw new Error('Runtime telemetry unavailable');
     cost.textContent = '$' + (execution.cost_microunits / 1000000).toFixed(2);
-    pulse.textContent = `${execution.executions} runs · ${obs.ci_passed} CI pass · ${obs.ci_failed} CI fail · ${obs.artifacts} artifacts`;
+    pulse.textContent = `${execution.executions} runs · ${obs.execution_failures} terminal failures · ${obs.ci_passed} CI pass · ${obs.ci_failed} CI fail · ${obs.approvals} approvals · ${obs.artifacts} artifacts · ${obs.evidence_records} evidence`;
   } catch { pulse.textContent = 'Runtime pulse unavailable'; }
 }
 refreshRuntimePulse();

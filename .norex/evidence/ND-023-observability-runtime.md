@@ -29,3 +29,7 @@ The Dev OS cost-guard rail now loads persisted `/api/state` telemetry and displa
 ## Failure-state semantics — 2026-10-04
 
 Session observability now counts only explicit terminal execution failure states (`FAILED`, `TIMEOUT`, `SPAWN_FAILED`, `OUTPUT_LIMIT`). `IN_PROGRESS` is no longer misclassified as an execution failure. A deterministic regression test verifies an active execution contributes zero failures and a completed `FAILED` execution contributes one.
+
+## Expanded Dev OS runtime pulse — 2026-10-04
+
+The Dev OS rail now renders persisted terminal-failure, CI pass/fail, approval, artifact and evidence counts alongside exact recorded execution count/cost. Values come directly from `/api/state` runtime telemetry; provider retry/fallback and allowance telemetry remain absent until executable provider dispatch can record them truthfully.
