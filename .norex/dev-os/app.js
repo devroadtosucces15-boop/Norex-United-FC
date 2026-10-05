@@ -226,3 +226,13 @@ if (recoveryExport && recoveryStatus) recoveryExport.addEventListener('click', a
   } catch (error) { recoveryStatus.textContent = `BLOCKED · ${error.message}`; }
   finally { recoveryExport.disabled = false; refreshRuntimePulse(); }
 });
+
+const recoveryRoundtrip = document.querySelector('#recovery-roundtrip');
+if (recoveryRoundtrip && recoveryStatus) recoveryRoundtrip.addEventListener('click', async () => {
+  recoveryRoundtrip.disabled = true; recoveryStatus.textContent = 'Exporting and restoring into isolated temporary runtime…';
+  try {
+    const result = await api('recovery/roundtrip', { approved: true });
+    recoveryStatus.textContent = `${result.status} · ${result.repository.branch} @ ${result.repository.commit.slice(0, 8)} · ${result.state.sessions} sessions · ${result.state.executions} executions`;
+  } catch (error) { recoveryStatus.textContent = `BLOCKED · ${error.message}`; }
+  finally { recoveryRoundtrip.disabled = false; refreshRuntimePulse(); }
+});

@@ -534,6 +534,24 @@ test('HTTP recovery export is approval-gated, repository-bound and integrity-ver
   } finally { server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); store.close(); }
 }));
 
+test('HTTP recovery roundtrip restores into an isolated empty runtime and preserves counts', () => fixture(async root => {
+  const store = createRuntimeStore({ dbPath: resolve(root, 'roundtrip-runtime.db') });
+  store.ensureSession({ id: 'roundtrip-ui', project: 'Norex United', branch: BRANCH });
+  const server = await startServer({ projectRoot: root, port: 0, runtimeStore: store });
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  const headers = { 'X-Norex-Local': '1', Origin: origin, 'Content-Type': 'application/json' };
+  try {
+    const denied = await fetch(origin + '/api/recovery/roundtrip', { method: 'POST', headers, body: JSON.stringify({ approved: false }) });
+    assert.equal(denied.status, 400);
+    const response = await fetch(origin + '/api/recovery/roundtrip', { method: 'POST', headers, body: JSON.stringify({ approved: true }) });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.status, 'RESTORE_VERIFIED');
+    assert.deepEqual(result.state, store.snapshot());
+    assert.equal(result.repository.branch, BRANCH);
+  } finally { server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); store.close(); }
+}));
+
 test('HTTP localhost preview persists durable artifact and bounded output', () => fixture(async root => {
   const dbPath = resolve(root, 'preview-runtime.db');
   const store = createRuntimeStore({ dbPath });

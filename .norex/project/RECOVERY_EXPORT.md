@@ -37,3 +37,7 @@ Recovery envelope v2 optionally records repository root, branch and commit along
 ## Approval-gated local export API — 2026-10-04
 
 `POST /api/recovery/export` is a same-origin JSON, explicit-approval operation. It writes a repository-bound v2 recovery bundle only into a unique OS temporary directory, verifies that bundle through the canonical reader, returns verification metadata, and removes the temporary file/directory before response completion. Callers cannot choose a path. Restore remains unavailable through the browser/API because it mutates runtime state and still requires a dedicated owner-safe flow plus credential rebinding semantics.
+
+## Isolated restore roundtrip — 2026-10-04
+
+With explicit owner approval, the local Dev OS can now exercise the real restore engine end-to-end without risking the active runtime. `POST /api/recovery/roundtrip` requires same-origin JSON and exact `{approved:true}`, creates a repository-bound temporary bundle, restores it into a separate empty temporary SQLite database, verifies snapshot counts, closes it and deletes the entire temporary directory. The rail exposes this as `VERIFY RESTORE ROUNDTRIP`. This validates restore mechanics but intentionally does not replace the active runtime; credential rebinding, active-runtime cutover and future migrations remain gated.

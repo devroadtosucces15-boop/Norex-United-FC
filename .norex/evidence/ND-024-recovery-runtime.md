@@ -33,3 +33,7 @@ The local Dev OS now exposes a same-origin JSON recovery export action that requ
 ## Dev OS recovery export control — 2026-10-04
 
 The Dev OS rail now exposes `VERIFY RECOVERY EXPORT`, which calls only the approval-gated same-origin recovery export endpoint. The control displays verified envelope/repository/runtime summary metadata and refreshes the exact runtime pulse after completion. It does not accept a filesystem path and does not expose restore mutation. Restore UI, credential rebinding and future schema migration remain gated.
+
+## Isolated restore roundtrip control — 2026-10-04
+
+After owner approval to cross the restore gate, the Dev OS gained an explicit same-origin `POST /api/recovery/roundtrip` verification flow and rail control. It exports the active non-secret runtime into a unique temporary directory, restores it through the real transactional restore engine into a separate empty temporary SQLite database, verifies snapshot counts and exact repository identity, closes the target, and deletes all temporary recovery material. It never mutates or replaces the active runtime database. Validation passes 36/36. Active-runtime replacement, credential rebinding and future schema migrations remain separate high-risk operations.

@@ -6,7 +6,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { writeRecoveryBundle, readRecoveryBundle } from './recovery-bundle.mjs';
+import { writeRecoveryBundle, readRecoveryBundle, restoreRecoveryBundle } from './recovery-bundle.mjs';
 import { createServices } from './local-services.mjs';
 import { planIntent } from './control-plane.mjs';
 import { createRuntimeStore } from './runtime-store.mjs';
@@ -79,6 +79,27 @@ export async function startServer({ projectRoot = resolve(root, '../..'), port =
           const written = await writeRecoveryBundle(runtimeStore, path, { repository: { root: projectRoot, branch, commit } });
           const verified = await readRecoveryBundle(path);
           return send(200, { status: 'VERIFIED', format: written.format, version: written.version, algorithm: written.algorithm, digest: written.digest, repository: verified.repository, state: { schema_version: verified.state.schema_version, sessions: verified.state.sessions.length, tasks: verified.state.tasks.length, executions: verified.state.executions.length, events: verified.state.events.length } });
+        } finally { await rm(dir, { recursive: true, force: true }); }
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/recovery/roundtrip') {
+        if (req.headers.origin !== origin || req.headers['content-type'] !== 'application/json') return send(403, { error: 'Same-origin JSON recovery verification required' });
+        let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 1024) { send(413, { error: 'Request too large' }); return; } }
+        let data; try { data = JSON.parse(body); } catch { return send(400, { error: 'Valid JSON recovery approval is required' }); }
+        if (!runtimeStore || !data || data.approved !== true || Object.keys(data).sort().join(',') !== 'approved') return send(400, { error: 'Explicit recovery roundtrip approval is required' });
+        const branch = (await execFileAsync('/usr/bin/git', ['-C', projectRoot, 'rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' })).stdout.trim();
+        const commit = (await execFileAsync('/usr/bin/git', ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' })).stdout.trim();
+        const repository = { root: projectRoot, branch, commit };
+        const dir = await mkdtemp(resolve(tmpdir(), 'norex-recovery-roundtrip-'));
+        const path = resolve(dir, 'runtime.recovery.json'), dbPath = resolve(dir, 'restored.db');
+        let restored;
+        try {
+          await writeRecoveryBundle(runtimeStore, path, { repository });
+          const target = createRuntimeStore({ dbPath });
+          try { restored = await restoreRecoveryBundle(target, path, { repository }); } finally { target.close(); }
+          const source = runtimeStore.snapshot();
+          if (JSON.stringify(restored) !== JSON.stringify(source)) throw new Error('Recovery roundtrip state mismatch');
+          return send(200, { status: 'RESTORE_VERIFIED', repository, state: restored });
         } finally { await rm(dir, { recursive: true, force: true }); }
       }
 
