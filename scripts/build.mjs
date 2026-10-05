@@ -1154,7 +1154,8 @@ ${advancedSection(LH, lm)}
 write('compare.html', page({ title: `Compare – ${config.siteTitle}`, base: '', active: 'compare', body: `
 ${pageHead('Head to head', "Pick any two players, from NOREX or anyone we've faced. Radar values are percentiles against every tracked player with 3+ games.", '')}
 <div class="cmp-pick card"><label>Player A<input list="cmp-list" id="cmp-a" placeholder="Type a gamertag…" autocomplete="off"></label><span class="vs">VS</span><label>Player B<input list="cmp-list" id="cmp-b" placeholder="Type a gamertag…" autocomplete="off"></label><datalist id="cmp-list"></datalist></div>
-<div id="cmp-out" class="cmp-out"><p class="muted">Loading players…</p></div>` }));
+<div id="cmp-out" class="cmp-out"><p class="muted">Loading players…</p></div>
+<div class="nx-insight-slot" data-nx-cmp-insight hidden></div>` }));
 
 for (const pl of visiblePlayers) {
   const st = pl.main && num(pl.main.gamesPlayed) ? { gp: num(pl.main.gamesPlayed), g: num(pl.main.goals), a: num(pl.main.assists), r: num(pl.main.ratingAve) } : pl.arch && { gp: pl.arch.gp, g: pl.arch.g, a: pl.arch.a, r: pl.arch.r };

@@ -25,7 +25,7 @@ import { hubRoute, hubSocket } from './hub.js';
 import { intelRoute } from './insights.js';
 import { awardsRoute, trophies } from './awards.js';
 import { playerInsights } from './aiinsights.js';
-import { statInsightsRoute, statAskRoute, statFeedbackRoute } from './statinsights.js';
+import { statInsightsRoute, statAskRoute, statFeedbackRoute, statCompareRoute } from './statinsights.js';
 import { squadsRoute } from './squads.js';
 import { ratingsRoute } from './ratings.js';
 import { feedbackRoute } from './feedback.js';
@@ -535,6 +535,10 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (p === '/api/insights/ask' && method === 'POST') { // BE9 – follow-up question, answered only from the stored fact pack
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
     return json(await statAskRoute(env, me, body));
+  }
+  if (p === '/api/insights/compare' && method === 'POST') { // BE9 – head-to-head for two home players, written on demand
+    if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
+    return json(await statCompareRoute(env, loadSite, me, body));
   }
   if (p === '/api/insights/feedback' && method === 'POST') { // BE9 – 👍/👎 on a stat insight
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);

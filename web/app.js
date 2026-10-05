@@ -958,10 +958,21 @@ if (cmpOut) (async () => {
     const a = byName.get($('#cmp-a').value.trim().toLowerCase()), b = byName.get($('#cmp-b').value.trim().toLowerCase());
     if (!a || !b) return;
     history.replaceState(null, '', `?a=${encodeURIComponent(a.k)}&b=${encodeURIComponent(b.k)}`);
-    render(a, b);
+    render(a, b); cmpInsight(a, b);
   };
   $('#cmp-a').addEventListener('change', update); $('#cmp-b').addEventListener('change', update);
-  if (A && B) render(A, B); else cmpOut.innerHTML = '<p class="muted">Pick two players.</p>';
+  if (A && B) { render(A, B); cmpInsight(A, B); } else cmpOut.innerHTML = '<p class="muted">Pick two players.</p>';
+
+  // ✨ head-to-head insight (BE9 compare) – members only, written on first view of a pair, cached until the stats change
+  function cmpInsight(a, b) {
+    const slot = $('[data-nx-cmp-insight]');
+    if (!slot || !flagOn('statInsights', baseRole || 'guest')) return;
+    if (!session || a.k === b.k || !a.home || !b.home) { slot.hidden = true; slot.innerHTML = ''; return; }
+    slot.hidden = false; slot.innerHTML = '';
+    (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => {
+      NXInsight.mount(slot, '', { call, toast, session, baseRole, compare: { a: a.k, b: b.k } });
+    }).catch(() => { slot.hidden = true; });
+  }
 
   function fut(p) {
     const s = p.s ?? {};

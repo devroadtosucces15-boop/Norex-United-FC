@@ -126,3 +126,10 @@ a.pb-mini:hover{border-color:var(--red);transform:translateY(-1px)}
   .pb-count{margin-left:0}
   .pb-filters select{flex:1 1 140px}
 }
+
+/* board 14 – Pro Builds as tilting trading cards (JS sets --rx/--ry/--mx/--my on mouse hover) */
+.pb-card{position:relative;transform-style:preserve-3d;transition:transform .25s ease,border-color .2s,box-shadow .2s}
+.pb-card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .2s;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.16),transparent 55%)}
+.pb-card:hover{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-2px)}
+.pb-card:hover::before{opacity:1}
+@media (prefers-reduced-motion: reduce){.pb-card,.pb-card:hover{transform:none}.pb-card::before{display:none}}

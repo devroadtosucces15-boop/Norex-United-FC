@@ -30,17 +30,22 @@
   }
 
   async function mount(el, key, ctx = {}) {
+    if (ctx.compare) key = `compare.${[ctx.compare.a, ctx.compare.b].sort().join('~')}`; // same key the server stores (compareKey)
     ensureToggle();
     el.hidden = false;
     el.classList.add('nx-insight', 'card');
     el.innerHTML = window.UI ? UI.skeleton('rows', 2) : '';
     let row;
     try {
-      const r = await fetch(`${MAPI}/api/insights?keys=${encodeURIComponent(key)}`, ctx.session ? { headers: { Authorization: `Bearer ${ctx.session.token}` } } : undefined);
-      const d = r.ok ? await r.json() : null;
-      row = d?.insights?.[0];
+      if (ctx.compare) { // BE9 compare: written on demand for members, nothing to show for guests
+        row = ctx.session ? (await ctx.call('/api/insights/compare', ctx.compare))?.insight : null;
+      } else {
+        const r = await fetch(`${MAPI}/api/insights?keys=${encodeURIComponent(key)}`, ctx.session ? { headers: { Authorization: `Bearer ${ctx.session.token}` } } : undefined);
+        const d = r.ok ? await r.json() : null;
+        row = d?.insights?.[0];
+      }
     } catch {}
-    if (!row) { el.remove(); return; }
+    if (!row) { if (ctx.compare) { el.hidden = true; el.innerHTML = ''; } else el.remove(); return; } // compare slot is reused for the next pair
     render(row);
 
     function render(r) {

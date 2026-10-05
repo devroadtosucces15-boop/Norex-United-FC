@@ -361,7 +361,7 @@ ${token() ? '' : `<p class="muted small">🔐 Log in to compare with your saved 
     const from = (src) => Object.entries(mods).flatMap(([k, l]) => l.filter(([f]) => f === src).map(([, v]) => [k, v]));
     const badge = (src) => { const l = from(src); return l.length ? `<span class="bd-fx">${fx(Object.fromEntries(l))}</span>` : '<span class="muted small">No modifier at this value</span>'; };
     const noTables = !g.body?.heightMods?.length && !g.body?.weightMods?.length;
-    return `<div class="bd-body">
+    return `<div class="bd-body">${figure(c)}
 <label><span>📏 Height <b data-bv="h">${c.h}</b> cm</span><input type="range" min="${H.min}" max="${H.max}" value="${c.h}" data-body="h" aria-label="Height">${badge('Height')}</label>
 <label><span>⚖️ Weight <b data-bv="w">${c.w}</b> kg</span><input type="range" min="${Wt.min}" max="${Wt.max}" value="${c.w}" data-body="w" aria-label="Weight">${badge('Weight')}</label>
 ${noTables ? '<p class="muted small">🧪 Height/weight modifier tables aren’t entered yet, so body size doesn’t change attributes here. Managers add <code>body.heightMods</code> / <code>weightMods</code> in Game rules.</p>' : ''}</div>`;
@@ -412,6 +412,7 @@ ${rows.map((r) => {
 <aside class="bd-side card">
 ${cur ? `<div class="bd-cur"><span>${cur.mine ? '📂' : '👀'}</span><div><small>${cur.mine ? 'My build' : `Build by ${esc(cur.by || 'a member')}`}</small><b>${esc(cur.title)}</b></div>${cur.mine ? '' : `<button type="button" class="btn sm" data-fork="${cur.id}">🍴 Fork</button>`}<button type="button" class="x" data-close aria-label="Close this build" title="Start a new build (keeps what's on screen)">×</button></div>` : ''}
 <div class="bd-arch"><span class="bd-ic">${ICON[ev.arch.group] ?? '⚽'}</span><div><small>${esc(groups.find((x) => x.id === ev.arch.group)?.name ?? '')}</small><h2>${esc(ev.arch.name)}</h2></div><div class="bd-ovr" title="Estimated overall"><b>${ev.ovr}</b><small>OVR*</small></div></div>
+${levelRing(ev)}
 <label class="bd-lvl"><span>Level <b>${ev.level}</b> / <span>${ev.cap}</span>${ev.level === ev.cap ? ' <span class="tag home">MAX</span>' : ''}</span>
 <span class="row"><input type="range" min="1" max="${ev.cap}" value="${ev.level}" data-level aria-label="Level"><button type="button" class="btn sm${ev.level === ev.cap ? ' ghost' : ''}" data-max>MAX</button></span></label>
 <div class="bd-ap${ev.left === 0 && ev.total ? ' full' : ''}"><div><small>Archetype points left</small><b>${ev.left}</b><span class="muted">/ ${ev.total}</span></div><span class="bd-apbar"><i style="width:${leftPct}%"></i></span></div>
@@ -426,9 +427,15 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
 </aside></div>`;
   }
 
+  // Board 14: a level ring, a turnable 3D body whose height/weight scale follows the sliders (CSS, no WebGL).
+  const figScale = (k, v) => { const r = M.rangeOf(g, k === 'h' ? 'height' : 'weight'), t = (v - r.min) / Math.max(1, r.max - r.min); return k === 'h' ? 0.82 + 0.36 * t : 0.78 + 0.5 * t; };
+  const figure = (c) => `<div class="bd-fig" data-fig><div class="bd-fig-body" style="--sy:${figScale('h', c.h).toFixed(3)};--sx:${figScale('w', c.w).toFixed(3)}"><i class="hd"></i><i class="tr"></i><i class="lg"></i></div><small class="muted">Drag to turn · height &amp; weight reshape the body</small></div>`;
+  const levelRing = (ev) => { const C = 2 * Math.PI * 52; return `<div class="bd-ring${ev.level === ev.cap ? ' max' : ''}" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="trk" cx="60" cy="60" r="52"/><circle class="fg" cx="60" cy="60" r="52" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - ev.level / ev.cap)).toFixed(1)}"/></svg><b>${ev.level}</b><small>of ${ev.cap}</small></div>`; };
+
   function draw() {
     const y = scrollY;
     $('[data-bd-body]').innerHTML = view();
+    $('[data-bd-body] .bd-picker .chip.on')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); // archetype rail: keep the picked one in view
     scrollTo(0, y);
   }
 
@@ -489,6 +496,11 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
       try { await navigator.clipboard.writeText(location.href); toast('🔗 Link copied – anyone can open this build'); } catch { prompt('Copy this link:', location.href); }
     }
   });
+  // drag the 3D body to turn it (pointer only, no autoplay)
+  let turn = null;
+  root.addEventListener('pointerdown', (e) => { const f = e.target.closest?.('[data-fig]'); if (f) turn = { f, el: f.querySelector('.bd-fig-body'), x: e.clientX, r: +(f.dataset.ry || 0) }; });
+  root.addEventListener('pointermove', (e) => { if (!turn) return; const ry = turn.r + (e.clientX - turn.x) * 0.6; turn.el.style.setProperty('--ry', ry.toFixed(1) + 'deg'); turn.f.dataset.ry = ry.toFixed(1); });
+  window.addEventListener('pointerup', () => { turn = null; });
   let dragging = false; // one undo step per slider drag, snapshot taken before the first move
   root.addEventListener('input', (e) => {
     if (e.target.matches('[data-level], [data-body]') && !dragging) { push(); dragging = true; }
@@ -496,6 +508,7 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
       const k = e.target.dataset.body;
       b = { ...b, [k]: +e.target.value };
       $(`[data-bv="${k}"]`).textContent = e.target.value;
+      $('[data-fig] .bd-fig-body')?.style.setProperty(k === 'h' ? '--sy' : '--sx', figScale(k, +e.target.value).toFixed(3));
       setHash(); return;
     }
     if (!e.target.matches('[data-level]')) return;
@@ -506,6 +519,8 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
     // Update only the side numbers while dragging; full redraw on release keeps the slider under the finger.
     const ev = M.evaluate(g, b);
     $('.bd-lvl b').textContent = ev.level;
+    $('.bd-ring b').textContent = ev.level;
+    $('.bd-ring .fg')?.setAttribute('stroke-dashoffset', (2 * Math.PI * 52 * (1 - ev.level / ev.cap)).toFixed(1));
     $('.bd-ap b').textContent = ev.left;
     $('.bd-ap .muted').textContent = `/ ${ev.total}`;
     if (lost) draw();

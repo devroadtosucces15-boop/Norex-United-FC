@@ -196,7 +196,21 @@ ${me ? `<form class="pb-cform" data-cform><textarea maxlength="500" rows="2" pla
       });
     }
 
-    root.addEventListener('click', async (e) => {
+    // board 14: Pro Builds as tilting trading cards – pointer tilt + a light sweep (mouse only, off for reduced motion)
+  const cardTilt = (c, e) => {
+    const r = c.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    c.style.setProperty('--ry', ((px - 0.5) * 12).toFixed(2) + 'deg');
+    c.style.setProperty('--rx', ((0.5 - py) * 9).toFixed(2) + 'deg');
+    c.style.setProperty('--mx', (px * 100).toFixed(1) + '%'); c.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+  };
+  const cardReset = (c) => { ['--rx', '--ry', '--mx', '--my'].forEach((k) => c.style.removeProperty(k)); };
+  root.addEventListener('pointermove', (e) => {
+    const c = e.target.closest?.('.pb-card');
+    if (!c || e.pointerType !== 'mouse' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    cardTilt(c, e);
+  });
+  root.addEventListener('pointerout', (e) => { const c = e.target.closest?.('.pb-card'); if (c && !c.contains(e.relatedTarget)) cardReset(c); });
+  root.addEventListener('click', async (e) => {
       const t = e.target.closest('button');
       if (!t) return;
       const cardEl = t.closest('[data-id]');
