@@ -31,3 +31,7 @@ Nested ND-025 validation initially became flaky because the PTY lifecycle test l
 ## UI streaming/cancellation binding — 2026-10-04
 
 TESTS/TERMINAL now poll the local state surface while an approved fixed command is active, render its accumulated redacted output incrementally, capture the active request ID, and expose a Cancel active run control that calls the existing same-origin cancellation endpoint. Controls reset after completion and the runtime pulse refreshes. This remains fixed-command execution; arbitrary shell input is not exposed.
+
+## PTY UTF-8/output-limit hardening — 2026-10-04
+
+The allowlisted PTY now applies the shared UTF-8 byte-bounded append helper at the 128 KiB output ceiling. Crossing the ceiling preserves a complete UTF-8 prefix, records `OUTPUT_LIMIT`, and terminates the detached PTY process group instead of silently continuing to execute while discarding output. The close handler preserves the terminal limit state. A deterministic multibyte regression validates both the byte ceiling and termination behavior. Native resize and unrestricted terminal input remain gated.

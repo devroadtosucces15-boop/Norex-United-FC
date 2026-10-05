@@ -250,6 +250,18 @@ test('PTY service supports allowlisted interactive stdin/read/close and explicit
   assert.match(pty.read(opened.session_id).status, /CLOSED|EXITED/);
 });
 
+test('PTY output is UTF-8 byte bounded and overflow terminates the process group', { skip: process.env.NOREX_WORKFLOW_VALIDATION === '1' }, async () => {
+  const pty = createPtyService({ cwd: tmpdir() });
+  const opened = pty.open('node-repl');
+  await new Promise(done => setTimeout(done, 100));
+  pty.write(opened.session_id, `console.log('€'.repeat(50000))\n`);
+  for (let i = 0; i < 40 && pty.read(opened.session_id).status === 'RUNNING'; i++) await new Promise(done => setTimeout(done, 50));
+  const state = pty.read(opened.session_id);
+  assert.equal(state.status, 'OUTPUT_LIMIT');
+  assert.ok(Buffer.byteLength(state.output, 'utf8') <= 128 * 1024);
+  assert.ok(state.output.endsWith('€') || !state.output.includes('€'));
+});
+
 test('filesystem create is exclusive, Shadow-scoped and rejects secret-like content', () => fixture(async root => {
   await mkdir(resolve(root, '.norex/notes'), { recursive: true });
   const services = await createServices(root);

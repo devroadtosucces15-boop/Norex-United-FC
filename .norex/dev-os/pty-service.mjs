@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { redact } from './local-services.mjs';
+import { appendUtf8Bounded } from './utf8.mjs';
 
 const LIMIT = 128 * 1024;
 const ENV = { PATH: '/usr/bin:/bin', HOME: '/nonexistent', LANG: 'C.UTF-8', TZ: 'UTC', CI: '1' };
@@ -16,9 +17,18 @@ export function createPtyService({ cwd, scriptBinary = '/usr/bin/script' }) {
     const id = randomUUID();
     const child = spawn(scriptBinary, ['-q', '-e', '-f', '-E', 'never', '/dev/null', '--', command.binary, ...command.args], { cwd, env: ENV, shell: false, detached: true, stdio: ['pipe','pipe','pipe'] });
     const session = { id, child, output: '', status: 'RUNNING', exit_code: null };
-    const collect = chunk => { if (session.output.length >= LIMIT) return; session.output += redact(chunk.toString()).slice(0, LIMIT - session.output.length); };
+    const collect = chunk => {
+      if (session.status !== 'RUNNING') return;
+      const redacted = redact(chunk.toString());
+      const bytes = Buffer.byteLength(session.output, 'utf8') + Buffer.byteLength(redacted, 'utf8');
+      session.output = appendUtf8Bounded(session.output, redacted, LIMIT);
+      if (bytes > LIMIT) {
+        session.status = 'OUTPUT_LIMIT';
+        try { process.kill(-session.child.pid, 'SIGKILL'); } catch {}
+      }
+    };
     child.stdout.on('data', collect); child.stderr.on('data', collect);
-    child.on('close', code => { session.exit_code = code; session.status = session.status === 'CLOSING' ? 'CLOSED' : 'EXITED'; });
+    child.on('close', code => { session.exit_code = code; if (session.status === 'CLOSING') session.status = 'CLOSED'; else if (session.status === 'RUNNING') session.status = 'EXITED'; });
     sessions.set(id, session);
     return { session_id: id, status: session.status };
   }
