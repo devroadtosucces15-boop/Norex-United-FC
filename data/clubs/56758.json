@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-05T04:50:36.826Z",
+ "fetchedAt": "2026-10-05T05:00:34.795Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -873,42 +873,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "PulviTheGoat",
-   "gamesPlayed": "9",
-   "winRate": "44",
-   "goals": "6",
-   "assists": "3",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "35",
-   "passesMade": "125",
-   "passSuccessRate": "75",
-   "ratingAve": "7.4",
-   "tacklesMade": "14",
-   "tackleSuccessRate": "30",
-   "proName": "Pulvi",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "171",
-   "proNationality": "95",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "2",
-   "redCards": "1",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "1",
-   "prevGoals6": "0",
-   "prevGoals7": "2",
-   "prevGoals8": "2",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Bdestroy10",
    "gamesPlayed": "10",
    "winRate": "80",
@@ -1558,7 +1522,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 9,
+  "midfielder": 8,
   "goalkeeper": 0,
   "forward": 18,
   "defender": 8
@@ -1764,24 +1728,24 @@
   },
   {
    "name": "CaptainFluffyCat",
-   "proPos": "25",
-   "gamesPlayed": "100",
+   "proPos": "0",
+   "gamesPlayed": "101",
    "goals": "75",
    "assists": "49",
    "manOfTheMatch": "20",
    "ratingAve": "7.5",
-   "prevGoals": "3",
-   "favoritePosition": "forward"
+   "prevGoals": "0",
+   "favoritePosition": "goalkeeper"
   },
   {
    "name": "kenny_bIue",
    "proPos": "25",
-   "gamesPlayed": "54",
-   "goals": "35",
-   "assists": "36",
+   "gamesPlayed": "55",
+   "goals": "36",
+   "assists": "38",
    "manOfTheMatch": "5",
    "ratingAve": "7.7",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "forward"
   },
   {
@@ -1851,25 +1815,14 @@
    "favoritePosition": ""
   },
   {
-   "name": "PulviTheGoat",
-   "proPos": "25",
-   "gamesPlayed": "71",
-   "goals": "28",
-   "assists": "26",
-   "manOfTheMatch": "7",
-   "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Bdestroy10",
    "proPos": "0",
-   "gamesPlayed": "46",
-   "goals": "42",
+   "gamesPlayed": "47",
+   "goals": "43",
    "assists": "52",
    "manOfTheMatch": "4",
    "ratingAve": "7.3",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "goalkeeper"
   },
   {
@@ -1974,9 +1927,9 @@
   {
    "name": "Louig_28",
    "proPos": "25",
-   "gamesPlayed": "59",
+   "gamesPlayed": "60",
    "goals": "36",
-   "assists": "34",
+   "assists": "35",
    "manOfTheMatch": "17",
    "ratingAve": "7.4",
    "prevGoals": "0",
