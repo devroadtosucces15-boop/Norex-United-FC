@@ -58,6 +58,21 @@
   }
 
   // ================= Squad Hub tab =================
+  // BE3 live Dugout: the line-up builder listens on room 'lineup:<id>' (bot/clubroom.js via /api/events/<id>/lineup/ws).
+  // A nudge says only *what* changed, so the builder re-reads the schedule. Managers only; no session = no socket.
+  function openLineupLive(id, onNudge) {
+    const tok = (() => { try { return localStorage.getItem('norex_session'); } catch { return null; } })();
+    if (!tok || !MAPI || !window.WebSocket) return () => {};
+    let sock = null, ping = null, retry = null, closed = false, opened = false;
+    const connect = () => {
+      try { sock = new WebSocket(`${MAPI.replace(/^http/, 'ws')}/api/events/${id}/lineup/ws?t=${encodeURIComponent(tok)}`); } catch { return; }
+      sock.onopen = () => { opened = true; ping = setInterval(() => { if (sock.readyState === 1) sock.send('ping'); }, 30000); };
+      sock.onmessage = (m) => { if (m.data !== 'pong') { try { onNudge(JSON.parse(m.data)); } catch { /* ignore junk */ } } };
+      sock.onclose = () => { clearInterval(ping); if (opened && !closed) retry = setTimeout(connect, 8000); }; // the builder still works without it
+    };
+    connect();
+    return () => { closed = true; clearInterval(ping); clearTimeout(retry); try { sock?.close(); } catch { /* already closed */ } };
+  }
   function schedule(el, ctx) {
     let S = null, sel = new Set(), poll = null, day = null, showPast = false, view = 'list';
     const load = async () => { S = await ctx.call('/api/events'); paint(); };
@@ -205,16 +220,17 @@ ${targets?.ready ? `<label class="dx-check"><input type="checkbox" name="discord
     }
     // P3.4 builder: pick a formation, tap a player then a slot (or drag), tap a filled slot to send them back to the bench.
     async function lineupModal(e) {
-      const who = people(e);
+      let who = people(e);
       const inv = Object.entries(e.lineup || {});
       let formation = e.formation ?? (e.type === 'rush' ? '' : '4-3-3');
       let slots = Object.fromEntries(inv.filter(([, slot]) => !formation || S.formations[formation]?.some((x) => x[0] === slot)).map(([id, slot]) => [slot, id]));
       let quick = Object.fromEntries(inv); // formation = '' → quick list { id: pos }
       let pick = null, templates = null, tplName = '';
+      let dirty = false, live = () => {}; // dirty = unsaved changes here, so a nudge never overwrites them
       const bench = () => [...who.values()].filter((p) => !Object.values(slots).includes(p.id)).sort((a, b) => rank(b) - rank(a));
       const rank = (p) => (p.s === 'yes' ? 2 : 0) + (p.on ? 1 : 0); // said yes first, then checked in
       const chip = (p) => `<button type="button" class="lu-chip${pick === p.id ? ' sel' : ''}${p.s === 'yes' ? '' : ' soft'}" draggable="true" data-p="${esc(p.id)}">${UI.avatar(p.a, p.n, 24)}<span><b>${esc(p.n)}</b><small>${p.on ? '🟢 on · ' : ''}${p.s ? `${ICON[p.s]} ` : ''}${esc((p.pos || []).slice(0, 3).join('/'))}${p.trial ? ` · 🧪 ${esc(p.trial)}` : ''}</small></span></button>`;
-      const body = () => `<div class="lu-bar"><label>Formation <select data-f>${[['', '📋 Quick list (no pitch)'], ...Object.keys(S.formations).map((k) => [k, k])].map(([k, l]) => `<option value="${k}"${k === formation ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+      const body = () => `${S.canManage ? `<div class="lu-ready">${readyView(e)}</div>` : ''}<div class="lu-bar"><label>Formation <select data-f>${[['', '📋 Quick list (no pitch)'], ...Object.keys(S.formations).map((k) => [k, k])].map(([k, l]) => `<option value="${k}"${k === formation ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
 <button type="button" class="btn sm ghost" data-suggest>✨ Suggest lineup</button>
 ${formation ? `<label>Template <select data-tpl><option value="">${templates ? (templates.length ? 'Load a saved lineup…' : 'No templates yet') : 'Loading…'}</option>${(templates || []).map((t) => `<option value="${t.id}">${esc(t.name)} · ${esc(t.formation)}</option>`).join('')}</select></label>
 <span class="lu-save"><input data-tplname maxlength="40" placeholder="Template name" value="${esc(tplName)}"><button type="button" class="btn sm ghost" data-savetpl>💾 Save</button></span>` : ''}</div>
@@ -228,7 +244,29 @@ ${formation ? `${pitchHtml(S.formations, formation, Object.fromEntries(Object.en
         onOpen: (d) => {
           const root = $('.lu', d);
           const paint = () => { root.innerHTML = body(); };
+          const adopt = (ev) => { // the server's lineup, read the same way as when the builder opened
+            const inv2 = Object.entries(ev.lineup || {});
+            formation = ev.formation ?? (ev.type === 'rush' ? '' : '4-3-3');
+            slots = Object.fromEntries(inv2.filter(([, slot]) => !formation || S.formations[formation]?.some((x) => x[0] === slot)).map(([id, slot]) => [slot, id]));
+            quick = Object.fromEntries(inv2);
+            pick = null;
+          };
+          live = openLineupLive(e.id, async (msg) => {
+            try {
+              S = await ctx.call('/api/events');
+              const fresh = S.events.find((x) => x.id === e.id);
+              if (!fresh) return;
+              Object.assign(e, fresh);
+              who = people(e);
+              if (msg.kind === 'publish' || msg.kind === 'draft') {
+                if (!dirty) { adopt(fresh); ctx.toast('🧩 Lineup updated by another manager'); }
+                else ctx.toast('🧩 Lineup saved elsewhere – your unsaved changes are kept', true);
+              }
+              paint();
+            } catch { /* the next nudge or a reopen will catch up */ }
+          });
           const place = (slot) => {
+            dirty = true;
             const cur = slots[slot];
             if (pick) { for (const k of Object.keys(slots)) if (slots[k] === pick) delete slots[k]; slots[slot] = pick; pick = null; }
             else if (cur) delete slots[slot];
@@ -246,13 +284,14 @@ ${formation ? `${pitchHtml(S.formations, formation, Object.fromEntries(Object.en
             if (ev.target.closest('[data-suggest]')) {
               try {
                 const r = await ctx.call('/api/events/recommend', { id: e.id, formation: formation || null });
-                formation = r.formation; slots = { ...r.lineup }; pick = null; paint();
+                formation = r.formation; slots = { ...r.lineup }; pick = null; dirty = true; paint();
                 ctx.toast(Object.keys(r.lineup).length ? '✨ Suggested a lineup from who said yes – review before publishing' : 'Nobody has said yes yet – nothing to suggest');
               } catch (er) { ctx.toast(er.message, true); }
             }
           });
           root.addEventListener('change', (ev) => {
             const t = ev.target;
+            dirty = true;
             if (t.matches('[data-f]')) { formation = t.value; slots = {}; pick = null; paint(); }
             if (t.matches('[data-tpl]') && t.value) { const tp = templates.find((x) => x.id === +t.value); formation = tp.formation; slots = { ...tp.slots }; paint(); ctx.toast(`Loaded “${tp.name}” – players who aren’t on tonight show as “Member”`); }
             if (t.matches('[data-u]')) { if (t.value) quick[t.dataset.u] = t.value; else delete quick[t.dataset.u]; }
@@ -263,6 +302,7 @@ ${formation ? `${pitchHtml(S.formations, formation, Object.fromEntries(Object.en
           root.addEventListener('drop', (ev) => { const sl = ev.target.closest('[data-slot]'); if (sl) { ev.preventDefault(); pick = ev.dataTransfer.getData('text/plain') || pick; place(sl.dataset.slot); } });
         },
       });
+      live();
       if (!v) return;
       const lineup = formation ? Object.fromEntries(Object.entries(slots).map(([slot, id]) => [id, slot])) : quick;
       if (v === 'publish' && !Object.keys(lineup).length) return ctx.toast('Place at least one player before publishing', true);

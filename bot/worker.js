@@ -504,4 +504,5 @@ function playerEmbed(p, club, site, footer) {
   };
 }
 export { ChatRoom } from './chatroom.js'; // P6.3b live chat rooms (Durable Object)
+export { ClubRoom } from './clubroom.js'; // BE0 live rooms (Locker/Dugout/Studio broadcast)
 export { HubRoom } from './hubroom.js'; // BE8 Hub live presence/waves (Durable Object)

@@ -37,6 +37,15 @@ class_name = "HubRoom"
 tag = "v1"
 new_sqlite_classes = ["ChatRoom"]
 
+# Redesign BE0 live rooms: generic ClubRoom DO for Locker/Dugout/Studio broadcast (bot/clubroom.js)
+[[durable_objects.bindings]]
+name = "CLUB_ROOM"
+class_name = "ClubRoom"
+
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["HubRoom"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["ClubRoom"]

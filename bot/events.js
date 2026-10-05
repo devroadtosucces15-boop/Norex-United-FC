@@ -9,6 +9,7 @@
 //   GET  /api/events/discord         managers: channels + roles to post to (shared with P5.3)
 //   POST /api/events/checkin         members, during the night: "I'm on" { id, on, trial }       (flag `matchNight`)
 //   POST /api/events/lineup          managers: quick lineup { id, lineup: { <discord id>: 'CB' } }
+//   GET  /api/events/:id/lineup/ws   managers: live Dugout – a nudge on room 'lineup:<id>' when the line-up, a yes/no or a check-in changes
 //   GET  /api/events/report?id=      members: session report – results that night (League from EA, confirmed Rush),
 //                                    team + player grades A+–F, position trials vs season average, attendance
 //   POST /api/events/report/post     managers: share the report (notify who came, optional Discord post)
@@ -19,6 +20,7 @@
 // reminders and nudges members who haven't answered (event.remind: dm = bell + DM · mention = @ in the channel · off).
 import { can, flagOn, flags } from './roles.js';
 import { notify, notifyMembers, safely } from './notify.js';
+import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
 import { awardPoints } from './points.js';
@@ -257,7 +259,7 @@ async function saveEvent(body, me, env, log) {
 
 // One member's answer to one or more events – used by the Squad Hub and the Discord buttons. → rows answered (or [] if none open).
 export async function answerEvents(env, me, ids, status) {
-  const rows = ids.length ? await all(env, `SELECT id, start, duration FROM events WHERE id IN (${marks(ids.length)}) AND status = 'scheduled' AND start + duration * 60000 > ?`, ...ids, Date.now()) : [];
+  const rows = ids.length ? await all(env, `SELECT id, start, duration, lineup FROM events WHERE id IN (${marks(ids.length)}) AND status = 'scheduled' AND start + duration * 60000 > ?`, ...ids, Date.now()) : [];
   if (!rows.length) return rows;
   const stmts = [];
   for (const r of rows) {
@@ -278,6 +280,7 @@ async function rsvp(body, me, env, log) {
   if (!ids.length || !(STATUSES.includes(status) || status === 'clear')) return fail('Bad answer.');
   const rows = await answerEvents(env, me, ids, status);
   if (!rows.length) return fail('Those events are over or cancelled.', 409);
+  for (const r of rows) if (hasLineup(r)) await pushLineup(env, r.id, 'rsvp'); // BE3: the ready check moved
   await log(env, me, 'event-rsvp', `${status} · ${rows.length} event${rows.length > 1 ? 's' : ''}`);
   return json(await listFor(env, me));
 }
@@ -383,6 +386,7 @@ async function nightRoute(p, method, body, me, env, log, loadSite, url) {
         ON CONFLICT (event_id, user_id) DO UPDATE SET trial = excluded.trial, name = excluded.name, avatar = excluded.avatar`, row.id, me.u, me.n, me.a ?? null, trial, Date.now());
       if (!already) await awardPoints(env, me.u, 'attendance', 5, `Checked in · ${label(row)}`); // P11.3 – only the first check-in for this night
     }
+    if (hasLineup(row)) await pushLineup(env, row.id, 'checkin'); // BE3: the ready check shows who's on
     await log(env, me, 'event-checkin', `${body.on === false ? 'left' : 'on'}${trial ? ` · trying ${trial}` : ''} · ${label(row)}`);
     return json(await listFor(env, me));
   }
@@ -483,6 +487,7 @@ async function lineupRoute(p, method, body, me, env, log) {
   const publish = !!body.publish && Object.keys(lineup).length > 0;
   await run(env, `UPDATE events SET lineup = ?, formation = ?${publish ? ', lineup_at = ?' : ''} WHERE id = ?`, JSON.stringify(lineup), formation, ...(publish ? [Date.now()] : []), row.id);
   await log(env, me, publish ? 'event-lineup-publish' : 'event-lineup', `${label(row)}${formation ? ` · ${formation}` : ''} · ${Object.keys(lineup).length} players`);
+  await pushLineup(env, row.id, publish ? 'publish' : 'draft'); // BE3: other managers with the builder open refresh
   const out = {};
   if (publish) {
     const ids = Object.keys(lineup);
@@ -498,7 +503,26 @@ async function lineupRoute(p, method, body, me, env, log) {
   return json({ ...out, ...(await listFor(env, me)) });
 }
 
-// ---------- BE4: nudge a short position ----------
+// ---------- BE3 live Dugout ----------
+// Room 'lineup:<id>' (bot/clubroom.js). The wire carries only *what* changed: the open builder re-reads GET /api/events,
+// so the manager-only ready check never travels over a socket.
+const hasLineup = (row) => Object.keys(parse(row.lineup, {})).length > 0;
+export const lineupRoom = (id) => `lineup:${Number(id)}`;
+export const pushLineup = (env, id, kind) => broadcastRoom(env, lineupRoom(id), { t: 'lineup', id: Number(id), kind, at: Date.now() });
+
+// WebSocket upgrade – called from members.js with the session already unsealed from `?t=`. Managers and the owner only
+// (the ready check is manager data); the room is broadcast-only, so a socket can't write anything.
+export async function lineupSocket(request, env, me, id) {
+  if (request.headers.get('Upgrade') !== 'websocket') return fail('Expected a WebSocket.', 426);
+  if (!me || !flagOn(env, me, 'events')) return fail('Not available yet.', 404);
+  if (!can(me, 'events.manage')) return fail('Managers only.', 403);
+  if (!env.CLUB_ROOM) return fail('Live updates are not set up yet.', 503);
+  if (!/^\d{1,9}$/.test(String(id)) || Number(id) < 1) return fail('Not found', 404);
+  const q = new URLSearchParams({ u: me.u, n: me.n || 'Manager' });
+  const room = env.CLUB_ROOM.get(env.CLUB_ROOM.idFromName(lineupRoom(id)));
+  return room.fetch(new Request(`https://room/ws?${q}`, { headers: request.headers }));
+}
+
 // Managers, from the Dugout squad view: DM/push only the members who play a short position and haven't
 // answered yet – a targeted version of the T-24h/T-2h cron reminder (eventReminders), fired on demand.
 async function nudgeRoute(body, me, env, log) {

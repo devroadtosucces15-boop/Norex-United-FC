@@ -19,7 +19,7 @@ import { deliverDMs, notify, notifyManagers, notifyRouteAll, publicRequestRoute,
 import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
-import { eventsRoute, localDate, publicEvents, weekEvents, reportPosterRoute } from './events.js';
+import { eventsRoute, lineupSocket, localDate, publicEvents, weekEvents, reportPosterRoute } from './events.js';
 import { lockerRoute } from './locker.js';
 import { hubRoute, hubSocket } from './hub.js';
 import { intelRoute } from './insights.js';
@@ -314,6 +314,12 @@ export async function handleMembers(request, env, ctx, loadSite) {
       const who = await unseal(env, url.searchParams.get('t'));
       if (who) who.role = await currentRole(env, who);
       return chatSocket(request, env, who, Number(wsChat[1]));
+    }
+    const wsLineup = url.pathname.match(/^\/api\/events\/(\d{1,9})\/lineup\/ws$/); // BE3 live Dugout – managers only, same ?t= shape
+    if (wsLineup) {
+      const who = await unseal(env, url.searchParams.get('t'));
+      if (who) who.role = await currentRole(env, who);
+      return lineupSocket(request, env, who, wsLineup[1]);
     }
     if (url.pathname === '/api/hub/ws') { // BE8 – live "who's in the Hub" roster + waves, same ?t= shape as chat
       const who = await unseal(env, url.searchParams.get('t'));
