@@ -159,3 +159,40 @@ button.lu-slot:hover .lu-dot,button.lu-slot:focus-visible .lu-dot{transform:scal
 .dw-day.short{border-color:rgba(239,68,68,.45)}
 .dw-day b{font:600 13px var(--head);text-transform:uppercase}
 .dw-day span{font:600 13px var(--body)}
+
+/* 📆 Month grid (BE11, assets/calendar.js): Monday-first, one card per day, kind colour on each chip. */
+.cal{display:grid;gap:10px;margin:0 0 12px}
+.cal-head{display:flex;align-items:center;gap:8px}
+.cal-head h4{margin:0;flex:1;text-align:center;font:600 18px var(--head);letter-spacing:.04em;text-transform:uppercase}
+.cal-head .btn{margin:0;min-width:36px}
+.cal-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font:600 12px var(--body);color:var(--muted)}
+.cal-legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--c);margin-right:5px;vertical-align:0}
+.cal-wk,.cal-body{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal-wk span{font:600 11px var(--head);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center;padding:2px 0}
+.cal-day{position:relative;min-width:0;min-height:86px;padding:5px 4px;border-radius:10px;border:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.cal-day.pad{background:transparent;border-style:dashed;opacity:.35}
+.cal-day.has{border-color:var(--line2)}
+.cal-day.today{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}
+.cal-num{font:600 12px var(--body);color:var(--muted)}
+.cal-day.today .cal-num{color:var(--red)}
+.cal-ev{display:flex;align-items:center;gap:4px;min-width:0;width:100%;padding:3px 5px;border:0;border-left:3px solid var(--c);border-radius:6px;background:color-mix(in srgb,var(--c) 18%,transparent);color:inherit;font:600 11px var(--body);text-align:left;cursor:pointer}
+.cal-ev:hover,.cal-ev:focus-visible{background:color-mix(in srgb,var(--c) 32%,transparent);outline:none}
+.cal-ev i{font-style:normal}
+.cal-ev b{font-weight:700;white-space:nowrap}
+.cal-ev span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-ev em{font-style:normal;flex:none}
+.cal-ev.off{opacity:.55;text-decoration:line-through}
+.cal-ev.my-yes{box-shadow:inset 0 0 0 1px var(--win)}
+.cal-more{font:600 10px var(--body);color:var(--muted)}
+.cal-skel{display:grid;gap:8px;padding:8px 0}
+.cal-skel span{height:44px;border-radius:10px;background:var(--panel);animation:cal-pulse 1.2s ease-in-out infinite}
+@keyframes cal-pulse{50%{opacity:.45}}
+.cal-err,.cal-none{text-align:center}
+@media (max-width:640px){
+  .cal-day{min-height:58px;padding:3px 2px}
+  .cal-ev{padding:2px;justify-content:center;border-left-width:0;background:none}
+  .cal-ev b,.cal-ev span,.cal-ev em{display:none}
+  .cal-ev i{font-size:14px}
+  .cal-more{display:none}
+}
+@media (prefers-reduced-motion:reduce){.cal-skel span{animation:none}}

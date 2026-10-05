@@ -59,7 +59,7 @@
 
   // ================= Squad Hub tab =================
   function schedule(el, ctx) {
-    let S = null, sel = new Set(), poll = null, day = null, showPast = false;
+    let S = null, sel = new Set(), poll = null, day = null, showPast = false, view = 'list';
     const load = async () => { S = await ctx.call('/api/events'); paint(); };
     const mine = (e) => e.rsvps.find((r) => r.id === ctx.me.u)?.s;
     const faces = (list, cls = '') => list.map((r) => `<img class="${cls}" src="${esc(r.a || '')}" alt="" data-tip="${esc(r.n)}${r.pos?.length ? ` · ${esc(r.pos.slice(0, 3).join('/'))}` : ''}">`).join('');
@@ -89,7 +89,23 @@ ${S.canManage && ph !== 'past' && ph !== 'cancelled' ? `<button type="button" cl
 <label class="ev-trial">🧪 Trying a position tonight? <select data-trial><option value="">No</option>${NEED_POS.map((p) => `<option${me?.trial === p ? ' selected' : ''}>${p}</option>`).join('')}</select></label></div>
 <h4>Who’s on <em>${e.checkins.length}</em></h4>${e.checkins.length ? `<ul class="ev-on">${e.checkins.map((c) => `<li>${UI.member({ id: c.id, n: c.n, a: c.a, sub: [lineup[c.id] && `🧩 ${lineup[c.id]}`, c.trial && `🧪 trying ${c.trial}`].filter(Boolean).join(' · ') }, { size: 26 })}</li>`).join('')}</ul>` : '<p class="muted small">Nobody has checked in yet.</p>'}</div>`;
     }
+    // 📆 Month view (BE11) – the grid lives in assets/calendar.js; a chip jumps back to its card in the list.
+    const loadCal = () => new Promise((ok, no) => (window.NXCalendar ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/calendar.js`, onload: ok, onerror: no }))));
+    const viewBtn = () => `<button type="button" class="btn sm ghost" data-cal-view>${view === 'month' ? '☰ List' : '📆 Month'}</button>`;
+    function paintMonth() {
+      el.innerHTML = `<div class="ev-top"><div><h3>🗓️ Schedule</h3><p class="muted small">Times are in your time zone (${esc(MY_TZ.replace(/_/g, ' '))}).</p></div><span class="grow"></span>${viewBtn()}${S.canManage ? '<button type="button" class="btn sm" data-new>➕ New event</button>' : ''}</div><div id="ev-month"></div>`;
+      loadCal().then(() => NXCalendar.grid($('#ev-month', el), {
+        call: ctx.call,
+        onPick: (id) => {
+          view = 'list'; paint();
+          const card = $(`#ev-${id}`, el);
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          else if (S.events.some((x) => x.id === id)) { ctx.toast('That one is in Recent below'); $('.ev-past', el)?.setAttribute('open', ''); }
+        },
+      })).catch(() => { $('#ev-month', el).innerHTML = '<p class="muted">Month view couldn’t load – try again in a moment.</p>'; });
+    }
     function paint() {
+      if (view === 'month' && S) { clearInterval(poll); return paintMonth(); }
       const now = Date.now();
       const upcoming = S.events.filter((e) => phase(e) !== 'past'), past = S.events.filter((e) => phase(e) === 'past').reverse();
       const days = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + i); return d; });
@@ -98,7 +114,7 @@ ${S.canManage && ph !== 'past' && ph !== 'cancelled' ? `<button type="button" cl
       const usual = upcoming.filter((e) => e.usual && !mine(e) && phase(e) === 'soon');
       const n = sel.size;
       el.innerHTML = `<div class="ev-top"><div><h3>🗓️ Schedule</h3><p class="muted small">Times are in your time zone (${esc(MY_TZ.replace(/_/g, ' '))}).</p></div><span class="grow"></span>
-${usual.length ? `<button type="button" class="btn sm ghost" data-usual>✨ Yes to ${usual.length} in my usual times</button>` : ''}${S.canManage ? '<button type="button" class="btn sm" data-new>➕ New event</button>' : ''}</div>
+${usual.length ? `<button type="button" class="btn sm ghost" data-usual>✨ Yes to ${usual.length} in my usual times</button>` : ''}${viewBtn()}${S.canManage ? '<button type="button" class="btn sm" data-new>➕ New event</button>' : ''}</div>
 <div class="ev-cal" role="list">${days.map((d) => { const k = dayKey(d.getTime()), list = byDay.get(k) ?? []; return `<button type="button" role="listitem" class="ev-day${list.length ? ' has' : ''}${day === k ? ' on' : ''}${k === dayKey(now) ? ' today' : ''}" data-day="${k}"${list.length ? '' : ' disabled'}><small>${d.toLocaleDateString(undefined, { weekday: 'short' })}</small><b>${d.getDate()}</b><span>${list.slice(0, 3).map((e) => `<i class="dot ${mine(e) ? `my-${mine(e)}` : ''}" title="${esc(label(e))}">${TYPES[e.type][0]}</i>`).join('')}</span></button>`; }).join('')}</div>
 <div class="bulk card${n ? ' on' : ''}"><span>${n ? `<b>${n}</b> event${n > 1 ? 's' : ''} selected` : 'Tip: tick several events, then answer them all at once'}</span><div class="bulk-btns">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="btn sm${n ? '' : ' ghost'}" data-bulk="${s}"${n ? '' : ' disabled'}>${ICON[s]} ${s}</button>`).join('')}<button type="button" class="btn ghost sm" data-bulk="clear"${n ? '' : ' disabled'}>Clear</button></div></div>
 ${upcoming.length ? [...byDay].map(([k, list]) => `<section class="ev-group" id="d-${k}"><h4>${fmtDay(list[0].start)}${k === dayKey(now) ? ' <em>today</em>' : ''}</h4>${list.map(card).join('')}</section>`).join('')
@@ -352,6 +368,7 @@ ${S.canManage ? `<div class="rp-share"><b>📣 Share it</b> <small class="muted"
       if (!b || !el.contains(b)) return;
       const card = b.closest('[data-id]'), ev = card && S.events.find((x) => x.id === +card.dataset.id), d = b.dataset;
       if (d.new !== undefined) return editor();
+      if (d.calView !== undefined) { view = view === 'month' ? 'list' : 'month'; return paint(); }
       if (d.day) { day = d.day; paint(); $(`#d-${d.day}`, el)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       if (d.bulk) { const ids = [...sel]; sel = new Set(); answer(ids, d.bulk); return ctx.toast(`${ids.length} event${ids.length > 1 ? 's' : ''} updated`); }
       if (d.usual !== undefined) { const ids = S.events.filter((x) => x.usual && !mine(x) && phase(x) === 'soon').map((x) => x.id); answer(ids, 'yes'); return ctx.toast(`✅ Yes to ${ids.length} – change any of them below`); }

@@ -186,4 +186,11 @@ await tt('activity log records the night', async () => {
   const types = sqlite.prepare("SELECT DISTINCT type FROM activity WHERE type LIKE 'event-%'").all().map((r) => r.type);
   return ['event-new', 'event-edit', 'event-cancel', 'event-rsvp', 'event-checkin', 'event-lineup', 'event-report', 'event-nudge'].every((x) => types.includes(x));
 });
+// ----- BE11 month grid front end (web/calendar.js, wired from web/events.js) -----
+const { readFileSync } = await import('node:fs');
+const calJs = readFileSync(new URL('../web/calendar.js', import.meta.url), 'utf8');
+const evJs = readFileSync(new URL('../web/events.js', import.meta.url), 'utf8');
+t('month grid: calendar.js exposes NXCalendar.grid and calls the month endpoint', /window\.NXCalendar\s*=\s*\{\s*grid\s*\}/.test(calJs) && calJs.includes('/api/events/calendar?month='));
+t('month grid: Monday-first offset and no NaN/undefined in the markup path', calJs.includes('(cur.getDay() + 6) % 7') && !/\bundefined\b\s*\+/.test(calJs));
+t('month grid: schedule toggles 📆 Month and loads assets/calendar.js', evJs.includes('data-cal-view') && evJs.includes('assets/calendar.js') && evJs.includes("view = 'list'"));
 done();
