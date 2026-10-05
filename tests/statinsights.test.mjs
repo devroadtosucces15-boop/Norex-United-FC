@@ -1,10 +1,10 @@
 // BE9 Insights engine: fact packs, the fingerprint gate, the number checker (must reject invented
 // numbers), the routes (tier gating, ask rate limit, feedback), the queue job, and the weekly post.
-import { call, env, login, siteJson, setAnthropicReply, DB } from './mock.mjs';
+import { call, env, login, siteJson, setAiReply, DB } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import {
   factPackFor, registryKeys, numbersOk, extractNumbers, writeInsight, refreshStatInsights,
-  handleStatInsightJob, statInsightWeekly,
+  handleStatInsightJob, statInsightWeekly, compareKey, statCompareRoute,
 } from '../bot/statinsights.js';
 
 const loadSite = async (f) => siteJson(f);
@@ -38,13 +38,13 @@ t('numbersOk: no numbers at all → true (nothing to check)', numbersOk('Steady 
 // ---------- writer: fingerprint gate + number checker + retry ----------
 env.FEATURES = JSON.stringify({ statInsights: 'public' }); // decouple tier tests from the flag's own owner gate
 
-setAnthropicReply(() => JSON.stringify({ headline: 'Solid week', body: 'A clean, honest read of the numbers.', watch: 'Keep it up.' }));
+setAiReply(() => JSON.stringify({ headline: 'Solid week', body: 'A clean, honest read of the numbers.', watch: 'Keep it up.' }));
 t('writeInsight writes a row when the writer stays inside the facts', await writeInsight(env, 'club', club));
 let row = await DB.prepare('SELECT * FROM stat_insights WHERE key = ?').bind('club').first();
 t('stored row has the right tier + sources', row.tier === 'public' && JSON.parse(row.sources).gamesPlayed === club.facts.gamesPlayed);
 
 let calls = 0;
-setAnthropicReply((req) => {
+setAiReply((req) => {
   calls++;
   const text = req.messages[0].content;
   // First attempt invents a number; the retry (triggered by the rejection) must use only real facts.
@@ -55,21 +55,21 @@ const matchKeyFacts = await factPackFor('match.latest', loadSite);
 t('an invented number is rejected and retried, then written once the retry is clean', await writeInsight(env, 'match.latest', matchKeyFacts) && calls === 2);
 
 calls = 0;
-setAnthropicReply(() => { calls++; return JSON.stringify({ headline: 'An incredible 999 wins', body: 'Unreal.', watch: 'Wow.' }); });
+setAiReply(() => { calls++; return JSON.stringify({ headline: 'An incredible 999 wins', body: 'Unreal.', watch: 'Wow.' }); });
 t('two invented-number replies in a row → skipped, not written', !(await writeInsight(env, 'club', club)) && calls === 2);
 
-setAnthropicReply(null); // back to the default reply for the rest of the file
+setAiReply(null); // back to the default reply for the rest of the file
 
 // ---------- refresh: fingerprint gate skips unchanged facts ----------
 await DB.exec('DELETE FROM stat_insights'); // clean slate – every registry key is missing
 calls = 0;
-setAnthropicReply(() => { calls++; return JSON.stringify({ headline: 'Form check', body: 'Nothing has moved.', watch: 'As before.' }); });
+setAiReply(() => { calls++; return JSON.stringify({ headline: 'Form check', body: 'Nothing has moved.', watch: 'As before.' }); });
 await refreshStatInsights(env, loadSite);
 t('refreshStatInsights writes every registry key on first run', calls === keys.length);
 calls = 0;
 await refreshStatInsights(env, loadSite); // nothing changed since → the fingerprint gate skips every key
 t('refreshStatInsights skips every key whose fingerprint already matches', calls === 0);
-setAnthropicReply(null);
+setAiReply(null);
 
 // ---------- queue job ----------
 await DB.exec("DELETE FROM stat_insights WHERE key = 'match.latest'");
@@ -97,7 +97,7 @@ t('a second vote replaces the first, not duplicates it', fb.vote === -1);
 t('feedback needs a key and a valid vote', (await call(member, '/api/insights/feedback', { key: '', vote: 1 })).d.error && (await call(member, '/api/insights/feedback', { key: 'club', vote: 3 })).d.error);
 
 // ---------- ask ----------
-setAnthropicReply(() => JSON.stringify({ answer: 'A fair return for the effort shown.' }));
+setAiReply(() => JSON.stringify({ answer: 'A fair return for the effort shown.' }));
 r = await call(member, '/api/insights/ask', { key: 'club', question: 'How are we doing?' });
 t('ask answers from the stored fact pack', r.s === 200 && r.d.answer);
 r = await call(member, '/api/insights/ask', { key: 'no-such-key', question: 'x' });
@@ -107,7 +107,7 @@ t('ask requires login', r.s === 401);
 for (let i = 0; i < 10; i++) await call(mgr, '/api/insights/ask', { key: 'club', question: `q${i}` });
 r = await call(mgr, '/api/insights/ask', { key: 'club', question: 'one more' });
 t('ask is rate-limited to 10/day per member', r.d.error?.includes('Too many'));
-setAnthropicReply(null);
+setAiReply(null);
 
 // ---------- weekly post ----------
 let posted = null;
@@ -136,5 +136,22 @@ t('/insight member-tier row → gated for a guest', /members only/.test((await d
 t('/insight member-tier row → shown to a member', (await discordInsightEmbed(env, 'goals', 'member')).embed?.title === '✨ Goals race');
 t('/insight with no stored row → friendly error', /No insight/.test((await discordInsightEmbed(env, 'match', 'owner')).error ?? ''));
 t('/insight unknown stat → error', !!(await discordInsightEmbed(env, 'nope', 'owner')).error);
+
+// ---------- BE9 compare (on demand, member+, pair key sorted, cached by fingerprint) ----------
+const homes = siteJson('players').filter((p) => p.home);
+const [pa, pb] = [homes[0], homes[1]];
+t('compareKey sorts the pair so A-vs-B and B-vs-A share one row', compareKey(pa.k, pb.k) === compareKey(pb.k, pa.k));
+const cmpPack = await factPackFor(compareKey(pa.k, pb.k), loadSite);
+t('compare fact pack is member-tier and carries both players by name (sorted pair)', cmpPack.tier === 'member' && [cmpPack.facts.a.name, cmpPack.facts.b.name].sort().join('|') === [pa.n, pb.n].sort().join('|'));
+t('compare fact pack with a non-home player → null', (await factPackFor(compareKey(pa.k, 'not-a-real-key'), loadSite)) === null);
+t('compare route: guests are refused', /Members only/.test((await statCompareRoute(env, loadSite, { role: 'guest' }, { a: pa.k, b: pb.k })).error ?? ''));
+t('compare route: same player twice is refused', /different/.test((await statCompareRoute(env, loadSite, { role: 'member' }, { a: pa.k, b: pa.k })).error ?? ''));
+setAiReply(() => JSON.stringify({ headline: 'Close call', body: 'Two very different games, one clear edge.', watch: 'Who grabs the next big game.' }));
+const first = await statCompareRoute(env, loadSite, { role: 'member' }, { a: pa.k, b: pb.k });
+t('compare route writes the pair on first view', first.insight?.headline === 'Close call' && first.insight.key === compareKey(pa.k, pb.k));
+let writerCalls = 0;
+setAiReply(() => { writerCalls++; return JSON.stringify({ headline: 'Changed', body: 'Changed body.', watch: 'Changed watch.' }); });
+const again = await statCompareRoute(env, loadSite, { role: 'member' }, { a: pb.k, b: pa.k });
+t('a repeat view of the same pair (either order) is served from the stored row, no writer call', again.insight?.headline === 'Close call' && writerCalls === 0);
 
 done();

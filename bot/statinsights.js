@@ -12,15 +12,17 @@
 //   POST /api/insights/ask      { key, question }          member+, 10/day, answered only from the
 //                                 same fact pack the stored insight was written from
 //   POST /api/insights/feedback { key, vote: 1|-1 }        member+
+//   POST /api/insights/compare  { a, b }                   member+, on demand: head-to-head for two home players
 //
 // refreshStatInsights(env, loadSite) (cron, see worker.js) walks the registry every run; a changed
 // fingerprint goes to the JOBS queue (BE0) when it's bound, else writes inline – same graceful
-// degrade as the rest of BE0's platform pieces. Needs the Worker secret ANTHROPIC_API_KEY; without it
-// the writer just logs and skips, so the feature never fails the cron or a request.
+// degrade as the rest of BE0's platform pieces. Uses the Workers AI binding (`AI`, bot/wrangler.toml);
+// without it the writer just logs and skips, so the feature never fails the cron or a request.
 import { atLeast } from './roles.js';
+import { TEXT_MODEL } from './aispike.js';
 
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
-const WRITER_MODEL = (env) => env.STAT_INSIGHTS_MODEL || 'claude-sonnet-5'; // templated, fact-bounded copy – Sonnet 5 holds quality here for a fraction of Opus's cost on a job that runs per changed stat
+const WRITER_MODEL = (env) => env.STAT_INSIGHTS_MODEL || TEXT_MODEL; // Workers AI text model (free allowance on the account) – fact-bounded copy, the number checker catches anything it invents
 
 const WRITER_SYSTEM = 'You write short, upbeat analyst copy for NOREX UNITED FC, an amateur EA FC Pro Clubs team. '
   + 'Club voice: confident, plain-English, a little cheeky, never corporate. No hashtags, no emoji, no markdown. '
@@ -87,14 +89,28 @@ async function leadersFacts(loadSite, stat) {
 }
 // Every key the registry currently covers. Board 12 wants every tile/column/chart/profile stat –
 // this slice covers club form, the latest match, every home-squad player's season, and the four
-// leaderboards (goals/assists/rating/MOTM); "compare" is still open – see the module comment.
+// leaderboards (goals/assists/rating/MOTM). Head-to-head pairs are on-demand (statCompareRoute), not in this list.
 export async function registryKeys(loadSite) {
   const players = await loadSite('players');
   return ['club', 'match.latest', ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
     ...players.filter((p) => p.home).map((p) => `player.${p.k}`)];
 }
+// BE9 compare – two home-squad players side by side. On demand only (POST /api/insights/compare), never
+// in the cron registry: the pair count is squad² so nothing is pre-written. The key is `compare.<a>~<b>`
+// with the keys sorted, so A-vs-B and B-vs-A share one stored row.
+export const compareKey = (a, b) => { const [x, y] = [a, b].sort(); return `compare.${x}~${y}`; };
+async function compareFacts(loadSite, a, b) {
+  if (a === b) return null;
+  const [pa, pb] = [await playerFacts(loadSite, a), await playerFacts(loadSite, b)];
+  if (!pa || !pb) return null;
+  const names = (await loadSite('players')).filter((p) => p.home && (p.k === a || p.k === b));
+  const nameOf = (k) => names.find((p) => p.k === k)?.n ?? k;
+  return { title: `${nameOf(a)} vs ${nameOf(b)}`, facts: { a: { name: nameOf(a), ...pa.facts }, b: { name: nameOf(b), ...pb.facts } } };
+}
 export async function factPackFor(key, loadSite) {
   if (key === 'club') return { tier: 'public', ...(await clubFacts(loadSite)) };
+  const cm = /^compare\.(.+)~(.+)$/.exec(key);
+  if (cm) { const f = await compareFacts(loadSite, cm[1], cm[2]); return f && { tier: 'member', ...f }; }
   if (key === 'match.latest') { const f = await matchFacts(loadSite); return f && { tier: 'public', ...f }; }
   const lm = /^leaders\.(.+)$/.exec(key);
   if (lm) { const f = await leadersFacts(loadSite, lm[1]); return f && { tier: 'public', ...f }; }
@@ -127,26 +143,22 @@ export function numbersOk(text, allowed) {
   return extractNumbers(text).every((n) => [...allowed].some((a) => Math.abs(a - n) < 0.1));
 }
 
-// ---------- the writer (Anthropic Messages API – zero npm deps, raw fetch) ----------
+// ---------- the writer (Workers AI binding – free tier, no API key) ----------
 async function callModel(env, { system, prompt, facts, parse, label }) {
-  if (!env.ANTHROPIC_API_KEY) { console.log(`statInsights: ANTHROPIC_API_KEY not set – skipping ${label}`); return null; }
+  if (!env.AI) { console.log(`statInsights: AI binding not set – skipping ${label}`); return null; }
   const allowed = allowedNumbers(facts);
   for (let attempt = 0; attempt < 2; attempt++) {
-    let res;
+    let text;
     try {
-      res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model: WRITER_MODEL(env), max_tokens: 500,
-          system: attempt ? `${system} Your last reply used a number that was not in the given facts – this time use ONLY the exact figures given, or none at all.` : system,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+      const r = await env.AI.run(WRITER_MODEL(env), {
+        messages: [
+          { role: 'system', content: attempt ? `${system} Your last reply used a number that was not in the given facts – this time use ONLY the exact figures given, or none at all.` : system },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 500,
       });
+      text = r?.response;
     } catch (e) { console.log(`statInsights: ${label} call failed`, e.message); return null; }
-    if (!res.ok) { console.log(`statInsights: ${label} HTTP`, res.status, await res.text().catch(() => '')); return null; }
-    const data = await res.json().catch(() => null);
-    const text = data?.content?.find((b) => b.type === 'text')?.text;
     const parsed = parse(text);
     if (parsed && Object.values(parsed).every((v) => numbersOk(v, allowed))) return parsed;
     console.log(`statInsights: ${label} rejected${parsed ? ' an invented number' : ' an unparsable reply'}, retrying`);
@@ -245,6 +257,23 @@ export async function statAskRoute(env, me, body) {
   const out = await callModel(env, { system: ASK_SYSTEM, prompt: askPrompt(facts, question), facts, parse: parseAsk, label: `ask:${key}` });
   await env.DB.prepare('INSERT INTO stat_insight_asks (user_id, key, question, at) VALUES (?, ?, ?, ?)').bind(me.u, key, question, Date.now()).run();
   return out ? { answer: out.answer } : { error: "Couldn't answer that from what's known right now." };
+}
+// POST /api/insights/compare { a, b }: members only. A stored row whose fingerprint still matches is returned
+// as-is (no writer call); otherwise the pair is written inline. Same number checker, same degrade: no key → error.
+export async function statCompareRoute(env, loadSite, me, body) {
+  if (!atLeast(me?.role ?? 'guest', 'member')) return { error: 'Members only.' };
+  const a = String(body?.a ?? ''), b = String(body?.b ?? '');
+  if (!a || !b || a === b) return { error: 'Pick two different players.' };
+  const key = compareKey(a, b);
+  const pack = await factPackFor(key, loadSite);
+  if (!pack) return { error: 'Both players need to be in the home squad.' };
+  const hash = await fingerprint(pack.facts);
+  let row = await one(env, 'SELECT key, headline, body, watch, at, hash FROM stat_insights WHERE key = ?', key);
+  if (!row || row.hash !== hash) {
+    if (!(await writeInsight(env, key, pack))) return { error: "Couldn't write that comparison right now." };
+    row = await one(env, 'SELECT key, headline, body, watch, at, hash FROM stat_insights WHERE key = ?', key);
+  }
+  return { insight: { key, headline: row.headline, body: row.body, watch: row.watch, at: row.at } };
 }
 export async function statFeedbackRoute(env, me, body) {
   const key = String(body?.key ?? '');

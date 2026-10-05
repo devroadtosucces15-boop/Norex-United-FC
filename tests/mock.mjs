@@ -61,10 +61,17 @@ export const mockDiscord = { id: '111', username: 'boss', global_name: 'Зуб_�
 export const SITE = 'http://localhost:4321/';
 globalThis.caches = { default: { match: async () => null, put: async () => {} } };
 const realFetch = globalThis.fetch;
-// BE9 – the stat insights writer/ask call. Tests set this to control the model's reply; defaults to a
-// reply built straight from the sent facts, so an unset test still gets a plausible, number-safe answer.
-export let anthropicReply = null;
-export const setAnthropicReply = (fn) => { anthropicReply = fn; };
+// BE9 – the stat insights writer/ask call runs on the Workers AI binding (env.AI). Tests set this to
+// control the model's reply; the default is a plausible, number-safe answer.
+export let aiReply = null;
+export const setAiReply = (fn) => { aiReply = fn; };
+export const mockAI = {
+  run: async (model, input) => {
+    const req = { model, ...input };
+    const response = aiReply ? aiReply(req) : JSON.stringify({ headline: 'Steady going', body: 'A quiet week for the numbers.', watch: 'Keep an eye on the next match.' });
+    return { response };
+  },
+};
 globalThis.fetch = async (url, init = {}) => {
   url = String(url);
   if (url.startsWith(SITE)) return new Response(fs.readFileSync(ROOT + 'site/' + url.slice(SITE.length)));
@@ -72,11 +79,6 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.endsWith('/users/@me/connections')) return Response.json(mockDiscord.connections ?? []); // P2.4
   if (url.endsWith('/users/@me')) return Response.json({ id: mockDiscord.id, username: mockDiscord.username, global_name: mockDiscord.global_name, avatar: null });
   if (url.includes('/guilds/')) return mockDiscord.inGuild ? Response.json({ roles: mockDiscord.roles }) : new Response('{}', { status: 404 });
-  if (url === 'https://api.anthropic.com/v1/messages') {
-    const req = JSON.parse(init.body);
-    const text = anthropicReply ? anthropicReply(req) : JSON.stringify({ headline: 'Steady going', body: 'A quiet week for the numbers.', watch: 'Keep an eye on the next match.' });
-    return Response.json({ content: [{ type: 'text', text }] });
-  }
   if (url.startsWith('https://discord.com/') || url.startsWith('https://api.github.com/')) throw new Error(`unexpected network call in test: ${url}`);
   return realFetch(url);
 };
@@ -87,7 +89,7 @@ export const jobs = [];
 export const env = {
   SITE_URL: SITE, DISCORD_APP_ID: '1', DISCORD_CLIENT_SECRET: 'shh', DISCORD_GUILD_ID: '9',
   ADMIN_IDS: '111', ADMIN_ROLE_ID: 'mgr', OWNER_ROLE_ID: 'founder', NOREX_KV: KV, DB, MEDIA: R2,
-  ANTHROPIC_API_KEY: 'test-key',
+  AI: mockAI,
   FEATURES: JSON.stringify(config.features ?? {}),
   HYPE_CHANNEL: JSON.stringify(config.hype ?? {}),
 };
