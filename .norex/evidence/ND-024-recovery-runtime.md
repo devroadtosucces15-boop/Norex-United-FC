@@ -29,3 +29,7 @@ Recovery envelope v2 can bind the runtime bundle to an exact repository root, Sh
 ## Approval-gated recovery export API — 2026-10-04
 
 The local Dev OS now exposes a same-origin JSON recovery export action that requires explicit approval. It creates a mode-0600 temporary v2 bundle, binds it to the exact repository root/branch/commit, reads it back through the integrity verifier, returns only non-secret verification metadata, and removes the temporary bundle before responding. It does not expose an arbitrary filesystem path or restore mutation through HTTP. Deterministic coverage verifies denial without approval plus exact repository identity and SHA-256 verification on approval.
+
+## Dev OS recovery export control — 2026-10-04
+
+The Dev OS rail now exposes `VERIFY RECOVERY EXPORT`, which calls only the approval-gated same-origin recovery export endpoint. The control displays verified envelope/repository/runtime summary metadata and refreshes the exact runtime pulse after completion. It does not accept a filesystem path and does not expose restore mutation. Restore UI, credential rebinding and future schema migration remain gated.
