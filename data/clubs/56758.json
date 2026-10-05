@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-05T14:10:34.791Z",
+ "fetchedAt": "2026-10-05T14:20:31.608Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -44,17 +44,17 @@
   "finishesInDivision4Group1": "0",
   "finishesInDivision5Group1": "0",
   "finishesInDivision6Group1": "0",
-  "gamesPlayed": "172",
+  "gamesPlayed": "173",
   "gamesPlayedPlayoff": "0",
-  "goals": "529",
-  "goalsAgainst": "365",
+  "goals": "531",
+  "goalsAgainst": "367",
   "promotions": "7",
   "relegations": "3",
   "losses": "52",
-  "ties": "23",
+  "ties": "24",
   "wins": "97",
-  "lastMatch0": "2",
-  "lastMatch1": "1",
+  "lastMatch0": "3",
+  "lastMatch1": "2",
   "lastMatch2": "1",
   "lastMatch3": "1",
   "lastMatch4": "1",
@@ -63,21 +63,21 @@
   "lastMatch7": "-1",
   "lastMatch8": "-1",
   "lastMatch9": "-1",
-  "lastOpponent0": "481895",
-  "lastOpponent1": "487294",
-  "lastOpponent2": "58182",
-  "lastOpponent3": "1095524",
-  "lastOpponent4": "58463",
-  "lastOpponent5": "63490",
-  "lastOpponent6": "621648",
-  "lastOpponent7": "29811",
-  "lastOpponent8": "102297",
-  "lastOpponent9": "223761",
+  "lastOpponent0": "17110",
+  "lastOpponent1": "481895",
+  "lastOpponent2": "487294",
+  "lastOpponent3": "58182",
+  "lastOpponent4": "1095524",
+  "lastOpponent5": "58463",
+  "lastOpponent6": "63490",
+  "lastOpponent7": "621648",
+  "lastOpponent8": "29811",
+  "lastOpponent9": "102297",
   "wstreak": "0",
-  "unbeatenstreak": "0",
-  "skillRating": "1867",
+  "unbeatenstreak": "1",
+  "skillRating": "1863",
   "reputationtier": "1",
-  "leagueAppearances": "172"
+  "leagueAppearances": "173"
  },
  "members": [
   {
@@ -2207,6 +2207,6 @@
  "leaderboard": {
   "currentDivision": "2",
   "bestDivision": "2",
-  "points": "140"
+  "points": "141"
  }
 }
