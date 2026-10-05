@@ -19,3 +19,7 @@ Normalize auth, availability, allowance, context, provider, policy and billing f
 
 ## Security
 Credentials are resolved by the Credential Broker and never injected into model-visible context.
+
+## Executable readiness gate — 2026-10-04
+
+The shared local `provider-adapter.mjs` now implements deterministic dispatch-readiness policy for Codex without invoking Codex. It requires installed presence plus separately VERIFIED auth, AVAILABLE allowance, verified included/free billing, an exact Capability Broker route and an ALLOWED permission decision. The current presence probe intentionally reports auth/allowance/billing as UNKNOWN, so real Codex dispatch remains GATED and cannot spend money.

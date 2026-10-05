@@ -26,3 +26,7 @@ Preserve task/event/checkpoint state and return control to Capability Broker for
 
 ## Security
 No raw credential in prompt/context/event/log. Credential Broker resolves any authorized provider credential outside model context.
+
+## Executable readiness gate — 2026-10-04
+
+The shared local `provider-adapter.mjs` now implements deterministic dispatch-readiness policy for Claude without invoking Claude. It requires installed presence plus separately VERIFIED auth, AVAILABLE allowance, verified included/free billing, an exact Capability Broker route and an ALLOWED permission decision. The current presence probe intentionally reports auth/allowance/billing as UNKNOWN, so real Claude dispatch remains GATED and cannot spend money.
