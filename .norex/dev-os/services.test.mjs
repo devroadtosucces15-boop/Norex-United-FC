@@ -16,6 +16,7 @@ import { probeProviderPresence } from './provider-probe.mjs';
 import { permissionDecision, validateCredentialHandle } from './permission-broker.mjs';
 import { permissionWithDurableGrant, permissionApprovalAction } from './permission-service.mjs';
 import { createPtyService } from './pty-service.mjs';
+import { normalizeMcpTool, planMcpInvocation } from './mcp-adapter.mjs';
 import { utf8Prefix } from './utf8.mjs';
 import { writeRecoveryBundle, readRecoveryBundle, restoreRecoveryBundle } from './recovery-bundle.mjs';
 import { browserProbe, captureLocalPreview } from './browser-service.mjs';
@@ -26,7 +27,7 @@ async function fixture(fn) {
   try {
     await mkdir(resolve(root, '.norex/dev-os'), { recursive: true });
     await mkdir(resolve(root, '.norex/evidence'), { recursive: true });
-    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'permission-broker.mjs', 'permission-service.mjs', 'pty-service.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'utf8.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
+    for (const file of ['server.mjs', 'local-services.mjs', 'runtime-store.mjs', 'capability-broker.mjs', 'routing-service.mjs', 'provider-probe.mjs', 'permission-broker.mjs', 'permission-service.mjs', 'pty-service.mjs', 'mcp-adapter.mjs', 'project-validation.mjs', 'recovery-bundle.mjs', 'browser-service.mjs', 'utf8.mjs', 'control-plane.mjs', 'app.js', 'services.test.mjs', 'index.html', 'style.css']) await copyFile(resolve(source, file), resolve(root, '.norex/dev-os', file));
     await writeFile(
       resolve(root, '.norex/evidence/ND-025-shadow-rehearsal.md'),
       '# ND-025 Shadow Rehearsal\n\nStatus: READY\nWorkflow: ND-025\n'
@@ -107,6 +108,16 @@ test('durable approval authorizes only its exact metered route', async () => {
     assert.equal(other.status, 'GATED'); assert.equal(other.approval_id, null);
     store.close();
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('MCP adapter is provider-neutral and refuses unverified billing/security/route mismatches', () => {
+  const descriptor = normalizeMcpTool({ server: 'local-mcp', tool: 'repo.inspect', capability: 'repo_inspection', billing_mode: 'LOCAL_OFFLINE', security_permitted: true });
+  const route = { status: 'ROUTED', capability: 'repo_inspection', provider: 'local-mcp', billing_mode: 'LOCAL_OFFLINE' };
+  assert.equal(planMcpInvocation({ descriptor, route, permission: { status: 'ALLOWED' } }).status, 'READY');
+  assert.equal(planMcpInvocation({ descriptor, route: { ...route, provider: 'other' }, permission: { status: 'ALLOWED' } }).status, 'GATED');
+  assert.equal(planMcpInvocation({ descriptor: { ...descriptor, billing_mode: 'UNKNOWN_BILLING' }, route: { ...route, billing_mode: 'UNKNOWN_BILLING' }, permission: { status: 'ALLOWED' } }).reason, 'billing-not-verified');
+  assert.equal(planMcpInvocation({ descriptor, route, permission: { status: 'APPROVAL_REQUIRED' } }).reason, 'security-permission-required');
+  assert.throws(() => normalizeMcpTool({ server: '../bad', tool: 'x', capability: 'y', billing_mode: 'LOCAL_OFFLINE' }), /rejected/);
 });
 
 test('UTF-8 byte prefix preserves complete code points and legitimate replacement characters', () => {
