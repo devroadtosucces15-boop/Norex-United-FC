@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-05T23:40:46.396Z",
+ "fetchedAt": "2026-10-05T23:44:54.293Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -259,42 +259,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Robin_PMK",
-   "gamesPlayed": "4",
-   "winRate": "75",
-   "goals": "3",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "100",
-   "passesMade": "37",
-   "passSuccessRate": "78",
-   "ratingAve": "6.6",
-   "tacklesMade": "1",
-   "tackleSuccessRate": "14",
-   "proName": "Pluto Planet",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "177",
-   "proNationality": "129",
-   "proOverall": "77",
-   "proOverallStr": "77",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "2",
-   "prevGoals3": "0",
-   "prevGoals4": "1",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "shon_day",
@@ -1632,7 +1596,7 @@
  "positionCount": {
   "midfielder": 8,
   "goalkeeper": 0,
-  "forward": 18,
+  "forward": 17,
   "defender": 8
  },
  "career": [
@@ -1701,17 +1665,6 @@
    "ratingAve": "6.4",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Robin_PMK",
-   "proPos": "25",
-   "gamesPlayed": "41",
-   "goals": "37",
-   "assists": "24",
-   "manOfTheMatch": "10",
-   "ratingAve": "7.8",
-   "prevGoals": "2",
-   "favoritePosition": "forward"
   },
   {
    "name": "MicroMyDraco",
