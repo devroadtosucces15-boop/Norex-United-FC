@@ -29,6 +29,31 @@ const leadersGoals = await factPackFor('leaders.goals', loadSite);
 t('leaders.goals is public and top-ranks by goals, highest first', leadersGoals.tier === 'public' && leadersGoals.facts.top[0].name === topScorer.n && leadersGoals.facts.top[0].value === topScorer.s.g);
 t('unknown leaders stat → null', (await factPackFor('leaders.nope', loadSite)) === null);
 
+// ---------- last-5 + head-to-head fact packs ----------
+const recent = siteJson('club').matches.slice(0, 5);
+const last5 = await factPackFor('matches.last5', loadSite);
+t('matches.last5 is public and counts the five newest results', last5.tier === 'public' && last5.facts.matches === recent.length
+  && last5.facts.wins + last5.facts.draws + last5.facts.losses === recent.length && last5.facts.results === recent.map((m) => m.res).join(''));
+t('matches.last5 goals + clean sheets add up from the matches', last5.facts.goalsFor === recent.reduce((n, m) => n + m.gf, 0)
+  && last5.facts.goalsAgainst === recent.reduce((n, m) => n + m.ga, 0) && last5.facts.cleanSheets === recent.filter((m) => m.ga === 0).length);
+t('matches.last5 top scorers are sorted by goals and capped at 3', last5.facts.topScorers.length <= 3
+  && last5.facts.topScorers.every((s, i, a) => !i || a[i - 1].goals >= s.goals));
+t('matches.last5 with no matches → null', (await factPackFor('matches.last5', async (f) => (f === 'club' ? { matches: [] } : siteJson(f)))) === null);
+const h2hRows = siteJson('h2h');
+const rival = h2hRows[0];
+const h2hPack = await factPackFor(`h2h.${rival.o}`, loadSite);
+t('h2h pack is public with the real record against that opponent', h2hPack.tier === 'public' && h2hPack.facts.opponent === rival.n
+  && h2hPack.facts.played === rival.p && h2hPack.facts.wins === rival.w && h2hPack.facts.goalDiff === rival.gf - rival.ga && h2hPack.facts.lastScore === rival.lastScore);
+t('h2h with an unknown opponent id → null', (await factPackFor('h2h.0000000', loadSite)) === null);
+t('h2h with no h2h data at all → null', (await factPackFor(`h2h.${rival.o}`, async (f) => (f === 'h2h' ? null : siteJson(f)))) === null);
+const latestOpp = h2hRows.find((e) => e.n === siteJson('club').matches[0].opp);
+t('registry adds matches.last5 and the head-to-head vs the latest opponent (when known)', keys.includes('matches.last5')
+  && (latestOpp ? keys.includes(`h2h.${latestOpp.o}`) : !keys.some((k) => k.startsWith('h2h.'))));
+t('registry has at most one h2h key (only the latest opponent is pre-written)', keys.filter((k) => k.startsWith('h2h.')).length <= 1);
+t('registry survives a missing h2h file', (await registryKeys(async (f) => { if (f === 'h2h') throw new Error('404'); return siteJson(f); })).includes('matches.last5'));
+const bumped = await factPackFor('matches.last5', async (f) => (f === 'club' ? { matches: recent.map((m, i) => (i ? m : { ...m, gf: m.gf + 1 })) } : siteJson(f)));
+t('matches.last5 facts change when the newest score changes (so the fingerprint gate re-writes it)', JSON.stringify(bumped.facts) !== JSON.stringify(last5.facts));
+
 // ---------- number checker ----------
 const allowed = new Set([5, 12, 50]);
 t('extractNumbers pulls every number out of a string', extractNumbers('5 goals in 12 games, 50%').join() === '5,12,50');
@@ -60,6 +85,16 @@ setAiReply(() => { calls++; return JSON.stringify({ headline: 'An incredible 999
 t('two invented-number replies in a row → skipped, not written', !(await writeInsight(env, 'club', club)) && calls === 2);
 
 setAiReply(null); // back to the default reply for the rest of the file
+
+calls = 0;
+setAiReply(() => { calls++; return JSON.stringify({ headline: 'Dominant over 40 meetings', body: 'Unreal record.', watch: 'Wow.' }); });
+t('an invented number in an h2h write is rejected twice and nothing is stored', !(await writeInsight(env, `h2h.${rival.o}`, h2hPack)) && calls === 2
+  && !(await DB.prepare('SELECT 1 FROM stat_insights WHERE key = ?').bind(`h2h.${rival.o}`).first()));
+setAiReply(() => JSON.stringify({ headline: `${last5.facts.wins} wins in ${last5.facts.matches}`, body: `${last5.facts.goalsFor} scored, ${last5.facts.goalsAgainst} conceded.`, watch: 'Keep going.' }));
+t('last-5 copy that quotes only fact-pack figures is written', await writeInsight(env, 'matches.last5', last5)
+  && (await DB.prepare('SELECT tier FROM stat_insights WHERE key = ?').bind('matches.last5').first()).tier === 'public');
+t('last-5 copy may quote a score line from the pack (opponent names carry digits through the checker)', numbersOk(`${last5.facts.scores[0]}`, new Set(extractNumbers(JSON.stringify(last5.facts)))));
+setAiReply(null);
 
 // ---------- refresh: fingerprint gate skips unchanged facts ----------
 await DB.exec('DELETE FROM stat_insights'); // clean slate – every registry key is missing
@@ -137,6 +172,9 @@ t('/insight member-tier row → gated for a guest', /members only/.test((await d
 t('/insight member-tier row → shown to a member', (await discordInsightEmbed(env, 'goals', 'member')).embed?.title === '✨ Goals race');
 t('/insight with no stored row → friendly error', /No insight/.test((await discordInsightEmbed(env, 'match', 'owner')).error ?? ''));
 t('/insight unknown stat → error', !!(await discordInsightEmbed(env, 'nope', 'owner')).error);
+await DB.prepare('INSERT INTO stat_insights (key, hash, headline, body, watch, sources, tier, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+  .bind('matches.last5', 'h', 'Five-game run', 'Body.', 'Watch.', '{}', 'public', Date.now()).run();
+t('/insight last5 reads the matches.last5 row for a guest (public tier)', (await discordInsightEmbed(env, 'last5', 'guest')).embed?.title === '✨ Five-game run');
 
 // ---------- BE9 compare (on demand, member+, pair key sorted, cached by fingerprint) ----------
 const homes = siteJson('players').filter((p) => p.home);

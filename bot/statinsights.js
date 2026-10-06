@@ -48,9 +48,10 @@ async function clubFacts(loadSite) {
     },
   };
 }
-async function matchFacts(loadSite) {
+// id 'latest' (or none) = the newest result; otherwise a match id from club.json's recent list.
+async function matchFacts(loadSite, id = 'latest') {
   const c = await loadSite('club');
-  const m = c.matches?.[0];
+  const m = id === 'latest' ? c.matches?.[0] : c.matches?.find((x) => String(x.id) === String(id));
   if (!m) return null;
   const top = [...(m.ps ?? [])].sort((a, b) => (b.r ?? 0) - (a.r ?? 0))[0];
   return {
@@ -94,6 +95,37 @@ async function noteFacts(env, loadSite, k) {
     facts: { ...base.facts, squadSize: home.length, goalsRank: rankBy('g'), ratingRank: rankBy('r'), coachStrengths },
   };
 }
+// BE9 last-5: the five most recent league results as a run – record, goals, clean sheets, who scored, newest first.
+async function last5Facts(loadSite) {
+  const ms = ((await loadSite('club')).matches ?? []).slice(0, 5);
+  if (!ms.length) return null;
+  const count = (r) => ms.filter((m) => m.res === r).length;
+  const scorers = new Map();
+  for (const m of ms) for (const s of m.scorers ?? []) scorers.set(s.n, (scorers.get(s.n) ?? 0) + (s.g ?? 0));
+  const topScorers = [...scorers].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, goals]) => ({ name, goals }));
+  return {
+    title: `Last ${ms.length} matches`,
+    facts: {
+      matches: ms.length, wins: count('W'), draws: count('D'), losses: count('L'),
+      goalsFor: ms.reduce((n, m) => n + (m.gf ?? 0), 0), goalsAgainst: ms.reduce((n, m) => n + (m.ga ?? 0), 0),
+      cleanSheets: ms.filter((m) => m.ga === 0).length, results: ms.map((m) => m.res).join(''),
+      scores: ms.map((m) => `${m.opp} ${m.gf}-${m.ga}`), topScorers,
+    },
+  };
+}
+// BE9 head-to-head vs one opponent club (site `h2h.json`, keyed by EA club id `o`): the whole record NOREX has
+// against them in the archive. Unknown opponent id → null.
+async function h2hFacts(loadSite, o) {
+  const e = ((await loadSite('h2h')) ?? []).find((x) => String(x.o) === o);
+  if (!e) return null;
+  return {
+    title: `Head to head – ${e.n}`,
+    facts: {
+      opponent: e.n, played: e.p, wins: e.w, draws: e.d, losses: e.l, goalsFor: e.gf, goalsAgainst: e.ga, goalDiff: e.gf - e.ga,
+      lastResult: e.lastRes, lastScore: e.lastScore,
+    },
+  };
+}
 // Same stat keys the site's own leaderboards (leaders.html) and compare tool (web/app.js's "compare
 // tool" block) already read off each home player's `s` object – mirrored here rather than imported,
 // since those are build-time/client helpers with no shared module to pull from.
@@ -111,10 +143,12 @@ async function leadersFacts(loadSite, stat) {
 }
 // Every key the registry currently covers. Board 12 wants every tile/column/chart/profile stat –
 // this slice covers club form, the latest match, every home-squad player's season, and the four
-// leaderboards (goals/assists/rating/MOTM), plus a private coach's note per home player (squad size, not squad²). Head-to-head pairs are on-demand (statCompareRoute), not in this list.
+// leaderboards (goals/assists/rating/MOTM), the last-5 run, the head-to-head vs the latest opponent, plus a private coach's note per home player (squad size, not squad²). Player-vs-player pairs are on-demand (statCompareRoute), not in this list.
+export const MATCH_CARDS = 3; // result pages that carry an insight: the newest + the two before it
 export async function registryKeys(loadSite) {
-  const players = await loadSite('players');
-  return ['club', 'match.latest', ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
+  const [players, club, h2h] = await Promise.all([loadSite('players'), loadSite('club'), loadSite('h2h').catch(() => null)]);
+  const latestOpp = (h2h ?? []).find((e) => e.n === club?.matches?.[0]?.opp); // only the next-talked-about rival is pre-written – the rest of the opponent list isn't
+  return ['club', 'match.latest', 'matches.last5', ...(latestOpp ? [`h2h.${latestOpp.o}`] : []), ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
     ...players.filter((p) => p.home).flatMap((p) => [`player.${p.k}`, ...((p.s?.gp ?? 0) > 0 ? [`note.${p.k}`] : [])])];
 }
 // BE9 compare – two home-squad players side by side. On demand only (POST /api/insights/compare), never
@@ -133,7 +167,11 @@ export async function factPackFor(key, loadSite, env) {
   if (key === 'club') return { tier: 'public', ...(await clubFacts(loadSite)) };
   const cm = /^compare\.(.+)~(.+)$/.exec(key);
   if (cm) { const f = await compareFacts(loadSite, cm[1], cm[2]); return f && { tier: 'member', ...f }; }
-  if (key === 'match.latest') { const f = await matchFacts(loadSite); return f && { tier: 'public', ...f }; }
+  const mm = /^match\.(latest|\d+)$/.exec(key);
+  if (mm) { const f = await matchFacts(loadSite, mm[1]); return f && { tier: 'public', ...f }; }
+  if (key === 'matches.last5') { const f = await last5Facts(loadSite); return f && { tier: 'public', ...f }; }
+  const hm = /^h2h\.(.+)$/.exec(key);
+  if (hm) { const f = await h2hFacts(loadSite, hm[1]); return f && { tier: 'public', ...f }; }
   const lm = /^leaders\.(.+)$/.exec(key);
   if (lm) { const f = await leadersFacts(loadSite, lm[1]); return f && { tier: 'public', ...f }; }
   const nm = /^note\.(.+)$/.exec(key);
@@ -334,7 +372,7 @@ export async function statInsightWeekly(env, postEmbed, now = Date.now()) {
 }
 
 // ---------- /insight (Discord, flag `statInsights`): one stored insight as an embed, same tier gate as the site ----------
-export const DISCORD_INSIGHT_KEYS = { club: 'club', match: 'match.latest', goals: 'leaders.goals', assists: 'leaders.assists', rating: 'leaders.rating', motm: 'leaders.motm' };
+export const DISCORD_INSIGHT_KEYS = { club: 'club', match: 'match.latest', last5: 'matches.last5', goals: 'leaders.goals', assists: 'leaders.assists', rating: 'leaders.rating', motm: 'leaders.motm' };
 export async function discordInsightEmbed(env, stat, role = 'guest') {
   const key = DISCORD_INSIGHT_KEYS[stat];
   if (!key) return { error: 'Pick one of the listed insights.' };

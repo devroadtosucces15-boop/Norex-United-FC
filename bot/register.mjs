@@ -26,7 +26,7 @@ const commands = [
   {
     name: 'insight', description: "The club's latest stat insight (✨ BE9)",
     options: [{ type: STRING, name: 'stat', description: 'Which insight (default: club form)', choices: [
-      { name: 'Club form', value: 'club' }, { name: 'Latest match', value: 'match' }, { name: 'Goals leaders', value: 'goals' },
+      { name: 'Club form', value: 'club' }, { name: 'Latest match', value: 'match' }, { name: 'Last 5 matches', value: 'last5' }, { name: 'Goals leaders', value: 'goals' },
       { name: 'Assists leaders', value: 'assists' }, { name: 'Rating leaders', value: 'rating' }, { name: 'MOTM leaders', value: 'motm' },
     ] }],
   },
