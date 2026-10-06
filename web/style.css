@@ -1190,6 +1190,7 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 .dg-acts{display:flex;gap:8px;flex-wrap:wrap}
 .dg-top{display:grid;gap:14px;grid-template-columns:minmax(200px,240px) minmax(0,1fr) minmax(200px,250px)}
 .dg-bottom{display:grid;gap:14px;margin-top:14px;grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr)}.dg-tr{grid-column:1/-1;order:3}
+.dg-hints{margin-top:14px}.dg-hints h3{margin:0 0 4px}.dg-hint-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.dg-hint-grid .nx-insight,.dg-hint-note .nx-insight{margin:10px 0 0}.dg-hint-pick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;font-weight:600}.dg-hint-pick select{max-width:100%}.insights-off .dg-hints{display:none}
 @media (max-width:1180px){.dg-top{grid-template-columns:minmax(190px,230px) minmax(0,1fr)}.dg-rd{grid-column:1/-1}.dg-bottom{grid-template-columns:1fr 1fr}.dg-tr{grid-column:1/-1;order:3}}
 @media (max-width:760px){.dg-top,.dg-bottom{grid-template-columns:1fr}.dg-head h2{font-size:21px}}
 .dg-sec{min-width:0}

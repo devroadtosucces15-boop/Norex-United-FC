@@ -1126,7 +1126,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   if (session && flagOn('presence', baseRole)) loadAsset('presence.js', 'NXPresence').then(() => NXPresence.start({ call, toast })).catch(() => {});
   // ---------- 🔑 the Hub clubhouse (board 10, BE8) – gold entrance tunnel + 3D room map – assets/hub.js ----------
   const hubworldEl = $('[data-hubworld]');
-  if (hubworldEl && session && flagOn('hub', baseRole)) loadAsset('hub.js', 'NXHub').then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, flagOn: (n) => flagOn(n, baseRole) })).catch(() => {});
+  if (hubworldEl && session && flagOn('hub', baseRole)) loadAsset('hub.js', 'NXHub').then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, flagOn: (n) => flagOn(n, baseRole), mountInsight: flagOn('statInsights', baseRole) ? (slot, key) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null })).catch(() => {});
 
   // ---------- verified badges (public) ----------
   (async () => {
@@ -1745,7 +1745,8 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
       .catch(() => toast('Could not load your stats – try again', true));
     const dg = $('#dugout-panel', panel); // board 08 Dugout – assets/dugout.js
     if (dg) (window.NXDugout ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/dugout.js`, onload: ok, onerror: no }))))
-      .then(() => NXDugout.mount(dg, { call, toast, UI, base: BASE, me: { u: session.u, n: session.n, a: session.a }, admin: () => S.admin, squadweek: () => S.squadweek, players: () => S.players, decide, canAnnounce: !!S.me?.user?.perms?.includes('notify.announce'), flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole) }))
+      .then(() => NXDugout.mount(dg, { call, toast, UI, base: BASE, me: { u: session.u, n: session.n, a: session.a }, admin: () => S.admin, squadweek: () => S.squadweek, players: () => S.players, decide, canAnnounce: !!S.me?.user?.perms?.includes('notify.announce'), flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole),
+        mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) ? (slot, key, opts) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole, ...opts })) : null }))
       .catch(() => toast('Could not load the Dugout – try again', true));
     const br = $('#boardroom-panel', panel); // board 09 Boardroom – assets/boardroom.js
     if (br) (window.NXBoardroom ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/boardroom.js`, onload: ok, onerror: no }))))

@@ -112,6 +112,13 @@
       const pill = $('[data-hubw-online]');
       if (pill) { pill.hidden = false; $('b', pill).textContent = d.online ?? 0; }
     }).catch(() => {});
+    // ✨ Coach's note (board 12): the member's own written read once they've claimed a player, else the club's form. Flag `statInsights`.
+    const coach = $('[data-hubw-coach]');
+    if (coach && ctx.mountInsight) {
+      const tryKey = async (key) => { const s = document.createElement('div'); coach.append(s); await ctx.mountInsight(s, key); return s.isConnected; }; // the widget removes its slot when there's no row
+      ctx.call('/api/me').then((me) => (me.claim?.status === 'approved' ? tryKey(`note.${me.claim.player}`) : false)).catch(() => false)
+        .then((ok) => ok || tryKey('club')).then((ok) => { coach.hidden = !ok; }).catch(() => {});
+    }
     playTunnel(render);
     $('.hubw-back')?.addEventListener('click', (e) => {
       if (reducedMotion()) return;

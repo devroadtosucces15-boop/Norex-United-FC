@@ -71,3 +71,5 @@
   .hubw-stage.hubw-3d{display:grid!important;height:auto!important}
   .hubw-stage.hubw-3d .hubw-room{position:static!important;transform:none!important}
 }
+
+.hubw-coach{max-width:760px;margin:0 auto 14px;padding:0 16px}.hubw-coach .nx-insight{margin:0;border-color:color-mix(in srgb,var(--gold) 55%,var(--line))}.hubw-coach .nx-insight h4{color:var(--gold)}

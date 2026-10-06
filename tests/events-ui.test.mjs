@@ -15,4 +15,7 @@ t('events.js data-* names do not collide with the panel onclick handlers' + (cla
 t('Before/During/After switch and check-in ring are rendered by the schedule card', /data-evmode/.test(ev) && /class="ev-ring"/.test(ev) && /STAGES/.test(ev));
 const build = fs.readFileSync(ROOT + 'scripts/build.mjs', 'utf8');
 t('match pages carry an insight slot (board 12 match card)', /const insightSlot/.test(build) && /\$\{insightSlot\}/.test(build));
+const read = (f) => fs.readFileSync(ROOT + f, 'utf8');
+t('Hub page has a coach slot; hub.js mounts note.<claimed player>, falling back to the club insight (board 12)', /data-hubw-coach/.test(read('scripts/hub-page.mjs')) && /note\.\$\{me\.claim\.player\}/.test(read('web/hub.js')) && /tryKey\('club'\)/.test(read('web/hub.js')) && /mountInsight: flagOn\('statInsights'/.test(app));
+t('Dugout hints: club + last-5 slots and a coach\'s note picker, kept across repaints, behind mountNote', /D\.hints = document\.createElement/.test(read('web/dugout.js')) && /data-hint="matches\.last5"/.test(read('web/dugout.js')) && /\.dg-hints/.test(read('web/style.css')) && /mountNote: flagOn\('statInsights'[^\n]*loadAsset\('insights\.js'/.test(app));
 done();

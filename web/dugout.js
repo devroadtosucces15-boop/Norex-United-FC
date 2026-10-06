@@ -97,6 +97,25 @@ ${e.lineupAt ? line(true, `Published ${esc(ctx.UI.ago ? ctx.UI.ago(e.lineupAt) :
   }
 
   // ---------- ④ squad week heatmap ----------
+  // ✨ Hints (board 12): the club's form, the last five games and a pick-a-player coach's note. One node kept across repaints
+  // (a live nudge rewrites el.innerHTML) so the widgets and the pick survive. Needs `ctx.mountNote` (flag statInsights).
+  function hints() {
+    if (D.hints || !ctx.mountNote) return D.hints;
+    const squad = ctx.players().filter((p) => p.home && (p.s?.gp ?? 0) > 0).sort((a, b) => a.n.localeCompare(b.n));
+    const h = D.hints = document.createElement('section');
+    h.className = 'card dg-sec dg-hints';
+    h.innerHTML = `<h3>✨ Hints</h3><p class="muted small">The written read on how we're playing, and a coach's note on any squad player.</p>
+<div class="dg-hint-grid"><div data-hint="club"></div><div data-hint="matches.last5"></div></div>
+${squad.length ? `<label class="dg-hint-pick">🧢 Coach's note for <select data-hint-pick aria-label="Squad player"><option value="">Pick a squad player…</option>${squad.map((p) => `<option value="${esc(p.k)}">${esc(p.n)}</option>`).join('')}</select></label><div class="dg-hint-note" data-hint-note></div>` : ''}`;
+    h.querySelectorAll('[data-hint]').forEach((slot) => ctx.mountNote(slot, slot.dataset.hint).catch(() => slot.remove()));
+    h.addEventListener('change', (e) => {
+      if (e.target.dataset.hintPick === undefined) return;
+      const slot = h.querySelector('[data-hint-note]'), k = e.target.value;
+      slot.replaceChildren();
+      if (k) ctx.mountNote(slot, `note.${k}`, { showAt: true, empty: 'No note written yet – one appears after the player’s first league game, or when their stats next change.' }).catch(() => { slot.textContent = 'Could not load the note – try again.'; });
+    });
+    return h;
+  }
   function heatmap() {
     const days = ctx.squadweek()?.days;
     const head = '<div class="dg-sec-h"><h3>📆 Squad week</h3><span class="dg-tag">next 7 days</span></div>';
@@ -159,6 +178,8 @@ ${by[k].length > 8 ? `<small class="muted">+${by[k].length - 8} more</small>` : 
 ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who)}</section><section class="card dg-sec dg-pi">${pitch(e, who)}</section><section class="card dg-sec dg-rd">${playsAndReady(e, who)}</section></div>`
     : `<div class="card">${ctx.UI.empty({ icon: '🗓️', title: 'No match night coming up', text: 'Schedule one and the line-up builder opens here.', action: '<a class="btn sm" href="#schedule">➕ Schedule a match night</a>' })}</div>`}
 <div class="dg-bottom"><section class="card dg-sec dg-wk">${heatmap()}</section>${ctx.flagOn('trials') ? `<section class="card dg-sec dg-tr">${funnel()}</section>` : ''}<section class="card dg-sec dg-cl">${claims()}</section></div></div>`;
+    const hn = hints();
+    if (hn) $('.dg', el).append(hn);
   }
 
   // ---------- actions ----------
