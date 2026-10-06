@@ -18,7 +18,7 @@
 // fingerprint goes to the JOBS queue (BE0) when it's bound, else writes inline – same graceful
 // degrade as the rest of BE0's platform pieces. Uses the Workers AI binding (`AI`, bot/wrangler.toml);
 // without it the writer just logs and skips, so the feature never fails the cron or a request.
-import { atLeast } from './roles.js';
+import { atLeast, can } from './roles.js';
 import { TEXT_MODEL } from './aispike.js';
 
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
@@ -261,7 +261,7 @@ export async function statAskRoute(env, me, body) {
 // POST /api/insights/compare { a, b }: members only. A stored row whose fingerprint still matches is returned
 // as-is (no writer call); otherwise the pair is written inline. Same number checker, same degrade: no key → error.
 export async function statCompareRoute(env, loadSite, me, body) {
-  if (!atLeast(me?.role ?? 'guest', 'member')) return { error: 'Members only.' };
+  if (!can(me, 'statInsights.compare')) return { error: 'Members only.' };
   const a = String(body?.a ?? ''), b = String(body?.b ?? '');
   if (!a || !b || a === b) return { error: 'Pick two different players.' };
   const key = compareKey(a, b);

@@ -1,11 +1,12 @@
 // BE9 Insights engine: fact packs, the fingerprint gate, the number checker (must reject invented
 // numbers), the routes (tier gating, ask rate limit, feedback), the queue job, and the weekly post.
-import { call, env, login, siteJson, setAiReply, DB } from './mock.mjs';
+import { call, env, login, siteJson, setAiReply, DB, sqlite, config } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import {
   factPackFor, registryKeys, numbersOk, extractNumbers, writeInsight, refreshStatInsights,
   handleStatInsightJob, statInsightWeekly, compareKey, statCompareRoute,
 } from '../bot/statinsights.js';
+import { can } from '../bot/roles.js';
 
 const loadSite = async (f) => siteJson(f);
 const homePlayer = siteJson('players').find((p) => p.home);
@@ -153,5 +154,34 @@ let writerCalls = 0;
 setAiReply(() => { writerCalls++; return JSON.stringify({ headline: 'Changed', body: 'Changed body.', watch: 'Changed watch.' }); });
 const again = await statCompareRoute(env, loadSite, { role: 'member' }, { a: pb.k, b: pa.k });
 t('a repeat view of the same pair (either order) is served from the stored row, no writer call', again.insight?.headline === 'Close call' && writerCalls === 0);
+
+// ---------- BE9 compare: number checker, permission matrix, flag gating ----------
+const pc = homes[2] ?? homes[1];
+setAiReply(() => JSON.stringify({ headline: 'Invented', body: 'One of them has 987 goals this season.', watch: 'Nothing.' }));
+const invented = await statCompareRoute(env, loadSite, { role: 'member' }, { a: pa.k, b: pc.k });
+t('compare: a reply with a number not in the fact pack is rejected (retry included) and nothing is stored', !!invented.error && !(await DB.prepare('SELECT 1 FROM stat_insights WHERE key = ?').bind(compareKey(pa.k, pc.k)).first()));
+t('compare: a non-home player is refused', /home squad/.test((await statCompareRoute(env, loadSite, { role: 'member' }, { a: pa.k, b: 'not-a-real-key' })).error ?? ''));
+t('compare: PERMS gate is member+', ['member', 'claimed', 'manager', 'owner'].every((r) => can({ role: r }, 'statInsights.compare')) && !can({ role: 'guest' }, 'statInsights.compare') && !can(null, 'statInsights.compare'));
+
+setAiReply(() => JSON.stringify({ headline: 'Close call', body: 'Two very different games, one clear edge.', watch: 'Who grabs the next big game.' }));
+const setFlag = (lvl) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), statInsights: lvl }); };
+const startLevel = JSON.parse(env.FEATURES).statInsights;
+sqlite.prepare("INSERT OR REPLACE INTO claims (user_id, player, player_name, status, at, name) VALUES ('931', ?, ?, 'approved', ?, 'Cmp Claimed')").run(pa.k, pa.n, Date.now());
+const tok = { member: await login('930', [], 'Cmp Member'), claimed: await login('931', [], 'Cmp Claimed'), manager: await login('932', ['mgr'], 'Cmp Manager'), owner: await login('933', ['founder'], 'Cmp Owner') };
+const cmpAllowed = { off: [], owner: ['owner'], managers: ['manager', 'owner'], members: ['member', 'claimed', 'manager', 'owner'], public: ['member', 'claimed', 'manager', 'owner'] };
+for (const [lvl, who] of Object.entries(cmpAllowed)) {
+  setFlag(lvl);
+  const got = [];
+  for (const [role, tk] of Object.entries(tok)) {
+    const r = await call(tk, '/api/insights/compare', { a: pa.k, b: pb.k });
+    if (r.s === 200 && r.d?.insight?.key === compareKey(pa.k, pb.k)) got.push(role);
+    else if (r.s !== 404) got.push(`${role}:${r.s}`); // flag off for this role must be a plain 404
+  }
+  t(`compare flag "${lvl}" → only ${who.join('/') || 'nobody'} get the insight, everyone else 404`, got.join() === who.join());
+  const anon = await call(null, '/api/insights/compare', { a: pa.k, b: pb.k });
+  t(`compare flag "${lvl}" → signed-out visitors never get it`, anon.s >= 400 && !anon.d?.insight);
+}
+setFlag(startLevel);
+t('statInsights ships at owner level in config.json', config.features.statInsights === 'owner');
 
 done();
