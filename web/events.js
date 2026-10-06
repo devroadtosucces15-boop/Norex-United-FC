@@ -85,7 +85,7 @@
       const tzNote = e.tz !== MY_TZ ? ` <small class="muted" data-tip="Scheduled for ${esc(e.tz.replace(/_/g, ' '))} – shown in your time">🌍 ${esc(new Date(e.start).toLocaleTimeString(undefined, { timeZone: e.tz, hour: '2-digit', minute: '2-digit' }))} ${esc(e.tz.split('/').pop().replace(/_/g, ' '))}</small>` : '';
       const me = e.checkins.find((c) => c.id === ctx.me.u);
       return `<article class="card ev ev-${e.type} ph-${ph}${sel.has(e.id) ? ' sel' : ''}${my ? ` my-${my}` : ''}" id="ev-${e.id}" data-id="${e.id}">
-<header>${ph === 'soon' || ph === 'live' ? `<input type="checkbox" class="ev-sel" data-sel aria-label="Select for bulk answer"${sel.has(e.id) ? ' checked' : ''}>` : ''}<span class="ev-ic" aria-hidden="true">${TYPES[e.type][0]}</span>
+<header>${ph === 'soon' || ph === 'live' ? `<input type="checkbox" class="ev-sel" data-evsel aria-label="Select for bulk answer"${sel.has(e.id) ? ' checked' : ''}>` : ''}<span class="ev-ic" aria-hidden="true">${TYPES[e.type][0]}</span>
 <div class="ev-t"><b>${esc(label(e))}</b><small>${fmtTime(e.start)} – ${fmtTime(e.end)}${tzNote}${ph === 'soon' ? ` · ${until(e.start)}` : ''}</small></div>
 ${ph === 'live' ? UI.pill(Date.now() < e.start ? 'Starting soon' : Date.now() < e.end ? 'Live now' : 'Just finished', { emoji: '🔴', tone: 'red' }) : ph === 'cancelled' ? UI.pill('Cancelled', { emoji: '🚫', tone: 'loss' }) : ''}
 ${e.lineupAt && e.lineup?.[ctx.me.u] ? UI.pill(`You’re starting at ${POS_OF(e.lineup[ctx.me.u])}`, { emoji: '🧩', tone: 'win' }) : ''}
@@ -130,8 +130,8 @@ ${S.canManage && ph !== 'past' && ph !== 'cancelled' ? `<button type="button" cl
       const n = sel.size;
       el.innerHTML = `<div class="ev-top"><div><h3>🗓️ Schedule</h3><p class="muted small">Times are in your time zone (${esc(MY_TZ.replace(/_/g, ' '))}).</p></div><span class="grow"></span>
 ${usual.length ? `<button type="button" class="btn sm ghost" data-usual>✨ Yes to ${usual.length} in my usual times</button>` : ''}${viewBtn()}${S.canManage ? '<button type="button" class="btn sm" data-new>➕ New event</button>' : ''}</div>
-<div class="ev-cal" role="list">${days.map((d) => { const k = dayKey(d.getTime()), list = byDay.get(k) ?? []; return `<button type="button" role="listitem" class="ev-day${list.length ? ' has' : ''}${day === k ? ' on' : ''}${k === dayKey(now) ? ' today' : ''}" data-day="${k}"${list.length ? '' : ' disabled'}><small>${d.toLocaleDateString(undefined, { weekday: 'short' })}</small><b>${d.getDate()}</b><span>${list.slice(0, 3).map((e) => `<i class="dot ${mine(e) ? `my-${mine(e)}` : ''}" title="${esc(label(e))}">${TYPES[e.type][0]}</i>`).join('')}</span></button>`; }).join('')}</div>
-<div class="bulk card${n ? ' on' : ''}"><span>${n ? `<b>${n}</b> event${n > 1 ? 's' : ''} selected` : 'Tip: tick several events, then answer them all at once'}</span><div class="bulk-btns">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="btn sm${n ? '' : ' ghost'}" data-bulk="${s}"${n ? '' : ' disabled'}>${ICON[s]} ${s}</button>`).join('')}<button type="button" class="btn ghost sm" data-bulk="clear"${n ? '' : ' disabled'}>Clear</button></div></div>
+<div class="ev-cal" role="list">${days.map((d) => { const k = dayKey(d.getTime()), list = byDay.get(k) ?? []; return `<button type="button" role="listitem" class="ev-day${list.length ? ' has' : ''}${day === k ? ' on' : ''}${k === dayKey(now) ? ' today' : ''}" data-evday="${k}"${list.length ? '' : ' disabled'}><small>${d.toLocaleDateString(undefined, { weekday: 'short' })}</small><b>${d.getDate()}</b><span>${list.slice(0, 3).map((e) => `<i class="dot ${mine(e) ? `my-${mine(e)}` : ''}" title="${esc(label(e))}">${TYPES[e.type][0]}</i>`).join('')}</span></button>`; }).join('')}</div>
+<div class="bulk card${n ? ' on' : ''}"><span>${n ? `<b>${n}</b> event${n > 1 ? 's' : ''} selected` : 'Tip: tick several events, then answer them all at once'}</span><div class="bulk-btns">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="btn sm${n ? '' : ' ghost'}" data-evbulk="${s}"${n ? '' : ' disabled'}>${ICON[s]} ${s}</button>`).join('')}<button type="button" class="btn ghost sm" data-evbulk="clear"${n ? '' : ' disabled'}>Clear</button></div></div>
 ${upcoming.length ? [...byDay].map(([k, list]) => `<section class="ev-group" id="d-${k}"><h4>${fmtDay(list[0].start)}${k === dayKey(now) ? ' <em>today</em>' : ''}</h4>${list.map(card).join('')}</section>`).join('')
     : UI.empty({ icon: '🗓️', title: 'Nothing scheduled yet', text: S.canManage ? 'Add the first match night with ➕ New event.' : 'Managers post match nights here – you answer ✅ ❔ ❌.' })}
 ${past.length ? `<details class="ev-past"${showPast ? ' open' : ''}><summary>🕘 Recent <em>${past.length}</em></summary>${past.map(card).join('')}</details>` : ''}`;
@@ -397,7 +397,7 @@ ${S.canManage ? `<div class="rp-share"><b>📣 Share it</b> <small class="muted"
 
     el.addEventListener('change', async (e) => {
       const card = e.target.closest('[data-id]'), ev = card && S.events.find((x) => x.id === +card.dataset.id);
-      if (e.target.matches('[data-sel]')) { e.target.checked ? sel.add(ev.id) : sel.delete(ev.id); paint(); }
+      if (e.target.matches('[data-evsel]')) { e.target.checked ? sel.add(ev.id) : sel.delete(ev.id); paint(); }
       if (e.target.matches('[data-trial]') && ev) {
         try { S = await ctx.call('/api/events/checkin', { id: ev.id, on: true, trial: e.target.value || null }); paint(); ctx.toast(e.target.value ? `Trying ${e.target.value} tonight – you’re checked in` : 'Back to your usual position'); } catch (er) { ctx.toast(er.message, true); }
       }
@@ -409,8 +409,8 @@ ${S.canManage ? `<div class="rp-share"><b>📣 Share it</b> <small class="muted"
       const card = b.closest('[data-id]'), ev = card && S.events.find((x) => x.id === +card.dataset.id), d = b.dataset;
       if (d.new !== undefined) return editor();
       if (d.calView !== undefined) { view = view === 'month' ? 'list' : 'month'; return paint(); }
-      if (d.day) { day = d.day; paint(); $(`#d-${d.day}`, el)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-      if (d.bulk) { const ids = [...sel]; sel = new Set(); answer(ids, d.bulk); return ctx.toast(`${ids.length} event${ids.length > 1 ? 's' : ''} updated`); }
+      if (d.evday) { day = d.evday; paint(); $(`#d-${d.evday}`, el)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      if (d.evbulk) { const ids = [...sel]; sel = new Set(); answer(ids, d.evbulk); return ctx.toast(`${ids.length} event${ids.length > 1 ? 's' : ''} updated`); }
       if (d.usual !== undefined) { const ids = S.events.filter((x) => x.usual && !mine(x) && phase(x) === 'soon').map((x) => x.id); answer(ids, 'yes'); return ctx.toast(`✅ Yes to ${ids.length} – change any of them below`); }
       if (!ev) return;
       if (d.nudge) {

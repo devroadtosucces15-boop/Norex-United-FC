@@ -5,6 +5,7 @@
 
 /* 14-day calendar strip */
 .ev-cal{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(58px,1fr);gap:6px;overflow-x:auto;padding:2px 2px 10px;margin:0 0 12px;scrollbar-width:thin}
+.ev-sel{width:24px;height:24px;margin:0;cursor:pointer;accent-color:var(--red,#c8352c);flex:none}
 .ev-day{display:grid;justify-items:center;gap:2px;padding:8px 4px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font:600 12px var(--body);cursor:pointer;transition:border-color .2s,transform .15s}
 .ev-day b{font:700 20px var(--head);color:#fff}
 .ev-day span{display:flex;gap:1px;min-height:18px}
