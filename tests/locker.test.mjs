@@ -132,5 +132,7 @@ t('board 07: one-tap RSVP, card vote, flip + save image, all user text escaped',
 t('board 07 ships behind its own owner flag; members keep the simple Locker tab', JSON.parse(readFileSync(new URL('../config.json', import.meta.url), 'utf8')).features.lockerRoom === 'owner' && appJs.includes("flagOn('lockerRoom', baseRole)") && appJs.includes("['locker', '🎽 Locker Room']") && appJs.includes('function viewLocker()'));
 t('board 07: motion respects reduced-motion', lkJs.includes('reduced()') && readFileSync(new URL('../web/style.css', import.meta.url), 'utf8').includes('.lk-swing.swing,.lk-medal.fresh .lk-coin'));
 
+t('board 07: error state hands raw text to UI.empty (it escapes once, no double-escape)', lkJs.includes("title: 'Could not open your locker', text: er.message") && !lkJs.includes('text: esc(er.message)'));
+
 t('no login → 401', (await call(null, '/api/locker')).s === 401);
 done();

@@ -240,7 +240,7 @@ ${list.length ? `<ul class="lk-alerts">${list.map((a) => { const href = safeLink
       const [l, v] = await Promise.all([ctx.call('/api/locker'), ctx.call('/api/vote').catch(() => votes)]);
       if (busy) return;
       data = l; votes = v; paint();
-    } catch (er) { if (!data && el?.isConnected) el.innerHTML = UI.empty({ icon: '🎽', title: 'Could not open your locker', text: esc(er.message) }); }
+    } catch (er) { if (!data && el?.isConnected) el.innerHTML = UI.empty({ icon: '🎽', title: 'Could not open your locker', text: er.message }); }
   }
   function tab(root, c) {
     el = root; ctx = c;
