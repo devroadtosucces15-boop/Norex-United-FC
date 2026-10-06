@@ -129,24 +129,26 @@ async function tellMembers(env, loadSite, prev, next) {
   const cache = new Map();
   const byUser = new Map();
   for (const r of rows) {
-    let breaking = false;
+    let imp = null;
     if (r.version) {
       if (!cache.has(r.version)) cache.set(r.version, await versionData(env, loadSite, r.version));
       const old = cache.get(r.version);
-      if (old) breaking = oneBuildImpact(r, old, next).breaking;
+      if (old) imp = oneBuildImpact(r, old, next);
     }
-    const u = byUser.get(r.user_id) ?? { n: 0, breaking: 0 };
-    u.n++; if (breaking) u.breaking++;
+    const u = byUser.get(r.user_id) ?? { n: 0, breaking: 0, named: [] };
+    u.n++; if (imp?.breaking) u.breaking++;
+    // per-build line: the build's name + the first thing that changed for it (breaking builds first when listed)
+    u.named.push({ title: r.title, breaking: !!imp?.breaking, text: imp?.changes[0]?.text ?? 'on an older version' });
     byUser.set(r.user_id, u);
   }
-  const groups = new Map();
-  for (const [uid, c] of byUser) { const k = `${c.n}:${c.breaking}`; (groups.get(k) ?? groups.set(k, { ...c, ids: [] }).get(k)).ids.push(uid); }
   let sent = 0;
-  for (const { n, breaking, ids } of groups.values()) {
+  for (const [uid, { n, breaking, named }] of byUser) {
+    named.sort((x, y) => y.breaking - x.breaking);
+    const per = named.slice(0, 3).map((x) => `${x.breaking ? '⚠️' : '⬆'} “${String(x.title || 'Untitled').slice(0, 40)}” – ${x.text}`).join('\n') + (named.length > 3 ? `\n… and ${named.length - 3} more` : '');
     const upgrade = breaking
       ? `⚠️ ${breaking} of your builds ${breaking === 1 ? 'needs' : 'need'} attention (archetype or points changed)${breaking < n ? ` · ${n} total on an older version` : ''} – upgrade to the new MAX in one click.`
       : `⬆ ${n} of your builds ${n === 1 ? 'is' : 'are'} on an older version – upgrade to the new MAX in one click.`;
-    sent += await notify(env, ids, { type: 'game', icon: '🎮', title, body: `${lines}${lines ? '\n' : ''}${upgrade}`, link: 'builder.html?upgrade=1' });
+    sent += await notify(env, [uid], { type: 'game', icon: '🎮', title, body: `${lines}${lines ? '\n' : ''}${per}\n${upgrade}`, link: 'builder.html?upgrade=1' });
   }
   const builders = new Set(rows.map((r) => r.user_id));
   const users = (await env.DB.prepare('SELECT id FROM users WHERE last_at > ?').bind(Date.now() - 180 * 86400e3).all()).results.map((u) => u.id).filter((id) => !builders.has(id));

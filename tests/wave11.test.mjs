@@ -26,6 +26,7 @@ const nb = (await call(builder, '/api/notify')).d;
 const gb = (nb.items ?? nb.list ?? nb.notifications ?? []).find((n) => n.type === 'game');
 t('builder gets a game notification with the cap change', gb && gb.title.includes(`${seed.levelCap.value} → ${cap}`) && gb.title.includes('fc27-w11'));
 t('…with how many builds need upgrading + upgrade link', gb && /1 of your builds needs attention \(archetype or points changed\)/.test(gb.body) && gb.link === 'builder.html?upgrade=1');
+t('…and names the build with what changed for it', gb && /⚠️ “[^”]+” – Max level \d+ → \d+/.test(gb.body));
 t('…and the what-changed lines', gb && gb.body.includes('PlayStyles added: Finesse Shot') && gb.body.includes('Archetype points per level'));
 const nf = (await call(fan, '/api/notify')).d;
 const gf = (nf.items ?? nf.list ?? nf.notifications ?? []).find((n) => n.type === 'game');
