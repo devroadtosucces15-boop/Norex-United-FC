@@ -67,7 +67,8 @@ const commands = [
     name: 'burner', description: 'Managers: track burner clubs – search EA, pick one, get stats after every game',
     default_member_permissions: String(1 << 28), contexts: [0],
     options: [
-      { type: SUB, name: 'search', description: 'Search EA for a club by name or club ID, then pick it', options: [{ type: STRING, name: 'club', description: 'Club name (or part of it) or club ID', required: true, min_length: 2, max_length: 40 }] },
+      { type: SUB, name: 'recent', description: 'Pick a burner from the clubs NOREX played lately – no typing' },
+      { type: SUB, name: 'search', description: 'Search EA for a club by name or club ID (leave empty for clubs NOREX played lately)', options: [{ type: STRING, name: 'club', description: 'Club name (or part of it) or club ID', required: false, min_length: 2, max_length: 40 }] },
       { type: SUB, name: 'track', description: 'Track a club right away by exact name or club ID', options: [{ type: STRING, name: 'club', description: 'Exact club name or club ID', required: true, min_length: 2, max_length: 40 }] },
       { type: SUB, name: 'list', description: 'The burner clubs being tracked, with their record' },
       { type: SUB, name: 'remove', description: 'Stop tracking a burner club' },

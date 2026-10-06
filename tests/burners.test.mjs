@@ -79,6 +79,15 @@ globalThis.fetch = async (url, init = {}) => {
     const c = BOARD.find((x) => x.clubId === id);
     return Response.json(c ? { [id]: { name: c.clubInfo.name, customKit: c.clubInfo.customKit } } : {});
   }
+  if (url.includes('proclubs.ea.com/api/fc/clubs/matches')) {
+    const u = new URL(url), mt = u.searchParams.get('matchType');
+    const g = (id, name, goals, w, l) => ({ goals: String(goals), wins: w, losses: l, details: { name, customKit: { crestAssetId: '5' } } });
+    const nowS = Math.floor(Date.now() / 1000);
+    return Response.json(mt === 'leagueMatch'
+      ? [{ matchId: 'x1', timestamp: String(nowS - 7200), clubs: { 80869: g(0, 'NOREX UNITED FC', 3, '1', '0'), 1355341: g(0, 'TeloSico', 1, '0', '1') } },
+        { matchId: 'x2', timestamp: String(nowS - 90000), clubs: { 80869: g(0, 'NOREX UNITED FC', 0, '0', '1'), 218552: g(0, 'Poundin Pitches', 2, '1', '0') } }]
+      : mt === 'friendlyMatch' ? [{ matchId: 'x3', timestamp: String(nowS - 600), clubs: { 80869: g(0, 'NOREX UNITED FC', 2, '0', '0'), 1355341: g(0, 'TeloSico', 2, '0', '0') } }] : []);
+  }
   if (url.includes('/webhooks/') && init.method === 'PATCH') { patches.push(JSON.parse(init.body)); return new Response('{}'); }
   return realFetch(url, init);
 };
@@ -94,6 +103,15 @@ try {
 
   await slash(MGR, 'search', 'zzzz');
   t('no match explains how a brand-new club appears', /no club matching/.test((await settle()).content));
+
+  t('a plain member cannot use /burner recent', /Managers only/.test((await slash(MEMBER, 'recent')).data.content));
+  t('/burner recent defers like search', (await slash(MGR, 'recent')).type === 5);
+  const rec = await settle();
+  const recOpts = rec.components[0].components[0];
+  t('recent: one row per opponent, newest game first (the friendly beats the older league game), same pick menu',
+    recOpts.custom_id === 'norex:bn:pick' && recOpts.options.map((o) => o.value).join() === '1355341,218552' && /drew 2–2 · Friendly/.test(recOpts.options[0].description) && /lost 0–2/.test(recOpts.options[1].description));
+  await slash(MGR, 'search');
+  t('/burner search with no name shows the same recent list', (await settle()).components[0].components[0].options.length === 2);
 
   const picked = await pick(MGR, 'norex:bn:pick', ['1355341']);
   t('picking from the menu tracks the club and confirms in place', picked.type === 7 && /Now tracking/.test(picked.data.content) && picked.data.components.length === 0);

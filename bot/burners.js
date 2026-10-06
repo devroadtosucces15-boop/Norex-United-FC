@@ -1,7 +1,8 @@
 // Burner-club tracker – the bot side (the data side is scripts/fetch.mjs → data/burners/, the page is
 // scripts/burners-page.mjs → site/burners.html).
 //
-//   /burner search <club>  managers: ask EA for clubs matching a name (or an ID), pick one from a menu → tracked
+//   /burner search [club]  managers: ask EA for clubs matching a name (or an ID), pick one from a menu → tracked
+//   /burner recent         managers: opponents from NOREX's latest games (all modes) in a pick menu – no typing
 //   /burner track  <club>  managers: track straight away by exact name or ID (falls back to the menu if unsure)
 //   /burner list           managers: tracked clubs with their record so far
 //   /burner remove         managers: menu to stop tracking one
@@ -13,7 +14,9 @@
 // tracked from. Gated by the `burners` flag + the `burners.manage` permission (managers).
 import { can, flagOn } from './roles.js';
 import { eaGet } from './clublookup.js';
-import { MAX_BURNERS } from './burnerstats.js';
+import { MAX_BURNERS, TYPE_LABEL } from './burnerstats.js';
+
+const HOME_CLUB = '80869'; // NOREX UNITED FC – overridable with the HOME_CLUB_ID var
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const reply = (content, extra = {}) => json({ type: 4, data: { content, flags: 64, allowed_mentions: { parse: [] }, ...extra } });
@@ -52,6 +55,28 @@ export async function searchClubs(q) {
     .filter((c) => /^\d{1,12}$/.test(c.id) && c.name)
     .sort((a, b) => (b.name.toLowerCase() === q.toLowerCase()) - (a.name.toLowerCase() === q.toLowerCase()) || b.gp - a.gp)
     .slice(0, 10);
+}
+
+// Who NOREX played lately (EA only keeps each club's last 5 per mode) → newest first, one row per opponent,
+// with the score and mode of that game. These are the likeliest burners: clubs that just met us.
+// → [{ id, name, crest, ts, type, res, gf, ga }]
+export async function recentOpponents(home = HOME_CLUB) {
+  const seen = new Map();
+  const lists = await Promise.all(Object.keys(TYPE_LABEL).map((type) => eaGet('clubs/matches', { clubIds: home, matchType: type }).then((l) => [type, l])));
+  for (const [type, list] of lists) {
+    for (const m of Array.isArray(list) ? list : []) {
+      const oppId = Object.keys(m.clubs ?? {}).find((k) => k !== String(home));
+      const mine = m.clubs?.[home], opp = m.clubs?.[oppId];
+      if (!oppId || !mine || !/^\d{1,12}$/.test(oppId)) continue;
+      const ts = Number(m.timestamp) || 0;
+      if (seen.get(oppId)?.ts >= ts) continue;
+      seen.set(oppId, {
+        id: oppId, name: opp?.details?.name ?? opp?.name ?? `Club ${oppId}`, crest: opp?.details?.customKit?.crestAssetId ?? null, ts, type,
+        res: mine.wins === '1' ? 'W' : mine.losses === '1' ? 'L' : 'D', gf: Number(mine.goals) || 0, ga: Number(opp?.goals ?? mine.goalsAgainst) || 0,
+      });
+    }
+  }
+  return [...seen.values()].sort((a, b) => b.ts - a.ts).slice(0, 25);
 }
 
 // ---------- tracking ----------
@@ -98,6 +123,26 @@ async function pickerBody(env, results, q) {
   };
 }
 
+// Recent opponents → an embed + the same pick menu (norex:bn:pick), already-tracked clubs ticked.
+async function recentBody(env, opps) {
+  if (!opps.length) return { content: '🔍 EA returned no recent NOREX games right now – try again in a minute, or look a club up with `/burner search <name>`.' };
+  const have = new Set((await all(env, 'SELECT club_id FROM burner_clubs WHERE active = 1')).map((r) => r.club_id));
+  const ago = (ts) => { const h = Math.max(0, Math.round((Date.now() / 1000 - ts) / 3600)); return h < 1 ? 'just now' : h < 48 ? `${h}h ago` : `${Math.round(h / 24)}d ago`; };
+  const WORD = { W: 'won', D: 'drew', L: 'lost' };
+  const line = (c) => `${WORD[c.res]} ${c.gf}–${c.ga} · ${TYPE_LABEL[c.type] ?? 'League'} · ${ago(c.ts)}`;
+  return {
+    embeds: [{
+      title: `🕘 ${opps.length} club${opps.length === 1 ? '' : 's'} NOREX played lately`, color: RED,
+      description: opps.map((c) => `${have.has(c.id) ? '✅' : '🔥'} **${c.name}** · \`${c.id}\` · we ${line(c)}`).join('\n').slice(0, 4000),
+      footer: { text: 'Pick the burner below – ✅ = already tracked' },
+    }],
+    components: [{ type: 1, components: [{
+      type: 3, custom_id: 'norex:bn:pick', placeholder: '🔥 Pick the burner to track', min_values: 1, max_values: 1,
+      options: opps.map((c) => ({ label: c.name.slice(0, 100), value: c.id, description: `${c.id} · we ${line(c)}`.slice(0, 100), emoji: { name: have.has(c.id) ? '✅' : '🔥' } })),
+    }] }],
+  };
+}
+
 const removeMenu = (rows) => ({ type: 1, components: [{
   type: 3, custom_id: 'norex:bn:rm', placeholder: '🗑️ Stop tracking…', min_values: 1, max_values: 1,
   options: rows.map((r) => ({ label: r.name.slice(0, 100), value: r.club_id, description: `club ${r.club_id}`, emoji: { name: '🗑️' } })),
@@ -123,6 +168,16 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
       });
       return reply('', { embeds: [{ title: `🔥 Burner clubs (${rows.length}/${MAX_BURNERS})`, color: RED, description: lines.join('\n'), url: `${site}burners.html`, footer: { text: 'Full stats on the Burner clubs page · /burner remove to stop tracking' } }] });
     })();
+  }
+  // `recent`, or `search` with no name: dropdown of the clubs NOREX just played.
+  if (sub?.name === 'recent' || (sub?.name === 'search' && !q)) {
+    ctx.waitUntil((async () => {
+      const body = await recentOpponents(env.HOME_CLUB_ID || HOME_CLUB).then((o) => recentBody(env, o)).catch((e) => ({ content: `⚠️ Could not reach EA: ${e.message}` }));
+      await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ allowed_mentions: { parse: [] }, ...body }),
+      }).catch((e) => console.log('burner reply failed', e.message));
+    })());
+    return json({ type: 5, data: { flags: 64 } });
   }
   if (!['search', 'track'].includes(sub?.name) || q.length < 2) return reply('⚠️ Give me a club name (or club ID) to look up.');
 
