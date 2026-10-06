@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-06T17:13:23.363Z",
+ "fetchedAt": "2026-10-06T17:20:22.405Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -1125,42 +1125,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "BALLR-99",
-   "gamesPlayed": "6",
-   "winRate": "50",
-   "goals": "8",
-   "assists": "3",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "50",
-   "passesMade": "86",
-   "passSuccessRate": "76",
-   "ratingAve": "7.9",
-   "tacklesMade": "8",
-   "tackleSuccessRate": "26",
-   "proName": "K. Mbapito",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "176",
-   "proNationality": "129",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "2",
-   "prevGoals4": "0",
-   "prevGoals5": "3",
-   "prevGoals6": "2",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "MAYOROFCALI_510",
    "gamesPlayed": "176",
    "winRate": "56",
@@ -1632,7 +1596,7 @@
  "positionCount": {
   "midfielder": 11,
   "goalkeeper": 1,
-  "forward": 15,
+  "forward": 14,
   "defender": 9
  },
  "career": [
@@ -2030,17 +1994,6 @@
    "manOfTheMatch": "9",
    "ratingAve": "7.5",
    "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "BALLR-99",
-   "proPos": "25",
-   "gamesPlayed": "142",
-   "goals": "160",
-   "assists": "30",
-   "manOfTheMatch": "34",
-   "ratingAve": "7.8",
-   "prevGoals": "1",
    "favoritePosition": "forward"
   },
   {
