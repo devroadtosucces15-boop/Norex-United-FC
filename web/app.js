@@ -1103,6 +1103,19 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
     if (el.dataset.nxInsight.startsWith('note.') && !session) { el.remove(); return; }
     (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(el, el.dataset.nxInsight, { call, toast, session, baseRole })).catch(() => el.remove());
   });
+  // ✨ head-to-head insight on the stats page "Head to head" table (BE9 h2h): click/Enter a row to mount `h2h.<opponent>` in the panel under the table
+  const h2hPanel = $('[data-nx-h2h-insight]');
+  if (h2hPanel && flagOn('statInsights', baseRole || 'guest')) {
+    const pick = (tr) => {
+      $$('#h2h tr.h2h-on').forEach((r) => r.classList.remove('h2h-on'));
+      tr.classList.add('h2h-on');
+      const slot = document.createElement('div');
+      h2hPanel.replaceChildren(slot); h2hPanel.hidden = false;
+      (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(slot, `h2h.${tr.dataset.h2h}`, { call, toast, session, baseRole, empty: 'No head-to-head insight for this opponent yet.' })).catch(() => { h2hPanel.hidden = true; });
+    };
+    $('#h2h')?.addEventListener('click', (e) => { const tr = e.target.closest('tr[data-h2h]'); if (tr && !e.target.closest('a')) pick(tr); });
+    $('#h2h')?.addEventListener('keydown', (e) => { const tr = e.target.closest?.('tr[data-h2h]'); if (tr && e.key === 'Enter') pick(tr); });
+  }
   // ✨ head-to-head insight (BE9 compare, compare.html) – members only, written on first view of a pair, cached until the stats change
   cmpHook = (a, b) => {
     const slot = $('[data-nx-cmp-insight]');

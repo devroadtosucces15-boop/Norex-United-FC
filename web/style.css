@@ -1441,3 +1441,5 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 @keyframes ixRise{from{transform:scaleY(0)}}
 .ix-col small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
 @media (prefers-reduced-motion:reduce){.ix-arc,.ix-bar i,.ix-tower i,.ix-drill{animation:none}.ix-gauge{transition:none}}
+
+#h2h tr[data-h2h]{cursor:pointer}#h2h tr[data-h2h]:hover td,#h2h tr.h2h-on td{background:rgba(200,53,44,.12)}

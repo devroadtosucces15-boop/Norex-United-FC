@@ -1072,6 +1072,7 @@ for (const m of allMatches) {
 const sessions = sessionsFor(homeMatches, homeId);
 write('matches/index.html', page({ title: `Matches – ${config.siteTitle}`, base: '../', active: 'matches', body: `
 ${pageHead('Matches', 'Every match since the site started archiving (EA itself only keeps the last 5). Play nights are grouped into sessions and graded on results and goal difference.', '../')}
+${homeMatches.length ? '<div data-nx-insight="matches.last5" hidden></div>' : ''}
 ${modes(`${section('Sessions', `<div class="session-grid">${sessions.map((s) => sessionCard(s, '../', homeId)).join('') || emptyState('🗓️', 'No sessions yet', 'Every play night becomes a graded session card here.')}</div>`)}
 ${section('All results', `${calendar('cal-all', homeMatches)}<div class="fixtures" id="cal-all">${homeMatches.map((m) => fixture(m, homeId, '../')).join('') || emptyState('🗂️', 'No results yet', 'Every league and playoff match is saved here from the next update on.')}</div>`)}
 ${matches.some((m) => !m.clubs[homeId]) ? section('Linked club matches', `<div class="fixtures">${matches.filter((m) => !m.clubs[homeId]).map((m) => fixture(m, Object.keys(m.clubs)[0], '../')).join('')}</div>`) : ''}`, 'matches', 'League & playoffs from EA · Rush logged by members · friendlies apart', section('Friendlies', friendlyBody('../')))}` }));
@@ -1153,7 +1154,7 @@ ${modes(`${section('Leaderboards', `<div class="tabs chipset" data-tabs>${boards
 ${boards.map(([, f, fmt], i) => `<div class="tab-panel card" id="lb${i}"${i ? ' hidden' : ''}>${barList(hm.map(({ pl, s }) => ({ pl, v: f(s) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 10), { base: '', fmt: fmt ?? ((v) => v) })}</div>`).join('')}`)}
 ${recs.length ? section('Club records', `<div class="records">${recs.join('')}</div>`, { sub: 'from the archive' }) : ''}
 ${section('Head to head', table('h2h', ['Opponent', '#P', '#W', '#D', '#L', '#GF', '#GA', '#GD', 'Last'], [...h2h.values()].sort((a, b) => b.p - a.p).map((e) =>
-    `<tr>${td(`${crest(e.o, 22, '')} ${clubLink(e.o, '')}`)}${td(e.p, true)}${td(e.w, true)}${td(e.d, true)}${td(e.l, true)}${td(e.gf, true)}${td(e.ga, true)}${td((e.gf - e.ga > 0 ? '+' : '') + (e.gf - e.ga), true, e.gf - e.ga)}${td(`<a href="matches/${e.last.matchId}.html">${resPill(result(e.last.clubs[homeId]))} ${scoreOf(e.last)}</a>`)}</tr>`), { filter: 'Search opponents…' }))}`, 'leaders')}
+    `<tr data-h2h="${esc(e.o)}" tabindex="0" title="Click for the head-to-head insight">${td(`${crest(e.o, 22, '')} ${clubLink(e.o, '')}`)}${td(e.p, true)}${td(e.w, true)}${td(e.d, true)}${td(e.l, true)}${td(e.gf, true)}${td(e.ga, true)}${td((e.gf - e.ga > 0 ? '+' : '') + (e.gf - e.ga), true, e.gf - e.ga)}${td(`<a href="matches/${e.last.matchId}.html">${resPill(result(e.last.clubs[homeId]))} ${scoreOf(e.last)}</a>`)}</tr>`), { filter: 'Search opponents…' }) + '<div data-nx-h2h-insight hidden></div>')}`, 'leaders')}
 ${advancedSection(LH, lm)}
 <p class="muted small">🏆 Monthly tables, Player of the Month and Best XI: <a href="leaders.html">Leaderboards</a> · 🏛️ <a href="halloffame.html">Hall of Fame</a></p>` }));
 

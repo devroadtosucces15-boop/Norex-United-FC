@@ -370,4 +370,11 @@ t('Notes tab mounts note.<player> through the shared widget with showAt', /ctx\.
 t('portal ctx hands trials.js a mountNote behind the statInsights flag', /trialsCtx = [\s\S]{0,400}mountNote: flagOn\('statInsights'/.test(appSrc));
 t('widget shows "last written" only when asked (showAt) and keeps an empty slot only when asked (empty)', /ctx\.showAt && r\.at/.test(insSrc) && /!row && ctx\.empty/.test(insSrc));
 
+// surfaces: matches.html last-5 slot + clickable "Head to head" rows on stats.html (ids from api/h2h.json)
+const buildSrc = readFileSync(new URL('../scripts/build.mjs', import.meta.url), 'utf8');
+t('matches index drops a matches.last5 slot above the sessions', /pageHead\('Matches'[^\n]*\n\$\{homeMatches\.length \? '<div data-nx-insight="matches\.last5" hidden>/.test(buildSrc));
+t('stats h2h rows carry data-h2h (EA club id) and the panel sits under the table', /<tr data-h2h="\$\{esc\(e\.o\)\}"/.test(buildSrc) && /data-nx-h2h-insight hidden/.test(buildSrc));
+t('app.js mounts h2h.<opponent> on row click/Enter behind statInsights, ignoring link clicks', /\[data-nx-h2h-insight\]/.test(appSrc) && /flagOn\('statInsights'[\s\S]{0,900}`h2h\.\$\{tr\.dataset\.h2h\}`/.test(appSrc) && /!e\.target\.closest\('a'\)/.test(appSrc));
+t('every h2h.json id is a digit string (safe for the data-h2h attribute + route)', h2hRows.every((e) => /^\d+$/.test(String(e.o))));
+
 done();
