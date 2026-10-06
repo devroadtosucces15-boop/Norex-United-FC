@@ -84,4 +84,14 @@ const health = await call(owner, '/api/admin/health');
 t('health.view: owner allowed', health.s === 200);
 t('health degrades gracefully with no analytics token in this env', health.d.analytics.ready === false && /token/.test(health.d.analytics.error));
 t('GitHub Actions status degrades gracefully with no GITHUB_REPO in this env', health.d.actions.ready === false && /GITHUB_REPO/.test(health.d.actions.error));
+// ----- board 09 front end: the Boardroom (flag boardroom, owner; tab only for flags.manage) -----
+const brJs = fs.readFileSync(ROOT + 'web/boardroom.js', 'utf8');
+const appJs9 = fs.readFileSync(ROOT + 'web/app.js', 'utf8');
+t('board 09: boardroom flag ships at owner', config.features.boardroom === 'owner');
+t('board 09: Boardroom sub-tab needs the flag and flag-edit rights, loads assets/boardroom.js', appJs9.includes("flagOn('boardroom', baseRole) && A.canEditFlags ? [['boardroom', '👑 Boardroom']]") && appJs9.includes('assets/boardroom.js'));
+t('board 09: one 5-stop slider per flag, live edit + reset + undo on the existing routes', brJs.includes("const LEVELS = ['off', 'owner', 'managers', 'members', 'public']") && brJs.includes("'/api/admin/flags'") && brJs.includes("'/api/admin/flags/reset'") && brJs.includes('B.undo.pop()'));
+t('board 09: LEVELS match bot/roles.js FLAG_LEVELS', JSON.stringify(FLAG_LEVELS) === JSON.stringify(['off', 'owner', 'managers', 'members', 'public']));
+t('board 09: health, announcement, induction and requests reuse existing routes; sends ask first', ["'/api/admin/health'", "'/api/notify/announce'", "'/api/hof'", 'ctx.requests(rq)'].every((x) => brJs.includes(x)) && brJs.includes("title: 'Send announcement?'") && brJs.includes('title: `Induct ${pl.n}?`'));
+t('board 09: preview-as pills use BE5 ?previewAs=', brJs.includes('index.html?previewAs='));
+t('board 09: member text escaped in HTML', !brJs.split('\n').filter((l) => !l.includes('ctx.toast(') && !l.includes('UI.confirm(')).some((l) => /\$\{(x|pl|p|a)\.(n|title|body|detail)\}/.test(l)));
 done();
