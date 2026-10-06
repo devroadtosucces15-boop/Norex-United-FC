@@ -80,4 +80,13 @@ const evJs = fs.readFileSync(ROOT + 'web/events.js', 'utf8');
 t('site: the builder opens the lineup socket and refreshes from /api/events', evJs.includes('/lineup/ws?t=') && evJs.includes("ctx.call('/api/events')") && evJs.includes('openLineupLive(e.id'));
 t('site: an unsaved draft is kept when someone else saves', evJs.includes('if (!dirty) { adopt(fresh)') && evJs.includes('your unsaved changes are kept'));
 t('site: the ready check is shown in the builder for managers', evJs.includes('lu-ready') && evJs.includes('readyView(e)'));
+// ----- board 08 front end: the Dugout as the manager portal's home (flag dugout, owner) -----
+const dgJs = fs.readFileSync(ROOT + 'web/dugout.js', 'utf8');
+const appJs8 = fs.readFileSync(ROOT + 'web/app.js', 'utf8');
+t('board 08: dugout flag ships at owner', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.dugout === 'owner');
+t('board 08: Dugout is the first manager sub-tab when the flag is on, and loads assets/dugout.js', appJs8.includes("flagOn('dugout', baseRole) ? [['dugout', '🧢 Dugout']]") && appJs8.includes('assets/dugout.js') && appJs8.includes("S.adminTab = 'dugout'"));
+t('board 08: only existing routes – lineup draft/publish, trials move, plays, claims via decide()', ["'/api/events/lineup'", "'/api/trials/update'", "'/api/plays'", "'/api/events'", 'ctx.decide(user, action)'].every((x) => dgJs.includes(x)));
+t('board 08: drag + tap fallback for the pitch and the funnel, swipe for claims', dgJs.includes('ondrop') && dgJs.includes('data-move') && dgJs.includes('onpointerup') && dgJs.includes('Math.abs(dx) > 110'));
+t('board 08: publishing asks first; a pending drag is never thrown away', dgJs.includes("ctx.UI.confirm({ title: 'Post the line-up?'") && dgJs.includes('never throw away an unsaved drag'));
+t('board 08: member/EA text escaped in HTML (toasts escape their own text)', !dgJs.split('\n').filter((l) => !l.includes('ctx.toast(')).some((l) => /\$\{(p|c|t|r|e)\.(n|ea|title|playerName)\}/.test(l)));
 done();
