@@ -857,6 +857,8 @@ function logTable(id, a, base) {
 
 // ---------- match page ----------
 function matchBody(m, base) {
+  const mi = homeMatches.slice(0, 3).findIndex((x) => x.matchId === m.matchId); // BE9 covers the newest three results (MATCH_CARDS)
+  const insightSlot = mi < 0 ? '' : `<div data-nx-insight="${mi ? `match.${esc(m.matchId)}` : 'match.latest'}" hidden></div>`;
   const [h, aw] = Object.keys(m.clubs).sort((a, b) => (a === homeId ? -1 : b === homeId ? 1 : 0));
   const list = (cid) => Object.entries(m.players?.[cid] || {}).map(([pid, p]) => ({ pid, ...p }));
   const team = (cid) => {
@@ -894,7 +896,7 @@ ${dots.map(({ p, side, x, y }) => { const pl = players.get(p.pid); return `<a cl
     `<tr>${td(pLink(p.pid, base, p.playername))}${td(posAbbr(p.pos))}${td(ratingPill(num(p.rating)), true, num(p.rating))}${td(p.goals, true)}${td(p.assists, true)}${ev ? evd(p.secondassists) : ''}${td(p.shots, true)}${td(`${p.passesmade}/${p.passattempts}`, true, p.passesmade)}${ev ? evd(p.dribbles) : ''}${td(`${p.tacklesmade}/${p.tackleattempts}`, true, p.tacklesmade)}${td(p.saves, true)}${td(p.mom === '1' ? '⭐' : '')}</tr>`)));
 
   return `${m.matchType === 'friendlyMatch' ? '<p class="kicker reveal">🤝 Club friendly – not counted in League stats</p>' : ''}<div class="reveal">${poster(m, base, { link: false })}<button class="btn dl-poster" type="button" data-for="poster-${m.matchId}">⬇ Download result graphic</button></div>
-<div class="grid2 reveal">${card('Match stats', `<div class="cmp-head"><span>${crest(h, 26, base)}</span><span>${crest(aw, 26, base)}</span></div><ul class="compare-bars">${cmp}</ul>`)}${card('Line-ups & ratings', pitch)}</div>
+${insightSlot}<div class="grid2 reveal">${card('Match stats', `<div class="cmp-head"><span>${crest(h, 26, base)}</span><span>${crest(aw, 26, base)}</span></div><ul class="compare-bars">${cmp}</ul>`)}${card('Line-ups & ratings', pitch)}</div>
 ${side(h)}${side(aw)}${ev ? '<p class="muted small">🏃 Drb = dribbles completed, 2nd A = the pass before the assist (from EA\'s match events).</p>' : ''}`;
 }
 

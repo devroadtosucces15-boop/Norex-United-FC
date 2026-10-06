@@ -16,6 +16,15 @@ const club = await factPackFor('club', loadSite);
 t('club fact pack is public with the real club numbers', club.tier === 'public' && club.facts.gamesPlayed === siteJson('club').gp);
 const match = await factPackFor('match.latest', loadSite);
 t('match.latest fact pack matches the newest result', match.tier === 'public' && match.facts.opponent === siteJson('club').matches[0].opp);
+const recentMatches = siteJson('club').matches;
+const older = recentMatches[1];
+if (older) {
+  const olderPack = await factPackFor(`match.${older.id}`, loadSite);
+  t('match.<id> fact pack is the result with that id, not the newest', olderPack?.tier === 'public' && olderPack.facts.opponent === older.opp && olderPack.facts.goalsFor === older.gf);
+}
+t('match.<id> for an id not in the recent list → null', (await factPackFor('match.1', loadSite)) === null);
+const mkeys = (await registryKeys(loadSite)).filter((k) => /^match\./.test(k));
+t('registry covers the three newest result pages (latest + two ids)', mkeys.includes('match.latest') && mkeys.length === Math.min(3, recentMatches.length) && recentMatches.slice(1, 3).every((m) => mkeys.includes(`match.${m.id}`)));
 const playerPack = await factPackFor(`player.${homePlayer.k}`, loadSite);
 t('player fact pack is member-tier with that player\'s own stats', playerPack.tier === 'member' && playerPack.facts.goals === (homePlayer.s?.g ?? 0));
 t('unknown key → null', (await factPackFor('nope', loadSite)) === null);

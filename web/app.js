@@ -944,6 +944,7 @@ $$('[data-worldcmp]').forEach((box) => {
 });
 
 // ---------- compare tool ----------
+let cmpHook = null, cmpPair = null;
 const cmpOut = $('#cmp-out');
 if (cmpOut) (async () => {
   const [pl] = await api();
@@ -963,16 +964,8 @@ if (cmpOut) (async () => {
   $('#cmp-a').addEventListener('change', update); $('#cmp-b').addEventListener('change', update);
   if (A && B) { render(A, B); cmpInsight(A, B); } else cmpOut.innerHTML = '<p class="muted">Pick two players.</p>';
 
-  // ✨ head-to-head insight (BE9 compare) – members only, written on first view of a pair, cached until the stats change
-  function cmpInsight(a, b) {
-    const slot = $('[data-nx-cmp-insight]');
-    if (!slot || !flagOn('statInsights', baseRole || 'guest')) return;
-    if (!session || a.k === b.k || !a.home || !b.home) { slot.hidden = true; slot.innerHTML = ''; return; }
-    slot.hidden = false; slot.innerHTML = '';
-    (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => {
-      NXInsight.mount(slot, '', { call, toast, session, baseRole, compare: { a: a.k, b: b.k } });
-    }).catch(() => { slot.hidden = true; });
-  }
+  // ✨ head-to-head insight (BE9 compare): the member block below (session, call, flags) installs cmpHook; whichever runs second picks up the pair
+  function cmpInsight(a, b) { cmpPair = [a, b]; cmpHook?.(a, b); }
 
   function fut(p) {
     const s = p.s ?? {};
@@ -1110,6 +1103,17 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
     if (el.dataset.nxInsight.startsWith('note.') && !session) { el.remove(); return; }
     (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(el, el.dataset.nxInsight, { call, toast, session, baseRole })).catch(() => el.remove());
   });
+  // ✨ head-to-head insight (BE9 compare, compare.html) – members only, written on first view of a pair, cached until the stats change
+  cmpHook = (a, b) => {
+    const slot = $('[data-nx-cmp-insight]');
+    if (!slot || !flagOn('statInsights', baseRole || 'guest')) return;
+    if (!session || a.k === b.k || !a.home || !b.home) { slot.hidden = true; slot.innerHTML = ''; return; }
+    slot.hidden = false; slot.innerHTML = '';
+    (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => {
+      NXInsight.mount(slot, '', { call, toast, session, baseRole, compare: { a: a.k, b: b.k } });
+    }).catch(() => { slot.hidden = true; });
+  };
+  if (cmpPair) cmpHook(...cmpPair);
   const nextEl = $('[data-next-event]');
   if (nextEl && flagOn('events', baseRole || 'guest')) loadEvents().then(() => NXEvents.next(nextEl)).catch(() => {});
   // ---------- 🎬 highlight of the week on the home page (P6.2) · 🟢 who's online (P6.4) – assets/hotw.js, assets/presence.js ----------
@@ -1749,11 +1753,11 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
         canAnnounce: !!S.me?.user?.perms?.includes('notify.announce'), flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole), onFlags: (f) => { S.admin.flags = f; },
         actIcon: (t) => ACT[t] || '•', actText: (t) => ACT_TXT[t] || t, requests: (el) => loadNotify().then(() => NXNotify.requestsPortal(el, notifyCtx())).catch(() => {}) }))
       .catch(() => toast('Could not load the Boardroom – try again', true));
-    const lk = $('#locker-panel', panel); // board 07 Locker Room – assets/locker.js
     const ix = $('#intel-panel', panel); // board 13 Club Intelligence – assets/intel.js
     if (ix) (window.NXIntel ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/intel.js`, onload: ok, onerror: no }))))
       .then(() => NXIntel.mount(ix, { call, toast, UI }))
       .catch(() => toast('Could not load Club Intelligence – try again', true));
+    const lk = $('#locker-panel', panel); // board 07 Locker Room – assets/locker.js
     if (lk) (window.NXLocker ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/locker.js`, onload: ok, onerror: no }))))
       .then(() => NXLocker.tab(lk, { call, toast, base: BASE, me: { u: session.u, n: session.n, a: session.a }, claim: () => S.me?.claim, players: () => S.players, flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole), badges: railBadges,
         mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) ? (slot, key) => (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null }))

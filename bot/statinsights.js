@@ -148,7 +148,8 @@ export const MATCH_CARDS = 3; // result pages that carry an insight: the newest 
 export async function registryKeys(loadSite) {
   const [players, club, h2h] = await Promise.all([loadSite('players'), loadSite('club'), loadSite('h2h').catch(() => null)]);
   const latestOpp = (h2h ?? []).find((e) => e.n === club?.matches?.[0]?.opp); // only the next-talked-about rival is pre-written – the rest of the opponent list isn't
-  return ['club', 'match.latest', 'matches.last5', ...(latestOpp ? [`h2h.${latestOpp.o}`] : []), ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
+  const recent = (club?.matches ?? []).slice(1, MATCH_CARDS).map((m) => `match.${m.id}`); // the newest is match.latest
+  return ['club', 'match.latest', ...recent, 'matches.last5', ...(latestOpp ? [`h2h.${latestOpp.o}`] : []), ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
     ...players.filter((p) => p.home).flatMap((p) => [`player.${p.k}`, ...((p.s?.gp ?? 0) > 0 ? [`note.${p.k}`] : [])])];
 }
 // BE9 compare – two home-squad players side by side. On demand only (POST /api/insights/compare), never
