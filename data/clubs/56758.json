@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-06T04:30:29.466Z",
+ "fetchedAt": "2026-10-06T04:40:33.426Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -403,42 +403,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "goalkeeper"
-  },
-  {
-   "name": "xX_KrOniCSaGe_Xx",
-   "gamesPlayed": "23",
-   "winRate": "47",
-   "goals": "0",
-   "assists": "5",
-   "cleanSheetsDef": "5",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "302",
-   "passSuccessRate": "80",
-   "ratingAve": "7.5",
-   "tacklesMade": "36",
-   "tackleSuccessRate": "36",
-   "proName": "Goliansio",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "188",
-   "proNationality": "95",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "3",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "JayyZun-",
@@ -1741,7 +1705,7 @@
   "midfielder": 11,
   "goalkeeper": 1,
   "forward": 17,
-  "defender": 10
+  "defender": 9
  },
  "career": [
   {
@@ -1835,24 +1799,13 @@
   {
    "name": "Pro-_-Pompe",
    "proPos": "0",
-   "gamesPlayed": "107",
+   "gamesPlayed": "108",
    "goals": "4",
    "assists": "3",
    "manOfTheMatch": "1",
    "ratingAve": "6.3",
    "prevGoals": "0",
    "favoritePosition": "goalkeeper"
-  },
-  {
-   "name": "xX_KrOniCSaGe_Xx",
-   "proPos": "5",
-   "gamesPlayed": "68",
-   "goals": "3",
-   "assists": "8",
-   "manOfTheMatch": "6",
-   "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "MicroMyDraco",
@@ -1911,14 +1864,14 @@
   },
   {
    "name": "LightShikigami",
-   "proPos": "14",
-   "gamesPlayed": "120",
+   "proPos": "5",
+   "gamesPlayed": "121",
    "goals": "44",
    "assists": "42",
    "manOfTheMatch": "11",
    "ratingAve": "7.2",
    "prevGoals": "0",
-   "favoritePosition": "midfielder"
+   "favoritePosition": "defender"
   },
   {
    "name": "V-_MALDINI4-_XI",
@@ -1934,9 +1887,9 @@
   {
    "name": "adeking121",
    "proPos": "14",
-   "gamesPlayed": "108",
+   "gamesPlayed": "109",
    "goals": "20",
-   "assists": "89",
+   "assists": "90",
    "manOfTheMatch": "8",
    "ratingAve": "7.5",
    "prevGoals": "0",
@@ -2176,11 +2129,11 @@
   {
    "name": "BALLR-99",
    "proPos": "25",
-   "gamesPlayed": "141",
-   "goals": "159",
+   "gamesPlayed": "142",
+   "goals": "160",
    "assists": "30",
    "manOfTheMatch": "34",
-   "ratingAve": "7.9",
+   "ratingAve": "7.8",
    "prevGoals": "1",
    "favoritePosition": "forward"
   },
