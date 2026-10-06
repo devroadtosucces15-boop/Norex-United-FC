@@ -1174,13 +1174,14 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   const ICON = { yes: '✅', maybe: '❔', no: '❌' };
   const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   const pill = (r) => `<span class="res ${r}">${r}</span>`;
-  const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set(),
+  const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, locker: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set(),
     subm: { type: 'feedback', q: '', rows: null }, reports: null }; // P8.1 / P8.3
   // Board 07: with the Locker Room on, the hub opens on the locker and the tab chips become a grouped side rail
   // (Me · Match nights · Squad · Tactics · Staff · Settings – same idea as the site menu); on phones it folds into a list.
-  const lockerOn = flagOn('locker', baseRole);
+  const lockerOn = flagOn('locker', baseRole) && flagOn('lockerRoom', baseRole); // board 07 redesign (flag lockerRoom)
+  const lockerBasic = flagOn('locker', baseRole) && !lockerOn; // BE2 simple Locker Room tab for everyone else
   const HOME = lockerOn ? 'locker' : 'me';
-  const TABS = [...(lockerOn ? [['locker', '🎽 My locker']] : []), ['me', lockerOn ? '🪪 My profile' : '👤 My NOREX'], ...(flagOn('events', baseRole) ? [['schedule', '🗓️ Schedule']] : []), ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(flagOn('suggestions', baseRole) ? [['ideas', '💡 Ideas']] : []), ...(flagOn('awards', baseRole) ? [['awards', '🏆 Awards']] : []), ...(flagOn('rushSquads', baseRole) ? [['squads', '🤝 Squads']] : []), ...(flagOn('starRatings', baseRole) ? [['ratings', '🌟 Ratings']] : []), ...(flagOn('predictions', baseRole) ? [['predict', '🔮 Predict']] : []), ...(flagOn('recommendations', baseRole) ? [['teamup', '🎯 Team up']] : []), ...(flagOn('feedback', baseRole) ? [['feedback', '💌 Feedback']] : []), ...(flagOn('avatarCard', baseRole) ? [['card', '🎨 AI Card']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
+  const TABS = [...(lockerOn ? [['locker', '🎽 My locker']] : []), ['me', lockerOn ? '🪪 My profile' : '👤 My NOREX'], ...(lockerBasic ? [['locker', '🎽 Locker Room']] : []), ...(flagOn('events', baseRole) ? [['schedule', '🗓️ Schedule']] : []), ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(flagOn('suggestions', baseRole) ? [['ideas', '💡 Ideas']] : []), ...(flagOn('awards', baseRole) ? [['awards', '🏆 Awards']] : []), ...(flagOn('rushSquads', baseRole) ? [['squads', '🤝 Squads']] : []), ...(flagOn('starRatings', baseRole) ? [['ratings', '🌟 Ratings']] : []), ...(flagOn('predictions', baseRole) ? [['predict', '🔮 Predict']] : []), ...(flagOn('recommendations', baseRole) ? [['teamup', '🎯 Team up']] : []), ...(flagOn('feedback', baseRole) ? [['feedback', '💌 Feedback']] : []), ...(flagOn('avatarCard', baseRole) ? [['card', '🎨 AI Card']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
 
   const RAIL = [['Me', ['locker', 'me', 'stats', 'card', 'alerts']], ['Match nights', ['schedule', 'availability', 'votes', 'rush', 'predict', 'ratings']],
     ['Squad', ['squads', 'teamup', 'scout', 'awards', 'ideas', 'feedback']], ['Staff', ['manager']]];
@@ -1222,7 +1223,8 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   async function load(tab) {
     try {
       if (tab === 'availability') S.avail = await call('/api/availability');
-      if (tab === 'locker') { lockerLive(true); return; } // assets/locker.js loads its own data
+      if (tab === 'locker' && lockerOn) { lockerLive(true); return; } // assets/locker.js loads its own data
+      if (tab === 'locker') { S.locker = await call('/api/locker'); lockerLive(true); }
       if (tab === 'votes') S.votes = await call('/api/vote');
       if ((tab === 'rush' || tab === 'manager') && flagOn('rushLog', baseRole)) S.rush = await call('/api/rush/queue');
       if (tab === 'manager') {
@@ -1267,7 +1269,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
     try { S.health = await call('/api/admin/health'); } catch (e) { toast(e.message, true); S.health = null; }
     if (S.adminTab === 'health') draw();
   }
-  const draw = () => { panel.innerHTML = ({ me: viewMe, locker: () => '<div id="locker-panel"></div>', availability: viewAvail,votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', ideas: () => '<div id="ideas-panel"></div>', schedule: () => '<div id="schedule-panel"></div>', awards: () => '<div id="awards-panel"></div>', squads: () => '<div id="squads-panel"></div>', ratings: () => '<div id="ratings-panel"></div>', predict: () => '<div id="predict-panel"></div>', teamup: () => '<div id="teamup-panel"></div>', feedback: () => '<div id="feedback-panel"></div>', card: () => '<div id="card-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
+  const draw = () => { panel.innerHTML = ({ me: viewMe, locker: lockerOn ? () => '<div id="locker-panel"></div>' : viewLocker, availability: viewAvail,votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', ideas: () => '<div id="ideas-panel"></div>', schedule: () => '<div id="schedule-panel"></div>', awards: () => '<div id="awards-panel"></div>', squads: () => '<div id="squads-panel"></div>', ratings: () => '<div id="ratings-panel"></div>', predict: () => '<div id="predict-panel"></div>', teamup: () => '<div id="teamup-panel"></div>', feedback: () => '<div id="feedback-panel"></div>', card: () => '<div id="card-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
 
   // ----- My NOREX -----
   function viewMe() {
@@ -1295,7 +1297,11 @@ ${profilesOn ? '<div class="card" id="profile-editor" style="grid-column:1/-1"><
   let lockerWs = null, lockerWsPing = null, lockerWsRetry = null, lockerTimer = null, lockerReload = null;
   const lockerRefresh = () => {
     clearTimeout(lockerReload);
-    lockerReload = setTimeout(() => { if (S.tab === 'locker') window.NXLocker?.refresh(); }, 150);
+    lockerReload = setTimeout(() => {
+      if (S.tab !== 'locker') return;
+      if (lockerOn) window.NXLocker?.refresh();
+      else call('/api/locker').then((d) => { S.locker = d; if (S.tab === 'locker') draw(); }).catch(() => {});
+    }, 150);
   };
   function lockerLive(on) {
     clearTimeout(lockerWsRetry); clearInterval(lockerWsPing); clearInterval(lockerTimer);
@@ -1313,6 +1319,22 @@ ${profilesOn ? '<div class="card" id="profile-editor" style="grid-column:1/-1"><
       lockerWs = null;
       if (S.tab === 'locker') lockerWsRetry = setTimeout(() => { if (S.tab === 'locker') lockerLive(true); }, 8000);
     };
+  }
+  // BE2 Locker Room – one /api/locker call: next match + RSVP + who's in, weekly award vote, unread alerts, new achievements.
+  function viewLocker() {
+    if (!S.locker) return UI.skeleton('cards', 3);
+    const L = S.locker, n = L.next;
+    const when = (t) => new Date(t).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const answer = { yes: '✅ You\'re in', maybe: '🤔 Maybe', no: '❌ Can\'t make it' }[n?.mine] || '⏳ Not answered yet';
+    const next = n ? `<div class="card locker-card"><small class="muted">Next up</small><h3>${esc(n.title || (n.type === 'league' ? 'League match' : 'Match night'))}</h3>
+<p>🗓️ ${esc(when(n.start))}</p><p><b>${esc(answer)}</b> · ${n.inCount} in</p>
+<div class="locker-in">${n.in.map((p) => `<span class="locker-av" title="${esc(p.n)}">${p.a ? `<img src="${esc(p.a)}" alt="">` : esc((p.n || '?')[0])}</span>`).join('')}${n.inCount > n.in.length ? `<span class="muted">+${n.inCount - n.in.length}</span>` : ''}</div>
+<a class="btn sm" href="#schedule-${esc(n.id)}">Open event</a></div>` : '<div class="card locker-card"><p class="muted">Nothing scheduled yet.</p></div>';
+    const vote = flagOn('awards', baseRole) ? `<div class="card locker-card"><small class="muted">Weekly awards</small><h3>${L.vote.voted ? '✅ You\'ve voted this week' : '🏆 Vote is open'}</h3>
+<p class="muted">Closes ${esc(when(L.vote.closes))}</p><a class="btn sm" href="#awards">${L.vote.voted ? 'See awards' : 'Cast your vote'}</a></div>` : '';
+    const alerts = notifyOn ? `<a class="card locker-card" href="#alerts"><small class="muted">Notifications</small><h3>🔔 ${L.unread ? `${L.unread} unread` : 'All caught up'}</h3></a>` : '';
+    const ach = L.achievements.length ? `<div class="card locker-card"><small class="muted">New achievements</small><div class="locker-ach">${L.achievements.map((a) => `<span class="pill ${esc(a.tier)}">${esc(a.icon)} ${esc(a.name)}</span>`).join('')}</div></div>` : '';
+    return `<div class="locker-grid">${next}${vote}${alerts}${ach}</div>`;
   }
   function viewAvail() {
     if (!S.avail) return UI.skeleton('cards', 4);

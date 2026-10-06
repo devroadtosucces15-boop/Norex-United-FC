@@ -129,6 +129,7 @@ t('front end: refresh on ping, 60 s fallback while the socket is down', appJs.in
 const lkJs = readFileSync(new URL('../web/locker.js', import.meta.url), 'utf8');
 t('board 07: hub opens on the locker and swaps chips for a grouped rail when the flag is on', appJs.includes("const HOME = lockerOn ? 'locker' : 'me'") && appJs.includes('class="hub-rail') && appJs.includes("['Match nights',"));
 t('board 07: one-tap RSVP, card vote, flip + save image, all user text escaped', lkJs.includes("'/api/events/rsvp'") && lkJs.includes("'/api/vote'") && lkJs.includes("data-lk=\"flip\"") && lkJs.includes('toBlob') && !/\$\{(p|a|pl|m)\.(n|title|opp|name)\}/.test(lkJs));
+t('board 07 ships behind its own owner flag; members keep the simple Locker tab', JSON.parse(readFileSync(new URL('../config.json', import.meta.url), 'utf8')).features.lockerRoom === 'owner' && appJs.includes("flagOn('lockerRoom', baseRole)") && appJs.includes("['locker', '🎽 Locker Room']") && appJs.includes('function viewLocker()'));
 t('board 07: motion respects reduced-motion', lkJs.includes('reduced()') && readFileSync(new URL('../web/style.css', import.meta.url), 'utf8').includes('.lk-swing.swing,.lk-medal.fresh .lk-coin'));
 
 t('no login → 401', (await call(null, '/api/locker')).s === 401);
