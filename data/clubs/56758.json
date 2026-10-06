@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-06T01:00:33.565Z",
+ "fetchedAt": "2026-10-06T01:10:40.147Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -151,6 +151,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "XxEL_AXEL_ONExX",
+   "gamesPlayed": "24",
+   "winRate": "45",
+   "goals": "10",
+   "assists": "12",
+   "cleanSheetsDef": "1",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "37",
+   "passesMade": "308",
+   "passSuccessRate": "83",
+   "ratingAve": "7.1",
+   "tacklesMade": "12",
+   "tackleSuccessRate": "13",
+   "proName": "AXELINHO",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "175",
+   "proNationality": "0",
+   "proOverall": "82",
+   "proOverallStr": "82",
+   "manOfTheMatch": "2",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "1",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "2",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "1",
+   "favoritePosition": "forward"
   },
   {
    "name": "AGGRESSOR-CB",
@@ -1776,7 +1812,7 @@
  "positionCount": {
   "midfielder": 8,
   "goalkeeper": 0,
-  "forward": 18,
+  "forward": 19,
   "defender": 10
  },
  "career": [
@@ -1803,13 +1839,24 @@
    "favoritePosition": "defender"
   },
   {
+   "name": "XxEL_AXEL_ONExX",
+   "proPos": "25",
+   "gamesPlayed": "195",
+   "goals": "125",
+   "assists": "97",
+   "manOfTheMatch": "30",
+   "ratingAve": "7.4",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "AGGRESSOR-CB",
    "proPos": "5",
-   "gamesPlayed": "15",
+   "gamesPlayed": "16",
    "goals": "0",
    "assists": "2",
    "manOfTheMatch": "0",
-   "ratingAve": "7.7",
+   "ratingAve": "7.4",
    "prevGoals": "0",
    "favoritePosition": "defender"
   },
@@ -2135,12 +2182,12 @@
   {
    "name": "Ox_Baki",
    "proPos": "25",
-   "gamesPlayed": "73",
+   "gamesPlayed": "74",
    "goals": "49",
    "assists": "35",
    "manOfTheMatch": "13",
-   "ratingAve": "7.4",
-   "prevGoals": "1",
+   "ratingAve": "7.3",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
