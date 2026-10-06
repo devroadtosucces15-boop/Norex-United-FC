@@ -1189,7 +1189,7 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 .dg-head h2{margin:0;font:700 26px var(--head);text-transform:uppercase;letter-spacing:.8px}
 .dg-acts{display:flex;gap:8px;flex-wrap:wrap}
 .dg-top{display:grid;gap:14px;grid-template-columns:minmax(200px,240px) minmax(0,1fr) minmax(200px,250px)}
-.dg-bottom{display:grid;gap:14px;margin-top:14px;grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr) minmax(240px,1fr)}
+.dg-bottom{display:grid;gap:14px;margin-top:14px;grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr)}.dg-tr{grid-column:1/-1;order:3}
 @media (max-width:1180px){.dg-top{grid-template-columns:minmax(190px,230px) minmax(0,1fr)}.dg-rd{grid-column:1/-1}.dg-bottom{grid-template-columns:1fr 1fr}.dg-tr{grid-column:1/-1;order:3}}
 @media (max-width:760px){.dg-top,.dg-bottom{grid-template-columns:1fr}.dg-head h2{font-size:21px}}
 .dg-sec{min-width:0}

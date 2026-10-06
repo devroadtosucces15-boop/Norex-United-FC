@@ -82,8 +82,15 @@ t('site: an unsaved draft is kept when someone else saves', evJs.includes('if (!
 t('site: the ready check is shown in the builder for managers', evJs.includes('lu-ready') && evJs.includes('readyView(e)'));
 // ----- board 08 front end: the Dugout as the manager portal's home (flag dugout, owner) -----
 const dgJs = fs.readFileSync(ROOT + 'web/dugout.js', 'utf8');
+const css08 = fs.readFileSync(ROOT + 'web/style.css', 'utf8');
 const appJs8 = fs.readFileSync(ROOT + 'web/app.js', 'utf8');
-t('board 08: dugout flag ships at owner', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.dugout === 'owner');
+t('board 08: dugout flag ships at managers (QA passed 2026-10-06)', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.dugout === 'managers');
+// QA fixes: a cancelled drag leaves no hidden pick, a shape change keeps the players, the claim card survives pointercancel
+t('board 08 QA: a drag that lands nowhere clears the pick', /ondragend = \(ev\) => \{[^}]*D\.pick = null/.test(dgJs));
+t('board 08 QA: changing the formation keeps players (reshape by position), not a wipe', dgJs.includes('function reshape(next)') && dgJs.includes('reshape(ev.target.value)') && !dgJs.includes("D.formation = ev.target.value; D.slots = {}"));
+t('board 08 QA: claim card resets on pointercancel', dgJs.includes('el.onpointercancel'));
+t('board 08 QA: editing a published line-up says it is not re-posted', dgJs.includes('post again to tell players'));
+t('board 08 QA: the trials funnel gets the full row', css08.includes('.dg-tr{grid-column:1/-1;order:3}'));
 t('board 08: Dugout is the first manager sub-tab when the flag is on, and loads assets/dugout.js', appJs8.includes("flagOn('dugout', baseRole) ? [['dugout', '🧢 Dugout']]") && appJs8.includes('assets/dugout.js') && appJs8.includes("S.adminTab = 'dugout'"));
 t('board 08: only existing routes – lineup draft/publish, trials move, plays, claims via decide()', ["'/api/events/lineup'", "'/api/trials/update'", "'/api/plays'", "'/api/events'", 'ctx.decide(user, action)'].every((x) => dgJs.includes(x)));
 t('board 08: drag + tap fallback for the pitch and the funnel, swipe for claims', dgJs.includes('ondrop') && dgJs.includes('data-move') && dgJs.includes('onpointerup') && dgJs.includes('Math.abs(dx) > 110'));

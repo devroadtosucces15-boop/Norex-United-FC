@@ -89,7 +89,7 @@ const brJs = fs.readFileSync(ROOT + 'web/boardroom.js', 'utf8');
 const appJs9 = fs.readFileSync(ROOT + 'web/app.js', 'utf8');
 t('board 09: boardroom flag ships at owner', config.features.boardroom === 'owner');
 t('board 09: Boardroom sub-tab needs the flag and flag-edit rights, loads assets/boardroom.js', appJs9.includes("flagOn('boardroom', baseRole) && A.canEditFlags ? [['boardroom', '👑 Boardroom']]") && appJs9.includes('assets/boardroom.js'));
-t('board 09: one 5-stop slider per flag, live edit + reset + undo on the existing routes', brJs.includes("const LEVELS = ['off', 'owner', 'managers', 'members', 'public']") && brJs.includes("'/api/admin/flags'") && brJs.includes("'/api/admin/flags/reset'") && brJs.includes('B.undo.pop()'));
+t('board 09: one 5-stop slider per flag, live edit + reset + undo on the existing routes', brJs.includes("const LEVELS = ['off', 'owner', 'managers', 'members', 'public']") && brJs.includes("'/api/admin/flags'") && brJs.includes("'/api/admin/flags/reset'") && brJs.includes('B.undo.pop()') && brJs.includes("d.br === 'undo' && !B.busy"));
 t('board 09: LEVELS match bot/roles.js FLAG_LEVELS', JSON.stringify(FLAG_LEVELS) === JSON.stringify(['off', 'owner', 'managers', 'members', 'public']));
 t('board 09: health, announcement, induction and requests reuse existing routes; sends ask first', ["'/api/admin/health'", "'/api/notify/announce'", "'/api/hof'", 'ctx.requests(rq)'].every((x) => brJs.includes(x)) && brJs.includes("title: 'Send announcement?'") && brJs.includes('title: `Induct ${pl.n}?`'));
 t('board 09: preview-as pills use BE5 ?previewAs=', brJs.includes('index.html?previewAs='));

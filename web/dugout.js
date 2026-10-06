@@ -145,6 +145,18 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
   }
 
   // ---------- actions ----------
+  // Switching shape keeps the players: each goes to a free spot with the same position, the rest fill what's left.
+  function reshape(next) {
+    const from = D.ev.formations[D.formation] || [], free = [...(D.ev.formations[next] || [])], slots = {}, rest = [];
+    for (const [slot] of from) {
+      const id = D.slots[slot];
+      if (!id) continue;
+      const i = free.findIndex(([s]) => POS_OF(s) === POS_OF(slot));
+      if (i >= 0) slots[free.splice(i, 1)[0][0]] = id; else rest.push(id);
+    }
+    for (const id of rest) { const i = free.findIndex(([s]) => s !== 'GK'); if (i >= 0) slots[free.splice(i, 1)[0][0]] = id; }
+    D.formation = next; D.slots = slots;
+  }
   function place(slot) {
     const cur = D.slots[slot];
     if (D.pick) {
@@ -170,7 +182,7 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
     try {
       const r = await ctx.call('/api/events/lineup', { id: e.id, formation: D.formation, lineup, publish });
       D.ev = { ...D.ev, ...r };
-      D.saving = publish ? '' : 'draft saved ✓';
+      D.saving = publish ? '' : e.lineupAt ? 'saved · post again to tell players' : 'draft saved ✓';
       paint();
       if (publish) ctx.toast(`Line-up posted · ${r.notified ?? 0} players told${r.discord?.ok ? ' · on Discord' : ''}`);
       if (r.discord && !r.discord.ok) ctx.toast(`Discord: ${r.discord.error}`, true);
@@ -202,13 +214,13 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
       if (d.move) moveTrial(d.move, d.to);
       if (d.decide) decide(d.u, d.decide);
     };
-    el.onchange = (ev) => { if (ev.target.matches('[data-dg="formation"]')) { D.formation = ev.target.value; D.slots = {}; D.pick = null; queueSave(); paint(); } };
+    el.onchange = (ev) => { if (ev.target.matches('[data-dg="formation"]')) { reshape(ev.target.value); D.pick = null; queueSave(); paint(); } };
     el.ondragstart = (ev) => {
       const p = ev.target.closest?.('[data-p]'), tc = ev.target.closest?.('[data-trial]');
       if (p) { D.pick = p.dataset.p; ev.dataTransfer.setData('text/plain', `p:${D.pick}`); el.classList.add('dragging'); $$slots(true); }
       if (tc) { ev.dataTransfer.setData('text/plain', `t:${tc.dataset.trial}`); tc.classList.add('lift'); }
     };
-    el.ondragend = () => { el.classList.remove('dragging'); $$slots(false); };
+    el.ondragend = (ev) => { el.classList.remove('dragging'); $$slots(false); if (ev.target.closest?.('[data-p]')) D.pick = null; }; // a drag that lands nowhere must not leave a hidden pick behind
     el.ondragover = (ev) => { if (ev.target.closest?.('[data-slot], [data-col]')) ev.preventDefault(); };
     el.ondrop = (ev) => {
       const v = ev.dataTransfer.getData('text/plain');
@@ -232,6 +244,7 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
       if (Math.abs(dx) > 110) decide(c.dataset.claimCard, dx > 0 ? 'approve' : 'reject');
       else { c.style.transform = ''; c.classList.remove('to-ok', 'to-no'); }
     };
+    el.onpointercancel = () => { if (card) { card.style.transform = ''; card.classList.remove('drag', 'to-ok', 'to-no'); } sx = null; card = null; }; // the browser took the gesture (scroll)
   }
   const $$slots = (on) => el.querySelectorAll('.dg-slot:not(.on)').forEach((s) => s.classList.toggle('glow', on));
 

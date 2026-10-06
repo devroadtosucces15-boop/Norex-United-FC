@@ -172,7 +172,7 @@ ${ctx.flagOn('hallOfFame') ? `<section class="card br-sec br-hf">${hof()}</secti
       const d = t.dataset;
       if (d.flag) setFlag(d.flag, d.level);
       if (d.reset) resetFlag(d.reset);
-      if (d.br === 'undo') { const u = B.undo.pop(); if (u) setFlag(u.name, u.level, { undo: true }); }
+      if (d.br === 'undo' && !B.busy) { const u = B.undo.pop(); if (u) setFlag(u.name, u.level, { undo: true }); }
       if (d.br === 'health') loadHealth();
       if (d.br === 'announce') sendAnnouncement();
       if (d.br === 'induct') induct();
