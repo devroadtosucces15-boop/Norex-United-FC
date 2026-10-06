@@ -524,6 +524,7 @@ export async function lineupSocket(request, env, me, id) {
   return room.fetch(new Request(`https://room/ws?${q}`, { headers: request.headers }));
 }
 
+// ---------- BE4: nudge a short position ----------
 // Managers, from the Dugout squad view: DM/push only the members who play a short position and haven't
 // answered yet – a targeted version of the T-24h/T-2h cron reminder (eventReminders), fired on demand.
 async function nudgeRoute(body, me, env, log) {
