@@ -1,6 +1,6 @@
 // BE9 Insights engine: fact packs, the fingerprint gate, the number checker (must reject invented
 // numbers), the routes (tier gating, ask rate limit, feedback), the queue job, and the weekly post.
-import { call, env, login, siteJson, setAiReply, DB, sqlite, config } from './mock.mjs';
+import { call, W, env, login, siteJson, setAiReply, DB, sqlite, config } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import {
   factPackFor, registryKeys, numbersOk, extractNumbers, writeInsight, refreshStatInsights,
@@ -183,5 +183,97 @@ for (const [lvl, who] of Object.entries(cmpAllowed)) {
 }
 setFlag(startLevel);
 t('statInsights ships at owner level in config.json', config.features.statInsights === 'owner');
+
+// ---------- BE9 coach's note (private tier): fact pack, registry, writer, visibility ----------
+const players = siteJson('players').filter((p) => p.home && (p.s?.gp ?? 0) > 0);
+const [np, nq] = [players[0], players[1] ?? players[0]]; // note subject / "some other player"
+const noPlayed = siteJson('players').find((p) => p.home && !(p.s?.gp > 0));
+const addNote = (subject, tag, text) => sqlite.prepare("INSERT INTO notes (kind, subject, tag, text, by_id, by_name, at) VALUES ('player', ?, ?, ?, 'm1', 'Coach', ?)").run(subject, tag, text, Date.now());
+sqlite.prepare("DELETE FROM notes WHERE kind = 'player'").run();
+addNote(np.k, 'strength', 'Brilliant first touch under pressure');
+addNote(np.k, 'issue', 'Keeps going missing in the 80th minute');
+addNote(np.k, 'general', 'Asked about moving to CAM');
+addNote(nq.k, 'strength', 'Great communicator');
+
+const notePack = await factPackFor(`note.${np.k}`, loadSite, env);
+t('note fact pack is private-tier and carries the player\'s own season stats', notePack.tier === 'private' && notePack.facts.goals === (np.s?.g ?? 0) && notePack.facts.games === np.s.gp);
+t('note fact pack carries only the manager STRENGTH notes – issue/general notes never reach the writer', notePack.facts.coachStrengths.join('|') === 'Brilliant first touch under pressure');
+t('note fact pack gives the squad rank + size (computed, not invented)', notePack.facts.squadSize === players.length && notePack.facts.goalsRank >= 1 && notePack.facts.goalsRank <= players.length);
+t('note fact pack without a D1 binding degrades to stats only', (await factPackFor(`note.${np.k}`, loadSite)).facts.coachStrengths.length === 0);
+t('note fact pack for a non-home player → null', (await factPackFor('note.not-a-real-key', loadSite, env)) === null);
+if (noPlayed) t('note fact pack for a home player with no league games → null', (await factPackFor(`note.${noPlayed.k}`, loadSite, env)) === null);
+const noteKeys = await registryKeys(loadSite);
+t('registry has one note key per home player with games (squad size, not squad²) and none for the others', players.every((p) => noteKeys.includes(`note.${p.k}`)) && noteKeys.filter((k) => k.startsWith('note.')).length === players.length);
+
+// writer: private tier gets the coach's-note voice; a number from a manager note is a legitimate fact; an invented one is rejected
+let noteSystem = '';
+setAiReply((req) => { noteSystem = req.messages[0].content; return JSON.stringify({ headline: 'First touch like glue', body: 'Management rate your first touch, and the numbers back a steady season.', watch: 'Push for more goals.' }); });
+await DB.exec("DELETE FROM stat_insights WHERE key LIKE 'note.%'");
+t('writeInsight stores a private-tier row for note.<k>', await writeInsight(env, `note.${np.k}`, notePack));
+t("the private tier uses the coach's-note system prompt", /private coach's note/.test(noteSystem));
+const noteRow = await DB.prepare('SELECT tier, sources FROM stat_insights WHERE key = ?').bind(`note.${np.k}`).first();
+t('the stored row is tier private and keeps the fact pack (incl. the strength note) as sources', noteRow.tier === 'private' && JSON.parse(noteRow.sources).coachStrengths.length === 1);
+setAiReply(() => JSON.stringify({ headline: 'Big numbers', body: 'You have 987 goals this season.', watch: 'Keep going.' }));
+await DB.prepare('DELETE FROM stat_insights WHERE key = ?').bind(`note.${np.k}`).run();
+t('a coach\'s note with an invented number is rejected and nothing is stored', !(await writeInsight(env, `note.${np.k}`, notePack)) && !(await DB.prepare('SELECT 1 FROM stat_insights WHERE key = ?').bind(`note.${np.k}`).first()));
+sqlite.prepare("DELETE FROM notes WHERE kind = 'player' AND subject = ? AND tag = 'strength'").run(np.k);
+addNote(np.k, 'strength', 'Scored 3 in one night against the league leaders');
+const numPack = await factPackFor(`note.${np.k}`, loadSite, env);
+setAiReply(() => JSON.stringify({ headline: 'Hat-trick hero', body: 'Management still talk about the 3 you scored in one night.', watch: 'Do it again.' }));
+t('a number that appears in a manager strength note is part of the fact pack, so it passes the checker', await writeInsight(env, `note.${np.k}`, numPack));
+
+// fingerprint gate: a new strength note re-writes only that player's note key
+setAiReply(null);
+let refreshCalls = 0;
+await refreshStatInsights(env, loadSite); // settle every other key first
+setAiReply(() => { refreshCalls++; return JSON.stringify({ headline: 'Updated', body: 'A fresh read.', watch: 'Next up.' }); });
+await refreshStatInsights(env, loadSite);
+t('refresh with unchanged facts + notes calls the writer zero times', refreshCalls === 0);
+addNote(np.k, 'strength', 'Reads the game early');
+await refreshStatInsights(env, loadSite);
+t('adding a manager strength note re-writes exactly that player\'s note key', refreshCalls === 1);
+addNote(np.k, 'issue', 'Quiet on comms');
+await refreshStatInsights(env, loadSite);
+t('an issue-tagged note does not change the fact pack, so no re-write', refreshCalls === 1);
+setAiReply(null);
+
+// visibility over HTTP: only the claimed player and managers/owner – never another member, another claimant, or a guest
+const noteKey = `note.${np.k}`, otherKey = `note.${nq.k}`;
+await DB.prepare("INSERT INTO stat_insights (key, hash, headline, body, watch, sources, tier, at) VALUES (?, 'h', 'Coach says', 'Well played.', 'Keep it up.', '{}', 'private', ?) ON CONFLICT (key) DO NOTHING").bind(otherKey, Date.now()).run();
+sqlite.prepare("DELETE FROM claims WHERE user_id IN ('941','942')").run();
+sqlite.prepare("INSERT INTO claims (user_id, player, player_name, status, at, name) VALUES ('941', ?, ?, 'approved', ?, 'Note Owner')").run(np.k, np.n, Date.now());
+sqlite.prepare("INSERT INTO claims (user_id, player, player_name, status, at, name) VALUES ('942', ?, ?, 'approved', ?, 'Note Other')").run(nq.k, nq.n, Date.now());
+const ntok = { member: await login('940', [], 'Note Member'), mine: await login('941', [], 'Note Owner'), other: await login('942', [], 'Note Other'), manager: await login('943', ['mgr'], 'Note Manager'), owner: await login('944', ['founder'], 'Note Founder') };
+const noteStart = JSON.parse(env.FEATURES).statInsights;
+const setNoteFlag = (lvl) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), statInsights: lvl }); };
+const seesNote = async (tk, k = noteKey) => (await call(tk, `/api/insights?keys=${encodeURIComponent(k)}`)).d?.insights?.some((x) => x.key === k) ?? false;
+setNoteFlag('public');
+t('coach\'s note: guest, plain member and another claimed player do not see it', !(await seesNote(null)) && !(await seesNote(ntok.member)) && !(await seesNote(ntok.other)));
+t('coach\'s note: the claimed player sees their own, managers and owner see it', (await seesNote(ntok.mine)) && (await seesNote(ntok.manager)) && (await seesNote(ntok.owner)));
+t('coach\'s note: a claimed player does not see a different player\'s note', !(await seesNote(ntok.mine, otherKey)) && (await seesNote(ntok.other, otherKey)));
+t('coach\'s note: a private row never leaks the tier or fact pack to the viewer', !('sources' in ((await call(ntok.mine, `/api/insights?keys=${encodeURIComponent(noteKey)}`)).d.insights[0] ?? {})) && !('tier' in ((await call(ntok.mine, `/api/insights?keys=${encodeURIComponent(noteKey)}`)).d.insights[0] ?? {})));
+const idx = async (tk, headers = {}) => W(`/api/insights?keys=${encodeURIComponent(noteKey)}`, { headers: { ...(tk ? { Authorization: 'Bearer ' + tk } : {}), ...headers } });
+t('insights responses for a signed-in viewer are private-cache, varied by Authorization; guests keep the shared cache', (await idx(ntok.mine)).headers.get('Cache-Control').startsWith('private') && /Authorization/i.test((await idx(ntok.mine)).headers.get('Vary') ?? '') && (await idx(null)).headers.get('Cache-Control').startsWith('public'));
+t('PERMS gate: statInsights.note is claimed+ (members and guests fail it)', ['claimed', 'manager', 'owner'].every((r) => can({ role: r }, 'statInsights.note')) && !can({ role: 'member' }, 'statInsights.note') && !can({ role: 'guest' }, 'statInsights.note'));
+
+// ask on a private row follows the same visibility
+setAiReply(() => JSON.stringify({ answer: 'Your first touch is the headline.' }));
+t('ask on your own coach\'s note works', !!(await call(ntok.mine, '/api/insights/ask', { key: noteKey, question: 'What stands out?' })).d.answer);
+t('ask on someone else\'s coach\'s note is refused', /Not available/.test((await call(ntok.other, '/api/insights/ask', { key: noteKey, question: 'What stands out?' })).d.error ?? ''));
+t('ask on a coach\'s note is refused for a plain member', /Not available/.test((await call(ntok.member, '/api/insights/ask', { key: noteKey, question: 'x' })).d.error ?? ''));
+t('managers can ask about any coach\'s note', !!(await call(ntok.manager, '/api/insights/ask', { key: otherKey, question: 'Summary?' })).d.answer);
+setAiReply(null);
+
+// flag matrix for the coach's note: the statInsights flag gates who can reach the route at all
+const noteAllowed = { off: [], owner: ['owner'], managers: ['manager', 'owner'], members: ['mine', 'manager', 'owner'], public: ['mine', 'manager', 'owner'] };
+for (const [lvl, who] of Object.entries(noteAllowed)) {
+  setNoteFlag(lvl);
+  const got = [];
+  for (const [role, tk] of Object.entries(ntok)) if (await seesNote(tk)) got.push(role);
+  t(`coach's note flag "${lvl}" → only ${who.join('/') || 'nobody'} get it`, got.join() === who.join());
+  t(`coach's note flag "${lvl}" → signed-out visitors never get it`, !(await seesNote(null)));
+}
+setNoteFlag(noteStart);
+t('statInsights still ships at owner level in config.json', config.features.statInsights === 'owner');
 
 done();

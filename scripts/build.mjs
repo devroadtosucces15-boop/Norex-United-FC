@@ -795,7 +795,7 @@ function playerBody(pl, base) {
 <p class="kicker">${pl.isHome ? `${esc(config.siteTitle)} player` : 'Player profile'}</p>
 <h1>${esc(pl.name)}</h1>
 <div class="member-badge" data-player="${esc(pl.key)}"></div>
-${pl.isHome ? `<div data-nx-insight="player.${esc(pl.key)}" hidden></div>` : ''}
+${pl.isHome ? `<div data-nx-insight="player.${esc(pl.key)}" hidden></div><div data-nx-insight="note.${esc(pl.key)}" hidden></div>` : ''}
 <div class="chips"><span class="chip strong">${esc(pl.pos || '—')}</span>${pl.tag ? `<span class="chip">${esc(pl.tag)}</span>` : ''}${pl.ovr ? `<span class="chip">OVR ${pl.ovr}</span>` : ''}${s.proHeight ? `<span class="chip">${esc(s.proHeight)} cm</span>` : ''}${otherNames.length ? `<span class="chip">aka ${otherNames.map(esc).join(', ')}</span>` : ''}</div>
 <div class="club-chips">${pl.clubIds.map((c) => `<a class="club-chip" href="${clubHref(c, base) ?? '#'}">${crest(c, 22, base)}${esc(clubName(c))}</a>`).join('')}</div>
 ${a.length ? `<div class="form big"><span class="form-label">Form</span>${a.slice(0, 10).reverse().map((x) => `<a href="${base}matches/${x.matchId}.html" data-tip="${esc(`${x.gf}–${x.ga} vs ${clubName(x.oppId)} · ${x.rating.toFixed(1)}`)}">${resPill(x.res)}</a>`).join('')}</div>` : ''}

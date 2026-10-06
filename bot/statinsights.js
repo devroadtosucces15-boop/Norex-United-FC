@@ -13,6 +13,8 @@
 //                                 same fact pack the stored insight was written from
 //   POST /api/insights/feedback { key, vote: 1|-1 }        member+
 //   POST /api/insights/compare  { a, b }                   member+, on demand: head-to-head for two home players
+//   key note.<playerKey> (private tier) – a coach's note for one home player, in the registry like player.<k>;
+//                                 readable only by that player (approved claim) and managers/owner
 //
 // refreshStatInsights(env, loadSite) (cron, see worker.js) walks the registry every run; a changed
 // fingerprint goes to the JOBS queue (BE0) when it's bound, else writes inline – same graceful
@@ -72,6 +74,26 @@ async function playerFacts(loadSite, k) {
     },
   };
 }
+// BE9 coach's note – private tier. The player's own season (playerFacts) + where they sit in the squad + what
+// managers have written down as that player's *strengths* (D1 `notes`, kind 'player', tag 'strength'). The other
+// note tags (issue / trial / general) are managers-only working notes and never reach the writer – a paraphrase
+// shown to the player would leak them. Without a D1 binding it degrades to the stats-only pack.
+const NOTE_LIMIT = 5, NOTE_CHARS = 200;
+async function noteFacts(env, loadSite, k) {
+  const base = await playerFacts(loadSite, k);
+  if (!base?.facts.games) return null; // no league games yet – nothing to write about (registryKeys skips them too)
+  const home = (await loadSite('players')).filter((p) => p.home && (p.s?.gp ?? 0) > 0);
+  const rankBy = (field) => {
+    const mine = home.find((p) => p.k === k)?.s?.[field];
+    return mine == null ? null : home.filter((p) => (p.s?.[field] ?? 0) > mine).length + 1;
+  };
+  const rows = env?.DB ? (await env.DB.prepare("SELECT text FROM notes WHERE kind = 'player' AND subject = ? AND tag = 'strength' ORDER BY id DESC LIMIT ?").bind(k, NOTE_LIMIT).all()).results ?? [] : [];
+  const coachStrengths = rows.map((r) => String(r.text ?? '').trim().slice(0, NOTE_CHARS)).filter(Boolean);
+  return {
+    title: `${base.title.replace(/ – season$/, '')} – coach's note`,
+    facts: { ...base.facts, squadSize: home.length, goalsRank: rankBy('g'), ratingRank: rankBy('r'), coachStrengths },
+  };
+}
 // Same stat keys the site's own leaderboards (leaders.html) and compare tool (web/app.js's "compare
 // tool" block) already read off each home player's `s` object – mirrored here rather than imported,
 // since those are build-time/client helpers with no shared module to pull from.
@@ -89,11 +111,11 @@ async function leadersFacts(loadSite, stat) {
 }
 // Every key the registry currently covers. Board 12 wants every tile/column/chart/profile stat –
 // this slice covers club form, the latest match, every home-squad player's season, and the four
-// leaderboards (goals/assists/rating/MOTM). Head-to-head pairs are on-demand (statCompareRoute), not in this list.
+// leaderboards (goals/assists/rating/MOTM), plus a private coach's note per home player (squad size, not squad²). Head-to-head pairs are on-demand (statCompareRoute), not in this list.
 export async function registryKeys(loadSite) {
   const players = await loadSite('players');
   return ['club', 'match.latest', ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
-    ...players.filter((p) => p.home).map((p) => `player.${p.k}`)];
+    ...players.filter((p) => p.home).flatMap((p) => [`player.${p.k}`, ...((p.s?.gp ?? 0) > 0 ? [`note.${p.k}`] : [])])];
 }
 // BE9 compare – two home-squad players side by side. On demand only (POST /api/insights/compare), never
 // in the cron registry: the pair count is squad² so nothing is pre-written. The key is `compare.<a>~<b>`
@@ -107,13 +129,15 @@ async function compareFacts(loadSite, a, b) {
   const nameOf = (k) => names.find((p) => p.k === k)?.n ?? k;
   return { title: `${nameOf(a)} vs ${nameOf(b)}`, facts: { a: { name: nameOf(a), ...pa.facts }, b: { name: nameOf(b), ...pb.facts } } };
 }
-export async function factPackFor(key, loadSite) {
+export async function factPackFor(key, loadSite, env) {
   if (key === 'club') return { tier: 'public', ...(await clubFacts(loadSite)) };
   const cm = /^compare\.(.+)~(.+)$/.exec(key);
   if (cm) { const f = await compareFacts(loadSite, cm[1], cm[2]); return f && { tier: 'member', ...f }; }
   if (key === 'match.latest') { const f = await matchFacts(loadSite); return f && { tier: 'public', ...f }; }
   const lm = /^leaders\.(.+)$/.exec(key);
   if (lm) { const f = await leadersFacts(loadSite, lm[1]); return f && { tier: 'public', ...f }; }
+  const nm = /^note\.(.+)$/.exec(key);
+  if (nm) { const f = await noteFacts(env, loadSite, nm[1]); return f && { tier: 'private', ...f }; }
   const pm = /^player\.(.+)$/.exec(key);
   if (pm) { const f = await playerFacts(loadSite, pm[1]); return f && { tier: 'member', ...f }; }
   return null;
@@ -178,6 +202,11 @@ function parseAsk(text) {
     return typeof j?.answer === 'string' ? { answer: j.answer.slice(0, 500) } : null;
   } catch { return null; }
 }
+const NOTE_SYSTEM = "You write a short private coach's note from the NOREX UNITED FC management to one of their players, an amateur "
+  + 'EA FC Pro Clubs team. Speak to the player directly ("you"): warm, honest, motivating, plain-English, never harsh or corporate. '
+  + 'Lead with what they do well – the coach strengths listed in the facts matter most – then one thing to push on. No hashtags, no emoji, no markdown. '
+  + "Never invent a number, name or event that is not in the facts you're given – if you're unsure, say something "
+  + 'qualitative instead of guessing a figure. Reply with ONLY a JSON object, nothing else.';
 function writerPrompt(pack) {
   return `${pack.title}\nFacts (JSON – the ONLY numbers you may use): ${JSON.stringify(pack.facts)}\n`
     + 'Reply with exactly: {"headline": "<=70 chars, punchy", "body": "2-3 sentences expanding on the headline using only the facts above", '
@@ -190,7 +219,7 @@ function askPrompt(facts, question) {
 
 // Writes (or overwrites) the stored insight for `key` from a freshly-built fact pack. Returns true on success.
 export async function writeInsight(env, key, pack) {
-  const out = await callModel(env, { system: WRITER_SYSTEM, prompt: writerPrompt(pack), facts: pack.facts, parse: parseWriter, label: `writer:${key}` });
+  const out = await callModel(env, { system: pack.tier === 'private' ? NOTE_SYSTEM : WRITER_SYSTEM, prompt: writerPrompt(pack), facts: pack.facts, parse: parseWriter, label: `writer:${key}` });
   if (!out) return false;
   const hash = await fingerprint(pack.facts);
   await env.DB.prepare(`INSERT INTO stat_insights (key, hash, headline, body, watch, sources, tier, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -206,7 +235,7 @@ export async function writeInsight(env, key, pack) {
 export async function refreshStatInsights(env, loadSite) {
   if (!env.DB) return;
   for (const key of await registryKeys(loadSite)) {
-    const pack = await factPackFor(key, loadSite);
+    const pack = await factPackFor(key, loadSite, env);
     if (!pack) continue;
     const hash = await fingerprint(pack.facts);
     if ((await one(env, 'SELECT hash FROM stat_insights WHERE key = ?', key))?.hash === hash) continue;
@@ -218,7 +247,7 @@ export async function refreshStatInsights(env, loadSite) {
 }
 // Called from worker.js's queue() consumer – rebuilds the fact pack (the message only carries the key).
 export async function handleStatInsightJob(env, loadSite, key) {
-  const pack = await factPackFor(key, loadSite);
+  const pack = await factPackFor(key, loadSite, env);
   if (pack) await writeInsight(env, key, pack);
 }
 
@@ -229,8 +258,9 @@ async function claimedPlayerOf(env, uid) {
 function visibleRow(row, role, claimedPlayer) {
   if (row.tier === 'public') return true;
   if (row.tier === 'member') return atLeast(role, 'member');
-  if (atLeast(role, 'manager')) return true; // private tier – coach's note: only that player + managers
-  const pm = /^player\.(.+)$/.exec(row.key);
+  if (!can({ role }, 'statInsights.note')) return false; // private tier – coach's note: only that player + managers
+  if (atLeast(role, 'manager')) return true;
+  const pm = /^(?:player|note)\.(.+)$/.exec(row.key);
   return !!pm && claimedPlayer === pm[1];
 }
 export async function statInsightsRoute(env, keys, me) {

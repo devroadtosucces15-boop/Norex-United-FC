@@ -142,8 +142,10 @@ ${list.length ? `<ul class="lk-alerts">${list.map((a) => { const href = safeLink
 <section class="lk-sec card lk-next" aria-label="Next match night">${next()}</section>
 <section class="lk-sec card lk-vote" aria-label="Man of the match vote">${voteFan()}</section>
 <section class="lk-sec card lk-vs" aria-label="Me vs the squad">${vsSquad(pl)}</section>
+${pl && ctx.mountNote && !noteNone ? '<section class="lk-sec lk-note" data-lk-note hidden aria-label="Coach\'s note"></section>' : ''}
 <section class="lk-sec card lk-ach" aria-label="Achievements and alerts">${medals()}${alerts()}</section>
 </div></div>`;
+    coachNote(pl);
     ctx.badges?.({ alerts: data.unread || 0, votes: votes?.matches?.[0] && !votes.matches[0].mine ? 1 : 0, awards: data.vote && !data.vote.voted && ctx.flagOn('awards') ? 1 : 0 });
     clearInterval(tick);
     tick = setInterval(() => {
@@ -151,6 +153,19 @@ ${list.length ? `<ul class="lk-alerts">${list.map((a) => { const href = safeLink
       const c = $('.lk-count', el);
       if (c) c.innerHTML = countdown(Number(c.dataset.start));
     }, 15000);
+  }
+  // ✨ Coach's note (BE9, private tier): mounted once and carried across repaints. The API only returns it for my own
+  // claimed player (or to a manager), so with no row the slot goes away for good (noteNone) instead of re-asking every paint.
+  let noteEl = null, noteBusy = false, noteNone = false;
+  function coachNote(pl) {
+    const slot = el.querySelector('[data-lk-note]');
+    if (!slot || !pl || !ctx.mountNote) return;
+    if (noteEl) { slot.replaceWith(noteEl); return; }
+    if (noteBusy) return;
+    noteBusy = true;
+    ctx.mountNote(slot, `note.${pl.k}`).then(() => {
+      if (slot.querySelector('.nx-ins-head')) { noteEl = slot; if (!slot.isConnected) el.querySelector('[data-lk-note]')?.replaceWith(slot); } else noteNone = true;
+    }).catch(() => { noteNone = true; slot.remove(); }).finally(() => { noteBusy = false; });
   }
   function tilt(e) {
     const card = e.target.closest?.('.lk-card');

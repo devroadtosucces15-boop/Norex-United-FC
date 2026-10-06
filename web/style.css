@@ -1057,6 +1057,7 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 .lk-head h2{margin:0;font:700 30px var(--head);text-transform:uppercase;letter-spacing:1px}
 .lk-grid{display:grid;gap:16px;grid-template-columns:minmax(250px,320px) minmax(0,1fr);grid-template-areas:"locker next" "locker vote" "vs vs" "ach ach"}
 .lk-locker{grid-area:locker}.lk-next{grid-area:next}.lk-vote{grid-area:vote}.lk-vs{grid-area:vs}.lk-ach{grid-area:ach}
+.lk-note{grid-column:1/-1}
 @media (min-width:1100px){.lk-grid{grid-template-columns:minmax(250px,320px) minmax(0,1fr) minmax(0,1fr);grid-template-areas:"locker next next" "locker vote vote" "vs vs ach"}}
 @media (max-width:760px){.lk-grid{grid-template-columns:1fr;grid-template-areas:"next" "locker" "vote" "vs" "ach"}}
 .lk-sec{min-width:0}

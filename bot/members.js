@@ -392,7 +392,8 @@ export async function handleMembers(request, env, ctx, loadSite) {
       if (!flagOn(env, me, 'statInsights')) return cors(env, fail('Not available yet.', 404));
       const keys = (url.searchParams.get('keys') || '').split(',').map((k) => k.trim()).filter(Boolean).slice(0, 20);
       const res = cors(env, json(await statInsightsRoute(env, keys, me)));
-      res.headers.set('Cache-Control', 'public, max-age=120');
+      res.headers.set('Cache-Control', me ? 'private, max-age=120' : 'public, max-age=120'); // a signed-in answer can carry private-tier rows (coach's notes) – never shareable
+      res.headers.set('Vary', 'Authorization');
       return res;
     }
     if (url.pathname === '/api/feed/public' && request.method === 'GET') { // P6.1c – posts a member marked public, on the home page

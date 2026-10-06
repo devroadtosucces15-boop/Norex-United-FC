@@ -1,6 +1,7 @@
 // Board 12 – the "✨ Insight" widget (BE9's per-stat fact-pack copy, bot/statinsights.js). Mounted wherever
 // build.mjs drops a `[data-nx-insight][data-key]` slot (home page club form + latest match, home-squad
-// player profiles). No "AI"/"LLM" wording anywhere here – resolved naming question (2026-10-03): branded
+// player profiles, plus the private `note.<k>` coach's note – the API only returns it to that player + managers, so the slot
+// vanishes for everyone else). No "AI"/"LLM" wording anywhere here – resolved naming question (2026-10-03): branded
 // as a plain club feature, not disclosed as machine-written.
 //   NXInsight.mount(el, key, ctx)   ctx = { call, toast, session, baseRole } from app.js
 // Insight mode (site-wide show/hide, `I` key) is self-contained: the first mount() call injects one
@@ -49,7 +50,7 @@
     render(row);
 
     function render(r) {
-      el.innerHTML = `<h4>✨ Insight</h4>
+      el.innerHTML = `<h4>${key.startsWith('note.') ? "✨ Coach's note" : '✨ Insight'}</h4>
 <p class="nx-ins-head">${esc(r.headline)}</p>
 <p class="nx-ins-body">${esc(r.body)}</p>
 ${r.watch ? `<p class="nx-ins-watch">👀 ${esc(r.watch)}</p>` : ''}

@@ -93,6 +93,7 @@ export const PERMS = {
   'hubroom.view': 'member', // BE8 – Hub: online count, live "who's here" roster
   'hubroom.wave': 'member', // BE8 – Hub: wave at another member
   'statInsights.compare': 'member', // BE9 – ✨ head-to-head insight for two home players, written on demand (flag statInsights on top)
+  'statInsights.note': 'claimed', // BE9 – ✨ coach's note per home player (private tier): a claimed member (their own player only – the row check) or a manager/owner; flag statInsights on top
 };
 
 export function can(user, action) {
