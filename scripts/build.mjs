@@ -1242,7 +1242,8 @@ if (MEMBER_API) buildMessages({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildTactics({ write, page, pageHead, emptyState, config });
 // Burner-club tracker: data/burners/ (kept apart from the NOREX archive) → burners.html + the bot's compact feed.
 const burnerList = loadBurners(DATA, readJson);
-buildBurners({ write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config }, burnerList);
+const burnerHomeNames = new Set((clubs.get(homeId)?.members ?? []).map((m) => String(m.name).toLowerCase()).filter((n) => n && !hidden.has(n)));
+buildBurners({ write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config, homeNames: burnerHomeNames, playerLink: (n) => pLinkByName(n, '') }, burnerList);
 write('api/burners.json', JSON.stringify(burnersFeed(burnerList)));
 
 // JSON API for search, the compare tool and the Discord bot.

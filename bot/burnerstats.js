@@ -129,3 +129,18 @@ export function reportEmbed(burner, m, stats, siteUrl = '') {
     footer: { text: `Burner tracker · club ${burner.id}` },
   };
 }
+
+// Burner squad members who share a gamertag with a NOREX member (case-insensitive). `homeNames` is a Set of
+// lowercase NOREX gamertags (hidden players already removed by the caller). Looks at the squad we have seen in
+// games plus the club's current roster, so a player who has joined but not played yet still shows up.
+export function sharedWithNorex(burner, homeNames) {
+  const stats = burner.stats ?? burnerStats(burner.matches);
+  const out = new Map();
+  for (const p of stats.players) {
+    if (homeNames.has(p.n.toLowerCase())) out.set(p.n.toLowerCase(), { n: p.n, gp: p.gp, g: p.g, a: p.a, rating: p.rating, active: burner.roster?.[p.n]?.active !== false });
+  }
+  for (const [n, r] of Object.entries(burner.roster ?? {})) {
+    if (homeNames.has(n.toLowerCase()) && !out.has(n.toLowerCase())) out.set(n.toLowerCase(), { n, gp: 0, g: 0, a: 0, rating: 0, active: r.active !== false });
+  }
+  return [...out.values()].sort((a, b) => b.gp - a.gp || a.n.localeCompare(b.n));
+}

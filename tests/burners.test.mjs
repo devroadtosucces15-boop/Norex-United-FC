@@ -3,7 +3,7 @@
 import { env, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
-import { burnerStats, mergeMatches, reportEmbed, slimBurnerMatch, updateRoster, MAX_BURNERS } from '../bot/burnerstats.js';
+import { burnerStats, sharedWithNorex, mergeMatches, reportEmbed, slimBurnerMatch, updateRoster, MAX_BURNERS } from '../bot/burnerstats.js';
 import { burnersKey } from '../bot/burners.js';
 
 // ---------- pure helpers ----------
@@ -34,6 +34,10 @@ t('roster diff reports who joined and left, keeping first-seen', r2.joined[0] ==
 const emb = reportEmbed({ id: '1355341', name: 'TeloSico', crest: '99' }, m1, s, 'https://site.test/');
 t('report embed: title, MOTM, season line, link to the burner card', emb.title === '🔥 TeloSico 3–1 Poundin Pitches' && emb.fields.some((f) => f.name.includes('Man of the match') && f.value.includes('Mike'))
   && emb.fields.some((f) => f.value.includes('1W 0D 1L')) && emb.url === 'https://site.test/burners.html#c1355341');
+
+const vs = sharedWithNorex({ matches: [m2, m1], roster: { Mike: { active: false }, Ghost: { active: true } } }, new Set(['mike', 'ghost', 'nobody']));
+t('vs NOREX: shared gamertags only, case-insensitive, played-first, roster-only joiners included, left flagged',
+  vs.length === 2 && vs[0].n === 'Mike' && vs[0].gp === 2 && vs[0].g === 2 && vs[0].active === false && vs[1].n === 'Ghost' && vs[1].gp === 0 && vs[1].active && sharedWithNorex({ matches: [m1] }, new Set()).length === 0);
 
 // ---------- keyed endpoint (what fetch.mjs reads) ----------
 const W = (path, init) => worker.fetch(new Request('http://localhost:8788' + path, init), env, { waitUntil() {} });

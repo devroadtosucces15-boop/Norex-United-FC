@@ -2,7 +2,7 @@
 // Reads data/burners/*.json (written by fetch.mjs, see bot/burnerstats.js) – deliberately nothing from the NOREX
 // archive, so a burner can never leak into League totals. Gated by the `burners` flag (cosmetic; the data is public EA data).
 import path from 'node:path';
-import { burnerStats, TYPE_LABEL, CREST_CDN } from '../bot/burnerstats.js';
+import { burnerStats, sharedWithNorex, TYPE_LABEL, CREST_CDN } from '../bot/burnerstats.js';
 
 const num = (v) => Number(v) || 0;
 const POS = { goalkeeper: 'GK', defender: 'DEF', midfielder: 'MID', forward: 'FWD' };
@@ -22,7 +22,7 @@ export const burnersFeed = (list) => ({
 });
 
 export function buildBurners(h, list) {
-  const { write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config } = h;
+  const { write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config, homeNames = new Set(), playerLink = (n) => esc(n) } = h;
   const crestImg = (b, size = 44) => `<img class="crest" src="${b.crest ? `${CREST_CDN}${num(b.crest)}.png` : `assets/crest-ea.png`}" width="${size}" height="${size}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
   const when = (ts) => (ts ? new Date(ts * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : '–');
   const form = (arr) => `<div class="form">${arr.map(resPill).join('') || '<span class="muted small">no games yet</span>'}</div>`;
@@ -48,6 +48,14 @@ ${form(s.form.slice().reverse())}</a>`;
       return `<tr>${td(`<time datetime="${new Date(m.ts * 1000).toISOString()}">${when(m.ts)}</time>`, false, m.ts)}${td(esc(TYPE_LABEL[m.type] ?? 'League'))}${td(oppName(m), false, oppName(m).toLowerCase())}${td(`<b>${m.gf}–${m.ga}</b>`, true, m.gf - m.ga)}${td(resPill(m.res), false, m.res)}${td(best ? `${esc(best.n)} ${ratingPill(best.r)}` : '–', false, best?.r ?? 0)}</tr>`;
     }));
 
+  // "vs NOREX": burner squad members who share a gamertag with one of ours – they may be the same person on a throwaway.
+  const vsNorex = (b) => {
+    const shared = sharedWithNorex(b, homeNames);
+    if (!shared.length) return '';
+    const rows = shared.map((p) => `<li>👤 <b>${playerLink(p.n)}</b> – ${p.gp ? `${p.gp} game${p.gp === 1 ? '' : 's'} for ${esc(b.name)} · ${p.g} ⚽ ${p.a} 🎯 ${ratingPill(p.rating)}` : `in ${esc(b.name)} now, no games yet`}${p.active ? '' : ' <span class="tag" data-tip="Not in the club any more">left</span>'}</li>`).join('');
+    return `<h3 class="bn-h">🆚 vs NOREX</h3><p class="muted small">Same gamertag as a ${esc(config.siteTitle)} member.</p><ul class="bn-list bn-vs">${rows}</ul>`;
+  };
+
   const modeRows = (b) => Object.entries(b.stats.byType).map(([t, r]) => `<li><b>${esc(TYPE_LABEL[t] ?? t)}</b> ${r.gp} played · ${r.w}W ${r.d}D ${r.l}L · ${r.gf}–${r.ga}</li>`).join('');
 
   const detail = (b) => {
@@ -67,6 +75,7 @@ ${o.skillRating ? `<li>📈 EA skill rating <b>${num(o.skillRating)}</b>${lb?.cu
 ${o.gamesPlayed ? `<li>🧾 EA season total: ${num(o.gamesPlayed)} played · ${num(o.wins)}W ${num(o.ties)}D ${num(o.losses)}L</li>` : ''}
 ${modeRows(b)}
 </ul></div>
+${vsNorex(b)}
 <h3 class="bn-h">👥 Squad (from tracked games)</h3>${squadTable(b)}
 <h3 class="bn-h">🗓️ Games</h3>${matchTable(b)}
 <p class="muted small">Tracked since ${esc(when(Date.parse(b.trackedAt) / 1000))} · ${b.matches.length} game${b.matches.length === 1 ? '' : 's'} on file (EA only shows each club's last 5 per mode, so earlier games before tracking can't be recovered) · updated ${esc(new Date(b.fetchedAt).toISOString().slice(0, 16).replace('T', ' '))} UTC</p>`, { id: `c${esc(b.id)}`, sub: `club ${esc(b.id)}` });
@@ -77,7 +86,7 @@ ${modeRows(b)}
 ${list.length ? `<section class="bn-grid reveal">${list.map(card).join('')}</section>${list.map(detail).join('')}`
     : emptyState('🔥', 'No burner clubs tracked yet', 'When someone makes a new one, run <b>/burner search</b> in Discord, pick the club, and it shows up here with every game.')}
 </div>
-<div class="bn-locked">${emptyState('🔒', 'Burner clubs are for managers', 'Log in with Discord if you are one – this page opens up for you.')}</div>
+<div class="bn-locked">${emptyState('🔒', 'Burner clubs are for members', 'Log in with Discord – this page opens up for you.')}</div>
 <link rel="stylesheet" href="assets/burners.css">`;
   write('burners.html', page({
     title: `Burner clubs – ${config.siteTitle}`, base: '', active: 'burners',
