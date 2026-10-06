@@ -33,6 +33,7 @@ import { makeAvatarCard } from './avatarcard.js';
 import { postEmbed } from './docs.js';
 import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordInsightEmbed } from './statinsights.js';
 import { handleHubWaveJob } from './hub.js';
+import { burnerCommand, burnerPick } from './burners.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
@@ -102,6 +103,8 @@ export default {
     if (i.type === 2 && i.data.name === 'avatarcard') return avatarCardCommand(i, env, ctx, who, new URL(request.url).origin);
     if (i.type === 2 && i.data.name === 'ask') return askCommand(i, env, ctx, site, who);
     if (i.type === 2 && i.data.name === 'insight') return insightCommand(i, env, who); // BE9
+    if (i.type === 2 && i.data.name === 'burner') return burnerCommand(i, env, ctx, who, site, (f) => load(site, f, ctx)); // burner-club tracker
+    if (i.type === 3 && /^norex:bn:/.test(i.data?.custom_id ?? '')) return burnerPick(i, env, ctx, who); // …its pickers
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
       try { return json(await eventButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
     }

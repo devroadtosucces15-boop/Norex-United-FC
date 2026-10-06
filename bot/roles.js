@@ -58,6 +58,7 @@ export const PERMS = {
   'trials.manage': 'manager', // P1.5 – trial cards, sessions, decisions
   'scout.recommend': 'member', // P5.5 – recommend a player to the managers
   'leaders.view': 'member', // P4.5 – squad boards (attendance, MOTM votes) on the leaderboards page
+  'burners.manage': 'manager', // burner-club tracker – search, track, untrack with /burner
   'hof.manage': 'manager', // P4.6 – induct legends, add club-history moments
   'feed.view': 'member', // P6.1 – club feed: read, react, comment
   'feed.post': 'member', // P6.1 – write posts (edit/remove own)

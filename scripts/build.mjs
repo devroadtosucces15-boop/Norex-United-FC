@@ -13,6 +13,7 @@ import { buildMessages } from './messages-page.mjs';
 import { buildTactics } from './tactics-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 import { buildRankings } from './rankings.mjs';
+import { buildBurners, burnersFeed, loadBurners } from './burners-page.mjs';
 
 const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
 const config = loadConfig();
@@ -463,6 +464,7 @@ const NAV_GROUPS = [
   { id: 'matches', icon: '⚽', label: 'Matches', links: [
     { id: 'matches', href: 'matches/index.html', icon: '🏁', label: 'Match nights & results', desc: 'Sessions, every game, League ⇄ Rush' },
     { id: 'clubs', href: 'clubs/index.html', icon: '🏟️', label: 'Opponents', desc: 'Every club we have faced' },
+    { id: 'burners', href: 'burners.html', icon: '🔥', label: 'Burner clubs', desc: 'Throwaway clubs we track', flag: 'burners' },
   ] },
   { id: 'stats', icon: '📊', label: 'Stats', links: [
     { id: 'stats', href: 'stats.html', icon: '📈', label: 'Club stats', desc: 'Totals, splits, DNA' },
@@ -1237,6 +1239,10 @@ if (MEMBER_API) buildFeed({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildHub({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildMessages({ write, page, pageHead, emptyState, config });
 if (MEMBER_API) buildTactics({ write, page, pageHead, emptyState, config });
+// Burner-club tracker: data/burners/ (kept apart from the NOREX archive) → burners.html + the bot's compact feed.
+const burnerList = loadBurners(DATA, readJson);
+buildBurners({ write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config }, burnerList);
+write('api/burners.json', JSON.stringify(burnersFeed(burnerList)));
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({

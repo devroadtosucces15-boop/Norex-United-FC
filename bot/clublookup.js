@@ -13,7 +13,7 @@ const HEADERS = {
   Origin: 'https://www.ea.com',
 };
 
-async function eaGet(endpoint, params) {
+export async function eaGet(endpoint, params) {
   try {
     const res = await fetch(`${EA}${endpoint}?${new URLSearchParams({ platform: PLATFORM, ...params })}`, { headers: HEADERS, signal: AbortSignal.timeout(8000) });
     return res.ok ? await res.json() : null;

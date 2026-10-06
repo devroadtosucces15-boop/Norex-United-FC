@@ -1,0 +1,18 @@
+/* Burner clubs page (scripts/burners-page.mjs). Club theme: ink, crest red, white. */
+[data-flag="burners"]:not([hidden]) ~ .bn-locked{display:none}
+.bn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin:6px 0 26px}
+.bn-card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;color:inherit;text-decoration:none;position:relative;overflow:hidden;transition:transform .18s,border-color .18s}
+.bn-card::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(var(--red),#ff7a45)}
+.bn-card:hover{transform:translateY(-3px);border-color:var(--red)}
+.bn-card-top{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.bn-card-top b{display:block;font-size:19px;line-height:1.15;letter-spacing:.02em}
+.bn-card-top small{display:block}
+.bn-rec{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.bn-rec span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.bn-rec b{display:block;font:700 20px/1.1 var(--head);color:var(--text);font-variant-numeric:tabular-nums}
+.bn-facts{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin:14px 0}
+.bn-list{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:14px}
+.bn-h{font:600 18px var(--head);letter-spacing:.04em;margin:22px 0 8px}
+.bn-locked .nx-empty{margin:30px auto}
+@media (max-width:600px){.bn-grid{grid-template-columns:1fr}.bn-facts{gap:12px}}
+@media (prefers-reduced-motion:reduce){.bn-card{transition:none}.bn-card:hover{transform:none}}

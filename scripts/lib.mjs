@@ -86,6 +86,23 @@ export async function saveCrawlSlice(config, cursor, found) {
   }
 }
 
+// Burner clubs picked with the bot's /burner command live in the Worker's D1 – read the same keyed way.
+// → { ok, burners: [{ id, name, crest, channel, at }] } (ok = false when the Worker is unreachable).
+export async function loadBurners(config) {
+  const api = config.members?.api, secret = process.env.DISCORD_CLIENT_SECRET;
+  if (!api || !secret) return { ok: false, burners: [] };
+  try {
+    const { createHash } = await import('node:crypto');
+    const key = createHash('sha256').update(`${secret}:norex-burners`).digest('hex');
+    const res = await fetch(`${api}/api/burners/tracked`, { signal: AbortSignal.timeout(10000), headers: { 'X-Norex-Key': key } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { ok: true, burners: (await res.json()).burners ?? [] };
+  } catch (e) {
+    console.warn('Burner list not loaded:', e.message);
+    return { ok: false, burners: [] };
+  }
+}
+
 // Bot personalisation (P7.5) set in the manager portal, stored in the Worker's D1 – read the same way as
 // loadOverrides() (a key derived from DISCORD_CLIENT_SECRET, a GitHub secret the Worker also has).
 export async function loadBotSettings(config) {

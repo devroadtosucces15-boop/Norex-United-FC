@@ -15,8 +15,9 @@
 // members' other clubs and to fill in stats for players you meet.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, loadCrawlCursor, saveCrawlSlice, num, sleep, eventCounts } from './lib.mjs';
+import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, loadBurners, loadCrawlCursor, saveCrawlSlice, num, sleep, eventCounts } from './lib.mjs';
 import { matchComponents } from '../bot/matchcard.js';
+import { MAX_BURNERS, burnerStats, mergeMatches, reportEmbed, slimBurnerMatch, updateRoster } from '../bot/burnerstats.js';
 
 const API = 'https://proclubs.ea.com/api/fc/';
 const HEADERS = {
@@ -323,6 +324,95 @@ async function trackRequested() {
   for (const [id, c] of Object.entries(state.clubs)) if (c.tier === 'manual' && !wanted.has(id)) c.tier = 'discovered';
 }
 
+// Burner clubs (picked with the bot's /burner command, stored in D1) – a dedicated, self-contained store in
+// data/burners/<id>.json: club info, EA season numbers, squad + roster history and every match we've seen
+// (League, Playoff and Friendly), kept apart from the NOREX archive so they never touch League totals.
+// Matches that appear after a burner was first fetched get a stats report in Discord (see postBurnerReports).
+const burnerDir = path.join(DATA, 'burners');
+const burnerReports = [];
+
+async function fetchBurner(entry) {
+  const id = String(entry.id);
+  const file = path.join(burnerDir, `${id}.json`);
+  const prev = readJson(file, null);
+  const [info, overall, members, career] = await Promise.all([
+    api('clubs/info', { clubIds: id }),
+    api('clubs/overallStats', { clubIds: id }),
+    api('members/stats', { clubId: id }),
+    api('members/career/stats', { clubId: id }),
+  ]);
+  const clubInfo = info?.[id] ?? prev?.info ?? null;
+  if (!clubInfo?.name) throw new Error('club not found on EA');
+  const hits = (await api('allTimeLeaderboard/search', { clubName: clubInfo.name }).catch(() => null)) || [];
+  const hit = hits.find((h) => String(h.clubId) === id);
+  const incoming = [];
+  for (const matchType of ['leagueMatch', 'playoffMatch', 'friendlyMatch']) {
+    const list = (await api('clubs/matches', { clubIds: id, matchType }).catch(() => null)) || [];
+    for (const m of list) { const s = slimBurnerMatch(m, id, matchType); if (s) incoming.push(s); }
+  }
+  const matches = mergeMatches(prev?.matches, incoming);
+  const { roster, joined, left } = updateRoster(prev?.roster, members?.members ?? [], now);
+  if (joined.length || left.length) console.log(`  burner ${clubInfo.name}: joined ${joined.join(', ') || '–'} · left ${left.join(', ') || '–'}`);
+  // First fetch = silent (history only). After that every match not yet reported is a new report.
+  const known = new Set(prev ? prev.reported ?? [] : matches.map((m) => m.id));
+  const record = {
+    id, name: clubInfo.name, crest: clubInfo.customKit?.crestAssetId ?? null, trackedAt: prev?.trackedAt ?? now, fetchedAt: now,
+    channel: entry.channel ?? prev?.channel ?? null, info: clubInfo, overall: Array.isArray(overall) ? overall[0] ?? null : prev?.overall ?? null,
+    leaderboard: hit ? { currentDivision: hit.currentDivision, bestDivision: hit.bestDivision, points: hit.points } : prev?.leaderboard ?? null,
+    members: members?.members ?? prev?.members ?? [], career: career?.members ?? prev?.career ?? [], roster, matches, reported: [...known].slice(-200),
+  };
+  const stats = burnerStats(matches);
+  const day = 86400;
+  for (const m of [...matches].reverse()) {
+    if (known.has(m.id) || m.ts < Date.now() / 1000 - day) continue; // a missed report older than a day is not worth posting
+    burnerReports.push({ record, match: m, stats });
+  }
+  writeJson(file, record);
+  return record;
+}
+
+async function fetchBurners() {
+  const listed = await loadBurners(config);
+  const saved = readJson(path.join(burnerDir, 'index.json'), { ids: [] });
+  // Worker unreachable → keep tracking what we tracked last run instead of dropping everything.
+  const entries = listed.ok ? listed.burners : saved.ids.map((id) => ({ id }));
+  for (const id of config.burners?.ids || []) if (!entries.some((e) => String(e.id) === String(id))) entries.push({ id });
+  const ids = [];
+  for (const entry of entries.slice(0, MAX_BURNERS)) {
+    try {
+      const r = await fetchBurner(entry);
+      ids.push(String(entry.id));
+      console.log(`burner     ${r.name} (${r.matches.length} matches)`);
+    } catch (e) {
+      if (saved.ids.includes(String(entry.id))) ids.push(String(entry.id)); // keep it listed through a bad run
+      console.warn(`burner ${entry.id}: ${e.message}`);
+    }
+  }
+  if (listed.ok || ids.length) writeJson(path.join(burnerDir, 'index.json'), { ids });
+}
+
+// One embed per new burner match in the channel the manager tracked it from (config.burners.channel overrides).
+// Needs the bot token; a failed post is simply retried next run (the match stays unreported).
+async function postBurnerReports() {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token || !burnerReports.length) return;
+  const site = config.siteUrl?.replace(/\/?$/, '/') ?? '';
+  let posted = 0;
+  for (const { record, match, stats } of burnerReports.sort((a, b) => a.match.ts - b.match.ts)) {
+    const channel = config.burners?.channel || record.channel;
+    if (!channel) { console.warn(`Burner ${record.name}: no channel to post to – run /burner track in the channel you want the reports in.`); break; }
+    if (posted >= 4) break; // a catch-up never floods the channel; the rest follow next run
+    const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, {
+      method: 'POST', headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [reportEmbed(record, match, stats, site)], allowed_mentions: { parse: [] } }),
+    }).catch((e) => ({ ok: false, status: e.message }));
+    if (!r.ok) { console.warn(`Burner report failed (${r.status}) – the bot needs View Channel + Send Messages + Embed Links there.`); break; }
+    record.reported = [...new Set([...record.reported, match.id])].slice(-200);
+    writeJson(path.join(burnerDir, `${record.id}.json`), record);
+    posted++;
+  }
+}
+
 async function main() {
   track(homeId, 'home', { depth: 0 });
   for (const id of config.extraClubIds || []) track(id, 'manual', { depth: 0 });
@@ -359,6 +449,7 @@ async function main() {
   await fetchWorld();
   await crawlSlice();
   await postToDiscord();
+  await fetchBurners().then(postBurnerReports).catch((e) => console.warn(`Burner tracker skipped: ${e.message}`)); // never fails the run
   writeJson(stateFile, state);
   // One heartbeat per day keeps GitHub from pausing the schedule on quiet weeks.
   writeJson(path.join(DATA, 'meta.json'), { lastSuccessfulDay: now.slice(0, 10), platform });

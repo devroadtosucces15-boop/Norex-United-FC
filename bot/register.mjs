@@ -63,6 +63,16 @@ const commands = [
   // P2.5 – only shown to people with Discord's Manage Roles permission (server owner can widen it in Server Settings → Integrations).
   // Club Intelligence – same visibility as /syncroles; the Worker still checks the manager role + `insights` flag.
   { name: 'insights', description: 'Managers: Club Intelligence – server + club analysis with recommendations', default_member_permissions: String(1 << 28), contexts: [0] },
+  {
+    name: 'burner', description: 'Managers: track burner clubs – search EA, pick one, get stats after every game',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: SUB, name: 'search', description: 'Search EA for a club by name or club ID, then pick it', options: [{ type: STRING, name: 'club', description: 'Club name (or part of it) or club ID', required: true, min_length: 2, max_length: 40 }] },
+      { type: SUB, name: 'track', description: 'Track a club right away by exact name or club ID', options: [{ type: STRING, name: 'club', description: 'Exact club name or club ID', required: true, min_length: 2, max_length: 40 }] },
+      { type: SUB, name: 'list', description: 'The burner clubs being tracked, with their record' },
+      { type: SUB, name: 'remove', description: 'Stop tracking a burner club' },
+    ],
+  },
   { name: 'syncroles', description: 'Managers: give/remove the ✅ Verified role for every player claim', default_member_permissions: String(1 << 28), contexts: [0] },
   {
     name: 'exportcontent', description: 'Owner: DM me pinned + recent messages from guide/rule/playstyle/announcement channels',
