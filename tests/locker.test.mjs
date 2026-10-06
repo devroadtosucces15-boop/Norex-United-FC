@@ -122,7 +122,7 @@ t('socket: no binding → 503', (await sock(member)).status === 503);
 env.CLUB_ROOM = { idFromName: (n) => n, get: () => ({ fetch: async () => new Response('ok') }) };
 
 // ----- front end: live refresh is wired to the socket, poll stays as the fallback -----
-t('front end: Locker tab opens /api/locker/ws and closes it on other tabs', appJs.includes('/api/locker/ws?t=') && appJs.includes("if (tab === 'locker') { lockerLive(true); return; }") && appJs.includes('window.NXLocker?.refresh()') && appJs.includes("if (tab !== 'locker') lockerLive(false);"));
+t('front end: Locker tab opens /api/locker/ws and closes it on other tabs', appJs.includes('/api/locker/ws?t=') && appJs.includes("if (tab === 'locker' && lockerOn) { lockerLive(true); return; }") && appJs.includes('window.NXLocker?.refresh()') && appJs.includes("if (tab !== 'locker') lockerLive(false);"));
 t('front end: refresh on ping, 60 s fallback while the socket is down', appJs.includes("e.data !== 'pong') lockerRefresh()") && appJs.includes('}, 60000);') && appJs.includes('lockerLive'));
 
 // ----- board 07 front end: grouped rail, opens on the locker, every section wired -----
