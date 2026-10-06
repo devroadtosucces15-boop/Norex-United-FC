@@ -62,6 +62,6 @@ t('board 13: ring, four gauges, to-dos, skyline and drill-downs are all rendered
 t('board 13: report text is escaped before the ** emphasis is applied', ixJs.includes("const rich = (s) => esc(s).replace("));
 t('board 13: remind asks first (it pings other managers)', /async function remind[\s\S]*?UI\.confirm/.test(ixJs));
 t('board 13: styled and reduced-motion safe', ixCss.includes('.ix-gauge{') && ixCss.includes('.ix-ring') && /prefers-reduced-motion:reduce\)\{\.ix-arc/.test(ixCss));
-t('board 13: flag insights is still owner-only until QA', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.insights === 'owner');
+t('board 13: flag insights is managers-only after QA (the room is staff-only)', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.insights === 'managers');
 
 done();

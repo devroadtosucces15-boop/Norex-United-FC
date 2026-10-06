@@ -124,7 +124,7 @@ ${gauges()}${drill()}
   }
   async function act(id, undo) {
     I.busy = id; paint();
-    try { I.r = await ctx.call('/api/intel/act', { id, undo: undo || undefined }); ctx.toast(undo ? '↶ Back on the list' : '✅ Marked as handled'); }
+    try { I.r = await ctx.call('/api/intel/act', { id, undo: undo || undefined }); ctx.toast(undo ? '↶ Back on the list' : 'Marked as handled'); }
     catch (er) { ctx.toast(er.message, true); if (/no longer current/i.test(er.message)) load(); }
     I.busy = ''; paint();
   }
