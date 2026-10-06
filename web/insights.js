@@ -46,14 +46,17 @@
         row = d?.insights?.[0];
       }
     } catch {}
+    if (!row && ctx.empty) { el.classList.remove('card'); el.innerHTML = `<p class="muted small">${esc(ctx.empty)}</p>`; return; } // a slot the caller keeps (manager portal picker)
     if (!row) { if (ctx.compare) { el.hidden = true; el.innerHTML = ''; } else el.remove(); return; } // compare slot is reused for the next pair
     render(row);
 
     function render(r) {
+      const written = ctx.showAt && r.at && window.UI ? `<p class="nx-ins-at muted small">✍️ Last written ${UI.time(r.at, false)}</p>` : ''; // only where asked (manager portal)
       el.innerHTML = `<h4>${key.startsWith('note.') ? "✨ Coach's note" : '✨ Insight'}</h4>
 <p class="nx-ins-head">${esc(r.headline)}</p>
 <p class="nx-ins-body">${esc(r.body)}</p>
 ${r.watch ? `<p class="nx-ins-watch">👀 ${esc(r.watch)}</p>` : ''}
+${written}
 <div class="nx-ins-foot">
 <div class="nx-ins-vote" role="group" aria-label="Was this useful?">
 <button type="button" data-vote="1" aria-label="Useful">👍</button>

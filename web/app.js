@@ -1652,7 +1652,8 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
   Object.assign(ACT_TXT, { 'post-report': 'reported a feed post', 'post-unreport': 'cleared a report', 'message-remove': 'removed a message', 'message-unreport': 'cleared a message report', warn: 'warned a member', mute: 'muted a member', unmute: 'unmuted a member', 'role-change': 'changed role' });
   Object.assign(ACT, { 'flag-change': '🚩' }); // BE5
   Object.assign(ACT_TXT, { 'flag-change': 'changed a feature flag' });
-  const trialsCtx = () => ({ call, toast, role: S.me?.user?.role ?? baseRole, perms: S.me?.user?.perms ?? [], me: { u: session.u, n: session.n, a: session.a }, admin: S.admin, players: Array.isArray(S.players) ? S.players : [], flagTrials: flagOn('trials', baseRole) });
+  const trialsCtx = () => ({ call, toast, role: S.me?.user?.role ?? baseRole, perms: S.me?.user?.perms ?? [], me: { u: session.u, n: session.n, a: session.a }, admin: S.admin, players: Array.isArray(S.players) ? S.players : [], flagTrials: flagOn('trials', baseRole),
+    mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) ? (slot, key, opts) => (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole, ...opts })) : null });
   const withTrials = (fn) => loadTrials().then(() => fn(window.NXTrials, trialsCtx())).catch(() => toast('Could not load this part – try again', true));
   function bind() {
     panel.onclick = async (e) => {

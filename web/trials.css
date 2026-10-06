@@ -102,6 +102,10 @@
 .tr-noteform .btn{margin:0;justify-self:start}
 .tr-noteform .row select{flex:1 1 160px;width:auto}
 .tr-notes-top{margin-bottom:16px}
+.tr-coach{margin-bottom:16px;display:grid;gap:10px}.tr-coach h3,.tr-coach p{margin:0}
+.tr-coach select{padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:14px var(--body);width:100%;max-width:340px;color-scheme:dark}
+.tr-coach select:focus{outline:2px solid var(--red);outline-offset:1px}
+.tr-coach-slot .nx-insight{margin:0}.tr-coach-slot:empty{display:none}.nx-ins-at{margin:0 0 10px}
 .mgr .tr-note-btn{background:none;border:1px solid var(--line2);border-radius:8px;cursor:pointer;padding:3px 7px;font-size:14px;transition:border-color .2s}
 .mgr .tr-note-btn:hover{border-color:var(--red)}
 

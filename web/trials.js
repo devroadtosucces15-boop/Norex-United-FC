@@ -300,6 +300,22 @@ ${T.data.canNotes ? `<section><h4>📝 Manager notes <small class="muted">(manag
       if (n.kind === 'player') { const p = ctx.players.find((x) => x.k === n.subject); return `<a class="tr-subj" href="${BASE}players/${encodeURIComponent(n.subject)}.html">🪪 ${esc(p?.n ?? n.subject)}</a>`; }
       const t = N.trials?.find((x) => String(x.id) === n.subject); return `<span class="tr-subj">🧭 ${esc(t?.ea ?? `Trial #${n.subject}`)}</span>`;
     };
+    // ✨ Coach's note (BE9, private tier) next to the private notes: one player at a time, kept across redraws.
+    let coach = null;
+    const coachCard = () => {
+      if (coach || !ctx.mountNote || !squad.length) return coach;
+      coach = document.createElement('section');
+      coach.className = 'card tr-coach';
+      coach.innerHTML = `<h3>✨ Coach's notes</h3><p class="muted small">The written read on each squad player, as that player sees it in their Locker Room. Built from their season stats and the strength notes below – never the private issue notes.</p>
+<select data-coach aria-label="Squad player"><option value="">Pick a squad player…</option>${squad.map((p) => `<option value="${esc(p.k)}">${esc(p.n)}</option>`).join('')}</select><div class="tr-coach-slot" data-coach-slot></div>`;
+      coach.addEventListener('change', (e) => {
+        if (e.target.dataset.coach === undefined) return;
+        const slot = $('[data-coach-slot]', coach), k = e.target.value;
+        slot.replaceChildren();
+        if (k) ctx.mountNote(slot, `note.${k}`, { showAt: true, empty: 'No note written yet – one appears after the player’s first league game, or when their stats next change.' }).catch(() => { slot.textContent = 'Could not load the note – try again.'; });
+      });
+      return coach;
+    };
     const draw = () => {
       const words = N.q.toLowerCase().split(/\s+/).filter(Boolean);
       const list = (N.notes || []).map((n) => ({ ...n, subjectHtml: subj(n) }))
@@ -313,6 +329,8 @@ ${T.data.canNotes ? `<section><h4>📝 Manager notes <small class="muted">(manag
 <div class="chipset">${Object.entries(TAG).map(([k, [i]]) => `<button type="button" class="chip${N.tag === k ? ' on' : ''}" data-tf="${k}" data-tip="${TAG[k][1]}">${i}</button>`).join('')}</div>
 <input class="tr-search" type="search" placeholder="Search notes…" value="${esc(N.q)}" data-nq></div>
 ${!N.notes ? UI.skeleton('rows', 3) : list.length ? `<ul class="tr-notes">${list.map((n) => noteLine(n, ctx)).join('')}</ul>` : UI.empty({ icon: '📝', title: N.notes.length ? 'No matching notes' : 'No notes yet', text: 'Private notes about members, players and trialists – timestamped, managers only.' })}`;
+      const cc = coachCard();
+      if (cc) el.querySelector('.tr-notes-top').after(cc);
       fillSubjects();
     };
     const fillSubjects = () => {

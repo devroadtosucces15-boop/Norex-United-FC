@@ -276,4 +276,13 @@ for (const [lvl, who] of Object.entries(noteAllowed)) {
 setNoteFlag(noteStart);
 t('statInsights still ships at owner level in config.json', config.features.statInsights === 'owner');
 
+// manager portal (Notes tab): every squad player's coach's note + "last written" – managers already pass visibleRow, no API change
+const mgrRows = (await (await W(`/api/insights?keys=${encodeURIComponent(`${noteKey},${otherKey}`)}`, { headers: { Authorization: 'Bearer ' + ntok.manager } })).json()).insights ?? [];
+t('a manager gets both players\' coach\'s notes, each with a numeric "at" for "last written"', mgrRows.length === 2 && mgrRows.every((r) => Number.isFinite(r.at) && r.at > 0));
+const { readFileSync } = await import('node:fs');
+const trialsSrc = readFileSync(new URL('../web/trials.js', import.meta.url), 'utf8'), appSrc = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8'), insSrc = readFileSync(new URL('../web/insights.js', import.meta.url), 'utf8');
+t('Notes tab mounts note.<player> through the shared widget with showAt', /ctx\.mountNote\(slot, `note\.\$\{k\}`, \{ showAt: true/.test(trialsSrc));
+t('portal ctx hands trials.js a mountNote behind the statInsights flag', /trialsCtx = [\s\S]{0,400}mountNote: flagOn\('statInsights'/.test(appSrc));
+t('widget shows "last written" only when asked (showAt) and keeps an empty slot only when asked (empty)', /ctx\.showAt && r\.at/.test(insSrc) && /!row && ctx\.empty/.test(insSrc));
+
 done();
