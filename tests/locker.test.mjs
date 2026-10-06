@@ -44,10 +44,20 @@ sqlite.prepare("INSERT INTO achievements (user_id, id, at, seen) VALUES ('800', 
 r = await call(member, '/api/locker');
 t('achievements: only unseen ones, with icon/name/tier', r.d.achievements.length === 1 && r.d.achievements[0].id === 'debut' && r.d.achievements[0].icon === '👟' && r.d.achievements[0].tier === 'common');
 
+// ----- board 07: medal shelf (rarest first) + latest alerts -----
+sqlite.prepare("INSERT INTO achievements (user_id, id, at, seen) VALUES ('800', 'goals-50', ?, 1)").run(Date.now() - 5000);
+r = await call(member, '/api/locker');
+t('medals: every unlock counted, rarest first, with icon/name/tier', r.d.medals.count === 3 && r.d.medals.total > 3 && r.d.medals.top[0].id === 'goals-50' && r.d.medals.top.every((m) => m.icon && m.name && m.tier));
+t('medals: per member', (await call(member2, '/api/locker')).d.medals.count === 0);
+for (let i = 0; i < 4; i++) sqlite.prepare("INSERT INTO notifications (user_id, type, title, ack, at) VALUES ('800', 'event', ?, 0, ?)").run(`Alert ${i}`, Date.now());
+r = await call(member, '/api/locker');
+t('alerts: my 3 newest, newest first', r.d.alerts.length === 3 && r.d.alerts[0].title === 'Alert 3' && r.d.alerts.every((a) => a.read === false));
+t('alerts: never someone else\'s', (await call(member2, '/api/locker')).d.alerts.length === 0);
+
 // ----- front end: the hub tab is wired to the route -----
 import { readFileSync } from 'node:fs';
 const appJs = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
-t('hub: Locker Room tab is flag-gated and loads /api/locker', appJs.includes("['locker', '🎽 Locker Room']") && appJs.includes("call('/api/locker')") && appJs.includes('viewLocker'));
+t('hub: Locker Room tab is flag-gated and loads /api/locker', appJs.includes("['locker', '🎽 My locker']") && appJs.includes('NXLocker') && readFileSync(new URL('../web/locker.js', import.meta.url), 'utf8').includes("call('/api/locker')"));
 
 // ----- live refresh (BE2): broadcasts + socket route -----
 const pushes = [], sockets = [];
@@ -112,8 +122,14 @@ t('socket: no binding → 503', (await sock(member)).status === 503);
 env.CLUB_ROOM = { idFromName: (n) => n, get: () => ({ fetch: async () => new Response('ok') }) };
 
 // ----- front end: live refresh is wired to the socket, poll stays as the fallback -----
-t('front end: Locker tab opens /api/locker/ws and closes it on other tabs', appJs.includes('/api/locker/ws?t=') && appJs.includes("if (tab === 'locker') { S.locker = await call('/api/locker'); lockerLive(true); }") && appJs.includes("if (tab !== 'locker') lockerLive(false);"));
+t('front end: Locker tab opens /api/locker/ws and closes it on other tabs', appJs.includes('/api/locker/ws?t=') && appJs.includes("if (tab === 'locker') { lockerLive(true); return; }") && appJs.includes('window.NXLocker?.refresh()') && appJs.includes("if (tab !== 'locker') lockerLive(false);"));
 t('front end: refresh on ping, 60 s fallback while the socket is down', appJs.includes("e.data !== 'pong') lockerRefresh()") && appJs.includes('}, 60000);') && appJs.includes('lockerLive'));
+
+// ----- board 07 front end: grouped rail, opens on the locker, every section wired -----
+const lkJs = readFileSync(new URL('../web/locker.js', import.meta.url), 'utf8');
+t('board 07: hub opens on the locker and swaps chips for a grouped rail when the flag is on', appJs.includes("const HOME = lockerOn ? 'locker' : 'me'") && appJs.includes('class="hub-rail') && appJs.includes("['Match nights',"));
+t('board 07: one-tap RSVP, card vote, flip + save image, all user text escaped', lkJs.includes("'/api/events/rsvp'") && lkJs.includes("'/api/vote'") && lkJs.includes("data-lk=\"flip\"") && lkJs.includes('toBlob') && !/\$\{(p|a|pl|m)\.(n|title|opp|name)\}/.test(lkJs));
+t('board 07: motion respects reduced-motion', lkJs.includes('reduced()') && readFileSync(new URL('../web/style.css', import.meta.url), 'utf8').includes('.lk-swing.swing,.lk-medal.fresh .lk-coin'));
 
 t('no login → 401', (await call(null, '/api/locker')).s === 401);
 done();

@@ -1,6 +1,7 @@
 // Locker Room (redesign BE2, board 07) – one batched summary for the club's shared "front page":
 //   GET /api/locker   members: next event + my RSVP + who's in, this week's award vote + deadline,
-//                      unread notification count, achievements unlocked since I last saw them
+//                      unread notification count, achievements unlocked since I last saw them,
+//                      my top medals (board 07 "achievements as medals") and my 3 latest alerts
 // The data here already exists (events, awards, notifications, achievements) – this just batches it into
 // one round trip instead of four. Flag `locker`.
 import { flagOn } from './roles.js';
@@ -14,6 +15,7 @@ const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then(
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const opt = (v) => v ?? undefined;
 const ACH = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));
+const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
 async function nextEvent(env, me) {
   const e = await one(env, "SELECT * FROM events WHERE status = 'scheduled' AND start + duration * 60000 > ? ORDER BY start LIMIT 1", Date.now());
@@ -36,6 +38,17 @@ async function newAchievements(env, me) {
   return rows.filter((r) => ACH[r.id]).map((r) => ({ id: r.id, icon: ACH[r.id].icon, name: ACH[r.id].name, tier: ACH[r.id].tier, at: r.at }));
 }
 
+// Board 07 medal shelf: everything I've unlocked, rarest first then newest – top 5 shown, the rest counted.
+async function medals(env, me) {
+  const rows = (await all(env, 'SELECT id, at FROM achievements WHERE user_id = ?', me.u)).filter((r) => ACH[r.id]);
+  rows.sort((a, b) => RANK[ACH[b.id].tier] - RANK[ACH[a.id].tier] || b.at - a.at);
+  return { count: rows.length, total: ACHIEVEMENTS.length, top: rows.slice(0, 5).map((r) => ({ id: r.id, icon: ACH[r.id].icon, name: ACH[r.id].name, tier: ACH[r.id].tier, at: r.at })) };
+}
+async function latestAlerts(env, me) {
+  const rows = await all(env, 'SELECT id, icon, title, link, at, read_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 3', me.u);
+  return rows.map((r) => ({ id: r.id, icon: opt(r.icon), title: r.title, link: opt(r.link), at: r.at, read: !!r.read_at }));
+}
+
 // WebSocket upgrade for the Locker room – called from members.js with the session already unsealed from `?t=`.
 // Same shape as hubSocket/chatSocket: the session and the flag are checked before anything is opened.
 export async function lockerSocket(request, env, me) {
@@ -52,6 +65,6 @@ export async function lockerRoute(p, method, me, env) {
   if (p !== '/api/locker') return null;
   if (!flagOn(env, me, 'locker')) return fail('Not available yet.', 404);
   if (method !== 'GET') return fail('Not found', 404);
-  const [next, vote, counts, achievements] = await Promise.all([nextEvent(env, me), openVote(env, me), notifyCounts(env, me), newAchievements(env, me)]);
-  return json({ next, vote, unread: counts.unread, achievements });
+  const [next, vote, counts, achievements, shelf, alerts] = await Promise.all([nextEvent(env, me), openVote(env, me), notifyCounts(env, me), newAchievements(env, me), medals(env, me), latestAlerts(env, me)]);
+  return json({ next, vote, unread: counts.unread, achievements, medals: shelf, alerts });
 }

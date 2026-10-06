@@ -1174,33 +1174,55 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   const ICON = { yes: '✅', maybe: '❔', no: '❌' };
   const fmtDay = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   const pill = (r) => `<span class="res ${r}">${r}</span>`;
-  const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, locker: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set(),
+  const S = { tab: 'me', me: null, players: [], clubs: [], pub: {}, avail: null, votes: null, rush: null, admin: null, adminTab: 'claims', sel: new Set(),
     subm: { type: 'feedback', q: '', rows: null }, reports: null }; // P8.1 / P8.3
-  const TABS = [['me', '👤 My NOREX'], ...(flagOn('locker', baseRole) ? [['locker', '🎽 Locker Room']] : []), ...(flagOn('events', baseRole) ? [['schedule', '🗓️ Schedule']] : []), ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(flagOn('suggestions', baseRole) ? [['ideas', '💡 Ideas']] : []), ...(flagOn('awards', baseRole) ? [['awards', '🏆 Awards']] : []), ...(flagOn('rushSquads', baseRole) ? [['squads', '🤝 Squads']] : []), ...(flagOn('starRatings', baseRole) ? [['ratings', '🌟 Ratings']] : []), ...(flagOn('predictions', baseRole) ? [['predict', '🔮 Predict']] : []), ...(flagOn('recommendations', baseRole) ? [['teamup', '🎯 Team up']] : []), ...(flagOn('feedback', baseRole) ? [['feedback', '💌 Feedback']] : []), ...(flagOn('avatarCard', baseRole) ? [['card', '🎨 AI Card']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
+  // Board 07: with the Locker Room on, the hub opens on the locker and the tab chips become a grouped side rail
+  // (Me · Match nights · Squad · Tactics · Staff · Settings – same idea as the site menu); on phones it folds into a list.
+  const lockerOn = flagOn('locker', baseRole);
+  const HOME = lockerOn ? 'locker' : 'me';
+  const TABS = [...(lockerOn ? [['locker', '🎽 My locker']] : []), ['me', lockerOn ? '🪪 My profile' : '👤 My NOREX'], ...(flagOn('events', baseRole) ? [['schedule', '🗓️ Schedule']] : []), ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(flagOn('suggestions', baseRole) ? [['ideas', '💡 Ideas']] : []), ...(flagOn('awards', baseRole) ? [['awards', '🏆 Awards']] : []), ...(flagOn('rushSquads', baseRole) ? [['squads', '🤝 Squads']] : []), ...(flagOn('starRatings', baseRole) ? [['ratings', '🌟 Ratings']] : []), ...(flagOn('predictions', baseRole) ? [['predict', '🔮 Predict']] : []), ...(flagOn('recommendations', baseRole) ? [['teamup', '🎯 Team up']] : []), ...(flagOn('feedback', baseRole) ? [['feedback', '💌 Feedback']] : []), ...(flagOn('avatarCard', baseRole) ? [['card', '🎨 AI Card']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm ? [['manager', '🛡️ Manager']] : [])];
 
-  hubEl.innerHTML = `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
+  const RAIL = [['Me', ['locker', 'me', 'stats', 'card', 'alerts']], ['Match nights', ['schedule', 'availability', 'votes', 'rush', 'predict', 'ratings']],
+    ['Squad', ['squads', 'teamup', 'scout', 'awards', 'ideas', 'feedback']], ['Staff', ['manager']]];
+  const tabLabel = Object.fromEntries(TABS);
+  const railItem = (k) => tabLabel[k] ? `<button class="rail-i" type="button" data-tab="${k}"><span>${tabLabel[k]}</span><b class="rail-b" data-badge="${k}" hidden></b></button>` : '';
+  hubEl.innerHTML = lockerOn ? `<div class="hub-shell"><nav class="hub-rail card" aria-label="Locker menu">
+<div class="rail-me"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><span id="role-tag">${roleTag(baseRole)}</span></div></div>
+<button class="rail-toggle" type="button" aria-expanded="false">☰ <span id="rail-cur">Menu</span></button>
+<div class="rail-groups">${RAIL.map(([g, ks]) => { const items = ks.map(railItem).join(''); return items ? `<div class="rail-g"><small>${g}</small>${items}</div>` : ''; }).join('')}
+<div class="rail-g"><small>Tactics</small><a class="rail-i" href="${BASE}tactics.html"><span>🧠 Playbook &amp; tactics</span></a></div>
+<div class="rail-g"><small>Settings</small><button class="rail-i" id="logout" type="button"><span>🚪 Log out</span></button></div></div></nav>
+<div id="panel"></div></div>` : `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
 <div class="chipset hub-tabs">${TABS.map(([k, l]) => `<button class="chip" type="button" data-tab="${k}">${l}</button>`).join('')}</div>
 <div id="panel"></div>`;
   $('#logout').onclick = logout;
-  $('.hub-tabs').onclick = (e) => { const b = e.target.closest('[data-tab]'); if (b) go(b.dataset.tab); };
+  const tabsEl = $('.hub-tabs') || $('.hub-rail');
+  tabsEl.onclick = (e) => {
+    const b = e.target.closest('[data-tab]');
+    if (b) { go(b.dataset.tab); tabsEl.classList.remove('open'); $('.rail-toggle')?.setAttribute('aria-expanded', 'false'); }
+    if (e.target.closest('.rail-toggle')) $('.rail-toggle').setAttribute('aria-expanded', tabsEl.classList.toggle('open'));
+  };
+  // Locker → rail badges (unread alerts, MOTM vote waiting, weekly awards open).
+  const railBadges = (n) => { for (const [k, v] of Object.entries(n)) { const b = $(`[data-badge="${k}"]`, hubEl); if (b) { b.textContent = v; b.hidden = !v; } } };
   addEventListener('hashchange', () => go(location.hash.slice(1), false));
   const panel = $('#panel');
 
   function go(tab, push = true) {
     if (tab === 'alerts-settings') { tab = 'alerts'; push = false; } // bell → ⚙️ Settings
     if (/^schedule-\d+$/.test(tab)) { tab = 'schedule'; push = false; } // link to one event
-    if (!TABS.some(([k]) => k === tab)) tab = 'me';
+    if (!TABS.some(([k]) => k === tab)) tab = HOME;
     S.tab = tab;
     if (tab !== 'locker') lockerLive(false);
     if (push) history.replaceState(null, '', `#${tab}`);
-    $$('.hub-tabs .chip').forEach((c) => c.classList.toggle('on', c.dataset.tab === tab));
+    $$('[data-tab]', tabsEl).forEach((c) => c.classList.toggle('on', c.dataset.tab === tab));
+    const cur = $('#rail-cur'); if (cur) cur.textContent = tabLabel[tab] || 'Menu';
     draw();
     load(tab);
   }
   async function load(tab) {
     try {
       if (tab === 'availability') S.avail = await call('/api/availability');
-      if (tab === 'locker') { S.locker = await call('/api/locker'); lockerLive(true); }
+      if (tab === 'locker') { lockerLive(true); return; } // assets/locker.js loads its own data
       if (tab === 'votes') S.votes = await call('/api/vote');
       if ((tab === 'rush' || tab === 'manager') && flagOn('rushLog', baseRole)) S.rush = await call('/api/rush/queue');
       if (tab === 'manager') {
@@ -1245,7 +1267,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
     try { S.health = await call('/api/admin/health'); } catch (e) { toast(e.message, true); S.health = null; }
     if (S.adminTab === 'health') draw();
   }
-  const draw = () => { panel.innerHTML = ({ me: viewMe, locker: viewLocker, availability: viewAvail,votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', ideas: () => '<div id="ideas-panel"></div>', schedule: () => '<div id="schedule-panel"></div>', awards: () => '<div id="awards-panel"></div>', squads: () => '<div id="squads-panel"></div>', ratings: () => '<div id="ratings-panel"></div>', predict: () => '<div id="predict-panel"></div>', teamup: () => '<div id="teamup-panel"></div>', feedback: () => '<div id="feedback-panel"></div>', card: () => '<div id="card-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
+  const draw = () => { panel.innerHTML = ({ me: viewMe, locker: () => '<div id="locker-panel"></div>', availability: viewAvail,votes: viewVotes, rush: viewRush, stats: () => '<div id="stats-panel"></div>', scout: () => '<div id="scout-panel"></div>', alerts: () => '<div id="alerts-panel"></div>', ideas: () => '<div id="ideas-panel"></div>', schedule: () => '<div id="schedule-panel"></div>', awards: () => '<div id="awards-panel"></div>', squads: () => '<div id="squads-panel"></div>', ratings: () => '<div id="ratings-panel"></div>', predict: () => '<div id="predict-panel"></div>', teamup: () => '<div id="teamup-panel"></div>', feedback: () => '<div id="feedback-panel"></div>', card: () => '<div id="card-panel"></div>', manager: viewManager }[S.tab])(); bind(); };
 
   // ----- My NOREX -----
   function viewMe() {
@@ -1273,7 +1295,7 @@ ${profilesOn ? '<div class="card" id="profile-editor" style="grid-column:1/-1"><
   let lockerWs = null, lockerWsPing = null, lockerWsRetry = null, lockerTimer = null, lockerReload = null;
   const lockerRefresh = () => {
     clearTimeout(lockerReload);
-    lockerReload = setTimeout(() => call('/api/locker').then((d) => { S.locker = d; if (S.tab === 'locker') draw(); }).catch(() => {}), 150);
+    lockerReload = setTimeout(() => { if (S.tab === 'locker') window.NXLocker?.refresh(); }, 150);
   };
   function lockerLive(on) {
     clearTimeout(lockerWsRetry); clearInterval(lockerWsPing); clearInterval(lockerTimer);
@@ -1291,22 +1313,6 @@ ${profilesOn ? '<div class="card" id="profile-editor" style="grid-column:1/-1"><
       lockerWs = null;
       if (S.tab === 'locker') lockerWsRetry = setTimeout(() => { if (S.tab === 'locker') lockerLive(true); }, 8000);
     };
-  }
-  // BE2 Locker Room – one /api/locker call: next match + RSVP + who's in, weekly award vote, unread alerts, new achievements.
-  function viewLocker() {
-    if (!S.locker) return UI.skeleton('cards', 3);
-    const L = S.locker, n = L.next;
-    const when = (t) => new Date(t).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    const answer = { yes: '✅ You\'re in', maybe: '🤔 Maybe', no: '❌ Can\'t make it' }[n?.mine] || '⏳ Not answered yet';
-    const next = n ? `<div class="card locker-card"><small class="muted">Next up</small><h3>${esc(n.title || (n.type === 'league' ? 'League match' : 'Match night'))}</h3>
-<p>🗓️ ${esc(when(n.start))}</p><p><b>${esc(answer)}</b> · ${n.inCount} in</p>
-<div class="locker-in">${n.in.map((p) => `<span class="locker-av" title="${esc(p.n)}">${p.a ? `<img src="${esc(p.a)}" alt="">` : esc((p.n || '?')[0])}</span>`).join('')}${n.inCount > n.in.length ? `<span class="muted">+${n.inCount - n.in.length}</span>` : ''}</div>
-<a class="btn sm" href="#schedule-${esc(n.id)}">Open event</a></div>` : '<div class="card locker-card"><p class="muted">Nothing scheduled yet.</p></div>';
-    const vote = flagOn('awards', baseRole) ? `<div class="card locker-card"><small class="muted">Weekly awards</small><h3>${L.vote.voted ? '✅ You\'ve voted this week' : '🏆 Vote is open'}</h3>
-<p class="muted">Closes ${esc(when(L.vote.closes))}</p><a class="btn sm" href="#awards">${L.vote.voted ? 'See awards' : 'Cast your vote'}</a></div>` : '';
-    const alerts = notifyOn ? `<a class="card locker-card" href="#alerts"><small class="muted">Notifications</small><h3>🔔 ${L.unread ? `${L.unread} unread` : 'All caught up'}</h3></a>` : '';
-    const ach = L.achievements.length ? `<div class="card locker-card"><small class="muted">New achievements</small><div class="locker-ach">${L.achievements.map((a) => `<span class="pill ${esc(a.tier)}">${esc(a.icon)} ${esc(a.name)}</span>`).join('')}</div></div>` : '';
-    return `<div class="locker-grid">${next}${vote}${alerts}${ach}</div>`;
   }
   function viewAvail() {
     if (!S.avail) return UI.skeleton('cards', 4);
@@ -1704,6 +1710,10 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
     if (sp) (window.NXMyStats ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/mystats.js`, onload: ok, onerror: no }))))
       .then(() => NXMyStats.tab(sp, { call, toast, me: { u: session.u, n: session.n, a: session.a }, claim: S.me?.claim, players: () => api().then(([p]) => p), flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole) }))
       .catch(() => toast('Could not load your stats – try again', true));
+    const lk = $('#locker-panel', panel); // board 07 Locker Room – assets/locker.js
+    if (lk) (window.NXLocker ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/locker.js`, onload: ok, onerror: no }))))
+      .then(() => NXLocker.tab(lk, { call, toast, base: BASE, me: { u: session.u, n: session.n, a: session.a }, claim: () => S.me?.claim, players: () => S.players, flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole), badges: railBadges }))
+      .catch(() => toast('Could not load your locker – try again', true));
     const ap = $('#alerts-panel', panel), ra = $('#requests-admin', panel);
     if (ap) loadNotify().then(() => NXNotify.tab(ap, notifyCtx())).catch(() => toast('Could not load notifications – try again', true));
     if (ra) loadNotify().then(() => NXNotify.requestsPortal(ra, notifyCtx())).catch(() => toast('Could not load requests – try again', true));
@@ -1733,7 +1743,7 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
       S.me = me; S.players = players; S.clubs = clubs; S.pub = pub.claims || {};
       $('#role-tag').innerHTML = roleTag(me.user.role);
       ls.set('norex_me', JSON.stringify({ player: me.claim?.status === 'approved' ? me.claim.player : null }));
-      go(location.hash.slice(1) || 'me', false);
+      go(location.hash.slice(1) || HOME, false);
       if (flagOn('badges', me.user.role)) (window.NXBadges ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/badges.js`, onload: ok, onerror: no })))) // P4.3 unlock toast
         .then(() => NXBadges.checkUnlocks({ call })).catch(() => {});
     } catch (e) { panel.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; }
