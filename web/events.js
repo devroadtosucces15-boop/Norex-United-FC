@@ -15,6 +15,7 @@
   if (!$('link[href$="events.css"]')) document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: `${BASE}assets/events.css` }));
   const TYPES = { league: ['🏆', 'League night'], rush: ['⚡', 'Rush session'], playoffs: ['🥇', 'Playoffs'], friendly: ['🤝', 'Friendly'], trial: ['🧭', 'Trial session'], training: ['🎯', 'Training'] };
   const ICON = { yes: '✅', maybe: '❔', no: '❌' };
+  const STAGES = [['before', '📅', 'Before'], ['during', '🔴', 'During'], ['after', '📋', 'After']];
   const NEED_POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
   const MY_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; } })();
   const dayKey = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -75,34 +76,69 @@
   }
   function schedule(el, ctx) {
     let S = null, sel = new Set(), poll = null, day = null, showPast = false, view = 'list';
+    const modes = {}; // event id → 'before' | 'during' | 'after' (the viewer's pick; default follows the night)
+    const modeOf = (e, ph) => modes[e.id] ?? (ph === 'past' ? 'after' : ph === 'live' ? 'during' : 'before');
     const load = async () => { S = await ctx.call('/api/events'); paint(); };
     const mine = (e) => e.rsvps.find((r) => r.id === ctx.me.u)?.s;
     const faces = (list, cls = '') => list.map((r) => `<img class="${cls}" src="${esc(r.a || '')}" alt="" data-tip="${esc(r.n)}${r.pos?.length ? ` · ${esc(r.pos.slice(0, 3).join('/'))}` : ''}">`).join('');
 
     function card(e) {
       const ph = phase(e), my = mine(e), by = (s) => e.rsvps.filter((r) => r.s === s);
-      const cov = coverage(e), live = ph === 'live' && S.matchNight;
+      const cov = coverage(e);
       const tzNote = e.tz !== MY_TZ ? ` <small class="muted" data-tip="Scheduled for ${esc(e.tz.replace(/_/g, ' '))} – shown in your time">🌍 ${esc(new Date(e.start).toLocaleTimeString(undefined, { timeZone: e.tz, hour: '2-digit', minute: '2-digit' }))} ${esc(e.tz.split('/').pop().replace(/_/g, ' '))}</small>` : '';
       const me = e.checkins.find((c) => c.id === ctx.me.u);
+      const stages = S.matchNight && ph !== 'cancelled', mode = stages ? modeOf(e, ph) : 'before';
+      const needsRow = cov.length && ph !== 'cancelled' ? `<div class="ev-needs">${cov.map((c) => `<span class="ev-need${c.short ? ' short' : ''}" data-tip="${c.k === 'players' ? `${c.have} said yes` : `${c.have} first-choice ${c.k} said yes${c.could > c.have ? ` · ${c.could} can play it` : ''}`}">${c.k === 'players' ? '👥' : esc(c.k)} <b>${c.have}/${c.n}</b></span>${S.canManage && c.short && c.k !== 'players' && ph !== 'past' ? `<button type="button" class="ev-nudge" data-nudge="${esc(c.k)}" data-tip="Nudge members who play ${esc(c.k)} and haven’t answered">📣</button>` : ''}`).join('')}</div>` : '';
+      const who = `<div class="ev-who"><span class="count-row"><span>✅ ${by('yes').length}</span><span>❔ ${by('maybe').length}</span><span>❌ ${by('no').length}</span></span><span class="faces">${faces(by('yes'))}${faces(by('maybe'), 'maybe')}</span></div>`;
+      const rsvpPick = (ph === 'soon' || ph === 'live') && mode === 'before' ? `<div class="pick" role="group" aria-label="Can you make it?">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="${my === s ? 'on' : ''}" data-rsvp="${s}" aria-pressed="${my === s}" aria-label="${s}">${ICON[s]}</button>`).join('')}</div>` : '';
+      const body = mode === 'during' ? liveBox(e, me, ph) : mode === 'after' ? afterBox(e, ph) : `${needsRow}${who}${lineupView(e)}${S.canManage ? readyView(e) : ''}`;
       return `<article class="card ev ev-${e.type} ph-${ph}${sel.has(e.id) ? ' sel' : ''}${my ? ` my-${my}` : ''}" id="ev-${e.id}" data-id="${e.id}">
 <header>${ph === 'soon' || ph === 'live' ? `<input type="checkbox" class="ev-sel" data-evsel aria-label="Select for bulk answer"${sel.has(e.id) ? ' checked' : ''}>` : ''}<span class="ev-ic" aria-hidden="true">${TYPES[e.type][0]}</span>
 <div class="ev-t"><b>${esc(label(e))}</b><small>${fmtTime(e.start)} – ${fmtTime(e.end)}${tzNote}${ph === 'soon' ? ` · ${until(e.start)}` : ''}</small></div>
 ${ph === 'live' ? UI.pill(Date.now() < e.start ? 'Starting soon' : Date.now() < e.end ? 'Live now' : 'Just finished', { emoji: '🔴', tone: 'red' }) : ph === 'cancelled' ? UI.pill('Cancelled', { emoji: '🚫', tone: 'loss' }) : ''}
 ${e.lineupAt && e.lineup?.[ctx.me.u] ? UI.pill(`You’re starting at ${POS_OF(e.lineup[ctx.me.u])}`, { emoji: '🧩', tone: 'win' }) : ''}
 ${e.usual !== undefined && !my && ph !== 'past' ? UI.pill(e.usual ? 'You’re usually on' : 'Outside your usual times', { emoji: e.usual ? '🟢' : '🌙', tone: e.usual ? 'win' : '', tip: 'From the play times on your profile' }) : ''}</header>
+${stages ? `<div class="ev-modes" role="tablist" aria-label="Stage of the night">${STAGES.map(([k, ic, name]) => `<button type="button" role="tab" class="${mode === k ? 'on' : ''}" data-evmode="${k}" aria-selected="${mode === k}">${ic} ${name}</button>`).join('')}</div>` : ''}
 ${e.cancelReason ? `<p class="muted small">🚫 ${esc(e.cancelReason)}</p>` : ''}${e.notes ? `<p class="ev-notes">${esc(e.notes).replace(/\n/g, '<br>')}</p>` : ''}
-${cov.length && ph !== 'cancelled' ? `<div class="ev-needs">${cov.map((c) => `<span class="ev-need${c.short ? ' short' : ''}" data-tip="${c.k === 'players' ? `${c.have} said yes` : `${c.have} first-choice ${c.k} said yes${c.could > c.have ? ` · ${c.could} can play it` : ''}`}">${c.k === 'players' ? '👥' : esc(c.k)} <b>${c.have}/${c.n}</b></span>${S.canManage && c.short && c.k !== 'players' && ph !== 'past' ? `<button type="button" class="ev-nudge" data-nudge="${esc(c.k)}" data-tip="Nudge members who play ${esc(c.k)} and haven’t answered">📣</button>` : ''}`).join('')}</div>` : ''}
-<div class="ev-who"><span class="count-row"><span>✅ ${by('yes').length}</span><span>❔ ${by('maybe').length}</span><span>❌ ${by('no').length}</span></span><span class="faces">${faces(by('yes'))}${faces(by('maybe'), 'maybe')}</span></div>
-${lineupView(e)}${S.canManage ? readyView(e) : ''}${live ? liveBox(e, me) : ''}
-<footer>${ph === 'soon' || ph === 'live' ? `<div class="pick" role="group" aria-label="Can you make it?">${['yes', 'maybe', 'no'].map((s) => `<button type="button" class="${my === s ? 'on' : ''}" data-rsvp="${s}" aria-pressed="${my === s}" aria-label="${s}">${ICON[s]}</button>`).join('')}</div>` : ''}
-<span class="grow"></span>${ph === 'past' && S.matchNight ? `<button type="button" class="btn sm${e.reportAt ? ' ghost' : ''}" data-report>📋 Session report</button>` : ''}
+${body}
+<footer>${rsvpPick}
+<span class="grow"></span>${!stages && ph === 'past' && S.matchNight ? `<button type="button" class="btn sm${e.reportAt ? ' ghost' : ''}" data-report>📋 Session report</button>` : ''}
 ${S.canManage && ph !== 'past' && ph !== 'cancelled' ? `<button type="button" class="btn sm ghost" data-lineup>🧩 Lineup</button><button type="button" class="btn sm ghost" data-edit>✏️</button><button type="button" class="btn sm ghost" data-cancel aria-label="Cancel event">🚫</button>` : ''}</footer></article>`;
     }
-    function liveBox(e, me) {
-      const lineup = e.lineup || {};
-      return `<div class="ev-live"><div class="row"><button type="button" class="btn sm${me ? ' on' : ''}" data-checkin>${me ? '🟢 You’re on' : '🟢 I’m on'}</button>
-<label class="ev-trial">🧪 Trying a position tonight? <select data-trial><option value="">No</option>${NEED_POS.map((p) => `<option${me?.trial === p ? ' selected' : ''}>${p}</option>`).join('')}</select></label></div>
-<h4>Who’s on <em>${e.checkins.length}</em></h4>${e.checkins.length ? `<ul class="ev-on">${e.checkins.map((c) => `<li>${UI.member({ id: c.id, n: c.n, a: c.a, sub: [lineup[c.id] && `🧩 ${lineup[c.id]}`, c.trial && `🧪 trying ${c.trial}`].filter(Boolean).join(' · ') }, { size: 26 })}</li>`).join('')}</ul>` : '<p class="muted small">Nobody has checked in yet.</p>'}</div>`;
+    // Live check-in ring (board 11): one arc per position the night needs, filled by who has checked in for it.
+    // A person counts for the position they're trying tonight, else their line-up slot, else their first-choice position.
+    function ring(e) {
+      const lineup = e.lineup || {}, rs = new Map(e.rsvps.map((r) => [r.id, r]));
+      const posOf = (c) => c.trial || (lineup[c.id] && POS_OF(lineup[c.id])) || rs.get(c.id)?.pos?.[0] || null;
+      const needed = Object.entries(e.needs).filter(([k, n]) => k !== 'players' && n > 0);
+      const yes = e.rsvps.filter((r) => r.s === 'yes').length;
+      const segs = needed.length ? needed.map(([k, n]) => ({ k, n })) : [{ k: 'All', n: e.needs.players || Math.max(yes, e.checkins.length, 1) }];
+      const group = new Map(segs.map((x) => [x.k, []])), other = [];
+      for (const c of e.checkins) { const k = needed.length ? posOf(c) : 'All'; (group.get(k) ?? other).push(c); }
+      const total = segs.reduce((a, x) => a + x.n, 0), on = e.checkins.length, R = 50, C = 2 * Math.PI * R, GAP = segs.length > 1 ? 5 : 0;
+      let at = 0;
+      const arcs = segs.map((x) => {
+        const len = Math.max(2, (x.n / total) * C - GAP), have = Math.min(group.get(x.k).length, x.n), fill = len * (have / x.n), off = -at;
+        at += (x.n / total) * C;
+        return `<circle class="rg-track" cx="60" cy="60" r="${R}" stroke-dasharray="${len.toFixed(1)} ${(C - len).toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>${have ? `<circle class="rg-fill${have >= x.n ? ' full' : ''}" cx="60" cy="60" r="${R}" style="--len:${fill.toFixed(1)}" stroke-dasharray="${fill.toFixed(1)} ${(C - fill).toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>` : ''}`;
+      }).join('');
+      const chip = (k, n, list) => `<li class="rg-pos${n && list.length >= n ? ' full' : ''}${n && !list.length ? ' empty' : ''}"><span class="rg-k">${esc(k)}${n ? ` <b>${Math.min(list.length, n)}/${n}</b>` : ''}</span><span class="rg-faces">${list.map((c) => `<span class="rg-face" data-tip="${esc(c.n)}${c.trial ? ` · trying ${esc(c.trial)}` : ''}">${UI.avatar(c.a, c.n, 24)}</span>`).join('')}</span></li>`;
+      const summary = `${on} on tonight, ${total} needed${needed.length ? `: ${segs.map((x) => `${x.k} ${Math.min(group.get(x.k).length, x.n)} of ${x.n}`).join(', ')}` : ''}`;
+      return `<div class="ev-ring"><div class="rg-dial"><svg viewBox="0 0 120 120" role="img" aria-label="${esc(summary)}"><g transform="rotate(-90 60 60)">${arcs}</g></svg><div class="rg-mid"><b>${on}</b><small>of ${total} on</small></div></div>
+<ul class="rg-legend">${segs.map((x) => chip(x.k === 'All' ? '👥 Squad' : x.k, x.n, group.get(x.k))).join('')}${other.length ? chip('Elsewhere', 0, other) : ''}</ul></div>`;
+    }
+    function liveBox(e, me, ph) {
+      const open = ph === 'live';
+      return `<div class="ev-live"><div class="row"><button type="button" class="btn sm${me ? ' on' : ''}" data-checkin${open ? '' : ' disabled'}>${me ? '🟢 You’re on' : '🟢 I’m on'}</button>
+<label class="ev-trial">🧪 Trying a position tonight? <select data-trial${open ? '' : ' disabled'}><option value="">No</option>${NEED_POS.map((p) => `<option${me?.trial === p ? ' selected' : ''}>${p}</option>`).join('')}</select></label></div>
+${open ? '' : `<p class="muted small ev-hint">${ph === 'past' ? 'This night is over – check-in has closed.' : `Check-in opens an hour before kick-off (${fmtTime(e.start - 3600e3)}).`}</p>`}
+<h4>Who’s on <em>${e.checkins.length}</em></h4>${ring(e)}${e.checkins.length ? '' : '<p class="muted small">Nobody has checked in yet.</p>'}</div>`;
+    }
+    function afterBox(e, ph) {
+      const yes = e.rsvps.filter((r) => r.s === 'yes').length, came = e.checkins.length;
+      return `<div class="ev-after">${ph === 'past'
+        ? `<p>${came ? `🟢 <b>${came}</b> checked in${yes ? ` of <b>${yes}</b> who said yes` : ''}.` : 'Nobody checked in for this night.'}</p><button type="button" class="btn sm${e.reportAt ? ' ghost' : ''}" data-report>📋 Session report</button>`
+        : `<p class="muted">The session report – grades, results, position trials and a shareable poster – opens once the night is over.</p>`}</div>`;
     }
     // 📆 Month view (BE11) – the grid lives in assets/calendar.js; a chip jumps back to its card in the list.
     const loadCal = () => new Promise((ok, no) => (window.NXCalendar ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/calendar.js`, onload: ok, onerror: no }))));
@@ -417,6 +453,7 @@ ${S.canManage ? `<div class="rp-share"><b>📣 Share it</b> <small class="muted"
         try { const r = await ctx.call('/api/events/nudge', { id: ev.id, position: d.nudge }); S = r; paint(); ctx.toast(`📣 ${r.notified} nudged for ${d.nudge}`); } catch (er) { ctx.toast(er.message, true); }
         return;
       }
+      if (d.evmode) { modes[ev.id] = d.evmode; return paint(); }
       if (d.rsvp) answer([ev.id], mine(ev) === d.rsvp ? 'clear' : d.rsvp);
       if (d.edit !== undefined) editor(ev);
       if (d.cancel !== undefined) {
