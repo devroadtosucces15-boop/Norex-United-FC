@@ -13,6 +13,7 @@
 //                                 same fact pack the stored insight was written from
 //   POST /api/insights/feedback { key, vote: 1|-1 }        member+
 //   POST /api/insights/compare  { a, b }                   member+, on demand: head-to-head for two home players
+//   POST /api/insights/h2h      { o }                      member+, on demand: record vs any opponent club (EA id) in h2h.json
 //   key note.<playerKey> (private tier) – a coach's note for one home player, in the registry like player.<k>;
 //                                 readable only by that player (approved claim) and managers/owner
 //
@@ -336,10 +337,24 @@ export async function statCompareRoute(env, loadSite, me, body) {
   const key = compareKey(a, b);
   const pack = await factPackFor(key, loadSite);
   if (!pack) return { error: 'Both players need to be in the home squad.' };
+  return onDemandInsight(env, key, pack, "Couldn't write that comparison right now.");
+}
+// POST /api/insights/h2h { o }: members only, o = EA club id of any opponent in h2h.json. The cron pre-writes only the
+// latest match's opponent (registryKeys); this writes any other opponent's row on first view, same fingerprint gate as compare.
+export async function statH2hRoute(env, loadSite, me, body) {
+  if (!can(me, 'statInsights.h2h')) return { error: 'Members only.' };
+  const o = String(body?.o ?? '');
+  if (!/^\d{1,20}$/.test(o)) return { error: 'Pick an opponent.' };
+  const key = `h2h.${o}`;
+  const pack = await factPackFor(key, loadSite);
+  if (!pack) return { error: 'No record against that club yet.' };
+  return onDemandInsight(env, key, pack, "Couldn't write that head-to-head right now.");
+}
+async function onDemandInsight(env, key, pack, failMsg) {
   const hash = await fingerprint(pack.facts);
   let row = await one(env, 'SELECT key, headline, body, watch, at, hash FROM stat_insights WHERE key = ?', key);
   if (!row || row.hash !== hash) {
-    if (!(await writeInsight(env, key, pack))) return { error: "Couldn't write that comparison right now." };
+    if (!(await writeInsight(env, key, pack))) return { error: failMsg };
     row = await one(env, 'SELECT key, headline, body, watch, at, hash FROM stat_insights WHERE key = ?', key);
   }
   return { insight: { key, headline: row.headline, body: row.body, watch: row.watch, at: row.at } };

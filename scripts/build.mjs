@@ -611,7 +611,7 @@ ${CHANNELS.length ? `<div id="watch">${card('📺 Watch NOREX', `<div class="liv
 </div>`, { sub: 'next up, last time out, and where to watch' })}
 ${section('Season at a glance', `<div class="stats stats-8">${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}</div>${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}`)}
-${ms.length ? '<div data-nx-insight="club" hidden></div><div data-nx-insight="match.latest" hidden></div>' : '<div data-nx-insight="club" hidden></div>'}
+${ms.length ? '<div data-nx-insight="club" hidden></div><div data-nx-insight="match.latest" hidden></div><div data-nx-insight="matches.last5" hidden></div>' : '<div data-nx-insight="club" hidden></div>'}
 ${tacticsTeaser(members, base)}
 ${squadCarousel(members, base)}
 ${matchReel(ms, sessions, id, base)}
@@ -860,7 +860,8 @@ function logTable(id, a, base) {
 // ---------- match page ----------
 function matchBody(m, base) {
   const mi = homeMatches.slice(0, 3).findIndex((x) => x.matchId === m.matchId); // BE9 covers the newest three results (MATCH_CARDS)
-  const insightSlot = mi < 0 ? '' : `<div data-nx-insight="${mi ? `match.${esc(m.matchId)}` : 'match.latest'}" hidden></div>`;
+  const opp = m.clubs[homeId] ? oppOf(m, homeId) : null; // BE9 head-to-head: only the home club's own matches have a record vs this opponent (every one is in api/h2h.json, built from the same list)
+  const insightSlot = (mi < 0 ? '' : `<div data-nx-insight="${mi ? `match.${esc(m.matchId)}` : 'match.latest'}" hidden></div>`) + (opp ? `<div data-nx-insight="h2h.${esc(opp)}" hidden></div>` : '');
   const [h, aw] = Object.keys(m.clubs).sort((a, b) => (a === homeId ? -1 : b === homeId ? 1 : 0));
   const list = (cid) => Object.entries(m.players?.[cid] || {}).map(([pid, p]) => ({ pid, ...p }));
   const team = (cid) => {

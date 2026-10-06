@@ -1,5 +1,5 @@
 // Board 12 – the "✨ Insight" widget (BE9's per-stat fact-pack copy, bot/statinsights.js). Mounted wherever
-// build.mjs drops a `[data-nx-insight][data-key]` slot (home page club form + latest match, home-squad
+// build.mjs drops a `[data-nx-insight][data-key]` slot (home page club form + latest match + last 5, match-page head-to-head, home-squad
 // player profiles, plus the private `note.<k>` coach's note – the API only returns it to that player + managers, so the slot
 // vanishes for everyone else). No "AI"/"LLM" wording anywhere here – resolved naming question (2026-10-03): branded
 // as a plain club feature, not disclosed as machine-written.
@@ -41,9 +41,14 @@
       if (ctx.compare) { // BE9 compare: written on demand for members, nothing to show for guests
         row = ctx.session ? (await ctx.call('/api/insights/compare', ctx.compare))?.insight : null;
       } else {
+        if (ctx.session && key.startsWith('h2h.')) { // BE9 h2h: a member's first view writes the opponent's row (cron pre-writes only the latest opponent); fall through to the plain read if refused
+          try { row = (await ctx.call('/api/insights/h2h', { o: key.slice(4) }))?.insight; } catch {}
+        }
+        if (!row) {
         const r = await fetch(`${MAPI}/api/insights?keys=${encodeURIComponent(key)}`, ctx.session ? { headers: { Authorization: `Bearer ${ctx.session.token}` } } : undefined);
         const d = r.ok ? await r.json() : null;
         row = d?.insights?.[0];
+        }
       }
     } catch {}
     if (!row && ctx.empty) { el.classList.remove('card'); el.innerHTML = `<p class="muted small">${esc(ctx.empty)}</p>`; return; } // a slot the caller keeps (manager portal picker)

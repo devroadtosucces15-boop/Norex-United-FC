@@ -4,7 +4,7 @@ import { call, W, env, login, siteJson, setAiReply, DB, sqlite, config } from '.
 import { t, done } from './lib.mjs';
 import {
   factPackFor, registryKeys, numbersOk, extractNumbers, writeInsight, refreshStatInsights,
-  handleStatInsightJob, statInsightWeekly, compareKey, statCompareRoute,
+  handleStatInsightJob, statInsightWeekly, compareKey, statCompareRoute, statH2hRoute,
 } from '../bot/statinsights.js';
 import { can } from '../bot/roles.js';
 
@@ -227,6 +227,44 @@ for (const [lvl, who] of Object.entries(cmpAllowed)) {
   t(`compare flag "${lvl}" → only ${who.join('/') || 'nobody'} get the insight, everyone else 404`, got.join() === who.join());
   const anon = await call(null, '/api/insights/compare', { a: pa.k, b: pb.k });
   t(`compare flag "${lvl}" → signed-out visitors never get it`, anon.s >= 400 && !anon.d?.insight);
+}
+setFlag(startLevel);
+// ---------- BE9 h2h on demand (member+, any opponent in h2h.json, same fingerprint gate as compare) ----------
+const rival2 = h2hRows.find((e) => e.o !== rival.o) ?? rival;
+t('h2h route: guests are refused', /Members only/.test((await statH2hRoute(env, loadSite, { role: 'guest' }, { o: rival2.o })).error ?? ''));
+t('h2h route: a malformed id is refused', /opponent/.test((await statH2hRoute(env, loadSite, { role: 'member' }, { o: "1'; DROP TABLE x" })).error ?? ''));
+t('h2h route: an unknown opponent is refused and nothing is stored', /No record/.test((await statH2hRoute(env, loadSite, { role: 'member' }, { o: '0000000' })).error ?? '') && !(await DB.prepare("SELECT 1 FROM stat_insights WHERE key = 'h2h.0000000'").first()));
+setAiReply(() => JSON.stringify({ headline: 'Familiar foe', body: `${rival2.n} have met NOREX ${rival2.p} time${rival2.p === 1 ? '' : 's'}.`, watch: 'The next meeting.' }));
+await DB.prepare('DELETE FROM stat_insights WHERE key = ?').bind(`h2h.${rival2.o}`).run();
+const h1 = await statH2hRoute(env, loadSite, { role: 'member' }, { o: rival2.o });
+t('h2h route writes an opponent on first view (public tier row)', h1.insight?.headline === 'Familiar foe' && h1.insight.key === `h2h.${rival2.o}` && (await DB.prepare('SELECT tier FROM stat_insights WHERE key = ?').bind(`h2h.${rival2.o}`).first())?.tier === 'public');
+writerCalls = 0;
+setAiReply(() => { writerCalls++; return JSON.stringify({ headline: 'Changed', body: 'Changed body.', watch: 'Changed watch.' }); });
+const h2 = await statH2hRoute(env, loadSite, { role: 'member' }, { o: rival2.o });
+t('h2h repeat view is served from the stored row, no writer call', h2.insight?.headline === 'Familiar foe' && writerCalls === 0);
+const changedSite = async (f) => (f === 'h2h' ? h2hRows.map((e) => (e.o === rival2.o ? { ...e, p: e.p + 1, w: e.w + 1, gf: e.gf + 1, lastScore: '1–0' } : e)) : siteJson(f));
+setAiReply(() => { writerCalls++; return JSON.stringify({ headline: 'Another one', body: 'A fresh result is in.', watch: 'Next up.' }); });
+const h3 = await statH2hRoute(env, loadSite, { role: 'member' }, { o: rival2.o });
+t('h2h: unchanged record still no writer call after the gate (control)', h3.insight?.headline === 'Familiar foe');
+const h4 = await statH2hRoute(env, changedSite, { role: 'member' }, { o: rival2.o });
+t('h2h: a changed record (new result) re-writes the row once', h4.insight?.headline === 'Another one' && writerCalls === 1);
+setAiReply(() => JSON.stringify({ headline: 'Invented', body: 'They have conceded 987 goals to us.', watch: 'Nothing.' }));
+await DB.prepare('DELETE FROM stat_insights WHERE key = ?').bind(`h2h.${rival.o}`).run();
+const hInv = await statH2hRoute(env, loadSite, { role: 'member' }, { o: rival.o });
+t('h2h route: an invented number is rejected and nothing is stored', !!hInv.error && !(await DB.prepare('SELECT 1 FROM stat_insights WHERE key = ?').bind(`h2h.${rival.o}`).first()));
+t('h2h: PERMS gate is member+', ['member', 'claimed', 'manager', 'owner'].every((r) => can({ role: r }, 'statInsights.h2h')) && !can({ role: 'guest' }, 'statInsights.h2h') && !can(null, 'statInsights.h2h'));
+setAiReply(() => JSON.stringify({ headline: 'Familiar foe', body: 'Met before.', watch: 'Next time.' }));
+for (const [lvl, who] of Object.entries(cmpAllowed)) {
+  setFlag(lvl);
+  const got = [];
+  for (const [role, tk] of Object.entries(tok)) {
+    const r = await call(tk, '/api/insights/h2h', { o: rival2.o });
+    if (r.s === 200 && r.d?.insight?.key === `h2h.${rival2.o}`) got.push(role);
+    else if (r.s !== 404) got.push(`${role}:${r.s}`);
+  }
+  t(`h2h flag "${lvl}" → only ${who.join('/') || 'nobody'} get the on-demand route, everyone else 404`, got.join() === who.join());
+  const anon = await call(null, '/api/insights/h2h', { o: rival2.o });
+  t(`h2h flag "${lvl}" → signed-out visitors never get it`, anon.s >= 400 && !anon.d?.insight);
 }
 setFlag(startLevel);
 t('statInsights ships at owner level in config.json', config.features.statInsights === 'owner');

@@ -28,7 +28,7 @@ import { lockerSocket } from './locker.js';
 import { intelRoute } from './insights.js';
 import { awardsRoute, trophies } from './awards.js';
 import { playerInsights } from './aiinsights.js';
-import { statInsightsRoute, statAskRoute, statFeedbackRoute, statCompareRoute } from './statinsights.js';
+import { statInsightsRoute, statAskRoute, statFeedbackRoute, statCompareRoute, statH2hRoute } from './statinsights.js';
 import { squadsRoute } from './squads.js';
 import { ratingsRoute } from './ratings.js';
 import { feedbackRoute } from './feedback.js';
@@ -562,6 +562,10 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (p === '/api/insights/compare' && method === 'POST') { // BE9 – head-to-head for two home players, written on demand
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
     return json(await statCompareRoute(env, loadSite, me, body));
+  }
+  if (p === '/api/insights/h2h' && method === 'POST') { // BE9 – record vs any opponent, written on first view
+    if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
+    return json(await statH2hRoute(env, loadSite, me, body));
   }
   if (p === '/api/insights/feedback' && method === 'POST') { // BE9 – 👍/👎 on a stat insight
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
