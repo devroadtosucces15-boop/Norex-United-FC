@@ -9,6 +9,7 @@
 //   GET  /api/events/discord         managers: channels + roles to post to (shared with P5.3)
 //   POST /api/events/checkin         members, during the night: "I'm on" { id, on, trial }       (flag `matchNight`)
 //   POST /api/events/lineup          managers: quick lineup { id, lineup: { <discord id>: 'CB' } }
+//   POST /api/events/plays           managers: { id, plays: [playId…] } – pin up to 4 published plays for that night (board 08)
 //   GET  /api/events/:id/lineup/ws   managers: live Dugout – a nudge on room 'lineup:<id>' when the line-up, a yes/no or a check-in changes
 //   GET  /api/events/report?id=      members: session report – results that night (League from EA, confirmed Rush),
 //                                    team + player grades A+–F, position trials vs season average, attendance
@@ -93,7 +94,7 @@ function readyCheck(lineup, formation, rs, cs, people) {
   for (const s of slots) counts[s.status]++;
   return { slots, subs, counts };
 }
-const eventOut = (r, rs, cs, profiles, manager, people = new Map()) => ({
+const eventOut = (r, rs, cs, profiles, manager, people = new Map(), plays = new Map()) => ({
   id: r.id, type: r.type, title: opt(r.title), start: r.start, duration: r.duration, end: r.start + r.duration * MIN, tz: r.tz,
   notes: opt(r.notes), needs: parse(r.needs, {}), public: !!r.public, status: r.status, cancelReason: opt(r.cancel_reason),
   by: opt(r.by_name), at: r.at, editedBy: opt(r.edited_by), editedAt: opt(r.edited_at), series: opt(r.series), lineup: parse(r.lineup, {}),
@@ -103,6 +104,7 @@ const eventOut = (r, rs, cs, profiles, manager, people = new Map()) => ({
   ready: manager ? readyCheck(parse(r.lineup, {}), r.formation, rs, cs, people) : undefined, // BE3 – managers only
   reportAt: opt(r.report_at), remind: r.remind ?? 'dm', formation: opt(r.formation), lineupAt: opt(r.lineup_at), ...(manager ? { posted: !!r.discord_msg } : {}),
   reportPoster: opt(r.report_poster), // BE11 – R2 key of the uploaded report poster, if any
+  plays: parse(r.plays, []).map((id) => plays.get(id)).filter(Boolean), // board 08 – plays for tonight (managers also get who's assigned/learned)
 });
 async function load(env, where, args, me) {
   const rows = await all(env, `SELECT * FROM events WHERE ${where} ORDER BY start LIMIT 120`, ...args);
@@ -117,7 +119,31 @@ async function load(env, where, args, me) {
   const manager = !!me && can(me, 'events.manage');
   const inLineups = [...new Set(rows.flatMap((r) => Object.keys(parse(r.lineup, {}))))];
   const people = new Map(inLineups.length ? (await all(env, `SELECT id, name, avatar FROM users WHERE id IN (${marks(inLineups.length)})`, ...inLineups)).map((u) => [u.id, { n: u.name, a: opt(u.avatar) }]) : []);
-  return rows.map((r) => eventOut(r, rs.filter((x) => x.event_id === r.id), cs.filter((x) => x.event_id === r.id), profiles, manager, people));
+  const plays = await pinnedPlays(env, rows, manager);
+  return rows.map((r) => eventOut(r, rs.filter((x) => x.event_id === r.id), cs.filter((x) => x.event_id === r.id), profiles, manager, people, plays));
+}
+// Board 08: titles of the plays pinned to these events (still published only); managers also get who's assigned / learned.
+async function pinnedPlays(env, rows, manager) {
+  const ids = [...new Set(rows.flatMap((r) => parse(r.plays, [])))];
+  if (!ids.length) return new Map();
+  const list = await all(env, `SELECT id, title, category FROM plays WHERE id IN (${marks(ids.length)}) AND published = 1 AND archived = 0`, ...ids);
+  const asg = manager && list.length ? await all(env, `SELECT play_id, user_id, learned FROM play_assign WHERE play_id IN (${marks(list.length)})`, ...list.map((p) => p.id)) : [];
+  return new Map(list.map((p) => [p.id, { id: p.id, title: p.title, category: p.category,
+    ...(manager ? { assigned: asg.filter((a) => a.play_id === p.id).map((a) => a.user_id), learned: asg.filter((a) => a.play_id === p.id && a.learned).map((a) => a.user_id) } : {}) }]));
+}
+async function playsRoute(body, me, env, log) {
+  if (!can(me, 'events.manage')) return fail('Managers only.', 403);
+  const row = await one(env, "SELECT * FROM events WHERE id = ? AND status = 'scheduled'", Number(body.id) || 0);
+  if (!row) return fail('That event is not on.', 404);
+  if (!Array.isArray(body.plays)) return fail('Send a list of plays.');
+  const want = [...new Set(body.plays.map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  if (want.length > 4) return fail('Pin up to 4 plays for one night.');
+  const ok = want.length ? new Set((await all(env, `SELECT id FROM plays WHERE id IN (${marks(want.length)}) AND published = 1 AND archived = 0`, ...want)).map((p) => p.id)) : new Set();
+  if (want.some((id) => !ok.has(id))) return fail('Only published plays can be pinned.');
+  await run(env, 'UPDATE events SET plays = ? WHERE id = ?', want.length ? JSON.stringify(want) : null, row.id);
+  await log(env, me, 'event-plays', `${label(row)} · ${want.length} play(s)`);
+  await pushLineup(env, row.id, 'plays'); // other open Dugouts refresh
+  return json(await listFor(env, me));
 }
 async function listFor(env, me) {
   const now = Date.now();
@@ -598,6 +624,7 @@ export async function eventsRoute(p, method, body, me, env, log, loadSite, url) 
   if (p === '/api/events') return saveEvent(body, me, env, log);
   if (p === '/api/events/rsvp') return rsvp(body, me, env, log);
   if (p === '/api/events/nudge') return nudgeRoute(body, me, env, log); // BE4 – nudge a short position
+  if (p === '/api/events/plays') return playsRoute(body, me, env, log); // board 08 – plays for tonight
   if (p === '/api/events/cancel') {
     if (!can(me, 'events.manage')) return fail('Managers only.', 403);
     const row = await one(env, "SELECT * FROM events WHERE id = ? AND status = 'scheduled'", Number(body.id) || 0);

@@ -1233,10 +1233,20 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 .dg-help{margin:4px 0 0}
 @media (max-width:560px){.dg-pitch{transform:none}.dg-dot{width:30px;height:30px;font-size:11px}.dg-slot small{font-size:10px}}
 /* ③ plays + ready */
-.dg-play{padding:9px 11px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);margin-bottom:6px}
+.dg-play{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);margin-bottom:6px}
+.dg-play>span{flex:1;min-width:0}
+.dg-play:not(.pin){opacity:.78;border-style:dashed}
+.dg-play.pin:not(.done){border-left:3px solid var(--red)}
 .dg-play.done{border-color:color-mix(in srgb,var(--win) 50%,var(--line2))}
-.dg-play:not(.done){border-left:3px solid var(--red)}
-.dg-play b{display:block;font-size:13.5px}.dg-play small{color:var(--muted);font-size:11px}
+.dg-play b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dg-play small{color:var(--muted);font-size:11px}
+.dg-star{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line2);background:transparent;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;transition:transform .15s,color .15s}
+.dg-star:hover{transform:scale(1.12);color:#fff}
+.dg-play.pin .dg-star{color:#f5c542;border-color:color-mix(in srgb,#f5c542 55%,transparent);background:color-mix(in srgb,#f5c542 12%,transparent)}
+.dg-asg{flex:none;white-space:nowrap}
+.dg-also{display:block;margin:8px 0 5px;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.dg-live{display:inline-flex;align-items:center;font:600 12px var(--body);color:var(--win);padding:4px 9px;border-radius:999px;border:1px solid color-mix(in srgb,var(--win) 45%,transparent);animation:dgLive 2.4s ease-in-out infinite}
+@keyframes dgLive{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.dg-live{animation:none}}
 .dg-ready-h{margin-top:14px}
 .dg-ready{list-style:none;margin:0;padding:0;font-size:13.5px}
 .dg-ready li{padding:5px 0;border-bottom:1px solid var(--line)}

@@ -2,8 +2,10 @@
 //   ① who's available (the event's RSVPs) → ② drag them onto the pitch (auto-saves a draft, one button publishes)
 //   ③ plays + ready check · ④ squad week heatmap (can we field 9?) · ⑤ trials funnel you drag cards across
 //   ⑥ claims as a card you swipe right to approve / left to reject, with the checks already done.
-// Reuses existing routes only: /api/events (+ /lineup), /api/admin/squadweek, /api/trials (+ /update), /api/plays,
-// /api/admin/claims (via ctx.decide). app.js mounts it as the Manager tab's 🧢 Dugout sub-tab. Flag `dugout`.
+// Routes: /api/events (+ /lineup, /plays – pin up to 4 plays for tonight), /api/admin/squadweek, /api/trials (+ /update),
+// /api/plays (+ /:id/assign), /api/admin/claims (via ctx.decide). Live: room 'lineup:<id>' (same socket as the Schedule
+// tab's builder) – another manager's save, a yes/no or a check-in refreshes this screen. app.js mounts it as the
+// Manager tab's 🧢 Dugout sub-tab. Flag `dugout`.
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -13,8 +15,8 @@
   const short = (n) => String(n ?? '').slice(0, 14);
 
   let el = null, ctx = null;
-  const D = { ev: null, trials: null, plays: null, at: 0, formation: null, slots: {}, pick: null, saving: '', claimAt: 0, evId: null };
-  let saveTimer = null;
+  const D = { ev: null, trials: null, plays: null, at: 0, formation: null, slots: {}, pick: null, saving: '', claimAt: 0, evId: null, dirty: false, live: false };
+  let saveTimer = null, live = null;
 
   const nextEvent = () => (D.ev?.events || []).filter((e) => e.status === 'scheduled' && e.end > Date.now()).sort((a, b) => a.start - b.start)[0] || null;
   const people = (e) => {
@@ -57,13 +59,27 @@ ${list.length ? `<div class="dg-avail">${list.map((p) => `<button type="button" 
   }
 
   // ---------- ③ plays + ready check ----------
+  // Plays for tonight: ★ pins a published play to this match night (up to 4); the starters' learned count comes from the
+  // event (play_assign), so it reads "6 of 9 starters learned it" rather than the whole squad.
+  function playsBlock(e, ids) {
+    if (!ctx.flagOn('tactics')) return '';
+    const pinned = e.plays || [], pinnedIds = new Set(pinned.map((p) => p.id));
+    const others = (D.plays || []).filter((p) => p.published && !pinnedIds.has(p.id)).slice(0, pinned.length ? 3 : 4);
+    const missing = (p) => ids.filter((u) => !(p.assigned || []).includes(u));
+    const row = (p, on) => {
+      const learned = on ? ids.filter((u) => (p.learned || []).includes(u)).length : 0, need = on ? missing(p) : [];
+      return `<div class="dg-play${on ? ' pin' : ''}${on && ids.length && learned === ids.length ? ' done' : ''}"><button type="button" class="dg-star" data-pin="${p.id}" aria-pressed="${on}" aria-label="${on ? 'Unpin' : 'Pin'} ${esc(p.title)} ${on ? 'from' : 'for'} tonight">${on ? '★' : '☆'}</button>
+<span><b>${esc(p.title)}</b><small>${on ? (ids.length ? `${learned} of ${ids.length} starters learned it${learned === ids.length ? ' ✅' : ''}` : 'pick the line-up to track who knows it') : 'tap ☆ to use it tonight'}</small></span>
+${need.length ? `<button type="button" class="btn ghost sm dg-asg" data-assign="${p.id}" title="Adds it to their Playbook and sends an alert">📋 Assign to ${need.length}</button>` : ''}</div>`;
+    };
+    return `<div class="dg-sec-h"><h3>🧠 Plays for tonight</h3><a class="dg-more" href="${ctx.base}tactics.html">Playbook →</a></div>
+${D.plays === null ? ctx.UI.skeleton('rows', 2) : pinned.length || others.length ? `${pinned.map((p) => row(p, true)).join('')}${others.length ? `${pinned.length ? '<small class="muted dg-also">Also in the Playbook</small>' : ''}${others.map((p) => row(p, false)).join('')}` : ''}`
+      : '<p class="muted small">No published plays yet – draw one in the Tactics Studio.</p>'}`;
+  }
   function playsAndReady(e, who) {
-    const plays = (D.plays || []).filter((p) => p.published).slice(0, 4);
-    const playsHtml = ctx.flagOn('tactics') ? `<div class="dg-sec-h"><h3>🧠 Plays</h3><a class="dg-more" href="${ctx.base}tactics.html">Playbook →</a></div>
-${D.plays === null ? ctx.UI.skeleton('rows', 2) : plays.length ? plays.map((p) => { const c = p.assignCounts || { assigned: 0, learned: 0 }; const all = c.assigned && c.learned >= c.assigned; return `<div class="dg-play${all ? ' done' : ''}"><b>${esc(p.title)}</b><small>${c.assigned ? `${c.learned} of ${c.assigned} marked “Learned”${all ? ' ✅' : ' · nudge the rest'}` : 'Not assigned yet'}</small></div>`; }).join('')
-      : '<p class="muted small">No published plays yet.</p>'}` : '';
     const f = D.ev.formations[D.formation] || [];
     const ids = f.map(([slot]) => D.slots[slot]).filter(Boolean);
+    const playsHtml = playsBlock(e, ids);
     const placedP = ids.map((id) => who.get(id)).filter(Boolean);
     const maybes = placedP.filter((p) => p.s === 'maybe'), unanswered = placedP.filter((p) => !p.s && !p.on), nos = placedP.filter((p) => p.s === 'no');
     const subs = [...who.values()].filter((p) => p.s === 'yes' && !ids.includes(p.id));
@@ -75,6 +91,7 @@ ${maybes.length ? line(null, `${maybes.length} maybe (${maybes.map((p) => esc(p.
 ${unanswered.length ? line(null, `${unanswered.length} picked but no answer yet`) : ''}
 ${nos.length ? line(false, `${nos.length} picked but can’t make it (${nos.map((p) => esc(p.n)).join(', ')})`) : ''}
 ${line(gk ? true : null, gk ? `Keeper: ${esc(gk.n)}` : 'Keeper: AI')}
+${ctx.flagOn('tactics') && e.plays?.length && ids.length ? (() => { const sharp = ids.filter((u) => e.plays.every((p) => (p.learned || []).includes(u))).length; return line(sharp === ids.length ? true : null, `${sharp} of ${ids.length} starters know all ${e.plays.length} play${e.plays.length > 1 ? 's' : ''} for tonight`); })() : ''}
 ${line(subs.length ? true : null, subs.length ? `${subs.length} sub${subs.length > 1 ? 's' : ''} ready (${subs.slice(0, 3).map((p) => esc(p.n)).join(', ')}${subs.length > 3 ? '…' : ''})` : 'No sub if someone drops')}
 ${e.lineupAt ? line(true, `Published ${esc(ctx.UI.ago ? ctx.UI.ago(e.lineupAt) : '')}`) : line(null, 'Not published yet')}</ul>`;
   }
@@ -138,7 +155,7 @@ ${by[k].length > 8 ? `<small class="muted">+${by[k].length - 8} more</small>` : 
     const when = e ? new Date(e.start).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
     el.innerHTML = `<div class="dg">
 <div class="dg-head"><h2>${e ? `Line-up · ${esc(e.title || (e.type === 'league' ? 'League match' : 'Match night'))}, ${esc(when)}` : 'The Dugout'}</h2>
-<div class="dg-acts">${ctx.canAnnounce ? '<a class="btn ghost sm" href="#alerts">📣 Announce</a>' : ''}<a class="btn ghost sm" href="#schedule">➕ Match night</a>${e ? `<button type="button" class="btn sm" data-dg="publish">📣 Post line-up${e.lineupAt ? ' again' : ''}</button>` : ''}</div></div>
+<div class="dg-acts">${e && D.live ? '<span class="dg-live" title="Updates by itself when another manager edits or players answer">🟢 Live</span>' : ''}${ctx.canAnnounce ? '<a class="btn ghost sm" href="#alerts">📣 Announce</a>' : ''}<a class="btn ghost sm" href="#schedule">➕ Match night</a>${e ? `<button type="button" class="btn sm" data-dg="publish">📣 Post line-up${e.lineupAt ? ' again' : ''}</button>` : ''}</div></div>
 ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who)}</section><section class="card dg-sec dg-pi">${pitch(e, who)}</section><section class="card dg-sec dg-rd">${playsAndReady(e, who)}</section></div>`
     : `<div class="card">${ctx.UI.empty({ icon: '🗓️', title: 'No match night coming up', text: 'Schedule one and the line-up builder opens here.', action: '<a class="btn sm" href="#schedule">➕ Schedule a match night</a>' })}</div>`}
 <div class="dg-bottom"><section class="card dg-sec dg-wk">${heatmap()}</section>${ctx.flagOn('trials') ? `<section class="card dg-sec dg-tr">${funnel()}</section>` : ''}<section class="card dg-sec dg-cl">${claims()}</section></div></div>`;
@@ -168,7 +185,7 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
     paint();
   }
   function queueSave() {
-    D.saving = 'saving…';
+    D.saving = 'saving…'; D.dirty = true;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => save(false), 900);
   }
@@ -181,12 +198,34 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
     if (publish && !(await ctx.UI.confirm({ title: 'Post the line-up?', text: `${Object.keys(lineup).length} players get an alert${e.lineupAt ? ' (again)' : ''} and it goes to Discord.`, ok: '📣 Post it' }))) return;
     try {
       const r = await ctx.call('/api/events/lineup', { id: e.id, formation: D.formation, lineup, publish });
-      D.ev = { ...D.ev, ...r };
+      D.ev = { ...D.ev, ...r }; D.dirty = false;
       D.saving = publish ? '' : e.lineupAt ? 'saved · post again to tell players' : 'draft saved ✓';
       paint();
       if (publish) ctx.toast(`Line-up posted · ${r.notified ?? 0} players told${r.discord?.ok ? ' · on Discord' : ''}`);
       if (r.discord && !r.discord.ok) ctx.toast(`Discord: ${r.discord.error}`, true);
     } catch (er) { D.saving = 'not saved'; paint(); ctx.toast(er.message, true); }
+  }
+  async function pin(playId) {
+    const e = nextEvent();
+    if (!e) return;
+    const cur = (e.plays || []).map((p) => p.id), on = cur.includes(playId);
+    if (!on && cur.length >= 4) return ctx.toast('Up to 4 plays for one night – unpin one first', true);
+    try {
+      const r = await ctx.call('/api/events/plays', { id: e.id, plays: on ? cur.filter((x) => x !== playId) : [...cur, playId] });
+      D.ev = { ...D.ev, ...r }; paint();
+      ctx.toast(on ? 'Unpinned' : '★ Pinned for tonight');
+    } catch (er) { ctx.toast(er.message, true); }
+  }
+  async function assign(playId) {
+    const e = nextEvent(), p = e?.plays?.find((x) => x.id === playId);
+    if (!p) return;
+    const ids = (D.ev.formations[D.formation] || []).map(([slot]) => D.slots[slot]).filter((u) => u && !(p.assigned || []).includes(u));
+    if (!ids.length) return;
+    try {
+      await ctx.call(`/api/plays/${playId}/assign`, { userIds: ids });
+      ctx.toast(`📋 ${p.title} sent to ${ids.length} player${ids.length > 1 ? 's' : ''}`);
+      await load(true);
+    } catch (er) { ctx.toast(er.message, true); }
   }
   async function moveTrial(id, to) {
     const t = D.trials?.find((x) => x.id === Number(id));
@@ -205,7 +244,7 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
 
   function bind() {
     el.onclick = (ev) => {
-      const t = ev.target.closest('[data-p], [data-slot], [data-dg], [data-move], [data-decide]');
+      const t = ev.target.closest('[data-p], [data-slot], [data-dg], [data-move], [data-decide], [data-pin], [data-assign]');
       if (!t) return;
       const d = t.dataset;
       if (d.p) { D.pick = D.pick === d.p ? null : d.p; paint(); }
@@ -213,6 +252,8 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
       if (d.dg === 'publish') save(true);
       if (d.move) moveTrial(d.move, d.to);
       if (d.decide) decide(d.u, d.decide);
+      if (d.pin) pin(Number(d.pin));
+      if (d.assign) assign(Number(d.assign));
     };
     el.onchange = (ev) => { if (ev.target.matches('[data-dg="formation"]')) { reshape(ev.target.value); D.pick = null; queueSave(); paint(); } };
     el.ondragstart = (ev) => {
@@ -258,8 +299,31 @@ ${e ? `<div class="dg-top"><section class="card dg-sec dg-av">${available(e, who
     ]);
     D.ev = ev; D.trials = tr; D.plays = pl;
     const e = nextEvent();
-    if (!e || e.id !== D.evId || !D.saving) adopt(e); // never throw away an unsaved drag
+    if (!e || e.id !== D.evId || (!D.dirty && !D.pick)) adopt(e); // never throw away an unsaved drag
+    listen(e);
     paint();
+  }
+  // Live: one socket on the next event's room. A nudge only says something changed – re-read /api/events (the builder's
+  // own save nudges too, which just re-adopts what it saved). Closes itself once the Dugout leaves the page.
+  function listen(e) {
+    if (live?.id === e?.id) return;
+    live?.close(); live = null; D.live = false;
+    const api = document.body.dataset.api, tok = (() => { try { return localStorage.getItem('norex_session'); } catch { return null; } })();
+    if (!e || !api || !tok || !window.WebSocket) return;
+    let sock = null, ping = null, retry = null, closed = false, wait = null, opened = false;
+    const close = () => { closed = true; clearInterval(ping); clearTimeout(retry); clearTimeout(wait); try { sock?.close(); } catch { /* already closed */ } };
+    const connect = () => {
+      try { sock = new WebSocket(`${api.replace(/^http/, 'ws')}/api/events/${e.id}/lineup/ws?t=${encodeURIComponent(tok)}`); } catch { return; }
+      sock.onopen = () => { opened = true; D.live = true; paint(); ping = setInterval(() => { if (sock.readyState === 1) sock.send('ping'); }, 30000); };
+      sock.onmessage = (m) => {
+        if (m.data === 'pong') return;
+        if (!el?.isConnected) return close();
+        clearTimeout(wait); wait = setTimeout(() => load(true).catch(() => {}), 400); // a burst of answers → one re-read
+      };
+      sock.onclose = () => { clearInterval(ping); if (D.live) { D.live = false; paint(); } if (opened && !closed && el?.isConnected) retry = setTimeout(connect, 8000); };
+    };
+    connect();
+    live = { id: e.id, close };
   }
   function mount(root, c) {
     el = root; ctx = c;
