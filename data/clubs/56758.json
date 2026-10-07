@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-07T22:30:34.510Z",
+ "fetchedAt": "2026-10-07T22:40:38.252Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -619,6 +619,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "Pozole-_-Blanco",
+   "gamesPlayed": "7",
+   "winRate": "71",
+   "goals": "1",
+   "assists": "2",
+   "cleanSheetsDef": "1",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "20",
+   "passesMade": "113",
+   "passSuccessRate": "84",
+   "ratingAve": "7.7",
+   "tacklesMade": "7",
+   "tackleSuccessRate": "28",
+   "proName": "Soplanuca",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "196",
+   "proNationality": "83",
+   "proOverall": "80",
+   "proOverallStr": "80",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "1",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "Treego2424",
@@ -1309,7 +1345,7 @@
   "midfielder": 9,
   "goalkeeper": 0,
   "forward": 9,
-  "defender": 7
+  "defender": 8
  },
  "career": [
   {
@@ -1359,7 +1395,7 @@
   {
    "name": "Biophonyy",
    "proPos": "14",
-   "gamesPlayed": "56",
+   "gamesPlayed": "57",
    "goals": "8",
    "assists": "14",
    "manOfTheMatch": "3",
@@ -1508,6 +1544,17 @@
    "manOfTheMatch": "29",
    "ratingAve": "8.3",
    "prevGoals": "1",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "Pozole-_-Blanco",
+   "proPos": "25",
+   "gamesPlayed": "210",
+   "goals": "72",
+   "assists": "122",
+   "manOfTheMatch": "24",
+   "ratingAve": "7.5",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
