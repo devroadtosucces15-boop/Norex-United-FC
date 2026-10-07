@@ -93,5 +93,28 @@ ${ctx.session ? '<div class="nx-ins-ask" hidden><input type="text" maxlength="20
     }
   }
 
-  globalThis.NXInsight = { mount };
+  // ✨ chips on a grid of `.stat` tiles: one chip per tile, click toggles one shared insight panel under the grid (mounted on first open)
+  function tiles(grid, key, ctx = {}) {
+    if (!grid || grid.dataset.insTiled) return;
+    grid.dataset.insTiled = '1';
+    ensureToggle();
+    let panel = null;
+    grid.querySelectorAll('.stat').forEach((tile) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'nx-ins-tile'; b.textContent = '✨';
+      b.title = 'Show the insight'; b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-label', 'Show the insight for this number');
+      b.addEventListener('click', async (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const open = b.getAttribute('aria-expanded') !== 'true';
+        grid.querySelectorAll('.nx-ins-tile').forEach((x) => x.setAttribute('aria-expanded', 'false'));
+        if (!open) { if (panel) panel.hidden = true; return; }
+        b.setAttribute('aria-expanded', 'true');
+        if (!panel) { panel = document.createElement('div'); panel.className = 'nx-ins-tilepanel'; grid.after(panel); await mount(panel, key, ctx); if (!panel.isConnected) { panel = null; grid.querySelectorAll('.nx-ins-tile').forEach((x) => x.remove()); } }
+        else panel.hidden = false;
+      });
+      tile.append(b);
+    });
+  }
+
+  globalThis.NXInsight = { mount, tiles };
 })();
