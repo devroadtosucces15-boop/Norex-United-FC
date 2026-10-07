@@ -61,6 +61,7 @@
 <div class="lk-next-row"><div class="lk-count" data-start="${n.start}" aria-label="Countdown">${countdown(n.start)}</div>
 <div class="lk-who"><small class="muted">Who’s in · ${n.inCount}</small><div class="lk-stack">${n.in.slice(0, 8).map((p) => `<span class="lk-av" title="${esc(p.n)}">${p.a ? `<img src="${esc(p.a)}" alt="">` : esc((p.n || '?')[0])}</span>`).join('')}${extra + Math.max(0, n.in.length - 8) > 0 ? `<span class="lk-av more">+${extra + Math.max(0, n.in.length - 8)}</span>` : ''}${n.inCount ? '' : '<span class="muted small">Be the first</span>'}</div></div></div>
 <div class="lk-rsvp" role="group" aria-label="Your answer">${[['yes', '✅', 'I’m in'], ['maybe', '❔', 'Maybe'], ['no', '❌', 'Can’t']].map(([k, i, l]) => `<button type="button" class="lk-ans a-${k}${n.mine === k ? ' on' : ''}" data-rsvp="${k}" aria-pressed="${n.mine === k}">${i} ${l}</button>`).join('')}</div>
+${(n.plays || []).length ? `<div class="lk-plays"><small class="muted">📋 Plays for tonight</small><div class="lk-play-row">${n.plays.map((p) => `<a class="lk-play${p.learned ? ' got' : p.assigned ? ' todo' : ''}" href="tactics.html#play${esc(p.id)}">${p.learned ? '✅' : p.assigned ? '📌' : '▶'} ${esc(p.title)}</a>`).join('')}</div></div>` : ''}
 <p class="lk-links"><a href="#schedule-${esc(n.id)}">Open event →</a><a href="#availability">Full week →</a></p>`;
   }
 

@@ -183,4 +183,25 @@ t('board 07: motion respects reduced-motion', lkJs.includes('reduced()') && read
 t('board 07: error state hands raw text to UI.empty (it escapes once, no double-escape)', lkJs.includes("title: 'Could not open your locker', text: er.message") && !lkJs.includes('text: esc(er.message)'));
 
 t('no login → 401', (await call(null, '/api/locker')).s === 401);
+
+// ----- board 08 → 07: plays pinned to the next night show in the Locker Room (D5) -----
+setFlags({ tactics: 'members' });
+const lkMgr = await login('810', ['mgr'], 'Locker Mgr');
+const mkPlay2 = async (title, pub) => { const x = await call(lkMgr, '/api/plays', { title, category: 'set-piece' }); if (pub) await call(lkMgr, `/api/plays/${x.d.id}/publish`, { published: true }); return x.d.id; };
+const lpA = await mkPlay2('Near-post corner', true), lpB = await mkPlay2('Low block', true);
+await call(lkMgr, '/api/events/plays', { id: evId, plays: [lpA, lpB] });
+await call(lkMgr, `/api/plays/${lpA}/assign`, { userIds: ['800'] });
+let lp = (await call(member, '/api/locker')).d.next.plays;
+t('plays: pinned plays come back in pin order', lp.length === 2 && lp[0].id === lpA && lp[1].id === lpB);
+t('plays: an assigned, unlearned play is flagged for me', lp[0].assigned === true && lp[0].learned === false && lp[1].assigned === false);
+await call(member, `/api/plays/${lpA}/learned`, { learned: true });
+t('plays: learned flips after I tick it', (await call(member, '/api/locker')).d.next.plays[0].learned === true);
+t('plays: per-member, not shared', (await call(member2, '/api/locker')).d.next.plays[0].learned === false);
+await call(lkMgr, `/api/plays/${lpB}/publish`, { published: false });
+t('plays: an unpublished play drops out', (await call(member, '/api/locker')).d.next.plays.map((x) => x.id).join() === String(lpA));
+setFlags({ tactics: 'off' });
+t('plays: hidden entirely while the Tactics Studio flag is off', (await call(member, '/api/locker')).d.next.plays.length === 0);
+setFlags({ tactics: 'members' });
+t('plays: the Locker Room Tonight card renders them as links into the Studio', /lk-play/.test(readFileSync(new URL('../web/locker.js', import.meta.url), 'utf8')) && /tactics\.html#play/.test(readFileSync(new URL('../web/locker.js', import.meta.url), 'utf8')));
+
 done();

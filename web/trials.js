@@ -275,12 +275,21 @@ ${T.data.canNotes ? `<section><h4>📝 Manager notes <small class="muted">(manag
   const wireTagPick = (root) => root.addEventListener('click', (e) => { const b = e.target.closest('[data-tagpick] .chip'); if (!b) return; $$('.chip', b.parentElement).forEach((c) => c.classList.toggle('on', c === b)); });
 
   // Modal from the Members table: notes about one member (and their claimed player).
-  async function notesModal(ctx, { kind, subject, title }) {
-    let notes = null, dlg;
+  async function notesModal(ctx, { kind, subject, title, player }) {
+    let notes = null, dlg, coach = null;
+    // ✨ Coach's note for the member's claimed player: one node, mounted once, carried across the modal's repaints.
+    const coachNode = () => {
+      if (coach || !player || !ctx.mountNote) return coach;
+      coach = document.createElement('section');
+      coach.className = 'tr-coach tr-coach-inline';
+      coach.innerHTML = '<p class="muted small">What their claimed player sees in their Locker Room.</p><div data-coach-slot></div>';
+      ctx.mountNote($('[data-coach-slot]', coach), `note.${player}`, { showAt: true, empty: 'No note written yet – one appears after their first league game, or when their stats next change.' }).catch(() => { coach.querySelector('[data-coach-slot]').textContent = 'Could not load the note – try again.'; });
+      return coach;
+    };
     const body = () => `${notes ? notesList(notes, ctx) : UI.skeleton('rows', 2)}${noteForm()}`;
-    const paint = () => { if (dlg?.isConnected) $('.nx-modal-body', dlg).innerHTML = body(); };
+    const paint = () => { if (dlg?.isConnected) { const b = $('.nx-modal-body', dlg); b.innerHTML = body(); const c = coachNode(); if (c) b.prepend(c); } };
     UI.modal({ title, icon: '📝', wide: true, actions: [], body: body(), onOpen: (d) => {
-      dlg = d; wireTagPick(d);
+      dlg = d; wireTagPick(d); paint();
       d.addEventListener('click', (e) => { const b = e.target.closest('[data-del]'); if (b) delNote(ctx, +b.dataset.del, (n) => { notes = n; paint(); }); });
       d.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -290,6 +299,18 @@ ${T.data.canNotes ? `<section><h4>📝 Manager notes <small class="muted">(manag
     try { notes = (await ctx.call(`/api/notes?kind=${kind}&subject=${encodeURIComponent(subject)}`)).notes; paint(); } catch (e) { ctx.toast(e.message, true); }
   }
 
+  // One list of every squad player's coach's note (GET /api/insights allows 20 keys a call, so chunked). Managers see
+  // every private row; a player with no row yet just doesn't appear. Text is escaped.
+  async function allNotes(ctx, squad) {
+    const keys = squad.map((p) => `note.${p.k}`), rows = new Map();
+    for (let i = 0; i < keys.length; i += 20) {
+      const r = await ctx.call(`/api/insights?keys=${keys.slice(i, i + 20).map(encodeURIComponent).join(',')}`);
+      for (const x of r.insights || []) rows.set(x.key, x);
+    }
+    const have = squad.filter((p) => rows.has(`note.${p.k}`));
+    if (!have.length) return '<p class="muted small">No coach’s notes written yet – they appear after each player’s first league game.</p>';
+    return `<ul class="tr-coach-list">${have.map((p) => { const x = rows.get(`note.${p.k}`); return `<li><b>${esc(p.n)}</b>${p.pos ? ` <span class="muted small">${esc(p.pos)}</span>` : ''}<p><strong>${esc(x.headline)}</strong> ${esc(x.body)}</p>${x.at ? `<small class="muted">✍️ ${UI.time(x.at)}</small>` : ''}</li>`; }).join('')}</ul><p class="muted small">${have.length} of ${squad.length} squad players have a note.</p>`;
+  }
   // Portal tab: every note, filter by subject type / tag, search, add a note about anyone.
   const N = { notes: null, kind: '', tag: '', q: '', trials: null };
   async function notesTab(el, ctx) {
@@ -307,7 +328,16 @@ ${T.data.canNotes ? `<section><h4>📝 Manager notes <small class="muted">(manag
       coach = document.createElement('section');
       coach.className = 'card tr-coach';
       coach.innerHTML = `<h3>✨ Coach's notes</h3><p class="muted small">The written read on each squad player, as that player sees it in their Locker Room. Built from their season stats and the strength notes below – never the private issue notes.</p>
-<select data-coach aria-label="Squad player"><option value="">Pick a squad player…</option>${squad.map((p) => `<option value="${esc(p.k)}">${esc(p.n)}</option>`).join('')}</select><div class="tr-coach-slot" data-coach-slot></div>`;
+<select data-coach aria-label="Squad player"><option value="">Pick a squad player…</option>${squad.map((p) => `<option value="${esc(p.k)}">${esc(p.n)}</option>`).join('')}</select> <button class="btn ghost sm" type="button" data-coach-all aria-expanded="false">📋 All notes at a glance</button><div class="tr-coach-slot" data-coach-slot></div><div class="tr-coach-all" data-coach-list hidden></div>`;
+      coach.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-coach-all]');
+        if (!b) return;
+        const box = $('[data-coach-list]', coach), open = box.hidden;
+        box.hidden = !open; b.setAttribute('aria-expanded', String(open));
+        if (!open || box.dataset.loaded) return;
+        box.innerHTML = UI.skeleton('rows', 3);
+        try { box.innerHTML = await allNotes(ctx, squad); box.dataset.loaded = '1'; } catch (er) { box.innerHTML = ''; box.hidden = true; b.setAttribute('aria-expanded', 'false'); ctx.toast(er.message, true); }
+      });
       coach.addEventListener('change', (e) => {
         if (e.target.dataset.coach === undefined) return;
         const slot = $('[data-coach-slot]', coach), k = e.target.value;

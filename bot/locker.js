@@ -23,11 +23,25 @@ async function nextEvent(env, me) {
   if (!e) return null;
   const rsvps = await all(env, 'SELECT user_id, status, name, avatar FROM event_rsvps WHERE event_id = ? ORDER BY at', e.id);
   const yes = rsvps.filter((r) => r.status === 'yes');
+  const plays = await tonightPlays(env, me, e);
   return {
     id: e.id, type: e.type, title: opt(e.title), start: e.start, duration: e.duration, tz: e.tz,
     mine: rsvps.find((r) => r.user_id === me.u)?.status ?? null,
     in: yes.slice(0, 24).map((r) => ({ id: r.user_id, n: r.name, a: opt(r.avatar) })), inCount: yes.length,
+    plays,
   };
+}
+// Board 08 → 07: the plays a manager pinned to this night (published only), each with my learned state – an assigned
+// play I haven't ticked is `todo`. Only when the Tactics Studio is visible to me, so a hidden feature never leaks.
+async function tonightPlays(env, me, e) {
+  let ids = [];
+  try { ids = JSON.parse(e.plays || '[]'); } catch { /* bad json → none */ }
+  if (!Array.isArray(ids) || !ids.length || !flagOn(env, me, 'tactics')) return [];
+  const list = await all(env, `SELECT id, title, category FROM plays WHERE id IN (${marks(ids.length)}) AND published = 1 AND archived = 0`, ...ids);
+  const mine = list.length ? await all(env, `SELECT play_id, learned FROM play_assign WHERE user_id = ? AND play_id IN (${marks(list.length)})`, me.u, ...list.map((p) => p.id)) : [];
+  const by = new Map(mine.map((a) => [a.play_id, !!a.learned]));
+  return ids.map((id) => list.find((p) => p.id === id)).filter(Boolean)
+    .map((p) => ({ id: p.id, title: p.title, category: opt(p.category), assigned: by.has(p.id), learned: by.get(p.id) === true }));
 }
 async function openVote(env, me) {
   const week = weekOf(Date.now());

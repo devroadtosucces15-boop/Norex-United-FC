@@ -368,6 +368,8 @@ const { readFileSync } = await import('node:fs');
 const trialsSrc = readFileSync(new URL('../web/trials.js', import.meta.url), 'utf8'), appSrc = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8'), insSrc = readFileSync(new URL('../web/insights.js', import.meta.url), 'utf8');
 t('Notes tab mounts note.<player> through the shared widget with showAt', /ctx\.mountNote\(slot, `note\.\$\{k\}`, \{ showAt: true/.test(trialsSrc));
 t('portal ctx hands trials.js a mountNote behind the statInsights flag', /trialsCtx = [\s\S]{0,400}mountNote: flagOn\('statInsights'/.test(appSrc));
+t('D3: Members 📝 modal gets the claimed player\'s coach note (player passed from the approved claim, mounted once)', /player: S\.admin\.claims\?\.\[d\.notes\]\?\.status === 'approved'/.test(appSrc) && /async function notesModal\(ctx, \{ kind, subject, title, player \}\)/.test(trialsSrc) && /ctx\.mountNote\(\$\('\[data-coach-slot\]', coach\), `note\.\$\{player\}`/.test(trialsSrc));
+t('D3: "All notes at a glance" chunks keys by 20 (route cap), escapes names + bodies, one fetch per chunk', /i \+= 20/.test(trialsSrc) && /slice\(i, i \+ 20\)/.test(trialsSrc) && /esc\(x\.headline\)\}<\/strong> \$\{esc\(x\.body\)\}/.test(trialsSrc));
 t('widget shows "last written" only when asked (showAt) and keeps an empty slot only when asked (empty)', /ctx\.showAt && r\.at/.test(insSrc) && /!row && ctx\.empty/.test(insSrc));
 
 // surfaces: matches.html last-5 slot + clickable "Head to head" rows on stats.html (ids from api/h2h.json)

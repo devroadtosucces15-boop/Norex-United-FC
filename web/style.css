@@ -1115,6 +1115,7 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 .lk-tile small{font:600 10px var(--head);letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-top:4px}
 .lk-live{font:700 20px var(--head);color:var(--loss);text-transform:uppercase;letter-spacing:1px}
 .lk-who{text-align:right}
+.lk-plays{margin:2px 0 12px}.lk-play-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.lk-play{padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);font-size:.85rem;text-decoration:none;color:inherit}.lk-play.todo{border-color:var(--red,#c8352c);background:rgba(200,53,44,.18)}.lk-play.got{border-color:#3fb27f;color:#9be3c0}.lk-play:hover{background:rgba(255,255,255,.14)}
 .lk-stack{display:flex;justify-content:flex-end;margin-top:4px}
 .lk-av{width:30px;height:30px;border-radius:50%;margin-left:-7px;overflow:hidden;display:inline-grid;place-items:center;background:var(--red);color:#fff;font:600 13px/1 var(--head);border:2px solid var(--panel)}
 .lk-av img{width:100%;height:100%;object-fit:cover}
@@ -1455,3 +1456,5 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 .lk-wcard .lk-wface{--t1:#f3d98b;--t2:#a8802b;--edge:#fff3c4;color:#2a1d05;align-items:center;gap:6px;text-align:center}
 .lk-wcard:focus-visible{outline:3px solid #c8352c;outline-offset:4px}
 @media (prefers-reduced-motion:reduce){.lk-wcard .lk-flip{transition:none}}
+
+.tr-coach-inline{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}.tr-coach-inline h4{margin:0 0 6px}.tr-coach-all{margin-top:12px}.tr-coach-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}.tr-coach-list li{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.05)}.tr-coach-list p{margin:4px 0}
