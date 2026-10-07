@@ -119,6 +119,9 @@
       ctx.call('/api/me').then((me) => (me.claim?.status === 'approved' ? tryKey(`note.${me.claim.player}`) : false)).catch(() => false)
         .then((ok) => ok || tryKey('club')).then((ok) => { coach.hidden = !ok; }).catch(() => {});
     }
+    // 🟢 live "here right now" roster + waves (flag `hubLive`, web/hublive.js) – loaded after the clubhouse so the tunnel isn't delayed
+    const liveEl = $('[data-hubw-live]');
+    if (liveEl && ctx.mountLive) ctx.mountLive(liveEl).catch(() => {});
     playTunnel(render);
     $('.hubw-back')?.addEventListener('click', (e) => {
       if (reducedMotion()) return;

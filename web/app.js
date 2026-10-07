@@ -1139,7 +1139,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   if (session && flagOn('presence', baseRole)) loadAsset('presence.js', 'NXPresence').then(() => NXPresence.start({ call, toast })).catch(() => {});
   // ---------- 🔑 the Hub clubhouse (board 10, BE8) – gold entrance tunnel + 3D room map – assets/hub.js ----------
   const hubworldEl = $('[data-hubworld]');
-  if (hubworldEl && session && flagOn('hub', baseRole)) loadAsset('hub.js', 'NXHub').then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, flagOn: (n) => flagOn(n, baseRole), mountInsight: flagOn('statInsights', baseRole) ? (slot, key) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null })).catch(() => {});
+  if (hubworldEl && session && flagOn('hub', baseRole)) loadAsset('hub.js', 'NXHub').then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, flagOn: (n) => flagOn(n, baseRole), mountLive: flagOn('hubLive', baseRole) ? (slot) => loadAsset('hublive.js', 'NXHubLive').then(() => NXHubLive.mount(slot, { call, toast, api: MAPI, token: session.token, me: session.u, name: session.n, avatar: session.a, canWave: true })) : null, mountInsight: flagOn('statInsights', baseRole) ? (slot, key) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null })).catch(() => {});
 
   // ---------- verified badges (public) ----------
   (async () => {

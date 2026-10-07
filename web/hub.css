@@ -73,3 +73,15 @@
 }
 
 .hubw-coach{max-width:760px;margin:0 auto 14px;padding:0 16px}.hubw-coach .nx-insight{margin:0;border-color:color-mix(in srgb,var(--gold) 55%,var(--line))}.hubw-coach .nx-insight h4{color:var(--gold)}
+/* ---------- live roster + waves (hubLive flag, web/hublive.js) ---------- */
+.hubw-live{max-width:760px;margin:0 auto 14px;padding:12px 16px;border-radius:14px;background:linear-gradient(160deg,#141014,#0b0a06);border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line))}
+.hubl-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.hubl-head b{font:700 14px var(--head);color:var(--gold);letter-spacing:.03em}
+.hubl-row{display:flex;flex-wrap:wrap;gap:8px;min-height:30px}
+.hubl-chip{display:inline-flex;align-items:center;gap:7px;padding:4px 6px 4px 4px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2);font:600 13px var(--body);color:#fff;animation:hublIn .3s ease both}
+.hubl-chip.me{border-color:color-mix(in srgb,var(--gold) 60%,var(--line2))}.hubl-chip small{color:var(--muted);font-weight:500}
+.hubl-wave{border:0;background:transparent;font-size:16px;line-height:1;padding:3px 5px;border-radius:50%;cursor:pointer;transition:transform .15s ease}
+.hubl-wave:hover,.hubl-wave:focus-visible{transform:rotate(14deg) scale(1.15);background:color-mix(in srgb,var(--gold) 22%,transparent);outline:none}
+.hubl-wave.sent{animation:hublWave .6s ease}.hubl-wave:disabled{opacity:.5;cursor:default}
+@keyframes hublIn{from{opacity:0;transform:translateY(4px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes hublWave{0%,100%{transform:rotate(0)}25%{transform:rotate(22deg)}75%{transform:rotate(-18deg)}}
+@media (prefers-reduced-motion:reduce){.hubl-chip,.hubl-wave.sent{animation:none}.hubl-wave{transition:none}.hubl-wave:hover,.hubl-wave:focus-visible{transform:none}}
