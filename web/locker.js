@@ -15,7 +15,7 @@
   const rCls = (r) => (r >= 8 ? 'hi' : r >= 7 ? 'ok' : r >= 6 ? 'mid' : 'lo');
   const safeLink = (l) => (l && /^[\w\-./#?=&%]+$/.test(l) && !l.startsWith('//') ? l : '');
 
-  let el = null, ctx = null, data = null, votes = null, voteAt = 0, tick = null, busy = false, flipped = false;
+  let el = null, ctx = null, data = null, votes = null, voteAt = 0, tick = null, busy = false, flipped = false, wflip = {};
 
   const myPlayer = () => {
     const c = ctx.claim();
@@ -65,12 +65,30 @@
   }
 
   // ---------- ③ MOTM vote by picking a card ----------
+  const closesIn = (t) => {
+    const ms = t - Date.now(), h = Math.ceil(ms / 36e5);
+    return ms <= 0 ? 'closed' : h >= 24 ? `closes in ${Math.floor(h / 24)}d ${h % 24}h` : `closes in ${h}h`;
+  };
+  // Vote closed: the winner's card sits face-down with a "?" – tap to flip it over (kept per match across repaints).
+  function closedVote(m, st, chips) {
+    const head = `<div class="lk-sec-h"><h3>⭐ MOTM · ${esc(m.gf)}–${esc(m.ga)} vs ${esc(m.opp)}</h3><span class="lk-tag">🔒 Voting closed</span></div>${chips}`;
+    const w = st.winner;
+    if (!w) return `${head}${UI.empty({ icon: '🗳️', title: 'No votes were cast', text: 'Voting for this match has closed without a winner.' })}`;
+    const on = !!wflip[m.id];
+    return `${head}<div class="lk-win"><button type="button" class="lk-wcard${on ? ' flipped' : ''}" data-wflip="${esc(m.id)}" aria-pressed="${on}" aria-label="${on ? `Man of the match: ${esc(w.n)}` : 'Tap to reveal the man of the match'}">
+<span class="lk-flip"><span class="lk-side lk-front lk-wq"><b>?</b><small>Tap to reveal</small></span>
+<span class="lk-side lk-back lk-wface"><span class="lk-vc-top"><b>${w.r != null ? Number(w.r).toFixed(1) : '⭐'}</b><small>${esc(POS[w.pos] || w.pos || '')}</small></span><span class="lk-face">${SIL}</span><span class="lk-vc-name">${esc(w.n)}</span><span class="lk-vc-n">👑 ${w.votes} vote${w.votes === 1 ? '' : 's'}${w.tie ? ' · tied' : ''}</span></span></span></button></div>
+<p class="muted small lk-fan-help">${on ? `${esc(w.n)} is man of the match${w.tie ? ' (tied on votes – higher rating takes it)' : ''}.` : 'The club has decided – flip the card.'}</p>`;
+  }
   function voteFan() {
     const ms = votes?.matches || [];
     const award = ctx.flagOn('awards') && data.vote ? `<a class="lk-award" href="#awards">${data.vote.voted ? '✅ Weekly awards: you’ve voted' : '🏆 Weekly awards are open'} · closes ${esc(new Date(data.vote.closes).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }))}</a>` : '';
     if (!votes) return `<div class="lk-sec-h"><h3>⭐ MOTM vote</h3></div>${UI.skeleton('cards', 1)}`;
     if (!ms.length) return `<div class="lk-sec-h"><h3>⭐ MOTM vote</h3></div>${UI.empty({ icon: '⚽', title: 'No recent matches', text: 'Votes open after our next league or playoff game.' })}${award}`;
     const m = ms[Math.min(voteAt, ms.length - 1)];
+    const st = (data.motm || []).find((x) => String(x.id) === String(m.id));
+    const chips = ms.length > 1 ? `<div class="chipset lk-matches">${ms.map((x, i) => `<button type="button" class="chip${i === Math.min(voteAt, ms.length - 1) ? ' on' : ''}" data-vm="${i}"><span class="res ${esc(x.res)}">${esc(x.res)}</span> vs ${esc(x.opp)}</button>`).join('')}</div>` : '';
+    if (st?.closed) return closedVote(m, st, chips) + award;
     const ps = [...m.players].sort((a, b) => b.r - a.r).slice(0, 7);
     const top = Math.max(0, ...Object.values(m.tally));
     const mid = (ps.length - 1) / 2;
@@ -81,8 +99,8 @@
 <span class="lk-vc-top"><b>${Number(p.r).toFixed(1)}</b><small>${esc(POS[p.pos] || p.pos || '')}</small></span><span class="lk-face">${SIL}</span><span class="lk-vc-name">${esc(p.n)}</span>
 <span class="lk-vc-n">${n ? `${lead ? '👑 ' : ''}${n} vote${n === 1 ? '' : 's'}` : '&nbsp;'}</span>${m.mine === p.k ? '<span class="lk-ribbon">✓ Your vote</span>' : ''}</button>`;
     }).join('');
-    return `<div class="lk-sec-h"><h3>⭐ MOTM vote · ${esc(m.gf)}–${esc(m.ga)} vs ${esc(m.opp)}</h3><span class="lk-tag">${m.total} vote${m.total === 1 ? '' : 's'}</span></div>
-${ms.length > 1 ? `<div class="chipset lk-matches">${ms.map((x, i) => `<button type="button" class="chip${i === Math.min(voteAt, ms.length - 1) ? ' on' : ''}" data-vm="${i}"><span class="res ${esc(x.res)}">${esc(x.res)}</span> vs ${esc(x.opp)}</button>`).join('')}</div>` : ''}
+    return `<div class="lk-sec-h"><h3>⭐ MOTM vote · ${esc(m.gf)}–${esc(m.ga)} vs ${esc(m.opp)}</h3><span class="lk-tag">${m.total} vote${m.total === 1 ? '' : 's'}${st ? ` · ${closesIn(st.closes)}` : ''}</span></div>
+${chips}
 <div class="lk-fan" data-match="${esc(m.id)}">${cards}</div>
 <p class="muted small lk-fan-help">Tap a card to vote · tap your pick again to take it back.</p>${award}`;
   }
@@ -146,7 +164,7 @@ ${pl && ctx.mountNote && !noteNone ? '<section class="lk-sec lk-note" data-lk-no
 <section class="lk-sec card lk-ach" aria-label="Achievements and alerts">${medals()}${alerts()}</section>
 </div></div>`;
     coachNote(pl);
-    ctx.badges?.({ alerts: data.unread || 0, votes: votes?.matches?.[0] && !votes.matches[0].mine ? 1 : 0, awards: data.vote && !data.vote.voted && ctx.flagOn('awards') ? 1 : 0 });
+    ctx.badges?.({ playbook: data.playbook || 0, builds: data.builds || 0, alerts: data.unread || 0, votes: votes?.matches?.filter((m) => !m.mine && !(data.motm || []).find((x) => String(x.id) === String(m.id) && x.closed)).length ? 1 : 0, awards: data.vote && !data.vote.voted && ctx.flagOn('awards') ? 1 : 0 });
     clearInterval(tick);
     tick = setInterval(() => {
       if (!el?.isConnected) { clearInterval(tick); return; }
@@ -238,7 +256,7 @@ ${pl && ctx.mountNote && !noteNone ? '<section class="lk-sec lk-note" data-lk-no
     img.src = `${ctx.base}assets/crest.png`;
   }
   function onClick(e) {
-    const t = e.target.closest('[data-lk], [data-rsvp], [data-vote], [data-vm]');
+    const t = e.target.closest('[data-lk], [data-rsvp], [data-vote], [data-vm], [data-wflip]');
     if (!t) return;
     const d = t.dataset;
     if (d.lk === 'flip') { flipped = !flipped; t.classList.toggle('flipped', flipped); t.setAttribute('aria-pressed', flipped); }
@@ -246,6 +264,7 @@ ${pl && ctx.mountNote && !noteNone ? '<section class="lk-sec lk-note" data-lk-no
     if (d.lk === 'claim') location.hash = 'me';
     if (d.rsvp) rsvp(d.rsvp);
     if (d.vote) vote(d.vote);
+    if (d.wflip) { wflip[d.wflip] = !wflip[d.wflip]; paint(); }
     if (d.vm !== undefined) { voteAt = Number(d.vm); paint(); }
   }
 

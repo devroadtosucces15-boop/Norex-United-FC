@@ -1,7 +1,9 @@
 // Locker Room (redesign BE2): GET /api/locker – next event + my RSVP + who's in, open award vote + deadline,
 // unread notification count, achievements unlocked since I last saw them, batched into one call.
 import { call, env, login, sqlite } from './mock.mjs';
+import { readFileSync } from 'node:fs';
 import { t, done } from './lib.mjs';
+import { motmClosed, motmCloses, motmStatus, MOTM_WINDOW_MS } from '../bot/locker.js';
 import { weekOf } from '../bot/awards.js';
 import { ClubRoom, broadcastRoom } from '../bot/clubroom.js';
 import { notify } from '../bot/notify.js';
@@ -54,9 +56,55 @@ r = await call(member, '/api/locker');
 t('alerts: my 3 newest, newest first', r.d.alerts.length === 3 && r.d.alerts[0].title === 'Alert 3' && r.d.alerts.every((a) => a.read === false));
 t('alerts: never someone else\'s', (await call(member2, '/api/locker')).d.alerts.length === 0);
 
-// ----- front end: the hub tab is wired to the route -----
-import { readFileSync } from 'node:fs';
+// ----- board 07 badges: Playbook to-learn count + My builds -----
+setFlags({ tactics: 'members', builder: 'members' });
+r = await call(member, '/api/locker');
+t('playbook: 0 with nothing assigned, builds 0', r.d.playbook === 0 && r.d.builds === 0);
+const mkPlay = (pub, arch) => Number(sqlite.prepare("INSERT INTO plays (title, created_by, created_at, updated_at, published, archived) VALUES ('P', '1', ?, ?, ?, ?)").run(Date.now(), Date.now(), pub, arch).lastInsertRowid);
+const [pA, pB, pC, pD] = [mkPlay(1, 0), mkPlay(1, 0), mkPlay(0, 0), mkPlay(1, 1)];
+for (const id of [pA, pB, pC, pD]) sqlite.prepare("INSERT INTO play_assign (play_id, user_id, assigned_at) VALUES (?, '800', ?)").run(id, Date.now());
+t('playbook: counts published, unarchived, unlearned assigned plays', (await call(member, '/api/locker')).d.playbook === 2);
+sqlite.prepare("UPDATE play_assign SET learned = 1 WHERE play_id = ? AND user_id = '800'").run(pA);
+t('playbook: drops once learned', (await call(member, '/api/locker')).d.playbook === 1);
+t('playbook: per member', (await call(member2, '/api/locker')).d.playbook === 0);
+setFlags({ tactics: 'off' });
+t('playbook: tactics flag off → 0', (await call(member, '/api/locker')).d.playbook === 0);
+setFlags({ tactics: 'members' });
+const mkBuild = (uid, removed) => sqlite.prepare("INSERT INTO builds (user_id, title, code, arch, level, at, updated_at, removed_at) VALUES (?, 'B', 'abc', 'a', 50, ?, ?, ?)").run(uid, Date.now(), Date.now(), removed);
+mkBuild('800', null); mkBuild('800', null); mkBuild('800', Date.now()); mkBuild('801', null);
+t('builds: my live builds only', (await call(member, '/api/locker')).d.builds === 2 && (await call(member2, '/api/locker')).d.builds === 1);
+setFlags({ builder: 'off' });
+t('builds: builder flag off → 0', (await call(member, '/api/locker')).d.builds === 0);
+
+// ----- board 07 MOTM close + winner flip (flag lockerRoom) -----
+const nowS = Math.floor(Date.now() / 1000);
+t('motm: closes 72 h after the match', motmCloses({ ts: nowS }) === nowS * 1000 + MOTM_WINDOW_MS && !motmClosed({ ts: nowS - 3600 }) && motmClosed({ ts: nowS - 73 * 3600 }) && !motmClosed({}));
+const ps = [{ k: 'a', n: 'Ann', pos: 'forward', r: 7 }, { k: 'b', n: 'Bea', pos: 'defender', r: 8 }, { k: 'c', n: 'Cat', pos: 'goalkeeper', r: 6 }];
+const fake = async () => ({ matches: [{ id: 'm-old', ts: nowS - 80 * 3600, ps }, { id: 'm-tie', ts: nowS - 90 * 3600, ps }, { id: 'm-none', ts: nowS - 100 * 3600, ps }, { id: 'm-new', ts: nowS - 3600, ps }].slice(0, 3) });
+const vote = (m, u, p) => sqlite.prepare('INSERT INTO votes (match_id, user_id, player, name, at) VALUES (?, ?, ?, ?, 1)').run(m, u, p, 'x');
+vote('m-old', 'u1', 'a'); vote('m-old', 'u2', 'a'); vote('m-old', 'u3', 'b'); vote('m-tie', 'u1', 'a'); vote('m-tie', 'u2', 'b');
+let ms = await motmStatus(env, fake);
+t('motm: closed match → winner is the most-voted player', ms[0].closed && ms[0].winner.k === 'a' && ms[0].winner.votes === 2 && ms[0].winner.tie === false);
+t('motm: tie → higher match rating wins, flagged tied', ms[1].winner.k === 'b' && ms[1].winner.tie === true);
+t('motm: closed with no votes → no winner', ms[2].closed && ms[2].winner === null);
+const fake2 = async () => ({ matches: [{ id: 'm-open', ts: nowS - 3600, ps }] });
+vote('m-open', 'u1', 'c');
+ms = await motmStatus(env, fake2);
+t('motm: open match → not closed, winner hidden until it closes', !ms[0].closed && ms[0].winner === null && ms[0].closes > Date.now());
+setFlags({ lockerRoom: 'off' });
+t('motm: lockerRoom off → no motm payload on /api/locker', (await call(member, '/api/locker')).d.motm.length === 0);
+setFlags({ lockerRoom: 'members' });
+r = await call(member, '/api/locker');
+t('motm: lockerRoom on → statuses for the recent matches', Array.isArray(r.d.motm) && r.d.motm.every((x) => typeof x.closes === 'number' && typeof x.closed === 'boolean'));
+
 const appJs = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+const lockerJs = readFileSync(new URL('../web/locker.js', import.meta.url), 'utf8');
+const membersJs = readFileSync(new URL('../bot/members.js', import.meta.url), 'utf8');
+t('motm: POST /api/vote refuses a closed match only when lockerRoom is on', /flagOn\(env, me, 'lockerRoom'\) && motmClosed\(m\)/.test(membersJs));
+t('front end: rail badges for Playbook + My builds, My builds entry gated by builder flag', appJs.includes('data-badge="playbook"') && appJs.includes('data-badge="builds"') && appJs.includes("flagOn('builder', baseRole)") && lockerJs.includes('playbook: data.playbook'));
+t('front end: closed vote shows a flip-to-reveal winner card, escaped', lockerJs.includes('data-wflip') && lockerJs.includes('${esc(w.n)}') && lockerJs.includes('closesIn(st.closes)'));
+
+// ----- front end: the hub tab is wired to the route -----
 t('hub: Locker Room tab is flag-gated and loads /api/locker', appJs.includes("['locker', '🎽 My locker']") && appJs.includes('NXLocker') && readFileSync(new URL('../web/locker.js', import.meta.url), 'utf8').includes("call('/api/locker')"));
 
 // ----- live refresh (BE2): broadcasts + socket route -----

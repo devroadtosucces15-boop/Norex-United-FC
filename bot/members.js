@@ -21,7 +21,7 @@ import { probuildsPublic, probuildsRoute } from './probuilds.js';
 import { badgesRoute } from './badges.js';
 import { docsList, knowledgeRoute } from './docs.js';
 import { eventsRoute, localDate, publicEvents, weekEvents, reportPosterRoute } from './events.js';
-import { lockerRoute } from './locker.js';
+import { lockerRoute, motmClosed } from './locker.js';
 import { hubRoute, hubSocket } from './hub.js';
 import { lineupSocket } from './events.js';
 import { lockerSocket } from './locker.js';
@@ -650,6 +650,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       if (!can(me, 'vote.motm')) return fail('Members only.', 403);
       const m = recent.find((x) => x.id === body.match);
       if (!m) return fail('Voting is only open for the latest matches.');
+      if (flagOn(env, me, 'lockerRoom') && motmClosed(m)) return fail('Voting for that match has closed.'); // board 07: 72 h window
       const cur = await one(env, 'SELECT player FROM votes WHERE match_id = ? AND user_id = ?', String(m.id), me.u);
       if (body.player === null || cur?.player === body.player) {
         await run(env, 'DELETE FROM votes WHERE match_id = ? AND user_id = ?', String(m.id), me.u);
@@ -710,7 +711,7 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (kno) return kno;
   const evt = await eventsRoute(p, method, body, me, env, log, loadSite, url); // P3.1 events · P3.2 RSVPs · P3.7 match night
   if (evt) return evt;
-  const lkr = await lockerRoute(p, method, me, env); // BE2 Locker Room: next event + vote + unread + achievements, one call
+  const lkr = await lockerRoute(p, method, me, env, loadSite); // BE2 Locker Room: next event + vote + unread + achievements, one call
   if (lkr) return lkr;
   const hub = await hubRoute(p, method, body, me, env, log); // BE8 Hub: online count + waves (live roster is the HUB_ROOM socket)
   if (hub) return hub;

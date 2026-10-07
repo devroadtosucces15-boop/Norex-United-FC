@@ -1099,13 +1099,17 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   });
   // ---------- ✨ Insight widget (board 12, BE9): home page club form + latest match, home-squad player profiles – assets/insights.js ----------
   // `note.<k>` slots (the private coach's note) only ask the API for a signed-in viewer; the row comes back only for that player's claimant + managers, else the widget removes its slot
-  if (flagOn('statInsights', baseRole || 'guest')) $$('[data-nx-insight]').forEach((el) => {
+  // ✨ chips on the stat tiles (home "Season at a glance", a home player's Career) → one insight panel under the grid
+  if (flagOn('statInsights', baseRole || 'guest') && flagOn('insightWidget', baseRole || 'guest')) $$('[data-ins-tile]').forEach((g) => {
+    (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.tiles(g, g.dataset.insTile, { call, toast, session, baseRole })).catch(() => {});
+  });
+  if (flagOn('statInsights', baseRole || 'guest') && flagOn('insightWidget', baseRole || 'guest')) $$('[data-nx-insight]').forEach((el) => {
     if (el.dataset.nxInsight.startsWith('note.') && !session) { el.remove(); return; }
     (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(el, el.dataset.nxInsight, { call, toast, session, baseRole })).catch(() => el.remove());
   });
   // ✨ head-to-head insight on the stats page "Head to head" table (BE9 h2h): click/Enter a row to mount `h2h.<opponent>` in the panel under the table
   const h2hPanel = $('[data-nx-h2h-insight]');
-  if (h2hPanel && flagOn('statInsights', baseRole || 'guest')) {
+  if (h2hPanel && flagOn('statInsights', baseRole || 'guest') && flagOn('insightWidget', baseRole || 'guest')) {
     const pick = (tr) => {
       $$('#h2h tr.h2h-on').forEach((r) => r.classList.remove('h2h-on'));
       tr.classList.add('h2h-on');
@@ -1119,7 +1123,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   // ✨ head-to-head insight (BE9 compare, compare.html) – members only, written on first view of a pair, cached until the stats change
   cmpHook = (a, b) => {
     const slot = $('[data-nx-cmp-insight]');
-    if (!slot || !flagOn('statInsights', baseRole || 'guest')) return;
+    if (!slot || !(flagOn('statInsights', baseRole || 'guest') && flagOn('insightWidget', baseRole || 'guest'))) return;
     if (!session || a.k === b.k || !a.home || !b.home) { slot.hidden = true; slot.innerHTML = ''; return; }
     slot.hidden = false; slot.innerHTML = '';
     (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => {
@@ -1139,7 +1143,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   if (session && flagOn('presence', baseRole)) loadAsset('presence.js', 'NXPresence').then(() => NXPresence.start({ call, toast })).catch(() => {});
   // ---------- 🔑 the Hub clubhouse (board 10, BE8) – gold entrance tunnel + 3D room map – assets/hub.js ----------
   const hubworldEl = $('[data-hubworld]');
-  if (hubworldEl && session && flagOn('hub', baseRole)) loadAsset('hub.js', 'NXHub').then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, flagOn: (n) => flagOn(n, baseRole), mountLive: flagOn('hubLive', baseRole) ? (slot) => loadAsset('hublive.js', 'NXHubLive').then(() => NXHubLive.mount(slot, { call, toast, api: MAPI, token: session.token, me: session.u, name: session.n, avatar: session.a, canWave: true })) : null, mountInsight: flagOn('statInsights', baseRole) ? (slot, key) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null })).catch(() => {});
+  if (hubworldEl && session && flagOn('hub', baseRole)) loadAsset('hub.js', 'NXHub').then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, flagOn: (n) => flagOn(n, baseRole), mountLive: flagOn('hubLive', baseRole) ? (slot) => loadAsset('hublive.js', 'NXHubLive').then(() => NXHubLive.mount(slot, { call, toast, api: MAPI, token: session.token, me: session.u, name: session.n, avatar: session.a, canWave: true })) : null, mountInsight: flagOn('statInsights', baseRole) && flagOn('insightWidget', baseRole) ? (slot, key) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null })).catch(() => {});
 
   // ---------- verified badges (public) ----------
   (async () => {
@@ -1211,7 +1215,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
 <div class="rail-me"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><span id="role-tag">${roleTag(baseRole)}</span></div></div>
 <button class="rail-toggle" type="button" aria-expanded="false">☰ <span id="rail-cur">Menu</span></button>
 <div class="rail-groups">${RAIL.map(([g, ks]) => { const items = ks.map(railItem).join(''); return items ? `<div class="rail-g"><small>${g}</small>${items}</div>` : ''; }).join('')}
-<div class="rail-g"><small>Tactics</small><a class="rail-i" href="${BASE}tactics.html"><span>🧠 Playbook &amp; tactics</span></a></div>
+<div class="rail-g"><small>Tactics</small><a class="rail-i" href="${BASE}tactics.html"><span>🧠 Playbook &amp; tactics</span><b class="rail-b" data-badge="playbook" hidden></b></a>${flagOn('builder', baseRole) ? `<a class="rail-i" href="${BASE}builder.html"><span>🧬 My builds</span><b class="rail-b" data-badge="builds" hidden></b></a>` : ''}</div>
 <div class="rail-g"><small>Settings</small><button class="rail-i" id="logout" type="button"><span>🚪 Log out</span></button></div></div></nav>
 <div id="panel"></div></div>` : `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
 <div class="chipset hub-tabs">${TABS.map(([k, l]) => `<button class="chip" type="button" data-tab="${k}">${l}</button>`).join('')}</div>
@@ -1670,7 +1674,7 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
   Object.assign(ACT, { 'flag-change': '🚩' }); // BE5
   Object.assign(ACT_TXT, { 'flag-change': 'changed a feature flag' });
   const trialsCtx = () => ({ call, toast, role: S.me?.user?.role ?? baseRole, perms: S.me?.user?.perms ?? [], me: { u: session.u, n: session.n, a: session.a }, admin: S.admin, players: Array.isArray(S.players) ? S.players : [], flagTrials: flagOn('trials', baseRole),
-    mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) ? (slot, key, opts) => (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole, ...opts })) : null });
+    mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) && flagOn('insightWidget', S.me?.user?.role ?? baseRole) ? (slot, key, opts) => (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole, ...opts })) : null });
   const withTrials = (fn) => loadTrials().then(() => fn(window.NXTrials, trialsCtx())).catch(() => toast('Could not load this part – try again', true));
   function bind() {
     panel.onclick = async (e) => {
@@ -1759,7 +1763,7 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
     const dg = $('#dugout-panel', panel); // board 08 Dugout – assets/dugout.js
     if (dg) (window.NXDugout ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/dugout.js`, onload: ok, onerror: no }))))
       .then(() => NXDugout.mount(dg, { call, toast, UI, base: BASE, me: { u: session.u, n: session.n, a: session.a }, admin: () => S.admin, squadweek: () => S.squadweek, players: () => S.players, decide, canAnnounce: !!S.me?.user?.perms?.includes('notify.announce'), flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole),
-        mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) ? (slot, key, opts) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole, ...opts })) : null }))
+        mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) && flagOn('insightWidget', S.me?.user?.role ?? baseRole) ? (slot, key, opts) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole, ...opts })) : null }))
       .catch(() => toast('Could not load the Dugout – try again', true));
     const br = $('#boardroom-panel', panel); // board 09 Boardroom – assets/boardroom.js
     if (br) (window.NXBoardroom ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/boardroom.js`, onload: ok, onerror: no }))))
@@ -1774,7 +1778,7 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
     const lk = $('#locker-panel', panel); // board 07 Locker Room – assets/locker.js
     if (lk) (window.NXLocker ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/locker.js`, onload: ok, onerror: no }))))
       .then(() => NXLocker.tab(lk, { call, toast, base: BASE, me: { u: session.u, n: session.n, a: session.a }, claim: () => S.me?.claim, players: () => S.players, flagOn: (f) => flagOn(f, S.me?.user?.role ?? baseRole), badges: railBadges,
-        mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) ? (slot, key) => (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null }))
+        mountNote: flagOn('statInsights', S.me?.user?.role ?? baseRole) && flagOn('insightWidget', S.me?.user?.role ?? baseRole) ? (slot, key) => (window.NXInsight ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/insights.js`, onload: ok, onerror: no })))).then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null }))
       .catch(() => toast('Could not load your locker – try again', true));
     const ap = $('#alerts-panel', panel), ra = $('#requests-admin', panel);
     if (ap) loadNotify().then(() => NXNotify.tab(ap, notifyCtx())).catch(() => toast('Could not load notifications – try again', true));

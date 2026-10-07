@@ -14,6 +14,7 @@ const fail = (msg, status = 400) => json({ error: msg }, status);
 const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results);
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const opt = (v) => v ?? undefined;
+const marks = (n) => Array(n).fill('?').join(',');
 const ACH = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));
 const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
@@ -44,6 +45,40 @@ async function medals(env, me) {
   rows.sort((a, b) => RANK[ACH[b.id].tier] - RANK[ACH[a.id].tier] || b.at - a.at);
   return { count: rows.length, total: ACHIEVEMENTS.length, top: rows.slice(0, 5).map((r) => ({ id: r.id, icon: ACH[r.id].icon, name: ACH[r.id].name, tier: ACH[r.id].tier, at: r.at })) };
 }
+// Board 07 badges: Playbook = published plays assigned to me that I haven't ticked as learned; builds = my saved builds.
+async function playbookCount(env, me) {
+  if (!flagOn(env, me, 'tactics')) return 0;
+  const r = await one(env, 'SELECT COUNT(*) AS n FROM play_assign a JOIN plays p ON p.id = a.play_id WHERE a.user_id = ? AND a.learned = 0 AND p.published = 1 AND p.archived = 0', me.u);
+  return r?.n || 0;
+}
+async function buildsCount(env, me) {
+  if (!flagOn(env, me, 'builder')) return 0;
+  const r = await one(env, 'SELECT COUNT(*) AS n FROM builds WHERE user_id = ? AND removed_at IS NULL', me.u);
+  return r?.n || 0;
+}
+
+// MOTM vote close (flag lockerRoom): a match's vote stays open for 72 h after the final whistle (match `ts` is in
+// seconds). Once closed the most-voted player is the winner (ties → higher match rating); no votes → no winner.
+export const MOTM_WINDOW_MS = 72 * 3600e3;
+export const motmCloses = (m) => (Number(m.ts) || 0) * 1000 + MOTM_WINDOW_MS;
+export const motmClosed = (m, now = Date.now()) => !!m.ts && now >= motmCloses(m);
+export async function motmStatus(env, loadSite) {
+  const matches = ((await loadSite('club'))?.matches || []).slice(0, 3);
+  if (!matches.length) return [];
+  const rows = await all(env, `SELECT match_id, player FROM votes WHERE match_id IN (${marks(matches.length)})`, ...matches.map((m) => String(m.id)));
+  const now = Date.now();
+  return matches.map((m) => {
+    const tally = {};
+    for (const r of rows) if (r.match_id === String(m.id)) tally[r.player] = (tally[r.player] || 0) + 1;
+    const closed = motmClosed(m, now);
+    let winner = null;
+    if (closed) {
+      const top = (m.ps || []).filter((p) => tally[p.k]).sort((a, b) => tally[b.k] - tally[a.k] || (b.r ?? 0) - (a.r ?? 0))[0];
+      if (top) winner = { k: top.k, n: top.n, pos: opt(top.pos), r: opt(top.r), votes: tally[top.k], tie: Object.values(tally).filter((v) => v === tally[top.k]).length > 1 };
+    }
+    return { id: m.id, closes: motmCloses(m), closed, winner };
+  });
+}
 async function latestAlerts(env, me) {
   const rows = await all(env, 'SELECT id, icon, title, link, at, read_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 3', me.u);
   return rows.map((r) => ({ id: r.id, icon: opt(r.icon), title: r.title, link: opt(r.link), at: r.at, read: !!r.read_at }));
@@ -61,10 +96,11 @@ export async function lockerSocket(request, env, me) {
 }
 
 // Logged-in route – called from members.js route() for paths it doesn't own.
-export async function lockerRoute(p, method, me, env) {
+export async function lockerRoute(p, method, me, env, loadSite) {
   if (p !== '/api/locker') return null;
   if (!flagOn(env, me, 'locker')) return fail('Not available yet.', 404);
   if (method !== 'GET') return fail('Not found', 404);
-  const [next, vote, counts, achievements, shelf, alerts] = await Promise.all([nextEvent(env, me), openVote(env, me), notifyCounts(env, me), newAchievements(env, me), medals(env, me), latestAlerts(env, me)]);
-  return json({ next, vote, unread: counts.unread, achievements, medals: shelf, alerts });
+  const [next, vote, counts, achievements, shelf, alerts, playbook, builds, motm] = await Promise.all([nextEvent(env, me), openVote(env, me), notifyCounts(env, me), newAchievements(env, me), medals(env, me), latestAlerts(env, me),
+    playbookCount(env, me), buildsCount(env, me), loadSite && flagOn(env, me, 'lockerRoom') ? motmStatus(env, loadSite).catch(() => []) : []]);
+  return json({ next, vote, unread: counts.unread, achievements, medals: shelf, alerts, playbook, builds, motm });
 }

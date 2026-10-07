@@ -266,7 +266,8 @@ button.chip{cursor:pointer}
 .nx-ins-vote{display:flex;gap:6px}.nx-ins-vote button{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;font-size:14px}.nx-ins-vote button.picked{border-color:var(--red);background:rgba(200,53,44,.15)}
 .nx-ins-ask-btn{background:none;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;color:inherit;font-size:13px}
 .nx-ins-ask{margin-top:10px;flex-wrap:wrap;gap:8px;align-items:center}.nx-ins-ask:not([hidden]){display:flex}.nx-ins-ask input{flex:1;min-width:140px}.nx-ins-answer{flex:1 0 100%;margin:4px 0 0;color:var(--muted)}
-.insights-off .nx-insight{display:none}
+.insights-off .nx-insight,.insights-off .nx-ins-tile,.insights-off .nx-ins-tilepanel{display:none}
+.stat .nx-ins-tile{position:absolute;right:6px;top:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:1px 7px;font-size:12px;cursor:pointer;color:inherit;line-height:1.5}.stat .nx-ins-tile:hover,.stat .nx-ins-tile[aria-expanded=true]{border-color:var(--red)}.nx-ins-tilepanel{margin-top:12px}.nx-ins-tilepanel .nx-insight{margin:0}
 .nx-ins-toggle{position:fixed;right:16px;bottom:16px;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 14px;color:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:13px}
 @media (max-width:640px){.nx-ins-toggle{right:10px;bottom:10px;padding:6px 10px;font-size:12px}}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:22px}
@@ -1444,3 +1445,13 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 @media (prefers-reduced-motion:reduce){.ix-arc,.ix-bar i,.ix-tower i,.ix-drill{animation:none}.ix-gauge{transition:none}}
 
 #h2h tr[data-h2h]{cursor:pointer}#h2h tr[data-h2h]:hover td,#h2h tr.h2h-on td{background:rgba(200,53,44,.12)}
+/* MOTM vote closed – winner card flips (board 07) */
+.lk-win{display:flex;justify-content:center;padding:18px 0 8px;perspective:900px}
+.lk-wcard{position:relative;display:block;width:190px;aspect-ratio:3/4.3;padding:0;border:0;background:none;cursor:pointer;color:#fff;font:inherit}
+.lk-wcard.flipped .lk-flip{transform:rotateY(180deg)}
+.lk-wcard .lk-front{--t1:#2d3440;--t2:#151a22;--edge:#c8352c;align-items:center;justify-content:center;gap:6px}
+.lk-wcard .lk-wq b{font:700 84px/1 Oswald,Impact,sans-serif;color:#c8352c}
+.lk-wcard .lk-wq small{opacity:.75;letter-spacing:.08em;text-transform:uppercase}
+.lk-wcard .lk-wface{--t1:#f3d98b;--t2:#a8802b;--edge:#fff3c4;color:#2a1d05;align-items:center;gap:6px;text-align:center}
+.lk-wcard:focus-visible{outline:3px solid #c8352c;outline-offset:4px}
+@media (prefers-reduced-motion:reduce){.lk-wcard .lk-flip{transition:none}}
