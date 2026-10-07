@@ -1363,6 +1363,7 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 .br-au #br-requests h3{font-size:14px}
 .br-audit{list-style:none;margin:8px 0 0;padding:0}
 .br-audit li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.br-audit-f{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.br-audit-f .br-in{flex:1 1 140px;min-width:0}
 .br-audit small{color:var(--muted);font-size:11px;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.br-thumb,.br-legend,.br-beam{transition:none}.br-stage.inducted .br-legend{animation:none}}
 

@@ -3,7 +3,7 @@
 //   ② health at a glance – data/build/Pages/bot dots + free-tier usage (GET /api/admin/health)
 //   ③ announcement with a live preview (POST /api/notify/announce)
 //   ④ Hall of Fame induction as a ceremony (POST /api/hof, kind legend)
-//   ⑤ people + audit – privacy/hide requests (NXNotify.requestsPortal) and the latest activity
+//   ⑤ people + audit – privacy/hide requests (NXNotify.requestsPortal) and the activity log (search, type filter, show more)
 // Preview-as pills reuse BE5's ?previewAs=. app.js mounts it as the Manager tab's 👑 Boardroom sub-tab. Flag `boardroom`.
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
@@ -24,7 +24,7 @@
   const FREE = { requests: 100000 };
 
   let el = null, ctx = null;
-  const B = { flags: null, health: undefined, ping: null, undo: [], filter: '', ann: { title: '', body: '', audience: 'members', ack: false }, hof: { player: '', title: '', text: '' }, busy: false };
+  const B = { flags: null, health: undefined, ping: null, undo: [], filter: '', ann: { title: '', body: '', audience: 'members', ack: false }, hof: { player: '', title: '', text: '' }, busy: false, aud: { q: '', type: '', n: 8 } };
 
   // ---------- ① switchboard ----------
   function switchboard() {
@@ -104,9 +104,15 @@ ${a?.ready ? `${bar('Worker requests', a.requests, FREE.requests, `${a.requests.
 
   // ---------- ⑤ people + audit ----------
   function audit() {
-    const acts = (ctx.admin()?.activity || []).slice(0, 8);
+    const all = ctx.admin()?.activity || [];
+    const a = B.aud, q = a.q.trim().toLowerCase();
+    const types = [...new Set(all.map((x) => x.type))].sort();
+    const hit = all.filter((x) => (!a.type || x.type === a.type) && (!q || `${x.n || ''} ${ctx.actText(x.type)} ${x.detail || ''}`.toLowerCase().includes(q)));
+    const acts = hit.slice(0, a.n);
     return `<div class="br-sec-h"><h3>🛡️ People and audit</h3></div><div id="br-requests"></div>
-<ul class="br-audit">${acts.map((x) => `<li><span>${esc(ctx.actIcon(x.type))} <b>${esc(x.n)}</b> ${esc(ctx.actText(x.type))}${x.detail ? ` · ${esc(x.detail)}` : ''}</span><small>${esc(ctx.UI.ago ? ctx.UI.ago(x.at) : '')}</small></li>`).join('') || '<li class="muted small">Nothing logged yet.</li>'}</ul>`;
+<div class="br-audit-f"><input type="search" class="br-in" data-aud-q placeholder="Search the log…" value="${esc(a.q)}" aria-label="Search the audit log"><select class="br-in" data-aud-type aria-label="Filter by type"><option value="">All types</option>${types.map((t) => `<option value="${esc(t)}"${t === a.type ? ' selected' : ''}>${esc(ctx.actIcon(t))} ${esc(ctx.actText(t))}</option>`).join('')}</select></div>
+<ul class="br-audit">${acts.map((x) => `<li><span>${esc(ctx.actIcon(x.type))} <b>${esc(x.n)}</b> ${esc(ctx.actText(x.type))}${x.detail ? ` · ${esc(x.detail)}` : ''}</span><small>${esc(ctx.UI.ago ? ctx.UI.ago(x.at) : '')}</small></li>`).join('') || `<li class="muted small">${all.length ? 'No entries match.' : 'Nothing logged yet.'}</li>`}</ul>
+${hit.length > acts.length ? `<button type="button" class="btn ghost sm" data-br="more">Show more (${hit.length - acts.length} left)</button>` : ''}<p class="muted small">Latest ${all.length} entries · ${hit.length} shown by the filter.</p>`;
   }
 
   function paint() {
@@ -169,6 +175,7 @@ ${ctx.flagOn('hallOfFame') ? `<section class="card br-sec br-hf">${hof()}</secti
     } catch (er) { ctx.toast(er.message, true); }
   }
 
+  const rq = () => { const r = $('#br-requests', el); if (r && ctx.flagOn('requests')) ctx.requests(r); };
   function bind() {
     el.onclick = (ev) => {
       const t = ev.target.closest('button');
@@ -180,6 +187,7 @@ ${ctx.flagOn('hallOfFame') ? `<section class="card br-sec br-hf">${hof()}</secti
       if (d.br === 'health') loadHealth();
       if (d.br === 'announce') sendAnnouncement();
       if (d.br === 'induct') induct();
+      if (d.br === 'more') { B.aud.n += 20; repaint('.br-au', audit); rq(); }
       if (d.aud) { B.ann.audience = d.aud; repaint('.br-an', announce); }
       if (d.ack !== undefined) { B.ann.ack = !B.ann.ack; repaint('.br-an', announce); }
     };
@@ -191,9 +199,10 @@ ${ctx.flagOn('hallOfFame') ? `<section class="card br-sec br-hf">${hof()}</secti
         const p = $('.br-embed', el); if (p) p.innerHTML = `<b>📣 ${esc(B.ann.title || 'Your title')}</b><p>${esc(B.ann.body || 'Your message shows here.')}</p>`;
         const send = $('[data-br="announce"]', el); if (send) send.disabled = B.ann.title.trim().length < 3;
       }
+      if ('audQ' in d) { B.aud.q = t.value; B.aud.n = 8; const pos = t.selectionStart; repaint('.br-au', audit); rq(); const f = $('[data-aud-q]', el); f.focus(); f.setSelectionRange(pos, pos); }
       if (d.hof && d.hof !== 'player') B.hof[d.hof] = t.value;
     };
-    el.onchange = (ev) => { if (ev.target.dataset.hof === 'player') { B.hof.player = ev.target.value; repaint('.br-hf', hof); } };
+    el.onchange = (ev) => { if (ev.target.matches('[data-aud-type]')) { B.aud.type = ev.target.value; B.aud.n = 8; repaint('.br-au', audit); rq(); } if (ev.target.dataset.hof === 'player') { B.hof.player = ev.target.value; repaint('.br-hf', hof); } };
   }
   function mount(root, c) {
     el = root; ctx = c;
