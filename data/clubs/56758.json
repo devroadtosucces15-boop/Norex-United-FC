@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-07T01:31:05.369Z",
+ "fetchedAt": "2026-10-07T01:41:04.130Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -873,42 +873,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "Fnandau92",
-   "gamesPlayed": "30",
-   "winRate": "60",
-   "goals": "25",
-   "assists": "11",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "31",
-   "passesMade": "357",
-   "passSuccessRate": "75",
-   "ratingAve": "7.4",
-   "tacklesMade": "18",
-   "tackleSuccessRate": "12",
-   "proName": "Nando",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "171",
-   "proNationality": "83",
-   "proOverall": "78",
-   "proOverallStr": "78",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "2",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Bdestroy10",
    "gamesPlayed": "10",
    "winRate": "80",
@@ -1522,7 +1486,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 10,
+  "midfielder": 9,
   "goalkeeper": 0,
   "forward": 12,
   "defender": 11
@@ -1531,7 +1495,7 @@
   {
    "name": "R3PTILI4N",
    "proPos": "14",
-   "gamesPlayed": "109",
+   "gamesPlayed": "110",
    "goals": "7",
    "assists": "15",
    "manOfTheMatch": "20",
@@ -1684,14 +1648,14 @@
   },
   {
    "name": "LightShikigami",
-   "proPos": "25",
-   "gamesPlayed": "125",
+   "proPos": "5",
+   "gamesPlayed": "126",
    "goals": "44",
-   "assists": "44",
+   "assists": "45",
    "manOfTheMatch": "11",
    "ratingAve": "7.2",
    "prevGoals": "0",
-   "favoritePosition": "forward"
+   "favoritePosition": "defender"
   },
   {
    "name": "V-_MALDINI4-_XI",
@@ -1804,17 +1768,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "Fnandau92",
-   "proPos": "14",
-   "gamesPlayed": "105",
-   "goals": "87",
-   "assists": "49",
-   "manOfTheMatch": "9",
-   "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Bdestroy10",
    "proPos": "25",
    "gamesPlayed": "48",
@@ -1894,11 +1847,11 @@
   {
    "name": "Scosmort",
    "proPos": "25",
-   "gamesPlayed": "53",
+   "gamesPlayed": "54",
    "goals": "27",
-   "assists": "15",
+   "assists": "17",
    "manOfTheMatch": "5",
-   "ratingAve": "7.3",
+   "ratingAve": "7.2",
    "prevGoals": "0",
    "favoritePosition": "forward"
   },
