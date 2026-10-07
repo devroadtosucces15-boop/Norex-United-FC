@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-07T17:30:39.802Z",
+ "fetchedAt": "2026-10-07T17:40:36.191Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -187,42 +187,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "SippinSizor",
-   "gamesPlayed": "3",
-   "winRate": "33",
-   "goals": "4",
-   "assists": "1",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "66",
-   "passesMade": "27",
-   "passSuccessRate": "79",
-   "ratingAve": "7.7",
-   "tacklesMade": "3",
-   "tackleSuccessRate": "60",
-   "proName": "f. Be Great",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "162",
-   "proNationality": "73",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "3",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "MicroMyDraco",
@@ -1344,7 +1308,7 @@
  "positionCount": {
   "midfielder": 8,
   "goalkeeper": 0,
-  "forward": 11,
+  "forward": 10,
   "defender": 8
  },
  "career": [
@@ -1380,17 +1344,6 @@
    "ratingAve": "6.4",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "SippinSizor",
-   "proPos": "25",
-   "gamesPlayed": "173",
-   "goals": "318",
-   "assists": "88",
-   "manOfTheMatch": "57",
-   "ratingAve": "8.4",
-   "prevGoals": "1",
-   "favoritePosition": "forward"
   },
   {
    "name": "MicroMyDraco",
