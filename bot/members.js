@@ -714,7 +714,7 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (lkr) return lkr;
   const hub = await hubRoute(p, method, body, me, env, log); // BE8 Hub: online count + waves (live roster is the HUB_ROOM socket)
   if (hub) return hub;
-  const pmr = await playMediaRoute(p, method, me, env); // BE1 recordings: list + file (before playsRoute, which 404s unknown sub-paths)
+  const pmr = await playMediaRoute(p, method, me, env, body, log); // BE1 recordings: list + file (before playsRoute, which 404s unknown sub-paths)
   if (pmr) return pmr;
   const ply = await playsRoute(p, method, body, me, env, log); // BE1 Tactics Studio: plays, versions, assignment, quiz
   if (ply) return ply;

@@ -4,8 +4,10 @@
 //   GET  /api/plays/:id/media                    members who can see the play: list (ready only)
 //   GET  /api/plays/:id/media/:mid               members who can see the play: the file (Bearer auth; the page fetches it as a blob)
 //   POST /api/plays/:id/media/:mid/delete        managers: hide one recording (row kept, nothing hard-deleted)
+//   POST /api/plays/:id/media/:mid/discord       managers: { channel, role? } → post the recording as a Discord attachment (over 25 MB: a card linking to the Studio instead)
 // Files are stored in the MEDIA bucket under `play/<id>/m/` – never in the feed's storage guard, so they can't be evicted.
 import { can, flagOn } from './roles.js';
+import { postEmbed } from './docs.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -15,6 +17,7 @@ const run = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).run();
 
 export const MEDIA_MAX = { video: 60e6, voice: 10e6 }; // bytes – a 60-second 720p tab capture is well under the video cap
 export const MEDIA_PER_PLAY = 6;
+export const DISCORD_ATTACH_MAX = 25e6; // bigger files can't be attached – the post links to the Studio instead
 const TYPES = {
   'video/webm': ['video', 'webm'], 'video/mp4': ['video', 'mp4'],
   'audio/webm': ['voice', 'webm'], 'audio/mp4': ['voice', 'm4a'],
@@ -63,8 +66,8 @@ export async function playMediaUpload(request, me, env, url, id, log) {
   return json({ media: view({ id: mid, kind, type, size: len, created_at: now }) });
 }
 
-export async function playMediaRoute(p, method, me, env) {
-  const m = /^\/api\/plays\/(\d+)\/media(?:\/([0-9a-f]{32})(\/delete)?)?$/.exec(p);
+export async function playMediaRoute(p, method, me, env, body, log) {
+  const m = /^\/api\/plays\/(\d+)\/media(?:\/([0-9a-f]{32})(\/delete|\/discord)?)?$/.exec(p);
   if (!m) return null;
   if (!flagOn(env, me, 'tactics')) return fail('Not available yet.', 404);
   if (!can(me, 'plays.view')) return fail('Members only.', 403);
@@ -78,6 +81,11 @@ export async function playMediaRoute(p, method, me, env) {
     const rows = await all(env, "SELECT * FROM play_media WHERE play_id = ? AND deleted = 0 AND status = 'ready' ORDER BY created_at", id);
     return json({ media: rows.map(view) });
   }
+  if (del === '/discord') {
+    if (method !== 'POST') return fail('Not found', 404);
+    if (!can(me, 'announce.discord')) return fail('Managers only.', 403);
+    return shareMedia(env, me, id, mid, body ?? {}, log);
+  }
   if (del) {
     if (method !== 'POST') return fail('Not found', 404);
     if (!can(me, 'plays.manage')) return fail('Managers only.', 403);
@@ -90,4 +98,47 @@ export async function playMediaRoute(p, method, me, env) {
   const obj = await env.MEDIA.get(row.key);
   if (!obj) return fail('Recording not found.', 404);
   return new Response(obj.body, { headers: { 'Content-Type': row.type, 'Content-Length': String(row.size), 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' } });
+}
+
+// Posts one recording to a Discord channel (optionally pinging a role). Small files go up as a real attachment so the
+// squad can watch in Discord; big ones get a card linking to the Studio. Never throws.
+async function shareMedia(env, me, id, mid, body, log) {
+  const row = await one(env, "SELECT m.*, p.title, p.published FROM play_media m JOIN plays p ON p.id = m.play_id WHERE m.id = ? AND m.play_id = ? AND m.deleted = 0 AND m.status = 'ready'", mid, id);
+  if (!row) return fail('Recording not found.', 404);
+  if (!row.published) return fail('Publish the play before sharing its recording.', 400);
+  const channel = String(body.channel ?? ''), role = String(body.role ?? '');
+  const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
+  const link = `${site}tactics.html#play${id}`;
+  const label = row.kind === 'video' ? '🎬 Video' : '🎙 Voice-over';
+  const embed = { title: `${label} · ${row.title}`.slice(0, 250), url: link, color: 0xc8352c, footer: { text: 'NOREX UNITED · Tactics Studio' } };
+  const open = { type: 1, components: [{ type: 2, style: 5, label: '▶ Open in Studio', url: link }] };
+  if (row.size > DISCORD_ATTACH_MAX) {
+    const res = await postEmbed(env, channel, role, { embeds: [{ ...embed, description: `Too big to attach (${mb(row.size)}) – watch it in the Studio.` }], components: [open] });
+    if (!res.ok) return fail(res.error);
+    await log(env, me, 'play-media-discord', `#${id} · ${row.kind} link`);
+    return json({ ok: true, attached: false });
+  }
+  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return fail('Connect the Discord bot first.');
+  if (!/^\d{5,25}$/.test(channel)) return fail('Pick a channel.');
+  if (role && !/^\d{1,25}$/.test(role)) return fail('Pick a role to ping, or none.');
+  const obj = await env.MEDIA.get(row.key);
+  if (!obj) return fail('Recording not found.', 404);
+  const everyone = role && role === env.DISCORD_GUILD_ID;
+  const ext = row.key.split('.').pop();
+  const fd = new FormData();
+  fd.set('payload_json', JSON.stringify({
+    content: role ? (everyone ? '@everyone' : `<@&${role}>`) : undefined,
+    embeds: [embed], components: [open],
+    allowed_mentions: role ? (everyone ? { parse: ['everyone'] } : { roles: [role] }) : { parse: [] },
+    attachments: [{ id: 0, filename: `${row.title.replace(/[^\w-]+/g, '-').slice(0, 40) || 'play'}.${ext}` }],
+  }));
+  fd.set('files[0]', new Blob([await new Response(obj.body).arrayBuffer()], { type: row.type }), `${row.title.replace(/[^\w-]+/g, '-').slice(0, 40) || 'play'}.${ext}`);
+  let r;
+  try { r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, { method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` }, body: fd }); } catch (e) { return fail(e.message); }
+  if (!r.ok) {
+    const res = await r.json().catch(() => ({}));
+    return fail(r.status === 413 || res.code === 40005 ? 'Discord says the file is too big for this server – share the link card instead.' : `Discord refused the post (${r.status}${res.message ? `: ${res.message}` : ''}).`);
+  }
+  await log(env, me, 'play-media-discord', `#${id} · ${row.kind} ${mb(row.size)}`);
+  return json({ ok: true, attached: true });
 }

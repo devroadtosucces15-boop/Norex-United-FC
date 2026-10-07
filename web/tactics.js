@@ -113,8 +113,13 @@
   const drawLine = (d) => `<polyline points="${(d.points || []).map((pt) => pt.join(',')).join(' ')}" fill="none" stroke="${/^#[0-9a-f]{6}$/i.test(d.color ?? '') ? d.color : '#c8352c'}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
   function pitch(doc, editable) {
     const toolClass = editable ? ` tool-${studio.tool}` : '';
-    return `<div class="tx-pitch${editable ? ' tx-edit' + toolClass : ''}" ${editable ? 'data-studio-pitch' : 'data-view-pitch'} aria-label="Tactics board"><svg class="tx-draw" viewBox="0 0 1000 640" preserveAspectRatio="none">${(doc.drawings || []).map(drawLine).join('')}</svg>${(doc.pieces || []).map(piece).join('')}<span class="tx-half"></span><span class="tx-circle"></span></div>`;
+    const board = `<div class="tx-pitch${editable ? ' tx-edit' + toolClass : ''}" ${editable ? 'data-studio-pitch' : 'data-view-pitch'} aria-label="Tactics board"><svg class="tx-draw" viewBox="0 0 1000 640" preserveAspectRatio="none">${(doc.drawings || []).map(drawLine).join('')}</svg>${(doc.pieces || []).map(piece).join('')}<span class="tx-half"></span><span class="tx-circle"></span></div>`;
+    return editable ? board : `<div class="tx-stage${is3d() ? ' tx-3d' : ''}" data-stage style="--spin:${spin}deg">${board}</div><div class="tx-view-bar"><button class="btn sm ghost" type="button" data-3d aria-pressed="${is3d()}">${is3d() ? '▭ Flat view' : '🧊 3D view'}</button>${is3d() ? '<small class="muted">Drag the board to turn it.</small>' : ''}</div>`;
   }
+  // 3D board (C8): CSS-only tilt + spin, pieces stand up facing the viewer. Viewing only – editing stays flat so drags map 1:1.
+  const is3d = () => { try { return localStorage.getItem('norex_tx3d') === '1'; } catch { return false; } };
+  function set3d(on) { try { localStorage.setItem('norex_tx3d', on ? '1' : '0'); } catch {} detailView(); }
+  let spin = 0;
   function quizEditRow(q, i) {
     return `<div class="tx-qedit" data-q="${i}"><input class="tx-qtext" type="text" value="${esc(q.q)}" data-qfield="q" placeholder="Question text" maxlength="200" aria-label="Question ${i + 1} text"><div class="tx-qopts">${q.options.map((o, j) => `<div class="tx-qopt"><input type="radio" name="qa${i}" ${q.answer === j ? 'checked' : ''} data-qanswer="${j}" aria-label="Correct answer"><input type="text" value="${esc(o)}" data-qopt="${j}" maxlength="80" placeholder="Option ${j + 1}" aria-label="Option ${j + 1}">${q.options.length > 2 ? `<button type="button" class="tx-qdel" data-del-opt="${j}" aria-label="Remove option">×</button>` : ''}</div>`).join('')}</div><div class="tx-qrow-actions">${q.options.length < 6 ? '<button type="button" class="btn sm ghost" data-add-opt>+ Option</button>' : ''}<button type="button" class="btn sm danger" data-del-q>Delete question</button></div></div>`;
   }
@@ -146,15 +151,38 @@ ${pitch(d, true)}
     const box = root.querySelector('[data-media-card]'); if (!box) return;
     let media = [];
     try { media = (await call(`/api/plays/${active}/media`)).media || []; } catch { box.remove(); return; }
-    const row = (m) => `<div class="tx-media-row"><span>${m.kind === 'video' ? '🎬 Video' : '🎙 Voice-over'}</span><small class="muted">${new Date(m.at).toLocaleDateString()} · ${(m.size / 1e6).toFixed(1)} MB</small><button class="btn sm ghost" type="button" data-watch="${m.id}" data-kind="${m.kind}">${m.kind === 'video' ? '▶ Watch' : '🔊 Listen'}</button>${manager() ? `<button class="btn sm danger" type="button" data-hide-media="${m.id}">Hide</button>` : ''}</div>`;
+    const row = (m) => `<div class="tx-media-row"><span>${m.kind === 'video' ? '🎬 Video' : '🎙 Voice-over'}</span><small class="muted">${new Date(m.at).toLocaleDateString()} · ${(m.size / 1e6).toFixed(1)} MB</small><button class="btn sm ghost" type="button" data-watch="${m.id}" data-kind="${m.kind}">${m.kind === 'video' ? '▶ Watch' : '🔊 Listen'}</button><button class="btn sm ghost" type="button" data-dl-media="${m.id}" data-kind="${m.kind}" title="Save the file${m.kind === 'video' ? ' – e.g. to upload to YouTube' : ''}">⬇ Save</button>${manager() ? `${detail?.published ? `<button class="btn sm ghost" type="button" data-media-discord="${m.id}">📣 Discord</button>` : ''}<button class="btn sm danger" type="button" data-hide-media="${m.id}">Hide</button>` : ''}</div>`;
     box.innerHTML = `<h3>Recordings</h3>${media.length ? media.map(row).join('') : '<p class="muted">No video or voice-over yet.</p>'}<div class="tx-media-player"></div>${manager() ? recordControls() : ''}`;
+  }
+  async function mediaBlob(mid) {
+    const r = await fetch(`${API}/api/plays/${active}/media/${mid}`, { headers: { Authorization: `Bearer ${session()?.token}` }, cache: 'no-store' });
+    if (!r.ok) throw new Error('Could not load that recording.');
+    return r.blob();
+  }
+  async function saveMedia(mid, kind) {
+    const blob = await mediaBlob(mid);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${(detail.title || 'play').replace(/[^\w-]+/g, '-').slice(0, 40)}.${blob.type.includes('mp4') ? (kind === 'video' ? 'mp4' : 'm4a') : 'webm'}`;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  async function shareMedia(mid) {
+    const t = await discordTargets();
+    let f = {};
+    const v = await UI.modal({
+      title: `Send to Discord · ${detail.title}`, icon: '📣',
+      body: `${dcPickers(t)}<p class="muted small">Videos up to 25 MB are attached so the squad can watch in Discord; bigger ones post a card linking to the Studio. For YouTube, use ⬇ Save and upload the file there.</p>`,
+      actions: t.ready ? [{ label: 'Cancel', value: null, kind: 'ghost' }, { label: '📣 Send', value: 'ok' }] : undefined,
+      onOpen: (d) => { const rd = () => { f = { channel: $('[name=channel]', d)?.value, role: $('[name=role]', d)?.value }; }; rd(); d.addEventListener('change', rd); },
+    });
+    if (v !== 'ok') return;
+    toast('Sending…');
+    try { const r = await call(`/api/plays/${active}/media/${mid}/discord`, f); toast(r.attached ? 'Sent to Discord 📣' : 'Too big to attach – posted a link card 📣'); } catch (x) { toast(x.message, true); }
   }
   async function watch(mid, kind) {
     const player = root.querySelector('.tx-media-player'); if (!player) return;
-    const s = session();
-    const r = await fetch(`${API}/api/plays/${active}/media/${mid}`, { headers: { Authorization: `Bearer ${s?.token}` }, cache: 'no-store' });
-    if (!r.ok) throw new Error('Could not load that recording.');
-    const url = URL.createObjectURL(await r.blob());
+    const url = URL.createObjectURL(await mediaBlob(mid));
     player.innerHTML = kind === 'video' ? `<video controls playsinline src="${url}"></video>` : `<audio controls src="${url}"></audio>`;
   }
   async function startRec(kind) {
@@ -291,6 +319,13 @@ ${pitch(d, true)}
     });
   }
   function wire() {
+    root.addEventListener('pointerdown', (e) => {
+      const st = e.target.closest('.tx-3d[data-stage]'); if (!st || studio) return;
+      let x = e.clientX; st.setPointerCapture?.(e.pointerId);
+      const move = (ev) => { spin = Math.max(-60, Math.min(60, spin + (ev.clientX - x) * 0.3)); x = ev.clientX; st.style.setProperty('--spin', `${spin}deg`); };
+      const up = () => { st.removeEventListener('pointermove', move); st.removeEventListener('pointerup', up); st.removeEventListener('pointercancel', up); };
+      st.addEventListener('pointermove', move); st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+    });
     root.addEventListener('focusout', () => setTimeout(() => { if (pendingRender && !busy()) refresh(); }, 0));
     root.addEventListener('pointerdown', (e) => {
       if (!studio) return;
@@ -341,6 +376,9 @@ ${pitch(d, true)}
       const rs = e.target.closest('[data-rec-start]'); if (rs) { startRec(rs.dataset.recStart); return; }
       if (e.target.closest('[data-rec-stop]')) { stopRec(); return; }
       const wt = e.target.closest('[data-watch]'); if (wt) { try { await watch(wt.dataset.watch, wt.dataset.kind); } catch (x) { toast(x.message, true); } return; }
+      const dl = e.target.closest('[data-dl-media]'); if (dl) { try { await saveMedia(dl.dataset.dlMedia, dl.dataset.kind); } catch (x) { toast(x.message, true); } return; }
+      const md = e.target.closest('[data-media-discord]'); if (md) { shareMedia(md.dataset.mediaDiscord); return; }
+      const t3 = e.target.closest('[data-3d]'); if (t3) { set3d(!is3d()); return; }
       const hd = e.target.closest('[data-hide-media]'); if (hd) { if (!(await UI.confirm({ title: 'Hide this recording?', text: 'It disappears for members; the file is kept.', ok: 'Hide', danger: true }))) return; try { await call(`/api/plays/${active}/media/${hd.dataset.hideMedia}/delete`, {}); toast('Recording hidden.'); loadMedia(); } catch (x) { toast(x.message, true); } return; }
       if (e.target.closest('[data-learn]')) { try { await call(`/api/plays/${active}/learned`, { learned: true }); detail.mine.learned = true; toast('Marked learned.'); detailView(); } catch (x) { toast(x.message, true); } return; }
       const pub = e.target.closest('[data-publish]'); if (pub) { try { detail = await call(`/api/plays/${active}/publish`, { published: pub.dataset.publish === '1' }); toast(detail.published ? 'Play published.' : 'Play unpublished.'); detailView(); } catch (x) { toast(x.message, true); } return; }

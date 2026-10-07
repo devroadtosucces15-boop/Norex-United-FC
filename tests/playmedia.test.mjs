@@ -43,6 +43,30 @@ const got = new Uint8Array(await file.arrayBuffer());
 t('member streams the file back byte-for-byte with its type', file.status === 200 && file.headers.get('Content-Type') === 'video/webm' && got.length === bytes.length && got.every((b, i) => b === bytes[i]));
 t('guest cannot read the file', (await W(`/api/plays/${id}/media/${vid}`)).status === 401);
 
+// ---- send a recording to Discord (C8) ----
+env.DISCORD_BOT_TOKEN = 'bot'; env.DISCORD_GUILD_ID = '9';
+const dc = [];
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init = {}) => {
+  const m = String(url).match(/\/channels\/(\w+)\/messages$/);
+  if (!m) return realFetch(url, init);
+  const isForm = init.body instanceof FormData;
+  dc.push({ channel: m[1], form: isForm, ...(isForm ? { json: JSON.parse(init.body.get('payload_json')), file: init.body.get('files[0]') } : JSON.parse(init.body)) });
+  return Response.json({ id: 'm' + dc.length });
+};
+const share = (tok, mid, b) => call(tok, `/api/plays/${id}/media/${mid}/discord`, b);
+t('member cannot send a recording to Discord', (await share(member, vid, { channel: '70001' })).s === 403);
+t('bad channel refused', (await share(manager, vid, { channel: 'abc' })).d.error === 'Pick a channel.');
+const sent = await share(manager, vid, { channel: '70001', role: '123' });
+const post = dc.at(-1);
+t('manager sends the video as a real attachment with an Open in Studio button', sent.s === 200 && sent.d.attached === true && post.form && post.file.size === bytes.length && post.json.components[0].components[0].style === 5 && post.json.content === '<@&123>');
+t('attachment filename keeps the play title + extension', post.file.name === 'Overlap-run.webm');
+sqlite.prepare('UPDATE play_media SET size = 30000000 WHERE id = ?').run(voice.media.id);
+const big = await share(manager, voice.media.id, { channel: '70001' });
+t('over 25 MB → link card instead of an attachment', big.s === 200 && big.d.attached === false && !dc.at(-1).form && dc.at(-1).embeds[0].description.includes('Too big'));
+sqlite.prepare('UPDATE play_media SET size = 3 WHERE id = ?').run(voice.media.id);
+globalThis.fetch = realFetch;
+
 t('member cannot hide a recording', (await call(member, `/api/plays/${id}/media/${vid}/delete`, {})).s === 403);
 t('manager hides the video → gone from the list', (await call(manager, `/api/plays/${id}/media/${vid}/delete`, {})).s === 200 && (await call(member, `/api/plays/${id}/media`)).d.media.length === 1);
 t('hidden row is kept, not hard-deleted', sqlite.prepare('SELECT deleted FROM play_media WHERE id = ?').get(vid)?.deleted === 1);
