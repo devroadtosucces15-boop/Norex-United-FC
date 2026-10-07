@@ -377,6 +377,23 @@ t('stats h2h rows carry data-h2h (EA club id) and the panel sits under the table
 t('app.js mounts h2h.<opponent> on row click/Enter behind statInsights, ignoring link clicks', /\[data-nx-h2h-insight\]/.test(appSrc) && /flagOn\('statInsights'[\s\S]{0,900}`h2h\.\$\{tr\.dataset\.h2h\}`/.test(appSrc) && /!e\.target\.closest\('a'\)/.test(appSrc));
 t('every h2h.json id is a digit string (safe for the data-h2h attribute + route)', h2hRows.every((e) => /^\d+$/.test(String(e.o))));
 
+// ---------- /insight opponent: (Discord head to head, stored row first, on-demand writer second) ----------
+{
+  const { discordH2hEmbed } = await import('../bot/statinsights.js');
+  const opp = siteJson('h2h')[0];
+  await DB.prepare('DELETE FROM stat_insights WHERE key = ?').bind(`h2h.${opp.o}`).run();
+  t('discord h2h: junk opponent id → error', /Pick an opponent/.test((await discordH2hEmbed(env, loadSite, 'abc', { role: 'owner' })).error ?? ''));
+  t('discord h2h: unknown club id → error', /No record/.test((await discordH2hEmbed(env, loadSite, '1', { role: 'owner' })).error ?? ''));
+  t('discord h2h: a guest cannot trigger a write when no row exists', /log in/.test((await discordH2hEmbed(env, loadSite, opp.o, { role: 'guest' })).error ?? ''));
+  let calls = 0;
+  setAiReply(() => { calls++; return JSON.stringify({ headline: 'Perfect against them', body: `Played ${opp.p} and never lost.`, watch: 'Keep the record spotless.' }); });
+  const first = await discordH2hEmbed(env, loadSite, opp.o, { role: 'owner' });
+  t('discord h2h: member+ with no stored row → writer runs, embed has record field', first.embed?.title === '✨ Perfect against them' && first.embed.fields[0].name === `vs ${opp.n}` && calls === 1);
+  const again = await discordH2hEmbed(env, loadSite, opp.o, { role: 'guest' });
+  t('discord h2h: stored row is reused with no writer call, and guests can read it', again.embed?.title === first.embed.title && calls === 1);
+  setAiReply(null);
+}
+
 done();
 
 // club pages: per-opponent h2h slot (only for clubs NOREX has played = the ids in api/h2h.json)

@@ -28,7 +28,7 @@ const commands = [
     options: [{ type: STRING, name: 'stat', description: 'Which insight (default: club form)', choices: [
       { name: 'Club form', value: 'club' }, { name: 'Latest match', value: 'match' }, { name: 'Last 5 matches', value: 'last5' }, { name: 'Goals leaders', value: 'goals' },
       { name: 'Assists leaders', value: 'assists' }, { name: 'Rating leaders', value: 'rating' }, { name: 'MOTM leaders', value: 'motm' },
-    ] }],
+    ] }, { type: STRING, name: 'opponent', description: 'Head to head vs a club we have played', autocomplete: true }],
   },
   // P7.4 – commands that read the member database (bot/botcmds.js)
   { name: 'schedule', description: 'Upcoming match nights – answer ✅ ❔ ❌ right here' },

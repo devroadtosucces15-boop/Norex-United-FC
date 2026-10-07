@@ -359,6 +359,29 @@ async function onDemandInsight(env, key, pack, failMsg) {
   }
   return { insight: { key, headline: row.headline, body: row.body, watch: row.watch, at: row.at } };
 }
+// /insight opponent:<club> (Discord): the stored `h2h.<id>` row when its facts are unchanged, else the same on-demand writer
+// as POST /api/insights/h2h. Guests may read a stored public row but never trigger a write.
+export async function discordH2hEmbed(env, loadSite, o, me) {
+  if (!env.DB) return { error: 'Insights need the member database, which is not connected here.' };
+  o = String(o ?? '');
+  if (!/^\d{1,20}$/.test(o)) return { error: 'Pick an opponent from the list.' };
+  const key = `h2h.${o}`;
+  const pack = await factPackFor(key, loadSite);
+  if (!pack) return { error: 'No record against that club yet.' };
+  let row = await one(env, 'SELECT key, headline, body, watch, at, hash FROM stat_insights WHERE key = ?', key);
+  if (!row || row.hash !== (await fingerprint(pack.facts))) {
+    if (!can(me, 'statInsights.h2h')) return row ? { embed: h2hEmbed(row, pack) } : { error: 'No insight for that opponent yet – log in on the site to write it.' };
+    const out = await statH2hRoute(env, loadSite, me, { o });
+    if (out.error) return { error: out.error };
+    row = out.insight;
+  }
+  return { embed: h2hEmbed(row, pack) };
+}
+const h2hEmbed = (row, pack) => ({
+  title: `✨ ${row.headline}`, description: `${row.body}\n\n👀 ${row.watch}`.slice(0, 3900), color: 0xc8352c,
+  fields: [{ name: `vs ${pack.facts.opponent}`, value: `${pack.facts.wins}W ${pack.facts.draws}D ${pack.facts.losses}L · ${pack.facts.goalsFor}–${pack.facts.goalsAgainst}`, inline: false }],
+  footer: { text: 'NOREX UNITED · head to head' }, timestamp: new Date(row.at).toISOString(),
+});
 export async function statFeedbackRoute(env, me, body) {
   const key = String(body?.key ?? '');
   const vote = body?.vote === 1 || body?.vote === -1 ? body.vote : null;

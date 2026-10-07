@@ -31,7 +31,7 @@ import { checkVoiceRecap } from './voicerecap.js';
 import { askAnswer, buildAskContext } from './ask.js';
 import { makeAvatarCard } from './avatarcard.js';
 import { postEmbed } from './docs.js';
-import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordInsightEmbed } from './statinsights.js';
+import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordInsightEmbed, discordH2hEmbed } from './statinsights.js';
 import { handleHubWaveJob } from './hub.js';
 import { burnerCommand, burnerPick } from './burners.js';
 
@@ -102,7 +102,7 @@ export default {
     if (i.type === 2 && i.data.name === 'profanitysetup') return profanitySetupCommand(i, env, ctx, who);
     if (i.type === 2 && i.data.name === 'avatarcard') return avatarCardCommand(i, env, ctx, who, new URL(request.url).origin);
     if (i.type === 2 && i.data.name === 'ask') return askCommand(i, env, ctx, site, who);
-    if (i.type === 2 && i.data.name === 'insight') return insightCommand(i, env, who); // BE9
+    if (i.type === 2 && i.data.name === 'insight') return insightCommand(i, env, ctx, site, who); // BE9
     if (i.type === 2 && i.data.name === 'burner') return burnerCommand(i, env, ctx, who, site, (f) => load(site, f, ctx)); // burner-club tracker
     if (i.type === 3 && /^norex:bn:/.test(i.data?.custom_id ?? '')) return burnerPick(i, env, ctx, who); // …its pickers
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
@@ -284,8 +284,19 @@ function avatarCardCommand(i, env, ctx, who, origin) {
 }
 
 // ---------- /insight (public, flag `statInsights`): BE9's stored stat insight as an embed – read-only, no writer call ----------
-async function insightCommand(i, env, who) {
+async function insightCommand(i, env, ctx, site, who) {
   if (!flagOn(env, who, 'statInsights')) return json({ type: 4, data: { content: '🔒 Club insights are not switched on for you yet.', flags: 64 } });
+  const opponent = flatOptions(i.data.options).find((o) => o.name === 'opponent')?.value;
+  if (opponent) { // head to head: may need the writer (slow) → deferred reply, then patched
+    ctx.waitUntil((async () => {
+      const out = await discordH2hEmbed(env, (f) => load(site, f, ctx), opponent, who).catch((e) => ({ error: `⚠️ ${e.message}` }));
+      await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(out.error ? { content: out.error } : { embeds: [out.embed] }),
+      }).catch((e) => console.log('insight h2h reply failed', e.message));
+    })());
+    return json({ type: 5 });
+  }
   const stat = flatOptions(i.data.options).find((o) => o.name === 'stat')?.value ?? 'club';
   const out = await discordInsightEmbed(env, stat, who.role).catch((e) => ({ error: `⚠️ ${e.message}` }));
   if (out.error) return json({ type: 4, data: { content: out.error, flags: 64 } });
@@ -368,6 +379,11 @@ async function load(site, file, ctx) {
 async function autocomplete(i, site, ctx) {
   const focused = flatOptions(i.data.options).find((o) => o.focused);
   const q = String(focused?.value ?? '').toLowerCase();
+  if (focused?.name === 'opponent') { // /insight opponent: the 32 EA clubs in h2h.json
+    const h2h = await load(site, 'h2h', ctx).catch(() => []);
+    return h2h.filter((e) => e.n.toLowerCase().includes(q)).sort((a, b) => b.p - a.p).slice(0, 25)
+      .map((e) => ({ name: `${e.n} · ${e.w}W ${e.d}D ${e.l}L`.slice(0, 100), value: String(e.o) }));
+  }
   const players = await load(site, 'players', ctx);
   return players
     .filter((p) => p.n.toLowerCase().includes(q))
