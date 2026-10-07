@@ -7,7 +7,7 @@ import { config } from './mock.mjs';
 const read = (f) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
 const app = read('web/app.js'), ins = read('web/insights.js'), build = read('scripts/build.mjs'), css = read('web/style.css');
 
-t('insightWidget ships at owner level, separate from statInsights', config.features.insightWidget === 'owner' && config.features.statInsights === 'owner');
+t('insightWidget ships at members level, separate from statInsights', config.features.insightWidget === 'members' && config.features.statInsights === 'members');
 const mounts = [...app.matchAll(/flagOn\('statInsights', ([^)]*)\)/g)];
 t('every front-end statInsights check in app.js is paired with insightWidget', mounts.length >= 7 && mounts.every((m) => app.slice(m.index, m.index + 140).includes(`flagOn('insightWidget', ${m[1]})`)));
 t('compare hook negates the pair as a whole', /!\(flagOn\('statInsights'[^)]*\) && flagOn\('insightWidget'[^)]*\)\)/.test(app));

@@ -267,7 +267,7 @@ for (const [lvl, who] of Object.entries(cmpAllowed)) {
   t(`h2h flag "${lvl}" → signed-out visitors never get it`, anon.s >= 400 && !anon.d?.insight);
 }
 setFlag(startLevel);
-t('statInsights ships at owner level in config.json', config.features.statInsights === 'owner');
+t('statInsights ships at members level (rolled out 2026-10-07) in config.json', config.features.statInsights === 'members');
 
 // ---------- BE9 coach's note (private tier): fact pack, registry, writer, visibility ----------
 const players = siteJson('players').filter((p) => p.home && (p.s?.gp ?? 0) > 0);
@@ -359,7 +359,7 @@ for (const [lvl, who] of Object.entries(noteAllowed)) {
   t(`coach's note flag "${lvl}" → signed-out visitors never get it`, !(await seesNote(null)));
 }
 setNoteFlag(noteStart);
-t('statInsights still ships at owner level in config.json', config.features.statInsights === 'owner');
+t('statInsights still ships at members level in config.json', config.features.statInsights === 'members');
 
 // manager portal (Notes tab): every squad player's coach's note + "last written" – managers already pass visibleRow, no API change
 const mgrRows = (await (await W(`/api/insights?keys=${encodeURIComponent(`${noteKey},${otherKey}`)}`, { headers: { Authorization: 'Bearer ' + ntok.manager } })).json()).insights ?? [];

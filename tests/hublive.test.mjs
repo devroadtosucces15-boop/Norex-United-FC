@@ -44,7 +44,7 @@ t('a queued wave says they will get an alert', toasts.at(-1).includes('alert'));
 // ---------- static wiring ----------
 const css = fs.readFileSync(ROOT + 'web/hub.css', 'utf8');
 t('reduced-motion fallback turns the animations off', /prefers-reduced-motion:reduce\)\{\.hubl-chip/.test(css));
-t('hubLive ships as an owner flag', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.hubLive === 'owner');
+t('hubLive ships at members level (rolled out 2026-10-07)', JSON.parse(fs.readFileSync(ROOT + 'config.json', 'utf8')).features.hubLive === 'members');
 t('app.js only loads it behind hubLive', /flagOn\('hubLive', baseRole\)\s*\?\s*\(slot\) => loadAsset\('hublive\.js'/.test(fs.readFileSync(ROOT + 'web/app.js', 'utf8')));
 t('hub page has the mount point', fs.readFileSync(ROOT + 'scripts/hub-page.mjs', 'utf8').includes('data-hubw-live'));
 done();

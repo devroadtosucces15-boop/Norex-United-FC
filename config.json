@@ -98,14 +98,14 @@
     "points": "members",
     "avatarCard": "members",
     "locker": "members",
-    "lockerRoom": "managers",
+    "lockerRoom": "members",
     "dugout": "managers",
     "boardroom": "owner",
     "tactics": "members",
-    "statInsights": "owner",
-    "insightWidget": "owner",
-    "hub": "owner",
-    "hubLive": "owner",
-    "push": "owner"
+    "statInsights": "members",
+    "insightWidget": "members",
+    "hub": "members",
+    "hubLive": "members",
+    "push": "members"
   }
 }
