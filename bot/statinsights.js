@@ -114,6 +114,14 @@ async function last5Facts(loadSite) {
     },
   };
 }
+// D2 club records (site `records.json`, same numbers as the Club records section): biggest win / heaviest defeat,
+// longest win streak, hat-tricks, best single-match marks. No file or no games → null.
+async function recordsFacts(loadSite) {
+  const r = await loadSite('records').catch(() => null);
+  if (!r?.games) return null;
+  const best = Object.fromEntries(Object.entries(r.bestMatch ?? {}).filter(([, v]) => v).map(([k, v]) => [k, { value: v.value, player: v.player }]));
+  return { title: 'Club records', facts: { games: r.games, biggestWin: r.biggestWin, heaviestDefeat: r.heaviestDefeat, longestWinStreak: r.longestWinStreak, hatTricks: r.hatTricks, hatTrickPlayers: r.hatTrickPlayers, bestInAMatch: best } };
+}
 // BE9 head-to-head vs one opponent club (site `h2h.json`, keyed by EA club id `o`): the whole record NOREX has
 // against them in the archive. Unknown opponent id → null.
 async function h2hFacts(loadSite, o) {
@@ -150,7 +158,7 @@ export async function registryKeys(loadSite) {
   const [players, club, h2h] = await Promise.all([loadSite('players'), loadSite('club'), loadSite('h2h').catch(() => null)]);
   const latestOpp = (h2h ?? []).find((e) => e.n === club?.matches?.[0]?.opp); // only the next-talked-about rival is pre-written – the rest of the opponent list isn't
   const recent = (club?.matches ?? []).slice(1, MATCH_CARDS).map((m) => `match.${m.id}`); // the newest is match.latest
-  return ['club', 'match.latest', ...recent, 'matches.last5', ...(latestOpp ? [`h2h.${latestOpp.o}`] : []), ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
+  return ['club', 'match.latest', ...recent, 'matches.last5', 'club.records', ...(latestOpp ? [`h2h.${latestOpp.o}`] : []), ...Object.keys(LEADER_STATS).map((s) => `leaders.${s}`),
     ...players.filter((p) => p.home).flatMap((p) => [`player.${p.k}`, ...((p.s?.gp ?? 0) > 0 ? [`note.${p.k}`] : [])])];
 }
 // BE9 compare – two home-squad players side by side. On demand only (POST /api/insights/compare), never
@@ -171,6 +179,7 @@ export async function factPackFor(key, loadSite, env) {
   if (cm) { const f = await compareFacts(loadSite, cm[1], cm[2]); return f && { tier: 'member', ...f }; }
   const mm = /^match\.(latest|\d+)$/.exec(key);
   if (mm) { const f = await matchFacts(loadSite, mm[1]); return f && { tier: 'public', ...f }; }
+  if (key === 'club.records') { const f = await recordsFacts(loadSite); return f && { tier: 'public', ...f }; }
   if (key === 'matches.last5') { const f = await last5Facts(loadSite); return f && { tier: 'public', ...f }; }
   const hm = /^h2h\.(.+)$/.exec(key);
   if (hm) { const f = await h2hFacts(loadSite, hm[1]); return f && { tier: 'public', ...f }; }

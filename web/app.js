@@ -1565,6 +1565,16 @@ ${Object.keys(A.flags).length ? `<div class="tbl"><table><thead><tr><th>Feature<
 <h3 style="margin-top:20px">⚙️ GitHub Actions</h3>${runs.length ? `<div class="tbl"><table><thead><tr><th>Workflow</th><th>Branch</th><th>Status</th><th>When</th><th></th></tr></thead><tbody>${runs.map((r) => `<tr><td>${esc(r.name)}</td><td><code>${esc(r.branch)}</code></td><td>${RUN_ICON[r.conclusion || r.status] || '•'} ${esc(r.conclusion || r.status)}</td><td>${ago(r.at)}</td><td><a class="btn ghost sm" href="${esc(r.url)}" target="_blank" rel="noopener">Open</a></td></tr>`).join('')}</tbody></table></div>` : `<p class="muted small">⚠️ ${esc(h.actions?.error || 'No runs found.')}</p>`}`;
       },
     };
+    if (flagOn('dugout', baseRole)) { // D4: the manager sub-tabs as a grouped side rail (same buttons + data-sub, so every handler still works)
+      const GROUPS = [['Match night', ['dugout', 'week', 'rush', 'votes']], ['People', ['claims', 'members', 'trials', 'notes', 'requests', 'submissions']],
+        ['Club', ['boardroom', 'intel', 'activity', 'reports']], ['Game & tools', ['game', 'builds', 'bot', 'flags', 'health']]];
+      const label = Object.fromEntries(sub), seen = new Set(GROUPS.flatMap(([, ks]) => ks));
+      const groups = [...GROUPS, ['More', sub.map(([k]) => k).filter((k) => !seen.has(k))]];
+      const item = (k) => label[k] ? `<button class="rail-i${S.adminTab === k ? ' on' : ''}" type="button" data-sub="${k}"${S.adminTab === k ? ' aria-current="page"' : ''}><span>${label[k]}</span></button>` : '';
+      return `<div class="mgr-shell"><nav class="mgr-rail card" aria-label="Manager menu"><button class="rail-toggle mgr-toggle" type="button" aria-expanded="false">☰ <span>${label[S.adminTab] || 'Menu'}</span></button>
+<div class="mgr-groups">${groups.map(([g, ks]) => { const items = ks.map(item).join(''); return items ? `<div class="rail-g"><small>${g}</small>${items}</div>` : ''; }).join('')}<div class="rail-g"><button class="rail-i" type="button" data-refresh><span>↻ Refresh</span></button></div></div></nav>
+<div class="card mgr mgr-main">${body[S.adminTab]()}</div></div>`;
+    }
     return `<div class="chipset sub-tabs">${sub.map(([k, l]) => `<button class="chip${S.adminTab === k ? ' on' : ''}" type="button" data-sub="${k}">${l}</button>`).join('')}<button class="chip" type="button" data-refresh>↻ Refresh</button></div><div class="card mgr">${body[S.adminTab]()}</div>`;
   }
   async function decide(user, action) {
@@ -1706,6 +1716,8 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
       if (d.m) vote(d.m, d.p);
       if (d.rush) decideRush(+d.id, d.rush);
       if (d.goRush !== undefined) { e.preventDefault(); S.adminTab = 'rush'; go('manager'); }
+      const mgrToggle = e.target.closest?.('.mgr-toggle');
+      if (mgrToggle) mgrToggle.setAttribute('aria-expanded', String(mgrToggle.closest('.mgr-rail').classList.toggle('open')));
       if (d.sub) {
         S.adminTab = d.sub; draw();
         if (d.sub === 'submissions' && S.subm.rows === null) loadSubmissions();

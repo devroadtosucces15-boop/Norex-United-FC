@@ -396,6 +396,15 @@ t('every h2h.json id is a digit string (safe for the data-h2h attribute + route)
   setAiReply(null);
 }
 
+
+// ----- D2: club records insight -----
+const recsRow = siteJson('records');
+const recPack = await factPackFor('club.records', async (f) => siteJson(f));
+t('D2 records: public fact pack from records.json (win/defeat, streak, hat-tricks, best-in-a-match)', recPack?.tier === 'public' && recPack.facts.games === recsRow.games && recPack.facts.longestWinStreak === recsRow.longestWinStreak && recPack.facts.hatTricks === recsRow.hatTricks && 'bestInAMatch' in recPack.facts);
+t('D2 records: no records file or no games → null', (await factPackFor('club.records', async (f) => { if (f === 'records') throw new Error('404'); return siteJson(f); })) === null && (await factPackFor('club.records', async (f) => (f === 'records' ? { games: 0 } : siteJson(f)))) === null);
+t('D2 records: pre-written by the cron registry', (await registryKeys(async (f) => siteJson(f))).includes('club.records'));
+t('D2 records: stats + leaders pages carry the slot under Club records', ['scripts/build.mjs', 'scripts/leaders-page.mjs'].every((f) => /<div data-nx-insight=\\?"club\.records\\?" hidden><\/div>/.test(readFileSync(new URL('../' + f, import.meta.url), 'utf8'))));
+
 done();
 
 // club pages: per-opponent h2h slot (only for clubs NOREX has played = the ids in api/h2h.json)

@@ -122,4 +122,11 @@ t('plays: an unpublished play drops off the night', (await call(mgr, '/api/event
 t('plays: an empty list clears the pins', (await call(mgr, '/api/events/plays', { id: laterId, plays: [] })).d.events.find((e) => e.id === laterId)?.plays.length === 0);
 t('board 08 C3: Dugout pins/assigns via the routes, shows the starters-learned line', ["'/api/events/plays'", '/assign`', 'starters know all', 'data-pin', 'data-assign'].every((x) => dgJs.includes(x)));
 t('board 08 C3: Dugout listens on the lineup room and keeps unsaved edits', dgJs.includes('/lineup/ws?t=') && dgJs.includes('function listen(e)') && dgJs.includes('!D.dirty && !D.pick') && dgJs.includes('if (!el?.isConnected) return close()'));
+// ----- D4: manager sub-tabs as a grouped rail (flag dugout) -----
+{
+  const app = fs.readFileSync(ROOT + 'web/app.js', 'utf8'), css = fs.readFileSync(ROOT + 'web/style.css', 'utf8');
+  t('D4: with the Dugout on, sub-tabs render as a grouped rail of the same data-sub buttons (nothing dropped into "More" by accident)', /if \(flagOn\('dugout', baseRole\)\) \{ \/\/ D4/.test(app) && /\['Match night', \['dugout'/.test(app) && /\['More', sub\.map/.test(app) && /data-sub="\$\{k\}"\$\{S\.adminTab === k/.test(app));
+  t('D4: the old chip row stays as the fallback when the Dugout flag is off', /<div class="chipset sub-tabs">\$\{sub\.map/.test(app));
+  t('D4: ☰ toggle on narrow screens, aria-expanded kept in sync', /\.mgr-toggle/.test(app) && /\.mgr-rail\.open \.mgr-groups\{display:block\}/.test(css) && /@media \(max-width:1100px\)/.test(css));
+}
 done();

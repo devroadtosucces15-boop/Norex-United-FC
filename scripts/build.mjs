@@ -1153,7 +1153,7 @@ write('stats.html', page({ title: `Stats – ${config.siteTitle}`, base: '', act
 ${pageHead('Stats centre', "League leaderboards use EA's club totals; records and head-to-heads come from the match archive. Rush numbers come from results logged by members and confirmed by a manager.", '')}
 ${modes(`${section('Leaderboards', `<div class="tabs chipset" data-tabs>${boards.map(([k], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="lb${i}">${k}</button>`).join('')}</div>
 ${boards.map(([, f, fmt], i) => `<div class="tab-panel card" id="lb${i}"${i ? ' hidden' : ''}>${barList(hm.map(({ pl, s }) => ({ pl, v: f(s) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 10), { base: '', fmt: fmt ?? ((v) => v) })}</div>`).join('')}`)}
-${recs.length ? section('Club records', `<div class="records">${recs.join('')}</div>`, { sub: 'from the archive' }) : ''}
+${recs.length ? section('Club records', `<div class="records">${recs.join('')}</div><div data-nx-insight="club.records" hidden></div>`, { sub: 'from the archive' }) : ''}
 ${section('Head to head', table('h2h', ['Opponent', '#P', '#W', '#D', '#L', '#GF', '#GA', '#GD', 'Last'], [...h2h.values()].sort((a, b) => b.p - a.p).map((e) =>
     `<tr data-h2h="${esc(e.o)}" tabindex="0" title="Click for the head-to-head insight">${td(`${crest(e.o, 22, '')} ${clubLink(e.o, '')}`)}${td(e.p, true)}${td(e.w, true)}${td(e.d, true)}${td(e.l, true)}${td(e.gf, true)}${td(e.ga, true)}${td((e.gf - e.ga > 0 ? '+' : '') + (e.gf - e.ga), true, e.gf - e.ga)}${td(`<a href="matches/${e.last.matchId}.html">${resPill(result(e.last.clubs[homeId]))} ${scoreOf(e.last)}</a>`)}</tr>`), { filter: 'Search opponents…' }) + '<div data-nx-h2h-insight hidden></div>')}`, 'leaders')}
 ${advancedSection(LH, lm)}
@@ -1274,6 +1274,16 @@ write('api/clubs.json', JSON.stringify([...clubs.values()].map((c) => ({ id: c.i
 write('api/rankings.json', JSON.stringify(buildRankings(readJson(path.join(DATA, 'world.json'), null), homeId, num(homeC?.overall?.skillRating) || null)));
 // P11.16 /history: League-only head-to-head record per opponent, same numbers as the Stats Centre's own
 // "Head to head" table – exposed here so the Discord command doesn't need to scrape the HTML.
+// D2: the same club records as the Club records section, as plain numbers for the insight writer (api/records.json).
+write('api/records.json', JSON.stringify(homeMatches.length ? {
+  games: homeMatches.length,
+  biggestWin: bigWin && margin(bigWin) > 0 ? { score: scoreOf(bigWin), opponent: clubName(oppOf(bigWin, homeId)) } : null,
+  heaviestDefeat: bigLoss && margin(bigLoss) < 0 ? { score: scoreOf(bigLoss), opponent: clubName(oppOf(bigLoss, homeId)) } : null,
+  longestWinStreak: Math.max(bestStreak, num(homeC?.overall?.wstreak)),
+  hatTricks: hatTricks.length,
+  hatTrickPlayers: [...new Set(hatTricks.map((x) => x.p.playername))].slice(0, 3),
+  bestMatch: Object.fromEntries([['rating', 'rating'], ['goals', 'goals'], ['assists', 'assists'], ['saves', 'saves']].map(([k, f]) => { const r = recBest((p) => num(p[f])); return [k, r && num(r.p[f]) ? { value: k === 'rating' ? +num(r.p[f]).toFixed(1) : num(r.p[f]), player: r.p.playername } : null]; })),
+} : null));
 write('api/h2h.json', JSON.stringify([...h2h.values()].map((e) => ({
   o: e.o, n: clubName(e.o), p: e.p, w: e.w, d: e.d, l: e.l, gf: e.gf, ga: e.ga,
   lastId: e.last.matchId, lastRes: result(e.last.clubs[homeId]), lastScore: scoreOf(e.last),

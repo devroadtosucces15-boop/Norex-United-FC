@@ -90,7 +90,7 @@ ${potm ? `<div class="hof-potm"><span aria-hidden="true">🏆</span><div><small>
 <div class="chips">${lb.currentDivision ? `<span class="chip strong">Division ${esc(lb.currentDivision)}</span>` : ''}${lb.bestDivision ? `<span class="chip">Best: Division ${esc(lb.bestDivision)}</span>` : ''}<span class="chip">${lm.length} archived games</span>${brand.founded ? `<span class="chip">Est. ${esc(brand.founded)}</span>` : ''}</div></div></section>
 ${MEMBER_API ? `<div data-flag="hallOfFame" hidden>${section('Club legends', '<div data-hof-legends></div>', { sub: 'inducted by the managers', id: 'legends' })}</div>` : ''}
 ${section('Award winners', months.length ? `<div class="hof-months">${months.map(award).join('')}</div>` : emptyState('🏆', 'No winners yet', 'Every month crowns a Player of the Month, a Golden Boot and a Playmaker.'), { sub: 'every month from the archive', id: 'awards' })}
-${recs.length ? section('Club records', `<div class="records">${recs.join('')}</div>`, { sub: 'from the archive', id: 'records' }) : ''}
+${recs.length ? section('Club records', `<div class="records">${recs.join('')}</div><div data-nx-insight="club.records" hidden></div>`, { sub: 'from the archive', id: 'records' }) : ''}
 ${section('Club history', `<ol class="hof-timeline" data-hof-timeline>${ev.map((e) => `<li class="hof-ev" data-date="${e.d}"><time datetime="${e.d}">${nice(e.d)}</time><span class="hof-ic">${e.icon}</span><div><b>${e.href ? `<a href="${e.href}">${e.title}</a>` : e.title}</b><p>${e.text}</p></div></li>`).join('')}${founded}</ol>`, { sub: 'milestones from the archive', id: 'history' })}
 <p class="muted small">Monthly tables and the Best XI are on the <a href="leaders.html">Leaderboards</a> page.</p>
 ${METRICS_JS('')}${MEMBER_API ? HONOURS('') : ''}`;
