@@ -637,6 +637,7 @@ ${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'],
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}
 ${ms.length ? counter('Clean sheets', ms.filter((m) => !num(m.clubs[oppOf(m, id)].goals)).length, { href: drillHref(id, base, 'cleansheets') }) : ''}
 </section>
+${homeMatches.some((m) => oppOf(m, homeId) === String(id)) ? `<div data-nx-insight="h2h.${esc(id)}" hidden></div>` : ''}
 ${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}
 ${ms.length ? `<div class="grid2 reveal">${card('Latest result', poster(ms[0], base) + `<button class="btn dl-poster" type="button" data-for="poster-${ms[0].matchId}">⬇ Download result graphic</button>`, 'flush')}${sessions[0] ? card('Last session', sessionCard(sessions[0], base, id)) : ''}</div>` : ''}
 ${section('Performance', `<div class="grid-charts">

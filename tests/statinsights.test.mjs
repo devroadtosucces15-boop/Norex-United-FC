@@ -378,3 +378,6 @@ t('app.js mounts h2h.<opponent> on row click/Enter behind statInsights, ignoring
 t('every h2h.json id is a digit string (safe for the data-h2h attribute + route)', h2hRows.every((e) => /^\d+$/.test(String(e.o))));
 
 done();
+
+// club pages: per-opponent h2h slot (only for clubs NOREX has played = the ids in api/h2h.json)
+t('non-home club pages drop a data-nx-insight="h2h.<id>" slot only when NOREX has played that club', /homeMatches\.some\(\(m\) => oppOf\(m, homeId\) === String\(id\)\) \? `<div data-nx-insight="h2h\.\$\{esc\(id\)\}"/.test(buildSrc));
