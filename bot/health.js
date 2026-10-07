@@ -50,8 +50,22 @@ async function actionRuns(env) {
   };
 }
 
+// P9.1 progress – read-only: crawl_cursor (meta) + club_index rows; clubs/day = rows checked in the last 24 h
+async function crawlProgress(env) {
+  try {
+    const q = (sql, ...a) => env.DB.prepare(sql).bind(...a).first();
+    const [cur, tot, day, last] = await Promise.all([
+      q("SELECT value FROM meta WHERE key = 'crawl_cursor'"),
+      q('SELECT COUNT(*) AS n FROM club_index'),
+      q('SELECT COUNT(*) AS n FROM club_index WHERE checked_at > ?', Date.now() - 864e5),
+      q('SELECT MAX(checked_at) AS at FROM club_index'),
+    ]);
+    return { ready: true, cursor: Number(cur?.value) || 1, indexed: tot?.n ?? 0, perDay: day?.n ?? 0, lastAt: last?.at ?? null };
+  } catch (e) { return { ready: false, error: String(e.message || e).slice(0, 120) }; }
+}
+
 export async function healthRoute(me, env) {
   if (!can(me, 'health.view')) return { ok: false, error: 'Owner only.' };
-  const [analytics, actions] = await Promise.all([workerAnalytics(env), actionRuns(env)]);
-  return { ok: true, analytics, actions };
+  const [analytics, actions, crawl] = await Promise.all([workerAnalytics(env), actionRuns(env), crawlProgress(env)]);
+  return { ok: true, analytics, actions, crawl };
 }

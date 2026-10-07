@@ -30,4 +30,11 @@ t('re-checking a club updates its row instead of duplicating it', reup.s === 200
 const final = await crawl();
 t('still just 2 rows after the update', final.d.indexed === 2);
 
+// Boardroom health readout: owner-only, reads cursor + count + clubs/day, no writes
+const { call, login } = await import('./mock.mjs');
+const owner = await login('111');
+const hc = (await call(owner, '/api/admin/health')).d.crawl;
+t('health shows crawl cursor, count and clubs/day', hc?.ready && hc.cursor === 31 && hc.indexed === 2 && hc.perDay === 2 && hc.lastAt > 0);
+t('Boardroom renders the crawl readout', (await import('node:fs')).readFileSync(new URL('../web/boardroom.js', import.meta.url), 'utf8').includes('h.crawl'));
+
 done();

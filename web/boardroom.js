@@ -64,7 +64,11 @@
     ].join('');
     const a = h.analytics;
     const bar = (label, n, max, txt) => `<div class="br-use"><span>${esc(label)}</span><b>${esc(txt)}</b><span class="br-track"><i class="${n / max > 0.8 ? 'hot' : n / max > 0.5 ? 'warm' : ''}" style="width:${Math.min(100, (n / max) * 100).toFixed(1)}%"></i></span></div>`;
+    const c = h.crawl;
+    const crawl = c?.ready ? `<div class="br-sec-h br-sub"><h3>🧭 Club crawl</h3><span class="br-tag">P9.1</span></div>
+<p class="small"><b>${c.indexed.toLocaleString()}</b> clubs indexed · cursor at ID <b>${c.cursor.toLocaleString()}</b> · <b>${c.perDay.toLocaleString()}</b> clubs/day${c.lastAt ? ` · last hit ${esc(ago(c.lastAt))}` : ''}</p>` : '';
     return `${head}<div class="br-dots">${tiles}</div>
+${crawl}
 <div class="br-sec-h br-sub"><h3>📦 Free-tier usage</h3><span class="br-tag">last 24 h</span></div>
 ${a?.ready ? `${bar('Worker requests', a.requests, FREE.requests, `${a.requests.toLocaleString()} / ${FREE.requests.toLocaleString()}`)}${bar('Worker errors', a.errors, Math.max(1, a.requests), `${a.errors.toLocaleString()}`)}<p class="muted small">CPU p50 ${esc(a.cpuP50)} ms · p99 ${esc(a.cpuP99)} ms</p>`
       : `<p class="muted small">⚠️ ${esc(a?.error || 'Cloudflare usage not available yet.')}</p>`}
