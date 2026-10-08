@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-08T01:00:33.782Z",
+ "fetchedAt": "2026-10-08T01:10:34.657Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -439,42 +439,6 @@
    "prevGoals9": "0",
    "prevGoals10": "1",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "ToNyWhITe4u",
-   "gamesPlayed": "1",
-   "winRate": "0",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "23",
-   "passSuccessRate": "63",
-   "ratingAve": "7.3",
-   "tacklesMade": "1",
-   "tackleSuccessRate": "33",
-   "proName": "R9",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "173",
-   "proNationality": "76",
-   "proOverall": "77",
-   "proOverallStr": "77",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "RL-xXTRAKASxX",
@@ -1344,7 +1308,7 @@
  "positionCount": {
   "midfielder": 10,
   "goalkeeper": 0,
-  "forward": 10,
+  "forward": 9,
   "defender": 8
  },
  "career": [
@@ -1470,25 +1434,14 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "ToNyWhITe4u",
-   "proPos": "25",
-   "gamesPlayed": "89",
-   "goals": "7",
-   "assists": "19",
-   "manOfTheMatch": "1",
-   "ratingAve": "6.8",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "RL-xXTRAKASxX",
    "proPos": "5",
-   "gamesPlayed": "143",
+   "gamesPlayed": "144",
    "goals": "37",
    "assists": "89",
    "manOfTheMatch": "7",
    "ratingAve": "7.4",
-   "prevGoals": "1",
+   "prevGoals": "0",
    "favoritePosition": "defender"
   },
   {

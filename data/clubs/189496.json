@@ -1,7 +1,7 @@
 {
  "id": "189496",
  "tier": "linked",
- "fetchedAt": "2026-10-08T01:00:33.782Z",
+ "fetchedAt": "2026-10-08T01:10:34.657Z",
  "info": {
   "name": "We blame lag fc",
   "clubId": 189496,
@@ -621,6 +621,42 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "websszy",
+   "gamesPlayed": "4",
+   "winRate": "75",
+   "goals": "4",
+   "assists": "3",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "66",
+   "passesMade": "68",
+   "passSuccessRate": "83",
+   "ratingAve": "8.1",
+   "tacklesMade": "6",
+   "tackleSuccessRate": "75",
+   "proName": "L. Foster",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "176",
+   "proNationality": "14",
+   "proOverall": "77",
+   "proOverallStr": "77",
+   "manOfTheMatch": "2",
+   "redCards": "0",
+   "prevGoals": "4",
+   "prevGoals1": "4",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "d1azch1no",
    "gamesPlayed": "54",
    "winRate": "68",
@@ -804,7 +840,7 @@
  "positionCount": {
   "midfielder": 2,
   "goalkeeper": 0,
-  "forward": 10,
+  "forward": 11,
   "defender": 4
  },
  "career": [
@@ -1005,6 +1041,17 @@
    "ratingAve": "7.8",
    "prevGoals": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "websszy",
+   "proPos": "14",
+   "gamesPlayed": "86",
+   "goals": "39",
+   "assists": "101",
+   "manOfTheMatch": "14",
+   "ratingAve": "8.4",
+   "prevGoals": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "d1azch1no",
