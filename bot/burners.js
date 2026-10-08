@@ -36,15 +36,36 @@ export async function burnersRoute(request, env) {
   return json({ burners: rows.map((r) => ({ id: r.club_id, name: r.name, crest: r.crest, channel: r.channel_id, at: r.added_at })) });
 }
 
+// ---------- club lookup: the site's own data first, EA live only as a fallback ----------
+// EA blocks the Worker's network (the same lookup works from GitHub Actions and from a laptop), so searches read what the
+// site already knows – every club NOREX has played (api/opponents.json, with the latest result against each) plus the
+// discovered-clubs index (api/clubs.json) – both rebuilt every ~10 minutes. EA is tried live only when that has nothing.
+const crestOf = (u) => /l(\d+)\.png/.exec(String(u ?? ''))?.[1] ?? null;
+async function siteClubs(loadSite) {
+  const get = (f) => (loadSite ? Promise.resolve().then(() => loadSite(f)).catch(() => null) : null);
+  const [opp, idx] = await Promise.all([get('opponents'), get('clubs')]);
+  const clubs = new Map();
+  for (const c of Array.isArray(idx) ? idx : []) if (c?.id && c.n) clubs.set(String(c.id), { id: String(c.id), name: c.n, crest: crestOf(c.cr), fromSite: true });
+  for (const o of Array.isArray(opp) ? opp : []) if (o?.id && o.n) clubs.set(String(o.id), { id: String(o.id), name: o.n, crest: o.cr ?? clubs.get(String(o.id))?.crest ?? null, fromSite: true });
+  return { clubs, opp: Array.isArray(opp) ? opp : [] };
+}
+
 // ---------- EA search ----------
 // A name goes to EA's all-time leaderboard search (finds clubs the moment they've played a game); an ID to clubs/info.
 // → [{ id, name, crest, gp, w, d, l, gf, ga, div }]
-export async function searchClubs(q) {
+export async function searchClubs(q, loadSite) {
   q = String(q ?? '').trim().slice(0, 40);
+  const { clubs } = await siteClubs(loadSite);
   if (/^\d{1,12}$/.test(q)) {
+    if (clubs.has(q)) return [clubs.get(q)];
     const c = (await eaGet('clubs/info', { clubIds: q }))?.[q];
-    return c?.name ? [{ id: q, name: c.name, crest: c.customKit?.crestAssetId ?? null }] : [];
+    if (c?.name) return [{ id: q, name: c.name, crest: c.customKit?.crestAssetId ?? null }];
+    // Neither source knows it: track it by ID anyway – the next site update asks EA from Actions and fills in the real name.
+    return [{ id: q, name: `Club ${q}`, crest: null, unverified: true }];
   }
+  const lq = q.toLowerCase();
+  const seen = clubs.size ? [...clubs.values()].filter((c) => c.name.toLowerCase().includes(lq)) : [];
+  if (seen.length) return seen.sort((a, b) => (b.name.toLowerCase() === lq) - (a.name.toLowerCase() === lq) || a.name.length - b.name.length).slice(0, 10);
   const hits = await eaGet('allTimeLeaderboard/search', { clubName: q });
   const n = (v) => Number(v) || 0;
   return (Array.isArray(hits) ? hits : [])
@@ -53,14 +74,16 @@ export async function searchClubs(q) {
       gp: n(h.gamesPlayed), w: n(h.wins), d: n(h.ties), l: n(h.losses), gf: n(h.goals), ga: n(h.goalsAgainst), div: n(h.bestDivision) || null,
     }))
     .filter((c) => /^\d{1,12}$/.test(c.id) && c.name)
-    .sort((a, b) => (b.name.toLowerCase() === q.toLowerCase()) - (a.name.toLowerCase() === q.toLowerCase()) || b.gp - a.gp)
+    .sort((a, b) => (b.name.toLowerCase() === lq) - (a.name.toLowerCase() === lq) || b.gp - a.gp)
     .slice(0, 10);
 }
 
 // Who NOREX played lately (EA only keeps each club's last 5 per mode) → newest first, one row per opponent,
 // with the score and mode of that game. These are the likeliest burners: clubs that just met us.
 // → [{ id, name, crest, ts, type, res, gf, ga }]
-export async function recentOpponents(home = HOME_CLUB) {
+export async function recentOpponents(home = HOME_CLUB, loadSite) {
+  const { opp } = await siteClubs(loadSite);
+  if (opp.length) return opp.slice(0, 25).map((o) => ({ id: o.id, name: o.n, crest: o.cr ?? null, ts: o.ts, type: o.type, res: o.res, gf: o.gf, ga: o.ga }));
   const seen = new Map();
   const lists = await Promise.all(Object.keys(TYPE_LABEL).map((type) => eaGet('clubs/matches', { clubIds: home, matchType: type }).then((l) => [type, l])));
   for (const [type, list] of lists) {
@@ -104,12 +127,12 @@ const trackedMsg = (club, site, already) => `${already ? '✅ Already tracking' 
   + `📋 ${site}burners.html#c${club.id}`;
 
 const who = (i) => { const u = i.member?.user ?? i.user ?? {}; return { id: String(u.id ?? ''), name: String(i.member?.nick || u.global_name || u.username || 'Manager').slice(0, 40) }; };
-const record = (c) => (c.gp ? `${c.w}W ${c.d}D ${c.l}L · ${c.gf}–${c.ga}${c.div ? ` · best div ${c.div}` : ''}` : 'no games yet');
+const record = (c) => (c.gp ? `${c.w}W ${c.d}D ${c.l}L · ${c.gf}–${c.ga}${c.div ? ` · best div ${c.div}` : ''}` : c.unverified ? 'ID not seen yet – tracked by ID' : c.fromSite ? 'a club NOREX has played' : 'no games yet');
 
 // Search results → an embed + a pick menu (clubs already tracked are ticked).
 async function pickerBody(env, results, q) {
   const have = new Set((await all(env, 'SELECT club_id FROM burner_clubs WHERE active = 1')).map((r) => r.club_id));
-  if (!results.length) return { content: `🔍 EA has no club matching **${q}** yet. A club shows up as soon as it has played one game – try again after their first match, or use their club ID.` };
+  if (!results.length) return { content: `🔍 EA has no club matching **${q}** yet. Names only match clubs NOREX has played – for any other club paste its **club ID** (\`/burner track 1234567\`), or try again after their first game.` };
   return {
     embeds: [{
       title: `🔍 ${results.length} club${results.length === 1 ? '' : 's'} matching “${q}”`, color: RED,
@@ -172,7 +195,7 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
   // `recent`, or `search` with no name: dropdown of the clubs NOREX just played.
   if (sub?.name === 'recent' || (sub?.name === 'search' && !q)) {
     ctx.waitUntil((async () => {
-      const body = await recentOpponents(env.HOME_CLUB_ID || HOME_CLUB).then((o) => recentBody(env, o)).catch((e) => ({ content: `⚠️ Could not reach EA: ${e.message}` }));
+      const body = await recentOpponents(env.HOME_CLUB_ID || HOME_CLUB, loadSite).then((o) => recentBody(env, o)).catch((e) => ({ content: `⚠️ Could not reach EA: ${e.message}` }));
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ allowed_mentions: { parse: [] }, ...body }),
       }).catch((e) => console.log('burner reply failed', e.message));
@@ -185,7 +208,7 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
   ctx.waitUntil((async () => {
     let body;
     try {
-      const results = await searchClubs(q);
+      const results = await searchClubs(q, loadSite);
       const exact = results.filter((c) => c.id === q || c.name.toLowerCase() === q.toLowerCase());
       if (sub.name === 'track' && exact.length === 1) {
         const r = await trackClub(env, exact[0], me, i.channel_id);
@@ -205,7 +228,7 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
 }
 
 // ---------- the pick menus (custom_id norex:bn:pick | norex:bn:rm) ----------
-export async function burnerPick(i, env, ctx, user) {
+export async function burnerPick(i, env, ctx, user, loadSite) {
   if (!can(user, 'burners.manage') || !flagOn(env, user, 'burners')) return reply('🔒 Managers only.');
   const id = String(i.data?.values?.[0] ?? '');
   if (!/^\d{1,12}$/.test(id)) return reply('⚠️ Unknown club.');
@@ -217,8 +240,8 @@ export async function burnerPick(i, env, ctx, user) {
     await env.DB.prepare('UPDATE burner_clubs SET active = 0, removed_at = ? WHERE club_id = ?').bind(Date.now(), id).run();
     return update(`🗑️ Stopped tracking **${row.name}**. Its history stays on the page until the next cleanup – /burner search brings it back.`);
   }
-  const club = (await searchClubs(id))[0];
-  if (!club) return update('⚠️ EA could not find that club right now – try again in a moment.');
+  const club = (await searchClubs(id, loadSite))[0];
+  if (!club) return update('⚠️ I could not find that club right now – try again in a moment.');
   const r = await trackClub(env, club, who(i), i.channel_id);
   if (r.error) return update(`⚠️ ${r.error}`);
   ctx.waitUntil(dispatchUpdate(env));

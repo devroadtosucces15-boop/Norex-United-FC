@@ -1294,6 +1294,18 @@ write('api/squad.json', JSON.stringify({
 }));
 write('api/clubs.json', JSON.stringify([...clubs.values()].map((c) => ({ id: c.id, n: clubName(c.id), t: state.clubs[c.id]?.tier ?? 'archived', ...(clubKit(c.id)?.crestAssetId ? { cr: crestSrc(c.id, SITE) } : {}) }))));
 // P9.2: global rankings – EA's world top 100 with Norex's rank, the cut-off and per-club rates (scripts/rankings.mjs)
+// Every club NOREX has met (any mode, friendlies included) with the latest result against each – the bot's /burner search + recent read this
+// because EA blocks the Worker's own network (see bot/burners.js).
+{
+  const seenOpp = new Map();
+  for (const m of allMatches) {
+    if (!m.clubs?.[homeId]) continue;
+    const o = oppOf(m, homeId);
+    if (!o || seenOpp.has(o)) continue;
+    seenOpp.set(o, { id: String(o), n: clubName(o), cr: clubKit(o)?.crestAssetId ? String(clubKit(o).crestAssetId) : null, ts: num(m.timestamp), type: m.matchType ?? 'leagueMatch', res: result(m.clubs[homeId]), gf: num(m.clubs[homeId].goals), ga: num(m.clubs[o].goals) });
+  }
+  write('api/opponents.json', JSON.stringify([...seenOpp.values()].slice(0, 60)));
+}
 write('api/rankings.json', JSON.stringify(buildRankings(readJson(path.join(DATA, 'world.json'), null), homeId, num(homeC?.overall?.skillRating) || null)));
 // P11.16 /history: League-only head-to-head record per opponent, same numbers as the Stats Centre's own
 // "Head to head" table – exposed here so the Discord command doesn't need to scrape the HTML.

@@ -68,8 +68,10 @@ const BOARD = [
   { clubId: '1355341', gamesPlayed: '2', wins: '1', losses: '1', ties: '0', goals: '4', goalsAgainst: '4', bestDivision: '6', clubInfo: { name: 'TeloSico', customKit: { crestAssetId: '99' } } },
   { clubId: '1355999', gamesPlayed: '30', wins: '20', losses: '5', ties: '5', goals: '70', goalsAgainst: '30', bestDivision: '2', clubInfo: { name: 'TeloSico Reserves', customKit: { crestAssetId: '98' } } },
 ];
+let siteData = null; // when set, the site's api/opponents.json + clubs.json answer; otherwise 404 so the EA fallback is exercised
 globalThis.fetch = async (url, init = {}) => {
   url = String(url);
+  if (/\/api\/(opponents|clubs)\.json/.test(url)) return siteData ? Response.json(siteData[/opponents/.test(url) ? 'opponents' : 'clubs']) : new Response('nope', { status: 404 });
   if (url.includes('proclubs.ea.com/api/fc/allTimeLeaderboard/search')) {
     const q = new URL(url).searchParams.get('clubName').toLowerCase();
     return Response.json(BOARD.filter((c) => c.clubInfo.name.toLowerCase().includes(q)));
@@ -112,6 +114,25 @@ try {
     recOpts.custom_id === 'norex:bn:pick' && recOpts.options.map((o) => o.value).join() === '1355341,218552' && /drew 2–2 · Friendly/.test(recOpts.options[0].description) && /lost 0–2/.test(recOpts.options[1].description));
   await slash(MGR, 'search');
   t('/burner search with no name shows the same recent list', (await settle()).components[0].components[0].options.length === 2);
+
+  // EA unreachable from the Worker (the real-world failure): the site's own club data answers instead.
+  const eaDown = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => (String(url).includes('proclubs.ea.com') ? new Response('blocked', { status: 403 }) : eaDown(url, init));
+  siteData = {
+    opponents: [{ id: '555111', n: 'Sweaty Burner FC', cr: '77', ts: Math.floor(Date.now() / 1000) - 600, type: 'friendlyMatch', res: 'W', gf: 5, ga: 1 }, { id: '555222', n: 'Other Side', cr: null, ts: Math.floor(Date.now() / 1000) - 99999, type: 'leagueMatch', res: 'L', gf: 0, ga: 2 }],
+    clubs: [{ id: '555111', n: 'Sweaty Burner FC', t: 'discovered' }, { id: '555333', n: 'Sweaty Second', t: 'discovered', cr: 'https://x/crests/256x256/l66.png' }],
+  };
+  await slash(MGR, 'recent');
+  const siteRec = (await settle()).components[0].components[0];
+  t('EA blocked: recent still lists the clubs NOREX just played, from site data', siteRec.options.map((o) => o.value).join() === '555111,555222' && /won 5–1 · Friendly/.test(siteRec.options[0].description));
+  await slash(MGR, 'search', 'sweaty');
+  const siteFound = await settle();
+  t('EA blocked: name search finds clubs in the site data, with their crest', siteFound.components[0].components[0].options.length === 2 && siteFound.embeds[0].description.includes('Sweaty Burner FC') && siteFound.embeds[0].description.includes('Sweaty Second'));
+  await slash(MGR, 'track', '999000111');
+  const idOnly = await settle();
+  t('EA blocked: an unknown club ID can still be tracked (the Actions fetch fills in the real name)', /Now tracking/.test(idOnly.content) || idOnly.embeds?.[0]?.description.includes('999000111'));
+  sqlite.prepare('DELETE FROM burner_clubs WHERE club_id = ?').run('999000111');
+  siteData = null; globalThis.fetch = eaDown;
 
   const picked = await pick(MGR, 'norex:bn:pick', ['1355341']);
   t('picking from the menu tracks the club and confirms in place', picked.type === 7 && /Now tracking/.test(picked.data.content) && picked.data.components.length === 0);
