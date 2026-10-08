@@ -30,4 +30,7 @@ t('nothing scrolls sideways: html and body clip overflow-x', /html,body\{overflo
 t('status bar is translucent so the header paints under it, with a safe-area top inset', idx.includes('black-translucent') && /\.top\{padding-top:env\(safe-area-inset-top\)\}/.test(css));
 const pj = fs.readFileSync(ROOT + 'web/pwa.js', 'utf8');
 t('installed app blocks pinch zoom gestures', pj.includes('gesturestart') && pj.includes("preventDefault"));
+const appJs = fs.readFileSync(ROOT + 'web/app.js', 'utf8');
+t('preview-as role is saved and reused on every page; ?previewAs=off clears it; logout clears it', appJs.includes("const PREVIEW_KEY = 'norex_preview_as'") && appJs.includes("previewParam === 'off'") && appJs.includes("ls.get(PREVIEW_KEY)") && appJs.includes("ls.set('norex_preview_as', null)"));
+t('exit-preview link uses previewAs=off', appJs.includes("set('previewAs', role || 'off')"));
 done();

@@ -1026,7 +1026,7 @@ if (MAPI) (() => {
   const decode = (t) => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(t.split('.')[0].replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0))));
   const session = (() => { try { const t = ls.get(KEY); const p = decode(t); return p.exp > Date.now() / 1000 ? { token: t, ...p } : null; } catch { return null; } })();
   if (!session) ls.set(KEY, null);
-  const logout = () => { ls.set(KEY, null); ls.set('norex_me', null); location.href = `${BASE}index.html`; };
+  const logout = () => { ls.set(KEY, null); ls.set('norex_me', null); ls.set('norex_preview_as', null); location.href = `${BASE}index.html`; };
   const loginUrl = () => `${MAPI}/auth/login?return=${encodeURIComponent(location.href.split('#')[0])}`;
   // BE5 – Boardroom "preview as": a manager/owner can add ?previewAs=member (…claimed / guest) to any URL
   // to see the site (and the member API) as that lower role. Never lets them escalate. The Worker
@@ -1034,7 +1034,15 @@ if (MAPI) (() => {
   // drives the client's own rendering (nav, flagOn() gates) to match.
   const VIEW_RANK = ['guest', 'member', 'claimed', 'manager', 'owner'];
   const realRole = session && (session.role ?? (session.adm ? 'manager' : 'member'));
-  const previewAsRaw = new URLSearchParams(location.search).get('previewAs');
+  // The chosen preview sticks across every page (and app relaunches) until "Exit preview": ?previewAs=<role> saves it,
+  // ?previewAs=off clears it, no param = use the saved one. Logging out clears it too.
+  const PREVIEW_KEY = 'norex_preview_as';
+  const qp = new URLSearchParams(location.search);
+  const previewParam = qp.get('previewAs');
+  if (previewParam === 'off') ls.set(PREVIEW_KEY, null);
+  else if (previewParam) ls.set(PREVIEW_KEY, previewParam);
+  if (previewParam) { qp.delete('previewAs'); history.replaceState(null, '', location.pathname + (qp.toString() ? `?${qp}` : '') + location.hash); }
+  const previewAsRaw = previewParam === 'off' ? null : previewParam || ls.get(PREVIEW_KEY);
   const previewAs = previewAsRaw && realRole && VIEW_RANK.includes(previewAsRaw) && VIEW_RANK.indexOf(previewAsRaw) <= VIEW_RANK.indexOf(realRole) && VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? previewAsRaw : null;
   const call = async (path, body) => {
     const r = await fetch(MAPI + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: { Authorization: `Bearer ${session?.token}`, ...(previewAs ? { 'x-view-as': previewAs } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
@@ -1051,12 +1059,12 @@ if (MAPI) (() => {
   const baseRole = previewAs || session && (session.role ?? (session.adm ? 'manager' : 'member'));
   const ago = UI.time;
   if (session) { applyFlags(baseRole); viewerRole = baseRole; }
-  const previewUrl = (role) => { const u = new URL(location.href); role ? u.searchParams.set('previewAs', role) : u.searchParams.delete('previewAs'); return u.pathname + u.search + u.hash; };
+  const previewUrl = (role) => { const u = new URL(location.href); u.searchParams.set('previewAs', role || 'off'); return u.pathname + u.search + u.hash; };
   const exitPreviewUrl = () => previewUrl(null);
   if (previewAs) {
     const bar = document.createElement('div');
     bar.className = 'preview-bar';
-    bar.innerHTML = `👁️ Previewing as <b>${esc(ROLE[previewAs]?.[0] || previewAs)}</b> <a href="${esc(exitPreviewUrl())}">Exit preview</a>`;
+    bar.innerHTML = `👁️ Previewing as <b>${esc(ROLE[previewAs]?.[0] || previewAs)}</b> on every page <a href="${esc(exitPreviewUrl())}">Exit preview</a>`;
     document.body.prepend(bar);
   }
   if (err) toast(err === 'not_member' ? 'Members only – you need to be in the NOREX Discord server.' : err === 'cancelled' ? 'Login cancelled.' : 'Discord login failed – try again.', true);
