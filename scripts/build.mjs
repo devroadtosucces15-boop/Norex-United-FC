@@ -501,7 +501,10 @@ function subTabs(base, active, activeGroup) {
 }
 // Mobile bottom tab bar (thumb reach) + a sheet that lists a group's pages, filled by app.js from #nav-data.
 function tabBar(base, activeGroup) {
-  return `<nav class="tabbar" aria-label="Sections">${NAV_GROUPS.map((g) => `<a href="${base}${g.links[0].href}" class="tab${g.id === activeGroup ? ' on' : ''}" data-group="${g.id}"><span>${g.icon}</span>${esc(g.label)}</a>`).join('')}<button type="button" class="tab me-tab" data-group="me"><span>👤</span>Me</button></nav>
+  const tabs = NAV_GROUPS.map((g) => `<a href="${base}${g.links[0].href}" class="tab${g.id === activeGroup ? ' on' : ''}" data-group="${g.id}"><span>${g.icon}</span>${esc(g.label)}</a>`);
+  // Hub sits dead centre as the raised gold button (flag-gated, shown once the viewer may enter); "Me" lives in the top bar on phones
+  if (MEMBER_API) tabs.splice(2, 0, `<a href="${base}hub/index.html" class="tab hub-tab" data-flag="hub" hidden aria-label="Members hub"><span><b>🔑</b></span>Hub</a>`);
+  return `<nav class="tabbar" aria-label="Sections">${tabs.join('')}<button type="button" class="tab me-tab" data-group="me"><span>👤</span>Me</button></nav>
 <div class="sheet" hidden><div class="sheet-grab"></div><div class="sheet-body"></div></div>`;
 }
 // Gold Hub bar (redesign board 10): replaces the normal club nav on /hub/ pages so members always know
@@ -521,15 +524,15 @@ function page({ title, base, active, body, description, image, hub }) {
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${base}assets/style.css"><style>:root{--red:${RED};--ink:${INK};--accent:${RED}}</style>
 <link rel="icon" href="${base}assets/favicon.png"><link rel="manifest" href="${base}manifest.webmanifest"><link rel="apple-touch-icon" href="${base}assets/icons/apple-touch-icon.png">
-<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="NOREX"><meta name="apple-mobile-web-app-status-bar-style" content="black">
-<script>try{if(sessionStorage.getItem('nxnav'))document.documentElement.classList.add('nx-covered')}catch(e){}</script>
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="NOREX"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>try{if(sessionStorage.getItem('nxnav'))document.documentElement.classList.add('nx-covered');if(sessionStorage.getItem('nxhub')){sessionStorage.removeItem('nxhub');document.documentElement.classList.add('nx-hubin')}}catch(e){}</script>
 </head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}" data-group="${activeGroup}" data-active="${esc(active ?? '')}"${hub ? ' class="hubw-body"' : ''}>
 <div class="bg" aria-hidden="true"></div>
 <div class="pxwipe" aria-hidden="true"><span class="pxwipe-ribbon"></span><img class="pxwipe-crest" src="${base}assets/crest.png" alt=""></div>
 <script type="application/json" id="nav-data">${JSON.stringify(NAV_GROUPS.map((g) => ({ id: g.id, icon: g.icon, label: g.label, links: g.links.map((l) => ({ id: l.id, href: l.href, icon: l.icon, label: l.label, desc: l.desc, flag: l.flag })) })))}</script>
 ${hub ? hubBar(base) : `<header class="top"><div class="wrap bar">
 <a class="brand" href="${base}index.html"><img src="${base}assets/crest.png" height="44" alt=""><span><b>NOREX</b><small>UNITED</small></span></a>
-${grpNav(base, active, activeGroup)}</div></header>
+${grpNav(base, active, activeGroup)}<button type="button" class="me-top" aria-label="Me: profile and login">👤</button></div></header>
 ${activeGroup ? subTabs(base, active, activeGroup) : ''}`}
 ${CHANNELS.length && MEMBER_API && !hub ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
 <footer class="foot"><div class="wrap foot-in"><img src="${base}assets/crest.png" height="70" alt="">

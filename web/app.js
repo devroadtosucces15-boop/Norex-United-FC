@@ -90,6 +90,24 @@ const api = () => (apiCache ??= Promise.all(['players', 'clubs'].map((f) => fetc
     else body.insertAdjacentHTML('beforeend', '<p class="muted">Loading…</p>');
     openSheet();
   });
+  // phones: "Me" moved to a profile button in the top bar – it opens the same sheet
+  $('.me-top')?.addEventListener('click', () => meTab?.click());
+  // Hub: the raised centre button – gold circle grows out of it, the key turns, then we navigate (the hub page wipes it away again)
+  const hubTab = $('.tab.hub-tab', bar);
+  hubTab?.addEventListener('click', (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    e.preventDefault(); e.stopPropagation();
+    if (reducedMotion()) { location.href = hubTab.href; return; }
+    const r = $('span', hubTab).getBoundingClientRect();
+    const ov = Object.assign(document.createElement('div'), { className: 'nx-hubgo', innerHTML: '<div><div class="nx-hubgo-key">🔑</div><b>ENTERING THE HUB</b></div>' });
+    ov.style.setProperty('--hx', `${Math.round(r.left + r.width / 2)}px`);
+    ov.style.setProperty('--hy', `${Math.round(r.top + r.height / 2)}px`);
+    document.body.appendChild(ov);
+    navigator.vibrate?.(12);
+    try { sessionStorage.setItem('nxhub', '1'); } catch { /* private mode */ }
+    setTimeout(() => { location.href = hubTab.href; }, 640);
+  });
+  addEventListener('pageshow', (e) => { if (e.persisted) $('.nx-hubgo')?.remove(); });
 })();
 
 // ---------- reveal on scroll + animated counters ----------

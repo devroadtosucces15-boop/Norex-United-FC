@@ -8,7 +8,11 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
   };
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  if (standalone()) root.classList.add('nx-standalone');
+  if (standalone()) {
+    root.classList.add('nx-standalone');
+    // iOS ignores user-scalable=no: block pinch / double-tap zoom in the installed app only (the browser keeps it for accessibility)
+    for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault());
+  }
 
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     window.addEventListener('load', () => navigator.serviceWorker.register(new URL(base + 'sw.js', location.href)).catch(() => {}));
