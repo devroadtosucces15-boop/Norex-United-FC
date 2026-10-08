@@ -161,7 +161,7 @@ ${s.canAnnounce ? `<section class="card nt-announce"><h3>📣 Send an announceme
       try {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return ctx.toast('This browser can’t receive push notifications.', true);
         if ((await Notification.requestPermission()) !== 'granted') return ctx.toast('Notifications are blocked – allow them for this site in the browser settings.', true);
-        const reg = await navigator.serviceWorker.register(new URL('sw.js', location.href));
+        const reg = await navigator.serviceWorker.register(new URL((document.body.dataset.base || '') + 'sw.js', location.href));
         const b64 = key.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (key.length % 4)) % 4);
         const applicationServerKey = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
         const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey }));

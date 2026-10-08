@@ -514,13 +514,14 @@ const hubBar = (base) => `<header class="hubw-bar"><div class="wrap hubw-bar-in"
 function page({ title, base, active, body, description, image, hub }) {
   const activeGroup = NAV_BY_ID.get(active) ?? '';
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>${esc(title)}</title><meta name="description" content="${esc(description ?? `${config.siteTitle} – Pro Clubs stats, results and player cards, updated automatically.`)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description ?? `${config.siteTitle} – Pro Clubs stats, results and player cards.`)}"><meta property="og:site_name" content="${esc(config.siteTitle)}"><meta property="og:type" content="website"><meta property="og:image" content="${esc(image ?? `${SITE}assets/crest.png`)}"><meta name="twitter:card" content="summary"><meta name="theme-color" content="${INK}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${base}assets/style.css"><style>:root{--red:${RED};--ink:${INK};--accent:${RED}}</style>
-<link rel="icon" href="${base}assets/favicon.png">
+<link rel="icon" href="${base}assets/favicon.png"><link rel="manifest" href="${base}manifest.webmanifest"><link rel="apple-touch-icon" href="${base}assets/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="NOREX"><meta name="apple-mobile-web-app-status-bar-style" content="black">
 <script>try{if(sessionStorage.getItem('nxnav'))document.documentElement.classList.add('nx-covered')}catch(e){}</script>
 </head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}" data-group="${activeGroup}" data-active="${esc(active ?? '')}"${hub ? ' class="hubw-body"' : ''}>
 <div class="bg" aria-hidden="true"></div>
@@ -536,7 +537,7 @@ ${CHANNELS.length && MEMBER_API && !hub ? '<div class="live-bar" hidden></div>' 
 <div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players, clubs, pages…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
 ${hub ? '' : tabBar(base, activeGroup)}
-<script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script></body></html>`;
+<script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script><script src="${base}assets/pwa.js" defer></script></body></html>`;
 }
 
 // ---------- club page ----------
@@ -1028,7 +1029,26 @@ ${panels.map(({ k, top }, i) => `<div class="tab-panel" id="pod-${k}"${i ? ' hid
 // ---------- write ----------
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.cpSync(path.join(ROOT, 'web'), path.join(OUT, 'assets'), { recursive: true });
-fs.copyFileSync(path.join(ROOT, 'web', 'sw.js'), path.join(OUT, 'sw.js')); // BE0 push receiver: must sit at the site root
+fs.copyFileSync(path.join(ROOT, 'web', 'sw.js'), path.join(OUT, 'sw.js')); // push receiver + offline cache: must sit at the site root
+// PWA: installable manifest (relative URLs, so it works under /Norex-United-FC/ and on a custom domain alike) + offline fallback page
+fs.writeFileSync(path.join(OUT, 'manifest.webmanifest'), JSON.stringify({
+  name: config.siteTitle, short_name: 'NOREX', description: `${config.siteTitle} – Pro Clubs stats, results and the members hub.`,
+  id: './', start_url: './index.html?source=pwa', scope: './', display: 'standalone', orientation: 'portrait-primary',
+  background_color: INK, theme_color: INK, categories: ['sports', 'games'],
+  icons: [
+    { src: 'assets/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: 'assets/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: 'assets/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  ],
+  shortcuts: [
+    { name: 'Results', url: './results.html', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
+    { name: 'Squad', url: './squad.html', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
+    { name: 'Members hub', url: './members.html', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
+  ],
+}, null, 2));
+fs.writeFileSync(path.join(OUT, 'offline.html'), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline – ${esc(config.siteTitle)}</title><meta name="theme-color" content="${INK}">
+<style>html,body{margin:0;height:100%;background:${INK};color:#fff;font-family:Inter,system-ui,sans-serif}body{display:grid;place-items:center;text-align:center;padding:24px}img{height:96px}h1{font-family:Oswald,Impact,sans-serif;letter-spacing:.04em;margin:.6em 0 .2em}p{opacity:.75;max-width:30em;margin:.4em auto}a,button{display:inline-block;margin-top:14px;background:${RED};color:#fff;border:0;border-radius:8px;padding:11px 20px;font:600 15px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}</style></head>
+<body><main><img src="assets/crest.png" alt=""><h1>YOU'RE OFFLINE</h1><p>No signal right now. Pages you've already opened still work – the rest comes back as soon as you're connected.</p><button type="button" onclick="location.reload()">Try again</button> <a href="index.html">Home</a></main></body></html>`);
 
 write('index.html', page({ title: `${config.siteTitle} – Official Pro Clubs hub`, base: '', active: 'home', body: clubBody(homeId, '', true) }));
 
