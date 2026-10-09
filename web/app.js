@@ -2106,6 +2106,16 @@ if (MAPI && liveBar && flagOn('liveBanner', viewerRole)) (() => {
         : `https://www.youtube-nocookie.com/embed/${encodeURIComponent(d.videoId)}?autoplay=1&mute=1`;
       embed.innerHTML = `<div class="live-frame"><iframe src="${src}" title="NOREX live on ${where}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div><p class="small"><a href="${esc(d.url)}" target="_blank" rel="noopener">Open on ${where} ↗</a></p>`;
       embed.hidden = false;
+      // preview: plays muted for about 10 s, then blurs behind a tap-to-keep-watching button (saves data, keeps the home page calm)
+      const fr = $('.live-frame', embed);
+      clearTimeout(embed._pv);
+      embed._pv = setTimeout(() => {
+        if (!fr || fr.querySelector('.live-resume')) return;
+        const b = Object.assign(document.createElement('button'), { type: 'button', className: 'live-resume', innerHTML: '<span aria-hidden="true">▶</span> Tap to keep watching' });
+        b.addEventListener('click', () => { fr.classList.remove('live-blur'); b.remove(); });
+        fr.classList.add('live-blur');
+        fr.append(b);
+      }, 10000);
     }
   };
   const poll = () => fetch(`${MAPI}/api/live`, { cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : {} })

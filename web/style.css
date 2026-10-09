@@ -1599,3 +1599,9 @@ html.nx-hubin::after{content:'';position:fixed;inset:0;z-index:10000;pointer-eve
 .tt-hint{font-size:11px;left:8px;bottom:6px}
 [data-tt-cam]:not([hidden]){display:flex;flex-wrap:wrap;gap:6px}
 }
+
+/* live embed preview: blurs after ~10 s until tapped */
+.live-frame{position:relative}
+.live-frame iframe{transition:filter .6s}
+.live-frame.live-blur iframe{filter:blur(14px) brightness(.6);pointer-events:none}
+.live-resume{position:absolute;inset:0;margin:auto;width:max-content;height:max-content;padding:12px 20px;border-radius:999px;border:2px solid #fff;background:rgba(0,0,0,.65);color:#fff;font:700 15px var(--body);cursor:pointer}
