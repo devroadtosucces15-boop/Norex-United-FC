@@ -68,7 +68,9 @@ t('refused: an oversize op is 413 and not relayed', (await op(mgr, { op: { k: 's
 
 // Chalk: a stroke with a bad colour falls back to the crest red; points are clipped to the pitch.
 await op(mgr, { op: { k: 'stroke', sid: 's1', color: 'javascript:1', points: [[10, 10], [2000, 5], [20, 20]] } });
-t('chalk: stroke colour is sanitised and off-pitch points are dropped', last().op.k === 'stroke' && last().op.color === '#c8352c' && last().op.points.length === 2);
+t('chalk: stroke colour is sanitised and off-pitch points are dropped', last().op.k === 'stroke' && last().op.d.color === '#c8352c' && last().op.d.points.length === 2);
+await op(mgr, { op: { k: 'stroke', sid: 's2', d: { kind: 'arrow', points: [[100, 100], [400, 300]], color: '#3aa0ff', w: 10 } } });
+t('chalk: a shape (arrow) is relayed whole, with its width', last().op.k === 'stroke' && last().op.d.kind === 'arrow' && last().op.d.w === 10 && last().op.d.points.length === 2);
 await op(mgr, { op: { k: 'strokeDel', sid: 's1' } });
 t('chalk: strokeDel and chalkClear are relayed', last().op.k === 'strokeDel' && (await op(mgr, { op: { k: 'chalkClear' } })).s === 200 && last().op.k === 'chalkClear');
 
@@ -115,6 +117,19 @@ t('site: remote ops are applied with per-key last-write-wins', tactics.includes(
 t('site: a remote change never re-renders over a focused input', tactics.includes('pendingRender') && tactics.includes('busy()'));
 
 // Save path untouched: the client still posts the whole document to /api/plays/:id.
-t('site: Save still posts the whole document (source of truth)', tactics.includes("call(`/api/plays/${active}`, { doc: studio.doc })"));
+t("site: Save still posts the whole document (source of truth)", tactics.includes("call(`/api/plays/${active}`, { doc: sent })") && tactics.includes("const sent = studio.doc"));
+
+// ----- Studio v2: tools, vertical/big field, save & publish, unsaved-work guard -----
+{
+  const css = fs.readFileSync(ROOT + 'web/tactics.css', 'utf8');
+  t('studio: every chalk tool is offered (pen, line, dashed, arrow, run, two-way, curve, circle, zone, dot, text, eraser)', ["'free'", "'line'", "'dash'", "'arrow'", "'run'", "'darrow'", "'curve'", "'circle'", "'rect'", "'dot'", "'text'", "'erase'"].every((k) => tactics.includes(`[${k},`)));
+  t('studio: cone + joker pieces can be added', tactics.includes("'add-cone'") && tactics.includes("'add-joker'") && css.includes('.tx-piece.cone'));
+  t('studio: Save keeps you in the studio and Save & publish makes it live', tactics.includes('data-save-publish') && tactics.includes("publish && !detail.published") && tactics.includes('/publish`, { published: true }'));
+  t('studio: leaving with unsaved edits asks first, keeps a local draft and warns on tab close', tactics.includes('confirmLeave') && tactics.includes('norex_tx_draft_') && tactics.includes("addEventListener('beforeunload'"));
+  t('studio: undo/redo + keyboard shortcuts, and the live room hears undone changes', tactics.includes('function syncDiff') && tactics.includes("e.key.toLowerCase() === 'z'"));
+  t('studio: vertical field maps the same document (rotated) and a big full-screen view exists', tactics.includes('const toPct') && tactics.includes('data-big') && css.includes('.tx-studio.full') && css.includes('.tx-pitch.vert'));
+  t('studio: saving tells you when the server left items out', tactics.includes('left out (off the pitch or invalid)'));
+  t('studio: publishing an empty saved version asks first', tactics.includes('Publish an empty play?'));
+}
 
 done();

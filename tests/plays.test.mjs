@@ -34,6 +34,17 @@ t('save bumps the version and keeps the doc', r.s === 200 && r.d.version === 2 &
 t('save rejects a piece off the pitch', (await call(manager, `/api/plays/${id}`, { doc: { ...doc, pieces: [{ id: 'k1', team: 'us', x: 5000, y: 20 }] } })).d.doc.pieces.length === 0);
 t('save rejects an unbalanced team value', (await call(manager, `/api/plays/${id}`, { doc: { ...doc, pieces: [{ id: 'k1', team: 'ref', x: 1, y: 1 }] } })).d.doc.pieces.length === 0);
 
+{ // Studio tools: shapes survive a save, junk is trimmed
+  const rich = { ...doc, pieces: [{ id: 'c1', team: 'cone', x: 100, y: 100 }, { id: 'j1', team: 'joker', x: 200, y: 200, label: 'J' }],
+    drawings: [{ id: 'a1', kind: 'arrow', points: [[10, 10], [300, 200]], color: '#3aa0ff', w: 10 }, { id: 'c2', kind: 'circle', points: [[500, 300], [560, 300]], color: '#ffffff', fill: true },
+      { id: 't1', kind: 'text', points: [[400, 100]], text: 'Press <here>', color: '#d4af37' }, { id: 't2', kind: 'text', points: [[400, 120]], text: '  ', color: '#d4af37' },
+      { id: 'bad', kind: 'arrow', points: [[10, 10]], color: '#fff' }, { id: 'old', points: [[1, 1], [5, 5]], color: '#c8352c' }, { id: 'nk', kind: 'laser', points: [[1, 1], [5, 5]] }] };
+  const r = await call(manager, `/api/plays/${id}`, { doc: rich });
+  const dr = r.d.doc.drawings;
+  t('studio tools: cone + joker pieces and arrow/circle/text shapes are kept', r.s === 200 && r.d.doc.pieces.length === 2 && dr.find((x) => x.id === 'a1')?.kind === 'arrow' && dr.find((x) => x.id === 'a1').w === 10 && dr.find((x) => x.id === 'c2')?.fill === true);
+  t('studio tools: text is cleaned, empty text and one-point arrows are dropped', dr.find((x) => x.id === 't1')?.text === 'Press here' && !dr.some((x) => x.id === 't2' || x.id === 'bad'));
+  t('studio tools: old strokes stay freehand, unknown kinds fall back to freehand', !dr.find((x) => x.id === 'old').kind && !dr.find((x) => x.id === 'nk').kind);
+}
 t('member still 404s before publish', (await call(member, `/api/plays/${id}`)).s === 404);
 r = await call(manager, `/api/plays/${id}/publish`, { published: true, userIds: ['901'] });
 t('publish + assign succeeds', r.s === 200 && r.d.published === true);

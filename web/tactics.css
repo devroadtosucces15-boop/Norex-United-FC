@@ -29,3 +29,54 @@
 .tx-stage.tx-3d .tx-draw{transform:translateZ(1px)}
 @media(prefers-reduced-motion:reduce){.tx-stage.tx-3d .tx-pitch{transition:none}}
 @media(max-width:680px){.tx-stage.tx-3d{padding:6px 0 40px}}
+
+/* ---------- Studio v2: more chalk tools, vertical field, big drawing view ---------- */
+/* the board keeps its true shape (the old max-height squashed it, which stretched circles into ovals) */
+.tx-pitch{max-height:none;width:min(100%,875px);margin-inline:auto}
+.tx-pitch.vert{aspect-ratio:640/1000;width:min(100%,560px)}
+.tx-box,.tx-six{position:absolute;border:2px solid rgba(255,255,255,.5);pointer-events:none}
+.tx-box.a{left:0;top:20.5%;bottom:20.5%;width:15.7%;border-left:0}.tx-box.b{right:0;top:20.5%;bottom:20.5%;width:15.7%;border-right:0}
+.tx-six.a{left:0;top:36.5%;bottom:36.5%;width:5.2%;border-left:0}.tx-six.b{right:0;top:36.5%;bottom:36.5%;width:5.2%;border-right:0}
+.tx-pitch.vert .tx-half{left:7%;right:7%;top:50%;bottom:auto;border-left:0;border-top:2px solid rgba(255,255,255,.55)}
+.tx-pitch.vert .tx-box.a{left:20.5%;right:20.5%;top:0;bottom:auto;width:auto;height:15.7%;border:2px solid rgba(255,255,255,.5);border-top:0}
+.tx-pitch.vert .tx-box.b{left:20.5%;right:20.5%;bottom:0;top:auto;width:auto;height:15.7%;border:2px solid rgba(255,255,255,.5);border-bottom:0}
+.tx-pitch.vert .tx-six.a{left:36.5%;right:36.5%;top:0;bottom:auto;width:auto;height:5.2%;border:2px solid rgba(255,255,255,.5);border-top:0}
+.tx-pitch.vert .tx-six.b{left:36.5%;right:36.5%;bottom:0;top:auto;width:auto;height:5.2%;border:2px solid rgba(255,255,255,.5);border-bottom:0}
+.tx-pitch.vert{background:linear-gradient(rgba(255,255,255,.035) 50%,transparent 50%),linear-gradient(#174d31,#123f29);background-size:100% 20%,100% 100%}
+.tx-piece.cone{width:22px;height:22px;border:0;border-radius:0;background:#ff9f1c;clip-path:polygon(50% 0,100% 100%,0 100%);box-shadow:none}
+.tx-piece.cone.sel{background:#ffd08a}
+.tx-piece.joker{background:var(--gold,#d4af37);color:#111}
+.tx-edit{touch-action:none}.tx-edit.tool-move{touch-action:pan-y}
+.tx-edit:not(.tool-move):not([class*="tool-add-"]){cursor:crosshair}.tx-edit.tool-erase{cursor:cell}
+.tx-toolbar{display:grid;gap:10px}
+.tx-grp small{display:block;margin-bottom:4px;font:700 10px/1 Inter,sans-serif;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.tx-style{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tx-hint{margin:2px 0 8px}
+.tx-tools .btn[disabled]{opacity:.4}
+.tx-asktext{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line2,var(--line));background:var(--panel2,var(--card));color:inherit;font:600 15px Inter,sans-serif}
+@media(max-width:680px){.tx-tools{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.tx-tools::-webkit-scrollbar{display:none}.tx-tools .btn{flex:none}}
+/* the big view: the studio takes the whole screen, field as tall as fits */
+body.tx-full-open{overflow:hidden}
+.tx-studio.full{position:fixed;inset:0;z-index:70;overflow:auto;background:var(--bg,#0b0f16);padding:8px 12px 14px}
+.tx-studio.full .tx-title{margin:0 0 6px;align-items:center}
+.tx-studio.full .tx-title h2{font-size:18px;margin:0}
+.tx-studio.full .tx-title .kicker{display:none}
+.tx-studio.full .tx-actions{flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.tx-studio.full .tx-toolbar{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;overflow-x:auto;gap:16px;padding-bottom:4px;scrollbar-width:thin}
+.tx-studio.full .tx-grp{flex:none}
+.tx-studio.full .tx-tools{flex-wrap:nowrap}
+.tx-studio.full .tx-pitch.vert{width:auto;height:min(calc(100dvh - 215px),calc((100vw - 24px) * 1.5625));min-height:320px}
+.tx-studio.full .tx-pitch:not(.vert){width:min(100%,calc((100dvh - 215px) * 1.5625))}
+.tx-fullbar{margin-top:8px;justify-content:center}
+.tx-studio.full .tx-title{flex-direction:column;align-items:stretch;gap:4px}
+.tx-studio.full .tx-title h2{display:none}
+.tx-studio.full .tx-actions{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none}
+.tx-studio.full .tx-actions .btn,.tx-studio.full .tx-actions .tx-live{flex:none;white-space:nowrap}
+.tx-studio.full .tx-hint{margin:0 0 4px}
+.tx-studio.full .tx-grp small{margin-bottom:3px}
+.tx-studio.full .tx-pitch.vert{height:min(calc(100dvh - 190px),calc((100vw - 24px) * 1.5625))}
+.tx-studio.full .tx-toolbar.tx-rows{display:grid;gap:6px;overflow:visible;padding:0}
+.tx-row{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+.tx-row::-webkit-scrollbar{display:none}
+.tx-row .btn,.tx-row .tx-colors{flex:none;margin:0}
+.tx-studio.full .tx-pitch.vert{height:min(calc(100dvh - 172px),calc((100vw - 24px) * 1.5625))}

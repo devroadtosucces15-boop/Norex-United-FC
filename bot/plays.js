@@ -40,21 +40,36 @@ const KEEP_VERSIONS = 20;
 const MAX_DOC_BYTES = 250_000;
 const PITCH = { x: 1000, y: 640 };
 const STARTER_DOC = { pieces: [], steps: [], drawings: [], quiz: [] };
+const TEAMS = ['us', 'opp', 'ball', 'cone', 'joker'];
+// Drawing kinds the Studio can chalk: freehand + straight/dashed lines, arrows (single, double, curved, run = dashed),
+// circle/zone/dot shapes and text labels. `pts` = how many points each kind needs (free: 2–60).
+const SHAPES = { free: [2, 60], line: [2, 2], dash: [2, 2], arrow: [2, 2], darrow: [2, 2], run: [2, 2], curve: [2, 2], circle: [2, 2], rect: [2, 2], dot: [1, 1], text: [1, 1] };
+const WIDTHS = [3, 6, 10];
+const MAX_DRAWINGS = 150;
 
 const inPitch = (p) => Number.isFinite(p?.x) && Number.isFinite(p?.y) && p.x >= 0 && p.x <= PITCH.x && p.y >= 0 && p.y <= PITCH.y;
+const okColor = (c) => (/^#[0-9a-f]{6}$/i.test(c ?? '') ? c : '#c8352c');
+// One chalk item → a safe shape, or null. Old documents (no `kind`) are freehand strokes.
+function cleanDrawing(d) {
+  const kind = SHAPES[d?.kind] ? d.kind : 'free';
+  const [lo, hi] = SHAPES[kind];
+  const points = (Array.isArray(d?.points) ? d.points : []).slice(0, hi).filter((pt) => Array.isArray(pt) && inPitch({ x: pt[0], y: pt[1] })).map((pt) => [pt[0], pt[1]]);
+  if (points.length < lo) return null;
+  const text = kind === 'text' ? clean(d.text, 40) : '';
+  if (kind === 'text' && !text) return null;
+  return { id: clean(d.id, 24) || crypto.randomUUID().slice(0, 8), ...(kind === 'free' ? {} : { kind }), points, color: okColor(d.color), ...(WIDTHS.includes(d.w) && d.w !== 6 ? { w: d.w } : {}), ...(d.fill && (kind === 'circle' || kind === 'rect') ? { fill: true } : {}), ...(kind === 'curve' && d.bend === -1 ? { bend: -1 } : {}), ...(text ? { text } : {}) };
+}
 // Validates and trims a client-submitted document to safe shapes/limits – never trusts it as-is.
 function cleanDoc(doc) {
   if (!doc || typeof doc !== 'object') return null;
-  const pieces = (Array.isArray(doc.pieces) ? doc.pieces : []).slice(0, 40)
-    .filter((p) => ['us', 'opp', 'ball'].includes(p?.team) && inPitch(p))
+  const pieces = (Array.isArray(doc.pieces) ? doc.pieces : []).slice(0, 60)
+    .filter((p) => TEAMS.includes(p?.team) && inPitch(p))
     .map((p) => ({ id: clean(p.id, 24) || crypto.randomUUID().slice(0, 8), team: p.team, x: p.x, y: p.y, label: p.label ? clean(p.label, 20) : undefined }));
   const pieceIds = new Set(pieces.map((p) => p.id));
   const steps = (Array.isArray(doc.steps) ? doc.steps : []).slice(0, 60)
     .filter((s) => Number.isFinite(s?.at) && s.at >= 0 && s.at <= 60_000 && s.pieces && typeof s.pieces === 'object')
     .map((s) => ({ at: s.at, pieces: Object.fromEntries(Object.entries(s.pieces).filter(([id, pos]) => pieceIds.has(id) && inPitch(pos)).map(([id, pos]) => [id, { x: pos.x, y: pos.y }])) }));
-  const drawings = (Array.isArray(doc.drawings) ? doc.drawings : []).slice(0, 40)
-    .filter((d) => Array.isArray(d?.points) && d.points.length >= 2)
-    .map((d) => ({ id: clean(d.id, 24) || crypto.randomUUID().slice(0, 8), points: d.points.slice(0, 60).filter((pt) => Array.isArray(pt) && inPitch({ x: pt[0], y: pt[1] })).map((pt) => [pt[0], pt[1]]), color: /^#[0-9a-f]{6}$/i.test(d.color ?? '') ? d.color : '#c8352c' }));
+  const drawings = (Array.isArray(doc.drawings) ? doc.drawings : []).slice(0, MAX_DRAWINGS).map(cleanDrawing).filter(Boolean);
   const quiz = (Array.isArray(doc.quiz) ? doc.quiz : []).slice(0, 20)
     .filter((q) => clean(q?.q, 200) && Array.isArray(q.options) && q.options.length >= 2 && q.options.length <= 6 && Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length)
     .map((q) => ({ q: clean(q.q, 200), options: q.options.slice(0, 6).map((o) => clean(o, 80)), answer: q.answer }));
@@ -153,10 +168,7 @@ async function save(env, me, id, body) {
 // client can't send as another member) and `at` from the server, which the clients use for last-write-wins per piece,
 // stroke or keyframe. Nothing is written to D1/R2 here.
 const OP_MAX_BYTES = 4_000;
-const STROKE_MAX = 60;
-const okTeam = (t) => ['us', 'opp', 'ball'].includes(t);
-const okColor = (c) => (/^#[0-9a-f]{6}$/i.test(c ?? '') ? c : '#c8352c');
-const pts = (list) => (Array.isArray(list) ? list.slice(0, STROKE_MAX).filter((pt) => Array.isArray(pt) && inPitch({ x: pt[0], y: pt[1] })).map((pt) => [pt[0], pt[1]]) : []);
+const okTeam = (t) => TEAMS.includes(t);
 // Only these shapes are relayed; anything else (or any out-of-pitch coordinate) is refused, never passed through.
 function cleanOp(op) {
   if (!op || typeof op !== 'object') return null;
@@ -167,15 +179,15 @@ function cleanOp(op) {
   }
   if (op.k === 'pieceDel') { const id = clean(op.id, 24); return id ? { k: 'pieceDel', id } : null; }
   if (op.k === 'stroke') {
-    const sid = clean(op.sid, 24), points = pts(op.points);
-    return sid && points.length >= 2 ? { k: 'stroke', sid, color: okColor(op.color), points } : null;
+    const d = cleanDrawing({ ...op.d, id: op.sid, points: op.d?.points ?? op.points, color: op.d?.color ?? op.color });
+    return clean(op.sid, 24) && d ? { k: 'stroke', sid: clean(op.sid, 24), d } : null;
   }
   if (op.k === 'strokeDel') { const sid = clean(op.sid, 24); return sid ? { k: 'strokeDel', sid } : null; }
   if (op.k === 'chalkClear') return { k: 'chalkClear' };
   if (op.k === 'key') {
     if (!Number.isFinite(op.at) || op.at < 0 || op.at > 60_000 || !op.pieces || typeof op.pieces !== 'object') return null;
     const pieces = {};
-    for (const [rawId, pos] of Object.entries(op.pieces).slice(0, 40)) {
+    for (const [rawId, pos] of Object.entries(op.pieces).slice(0, 60)) {
       const id = clean(rawId, 24);
       if (id && inPitch(pos)) pieces[id] = { x: pos.x, y: pos.y };
     }
