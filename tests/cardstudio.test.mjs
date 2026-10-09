@@ -283,4 +283,8 @@ t('owner revokes artwork', (await call(owner,'/api/cards/owner/revoke',{id:owner
 t('revocation removes public player artwork', !(await (await W('/api/cards/portraits')).json()).portraits[player.k]);
 t('revocation retains uploaded photo for private inspection', (await row(ownerRequest.id)).photo_key !== '');
 t('owner can resubmit after revocation in same month', (await reqUp(owner, `targetPlayer=${encodeURIComponent(player.k)}&avatar=0&portrait=1`, JPG())).s === 200);
+await env.DB.prepare("UPDATE claims SET status = 'approved' WHERE user_id = '501'").run();
+await env.DB.prepare("INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, target_player, published) VALUES ('501', '2025-01', 0, 0, '', 'done', 1, 'different-player', 1)").run();
+t('owner revokes claimed-player artwork', (await call(owner, '/api/cards/owner/revoke', {id:two.id})).s === 200);
+t('revocation preserves explicit artwork assigned to a different player', (await env.DB.prepare("SELECT published FROM card_requests WHERE target_player = 'different-player'").first('published')) === 1);
 done();

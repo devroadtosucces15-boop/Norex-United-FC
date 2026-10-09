@@ -84,7 +84,10 @@ for (let i = 0; i < 3; i++) {
   sqlite.prepare('UPDATE media SET size = ? WHERE key = ?').run(3.5e9, k);
   big.push({ k, post: post.id });
 }
+await env.MEDIA.put('cardresult/retained.png', PNG());
+r2objects.get('cardresult/retained.png').uploaded = new Date(Date.now() - 30 * 86400e3);
 const g = await mediaCron(env);
+t('guard: private player artwork is retained under storage pressure', r2objects.has('cardresult/retained.png'));
 t('guard: abandoned uploads dropped after a day', orphans.length > 0 && orphans.every((k) => !r2objects.has(k)));
 t('guard: over 9 GB → oldest deleted until under 8 GB', g.before > GUARD_HIGH && g.after <= GUARD_LOW && g.dropped === 1 && !r2objects.has(big[0].k) && r2objects.has(big[2].k));
 const shown = (await call(m1, `/api/feed/post?id=${big[0].post}`)).d.post;
