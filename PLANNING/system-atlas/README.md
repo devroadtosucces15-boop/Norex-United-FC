@@ -2,12 +2,13 @@
 
 > Automatically regenerated from the repository. This is a **static evidence map**, not a complete runtime trace.
 
-Source revision: `031478d6762ae16b84e24e506789f3b6b00828a8`
+Source revision: `370aaf7d67cc9888715cd85e30e70dc2a5ac5632`
 
-Indexed **656 files**, **425 resolved module imports**, **220 API path literals**, **270 SQL table references**.
+Indexed **657 files**, **425 resolved module imports**, **220 API path literals**, **270 SQL table references**.
 
 ## Navigate
 
+- [Interactive Explorer](explorer.html) (serve this directory over HTTP)
 - [System layers](00-system-layers.md)
 - [API references](map-api.md)
 - [Database references](map-database.md)

@@ -1,6 +1,6 @@
 {
-  "revision": "031478d6762ae16b84e24e506789f3b6b00828a8",
-  "files": 656,
+  "revision": "370aaf7d67cc9888715cd85e30e70dc2a5ac5632",
+  "files": 657,
   "imports": 425,
   "api_paths": 220,
   "tables": 270,
@@ -45,7 +45,7 @@
     {
       "path": ".github/workflows/system-atlas.yml",
       "layer": ".github",
-      "lines": 43,
+      "lines": 45,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6879,6 +6879,17 @@
       "imports": [],
       "endpoints": [],
       "tables": [],
+      "functions": []
+    },
+    {
+      "path": "scripts/build-atlas-explorer.py",
+      "layer": "scripts",
+      "lines": 64,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "pathlib"
+      ],
       "functions": []
     },
     {
