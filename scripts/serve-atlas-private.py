@@ -13,6 +13,8 @@ class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*args,**kwargs):super().__init__(*args,directory=str(BASE),**kwargs)
  def do_GET(self):
   url=urlsplit(self.path)
+  if url.path in ("/private-sources.json", "/private-sources.json/"):
+   self.send_error(404,"Not found");return
   if url.path!="/__local_preview":return super().do_GET()
   rel=parse_qs(url.query).get("id",[""])[0]
   try:
