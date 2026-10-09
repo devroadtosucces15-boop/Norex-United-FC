@@ -255,7 +255,7 @@ export async function mediaCron(env, now = Date.now()) {
   if (bytes > GUARD_HIGH) {
     for (const o of objects.sort((a, b) => a.at - b.at)) {
       if (bytes <= GUARD_LOW) break;
-      if (o.key.startsWith('play/') || o.key.startsWith('card/') || o.key.startsWith('cardphoto/')) continue; // BE1 playbook documents aren't disposable like feed photos/clips
+      if (o.key.startsWith('play/') || o.key.startsWith('card/') || o.key.startsWith('cardphoto/') || o.key.startsWith('cardresult/')) continue; // BE1 playbook documents aren't disposable like feed photos/clips
       dropped.push(o.key); bytes -= o.size;
     }
     if (dropped.length) {

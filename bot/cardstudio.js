@@ -244,8 +244,8 @@ export async function cardsRoute(p, method, body, me, env, log) {
     if (!r) return fail('Request not found.', 404);
     const claim = await one(env, "SELECT player FROM claims WHERE user_id = ? AND status = 'approved'", r.user_id);
     const player = r.target_player || claim?.player;
-    const rows = player ? await all(env, `SELECT * FROM card_requests WHERE target_player = ? OR user_id IN
-      (SELECT user_id FROM claims WHERE player = ? AND status = 'approved')`, player, player) : [r];
+    const rows = player ? await all(env, `SELECT * FROM card_requests WHERE target_player = ? OR (target_player IS NULL AND user_id IN
+      (SELECT user_id FROM claims WHERE player = ? AND status = 'approved'))`, player, player) : [r];
     for (const row of rows) {
       await run(env, "UPDATE card_requests SET status = 'rejected', published = 0, note = 'Revoked by owner — resubmission allowed', decided_by = ?, decided_at = ? WHERE id = ?", me.u, Date.now(), row.id);
 
