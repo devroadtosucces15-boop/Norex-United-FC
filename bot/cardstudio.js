@@ -107,10 +107,10 @@ export async function cardRequestUpload(request, me, env, url, log) {
   if (existing && existing.status !== 'rejected') return fail('You already sent a card request this month – the next one opens on the 1st.', 409);
   const bg = await one(env, "SELECT * FROM card_templates WHERE id = ? AND kind = 'bg'", Number(url.searchParams.get('bg')));
   const pose = await one(env, "SELECT * FROM card_templates WHERE id = ? AND kind = 'pose'", Number(url.searchParams.get('pose')));
-  if (!bg) return fail('Pick a background.');
-  if (!pose) return fail('Pick a pose.');
-  if (!(await canUseTemplate(env, me.u, bg))) return fail('That background is locked for you.', 403);
-  if (!(await canUseTemplate(env, me.u, pose))) return fail('That pose is locked for you.', 403);
+  if (avatarEnabled && !bg) return fail('Pick a background for your cinematic avatar.');
+  if (avatarEnabled && !pose) return fail('Pick a pose for your cinematic avatar.');
+  if (bg && !(await canUseTemplate(env, me.u, bg))) return fail('That background is locked for you.', 403);
+  if (pose && !(await canUseTemplate(env, me.u, pose))) return fail('That pose is locked for you.', 403);
   const bytes = new Uint8Array(await request.arrayBuffer());
   if (!bytes.length) return fail('Choose a photo first.');
   if (bytes.length > PHOTO_MAX) return fail('That photo is too big – 8 MB max.');
@@ -120,13 +120,13 @@ export async function cardRequestUpload(request, me, env, url, log) {
   await env.MEDIA.put(key, bytes, { httpMetadata: { contentType: type[0] } });
   try {
     if (existing) await run(env, "DELETE FROM card_requests WHERE id = ? AND status = 'rejected'", existing.id);
-    await run(env, 'INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, avatar_enabled, portrait_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', me.u, month, bg.id, pose.id, key, 'pending', Date.now(), avatarEnabled ? 1 : 0, portraitEnabled ? 1 : 0);
+    await run(env, 'INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, avatar_enabled, portrait_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', me.u, month, bg?.id ?? 0, pose?.id ?? 0, key, 'pending', Date.now(), avatarEnabled ? 1 : 0, portraitEnabled ? 1 : 0);
   } catch {
     await dropPhoto(env, key);
     return fail('You already sent a card request this month – the next one opens on the 1st.', 409);
   }
-  await log(env, me, 'card-request', `${bg.name} + ${pose.name}`);
-  await safely(notifyManagers(env, { icon: '🪪', title: 'New card request', body: `${me.n || 'A member'} asked for a ${bg.name} / ${pose.name} card.`, link: 'members.html#cards', ref: `card:${me.u}:${month}` }, me.u));
+  await log(env, me, 'card-request', avatarEnabled ? `${bg.name} + ${pose.name}` : 'Standardized portrait');
+  await safely(notifyManagers(env, { icon: '🪪', title: 'New card request', body: avatarEnabled ? `${me.n || 'A member'} asked for a ${bg.name} / ${pose.name} card.` : `${me.n || 'A member'} asked for a standardized website portrait.`, link: 'members.html#cards', ref: `card:${me.u}:${month}` }, me.u));
   return json(await mine(env, me));
 }
 
@@ -354,7 +354,7 @@ async function generateOne(env, r, now) {
   try {
     const [bgT, poseT] = await Promise.all([one(env, 'SELECT asset_key FROM card_templates WHERE id = ?', r.bg_id), one(env, 'SELECT prompt FROM card_templates WHERE id = ?', r.pose_id)]);
     const [bg, photo] = await Promise.all([readAsset(env, bgT?.asset_key), readAsset(env, r.photo_key)]);
-    if (!bg || !poseT) throw new Error('The chosen background or pose is gone.');
+    if (r.avatar_enabled !== 0 && (!bg || !poseT)) throw new Error('The chosen background or pose is gone.');
     if (!photo) throw new Error('The photo is gone.');
     if (r.avatar_enabled !== 0) {
       const card = await render(env, bg, poseT, photo);

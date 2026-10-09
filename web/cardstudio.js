@@ -53,10 +53,10 @@ ${t.locked ? '<span class="cs-redeem" title="Redeeming with points is coming soo
     const card = r?.status === 'done' && (r.hasResult || r.hasPortrait) ? `<div class="cs-done">${r.hasResult ? `<img class="cs-card" data-result="${r.id}" alt="Cinematic avatar"><a class="btn small" data-save-card download="norex-avatar-${esc(r.month)}.png" hidden>⬇ Save avatar</a>` : ''}${r.hasPortrait ? `<img class="cs-card" data-portrait="${r.id}" alt="Website portrait"><a class="btn small" data-save-card download="norex-portrait-${esc(r.month)}.png" hidden>⬇ Save portrait</a><canvas class="cs-card cs-live-card" data-card-preview="${r.id}" aria-label="Player card with live statistics"></canvas><button type="button" class="btn small" data-export-live="${r.id}">⬇ Export player card</button><p class="muted small">Card statistics reflect the latest loaded club data; refresh to update.</p>` : ''}</div>` : '';
     const open = !r || r.status === 'rejected';
     return `<section class="cs-sec cs-req"><h4>📸 Request my card</h4>
-<p class="muted">One request per month (${esc(month)}). Pick a background and pose above, add a clear photo of your face, and a manager will approve it.</p>
+<p class="muted">One request per month (${esc(month)}). Upload a photo and choose your outputs. Background and pose templates are only required for a cinematic avatar. A manager will approve the request.</p>
 ${status}${card}
 ${open ? `<form id="cs-request" class="cs-form"><label class="cs-file"><input type="file" name="photo" accept="image/png,image/jpeg,image/webp" required><span>📷 Choose photo</span></label>
-<img class="cs-photo" id="cs-preview" alt="" hidden><label><input type="checkbox" name="avatar" checked> Cinematic avatar</label><label><input type="checkbox" name="portrait" checked> Website portrait</label><button class="btn" type="submit" disabled>📨 Send request</button></form>${r?.status === 'rejected' ? '<p class="muted">Your last photo was not approved – sending a new one does not use up your month.</p>' : ''}` : ''}</section>`;
+<img class="cs-photo" id="cs-preview" alt="" hidden><p class="muted small">No templates yet? Uncheck Cinematic avatar to request the standard website portrait immediately.</p><label><input type="checkbox" name="avatar" checked> Cinematic avatar</label><label><input type="checkbox" name="portrait" checked> Website portrait</label><button class="btn" type="submit" disabled>📨 Send request</button></form>${r?.status === 'rejected' ? '<p class="muted">Your last photo was not approved – sending a new one does not use up your month.</p>' : ''}` : ''}</section>`;
   };
 
   const queueHtml = (list) => {
@@ -130,7 +130,7 @@ ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="car
         $('#cs-pick', el).textContent = sel.bg || sel.pose ? `Selected: ${name(d.backgrounds, sel.bg) || '—'} + ${name(d.poses, sel.pose) || '—'}` : '';
       };
       const rform = $('#cs-request', el);
-      const sync = () => { if (rform) rform.querySelector('button').disabled = !(sel.bg && sel.pose && photo && (rform.avatar.checked || rform.portrait.checked)); };
+      const sync = () => { if (rform) rform.querySelector('button').disabled = !(photo && (rform.avatar.checked || rform.portrait.checked) && (!rform.avatar.checked || (sel.bg && sel.pose))); };
       if (rform) rform.avatar.onchange = rform.portrait.onchange = sync;
       pick();
       sync();
@@ -159,7 +159,7 @@ ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="car
         };
         rform.onsubmit = async (e) => {
           e.preventDefault();
-          if (!(sel.bg && sel.pose && photo && (rform.avatar.checked || rform.portrait.checked))) return;
+          if (!(photo && (rform.avatar.checked || rform.portrait.checked) && (!rform.avatar.checked || (sel.bg && sel.pose)))) return;
           const btn = rform.querySelector('button');
           btn.disabled = true;
           try {
