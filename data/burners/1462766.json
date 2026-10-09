@@ -3,7 +3,7 @@
  "name": "ggs gm",
  "crest": "99160220",
  "trackedAt": "2026-10-09T01:30:33.015Z",
- "fetchedAt": "2026-10-09T15:40:55.625Z",
+ "fetchedAt": "2026-10-09T15:51:01.322Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "ggs gm",
@@ -231,42 +231,6 @@
    "prevGoals9": "2",
    "prevGoals10": "1",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "itzAldinha27",
-   "gamesPlayed": "11",
-   "winRate": "100",
-   "goals": "7",
-   "assists": "6",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "100",
-   "passesMade": "152",
-   "passSuccessRate": "80",
-   "ratingAve": "8.9",
-   "tacklesMade": "23",
-   "tackleSuccessRate": "67",
-   "proName": "Aldinha",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "168",
-   "proNationality": "83",
-   "proOverall": "75",
-   "proOverallStr": "75",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "1",
-   "prevGoals5": "0",
-   "prevGoals6": "1",
-   "prevGoals7": "1",
-   "prevGoals8": "1",
-   "prevGoals9": "1",
-   "prevGoals10": "1",
-   "favoritePosition": "defender"
   }
  ],
  "career": [
@@ -313,23 +277,12 @@
    "ratingAve": "7.8",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "itzAldinha27",
-   "proPos": "5",
-   "gamesPlayed": "160",
-   "goals": "38",
-   "assists": "48",
-   "manOfTheMatch": "17",
-   "ratingAve": "7.9",
-   "prevGoals": "1",
-   "favoritePosition": "defender"
   }
  ],
  "roster": {
   "Daniel_Munoz_": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T15:40:55.625Z",
+   "last": "2026-10-09T15:51:01.322Z",
    "active": true,
    "gp": 11,
    "pos": "forward",
@@ -337,7 +290,7 @@
   },
   "Itzyoungdan": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T15:40:55.625Z",
+   "last": "2026-10-09T15:51:01.322Z",
    "active": true,
    "gp": 15,
    "pos": "forward",
@@ -345,7 +298,7 @@
   },
   "IM_Trash_Broski": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T15:40:55.625Z",
+   "last": "2026-10-09T15:51:01.322Z",
    "active": true,
    "gp": 8,
    "pos": "forward",
@@ -353,7 +306,7 @@
   },
   "JEZB_11": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T15:40:55.625Z",
+   "last": "2026-10-09T15:51:01.322Z",
    "active": true,
    "gp": 15,
    "pos": "midfielder",
@@ -362,7 +315,7 @@
   "itzAldinha27": {
    "first": "2026-10-09T01:30:33.015Z",
    "last": "2026-10-09T15:40:55.625Z",
-   "active": true,
+   "active": false,
    "gp": 11,
    "pos": "defender",
    "ovr": 75
