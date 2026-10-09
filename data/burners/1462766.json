@@ -3,7 +3,7 @@
  "name": "ggs gm",
  "crest": "99160220",
  "trackedAt": "2026-10-09T01:30:33.015Z",
- "fetchedAt": "2026-10-09T02:40:30.973Z",
+ "fetchedAt": "2026-10-09T02:50:32.324Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "ggs gm",
@@ -233,42 +233,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "Slug17-_-",
-   "gamesPlayed": "5",
-   "winRate": "100",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "24",
-   "passSuccessRate": "72",
-   "ratingAve": "6.6",
-   "tacklesMade": "5",
-   "tackleSuccessRate": "23",
-   "proName": "B. Slug",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "190",
-   "proNationality": "83",
-   "proOverall": "79",
-   "proOverallStr": "79",
-   "manOfTheMatch": "0",
-   "redCards": "1",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "itzAldinha27",
    "gamesPlayed": "11",
    "winRate": "100",
@@ -351,17 +315,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "Slug17-_-",
-   "proPos": "5",
-   "gamesPlayed": "170",
-   "goals": "149",
-   "assists": "125",
-   "manOfTheMatch": "39",
-   "ratingAve": "8.1",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "itzAldinha27",
    "proPos": "5",
    "gamesPlayed": "160",
@@ -376,7 +329,7 @@
  "roster": {
   "Daniel_Munoz_": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T02:40:30.973Z",
+   "last": "2026-10-09T02:50:32.324Z",
    "active": true,
    "gp": 11,
    "pos": "forward",
@@ -384,7 +337,7 @@
   },
   "Itzyoungdan": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T02:40:30.973Z",
+   "last": "2026-10-09T02:50:32.324Z",
    "active": true,
    "gp": 15,
    "pos": "forward",
@@ -392,7 +345,7 @@
   },
   "IM_Trash_Broski": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T02:40:30.973Z",
+   "last": "2026-10-09T02:50:32.324Z",
    "active": true,
    "gp": 8,
    "pos": "forward",
@@ -400,27 +353,27 @@
   },
   "JEZB_11": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T02:40:30.973Z",
+   "last": "2026-10-09T02:50:32.324Z",
    "active": true,
    "gp": 15,
    "pos": "midfielder",
    "ovr": 82
   },
-  "Slug17-_-": {
-   "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T02:40:30.973Z",
-   "active": true,
-   "gp": 5,
-   "pos": "defender",
-   "ovr": 79
-  },
   "itzAldinha27": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T02:40:30.973Z",
+   "last": "2026-10-09T02:50:32.324Z",
    "active": true,
    "gp": 11,
    "pos": "defender",
    "ovr": 75
+  },
+  "Slug17-_-": {
+   "first": "2026-10-09T01:30:33.015Z",
+   "last": "2026-10-09T02:40:30.973Z",
+   "active": false,
+   "gp": 5,
+   "pos": "defender",
+   "ovr": 79
   }
  },
  "matches": [
