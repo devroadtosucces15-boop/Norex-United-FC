@@ -26,8 +26,9 @@ flowchart LR
   n19["scripts/serve-atlas-private.py"]
   n20["scripts/serve.mjs"]
   n21["scripts/tactics-page.mjs"]
-  n22["scripts/updates-page.mjs"]
-  n23["scripts/updates.mjs"]
+  n22["scripts/test-atlas-local.py"]
+  n23["scripts/updates-page.mjs"]
+  n24["scripts/updates.mjs"]
   n5 --> n6
   n5 --> n7
   n5 --> n8
@@ -40,9 +41,9 @@ flowchart LR
   n5 --> n17
   n5 --> n18
   n5 --> n21
-  n5 --> n22
+  n5 --> n23
   n12 --> n15
   n20 --> n15
-  n22 --> n15
   n23 --> n15
+  n24 --> n15
 ```

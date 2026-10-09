@@ -1,6 +1,6 @@
 {
-  "revision": "862e1960305984c29d18025ca9a44c833af2c345",
-  "files": 661,
+  "revision": "6097d77418599d600ba9695f004b94d2008a99ee",
+  "files": 662,
   "imports": 425,
   "api_paths": 220,
   "tables": 273,
@@ -7397,7 +7397,7 @@
     {
       "path": "scripts/serve-atlas-private.py",
       "layer": "scripts",
-      "lines": 37,
+      "lines": 39,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -7431,6 +7431,18 @@
       "functions": [
         "buildTactics"
       ]
+    },
+    {
+      "path": "scripts/test-atlas-local.py",
+      "layer": "scripts",
+      "lines": 39,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "pathlib",
+        "urllib"
+      ],
+      "functions": []
     },
     {
       "path": "scripts/updates-page.mjs",
