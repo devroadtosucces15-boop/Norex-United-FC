@@ -1557,3 +1557,13 @@ html.nx-hubin::after{content:'';position:fixed;inset:0;z-index:10000;pointer-eve
 .sh-face.sh-front{overflow:visible;border-radius:0}
 .sh-front .big-crest{max-height:calc(100% - 26px);max-width:calc(100% - 20px);object-fit:contain;animation-duration:7s}
 @keyframes float{50%{transform:translateY(-8px)}}
+
+/* home "Latest result": swipe sideways through the last few results (scroll-snap), dots show where you are */
+.lr-rail{display:grid;grid-auto-flow:column;grid-auto-columns:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.lr-rail::-webkit-scrollbar{display:none}
+.lr-item{scroll-snap-align:center;scroll-snap-stop:always;min-width:0;display:flex;flex-direction:column;gap:10px}
+.lr-item .dl-poster{margin:0 14px 14px}
+.lr-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px 12px}
+.lr-dots{display:flex;gap:6px}
+.lr-dots i{width:7px;height:7px;border-radius:50%;background:var(--line2);transition:background .2s,transform .2s}
+.lr-dots i.on{background:var(--red);transform:scale(1.25)}

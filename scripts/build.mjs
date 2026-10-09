@@ -443,6 +443,16 @@ ${s.mvp ? `<div class="se-mvp">🏅 Session MVP <b>${pLink(s.mvp.pid, base, s.mv
 </div>`;
 }
 
+// Home "Latest result": the newest result poster, with the next few earlier ones one swipe away (scroll-snap rail; dots added by app.js).
+// Only the first poster keeps the plain `poster-<id>` id (the page's other cards rely on it); the rest get an `lr-` prefix so ids never collide.
+function latestResults(list, base) {
+  const one = (m, i) => poster(m, base).replace(`id="poster-${m.matchId}"`, i ? `id="lr-poster-${m.matchId}"` : `id="poster-${m.matchId}"`)
+    + `<button class="btn dl-poster" type="button" data-for="${i ? 'lr-' : ''}poster-${m.matchId}">⬇ Download result graphic</button>`;
+  if (list.length < 2) return one(list[0], 0);
+  return `<div class="lr-rail" data-lr tabindex="0" aria-label="Latest results – swipe for earlier ones">${list.map((m, i) => `<div class="lr-item" data-lr-item>${one(m, i)}</div>`).join('')}</div>
+<div class="lr-foot"><span class="lr-dots" data-lr-dots aria-hidden="true"></span><small class="muted">← swipe for earlier results</small></div>`;
+}
+
 // ---------- layout ----------
 const homeKit = clubs.get(homeId)?.info?.customKit ?? {};
 const RED = brand.red ?? hex(homeKit.kitColor2, '#c8352c');
@@ -610,7 +620,7 @@ ${brand.motto ? `<div class="sh-plane sh-fg" style="--depth:28"><p class="ribbon
 ${MEMBER_API ? '<div data-hotw hidden></div><div data-feed-public hidden></div><div data-news data-flag="docs" hidden></div>' : ''}
 ${section('This week', `<div class="grid3">
 ${MEMBER_API ? '<div data-next-event hidden></div>' : ''}
-${card('Latest result', ms.length ? poster(ms[0], base) + `<button class="btn dl-poster" type="button" data-for="poster-${ms[0].matchId}">⬇ Download result graphic</button>` : emptyState('🗂️', 'No matches yet', 'Results land here once the first match is archived.'), 'flush')}
+${card('Latest result', ms.length ? latestResults(ms.slice(0, 5), base) : emptyState('🗂️', 'No matches yet', 'Results land here once the first match is archived.'), 'flush')}
 ${CHANNELS.length ? `<div id="watch">${card('📺 Watch NOREX', `<div class="live-embed" hidden></div><div class="watch-grid">${CHANNELS.map(([k, label, svg, sub]) => `<a class="watch-card ${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener"><span class="wc-ic">${svg}</span><span><b>${label}</b><small>${sub}</small></span><span class="wc-go">Follow →</span></a>`).join('')}</div>`)}</div>` : ''}
 </div>`, { sub: 'next up, last time out, and where to watch' })}
 ${section('Season at a glance', `<div class="stats stats-8" data-ins-tile="club">${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]

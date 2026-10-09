@@ -139,6 +139,15 @@ const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries)
 }, { threshold: [0, 0.12] }) : null;
 $$('.reveal').forEach((el) => (io ? io.observe(el) : el.classList.add('in')));
 
+// ---------- home "Latest result" rail: dots follow the swipe ----------
+$$('[data-lr]').forEach((rail) => {
+  const items = $$('[data-lr-item]', rail), dots = $('[data-lr-dots]', rail.parentElement);
+  if (!dots || items.length < 2) return;
+  dots.innerHTML = items.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('');
+  const paint = () => { const i = Math.round(rail.scrollLeft / Math.max(1, rail.clientWidth)); [...dots.children].forEach((d, k) => d.classList.toggle('on', k === i)); };
+  rail.addEventListener('scroll', () => requestAnimationFrame(paint), { passive: true });
+});
+
 // ---------- tooltips ----------
 const tip = $('.tip');
 function showTip(el, x, y) {
