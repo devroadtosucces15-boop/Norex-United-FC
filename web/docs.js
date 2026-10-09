@@ -161,6 +161,8 @@ ${!s ? `<p class="dx-guest card">🔒 You’re seeing what’s public. <a href="
       const slot = $('[data-glossary-static]', root);
       if (slot && staticGlossary) { slot.append(staticGlossary); staticGlossary.hidden = false; }
       const target = location.hash.startsWith('#d-') && byHash(root);
+      const area = !target && location.hash.length > 1 && byHash(root); // /docs.html#rules etc. – the sections are drawn after load, so the browser can't scroll to them itself
+      if (area) setTimeout(() => area.scrollIntoView({ block: 'start', behavior: 'instant' }), 150); // after the glossary slot below has been filled, and instant: the page's smooth scrolling gets cancelled by late layout
       if (target) { if (target.tagName === 'DETAILS') target.open = true; target.classList.add('flash'); target.scrollIntoView({ block: 'center' }); }
     }
 

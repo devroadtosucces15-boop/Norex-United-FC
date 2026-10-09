@@ -32,4 +32,10 @@ t('Dugout hints: club + last-5 slots and a coach\'s note picker, kept across rep
   const bp = read('scripts/burners-page.mjs'), wi = read('web/burners-whatif.js');
   t('burner what-if is display-only: labelled not official, opt-in per burner, no API/storage writes', /not official/.test(bp) && /type="checkbox"/.test(bp) && !/fetch\(|localStorage|XMLHttpRequest/.test(wi));
 }
+{
+  const hub2 = read('web/hub.js'), app3 = read('web/app.js');
+  t('hubGold Locker rail holds personal tabs only; club tabs are Hub rooms', /gold \? \[\['🎽 My Locker', \['locker', 'me', 'stats', 'card', 'alerts', 'availability', 'votes', 'ratings', 'predict', 'ideas', 'feedback'\]\]/.test(app3) && ['rush', 'squads', 'teamup', 'rules'].every((id) => new RegExp(`id: '${id}', group: '(matchday|club)', gold: true`).test(hub2)));
+  t('hubGold: rules room deep-links to docs#rules; notification settings hidden for non-owners', /docs\.html#rules/.test(hub2) && /nx-no-notify-settings/.test(app3) && /nx-no-notify-settings #alerts-settings/.test(read('web/style.css')));
+  t('carousel draws only the cards near the front; pitch is fitted to the stage', /off > 3/.test(app3) && /function fitCam/.test(app3) && /\.carousel-card\.far\{visibility:hidden/.test(read('web/style.css')));
+}
 done();

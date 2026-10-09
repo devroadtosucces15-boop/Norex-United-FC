@@ -1102,7 +1102,7 @@ if (MAPI) (() => {
   const roleTag = (r) => { const [l, c] = ROLE[r] || ROLE.member; return `<span class="tag ${c}">${l}</span>`; };
   const baseRole = previewAs || session && (session.role ?? (session.adm ? 'manager' : 'member'));
   const ago = UI.time;
-  if (session) { applyFlags(baseRole); viewerRole = baseRole; }
+  if (session) { applyFlags(baseRole); viewerRole = baseRole; if (flagOn('hubGold', baseRole) && baseRole !== 'owner') document.documentElement.classList.add('nx-no-notify-settings'); } // hubGold: only the owner edits notification settings; everyone else uses their device / Discord's own
   const previewUrl = (role) => { const u = new URL(location.href); u.searchParams.set('previewAs', role || 'off'); return u.pathname + u.search + u.hash; };
   const exitPreviewUrl = () => previewUrl(null);
   if (previewAs) {
@@ -1287,14 +1287,18 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   if (flagOn('dugout', baseRole)) S.adminTab = 'dugout'; // board 08: the manager portal opens on the Dugout
   const TABS = [...(lockerOn ? [['locker', '🎽 My locker']] : []), ['me', lockerOn ? '🪪 My profile' : '👤 My NOREX'], ...(lockerBasic ? [['locker', '🎽 Locker Room']] : []), ...(flagOn('events', baseRole) ? [['schedule', '🗓️ Schedule']] : []), ['availability', '📅 Availability'], ['votes', '⭐ MOTM votes'], ...(flagOn('myStats', baseRole) ? [['stats', '📊 My stats']] : []), ...(flagOn('rushLog', baseRole) ? [['rush', '⚡ Rush']] : []), ...(flagOn('scouting', baseRole) ? [['scout', '🔭 Scout']] : []), ...(flagOn('suggestions', baseRole) ? [['ideas', '💡 Ideas']] : []), ...(flagOn('awards', baseRole) ? [['awards', '🏆 Awards']] : []), ...(flagOn('rushSquads', baseRole) ? [['squads', '🤝 Squads']] : []), ...(flagOn('starRatings', baseRole) ? [['ratings', '🌟 Ratings']] : []), ...(flagOn('predictions', baseRole) ? [['predict', '🔮 Predict']] : []), ...(flagOn('recommendations', baseRole) ? [['teamup', '🎯 Team up']] : []), ...(flagOn('feedback', baseRole) ? [['feedback', '💌 Feedback']] : []), ...(flagOn('avatarCard', baseRole) ? [['card', '🎨 AI Card']] : []), ...(notifyOn ? [['alerts', '🔔 Alerts']] : []), ...(session.adm && (RANK[baseRole] ?? 0) >= RANK.manager ? [['manager', '🛡️ Manager']] : [])];
 
-  const RAIL = [['Me', ['locker', 'me', 'stats', 'card', 'alerts']], ['Match nights', ['schedule', 'availability', 'votes', 'rush', 'predict', 'ratings']],
+  // hubGold: three levels – main menu → the Hub (everything about the club) → your Locker (only what's about you: profile, stats,
+  // AI card, alerts, your availability, your votes and predictions, ideas and feedback). Club tabs still open from the Hub's rooms.
+  const gold = flagOn('hubGold', baseRole);
+  const RAIL = gold ? [['🎽 My Locker', ['locker', 'me', 'stats', 'card', 'alerts', 'availability', 'votes', 'ratings', 'predict', 'ideas', 'feedback']], ['Staff', ['manager']]]
+    : [['Me', ['locker', 'me', 'stats', 'card', 'alerts']], ['Match nights', ['schedule', 'availability', 'votes', 'rush', 'predict', 'ratings']],
     ['Squad', ['squads', 'teamup', 'scout', 'awards', 'ideas', 'feedback']], ['Staff', ['manager']]];
   const tabLabel = Object.fromEntries(TABS);
   const railItem = (k) => tabLabel[k] ? `<button class="rail-i" type="button" data-tab="${k}"><span>${tabLabel[k]}</span><b class="rail-b" data-badge="${k}" hidden></b></button>` : '';
   hubEl.innerHTML = lockerOn ? `<div class="hub-shell"><nav class="hub-rail card" aria-label="Locker menu">
 <div class="rail-me"><img src="${esc(session.a)}" alt=""><div><b>${esc(session.n)}</b><span id="role-tag">${roleTag(baseRole)}</span></div></div>
 <button class="rail-toggle" type="button" aria-expanded="false">☰ <span id="rail-cur">Menu</span></button>
-<div class="rail-groups">${RAIL.map(([g, ks]) => { const items = ks.map(railItem).join(''); return items ? `<div class="rail-g"><small>${g}</small>${items}</div>` : ''; }).join('')}
+<div class="rail-groups">${gold ? `<div class="rail-g"><small>The Hub</small><a class="rail-i" href="${BASE}hub/index.html"><span>🔑 Club rooms · schedule, rush, scout, awards, docs</span></a></div>` : ''}${RAIL.map(([g, ks]) => { const items = ks.map(railItem).join(''); return items ? `<div class="rail-g"><small>${g}</small>${items}</div>` : ''; }).join('')}
 <div class="rail-g"><small>Tactics</small><a class="rail-i" href="${BASE}tactics.html"><span>🧠 Playbook &amp; tactics</span><b class="rail-b" data-badge="playbook" hidden></b></a>${flagOn('builder', baseRole) ? `<a class="rail-i" href="${BASE}builder.html"><span>🧬 My builds</span><b class="rail-b" data-badge="builds" hidden></b></a>` : ''}</div>
 <div class="rail-g"><small>Settings</small><button class="rail-i" id="logout" type="button"><span>🚪 Log out</span></button></div></div></nav>
 <div id="panel"></div></div>` : `<div class="hub-head card"><img src="${esc(session.a)}" alt=""><div><small class="muted">Logged in as</small><h2>${esc(session.n)}</h2><span id="role-tag">${roleTag(baseRole)}</span></div><button class="btn ghost" id="logout" type="button">Log out</button></div>
