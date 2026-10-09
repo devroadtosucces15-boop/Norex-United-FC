@@ -14,7 +14,7 @@ const centerSubtab = () => {
   const bar = $('.subtabs-in'), on = bar && $('.on, [aria-current]', bar);
   if (on && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
 };
-const applyFlags = (role) => { $$('[data-flag]').forEach((el) => { el.hidden = !flagOn(el.dataset.flag, role); }); centerSubtab(); };
+const applyFlags = (role) => { $$('[data-flag]').forEach((el) => { el.hidden = !flagOn(el.dataset.flag, role); }); if (flagOn('hubGold', role)) $$('[data-hubmove]').forEach((el) => { el.hidden = true; }); centerSubtab(); }; // hubGold: Messages, Club docs, Play Style, Builder and Pro Builds live in the Hub instead of the main nav
 addEventListener('load', () => { centerSubtab(); setTimeout(centerSubtab, 700); });
 applyFlags('guest');
 let viewerRole = 'guest'; // set by the members block after login
@@ -61,7 +61,7 @@ const api = () => (apiCache ??= Promise.all(['players', 'clubs'].map((f) => fetc
   backdrop.hidden = true;
   const groups = (() => { try { return JSON.parse($('#nav-data')?.textContent || '[]'); } catch { return []; } })();
   const active = document.body.dataset.active || '', activeGroup = document.body.dataset.group || '';
-  const linkHtml = (l) => `<a class="lk${l.id === active ? ' hov' : ''}" href="${BASE}${l.href}"${l.flag ? ` data-flag="${l.flag}" hidden` : ''}><div class="ic">${l.icon}</div><div><b>${esc(l.label)}</b><small>${esc(l.desc)}</small></div></a>`;
+  const linkHtml = (l) => `<a class="lk${l.id === active ? ' hov' : ''}" href="${BASE}${l.href}"${l.flag ? ` data-flag="${l.flag}" hidden` : ''}${l.moved ? ' data-hubmove' : ''}><div class="ic">${l.icon}</div><div><b>${esc(l.label)}</b><small>${esc(l.desc)}</small></div></a>`;
   const body = $('.sheet-body', sheet);
   const openSheet = (top) => { sheet.classList.toggle('sheet-top', !!top); sheet.hidden = false; backdrop.hidden = false; requestAnimationFrame(() => { sheet.classList.add('open'); backdrop.classList.add('open'); }); };
   const closeSheet = () => {
@@ -1212,7 +1212,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   if (session && flagOn('presence', baseRole)) loadAsset('presence.js', 'NXPresence').then(() => NXPresence.start({ call, toast })).catch(() => {});
   // ---------- 🔑 the Hub clubhouse (board 10, BE8) – gold entrance tunnel + 3D room map – assets/hub.js ----------
   const hubworldEl = $('[data-hubworld]');
-  if (hubworldEl && session && flagOn('hub', baseRole)) loadAsset('hub.js', 'NXHub').then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, flagOn: (n) => flagOn(n, baseRole), mountLive: flagOn('hubLive', baseRole) ? (slot) => loadAsset('hublive.js', 'NXHubLive').then(() => NXHubLive.mount(slot, { call, toast, api: MAPI, token: session.token, me: session.u, name: session.n, avatar: session.a, canWave: true })) : null, mountInsight: flagOn('statInsights', baseRole) && flagOn('insightWidget', baseRole) ? (slot, key) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null })).catch(() => {});
+  if (hubworldEl && session && flagOn('hub', baseRole)) (flagOn('hubGold', baseRole) ? loadAsset('hubgold.js', 'NXHubGold') : Promise.resolve()).then(() => loadAsset('hub.js', 'NXHub')).then(() => NXHub.init(hubworldEl, { call, toast, role: baseRole, gold: flagOn('hubGold', baseRole), name: session.n, avatar: session.a, flagOn: (n) => flagOn(n, baseRole), mountLive: flagOn('hubLive', baseRole) ? (slot) => loadAsset('hublive.js', 'NXHubLive').then(() => NXHubLive.mount(slot, { call, toast, api: MAPI, token: session.token, me: session.u, name: session.n, avatar: session.a, canWave: true })) : null, mountInsight: flagOn('statInsights', baseRole) && flagOn('insightWidget', baseRole) ? (slot, key) => loadAsset('insights.js', 'NXInsight').then(() => NXInsight.mount(slot, key, { call, toast, session, baseRole })) : null })).catch(() => {});
 
   // ---------- verified badges (public) ----------
   (async () => {

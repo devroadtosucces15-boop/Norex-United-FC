@@ -18,4 +18,14 @@ t('match pages carry an insight slot (board 12 match card)', /const insightSlot/
 const read = (f) => fs.readFileSync(ROOT + f, 'utf8');
 t('Hub page has a coach slot; hub.js mounts note.<claimed player>, falling back to the club insight (board 12)', /data-hubw-coach/.test(read('scripts/hub-page.mjs')) && /note\.\$\{me\.claim\.player\}/.test(read('web/hub.js')) && /tryKey\('club'\)/.test(read('web/hub.js')) && /mountInsight: flagOn\('statInsights'/.test(app));
 t('Dugout hints: club + last-5 slots and a coach\'s note picker, kept across repaints, behind mountNote', /D\.hints = document\.createElement/.test(read('web/dugout.js')) && /data-hint="matches\.last5"/.test(read('web/dugout.js')) && /\.dg-hints/.test(read('web/style.css')) && /mountNote: flagOn\('statInsights'[^\n]*loadAsset\('insights\.js'/.test(app));
+
+// ----- Hub redesign (flag hubGold, owner) -----
+{
+  const cfg = JSON.parse(read('config.json'));
+  const gold = read('web/hubgold.js'), hub = read('web/hub.js'), app2 = read('web/app.js'), build = read('scripts/build.mjs');
+  t('hubGold ships as an owner flag', cfg.features.hubGold === 'owner');
+  t('hub.js only adds the moved rooms and the gold layout when ctx.gold', /\(!r\.gold \|\| ctx\.gold\)/.test(hub) && /ctx\.gold && window\.NXHubGold/.test(hub));
+  t('hubgold.js: locker is a card with a door, entrance skips under reduced motion, no burner room', /hubg-lockercard/.test(gold) && /hubg-door-card/.test(gold) && /reduced\(\) \|\| seen/.test(gold) && !/burner/i.test(gold + hub));
+  t('moved nav links hidden by hubGold; burners stay in the nav', ['docs', 'playstyle', 'messages', 'builder', 'probuilds'].every((id) => new RegExp(`moved: true, id: '${id}'`).test(build)) && !/moved: true, id: 'burners'/.test(build) && /flagOn\('hubGold', role\)\) \$\$\('\[data-hubmove\]'\)/.test(app2));
+}
 done();

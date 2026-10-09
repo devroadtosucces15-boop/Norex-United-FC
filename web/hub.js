@@ -18,19 +18,24 @@
   // so members know the room exists. Target pages are the real, already-built surfaces (no new rooms built here).
   const RANK = { guest: 0, member: 1, claimed: 2, manager: 3, owner: 4 };
   const ROOMS = [
-    { id: 'locker', icon: '🎽', name: 'Locker Room', desc: 'Me · stats · builds', href: `${BASE}members.html#locker` },
-    { id: 'matchnight', icon: '🗓️', name: 'Match Night Centre', desc: 'Schedule · RSVP · reports', href: `${BASE}members.html#schedule`, flag: 'events' },
-    { id: 'tactics', icon: '🧠', name: 'Tactics Room', desc: 'Studio · Playbook', href: `${BASE}tactics.html`, flag: 'tactics' },
-    { id: 'trophy', icon: '🏅', name: 'Trophy Room', desc: 'Achievements · badges · HoF', href: `${BASE}members.html#awards`, flag: 'awards' },
-    { id: 'scout', icon: '🔭', name: 'Scout Office', desc: 'Scout · Rush log', href: `${BASE}members.html#scout` },
-    { id: 'notice', icon: '📣', name: 'Notice board', desc: 'Alerts · announcements', href: `${BASE}members.html#alerts`, flag: 'notifications' },
-    { id: 'dugout', icon: '🛡️', name: 'Dugout', desc: 'Managers only', href: `${BASE}members.html#manager`, min: 'manager' },
-    { id: 'boardroom', icon: '👑', name: 'Boardroom', desc: 'Owner only', href: `${BASE}members.html#manager`, min: 'owner' },
+    { id: 'locker', group: 'me', icon: '🎽', name: 'Locker Room', desc: 'Me · stats · builds', href: `${BASE}members.html#locker` },
+    { id: 'trophy', group: 'me', icon: '🏅', name: 'Trophy Room', desc: 'Achievements · badges · HoF', href: `${BASE}members.html#awards`, flag: 'awards' },
+    { id: 'chat', group: 'me', gold: true, icon: '💬', name: 'Team chat', desc: 'Messages and mentions', href: `${BASE}messages.html`, flag: 'messages' },
+    { id: 'matchnight', group: 'matchday', icon: '🗓️', name: 'Match Night Centre', desc: 'Schedule · RSVP · reports', href: `${BASE}members.html#schedule`, flag: 'events' },
+    { id: 'notice', group: 'matchday', icon: '📣', name: 'Notice board', desc: 'Alerts · announcements', href: `${BASE}members.html#alerts`, flag: 'notifications' },
+    { id: 'tactics', group: 'tactics', icon: '🧠', name: 'Tactics Room', desc: 'Studio · Playbook', href: `${BASE}tactics.html`, flag: 'tactics' },
+    { id: 'playstyle', group: 'tactics', gold: true, icon: '🧭', name: 'Play Style', desc: 'How we play', href: `${BASE}playstyle.html`, flag: 'playStyle' },
+    { id: 'builder', group: 'tactics', gold: true, icon: '🧩', name: 'Builder', desc: 'Plan your pro', href: `${BASE}builder.html`, flag: 'builder' },
+    { id: 'probuilds', group: 'tactics', gold: true, icon: '⭐', name: 'Pro Builds', desc: 'Squad builds that work', href: `${BASE}probuilds.html`, flag: 'proBuilds' },
+    { id: 'docs', group: 'club', gold: true, icon: '📜', name: 'Club docs', desc: 'Rules and announcements', href: `${BASE}docs.html`, flag: 'docs' },
+    { id: 'scout', group: 'club', icon: '🔭', name: 'Scout Office', desc: 'Scout · Rush log', href: `${BASE}members.html#scout` },
+    { id: 'dugout', group: 'staff', icon: '🛡️', name: 'Dugout', desc: 'Managers only', href: `${BASE}members.html#manager`, min: 'manager' },
+    { id: 'boardroom', group: 'staff', icon: '👑', name: 'Boardroom', desc: 'Owner only', href: `${BASE}members.html#manager`, min: 'owner' },
   ];
 
   function roomsFor(ctx) {
     const rank = RANK[ctx.role] ?? 0;
-    return ROOMS.filter((r) => !r.flag || ctx.flagOn(r.flag)).map((r) => ({ ...r, locked: r.min ? rank < RANK[r.min] : false }));
+    return ROOMS.filter((r) => (!r.gold || ctx.gold) && (!r.flag || ctx.flagOn(r.flag))).map((r) => ({ ...r, locked: r.min ? rank < RANK[r.min] : false }));
   }
 
   const tileHtml = (r) => `<a class="hubw-room${r.locked ? ' locked' : ''}" data-room="${r.id}" ${r.locked ? 'aria-disabled="true"' : `href="${r.href}"`}>
@@ -86,6 +91,7 @@
   function init(root, ctx) {
     const rooms = roomsFor(ctx);
     const render = () => {
+      if (ctx.gold && window.NXHubGold) { NXHubGold.render(root, rooms, ctx, tileHtml); paintBadges(); return; } // hubGold: card grid + My Locker instead of the orbit ring
       root.innerHTML = flatList(rooms);
       const stage = $('[data-hubw-stage]', root);
       const listBtn = $('[data-hubw-list]', root);
@@ -122,7 +128,7 @@
     // 🟢 live "here right now" roster + waves (flag `hubLive`, web/hublive.js) – loaded after the clubhouse so the tunnel isn't delayed
     const liveEl = $('[data-hubw-live]');
     if (liveEl && ctx.mountLive) ctx.mountLive(liveEl).catch(() => {});
-    playTunnel(render);
+    (ctx.gold && window.NXHubGold ? NXHubGold.intro : playTunnel)(render);
     $('.hubw-back')?.addEventListener('click', (e) => {
       if (reducedMotion()) return;
       const key = `hub_tunnel_${new Date().toISOString().slice(0, 10)}`;

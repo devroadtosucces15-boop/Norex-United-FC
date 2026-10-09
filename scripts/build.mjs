@@ -466,9 +466,9 @@ const NAV_GROUPS = [
     { id: 'squad', href: 'squad.html', icon: '👥', label: 'Squad', desc: 'Every player, cards' },
     { id: 'fame', href: 'halloffame.html', icon: '🏛️', label: 'Hall of Fame', desc: 'Legends and records' },
     ...(MEMBER_API ? [{ id: 'feed', href: 'feed.html', icon: '📰', label: 'Club feed', desc: 'Latest posts', flag: 'feed' }] : []),
-    ...(MEMBER_API ? [{ id: 'docs', href: 'docs.html', icon: '📜', label: 'Club docs', desc: 'Rules and announcements', flag: 'docs' }] : []),
-    ...(MEMBER_API ? [{ id: 'playstyle', href: 'playstyle.html', icon: '🧭', label: 'Play Style', desc: 'How we play', flag: 'playStyle' }] : []),
-    ...(MEMBER_API ? [{ id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages', desc: 'Team chat', flag: 'messages' }] : []),
+    ...(MEMBER_API ? [{ moved: true, id: 'docs', href: 'docs.html', icon: '📜', label: 'Club docs', desc: 'Rules and announcements', flag: 'docs' }] : []),
+    ...(MEMBER_API ? [{ moved: true, id: 'playstyle', href: 'playstyle.html', icon: '🧭', label: 'Play Style', desc: 'How we play', flag: 'playStyle' }] : []),
+    ...(MEMBER_API ? [{ moved: true, id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages', desc: 'Team chat', flag: 'messages' }] : []),
     { id: 'updates', href: 'updates.html', icon: '📰', label: 'Game updates', desc: 'EA patch notes and what they mean for builds' },
     { id: 'about', href: 'about.html', icon: 'ℹ️', label: 'About', desc: 'Our story' },
   ] },
@@ -484,8 +484,8 @@ const NAV_GROUPS = [
     { id: 'compare', href: 'compare.html', icon: '⚖️', label: 'Compare', desc: 'Any two players, radar' },
   ] },
   { id: 'tactics', icon: '🧠', label: 'Tactics', links: [
-    { id: 'builder', href: 'builder.html', icon: '🧩', label: 'Builder', desc: 'Plan your pro', flag: 'builder' },
-    { id: 'probuilds', href: 'probuilds.html', icon: '⭐', label: 'Pro Builds', desc: 'Squad builds that work', flag: 'proBuilds' },
+    { moved: true, id: 'builder', href: 'builder.html', icon: '🧩', label: 'Builder', desc: 'Plan your pro', flag: 'builder' },
+    { moved: true, id: 'probuilds', href: 'probuilds.html', icon: '⭐', label: 'Pro Builds', desc: 'Squad builds that work', flag: 'proBuilds' },
     ...(MEMBER_API ? [{ id: 'tactics-studio', href: 'tactics.html', icon: '🧠', label: 'Tactics Studio', desc: 'Club playbook and drills', flag: 'tactics' }] : []),
   ] },
 ];
@@ -494,7 +494,7 @@ const NAV_BY_ID = new Map(NAV_GROUPS.flatMap((g) => g.links.map((l) => [l.id, g.
 // Mega menu: every group's links render together (mockup board 01) – opening any group button shows the
 // same panel, with that group's column highlighted; the page's own group stays marked with `.lk.hov`.
 function megaCol(g, base, active) {
-  return `<div class="col" data-group="${g.id}"><h4><span>${g.icon}</span>${esc(g.label)}</h4>${g.links.map((l) => `<a class="lk${l.id === active ? ' hov' : ''}" href="${base}${l.href}"${l.id === active ? ' aria-current="page"' : ''}${l.flag ? ` data-flag="${esc(l.flag)}" hidden` : ''}><div class="ic">${l.icon}</div><div><b>${esc(l.label)}</b><small>${esc(l.desc)}</small></div></a>`).join('')}</div>`;
+  return `<div class="col" data-group="${g.id}"><h4><span>${g.icon}</span>${esc(g.label)}</h4>${g.links.map((l) => `<a class="lk${l.id === active ? ' hov' : ''}" href="${base}${l.href}"${l.id === active ? ' aria-current="page"' : ''}${l.flag ? ` data-flag="${esc(l.flag)}" hidden` : ''}${l.moved ? ' data-hubmove' : ''}><div class="ic">${l.icon}</div><div><b>${esc(l.label)}</b><small>${esc(l.desc)}</small></div></a>`).join('')}</div>`;
 }
 function grpNav(base, active, activeGroup) {
   const watch = CHANNELS.length ? `<div class="osw small feat-label">Watch NOREX</div><div class="watch">${CHANNELS.map(([k, label, svg]) => `<a class="${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div>` : '';
@@ -539,7 +539,7 @@ function page({ title, base, active, body, description, image, hub }) {
 </head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}" data-group="${activeGroup}" data-active="${esc(active ?? '')}"${hub ? ' class="hubw-body"' : ''}>
 <div class="bg" aria-hidden="true"></div>
 <div class="pxwipe" aria-hidden="true"><span class="pxwipe-ribbon"></span><img class="pxwipe-crest" src="${base}assets/crest.png" alt=""></div>
-<script type="application/json" id="nav-data">${JSON.stringify(NAV_GROUPS.map((g) => ({ id: g.id, icon: g.icon, label: g.label, links: g.links.map((l) => ({ id: l.id, href: l.href, icon: l.icon, label: l.label, desc: l.desc, flag: l.flag })) })))}</script>
+<script type="application/json" id="nav-data">${JSON.stringify(NAV_GROUPS.map((g) => ({ id: g.id, icon: g.icon, label: g.label, links: g.links.map((l) => ({ id: l.id, href: l.href, icon: l.icon, label: l.label, desc: l.desc, flag: l.flag, moved: l.moved })) })))}</script>
 ${hub ? hubBar(base) : `<header class="top"><div class="wrap bar">
 <a class="brand" href="${base}index.html"><img src="${base}assets/crest.png" height="44" alt=""><span><b>NOREX</b><small>UNITED</small></span></a>
 ${grpNav(base, active, activeGroup)}<button type="button" class="me-top" aria-label="Me: profile and login">👤</button></div></header>

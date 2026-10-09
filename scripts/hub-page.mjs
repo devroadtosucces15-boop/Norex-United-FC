@@ -12,6 +12,6 @@ export function buildHub({ write, page, pageHead, emptyState, config }) {
     body: `${pageHead('The Hub', 'Your clubhouse. Walk into the Locker Room, Match Night Centre, Tactics Room and more.', '../', false)}
 <div data-flag="hub" hidden><div class="hubw-coach" data-hubw-coach hidden></div><div class="hubw-live" data-hubw-live hidden></div><div id="hubworld" class="hubworld" data-hubworld><p class="muted">Loading the clubhouse…</p></div></div>
 <div class="hubw-soon">${emptyState('🔑', 'The Hub is for members', 'Your own gold clubhouse, with its own rooms – log in with Discord and you’re in.')}</div>
-<link rel="stylesheet" href="../assets/hub.css">`,
+<link rel="stylesheet" href="../assets/hub.css"><link rel="stylesheet" href="../assets/hubgold.css">`,
   }));
 }
