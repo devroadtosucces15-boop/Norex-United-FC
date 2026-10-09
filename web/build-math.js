@@ -116,7 +116,7 @@
   function choices(g, b) {
     const sl = slotsOf(g);
     const ids = new Set((g.playstyles || []).map((p) => p.id));
-    const canPlus = new Set((g.playstyles || []).filter((p) => p.plus).map((p) => p.id));
+    const canPlus = new Set((g.playstyles || []).filter((p) => p.plus !== false).map((p) => p.id));
     const plus = [...new Set((b.plus || []).filter((id) => canPlus.has(id)))].slice(0, sl.plus);
     const ps = [...new Set((b.ps || []).filter((id) => ids.has(id) && !plus.includes(id)))].slice(0, sl.playstyles);
     const sp = specsFor(g, b.arch).some((s) => s.id === b.sp) ? b.sp : null;

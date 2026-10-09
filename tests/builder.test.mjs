@@ -44,11 +44,12 @@ t('share link without archetype → null', M.decode(g, 'l=5') === null);
 
 // (b) PlayStyles, Specializations, Facilities, Body
 const gb = { ...g, slots: { playstyles: 2, plus: 1, facilities: 1 },
-  playstyles: [{ id: 'finesse', name: 'Finesse Shot', plus: true }, { id: 'power', name: 'Power Shot', plus: true }, { id: 'trick', name: 'Trickster' }],
+  playstyles: [{ id: 'finesse', name: 'Finesse Shot', plus: true }, { id: 'power', name: 'Power Shot', plus: true }, { id: 'trick', name: 'Trickster', plus: false }, { id: 'plain', name: 'No flag in the data' }],
   specializations: [{ id: 'poacher', name: 'Poacher', archetypes: ['x'], bonus: { Finishing: 2 } }, { id: 'other', name: 'Other', archetypes: ['nope'], bonus: { Vision: 5 } }],
   facilities: [{ id: 'gym', name: 'Gym', bonus: { Strength: 3 } }, { id: 'track', name: 'Track', bonus: { 'Sprint Speed': 2 } }],
   body: { height: { min: 160, max: 200, def: 180 }, weight: { min: 60, max: 100, def: 75 }, heightMods: [{ from: 190, to: 200, mods: { Agility: -3, 'Heading Accuracy': 2 } }], weightMods: [] } };
 const c1 = M.choices(gb, { arch: 'x', ps: ['finesse', 'power', 'trick', 'bogus'], plus: ['trick', 'power'], sp: 'other', fa: ['gym', 'track'], h: 250, w: 0 });
+t('a PlayStyle with no plus flag in the data still takes a + (every PlayStyle has one in the game); plus:false opts out', M.choices(gb, { arch: 'x', ps: [], plus: ['plain'] }).plus.join() === 'plain' && M.choices(gb, { arch: 'x', ps: [], plus: ['trick'] }).plus.length === 0);
 t('choices: slot limits, unknown ids, + only where allowed', c1.plus.join() === 'power' && c1.ps.join() === 'finesse,trick' && c1.fa.join() === 'gym');
 t('choices: specialization must fit the archetype', c1.sp === null && M.choices(gb, { arch: 'x', sp: 'poacher' }).sp === 'poacher');
 t('choices: body clamped / defaulted', c1.h === 200 && c1.w === 75);

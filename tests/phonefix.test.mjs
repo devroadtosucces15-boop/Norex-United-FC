@@ -13,4 +13,8 @@ t('About page no longer offers "Hide me from the site"', !notify.includes('id="r
 const idx = fs.readdirSync(ROOT + 'site/matches').filter((f) => /^\d+\.html$/.test(f));
 const page = read('site/matches/' + idx[0]);
 t('match page pitch: our team first on the whole pitch, opponent and "Both" as tabs', ['pv-h', 'pv-a', 'pv-b'].every((id) => page.includes(`id="${id}"`)) && /id="pv-a"[^>]*hidden/.test(page) && /id="pv-b"[^>]*hidden/.test(page) && !/id="pv-h"[^>]*hidden/.test(page));
+const bd = read('web/builder.js');
+t('chip pill follows the active chip box (no white bar over wrapped rows) and re-seats on resize', app.includes('pill.style.height = `${btn.offsetHeight}px`') && app.includes('new ResizeObserver') && !read('web/style.css').includes('.chip-pill{position:absolute;top:0;left:0;height:100%'));
+t('builder redraw keeps the page where it is (no scrollIntoView on the page, instant scrollTo)', !bd.includes('scrollIntoView?.({ block') && bd.includes("behavior: 'instant'"));
+t('builder: Min / −5 / +5 / Max strip per attribute', ['data-q="min"', 'data-q="-5"', 'data-q="+5"', 'data-q="max"'].every((x) => bd.includes(x)));
 done();

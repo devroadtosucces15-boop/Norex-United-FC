@@ -344,7 +344,7 @@ ${token() ? '' : `<p class="muted small">🔐 Log in to compare with your saved 
       const list = g.playstyles || [];
       if (!list.length) return none('PlayStyles');
       return `<p class="muted small">Pick up to <b>${sl.playstyles}</b> PlayStyles and <b>${sl.plus}</b> PlayStyle+ (click again to upgrade to + or remove). ${c.ps.length}/${sl.playstyles} · ${c.plus.length}/${sl.plus}+</p>
-<div class="bd-opts">${list.map((p) => { const on = c.ps.includes(p.id), pl = c.plus.includes(p.id); return `<button type="button" class="bd-opt${on ? ' on' : ''}${pl ? ' plus' : ''}" data-ps="${esc(p.id)}"${p.desc ? ` title="${esc(p.desc)}"` : ''}><span>${esc(p.icon || '💫')}</span><b>${esc(p.name)}${pl ? ' <i>+</i>' : ''}</b>${p.plus ? '' : '<small class="muted">no +</small>'}</button>`; }).join('')}</div>`;
+<div class="bd-opts">${list.map((p) => { const on = c.ps.includes(p.id), pl = c.plus.includes(p.id); return `<button type="button" class="bd-opt${on ? ' on' : ''}${pl ? ' plus' : ''}" data-ps="${esc(p.id)}"${p.desc ? ` title="${esc(p.desc)}"` : ''}><span>${esc(p.icon || '💫')}</span><b>${esc(p.name)}${pl ? ' <i>+</i>' : ''}</b>${p.plus === false ? '<small class="muted">no +</small>' : ''}</button>`; }).join('')}</div>`;
     }
     if (tab === 'specializations') {
       const list = M.specsFor(g, b.arch);
@@ -395,11 +395,12 @@ ${noTables ? '<p class="muted small">🧪 Height/weight modifier tables aren’t
 ${rows.map((r) => {
     const c = M.canAdd(g, ev, r.name);
     return `<div class="bd-row${r.sig ? ' sig' : ''}${r.add ? ' up' : ''}" data-attr="${esc(r.name)}">
-<span class="bd-name">${r.sig ? '<i title="Signature attribute">★</i> ' : ''}${esc(r.name)}</span>
+<span class="bd-name" role="button" tabindex="0" title="Tap for Min / −5 / +5 / Max">${r.sig ? '<i title="Signature attribute">★</i> ' : ''}${esc(r.name)}</span>
 <span class="bd-bar" aria-hidden="true"><i class="b" style="width:${pct(r.base)}%"></i><i class="a" style="left:${pct(r.base)}%;width:${pct(r.add)}%"></i>${r.bonus ? `<i class="m" style="left:${pct(r.base + r.add)}%;width:${pct(r.bonus)}%"></i>` : ''}</span>
 <button type="button" class="bd-pm" data-d="-1" aria-label="Lower ${esc(r.name)}"${r.add ? '' : ' disabled'}>−</button>
 <b class="bd-val">${r.value}${r.add ? `<small>+${r.add}</small>` : ''}${r.bonus ? `<small class="gold" title="Mastery bonus">+${r.bonus}</small>` : ''}${r.mod ? `<small class="${r.mod > 0 ? 'pos' : 'neg'}" title="${esc(r.modFrom.map(([f, v]) => `${f} ${v > 0 ? '+' : ''}${v}`).join(' · '))}">${r.mod > 0 ? '+' : ''}${r.mod}</small>` : ''}</b>
-<button type="button" class="bd-pm" data-d="1" aria-label="Raise ${esc(r.name)}"${c == null ? ' disabled' : ''} title="${c == null ? (r.value >= r.top ? 'At the maximum' : 'Not enough AP') : `Costs ${c} AP`}">+</button></div>`;
+<button type="button" class="bd-pm" data-d="1" aria-label="Raise ${esc(r.name)}"${c == null ? ' disabled' : ''} title="${c == null ? (r.value >= r.top ? 'At the maximum' : 'Not enough AP') : `Costs ${c} AP`}">+</button>
+${openAttr === r.name ? `<div class="bd-quick" data-attr-q="${esc(r.name)}"><button type="button" data-q="min"${r.add ? '' : ' disabled'}>⏮ Min <small>${r.base}</small></button><button type="button" data-q="-5"${r.add ? '' : ' disabled'}>−5</button><button type="button" data-q="+5"${c == null ? ' disabled' : ''}>+5</button><button type="button" data-q="max"${c == null ? ' disabled' : ''}>Max <small>${r.top}</small> ⏭</button></div>` : ''}</div>`;
   }).join('')}</section>`;
     };
     const leftPct = ev.total ? Math.max(0, (ev.left / ev.total) * 100) : 0;
@@ -435,10 +436,13 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
   function draw() {
     const y = scrollY;
     $('[data-bd-body]').innerHTML = view();
-    $('[data-bd-body] .bd-picker .chip.on')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); // archetype rail: keep the picked one in view
-    scrollTo(0, y);
+    // archetype rail: keep the picked one in view – by moving the rail itself; scrollIntoView also scrolled the PAGE up to the rail
+    const on = $('[data-bd-body] .bd-picker .chip.on'), rail = on?.closest('.bd-picker');
+    if (rail && rail.scrollWidth > rail.clientWidth) rail.scrollLeft = on.offsetLeft - (rail.clientWidth - on.offsetWidth) / 2;
+    scrollTo({ top: y, behavior: 'instant' }); // instant: the page has smooth scrolling, which animated every redraw back to the top
   }
 
+  let openAttr = null; // attribute whose quick strip (Min −5 +5 Max) is open – survives redraws
   function step(name, d, times) {
     push();
     for (let i = 0; i < times; i++) {
@@ -454,8 +458,15 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
   }
 
   root.addEventListener('click', async (e) => {
+    const nm = e.target.closest('.bd-name');
+    if (nm) { const a = nm.closest('[data-attr]').dataset.attr; openAttr = openAttr === a ? null : a; draw(); return; }
     const t = e.target.closest('button');
     if (!t || t.disabled) return;
+    if (t.dataset.q) {
+      const a = t.closest('[data-attr-q]').dataset.attrQ;
+      step(a, t.dataset.q === 'min' || t.dataset.q === '-5' ? -1 : 1, t.dataset.q === 'min' || t.dataset.q === 'max' ? 500 : 5);
+      return;
+    }
     if (t.dataset.tab) { tab = t.dataset.tab; draw(); return; }
     if (t.dataset.ps) {
       const id = t.dataset.ps, p = (g.playstyles || []).find((x) => x.id === id), c = M.choices(g, b), sl = M.slotsOf(g);
@@ -463,7 +474,7 @@ ${(g.masteries || []).some((m) => m.archetype === ev.arch.id) ? `<div class="bd-
       if (c.plus.includes(id)) b = { ...b, plus: c.plus.filter((x) => x !== id) };
       else if (c.ps.includes(id)) {
         const ps = c.ps.filter((x) => x !== id);
-        b = p?.plus && c.plus.length < sl.plus ? { ...b, ps, plus: [...c.plus, id] } : { ...b, ps };
+        b = p?.plus !== false && c.plus.length < sl.plus ? { ...b, ps, plus: [...c.plus, id] } : { ...b, ps };
       } else if (c.ps.length < sl.playstyles) b = { ...b, ps: [...c.ps, id] };
       else { hist.pop(); toast(`All ${sl.playstyles} PlayStyle slots are full – remove one first`, 'error'); return; }
       setHash(); draw(); return;

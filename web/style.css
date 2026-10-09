@@ -160,7 +160,7 @@ button.chip{cursor:pointer}
 /* [data-tabs] tab switch (board 05 part 2): a real .chip-pill slides between chips instead of an
    instant background swap; JS adds .has-pill, so a no-JS/JS-off group keeps the plain instant toggle above. */
 [data-tabs]{position:relative}
-[data-tabs] .chip-pill{position:absolute;top:0;left:0;height:100%;border-radius:999px;background:#fff;z-index:0;transition:transform .25s cubic-bezier(.4,0,.2,1),width .25s cubic-bezier(.4,0,.2,1)}
+[data-tabs] .chip-pill{position:absolute;top:0;left:0;height:34px;border-radius:999px;background:#fff;z-index:0;transition:transform .25s cubic-bezier(.4,0,.2,1),width .25s cubic-bezier(.4,0,.2,1)}
 [data-tabs] button.chip{position:relative;z-index:1}
 [data-tabs].has-pill button.chip.on{background:transparent;border-color:transparent;color:#111}
 @media (prefers-reduced-motion:reduce){[data-tabs] .chip-pill{transition:none}}

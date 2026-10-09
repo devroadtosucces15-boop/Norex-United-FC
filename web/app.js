@@ -217,11 +217,15 @@ $$('[data-tabs]').forEach((g) => {
   const movePill = (btn, animate) => {
     if (!btn) return;
     pill.style.transition = animate && !reducedMotion() ? '' : 'none';
+    // follow the chip's own box: when the chips wrap onto a second line the pill must not stretch over both rows (the white bar)
     pill.style.width = `${btn.offsetWidth}px`;
-    pill.style.transform = `translateX(${btn.offsetLeft}px)`;
+    pill.style.height = `${btn.offsetHeight}px`;
+    pill.style.transform = `translate(${btn.offsetLeft}px, ${btn.offsetTop}px)`;
   };
   movePill($('button.chip.on', g), false);
   addEventListener('resize', () => movePill($('button.chip.on', g), false));
+  // re-seat it whenever the group changes size: fonts loading, a hidden tab panel opening, chips wrapping
+  if ('ResizeObserver' in window) new ResizeObserver(() => movePill($('button.chip.on', g), false)).observe(g);
   chipGroup(g, (b) => {
     movePill(b, true);
     const panels = $$('.tab-panel', g.parentElement);
