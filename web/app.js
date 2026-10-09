@@ -510,7 +510,7 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
   $('[data-zoom=out]', zoomWrap)?.addEventListener('click', () => stage.style.setProperty('--tt-sc', Math.max(0.6, (parseFloat(getComputedStyle(stage).getPropertyValue('--tt-sc')) || 1) - 0.15)));
   $('[data-tt-reset]', root)?.addEventListener('click', () => applyCam(camName));
 
-  const canUse3D = () => !matchMedia('(prefers-reduced-motion: reduce)').matches && innerWidth >= 760;
+  const canUse3D = () => !matchMedia('(prefers-reduced-motion: reduce)').matches; // phones get it too: the flat pitch can't fit names inside the field
   function updateMode() {
     const on = canUse3D();
     flat.hidden = on; stage.hidden = !on; hint.hidden = !on;

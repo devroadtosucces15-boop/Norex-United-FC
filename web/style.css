@@ -1589,3 +1589,13 @@ html.nx-hubin::after{content:'';position:fixed;inset:0;z-index:10000;pointer-eve
 .nx-ins-ddbody{padding:0 14px 14px}
 .nx-ins-dd[open] .nx-ins-ddbody .nx-ins-head{display:none}
 @media (max-width:560px){.nx-ins-dd>summary{flex-wrap:wrap;gap:2px 10px}.nx-ins-sum{flex:1 0 100%;order:3;white-space:normal;font-size:14px}.nx-ins-dd>summary::after{order:2}}
+
+/* tactics table on phones: taller stage, side-swipe orbits, vertical swipe still scrolls the page */
+@media (max-width:760px){
+.tt-stage{aspect-ratio:1/1.05;touch-action:pan-y}
+.tt-world{inset:5% 4% 9%}
+.tt-pin b{width:28px;height:28px;font-size:11px;border-width:2px}
+.tt-pin span{font-size:9px;max-width:56px}
+.tt-hint{font-size:11px;left:8px;bottom:6px}
+[data-tt-cam]:not([hidden]){display:flex;flex-wrap:wrap;gap:6px}
+}
