@@ -64,6 +64,8 @@ export const PERMS = {
   'feed.view': 'member', // P6.1 – club feed: read, react, comment
   'feed.post': 'member', // P6.1 – write posts (edit/remove own)
   'posts.moderate': 'manager', // P6.1 / P8.3 – pin/remove posts
+  'cards.use': 'member', // Card Studio – pick templates, submit a card request
+  'cards.templates': 'manager', // Card Studio – upload/edit templates, grant premium unlocks, review requests
   'media.storage': 'owner', // P6.1b – media storage dashboard (R2 usage, delete files)
   'messages.use': 'member', // P6.3 – DMs and group chats: read/send in your own chats
   'messages.reported': 'manager', // P6.3 – managers see reported messages only

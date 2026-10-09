@@ -27,7 +27,7 @@ export const TYPES = {
   'image/jpeg': ['image', 'jpg'], 'image/png': ['image', 'png'], 'image/webp': ['image', 'webp'], 'image/gif': ['image', 'gif'],
   'video/mp4': ['video', 'mp4'], 'video/webm': ['video', 'webm'], 'video/quicktime': ['video', 'mov'],
 };
-const KEY = /^[iv]\/[0-9a-f]{32}\.(jpg|png|webp|gif|mp4|webm|mov)$/;
+const KEY = /^(?:[iv]|card)\/[0-9a-f]{32}\.(jpg|png|webp|gif|mp4|webm|mov)$/;
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -255,7 +255,7 @@ export async function mediaCron(env, now = Date.now()) {
   if (bytes > GUARD_HIGH) {
     for (const o of objects.sort((a, b) => a.at - b.at)) {
       if (bytes <= GUARD_LOW) break;
-      if (o.key.startsWith('play/')) continue; // BE1 playbook documents aren't disposable like feed photos/clips
+      if (o.key.startsWith('play/') || o.key.startsWith('card/') || o.key.startsWith('cardphoto/')) continue; // BE1 playbook documents aren't disposable like feed photos/clips
       dropped.push(o.key); bytes -= o.size;
     }
     if (dropped.length) {

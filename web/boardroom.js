@@ -18,7 +18,7 @@
     awards: ['🏆', 'Weekly awards'], rushSquads: ['🤝', 'Rush squads'], starRatings: ['🌟', 'Star ratings'], feedback: ['💌', 'Anonymous feedback'], predictions: ['🔮', 'Predictions'],
     recommendations: ['🎯', 'Who to play with'], scoutReport: ['📋', 'Scout reports'], ask: ['❓', 'Ask the club'], aiInsights: ['🧠', 'Player notes'], lineupRec: ['✨', 'Line-up suggestions'],
     insights: ['🧭', 'Club Intelligence'], feed: ['📰', 'Club feed'], hotw: ['🔥', 'Highlight of the week'], presence: ['🟢', 'Who’s online'], mentions: ['@', 'Mentions'],
-    messages: ['✉️', 'Messages'], points: ['⭐', 'Club points'], avatarCard: ['🎨', 'Avatar card'], locker: ['🎽', 'Locker Room tab'], lockerRoom: ['🎽', 'Locker Room redesign'],
+    messages: ['✉️', 'Messages'], points: ['⭐', 'Club points'], avatarCard: ['🎨', 'Avatar card'], cardStudio: ['🪪', 'Card Studio'], locker: ['🎽', 'Locker Room tab'], lockerRoom: ['🎽', 'Locker Room redesign'],
     dugout: ['🧢', 'Dugout'], boardroom: ['👑', 'Boardroom'], tactics: ['🧠', 'Tactics Studio + Playbook'], statInsights: ['✨', 'Stat insights'], insightWidget: ['✨', 'Insight widget (front end)'], hub: ['🔑', 'The Hub'], push: ['📲', 'Phone notifications'],
   };
   const FREE = { requests: 100000 };

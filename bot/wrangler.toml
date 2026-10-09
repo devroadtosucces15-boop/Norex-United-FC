@@ -23,6 +23,10 @@ VAPID_PUBLIC_KEY = "BHlk5h_Pk73q6Puq3GZBlD2N11-0XNiDukORC4i62w98wxnFxWgoT1V145xh
 [ai]
 binding = "AI"
 
+# Card Studio: shrinks the background/photo references below the 512px FLUX.2 limit
+[images]
+binding = "IMAGES"
+
 # P6.3b live chat: one Durable Object per chat room (SQLite-backed class = Workers Free plan)
 [[durable_objects.bindings]]
 name = "CHAT_ROOM"
