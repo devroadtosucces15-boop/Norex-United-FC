@@ -1,6 +1,6 @@
 {
-  "revision": "99879ab5b07906684aacebfdee4956fccb5d35ac",
-  "files": 660,
+  "revision": "fa285138378d642ceda0c1dca37a8e774b86981b",
+  "files": 661,
   "imports": 425,
   "api_paths": 220,
   "tables": 273,
@@ -6893,6 +6893,17 @@
       "functions": []
     },
     {
+      "path": "scripts/build-atlas-history.py",
+      "layer": "scripts",
+      "lines": 27,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "pathlib"
+      ],
+      "functions": []
+    },
+    {
       "path": "scripts/build-atlas-local.py",
       "layer": "scripts",
       "lines": 27,
@@ -6906,7 +6917,7 @@
     {
       "path": "scripts/build-atlas-private-view.py",
       "layer": "scripts",
-      "lines": 27,
+      "lines": 28,
       "imports": [],
       "endpoints": [],
       "tables": [

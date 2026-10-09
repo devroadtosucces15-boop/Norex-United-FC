@@ -5,43 +5,44 @@ Source-level imports; isolated files appear without arrows.
 ```mermaid
 flowchart LR
   n0["scripts/build-atlas-explorer.py"]
-  n1["scripts/build-atlas-local.py"]
-  n2["scripts/build-atlas-private-view.py"]
-  n3["scripts/build-system-atlas.py"]
-  n4["scripts/build.mjs"]
-  n5["scripts/builder-page.mjs"]
-  n6["scripts/burners-page.mjs"]
-  n7["scripts/charts.mjs"]
-  n8["scripts/docs-page.mjs"]
-  n9["scripts/ea-relay.mjs"]
-  n10["scripts/feed-page.mjs"]
-  n11["scripts/fetch.mjs"]
-  n12["scripts/hub-page.mjs"]
-  n13["scripts/leaders-page.mjs"]
-  n14["scripts/lib.mjs"]
-  n15["scripts/messages-page.mjs"]
-  n16["scripts/probuilds-page.mjs"]
-  n17["scripts/rankings.mjs"]
-  n18["scripts/serve-atlas-private.py"]
-  n19["scripts/serve.mjs"]
-  n20["scripts/tactics-page.mjs"]
-  n21["scripts/updates-page.mjs"]
-  n22["scripts/updates.mjs"]
-  n4 --> n5
-  n4 --> n6
-  n4 --> n7
-  n4 --> n8
-  n4 --> n10
-  n4 --> n12
-  n4 --> n13
-  n4 --> n14
-  n4 --> n15
-  n4 --> n16
-  n4 --> n17
-  n4 --> n20
-  n4 --> n21
-  n11 --> n14
-  n19 --> n14
-  n21 --> n14
-  n22 --> n14
+  n1["scripts/build-atlas-history.py"]
+  n2["scripts/build-atlas-local.py"]
+  n3["scripts/build-atlas-private-view.py"]
+  n4["scripts/build-system-atlas.py"]
+  n5["scripts/build.mjs"]
+  n6["scripts/builder-page.mjs"]
+  n7["scripts/burners-page.mjs"]
+  n8["scripts/charts.mjs"]
+  n9["scripts/docs-page.mjs"]
+  n10["scripts/ea-relay.mjs"]
+  n11["scripts/feed-page.mjs"]
+  n12["scripts/fetch.mjs"]
+  n13["scripts/hub-page.mjs"]
+  n14["scripts/leaders-page.mjs"]
+  n15["scripts/lib.mjs"]
+  n16["scripts/messages-page.mjs"]
+  n17["scripts/probuilds-page.mjs"]
+  n18["scripts/rankings.mjs"]
+  n19["scripts/serve-atlas-private.py"]
+  n20["scripts/serve.mjs"]
+  n21["scripts/tactics-page.mjs"]
+  n22["scripts/updates-page.mjs"]
+  n23["scripts/updates.mjs"]
+  n5 --> n6
+  n5 --> n7
+  n5 --> n8
+  n5 --> n9
+  n5 --> n11
+  n5 --> n13
+  n5 --> n14
+  n5 --> n15
+  n5 --> n16
+  n5 --> n17
+  n5 --> n18
+  n5 --> n21
+  n5 --> n22
+  n12 --> n15
+  n20 --> n15
+  n22 --> n15
+  n23 --> n15
 ```
