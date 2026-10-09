@@ -1600,3 +1600,22 @@ html.nx-hubin::after{content:'';position:fixed;inset:0;z-index:10000;pointer-eve
 
 /* hubGold: notification settings are the owner's only */
 html.nx-no-notify-settings #alerts-settings,html.nx-no-notify-settings .bell-panel footer a[href$="#alerts-settings"]{display:none}
+
+/* ---------- spacing rhythm + table frames (issue #31) ----------
+   One rule of thumb for the whole site: 22px between a block of tiles/tables and the next thing, 14px between a heading and its content,
+   tables keep the same inner gutter as the page, a clipped column shows a fade at the edge instead of looking cut off,
+   and an odd tile never sits alone on the last row. */
+.stats{margin-bottom:22px}
+.stats + .tbl,.stats + h3,.stats + .card,.stats + .tabs,.stats + .grid2,.stats + .grid3{margin-top:22px}
+.tbl{margin:14px 0 22px}
+.tbl:last-child{margin-bottom:0}
+.tbl + h3,.tbl + .tbl,.tbl + .card,.tbl + .stats,.tbl + p{margin-top:22px}
+.block > * + h3,.card > * + h3{margin-top:26px}
+th,td{padding:10px 14px}
+th:first-child,td:first-child{padding-left:16px}
+th:last-child,td:last-child{padding-right:16px}
+.tbl{background:linear-gradient(to right,var(--panel) 30%,transparent),linear-gradient(to left,var(--panel) 30%,transparent) 100% 0,radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.5),transparent) 0 0,radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.5),transparent) 100% 0;background-repeat:no-repeat;background-color:var(--panel);background-size:40px 100%,40px 100%,14px 100%,14px 100%;background-attachment:local,local,scroll,scroll}
+@media (max-width:560px){
+  .stats:not(.stats-8){grid-template-columns:repeat(2,1fr)}
+  .stats .stat:last-child:nth-child(odd){grid-column:1/-1}
+}
