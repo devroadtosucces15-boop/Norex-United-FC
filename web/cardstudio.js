@@ -26,11 +26,11 @@ ${t.locked ? '<span class="cs-redeem" title="Redeeming with points is coming soo
     try {
       const r = await fetch(`${ctx.api}/api/cards/${card ? 'result' : 'photo'}/${card ? (portrait ? img.dataset.portrait : img.dataset.result) : img.dataset.photo}${portrait ? '?kind=portrait' : ''}`, { headers: { Authorization: `Bearer ${ctx.token}` } });
       if (!r.ok) throw new Error();
-      const u = URL.createObjectURL(await r.blob());
+      const blob = await r.blob(), u = URL.createObjectURL(blob);
       photoUrls.push(u);
       img.src = u;
-      const save = card ? img.nextElementSibling : null;
-      if (card && save) { save.href = u; save.hidden = false; }
+      const save = img.nextElementSibling;
+      if (save?.matches('[data-save-card],[data-save-photo]')) { save.href = u; save.hidden = false; if (!card) save.download = 'norex-upload-' + img.dataset.photo + '.' + ({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[blob.type] || 'jpg'); const view=save.nextElementSibling; if(view?.matches('[data-view-art]')) {view.href=u;view.hidden=false;} }
     } catch { img.replaceWith(Object.assign(document.createElement('span'), { className: 'cs-nophoto', textContent: card ? 'Card removed' : 'Photo removed' })); }
   });
   // Phone photos can be 10 MB+; send a 1600px JPEG instead (falls back to the original file).
@@ -59,7 +59,8 @@ ${open ? `<form id="cs-request" class="cs-form"><label class="cs-file"><input ty
 <label>Kit number (optional)<input name="kitNumber" type="number" min="0" max="99" step="1" placeholder="0–99"></label><img class="cs-photo" id="cs-preview" alt="" hidden><p class="muted small">No templates yet? Uncheck Cinematic avatar to request the standard website portrait immediately.</p><label><input type="checkbox" name="avatar" checked> Cinematic avatar</label><label><input type="checkbox" name="portrait" checked> Website portrait</label><button class="btn" type="submit" disabled>📨 Send request</button></form>${r?.status === 'rejected' ? '<p class="muted">Your last photo was not approved – sending a new one does not use up your month.</p>' : ''}` : ''}</section>`;
   };
 
-  const queueHtml = (list) => {
+  const queueHtml = (list, players = []) => {
+    list = list.map(r => ({...r, user:players.find(p=>p.k===r.targetPlayer)?.n || r.user}));
     const pending = list.filter((x) => x.status === 'pending'), reviews = list.filter((x) => x.status === 'review'), done = list.filter((x) => !['pending', 'review'].includes(x.status));
     return `<section class="cs-sec"><h4>📥 Card requests${pending.length ? ` <span class="cs-count">${pending.length}</span>` : ''}</h4>
 ${reviews.length ? `<h5>🔎 Generated artwork awaiting review</h5><ul class="cs-queue">${reviews.map(x => `<li class="cs-qrow" data-req="${x.id}"><div class="cs-review-images">${x.hasResult ? `<img class="cs-card" data-result="${x.id}" alt="Cinematic avatar awaiting review">` : ''}${x.hasPortrait ? `<img class="cs-card" data-portrait="${x.id}" alt="Website portrait awaiting review">` : ''}</div><div class="cs-qinfo"><b>${esc(x.user)}</b><span class="muted">Inspect likeness, framing, kit colors and background before publishing</span></div><div class="cs-qact"><button type="button" class="btn small" data-review="publish">✅ Publish</button><button type="button" class="btn ghost small" data-review="regenerate">🔁 Regenerate</button></div></li>`).join('')}</ul>` : ''}
@@ -97,12 +98,25 @@ ${premium.length ? `<form id="cs-grant" class="cs-form"><select name="user" requ
 <button class="btn" type="submit" data-act="grant">Grant</button><button class="btn ghost" type="submit" data-act="revoke">Revoke</button></form>` : '<p class="muted">Add a premium template first.</p>'}</section>`;
   };
 
+  const ownerHtml = (requests, players) => `<section class="card cs-wrap cs-owner"><h3>👑 Player artwork</h3>
+<p class="muted">Submit a photo for any player. Generated artwork still goes through quality review before appearing on the site.</p>
+<form id="cs-owner-upload" class="cs-form"><label>Player<select name="player" required><option value="">Choose a player</option>${[...players].sort((a,b)=>String(a.n).localeCompare(String(b.n))).map(p=>`<option value="${esc(p.k)}">${esc(p.n)}${p.home ? ' · NOREX' : ''}</option>`).join('')}</select></label>
+<label>Photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required></label>
+<label>Kit number<input name="kitNumber" type="number" min="0" max="99" step="1" placeholder="Optional"></label><button class="btn" type="submit">Submit player photo</button></form>
+<h4>Uploads and artwork</h4><p class="muted small">Revoke removes the player’s published artwork and opens resubmission. Previously deleted source photos are unavailable.</p>
+<div class="cs-owner-list">${requests.map(r=>`<article class="cs-owner-row"><h5>${esc(players.find(p=>p.k===r.player)?.n || r.user)} · ${esc(STATUS[r.status]?.[1] || r.status)}</h5><p class="muted small">${esc(r.month)}${r.note ? ' · '+esc(r.note) : ''}</p>
+<div class="cs-owner-media">${r.hasPhoto ? `<figure><img class="cs-photo" data-photo="${r.id}" alt="Uploaded player photo"><a class="btn ghost small" data-save-photo download hidden>Download upload</a><a class="btn ghost small" data-view-art target="_blank" rel="noopener" hidden>View upload</a><figcaption>Uploaded photo</figcaption></figure>` : '<p class="muted small">Source photo unavailable</p>'}
+${r.hasPortrait ? `<figure><img class="cs-card" data-portrait="${r.id}" alt="Player portrait"><a class="btn ghost small" data-save-card download="norex-portrait-${r.id}.png" hidden>Download portrait</a><a class="btn ghost small" data-view-art target="_blank" rel="noopener" hidden>View portrait</a></figure>` : ''}
+${r.hasResult ? `<figure><img class="cs-card" data-result="${r.id}" alt="Cinematic artwork"><a class="btn ghost small" data-save-card download="norex-avatar-${r.id}.png" hidden>Download avatar</a><a class="btn ghost small" data-view-art target="_blank" rel="noopener" hidden>View avatar</a></figure>` : ''}</div>
+<form class="cs-form" data-owner-kit="${r.id}"><label>Kit number<input name="kitNumber" type="number" min="0" max="99" step="1" value="${esc(r.kitNumber)}" placeholder="Optional"></label><button class="btn ghost small" type="submit">Save number</button></form>
+${r.status !== 'rejected' ? `<button class="btn ghost small" type="button" data-owner-revoke="${r.id}">Revoke · allow resubmission</button>` : '<span class="muted small">Resubmission open</span>'}</article>`).join('') || '<p class="muted">No uploads yet.</p>'}</div></section>`;
+
   function tab(el, ctx) {
     const sel = { bg: null, pose: null };
     let photo = null, poll = 0, polls = 0;
     const load = async () => {
-      let d, mine, queue = [];
-      try { [d, mine] = await Promise.all([ctx.call('/api/cards/templates'), ctx.call('/api/cards/request')]); if (d.manage) queue = (await ctx.call('/api/cards/requests')).requests; } catch (e) { el.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; return; }
+      let d, mine, queue = [], ownerRequests = [];
+      try { [d, mine] = await Promise.all([ctx.call('/api/cards/templates'), ctx.call('/api/cards/request')]); if (d.manage) queue = (await ctx.call('/api/cards/requests')).requests; if (d.owner) ownerRequests = (await ctx.call('/api/cards/owner/requests')).requests; } catch (e) { el.innerHTML = `<div class="card"><p>⚠️ ${esc(e.message)}</p></div>`; return; }
       for (const k of ['bg', 'pose']) if (sel[k] && !(k === 'bg' ? d.backgrounds : d.poses).some((t) => t.id === sel[k] && !t.locked && t.active !== false)) sel[k] = null;
       el.innerHTML = `<div class="card cs-wrap"><h3>🪪 Card Studio</h3>
 <p class="muted">Pick a background and a pose for your club card. Premium looks show 🔒 until they are unlocked for you.</p>
@@ -110,7 +124,29 @@ ${gallery('Background', '🌫️', d.backgrounds.filter((t) => t.active !== fals
 ${gallery('Pose', '💪', d.poses.filter((t) => t.active !== false), 'pose', sel.pose, 'No poses yet.')}
 <p class="cs-pick muted" id="cs-pick"></p>
 ${requestHtml(mine, mine.month)}</div>
-${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="card cs-wrap">${adminHtml(d)}</div>` : ''}`;
+${d.owner ? ownerHtml(ownerRequests, ctx.players?.() || []) : ''}
+${d.manage ? `<div class="card cs-wrap">${queueHtml(queue, ctx.players?.() || [])}</div><div class="card cs-wrap">${adminHtml(d)}</div>` : ''}`;
+      $$('[data-owner-kit]',el).forEach(form=>form.onsubmit=async e=>{
+        e.preventDefault(); const btn=form.querySelector('button');btn.disabled=true;
+        try {await ctx.call('/api/cards/kit-number',{id:Number(form.dataset.ownerKit),kitNumber:form.kitNumber.value===''?null:Number(form.kitNumber.value)});await window.NXPlayerPortraits?.refresh();ctx.toast('Kit number saved');load();}
+        catch(e){ctx.toast(e.message,true);btn.disabled=false;}
+      });
+      const ownerUpload = $('#cs-owner-upload', el);
+      if (ownerUpload) ownerUpload.onsubmit = async e => {
+        e.preventDefault(); const btn=ownerUpload.querySelector('button'); btn.disabled=true;
+        try {
+          const photo=await shrink(ownerUpload.photo.files[0]);
+          const q=new URLSearchParams({targetPlayer:ownerUpload.player.value,avatar:'0',portrait:'1',kitNumber:ownerUpload.kitNumber.value});
+          const r=await fetch(`${ctx.api}/api/cards/request?${q}`,{method:'POST',headers:{Authorization:`Bearer ${ctx.token}`,'Content-Type':photo.type || 'image/jpeg'},body:photo});
+          const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error || 'Upload failed');
+          ctx.toast('Player photo submitted for approval'); load();
+        } catch(e) {ctx.toast(e.message,true); btn.disabled=false;}
+      };
+      $$('[data-owner-revoke]',el).forEach(btn=>btn.onclick=async()=>{
+        btn.disabled=true;
+        try {await ctx.call('/api/cards/owner/revoke',{id:Number(btn.dataset.ownerRevoke)}); await window.NXPlayerPortraits?.refresh(); ctx.toast('Artwork revoked · resubmission open'); load();}
+        catch(e){ctx.toast(e.message,true);btn.disabled=false;}
+      });
       const kitForm = $('#cs-kit', el);
       if (kitForm) kitForm.onsubmit = async e => {
         e.preventDefault(); const btn=kitForm.querySelector('button'); btn.disabled=true;

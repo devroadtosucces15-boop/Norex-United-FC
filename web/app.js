@@ -843,7 +843,7 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
     const draw = () => {
       stage3d.innerHTML = ORDER.filter((i) => d.top3[i]).map((i) => {
         const p = d.top3[i];
-        return `<a class="pod-block ${RANK_CLS[i]}" href="${p.href}"><span class="pod-tag"><span class="pod-av">${esc(initials(p.name))}</span><span class="pod-name">${esc(p.name)}</span><span class="pod-v">${esc(p.v)}</span></span><span class="pod-rank">${i + 1}</span></a>`;
+        return `<a class="pod-block ${RANK_CLS[i]}" href="${p.href}"><span class="pod-tag"><span class="pod-av" data-card-player="${esc(p.player)}">${esc(initials(p.name))}</span><span class="pod-name">${esc(p.name)}</span><span class="pod-v">${esc(p.v)}</span></span><span class="pod-rank">${i + 1}</span></a>`;
       }).join('');
       requestAnimationFrame(() => requestAnimationFrame(() => $$('.pod-block', stage3d).forEach((b) => b.classList.add('in'))));
     };

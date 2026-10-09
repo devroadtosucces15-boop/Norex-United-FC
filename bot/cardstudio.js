@@ -88,17 +88,26 @@ const dropPhoto = (env, key) => (key && env.MEDIA ? env.MEDIA.delete(key).catch(
 
 const reqView = (r, extra = {}) => ({
   id: r.id, month: r.month, status: r.status === 'done' && r.published === 0 ? 'review' : r.status, note: r.note, bg: r.bg_name ?? null, pose: r.pose_name ?? null,
-  createdAt: r.created_at, decidedAt: r.decided_at, hasResult: !!r.result_key, hasPortrait: !!r.portrait_key, kitNumber: r.kit_number ?? null, avatarEnabled: r.avatar_enabled !== 0, portraitEnabled: r.portrait_enabled === 1, attempts: r.attempts, ...extra,
+  createdAt: r.created_at, decidedAt: r.decided_at, hasPhoto: !!r.photo_key, targetPlayer: r.target_player ?? null, hasResult: !!r.result_key, hasPortrait: !!r.portrait_key, kitNumber: r.kit_number ?? null, avatarEnabled: r.avatar_enabled !== 0, portraitEnabled: r.portrait_enabled === 1, attempts: r.attempts, ...extra,
 });
 const REQ_SQL = `SELECT r.*, b.name AS bg_name, p.name AS pose_name FROM card_requests r
   LEFT JOIN card_templates b ON b.id = r.bg_id LEFT JOIN card_templates p ON p.id = r.pose_id`;
 
 // POST /api/cards/request?bg=<id>&pose=<id> – the body is the raw photo. Photos live under cardphoto/ (never /media),
 // so only the member and managers can ever see them; they are deleted on reject/cancel.
-export async function cardRequestUpload(request, me, env, url, log) {
+export async function cardRequestUpload(request, me, env, url, log, loadSite) {
   const blocked = gate(me, env);
   if (blocked) return blocked;
   if (!env.MEDIA) return fail('Media storage is not connected.', 503);
+  const targetPlayer = url.searchParams.get('targetPlayer');
+  let targetUser = me.u;
+  if (targetPlayer !== null) {
+    if (me.role !== 'owner') return fail('Owner only.', 403);
+    const player = (await loadSite('players')).find(p => p.k === targetPlayer);
+    if (!player) return fail('Player not found.', 404);
+    const claim = await one(env, "SELECT user_id FROM claims WHERE player = ? AND status = 'approved'", targetPlayer);
+    targetUser = claim?.user_id || 'player:' + targetPlayer;
+  }
   const avatarEnabled = url.searchParams.get('avatar') !== '0';
   const portraitEnabled = url.searchParams.get('portrait') === '1';
   if (!avatarEnabled && !portraitEnabled) return fail('Choose at least one output.');
@@ -106,8 +115,8 @@ export async function cardRequestUpload(request, me, env, url, log) {
   const kitNumber = rawNumber == null || rawNumber === '' ? null : Number(rawNumber);
   if (kitNumber !== null && (!/^\d{1,2}$/.test(rawNumber) || !Number.isInteger(kitNumber) || kitNumber < 0 || kitNumber > 99)) return fail('Kit number must be between 0 and 99.');
   const month = monthKey();
-  const existing = await one(env, 'SELECT id, status FROM card_requests WHERE user_id = ? AND month = ?', me.u, month);
-  if (existing && existing.status !== 'rejected') return fail('You already sent a card request this month – the next one opens on the 1st.', 409);
+  const existing = await one(env, 'SELECT id, status, photo_key, result_key, portrait_key FROM card_requests WHERE user_id = ? AND month = ?', targetUser, month);
+  if (existing && existing.status !== 'rejected') return fail(targetPlayer ? 'That player already has a request this month. Revoke it to allow resubmission.' : 'You already sent a card request this month – the next one opens on the 1st.', 409);
   const bg = await one(env, "SELECT * FROM card_templates WHERE id = ? AND kind = 'bg'", Number(url.searchParams.get('bg')));
   const pose = await one(env, "SELECT * FROM card_templates WHERE id = ? AND kind = 'pose'", Number(url.searchParams.get('pose')));
   if (avatarEnabled && !bg) return fail('Pick a background for your cinematic avatar.');
@@ -123,11 +132,12 @@ export async function cardRequestUpload(request, me, env, url, log) {
   await env.MEDIA.put(key, bytes, { httpMetadata: { contentType: type[0] } });
   try {
     if (existing) await run(env, "DELETE FROM card_requests WHERE id = ? AND status = 'rejected'", existing.id);
-    await run(env, 'INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, avatar_enabled, portrait_enabled, kit_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', me.u, month, bg?.id ?? 0, pose?.id ?? 0, key, 'pending', Date.now(), avatarEnabled ? 1 : 0, portraitEnabled ? 1 : 0, kitNumber);
+    await run(env, 'INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, avatar_enabled, portrait_enabled, kit_number, target_player, submitted_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', targetUser, month, bg?.id ?? 0, pose?.id ?? 0, key, 'pending', Date.now(), avatarEnabled ? 1 : 0, portraitEnabled ? 1 : 0, kitNumber, targetPlayer, me.u);
   } catch {
     await dropPhoto(env, key);
     return fail('You already sent a card request this month – the next one opens on the 1st.', 409);
   }
+  if (existing) await Promise.all([dropPhoto(env, existing.photo_key), dropPhoto(env, existing.result_key), dropPhoto(env, existing.portrait_key)]);
   await log(env, me, 'card-request', avatarEnabled ? `${bg.name} + ${pose.name}` : 'Standardized portrait');
   await safely(notifyManagers(env, { icon: '🪪', title: 'New card request', body: avatarEnabled ? `${me.n || 'A member'} asked for a ${bg.name} / ${pose.name} card.` : `${me.n || 'A member'} asked for a standardized website portrait.`, link: 'members.html#cards', ref: `card:${me.u}:${month}` }, me.u));
   return json(await mine(env, me));
@@ -172,7 +182,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
     const owned = new Set((await all(env, 'SELECT template_id FROM card_unlocks WHERE user_id = ?', me.u)).map((r) => r.template_id));
     const templates = rows.map((t) => view(t, owned.has(t.id), manage));
     const people = manage ? await all(env, 'SELECT id, name FROM users ORDER BY name COLLATE NOCASE LIMIT 500') : undefined;
-    return json({ size: CARD_SIZE, manage, people, backgrounds: templates.filter((t) => t.kind === 'bg'), poses: templates.filter((t) => t.kind === 'pose') });
+    return json({ size: CARD_SIZE, manage, owner: me.role === 'owner', people, backgrounds: templates.filter((t) => t.kind === 'bg'), poses: templates.filter((t) => t.kind === 'pose') });
   }
 
   if (p === '/api/cards/templates/update' && method === 'POST') {
@@ -221,6 +231,29 @@ export async function cardsRoute(p, method, body, me, env, log) {
     return json(await mine(env, me));
   }
 
+  if (p === '/api/cards/owner/requests' && method === 'GET') {
+    if (me.role !== 'owner') return fail('Owner only.', 403);
+    const rows = await all(env, `SELECT r.*, u.name AS user_name, COALESCE(r.target_player, c.player) AS player FROM card_requests r
+      LEFT JOIN users u ON u.id = r.user_id LEFT JOIN claims c ON c.user_id = r.user_id AND c.status = 'approved'
+      ORDER BY r.created_at DESC, r.id DESC LIMIT 500`);
+    return json({ requests: rows.map(r => reqView(r, { user: r.user_name || r.player || 'Member', userId: r.user_id, player: r.player })) });
+  }
+  if (p === '/api/cards/owner/revoke' && method === 'POST') {
+    if (me.role !== 'owner') return fail('Owner only.', 403);
+    const r = await one(env, 'SELECT * FROM card_requests WHERE id = ?', Number(body.id));
+    if (!r) return fail('Request not found.', 404);
+    const claim = await one(env, "SELECT player FROM claims WHERE user_id = ? AND status = 'approved'", r.user_id);
+    const player = r.target_player || claim?.player;
+    const rows = player ? await all(env, `SELECT * FROM card_requests WHERE target_player = ? OR user_id IN
+      (SELECT user_id FROM claims WHERE player = ? AND status = 'approved')`, player, player) : [r];
+    for (const row of rows) {
+      await run(env, "UPDATE card_requests SET status = 'rejected', published = 0, note = 'Revoked by owner — resubmission allowed', decided_by = ?, decided_at = ? WHERE id = ?", me.u, Date.now(), row.id);
+
+    }
+    await log(env, me, 'card-owner-revoke', `#${r.id} ${player || r.user_id}`);
+    return json({ ok: true });
+  }
+
   if (p === '/api/cards/requests' && method === 'GET') {
     if (!manage) return fail('Managers only.', 403);
     const rows = await all(env, `SELECT r.*, b.name AS bg_name, p.name AS pose_name, u.name AS user_name, d.name AS decider FROM card_requests r
@@ -255,7 +288,9 @@ export async function cardsRoute(p, method, body, me, env, log) {
   if (p === '/api/cards/kit-number' && method === 'POST') {
     const value = body.kitNumber;
     if (value !== null && (!Number.isInteger(value) || value < 0 || value > 99)) return fail('Kit number must be between 0 and 99.');
-    const updated = await run(env, 'UPDATE card_requests SET kit_number = ? WHERE id = ? AND user_id = ?', value, Number(body.id), me.u);
+    const updated = me.role === 'owner'
+      ? await run(env, 'UPDATE card_requests SET kit_number = ? WHERE id = ?', value, Number(body.id))
+      : await run(env, 'UPDATE card_requests SET kit_number = ? WHERE id = ? AND user_id = ?', value, Number(body.id), me.u);
     if (!updated.meta?.changes) return fail('Request not found.', 404);
     return json({ ok: true });
   }
@@ -266,11 +301,10 @@ export async function cardsRoute(p, method, body, me, env, log) {
     const r = await one(env, 'SELECT * FROM card_requests WHERE id = ?', Number(body.id));
     if (!r || r.status !== 'done' || r.published !== 0) return fail('Artwork is not awaiting review.', 409);
     if (body.decision === 'publish') {
-      const updated = await run(env, "UPDATE card_requests SET published = 1, photo_key = '' WHERE id = ? AND status = 'done' AND published = 0", r.id);
+      const updated = await run(env, "UPDATE card_requests SET published = 1 WHERE id = ? AND status = 'done' AND published = 0", r.id);
       if (!updated.meta?.changes) return fail('Already reviewed.', 409);
-      await dropPhoto(env, r.photo_key);
-      // Private source photo is removed after publishing.
-      await safely(notify(env, [r.user_id], { type: 'card', icon: '🏁', title: 'Your NOREX artwork is ready', body: 'Manager-approved artwork is ready to download.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
+      // Retain uploaded photos privately for owner inspection and download.
+      if (!r.user_id.startsWith('player:')) await safely(notify(env, [r.user_id], { type: 'card', icon: '🏁', title: 'Your NOREX artwork is ready', body: 'Manager-approved artwork is ready to download.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
     } else {
       const updated = await run(env, "UPDATE card_requests SET status = 'approved', published = 0, attempts = 0, started_at = NULL, result_key = NULL, portrait_key = NULL WHERE id = ? AND status = 'done' AND published = 0", r.id);
       if (!updated.meta?.changes) return fail('Already reviewed.', 409);
@@ -409,9 +443,9 @@ export async function generateCards(env, { limit = 2, now = Date.now() } = {}) {
 // Only published website artwork tied to a currently approved player claim is public.
 // Original photos and cinematic outputs remain behind their authenticated endpoints.
 export async function publicPortraits(request, env) {
-  const rows = await all(env, `SELECT r.id, c.player, r.kit_number FROM card_requests r
-    JOIN claims c ON c.user_id = r.user_id AND c.status = 'approved'
-    WHERE r.status = 'done' AND r.published = 1 AND r.portrait_key IS NOT NULL
+  const rows = await all(env, `SELECT r.id, COALESCE(r.target_player, c.player) AS player, r.kit_number FROM card_requests r
+    LEFT JOIN claims c ON c.user_id = r.user_id AND c.status = 'approved'
+    WHERE r.status = 'done' AND r.published = 1 AND r.portrait_key IS NOT NULL AND (r.target_player IS NOT NULL OR c.player IS NOT NULL)
     ORDER BY r.created_at DESC, r.id DESC`);
   const url = new URL(request.url), id = url.searchParams.get('id');
   if (id !== null) {

@@ -193,7 +193,7 @@ t('generated artwork is held for manager review', (await call(m2, '/api/cards/re
 t('member cannot see unapproved artwork', (await resGet(m2, two.id)).status === 404);
 t('member cannot publish artwork', (await call(m2, '/api/cards/requests/review', { id: two.id, decision: 'publish' })).s === 403);
 t('manager can publish after inspecting', (await call(mgr, '/api/cards/requests/review', { id: two.id, decision: 'publish' })).s === 200);
-t('selfie is deleted after manager publishes', (await row(two.id)).photo_key === '' && !r2objects.has(photoKey2));
+t('published source photo remains privately available for owner inspection', (await row(two.id)).photo_key === photoKey2 && r2objects.has(photoKey2));
 t('member notified the card is ready', (await env.DB.prepare("SELECT title FROM notifications WHERE user_id = '501' AND type = 'card' ORDER BY id DESC").first('title')) === 'Your NOREX artwork is ready');
 t('requester sees the card', (await resGet(m2, two.id)).status === 200);
 t('manager sees the card', (await resGet(mgr, two.id)).status === 200);
@@ -260,4 +260,27 @@ t('kit number can be cleared', (await call(m2,'/api/cards/kit-number',{id:two.id
 await env.DB.prepare("UPDATE claims SET status = 'rejected' WHERE user_id = '501'").run();
 t('revoking claim removes public portrait', !(await (await W('/api/cards/portraits')).json()).portraits['test-player']);
 t('revoking claim blocks public image URL', (await W(`/api/cards/portraits?id=${two.id}`)).status === 404);
+// Owner controls cover linked members and players without a site account.
+const player = (await import('./mock.mjs')).siteJson('players').find(p => p.home);
+const player2 = (await import('./mock.mjs')).siteJson('players').find(p => p.k !== player.k);
+t('members cannot browse owner upload archive', (await call(m1, '/api/cards/owner/requests')).s === 403);
+t('managers cannot submit for another player', (await reqUp(mgr, `targetPlayer=${encodeURIComponent(player.k)}&avatar=0&portrait=1`, JPG())).s === 403);
+t('unknown owner target rejected', (await reqUp(owner, 'targetPlayer=missing&avatar=0&portrait=1', JPG())).s === 404);
+const owned = await reqUp(owner, `targetPlayer=${encodeURIComponent(player.k)}&avatar=0&portrait=1&kitNumber=15`, JPG());
+t('owner can submit for an unclaimed player', owned.s === 200);
+const ownerList = (await call(owner, '/api/cards/owner/requests')).d.requests;
+const ownerRequest = ownerList.find(r => r.player === player.k);
+t('owner archive includes source photo and target', ownerRequest.hasPhoto && ownerRequest.targetPlayer === player.k);
+t('owner can submit another player in the same month', (await reqUp(owner, `targetPlayer=${encodeURIComponent(player2.k)}&avatar=0&portrait=1`, JPG())).s === 200);
+const ownerPhoto = await W(`/api/cards/photo/${ownerRequest.id}`, {headers:{Authorization:'Bearer '+owner}});
+t('owner can download the submitted original', ownerPhoto.status === 200);
+t('guest cannot download source photo', (await W(`/api/cards/photo/${ownerRequest.id}`)).status === 401);
+t('another member cannot download owner-submitted photo', (await W(`/api/cards/photo/${ownerRequest.id}`, {headers:{Authorization:'Bearer '+m1}})).status === 404);
+await env.DB.prepare("UPDATE card_requests SET status = 'done', published = 1, portrait_key = ? WHERE id = ?").bind(done2.result_key, ownerRequest.id).run();
+t('owner-published unclaimed player portrait is public', (await (await W('/api/cards/portraits')).json()).portraits[player.k].id === ownerRequest.id);
+t('manager cannot revoke player artwork', (await call(mgr,'/api/cards/owner/revoke',{id:ownerRequest.id})).s === 403);
+t('owner revokes artwork', (await call(owner,'/api/cards/owner/revoke',{id:ownerRequest.id})).s === 200);
+t('revocation removes public player artwork', !(await (await W('/api/cards/portraits')).json()).portraits[player.k]);
+t('revocation retains uploaded photo for private inspection', (await row(ownerRequest.id)).photo_key !== '');
+t('owner can resubmit after revocation in same month', (await reqUp(owner, `targetPlayer=${encodeURIComponent(player.k)}&avatar=0&portrait=1`, JPG())).s === 200);
 done();

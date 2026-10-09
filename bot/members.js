@@ -425,7 +425,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)
     if (ctx?.waitUntil) ctx.waitUntil(seen); else await seen;
     if (url.pathname === '/api/feed/upload' && request.method === 'POST') return cors(env, await mediaUploadRoute(request, me, env, url)); // P6.1b – raw file body
-    if (url.pathname === '/api/cards/request' && request.method === 'POST') return cors(env, await cardRequestUpload(request, me, env, url, log)); // Card Studio – member photo, raw body
+    if (url.pathname === '/api/cards/request' && request.method === 'POST') return cors(env, await cardRequestUpload(request, me, env, url, log, loadSite)); // Card Studio – member photo, raw body
     if (url.pathname.startsWith('/api/cards/photo/') && request.method === 'GET') return cors(env, await cardPhoto(request, me, env, url.pathname.split('/').pop())); // requester or manager only
     if (url.pathname.startsWith('/api/cards/result/') && request.method === 'GET') return cors(env, await cardResult(request, me, env, url.pathname.split('/').pop())); // the finished card: requester or manager only
     if (url.pathname === '/api/cards/templates/upload' && request.method === 'POST') return cors(env, await cardTemplateUpload(request, me, env, url, log)); // Card Studio – raw image body
