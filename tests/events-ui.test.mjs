@@ -23,7 +23,7 @@ t('Dugout hints: club + last-5 slots and a coach\'s note picker, kept across rep
 {
   const cfg = JSON.parse(read('config.json'));
   const gold = read('web/hubgold.js'), hub = read('web/hub.js'), app2 = read('web/app.js'), build = read('scripts/build.mjs');
-  t('hubGold ships as an owner flag', cfg.features.hubGold === 'owner');
+  t('hubGold is on for members', cfg.features.hubGold === 'members');
   t('hub.js only adds the moved rooms and the gold layout when ctx.gold', /\(!r\.gold \|\| ctx\.gold\)/.test(hub) && /ctx\.gold && window\.NXHubGold/.test(hub));
   t('hubgold.js: locker is a card with a door, entrance skips under reduced motion, no burner room', /hubg-lockercard/.test(gold) && /hubg-door-card/.test(gold) && /reduced\(\) \|\| seen/.test(gold) && !/burner/i.test(gold + hub));
   t('moved nav links hidden by hubGold; burners stay in the nav', ['docs', 'playstyle', 'messages', 'builder', 'probuilds'].every((id) => new RegExp(`moved: true, id: '${id}'`).test(build)) && !/moved: true, id: 'burners'/.test(build) && /flagOn\('hubGold', role\)\) \$\$\('\[data-hubmove\]'\)/.test(app2));
