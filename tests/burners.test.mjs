@@ -71,7 +71,7 @@ const BOARD = [
 let siteData = null; // when set, the site's api/opponents.json + clubs.json answer; otherwise 404 so the EA fallback is exercised
 globalThis.fetch = async (url, init = {}) => {
   url = String(url);
-  if (/\/api\/(opponents|clubs)\.json/.test(url)) return siteData ? Response.json(siteData[/opponents/.test(url) ? 'opponents' : 'clubs']) : new Response('nope', { status: 404 });
+  if (/\/api\/(opponents|clubs|linked)\.json/.test(url)) return siteData ? Response.json(siteData[/opponents/.test(url) ? 'opponents' : /linked/.test(url) ? 'linked' : 'clubs'] ?? []) : new Response('nope', { status: 404 });
   if (url.includes('proclubs.ea.com/api/fc/allTimeLeaderboard/search')) {
     const q = new URL(url).searchParams.get('clubName').toLowerCase();
     return Response.json(BOARD.filter((c) => c.clubInfo.name.toLowerCase().includes(q)));
@@ -120,11 +120,16 @@ try {
   globalThis.fetch = async (url, init = {}) => (String(url).includes('proclubs.ea.com') ? new Response('blocked', { status: 403 }) : eaDown(url, init));
   siteData = {
     opponents: [{ id: '555111', n: 'Sweaty Burner FC', cr: '77', ts: Math.floor(Date.now() / 1000) - 600, type: 'friendlyMatch', res: 'W', gf: 5, ga: 1 }, { id: '555222', n: 'Other Side', cr: null, ts: Math.floor(Date.now() / 1000) - 99999, type: 'leagueMatch', res: 'L', gf: 0, ga: 2 }],
+    linked: [{ id: '777001', n: 'Side Hustle FC', cr: '5', p: ['MrMike', 'Ringerr', 'oKaede-', 'Jez'] }, { id: '777002', n: 'Alt Club', cr: null, p: ['Jez'] }],
     clubs: [{ id: '555111', n: 'Sweaty Burner FC', t: 'discovered' }, { id: '555333', n: 'Sweaty Second', t: 'discovered', cr: 'https://x/crests/256x256/l66.png' }],
   };
   await slash(MGR, 'recent');
+  const linkedRec = await settle();
+  t('recent lists the clubs our players are also in (not opponents), most shared players first, with who', linkedRec.components[0].components[0].options.map((o) => o.value).join() === '777001,777002'
+    && linkedRec.embeds[0].description.includes('MrMike, Ringerr, oKaede- +1') && /also in/.test(linkedRec.embeds[0].title));
+  await slash(MGR, 'search');
   const siteRec = (await settle()).components[0].components[0];
-  t('EA blocked: recent still lists the clubs NOREX just played, from site data', siteRec.options.map((o) => o.value).join() === '555111,555222' && /won 5–1 · Friendly/.test(siteRec.options[0].description));
+  t('EA blocked: search with no name still lists the clubs NOREX just faced, from site data', siteRec.options.map((o) => o.value).join() === '555111,555222' && /won 5–1 · Friendly/.test(siteRec.options[0].description));
   await slash(MGR, 'search', 'sweaty');
   const siteFound = await settle();
   t('EA blocked: name search finds clubs in the site data, with their crest', siteFound.components[0].components[0].options.length === 2 && siteFound.embeds[0].description.includes('Sweaty Burner FC') && siteFound.embeds[0].description.includes('Sweaty Second'));

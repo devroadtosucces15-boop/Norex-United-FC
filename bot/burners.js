@@ -2,7 +2,8 @@
 // scripts/burners-page.mjs → site/burners.html).
 //
 //   /burner search [club]  managers: ask EA for clubs matching a name (or an ID), pick one from a menu → tracked
-//   /burner recent         managers: opponents from NOREX's latest games (all modes) in a pick menu – no typing
+//   /burner recent         managers: clubs our own players are also in (linked by gamertag) in a pick menu – no typing;
+//                          /burner search with no name lists the clubs NOREX has faced instead
 //   /burner track  <club>  managers: track straight away by exact name or ID (falls back to the menu if unsure)
 //   /burner list           managers: tracked clubs with their record so far
 //   /burner remove         managers: menu to stop tracking one
@@ -48,6 +49,14 @@ async function siteClubs(loadSite) {
   for (const c of Array.isArray(idx) ? idx : []) if (c?.id && c.n) clubs.set(String(c.id), { id: String(c.id), name: c.n, crest: crestOf(c.cr), fromSite: true });
   for (const o of Array.isArray(opp) ? opp : []) if (o?.id && o.n) clubs.set(String(o.id), { id: String(o.id), name: o.n, crest: o.cr ?? clubs.get(String(o.id))?.crest ?? null, fromSite: true });
   return { clubs, opp: Array.isArray(opp) ? opp : [] };
+}
+
+// Clubs our own players are also in (the crawl links a club when one of NOREX's gamertags is on its roster) → api/linked.json
+// [{ id, n, cr, p: [gamertags] }], most shared players first.
+export async function linkedClubs(loadSite) {
+  const list = loadSite ? await Promise.resolve().then(() => loadSite('linked')).catch(() => null) : null;
+  return (Array.isArray(list) ? list : []).filter((c) => c?.id && c.n && c.p?.length)
+    .map((c) => ({ id: String(c.id), name: c.n, crest: c.cr ?? null, players: c.p.map(String) }));
 }
 
 // ---------- EA search ----------
@@ -166,6 +175,24 @@ async function recentBody(env, opps) {
   };
 }
 
+// Clubs our players are also in → an embed + the same pick menu (norex:bn:pick), already-tracked clubs ticked.
+async function linkedBody(env, clubs) {
+  const have = new Set((await all(env, 'SELECT club_id FROM burner_clubs WHERE active = 1')).map((r) => r.club_id));
+  const who = (c) => `${c.players.slice(0, 3).join(', ')}${c.players.length > 3 ? ` +${c.players.length - 3}` : ''}`;
+  const list = clubs.slice(0, 25);
+  return {
+    embeds: [{
+      title: `🔗 ${list.length} club${list.length === 1 ? '' : 's'} our players are also in`, color: RED,
+      description: list.map((c) => `${have.has(c.id) ? '✅' : '🔥'} **${c.name}** · \`${c.id}\` · ${who(c)}`).join('\n').slice(0, 4000),
+      footer: { text: 'Pick the burner below – ✅ = already tracked · /burner search with no name lists clubs we have faced' },
+    }],
+    components: [{ type: 1, components: [{
+      type: 3, custom_id: 'norex:bn:pick', placeholder: '🔥 Pick the burner to track', min_values: 1, max_values: 1,
+      options: list.map((c) => ({ label: c.name.slice(0, 100), value: c.id, description: `${c.id} · ${who(c)}`.slice(0, 100), emoji: { name: have.has(c.id) ? '✅' : '🔥' } })),
+    }] }],
+  };
+}
+
 const removeMenu = (rows) => ({ type: 1, components: [{
   type: 3, custom_id: 'norex:bn:rm', placeholder: '🗑️ Stop tracking…', min_values: 1, max_values: 1,
   options: rows.map((r) => ({ label: r.name.slice(0, 100), value: r.club_id, description: `club ${r.club_id}`, emoji: { name: '🗑️' } })),
@@ -195,7 +222,10 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
   // `recent`, or `search` with no name: dropdown of the clubs NOREX just played.
   if (sub?.name === 'recent' || (sub?.name === 'search' && !q)) {
     ctx.waitUntil((async () => {
-      const body = await recentOpponents(env.HOME_CLUB_ID || HOME_CLUB, loadSite).then((o) => recentBody(env, o)).catch((e) => ({ content: `⚠️ Could not reach EA: ${e.message}` }));
+      const body = await (async () => {
+        if (sub.name === 'recent') { const linked = await linkedClubs(loadSite); if (linked.length) return linkedBody(env, linked); }
+        return recentBody(env, await recentOpponents(env.HOME_CLUB_ID || HOME_CLUB, loadSite));
+      })().catch((e) => ({ content: `⚠️ Could not load the club list: ${e.message}` }));
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ allowed_mentions: { parse: [] }, ...body }),
       }).catch((e) => console.log('burner reply failed', e.message));

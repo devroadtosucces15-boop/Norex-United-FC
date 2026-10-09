@@ -1305,6 +1305,11 @@ write('api/clubs.json', JSON.stringify([...clubs.values()].map((c) => ({ id: c.i
     seenOpp.set(o, { id: String(o), n: clubName(o), cr: clubKit(o)?.crestAssetId ? String(clubKit(o).crestAssetId) : null, ts: num(m.timestamp), type: m.matchType ?? 'leagueMatch', res: result(m.clubs[homeId]), gf: num(m.clubs[homeId].goals), ga: num(m.clubs[o].goals) });
   }
   write('api/opponents.json', JSON.stringify([...seenOpp.values()].slice(0, 60)));
+  // …and the clubs one of NOREX's gamertags is also on (the crawl's "linked" tier) – what /burner recent lists
+  write('api/linked.json', JSON.stringify(Object.entries(state.clubs)
+    .filter(([id, c]) => id !== String(homeId) && Array.isArray(c.linkedPlayers) && c.linkedPlayers.length)
+    .map(([id, c]) => ({ id: String(id), n: clubName(id), cr: clubKit(id)?.crestAssetId ? String(clubKit(id).crestAssetId) : null, p: c.linkedPlayers }))
+    .sort((a, b) => b.p.length - a.p.length || a.n.localeCompare(b.n)).slice(0, 60)));
 }
 write('api/rankings.json', JSON.stringify(buildRankings(readJson(path.join(DATA, 'world.json'), null), homeId, num(homeC?.overall?.skillRating) || null)));
 // P11.16 /history: League-only head-to-head record per opponent, same numbers as the Stats Centre's own
