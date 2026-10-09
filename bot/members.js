@@ -46,6 +46,7 @@ import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { crawlRoute } from './crawl.js';
 import { burnersRoute, burnersRelay } from './burners.js';
+import { issueSave } from './issues.js';
 import { clubLookup } from './clublookup.js';
 import { awardPoints, pointsRoute } from './points.js';
 import { myAvatarCard } from './avatarcard.js';
@@ -567,6 +568,10 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (p === '/api/insights/h2h' && method === 'POST') { // BE9 – record vs any opponent, written on first view
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
     return json(await statH2hRoute(env, loadSite, me, body));
+  }
+  if (p === '/api/issues' && method === 'POST') { // owner issue tool: one pinned note per call
+    if (!can(me, 'issues.report') || !flagOn(env, me, 'issueTool')) return fail('Owner only.', 403);
+    return json(await issueSave(env, me, body));
   }
   if (p === '/api/insights/feedback' && method === 'POST') { // BE9 – 👍/👎 on a stat insight
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);

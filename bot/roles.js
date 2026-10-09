@@ -22,6 +22,7 @@ export const PERMS = {
   'profiles.view': 'member', // P2.1 – hover cards + member profile pages
   'availability.set': 'member',
   'vote.motm': 'member',
+  'issues.report': 'owner', // the owner's pin-and-describe issue tool (web/report.js)
   // Manager portal (built)
   'portal.view': 'manager',
   'claims.decide': 'manager',

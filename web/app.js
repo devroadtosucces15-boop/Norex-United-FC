@@ -1161,6 +1161,16 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
   if (nextEl && flagOn('events', baseRole || 'guest')) loadEvents().then(() => NXEvents.next(nextEl)).catch(() => {});
   // ---------- 🎬 highlight of the week on the home page (P6.2) · 🟢 who's online (P6.4) – assets/hotw.js, assets/presence.js ----------
   const loadAsset = (file, global) => new Promise((ok, no) => (window[global] ? ok() : document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/${file}`, onload: ok, onerror: no }))));
+  // ---------- 🐞 owner issue tool (flag issueTool) – every page and sub-tab; keeps working while previewing as another role ----------
+  // Its uploads skip the x-view-as header so a "Preview as Member" session can still file notes as the real owner.
+  if (session && realRole === 'owner' && flagOn('issueTool', 'owner')) {
+    const post = async (path, body) => {
+      const r = await fetch(MAPI + path, { method: 'POST', cache: 'no-store', headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error(`Error ${r.status}`);
+      return r.json();
+    };
+    loadAsset('report.js', 'NXReport').then(() => NXReport.init({ call: post, toast, role: realRole, viewAs: previewAs, user: { u: session.u, n: session.n } })).catch(() => {});
+  }
   const hotwEl = $('[data-hotw]');
   if (hotwEl && flagOn('hotw', baseRole || 'guest')) loadAsset('hotw.js', 'NXHotw').then(() => NXHotw.home(hotwEl)).catch(() => {});
   // ---------- 📰 public feed posts on the home page (P6.1c) – assets/feed-public.js ----------
