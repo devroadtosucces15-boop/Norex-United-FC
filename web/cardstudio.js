@@ -50,13 +50,13 @@ ${t.locked ? '<span class="cs-redeem" title="Redeeming with points is coming soo
     const r = mine.request;
     const [icon, label] = r ? STATUS[r.status] || ['•', r.status] : [];
     const status = r ? `<div class="cs-status ${r.status}"><span class="cs-ico">${icon}</span><div><b>${esc(label)}</b><br><span class="muted">${esc(r.bg || '—')} + ${esc(r.pose || '—')} · ${esc(r.month)}${r.note ? ` · “${esc(r.note)}”` : ''}</span></div>${['pending', 'approved', 'generating', 'failed'].includes(r.status) ? `<img class="cs-photo" data-photo="${r.id}" alt="Your photo">` : ''}${r.status === 'pending' ? '<button type="button" class="btn ghost small" id="cs-cancel">Cancel</button>' : ''}</div>` : '';
-    const card = r?.status === 'done' && (r.hasResult || r.hasPortrait) ? `<div class="cs-done">${r.hasResult ? `<img class="cs-card" data-result="${r.id}" alt="Cinematic avatar"><a class="btn small" data-save-card download="norex-avatar-${esc(r.month)}.png" hidden>⬇ Save avatar</a>` : ''}${r.hasPortrait ? `<img class="cs-card" data-portrait="${r.id}" alt="Website portrait"><a class="btn small" data-save-card download="norex-portrait-${esc(r.month)}.png" hidden>⬇ Save portrait</a><canvas class="cs-card cs-live-card" data-card-preview="${r.id}" aria-label="Player card with live statistics"></canvas><button type="button" class="btn small" data-export-live="${r.id}">⬇ Export player card</button><p class="muted small">Card statistics reflect the latest loaded club data; refresh to update.</p>` : ''}</div>` : '';
+    const card = r?.status === 'done' && (r.hasResult || r.hasPortrait) ? `<div class="cs-done">${r.hasResult ? `<img class="cs-card" data-result="${r.id}" alt="Cinematic avatar"><a class="btn small" data-save-card download="norex-avatar-${esc(r.month)}.png" hidden>⬇ Save avatar</a>` : ''}${r.hasPortrait ? `<img class="cs-card" data-portrait="${r.id}" alt="Website portrait"><a class="btn small" data-save-card download="norex-portrait-${esc(r.month)}.png" hidden>⬇ Save portrait</a><form class="cs-form" id="cs-kit"><label>Kit number (optional)<input name="kitNumber" type="number" min="0" max="99" step="1" value="${esc(r.kitNumber)}" placeholder="0–99"></label><button class="btn small" type="submit">Save kit number</button></form><canvas class="cs-card cs-live-card" data-card-preview="${r.id}" aria-label="Player card with live statistics"></canvas><button type="button" class="btn small" data-export-live="${r.id}">⬇ Export player card</button><p class="muted small">Card statistics reflect the latest loaded club data; refresh to update.</p>` : ''}</div>` : '';
     const open = !r || r.status === 'rejected';
     return `<section class="cs-sec cs-req"><h4>📸 Request my card</h4>
 <p class="muted">One request per month (${esc(month)}). Upload a photo and choose your outputs. Background and pose templates are only required for a cinematic avatar. A manager will approve the request.</p>
 ${status}${card}
 ${open ? `<form id="cs-request" class="cs-form"><label class="cs-file"><input type="file" name="photo" accept="image/png,image/jpeg,image/webp" required><span>📷 Choose photo</span></label>
-<img class="cs-photo" id="cs-preview" alt="" hidden><p class="muted small">No templates yet? Uncheck Cinematic avatar to request the standard website portrait immediately.</p><label><input type="checkbox" name="avatar" checked> Cinematic avatar</label><label><input type="checkbox" name="portrait" checked> Website portrait</label><button class="btn" type="submit" disabled>📨 Send request</button></form>${r?.status === 'rejected' ? '<p class="muted">Your last photo was not approved – sending a new one does not use up your month.</p>' : ''}` : ''}</section>`;
+<label>Kit number (optional)<input name="kitNumber" type="number" min="0" max="99" step="1" placeholder="0–99"></label><img class="cs-photo" id="cs-preview" alt="" hidden><p class="muted small">No templates yet? Uncheck Cinematic avatar to request the standard website portrait immediately.</p><label><input type="checkbox" name="avatar" checked> Cinematic avatar</label><label><input type="checkbox" name="portrait" checked> Website portrait</label><button class="btn" type="submit" disabled>📨 Send request</button></form>${r?.status === 'rejected' ? '<p class="muted">Your last photo was not approved – sending a new one does not use up your month.</p>' : ''}` : ''}</section>`;
   };
 
   const queueHtml = (list) => {
@@ -111,6 +111,14 @@ ${gallery('Pose', '💪', d.poses.filter((t) => t.active !== false), 'pose', sel
 <p class="cs-pick muted" id="cs-pick"></p>
 ${requestHtml(mine, mine.month)}</div>
 ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="card cs-wrap">${adminHtml(d)}</div>` : ''}`;
+      const kitForm = $('#cs-kit', el);
+      if (kitForm) kitForm.onsubmit = async e => {
+        e.preventDefault(); const btn=kitForm.querySelector('button'); btn.disabled=true;
+        try {
+          await ctx.call('/api/cards/kit-number', { id:mine.request.id, kitNumber:kitForm.kitNumber.value === '' ? null : Number(kitForm.kitNumber.value) });
+          await window.NXPlayerPortraits?.refresh(); ctx.toast('Kit number saved'); load();
+        } catch(e) {ctx.toast(e.message,true); btn.disabled=false;}
+      };
       loadPhotos(el, ctx);
       if (mine.request?.hasPortrait) {
         loadComposer().then(async () => {
@@ -120,7 +128,7 @@ ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="car
           if (!portrait.complete || !portrait.naturalWidth) await new Promise(resolve => { portrait.addEventListener('load', resolve, {once:true}); portrait.addEventListener('error', resolve, {once:true}); });
           if (!portrait.naturalWidth) return;
           const player = NXCardComposer.getPlayer(ctx);
-          await NXCardComposer.draw(canvas, portrait.src, player, `${BASE}assets/crest.png`);
+          await NXCardComposer.draw(canvas, portrait.src, player, `${BASE}assets/crest.png`, { kitNumber: mine.request.kitNumber });
           const exportBtn = $(`[data-export-live="${mine.request.id}"]`, el);
           if (exportBtn) exportBtn.onclick = () => canvas.toBlob(blob => { if (!blob) return; const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'norex-player-card.png'; a.click(); setTimeout(() => URL.revokeObjectURL(u), 30000); }, 'image/png');
         }).catch(err => ctx.toast('Card preview unavailable: ' + err.message, true));
@@ -163,7 +171,7 @@ ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="car
           const btn = rform.querySelector('button');
           btn.disabled = true;
           try {
-            const r = await fetch(`${ctx.api}/api/cards/request?bg=${sel.bg}&pose=${sel.pose}&avatar=${rform.avatar.checked ? 1 : 0}&portrait=${rform.portrait.checked ? 1 : 0}`, { method: 'POST', headers: { Authorization: `Bearer ${ctx.token}`, 'Content-Type': photo.type || 'image/jpeg' }, body: photo });
+            const r = await fetch(`${ctx.api}/api/cards/request?bg=${sel.bg}&pose=${sel.pose}&avatar=${rform.avatar.checked ? 1 : 0}&portrait=${rform.portrait.checked ? 1 : 0}&kitNumber=${encodeURIComponent(rform.kitNumber.value)}`, { method: 'POST', headers: { Authorization: `Bearer ${ctx.token}`, 'Content-Type': photo.type || 'image/jpeg' }, body: photo });
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j.error || `Error ${r.status}`);
             photo = null;
@@ -181,7 +189,7 @@ ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="car
           try { await ctx.call('/api/cards/requests/decide', { id: Number(row.dataset.req), decision: b.dataset.decide, note }); ctx.toast(b.dataset.decide === 'approve' ? 'Approved' : 'Rejected'); load(); } catch (err) { ctx.toast(err.message, true); $$('button', row).forEach((x) => { x.disabled = false; }); }
         };
       });
-      $$('[data-review]', el).forEach((b) => { b.onclick = async () => { const id = Number(b.closest('[data-req]').dataset.req); b.disabled = true; try { await ctx.call('/api/cards/requests/review', { id, decision: b.dataset.review }); ctx.toast(b.dataset.review === 'publish' ? 'Published' : 'Regeneration queued'); load(); } catch (e) { ctx.toast(e.message, true); b.disabled = false; } }; });
+      $$('[data-review]', el).forEach((b) => { b.onclick = async () => { const id = Number(b.closest('[data-req]').dataset.req); b.disabled = true; try { await ctx.call('/api/cards/requests/review', { id, decision: b.dataset.review }); ctx.toast(b.dataset.review === 'publish' ? 'Published' : 'Regeneration queued'); window.NXPlayerPortraits?.refresh(); load(); } catch (e) { ctx.toast(e.message, true); b.disabled = false; } }; });
       $$('[data-retry]', el).forEach((b) => {
         b.onclick = async () => { b.disabled = true; try { await ctx.call('/api/cards/requests/retry', { id: Number(b.dataset.retry) }); ctx.toast('Retrying'); load(); } catch (err) { ctx.toast(err.message, true); b.disabled = false; } };
       });

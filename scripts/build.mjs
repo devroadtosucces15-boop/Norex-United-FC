@@ -276,7 +276,7 @@ function futCard(pl, base, { big = false } = {}) {
 <span class="fut-shine"></span>
 ${au ? `<span class="fut-aura" aria-label="${au === 'hot' ? 'On a hot streak' : 'In a cold spell'}">${au === 'hot' ? '🔥' : '🧊'}</span>` : ''}
 <span class="fut-top"><b class="fut-ovr">${pl.ovr || '–'}</b><span class="fut-pos">${esc(pl.pos || '—')}</span>${pl.mainClub ? crest(pl.mainClub, 28, base, 'fut-crest') : ''}</span>
-<span class="fut-face">${SILHOUETTE}</span>
+<span class="fut-face" data-card-player="${esc(pl.key)}">${SILHOUETTE}</span>
 <span class="fut-name">${esc(pl.name)}</span>
 ${pl.tag ? `<span class="fut-tag">${esc(pl.tag)}</span>` : ''}
 <span class="fut-stats">${stats.map(([k, v]) => `<span><b>${esc(v)}</b>${k}</span>`).join('')}</span>
@@ -540,7 +540,7 @@ ${CHANNELS.length && MEMBER_API && !hub ? '<div class="live-bar" hidden></div>' 
 <div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players, clubs, pages…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
 ${hub ? '' : tabBar(base, activeGroup)}
-<script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script><script src="${base}assets/pwa.js" defer></script></body></html>`;
+<script src="${base}assets/ui.js" defer></script><script src="${base}assets/cardcomposer.js" defer></script><script src="${base}assets/playerportraits.js" defer></script><script src="${base}assets/app.js" defer></script><script src="${base}assets/pwa.js" defer></script></body></html>`;
 }
 
 // ---------- club page ----------

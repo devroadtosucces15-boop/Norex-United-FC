@@ -25,39 +25,67 @@
     for(const i of queue) a[i*4+3]=0;
     c.putImageData(frame,0,0); return canvas;
   }
-  function fit(ctx, img, x, y, w, h) {
-    const ratio = Math.max(w / img.width, h / img.height);
-    const iw = img.width * ratio, ih = img.height * ratio;
-    ctx.drawImage(img, x + (w-iw)/2, y + (h-ih)/2, iw, ih);
+  // Crop to visible subject bounds before fitting, keeping head and shoulders intact.
+  async function prepare(src, kitNumber) {
+    const raw = await image(src), cut = isolate(raw);
+    const cv = document.createElement('canvas'); cv.width = cut.width; cv.height = cut.height;
+    const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(cut, 0, 0);
+    const a = g.getImageData(0, 0, cv.width, cv.height).data;
+    let left = cv.width, top = cv.height, right = 0, bottom = 0;
+    for (let y=0; y<cv.height; y++) for (let x=0; x<cv.width; x++) if (a[(y*cv.width+x)*4+3]>24) {
+      left=Math.min(left,x); top=Math.min(top,y); right=Math.max(right,x); bottom=Math.max(bottom,y);
+    }
+    const out = document.createElement('canvas');
+    out.width = Math.max(1,right-left+1); out.height = Math.max(1,bottom-top+1);
+    const c = out.getContext('2d'); c.drawImage(cv,left,top,out.width,out.height,0,0,out.width,out.height);
+    if (kitNumber != null && kitNumber !== '' && Number.isInteger(Number(kitNumber)) && Number(kitNumber)>=0 && Number(kitNumber)<=99) {
+      c.textAlign='center'; c.textBaseline='middle'; c.font=`700 ${Math.round(out.height*.085)}px Oswald, Impact, sans-serif`;
+      c.lineWidth=Math.max(2,out.height*.005); c.strokeStyle='#16191d'; c.fillStyle='#fff';
+      c.strokeText(String(Number(kitNumber)),out.width*.5,out.height*.82);
+      c.fillText(String(Number(kitNumber)),out.width*.5,out.height*.82);
+    }
+    return out;
   }
-  async function draw(canvas, portraitUrl, player, crestUrl) {
+  function fit(ctx, img, x, y, w, h) {
+    const ratio = Math.min(w / img.width, h / img.height);
+    const iw = img.width * ratio, ih = img.height * ratio;
+    ctx.drawImage(img, x + (w-iw)/2, y+h-ih, iw, ih);
+  }
+  async function draw(canvas, portraitUrl, player, crestUrl, options = {}) {
+    await document.fonts?.ready;
     canvas.width = WIDTH; canvas.height = HEIGHT;
     const c = canvas.getContext('2d');
-    const gold = c.createLinearGradient(0,0,WIDTH,HEIGHT);
-    gold.addColorStop(0,'#ffe6a0'); gold.addColorStop(.55,'#d6b05a'); gold.addColorStop(1,'#b58b36');
-    c.fillStyle = gold;
-    c.beginPath();
-    c.moveTo(52,18); c.lineTo(548,18); c.lineTo(584,52); c.lineTo(584,724); c.lineTo(300,828); c.lineTo(16,724); c.lineTo(16,52); c.closePath(); c.fill();
-    c.strokeStyle = '#f9e5a7'; c.lineWidth = 5; c.stroke();
-    c.fillStyle = '#302107';
-    c.font = 'bold 98px system-ui'; c.fillText(safe(player?.ovr),70,153);
-    c.font = 'bold 42px system-ui'; c.fillText(safe(player?.pos),78,203);
-    try { const crest = await image(crestUrl); c.drawImage(crest,475,90,65,75); } catch {}
-    c.save(); c.beginPath(); c.rect(110,208,380,390); c.clip();
-    const portrait = isolate(await image(portraitUrl)); fit(c,portrait,110,208,380,390);
+    // Read the site's canonical tier tokens; never introduce a second card theme.
+    const tier = player?.ovr>=88?'icon':player?.ovr>=80?'gold':player?.ovr>=70?'silver':player?.ovr>0?'bronze':'plain';
+    const probe = Object.assign(document.createElement('span'), {className:'tier-'+tier});
+    probe.hidden=true; document.body.append(probe);
+    const styles = getComputedStyle(probe), token = k => styles.getPropertyValue(k).trim();
+    const t1=token('--t1'), t2=token('--t2'), tx=token('--tx'), edge=token('--edge'); probe.remove();
+    const gradient = c.createLinearGradient(0,0,WIDTH*.34,HEIGHT); gradient.addColorStop(0,t1); gradient.addColorStop(1,t2);
+    c.beginPath(); [[0,.04],[.08,0],[.92,0],[1,.04],[1,.88],[.5,1],[0,.88]].forEach(([x,y],i)=>c[i?'lineTo':'moveTo'](x*WIDTH,y*HEIGHT)); c.closePath();
+    c.fillStyle=gradient; c.fill(); c.strokeStyle=edge; c.lineWidth=4; c.stroke(); c.save(); c.clip();
+    c.strokeStyle='rgba(255,255,255,.05)'; c.lineWidth=2;
+    for(let x=-HEIGHT;x<WIDTH+HEIGHT;x+=28){ c.beginPath(); c.moveTo(x,HEIGHT); c.lineTo(x+HEIGHT*.47,0); c.stroke(); }
     c.restore();
-    c.fillStyle = '#302107'; c.textAlign = 'center'; c.font = 'bold 43px system-ui';
-    const name = safe(player?.n,'NOREX PLAYER').slice(0,24);
-    let size = 43; while (c.measureText(name).width > 475 && size > 19) { c.font = 'bold ' + (--size) + 'px system-ui'; }
-    c.fillText(name,300,654);
-    const stats = [[safe(player?.s?.g),'GLS'],[safe(player?.s?.a),'AST'],[player?.s?.r ? Number(player.s.r).toFixed(1) : '—','RAT']];
+    c.fillStyle = tx;
+    c.font = '700 98px Oswald, Impact, sans-serif'; c.fillText(safe(player?.ovr),48,127);
+    c.font = '600 42px Oswald, Impact, sans-serif'; c.fillText(safe(player?.pos),50,177);
+    try { const crest = await image(crestUrl); const h=75; c.drawImage(crest,WIDTH-48-h*crest.width/crest.height,65,h*crest.width/crest.height,h); } catch {}
+    c.save(); c.beginPath(); c.rect(48,186,504,362); c.clip();
+    const portrait = options.prepared ? await image(portraitUrl) : await prepare(portraitUrl,options.kitNumber);
+    fit(c,portrait,48,186,504,362); c.restore();
+    c.fillStyle = tx; c.textAlign = 'center'; c.font = '700 43px Oswald, Impact, sans-serif';
+    const name = safe(player?.n,'NOREX PLAYER').toUpperCase().slice(0,24);
+    let size = 43; while (c.measureText(name).width > 475 && size > 19) { c.font = 'bold ' + (--size) + 'px Oswald, Impact, sans-serif'; }
+    c.fillText(name.toUpperCase(),300,598);
+    const stats = [[safe(player?.s?.g),'GLS'],[safe(player?.s?.a),'AST'],[player?.s?.r ? Number(player.s.r).toFixed(1) : '—','RAT'],[player?.s?.p == null ? '—' : player.s.p+'%','PAS'],[player?.s?.t == null ? '—' : player.s.t+'%','TKL'],[safe(player?.s?.gp),'GP']];
     stats.forEach(([value,label],i) => {
-      const x = 150+i*150;
-      c.font = 'bold 45px system-ui'; c.fillText(value,x,724);
-      c.font = '25px system-ui'; c.fillText(label,x,754);
+      const x = 150+(i%3)*150, y = 662+Math.floor(i/3)*83;
+      c.font = '700 45px Oswald, Impact, sans-serif'; c.fillText(value,x,y);
+      c.font = '500 23px Oswald, Impact, sans-serif'; c.fillText(label,x,y+28);
     });
     c.font = 'bold 19px system-ui'; c.fillText('NOREX UNITED FC',300,798);
     return canvas;
   }
-  window.NXCardComposer = { draw, getPlayer, WIDTH, HEIGHT };
+  window.NXCardComposer = { draw, prepare, getPlayer, WIDTH, HEIGHT };
 })();
