@@ -3,7 +3,7 @@
  "name": "ggs gm",
  "crest": "99160220",
  "trackedAt": "2026-10-09T01:30:33.015Z",
- "fetchedAt": "2026-10-09T18:20:54.381Z",
+ "fetchedAt": "2026-10-09T18:40:52.958Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "ggs gm",
@@ -161,42 +161,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "IM_Trash_Broski",
-   "gamesPlayed": "8",
-   "winRate": "100",
-   "goals": "12",
-   "assists": "8",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "66",
-   "passesMade": "100",
-   "passSuccessRate": "83",
-   "ratingAve": "9.0",
-   "tacklesMade": "7",
-   "tackleSuccessRate": "46",
-   "proName": "WEBO",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "167",
-   "proNationality": "45",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "4",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "1",
-   "prevGoals3": "2",
-   "prevGoals4": "3",
-   "prevGoals5": "2",
-   "prevGoals6": "1",
-   "prevGoals7": "1",
-   "prevGoals8": "2",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "JEZB_11",
    "gamesPlayed": "15",
    "winRate": "93",
@@ -257,17 +221,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "IM_Trash_Broski",
-   "proPos": "25",
-   "gamesPlayed": "89",
-   "goals": "49",
-   "assists": "47",
-   "manOfTheMatch": "16",
-   "ratingAve": "8.0",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "JEZB_11",
    "proPos": "14",
    "gamesPlayed": "244",
@@ -282,7 +235,7 @@
  "roster": {
   "Daniel_Munoz_": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T18:20:54.381Z",
+   "last": "2026-10-09T18:40:52.958Z",
    "active": true,
    "gp": 11,
    "pos": "forward",
@@ -290,27 +243,27 @@
   },
   "Itzyoungdan": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T18:20:54.381Z",
+   "last": "2026-10-09T18:40:52.958Z",
    "active": true,
    "gp": 15,
-   "pos": "forward",
-   "ovr": 83
-  },
-  "IM_Trash_Broski": {
-   "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T18:20:54.381Z",
-   "active": true,
-   "gp": 8,
    "pos": "forward",
    "ovr": 83
   },
   "JEZB_11": {
    "first": "2026-10-09T01:30:33.015Z",
-   "last": "2026-10-09T18:20:54.381Z",
+   "last": "2026-10-09T18:40:52.958Z",
    "active": true,
    "gp": 15,
    "pos": "midfielder",
    "ovr": 82
+  },
+  "IM_Trash_Broski": {
+   "first": "2026-10-09T01:30:33.015Z",
+   "last": "2026-10-09T18:20:54.381Z",
+   "active": false,
+   "gp": 8,
+   "pos": "forward",
+   "ovr": 83
   },
   "itzAldinha27": {
    "first": "2026-10-09T01:30:33.015Z",
