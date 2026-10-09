@@ -522,7 +522,9 @@ button.chip{cursor:pointer}
 /* side cards overlap the front one in screen space at these angles – pointer-events:none keeps hit-testing
    on the actual front card instead of whichever sibling happens to paint on top; dragging still works
    because those clicks fall through to the stage itself */
-.carousel-card:not(.front){opacity:.4;filter:brightness(.55) saturate(.7);pointer-events:none;transform:rotateY(calc(var(--i) * var(--car-step,0deg))) translateZ(var(--car-radius,280px)) scale(.82)}
+.carousel-card:not(.front){opacity:1;filter:brightness(calc(1 - var(--dist,.3) * .62)) saturate(calc(1 - var(--dist,.3) * .35));pointer-events:none;transform:rotateY(calc(var(--i) * var(--car-step,0deg))) translateZ(var(--car-radius,280px)) scale(.88)}
+/* names are never cut short: they wrap, and long ones get smaller (app.js sets --nm) */
+.carousel-front .fut-name{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.05;font-size:var(--nm,16px);display:grid;place-items:center;min-height:2.3em}
 .carousel-flip{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
 .carousel-card.flipped .carousel-flip{transform:rotateY(180deg)}
 /* backface-visibility only hides rendering – the flipped-away face still hit-tests as topmost in some
@@ -1550,3 +1552,8 @@ html.nx-hubin::after{content:'';position:fixed;inset:0;z-index:10000;pointer-eve
   .sheet.sheet-top .acct-menu a,.sheet.sheet-top .acct-out{padding:13px 10px;font-size:15px;white-space:normal;overflow-wrap:anywhere}
   .sheet.sheet-top *{max-width:100%;box-sizing:border-box}
 }
+
+/* hero coin: the crest face is no longer clipped by a circle – it has room to float and is never cut off (the back face keeps its round card) */
+.sh-face.sh-front{overflow:visible;border-radius:0}
+.sh-front .big-crest{max-height:calc(100% - 26px);max-width:calc(100% - 20px);object-fit:contain;animation-duration:7s}
+@keyframes float{50%{transform:translateY(-8px)}}

@@ -549,7 +549,14 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
     }
     front = best;
     let vi = -1;
-    cards.forEach((c) => { if (c.hidden) return; vi++; c.classList.toggle('front', vi === best); });
+    cards.forEach((c) => {
+      if (c.hidden) return;
+      vi++;
+      c.classList.toggle('front', vi === best);
+      // dim by distance from the front card instead of making the far ones see-through
+      const a = ((rot + vi * step) % 360 + 360) % 360;
+      c.style.setProperty('--dist', (Math.min(a, 360 - a) / 180).toFixed(3));
+    });
     if (countEl) countEl.textContent = `Drag to spin · ${best + 1} of ${n}`;
   }
 
@@ -584,6 +591,8 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
       c.className = 'carousel-card';
       c.dataset.group = p.group;
       c.innerHTML = `<div class="carousel-flip"><div class="carousel-front">${p.front}</div><div class="carousel-back">${p.back}</div></div>`;
+      const nm = $('.fut-name', c), len = (nm?.textContent || '').trim().length;
+      if (nm) c.style.setProperty('--nm', `${len <= 10 ? 16 : len <= 14 ? 13.5 : len <= 18 ? 11.5 : 10.5}px`);
       ring.append(c);
       return c;
     });
@@ -607,15 +616,19 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
       dragStart = e.clientX; dragRotStart = rot; moved = false;
       stage.setPointerCapture(e.pointerId);
     });
+    let lastX = 0, lastT = 0, vel = 0;
     stage.addEventListener('pointermove', (e) => {
       if (dragStart == null) return;
       const dx = e.clientX - dragStart;
       if (Math.abs(dx) > 4) moved = true;
+      const now = performance.now();
+      if (lastT && now > lastT) vel = (e.clientX - lastX) / (now - lastT); // px/ms, for the fling on release
+      lastX = e.clientX; lastT = now;
       rot = dragRotStart + dx * 0.4;
       applyRot(false);
       updateFront();
     });
-    const endDrag = () => { if (dragStart == null) return; dragStart = null; const n = visible.length || 1; const st = 360 / n; rot = Math.round(rot / st) * st; applyRot(true); updateFront(); };
+    const endDrag = () => { if (dragStart == null) return; dragStart = null; const n = visible.length || 1; const st = 360 / n; if (moved && !reducedMotion()) rot += Math.max(-1.4, Math.min(1.4, vel)) * 0.4 * 240; vel = 0; lastT = 0; rot = Math.round(rot / st) * st; applyRot(true); updateFront(); };
     stage.addEventListener('pointerup', endDrag);
     stage.addEventListener('pointercancel', endDrag);
     stage.addEventListener('keydown', (e) => {
