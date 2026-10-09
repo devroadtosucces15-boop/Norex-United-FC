@@ -19,15 +19,16 @@ ${t.locked ? '<span class="cs-redeem" title="Redeeming with points is coming soo
   const STATUS = { pending: ['⏳', 'Waiting for a manager'], approved: ['✅', 'Approved – your card is in the queue'], rejected: ['❌', 'Not approved'], generating: ['🎨', 'Your card is being made'], done: ['🏁', 'Ready'], failed: ['⚠️', 'It did not work after 3 tries – a manager has been told'] };
   // Photos are private: fetched with the login token and shown from a blob URL.
   const photoUrls = [];
-  const loadPhotos = (el, ctx) => $$('[data-photo],[data-result]', el).forEach(async (img) => {
-    const card = img.dataset.result !== undefined;
+  const loadPhotos = (el, ctx) => $$('[data-photo],[data-result],[data-portrait]', el).forEach(async (img) => {
+    const card = img.dataset.result !== undefined || img.dataset.portrait !== undefined;
+    const portrait = img.dataset.portrait !== undefined;
     try {
-      const r = await fetch(`${ctx.api}/api/cards/${card ? 'result' : 'photo'}/${card ? img.dataset.result : img.dataset.photo}`, { headers: { Authorization: `Bearer ${ctx.token}` } });
+      const r = await fetch(`${ctx.api}/api/cards/${card ? 'result' : 'photo'}/${card ? (portrait ? img.dataset.portrait : img.dataset.result) : img.dataset.photo}${portrait ? '?kind=portrait' : ''}`, { headers: { Authorization: `Bearer ${ctx.token}` } });
       if (!r.ok) throw new Error();
       const u = URL.createObjectURL(await r.blob());
       photoUrls.push(u);
       img.src = u;
-      const save = $('[data-save-card]', img.closest('.cs-done') || el);
+      const save = card ? img.nextElementSibling : null;
       if (card && save) { save.href = u; save.hidden = false; }
     } catch { img.replaceWith(Object.assign(document.createElement('span'), { className: 'cs-nophoto', textContent: card ? 'Card removed' : 'Photo removed' })); }
   });
@@ -48,13 +49,13 @@ ${t.locked ? '<span class="cs-redeem" title="Redeeming with points is coming soo
     const r = mine.request;
     const [icon, label] = r ? STATUS[r.status] || ['•', r.status] : [];
     const status = r ? `<div class="cs-status ${r.status}"><span class="cs-ico">${icon}</span><div><b>${esc(label)}</b><br><span class="muted">${esc(r.bg || '—')} + ${esc(r.pose || '—')} · ${esc(r.month)}${r.note ? ` · “${esc(r.note)}”` : ''}</span></div>${['pending', 'approved', 'generating', 'failed'].includes(r.status) ? `<img class="cs-photo" data-photo="${r.id}" alt="Your photo">` : ''}${r.status === 'pending' ? '<button type="button" class="btn ghost small" id="cs-cancel">Cancel</button>' : ''}</div>` : '';
-    const card = r?.status === 'done' && r.hasResult ? `<div class="cs-done"><img class="cs-card" data-result="${r.id}" alt="Your club card"><a class="btn small" data-save-card download="norex-card-${esc(r.month)}.png" hidden>⬇ Save my card</a></div>` : '';
+    const card = r?.status === 'done' && (r.hasResult || r.hasPortrait) ? `<div class="cs-done">${r.hasResult ? `<img class="cs-card" data-result="${r.id}" alt="Cinematic avatar"><a class="btn small" data-save-card download="norex-avatar-${esc(r.month)}.png" hidden>⬇ Save avatar</a>` : ''}${r.hasPortrait ? `<img class="cs-card" data-portrait="${r.id}" alt="Website portrait"><a class="btn small" data-save-card download="norex-portrait-${esc(r.month)}.png" hidden>⬇ Save portrait</a>` : ''}</div>` : '';
     const open = !r || r.status === 'rejected';
     return `<section class="cs-sec cs-req"><h4>📸 Request my card</h4>
 <p class="muted">One request per month (${esc(month)}). Pick a background and pose above, add a clear photo of your face, and a manager will approve it.</p>
 ${status}${card}
 ${open ? `<form id="cs-request" class="cs-form"><label class="cs-file"><input type="file" name="photo" accept="image/png,image/jpeg,image/webp" required><span>📷 Choose photo</span></label>
-<img class="cs-photo" id="cs-preview" alt="" hidden><button class="btn" type="submit" disabled>📨 Send request</button></form>${r?.status === 'rejected' ? '<p class="muted">Your last photo was not approved – sending a new one does not use up your month.</p>' : ''}` : ''}</section>`;
+<img class="cs-photo" id="cs-preview" alt="" hidden><label><input type="checkbox" name="avatar" checked> Cinematic avatar</label><label><input type="checkbox" name="portrait" checked> Website portrait</label><button class="btn" type="submit" disabled>📨 Send request</button></form>${r?.status === 'rejected' ? '<p class="muted">Your last photo was not approved – sending a new one does not use up your month.</p>' : ''}` : ''}</section>`;
   };
 
   const queueHtml = (list) => {
@@ -142,11 +143,11 @@ ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="car
         };
         rform.onsubmit = async (e) => {
           e.preventDefault();
-          if (!(sel.bg && sel.pose && photo)) return;
+          if (!(sel.bg && sel.pose && photo && (rform.avatar.checked || rform.portrait.checked))) return;
           const btn = rform.querySelector('button');
           btn.disabled = true;
           try {
-            const r = await fetch(`${ctx.api}/api/cards/request?bg=${sel.bg}&pose=${sel.pose}`, { method: 'POST', headers: { Authorization: `Bearer ${ctx.token}`, 'Content-Type': photo.type || 'image/jpeg' }, body: photo });
+            const r = await fetch(`${ctx.api}/api/cards/request?bg=${sel.bg}&pose=${sel.pose}&avatar=${rform.avatar.checked ? 1 : 0}&portrait=${rform.portrait.checked ? 1 : 0}`, { method: 'POST', headers: { Authorization: `Bearer ${ctx.token}`, 'Content-Type': photo.type || 'image/jpeg' }, body: photo });
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j.error || `Error ${r.status}`);
             photo = null;

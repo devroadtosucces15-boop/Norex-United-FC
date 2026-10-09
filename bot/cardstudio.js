@@ -88,7 +88,7 @@ const dropPhoto = (env, key) => (key && env.MEDIA ? env.MEDIA.delete(key).catch(
 
 const reqView = (r, extra = {}) => ({
   id: r.id, month: r.month, status: r.status, note: r.note, bg: r.bg_name ?? null, pose: r.pose_name ?? null,
-  createdAt: r.created_at, decidedAt: r.decided_at, hasResult: !!r.result_key, attempts: r.attempts, ...extra,
+  createdAt: r.created_at, decidedAt: r.decided_at, hasResult: !!r.result_key, hasPortrait: !!r.portrait_key, avatarEnabled: r.avatar_enabled !== 0, portraitEnabled: r.portrait_enabled === 1, attempts: r.attempts, ...extra,
 });
 const REQ_SQL = `SELECT r.*, b.name AS bg_name, p.name AS pose_name FROM card_requests r
   LEFT JOIN card_templates b ON b.id = r.bg_id LEFT JOIN card_templates p ON p.id = r.pose_id`;
@@ -99,6 +99,9 @@ export async function cardRequestUpload(request, me, env, url, log) {
   const blocked = gate(me, env);
   if (blocked) return blocked;
   if (!env.MEDIA) return fail('Media storage is not connected.', 503);
+  const avatarEnabled = url.searchParams.get('avatar') !== '0';
+  const portraitEnabled = url.searchParams.get('portrait') === '1';
+  if (!avatarEnabled && !portraitEnabled) return fail('Choose at least one output.');
   const month = monthKey();
   const existing = await one(env, 'SELECT id, status FROM card_requests WHERE user_id = ? AND month = ?', me.u, month);
   if (existing && existing.status !== 'rejected') return fail('You already sent a card request this month – the next one opens on the 1st.', 409);
@@ -117,7 +120,7 @@ export async function cardRequestUpload(request, me, env, url, log) {
   await env.MEDIA.put(key, bytes, { httpMetadata: { contentType: type[0] } });
   try {
     if (existing) await run(env, "DELETE FROM card_requests WHERE id = ? AND status = 'rejected'", existing.id);
-    await run(env, 'INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', me.u, month, bg.id, pose.id, key, 'pending', Date.now());
+    await run(env, 'INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, avatar_enabled, portrait_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', me.u, month, bg.id, pose.id, key, 'pending', Date.now(), avatarEnabled ? 1 : 0, portraitEnabled ? 1 : 0);
   } catch {
     await dropPhoto(env, key);
     return fail('You already sent a card request this month – the next one opens on the 1st.', 409);
@@ -263,10 +266,12 @@ export async function cardsRoute(p, method, body, me, env, log) {
 export async function cardResult(request, me, env, id) {
   const blocked = gate(me, env);
   if (blocked) return blocked;
-  const r = await one(env, 'SELECT user_id, result_key FROM card_requests WHERE id = ?', Number(id));
-  if (!r || !r.result_key || !env.MEDIA) return new Response('Not found', { status: 404 });
+  const r = await one(env, 'SELECT user_id, result_key, portrait_key FROM card_requests WHERE id = ?', Number(id));
+  const portrait = new URL(request.url).searchParams.get('kind') === 'portrait';
+  const key = portrait ? r?.portrait_key : r?.result_key;
+  if (!key || !env.MEDIA) return new Response('Not found', { status: 404 });
   if (r.user_id !== me.u && !can(me, 'cards.templates')) return new Response('Not found', { status: 404 });
-  const obj = await env.MEDIA.get(r.result_key);
+  const obj = await env.MEDIA.get(key);
   if (!obj) return new Response('Card removed', { status: 404 });
   const h = new Headers();
   obj.writeHttpMetadata(h);
@@ -288,10 +293,10 @@ async function reference(env, bytes, type) {
   return new Blob([await out.response().arrayBuffer()], { type: 'image/png' });
 }
 
-async function render(env, bg, pose, photo) {
+async function render(env, bg, pose, photo, portrait = false) {
   if (!env.AI) throw new Error('The AI binding is not connected.');
   const form = new FormData();
-  form.append('prompt', cardPrompt(pose.prompt));
+  form.append('prompt', portrait ? 'Image 1 is the person. Preserve their facial identity, hairstyle, skin tone and expression. Create a consistent clean semi-cartoon football player bust portrait, head and chest only, straight-on camera, neutral relaxed pose, centered with generous margins, wearing a generic black red and white football jersey, no text, no numbers, no logos, no badges, no frame, no scenery. Solid contrasting light background suitable for automated cutout. Match a repeatable professional game-card illustration style.' : cardPrompt(pose.prompt));
   form.append('width', String(CARD_SIZE));
   form.append('height', String(CARD_SIZE));
   form.append('input_image_0', await reference(env, bg.bytes, bg.type), 'background.png');
@@ -320,22 +325,31 @@ async function generateOne(env, r, now) {
   if (!claimed.meta?.changes) return 'skipped';
   const attempt = r.attempts + 1;
   let resultKey = null;
+  let portraitKey = null;
   try {
     const [bgT, poseT] = await Promise.all([one(env, 'SELECT asset_key FROM card_templates WHERE id = ?', r.bg_id), one(env, 'SELECT prompt FROM card_templates WHERE id = ?', r.pose_id)]);
     const [bg, photo] = await Promise.all([readAsset(env, bgT?.asset_key), readAsset(env, r.photo_key)]);
     if (!bg || !poseT) throw new Error('The chosen background or pose is gone.');
     if (!photo) throw new Error('The photo is gone.');
-    const card = await render(env, bg, poseT, photo);
-    resultKey = `cardresult/${hex(16)}.${card.type[1]}`;
-    await env.MEDIA.put(resultKey, card.bytes, { httpMetadata: { contentType: card.type[0] } });
-    const res = await run(env, "UPDATE card_requests SET status = 'done', result_key = ?, photo_key = '', started_at = NULL WHERE id = ? AND status = 'generating'", resultKey, r.id);
-    if (!res.meta?.changes) { await dropPhoto(env, resultKey); return 'skipped'; }
+    if (r.avatar_enabled !== 0) {
+      const card = await render(env, bg, poseT, photo);
+      resultKey = `cardresult/${hex(16)}.${card.type[1]}`;
+      await env.MEDIA.put(resultKey, card.bytes, { httpMetadata: { contentType: card.type[0] } });
+    }
+    if (r.portrait_enabled === 1) {
+      const portrait = await render(env, bg, poseT, photo, true);
+      portraitKey = `cardresult/${hex(16)}.${portrait.type[1]}`;
+      await env.MEDIA.put(portraitKey, portrait.bytes, { httpMetadata: { contentType: portrait.type[0] } });
+    }
+    const res = await run(env, "UPDATE card_requests SET status = 'done', result_key = ?, portrait_key = ?, photo_key = '', started_at = NULL WHERE id = ? AND status = 'generating'", resultKey, portraitKey, r.id);
+    if (!res.meta?.changes) { await dropPhoto(env, resultKey); await dropPhoto(env, portraitKey); return 'skipped'; }
     await dropPhoto(env, r.photo_key); // the selfie has done its job
     await safely(notify(env, [r.user_id], { type: 'card', icon: '🏁', title: 'Your club card is ready', body: 'Open Card Studio to see and save it.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
     return 'done';
   } catch (e) {
     console.log('card generation failed', r.id, attempt, e.message);
     if (resultKey) await dropPhoto(env, resultKey);
+    if (portraitKey) await dropPhoto(env, portraitKey);
     const final = attempt >= MAX_ATTEMPTS;
     await run(env, "UPDATE card_requests SET status = ?, started_at = ? WHERE id = ? AND status = 'generating'", final ? 'failed' : 'approved', now, r.id);
     if (final) {
