@@ -30,7 +30,7 @@
     const last = (pl?.tr || []).slice(-10);
     const avg = last.length ? last.reduce((a, b) => a + b, 0) / last.length : 0;
     const front = pl ? `<span class="lk-top"><b class="lk-ovr">${pl.ovr || '–'}</b><span class="lk-pos">${esc(pl.pos || '—')}</span><img src="${ctx.base}assets/crest.png" alt="" height="34"></span>
-<span class="lk-face">${SIL}</span><span class="lk-name">${esc(pl.n)}</span>
+<span class="lk-face" data-card-player="${esc(pl.k)}">${SIL}</span><span class="lk-name">${esc(pl.n)}</span>
 <span class="lk-stats"><span><b>${s.g ?? '–'}</b>GLS</span><span><b>${s.a ?? '–'}</b>AST</span><span><b>${s.r ? Number(s.r).toFixed(1) : '–'}</b>RAT</span></span>`
       : `<span class="lk-top"><b class="lk-ovr">?</b><span class="lk-pos">—</span></span><span class="lk-face">${SIL}</span><span class="lk-name">Your card</span><span class="lk-hint">Claim your player to hang it here</span>`;
     const back = `<span class="lk-back-h">Last ${last.length || 10} ratings</span>${last.length ? `<span class="lk-bars">${last.map((r) => `<i class="${rCls(r)}" style="--h:${Math.max(8, Math.min(100, (r - 4) * 16.6))}%" title="${r}"><em>${Number(r).toFixed(1)}</em></i>`).join('')}</span>
@@ -78,7 +78,7 @@ ${(n.plays || []).length ? `<div class="lk-plays"><small class="muted">📋 Play
     const on = !!wflip[m.id];
     return `${head}<div class="lk-win"><button type="button" class="lk-wcard${on ? ' flipped' : ''}" data-wflip="${esc(m.id)}" aria-pressed="${on}" aria-label="${on ? `Man of the match: ${esc(w.n)}` : 'Tap to reveal the man of the match'}">
 <span class="lk-flip"><span class="lk-side lk-front lk-wq"><b>?</b><small>Tap to reveal</small></span>
-<span class="lk-side lk-back lk-wface"><span class="lk-vc-top"><b>${w.r != null ? Number(w.r).toFixed(1) : '⭐'}</b><small>${esc(POS[w.pos] || w.pos || '')}</small></span><span class="lk-face">${SIL}</span><span class="lk-vc-name">${esc(w.n)}</span><span class="lk-vc-n">👑 ${w.votes} vote${w.votes === 1 ? '' : 's'}${w.tie ? ' · tied' : ''}</span></span></span></button></div>
+<span class="lk-side lk-back lk-wface"><span class="lk-vc-top"><b>${w.r != null ? Number(w.r).toFixed(1) : '⭐'}</b><small>${esc(POS[w.pos] || w.pos || '')}</small></span><span class="lk-face" data-card-player="${esc(w.k)}">${SIL}</span><span class="lk-vc-name">${esc(w.n)}</span><span class="lk-vc-n">👑 ${w.votes} vote${w.votes === 1 ? '' : 's'}${w.tie ? ' · tied' : ''}</span></span></span></button></div>
 <p class="muted small lk-fan-help">${on ? `${esc(w.n)} is man of the match${w.tie ? ' (tied on votes – higher rating takes it)' : ''}.` : 'The club has decided – flip the card.'}</p>`;
   }
   function voteFan() {
@@ -97,7 +97,7 @@ ${(n.plays || []).length ? `<div class="lk-plays"><small class="muted">📋 Play
       const o = i - mid, n = m.tally[p.k] || 0;
       const lead = top > 0 && n === top;
       return `<button type="button" class="lk-vc${m.mine === p.k ? ' mine' : ''}${lead ? ' lead' : ''}" data-vote="${esc(p.k)}" style="--rot:${(o * 7).toFixed(1)}deg;--dy:${(Math.abs(o) * Math.abs(o) * 4).toFixed(0)}px;--z:${20 - Math.round(Math.abs(o))}" aria-pressed="${m.mine === p.k}" aria-label="Vote for ${esc(p.n)}, rated ${Number(p.r).toFixed(1)}">
-<span class="lk-vc-top"><b>${Number(p.r).toFixed(1)}</b><small>${esc(POS[p.pos] || p.pos || '')}</small></span><span class="lk-face">${SIL}</span><span class="lk-vc-name">${esc(p.n)}</span>
+<span class="lk-vc-top"><b>${Number(p.r).toFixed(1)}</b><small>${esc(POS[p.pos] || p.pos || '')}</small></span><span class="lk-face" data-card-player="${esc(p.k)}">${SIL}</span><span class="lk-vc-name">${esc(p.n)}</span>
 <span class="lk-vc-n">${n ? `${lead ? '👑 ' : ''}${n} vote${n === 1 ? '' : 's'}` : '&nbsp;'}</span>${m.mine === p.k ? '<span class="lk-ribbon">✓ Your vote</span>' : ''}</button>`;
     }).join('');
     return `<div class="lk-sec-h"><h3>⭐ MOTM vote · ${esc(m.gf)}–${esc(m.ga)} vs ${esc(m.opp)}</h3><span class="lk-tag">${m.total} vote${m.total === 1 ? '' : 's'}${st ? ` · ${closesIn(st.closes)}` : ''}</span></div>
@@ -226,7 +226,14 @@ ${pl && ctx.mountNote && !noteNone ? '<section class="lk-sec lk-note" data-lk-no
     busy = false; paint();
   }
   // Save my card as a PNG – drawn on a canvas (same-origin crest), no library.
-  function saveCard() {
+  async function saveCard() {
+    const player = myPlayer(), artwork = await window.NXPlayerPortraits?.get(player?.k);
+    if (player && artwork) {
+      const cv = document.createElement('canvas');
+      await NXCardComposer.draw(cv, artwork.url, player, `${ctx.base}assets/crest.png`, { prepared: true });
+      cv.toBlob(b => { if (!b) return; const u = URL.createObjectURL(b), a = Object.assign(document.createElement('a'), { href: u, download: 'norex-player-card.png' }); a.click(); setTimeout(() => URL.revokeObjectURL(u), 30000); }, 'image/png');
+      return;
+    }
     const pl = myPlayer();
     if (!pl) return;
     const [c1, c2, tx] = TIER_COL[`tier-${tierOf(pl.ovr)}`];

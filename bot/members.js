@@ -23,7 +23,7 @@ import { docsList, knowledgeRoute } from './docs.js';
 import { eventsRoute, localDate, publicEvents, weekEvents, reportPosterRoute } from './events.js';
 import { lockerRoute, motmClosed } from './locker.js';
 import { hubRoute, hubSocket } from './hub.js';
-import { cardsRoute, cardTemplateUpload, cardRequestUpload, cardPhoto, cardResult, generateCards, takeCardKick } from './cardstudio.js';
+import { cardsRoute, cardTemplateUpload, cardRequestUpload, cardPhoto, cardResult, generateCards, takeCardKick, publicPortraits } from './cardstudio.js';
 import { lineupSocket } from './events.js';
 import { lockerSocket } from './locker.js';
 import { intelRoute } from './insights.js';
@@ -419,6 +419,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
     if (url.pathname === '/api/burners/relay') return cors(env, await burnersRelay(request, env)); // EA relay answer from the Actions job
     if (url.pathname === '/api/burners/tracked') return cors(env, await burnersRoute(request, env)); // burner tracker – fetch.mjs reads the clubs to follow
     if (url.pathname === '/api/clubs/lookup' && request.method === 'GET') return cors(env, await clubLookup(env, url.searchParams.get('q'))); // P9.4 – find any club, indexing it live if needed
+    if (url.pathname === '/api/cards/portraits' && request.method === 'GET') return cors(env, await publicPortraits(request, env));
     if (!me) return cors(env, fail('Please log in again.', 401));
     me.role = await currentRole(env, me, request);
     const seen = touch(env, me); // P6.4 – "online now" (a no-op write unless a minute has passed)

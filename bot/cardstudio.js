@@ -88,7 +88,7 @@ const dropPhoto = (env, key) => (key && env.MEDIA ? env.MEDIA.delete(key).catch(
 
 const reqView = (r, extra = {}) => ({
   id: r.id, month: r.month, status: r.status === 'done' && r.published === 0 ? 'review' : r.status, note: r.note, bg: r.bg_name ?? null, pose: r.pose_name ?? null,
-  createdAt: r.created_at, decidedAt: r.decided_at, hasResult: !!r.result_key, hasPortrait: !!r.portrait_key, avatarEnabled: r.avatar_enabled !== 0, portraitEnabled: r.portrait_enabled === 1, attempts: r.attempts, ...extra,
+  createdAt: r.created_at, decidedAt: r.decided_at, hasResult: !!r.result_key, hasPortrait: !!r.portrait_key, kitNumber: r.kit_number ?? null, avatarEnabled: r.avatar_enabled !== 0, portraitEnabled: r.portrait_enabled === 1, attempts: r.attempts, ...extra,
 });
 const REQ_SQL = `SELECT r.*, b.name AS bg_name, p.name AS pose_name FROM card_requests r
   LEFT JOIN card_templates b ON b.id = r.bg_id LEFT JOIN card_templates p ON p.id = r.pose_id`;
@@ -102,6 +102,9 @@ export async function cardRequestUpload(request, me, env, url, log) {
   const avatarEnabled = url.searchParams.get('avatar') !== '0';
   const portraitEnabled = url.searchParams.get('portrait') === '1';
   if (!avatarEnabled && !portraitEnabled) return fail('Choose at least one output.');
+  const rawNumber = url.searchParams.get('kitNumber');
+  const kitNumber = rawNumber == null || rawNumber === '' ? null : Number(rawNumber);
+  if (kitNumber !== null && (!/^\d{1,2}$/.test(rawNumber) || !Number.isInteger(kitNumber) || kitNumber < 0 || kitNumber > 99)) return fail('Kit number must be between 0 and 99.');
   const month = monthKey();
   const existing = await one(env, 'SELECT id, status FROM card_requests WHERE user_id = ? AND month = ?', me.u, month);
   if (existing && existing.status !== 'rejected') return fail('You already sent a card request this month – the next one opens on the 1st.', 409);
@@ -120,7 +123,7 @@ export async function cardRequestUpload(request, me, env, url, log) {
   await env.MEDIA.put(key, bytes, { httpMetadata: { contentType: type[0] } });
   try {
     if (existing) await run(env, "DELETE FROM card_requests WHERE id = ? AND status = 'rejected'", existing.id);
-    await run(env, 'INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, avatar_enabled, portrait_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', me.u, month, bg?.id ?? 0, pose?.id ?? 0, key, 'pending', Date.now(), avatarEnabled ? 1 : 0, portraitEnabled ? 1 : 0);
+    await run(env, 'INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, avatar_enabled, portrait_enabled, kit_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', me.u, month, bg?.id ?? 0, pose?.id ?? 0, key, 'pending', Date.now(), avatarEnabled ? 1 : 0, portraitEnabled ? 1 : 0, kitNumber);
   } catch {
     await dropPhoto(env, key);
     return fail('You already sent a card request this month – the next one opens on the 1st.', 409);
@@ -247,6 +250,14 @@ export async function cardsRoute(p, method, body, me, env, log) {
       ? { type: 'card', icon: '✅', title: 'Your card request was approved', body: 'A manager approved your photo. Your card is next in line.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }
       : { type: 'card', icon: '❌', title: 'Your card request was not approved', body: `${note} You can send a new photo – it does not use up your month.`, link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
     return json({ ok: true, status });
+  }
+
+  if (p === '/api/cards/kit-number' && method === 'POST') {
+    const value = body.kitNumber;
+    if (value !== null && (!Number.isInteger(value) || value < 0 || value > 99)) return fail('Kit number must be between 0 and 99.');
+    const updated = await run(env, 'UPDATE card_requests SET kit_number = ? WHERE id = ? AND user_id = ?', value, Number(body.id), me.u);
+    if (!updated.meta?.changes) return fail('Request not found.', 404);
+    return json({ ok: true });
   }
 
   if (p === '/api/cards/requests/review' && method === 'POST') {
@@ -393,4 +404,28 @@ export async function generateCards(env, { limit = 2, now = Date.now() } = {}) {
   const results = [];
   for (const r of rows) results.push(await generateOne(env, r, now));
   return results;
+}
+
+// Only published website artwork tied to a currently approved player claim is public.
+// Original photos and cinematic outputs remain behind their authenticated endpoints.
+export async function publicPortraits(request, env) {
+  const rows = await all(env, `SELECT r.id, c.player, r.kit_number FROM card_requests r
+    JOIN claims c ON c.user_id = r.user_id AND c.status = 'approved'
+    WHERE r.status = 'done' AND r.published = 1 AND r.portrait_key IS NOT NULL
+    ORDER BY r.created_at DESC, r.id DESC`);
+  const url = new URL(request.url), id = url.searchParams.get('id');
+  if (id !== null) {
+    const row = rows.find(r => String(r.id) === id);
+    if (!row || rows.find(r => r.player === row.player)?.id !== row.id) return new Response('Not found', { status: 404 });
+    const record = await one(env, 'SELECT portrait_key FROM card_requests WHERE id = ?', row.id);
+    const obj = await env.MEDIA?.get(record.portrait_key);
+    if (!obj) return new Response('Not found', { status: 404 });
+    const headers = new Headers(); obj.writeHttpMetadata(headers);
+    headers.set('X-Content-Type-Options', 'nosniff');
+    headers.set('Cache-Control', 'no-cache');
+    return new Response(obj.body, { headers });
+  }
+  const portraits = Object.create(null);
+  for (const r of rows) if (!Object.hasOwn(portraits, r.player)) portraits[r.player] = { id: r.id, kitNumber: r.kit_number };
+  return json({ portraits });
 }
