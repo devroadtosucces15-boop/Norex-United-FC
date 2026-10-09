@@ -21,7 +21,6 @@ const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
 const REMIND_MAX = 3; // DM reminders for an unacknowledged announcement (one per day)
 const REQ_DAILY = 5; // requests per member per day
-const REQ_PER_IP = 3; // public "hide me" requests per IP per day
 const RED = 0xc8352c;
 
 // Notification types → settings rows. mode: dm = site + Discord DM · site = site only · off = muted.
@@ -291,7 +290,7 @@ async function notifyRoute(p, method, body, me, env, log) {
 }
 
 // ---------- P5.6 club & privacy requests ----------
-const REQ_KINDS = ['club', 'hide'];
+const REQ_KINDS = ['club']; // 'hide' (hide me from the site) was retired – club records are kept
 const reqOut = (r, full) => ({
   id: r.id, kind: r.kind, status: r.status, subject: r.subject, clubId: opt(r.club_id), note: opt(r.note), at: r.at,
   decidedBy: opt(r.decided_by), decidedAt: opt(r.decided_at), reason: opt(r.reason),
@@ -345,18 +344,7 @@ export async function publicRequestRoute(request, env, me, loadSite, log) {
   if (url.pathname === '/api/overrides') return overridesRoute(request, env);
   if (!flagOn(env, me, 'requests')) return fail('Not available yet.', 404);
   if (request.method !== 'POST') return fail('Not found', 404);
-  const body = await request.json().catch(() => ({}));
-  if (body.website) return json({ ok: true }); // honeypot
-  const ip = await ipHash(env, request);
-  const n = await one(env, 'SELECT COUNT(*) AS n FROM requests WHERE ip_hash = ? AND at > ?', ip, Date.now() - DAY);
-  if (n.n >= REQ_PER_IP) return fail('Too many requests today – ask a manager on Discord instead.', 429);
-  const contact = clean(body.contact, 40).replace(/^@/, '');
-  if (!me && !/^[\w.]{2,32}$/.test(contact)) return fail('Enter your Discord username so a manager can check it’s really you.');
-  const { r, error, status } = await readRequest(env, { ...body, kind: 'hide' }, loadSite);
-  if (error) return fail(error, status);
-  await insertRequest(env, r, me, contact || null, ip);
-  await log(env, me ?? { u: null, n: r.subject, a: null }, 'request', `hide · ${r.subject}`);
-  return json({ ok: true });
+  return fail('Hiding a player from the site is no longer offered.', 410);
 }
 
 export async function requestRoute(p, method, body, me, env, loadSite, log) {
@@ -416,7 +404,7 @@ async function overridesRoute(request, env) {
   }
   const rows = await all(env, "SELECT id, kind, subject, club_id FROM requests WHERE status = 'approved'");
   return json({
-    hiddenPlayers: rows.filter((r) => r.kind === 'hide').map((r) => r.subject),
+    hiddenPlayers: [], // hide requests are retired: nothing is ever hidden from the archive
     clubs: rows.filter((r) => r.kind === 'club').map((r) => ({ req: r.id, id: opt(r.club_id), name: r.subject })),
   });
 }

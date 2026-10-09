@@ -887,17 +887,21 @@ function matchBody(m, base) {
     return `<li><b class="${x > y ? 'lead' : ''}">${dec ? x.toFixed(dec) : x}${suf}</b><span>${label}</span><b class="${y > x ? 'lead' : ''}">${dec ? y.toFixed(dec) : y}${suf}</b><div class="duel"><i class="l" style="--w:${(x / tot) * 100}%"></i><i class="r" style="--w:${(y / tot) * 100}%"></i></div></li>`;
   }).join('');
 
-  // Pitch: home attacks right, away attacks left.
+  // Pitch: one team at a time on the whole pitch (NOREX by default, then the opponent), or both sharing it – home attacks right, away attacks left.
   const LINES = { goalkeeper: 0, defender: 1, midfielder: 2, forward: 3 };
-  const X = [[6, 17, 29, 41], [94, 83, 71, 59]];
-  const dots = [h, aw].flatMap((cid, side) => {
+  const X = [[6, 17, 29, 41], [94, 83, 71, 59]]; // each side on its own half
+  const XFULL = [9, 31, 56, 80]; // a single team spread over the whole pitch, attacking right
+  const layout = (cid, side, full) => {
     const groups = [[], [], [], []];
     for (const p of list(cid)) groups[LINES[p.pos] ?? 2].push(p);
-    return groups.flatMap((g, line) => g.map((p, i) => ({ p, side, x: X[side][line], y: ((i + 1) * 100) / (g.length + 1) })));
-  });
-  const pitch = `<div class="pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>
-${dots.map(({ p, side, x, y }) => { const pl = players.get(p.pid); return `<a class="pp side${side}" style="left:${x}%;top:${y}%" ${pl && !pl.hidden ? `href="${pUrl(pl, base)}"` : ''} data-tip="${esc(`${p.playername} · ${posAbbr(p.pos)} · ${num(p.rating).toFixed(1)}${num(p.goals) ? ` · ${p.goals}G` : ''}${num(p.assists) ? ` · ${p.assists}A` : ''}`)}"><b class="${ratingClass(num(p.rating))}">${num(p.rating).toFixed(1)}</b><span>${esc(p.playername)}</span>${p.mom === '1' ? '<em>⭐</em>' : ''}${num(p.goals) ? `<u>${'⚽'.repeat(Math.min(num(p.goals), 3))}</u>` : ''}</a>`; }).join('')}</div>
-<div class="pitch-key"><span>${crest(h, 18, base)} ${esc(clubName(h))} →</span><span>← ${esc(clubName(aw))} ${crest(aw, 18, base)}</span></div>`;
+    return groups.flatMap((g, line) => g.map((p, i) => ({ p, side, x: full ? XFULL[line] : X[side][line], y: ((i + 1) * 100) / (g.length + 1) })));
+  };
+  const dot = ({ p, side, x, y }) => { const pl = players.get(p.pid); return `<a class="pp side${side}" style="left:${x}%;top:${y}%" ${pl && !pl.hidden ? `href="${pUrl(pl, base)}"` : ''} data-tip="${esc(`${p.playername} · ${posAbbr(p.pos)} · ${num(p.rating).toFixed(1)}${num(p.goals) ? ` · ${p.goals}G` : ''}${num(p.assists) ? ` · ${p.assists}A` : ''}`)}"><b class="${ratingClass(num(p.rating))}">${num(p.rating).toFixed(1)}</b><span>${esc(p.playername)}</span>${p.mom === '1' ? '<em>⭐</em>' : ''}${num(p.goals) ? `<u>${'⚽'.repeat(Math.min(num(p.goals), 3))}</u>` : ''}</a>`; };
+  const pitchBox = (dots, key) => `<div class="pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots.map(dot).join('')}</div><div class="pitch-key">${key}</div>`;
+  const pitch = `<div class="tabs chipset pitch-tabs" data-tabs><button class="chip on" type="button" data-tab="pv-h">${esc(clubName(h))}</button><button class="chip" type="button" data-tab="pv-a">${esc(clubName(aw))}</button><button class="chip" type="button" data-tab="pv-b">⚔️ Both</button></div>
+<div class="tab-panel" id="pv-h">${pitchBox(layout(h, 0, true), `<span>${crest(h, 18, base)} ${esc(clubName(h))} →</span>`)}</div>
+<div class="tab-panel" id="pv-a" hidden>${pitchBox(layout(aw, 1, true), `<span>${crest(aw, 18, base)} ${esc(clubName(aw))} →</span>`)}</div>
+<div class="tab-panel" id="pv-b" hidden>${pitchBox([...layout(h, 0, false), ...layout(aw, 1, false)], `<span>${crest(h, 18, base)} ${esc(clubName(h))} →</span><span>← ${esc(clubName(aw))} ${crest(aw, 18, base)}</span>`)}</div>`;
 
   const evd = (v) => td(v === undefined ? '<span class="muted">–</span>' : esc(v), true, v === undefined ? -1 : num(v));
   const side = (cid) => section(`${crest(cid, 30, base)} ${clubLink(cid, base)}`, table(`m-${cid}`, ['Player', 'Pos', '#Rating', '#G', '#A', ...(ev ? ['#2nd A'] : []), '#Shots', '#Pass', ...(ev ? ['#Drb'] : []), '#Tkl', '#Saves', 'MOTM'], list(cid).sort((x, y) => num(y.rating) - num(x.rating)).map((p) =>

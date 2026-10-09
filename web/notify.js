@@ -218,7 +218,7 @@ ${s.canAnnounce ? `<section class="card nt-announce"><h3>📣 Send an announceme
   const rsPill = (s) => UI.pill(RS[s]?.[1] ?? s, { emoji: RS[s]?.[0], tone: RS[s]?.[2] });
   const KIND = { club: ['🏟️', 'Track club'], hide: ['🙈', 'Hide player'] };
 
-  // About page: two forms. "Track another club" needs a login; "Hide me" works for anyone.
+  // About page: "Track another club" (needs a login). The old "Hide me from the site" form was removed – club records are kept.
   async function requestForms(el, ctx) {
     const clubs = await ctx.clubs().catch(() => []);
     const known = clubs.filter((c) => !['home', 'linked', 'manual'].includes(c.t));
@@ -232,12 +232,7 @@ ${s.canAnnounce ? `<section class="card nt-announce"><h3>📣 Send an announceme
 ${ctx.session ? `<label>Club name<input name="subject" list="req-clubs" maxlength="60" required placeholder="Start typing…" autocomplete="off"></label><datalist id="req-clubs">${known.map((c) => `<option value="${esc(c.n)}">`).join('')}</datalist>
 <label>Why? <small class="muted">(optional)</small><input name="note" maxlength="400" placeholder="I play there on weekends"></label><button class="btn" type="submit">Send request</button>`
     : `<a class="btn discord" href="${esc(ctx.loginUrl())}">Log in with Discord to ask</a>`}</form>
-<form class="card req-card" id="req-hide"><h3>🙈 Hide me from the site</h3><p class="muted small">Don't want your gamertag listed? A manager checks it's really you, then you disappear from every page on the next update.</p>
-<label>Your EA gamertag<input name="subject" maxlength="60" required placeholder="As it shows in the game"></label>
-${ctx.session ? '' : '<label>Your Discord username<input name="contact" maxlength="40" required placeholder="so a manager can confirm it’s you"></label>'}
-<label>Anything else? <small class="muted">(optional)</small><input name="note" maxlength="400"></label>
-<input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-<button class="btn ghost" type="submit">Ask to be hidden</button></form></div><div id="req-mine"></div>`;
+</div><div id="req-mine"></div>`;
     if (ctx.session) { try { mine = (await ctx.call('/api/requests')).requests; drawMine(); } catch {} }
     el.onsubmit = async (e) => {
       e.preventDefault();

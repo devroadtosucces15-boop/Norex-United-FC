@@ -128,10 +128,12 @@
       const key = `hub_tunnel_${new Date().toISOString().slice(0, 10)}`;
       try { if (!localStorage.getItem(key)) return; } catch { return; }
       e.preventDefault();
+      const href = e.currentTarget.href; // read now: currentTarget is null by the time the timer fires, which left a black screen and no navigation
       const el = document.createElement('div');
       el.className = 'hubw-tunnel hubw-tunnel-out';
       document.body.appendChild(el);
-      setTimeout(() => { location.href = e.currentTarget.href; }, 320);
+      addEventListener('pageshow', () => el.remove(), { once: true }); // coming back via the back button restores the page from cache
+      setTimeout(() => { location.href = href; }, 320);
     });
   }
 

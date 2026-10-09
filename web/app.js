@@ -10,7 +10,12 @@ const FLAGS = (() => { try { return JSON.parse(document.body.dataset.features ||
 const FLAG_MIN = { public: 0, members: 1, managers: 3, owner: 4 };
 const RANK = { guest: 0, member: 1, claimed: 2, manager: 3, owner: 4 };
 const flagOn = (name, role = 'guest') => FLAGS[name] in FLAG_MIN && (RANK[role] ?? 0) >= FLAG_MIN[FLAGS[name]];
-const applyFlags = (role) => $$('[data-flag]').forEach((el) => { el.hidden = !flagOn(el.dataset.flag, role); });
+const centerSubtab = () => {
+  const bar = $('.subtabs-in'), on = bar && $('.on, [aria-current]', bar);
+  if (on && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
+};
+const applyFlags = (role) => { $$('[data-flag]').forEach((el) => { el.hidden = !flagOn(el.dataset.flag, role); }); centerSubtab(); };
+addEventListener('load', () => { centerSubtab(); setTimeout(centerSubtab, 700); });
 applyFlags('guest');
 let viewerRole = 'guest'; // set by the members block after login
 // For page scripts that draw after load (builder, Pro Builds): who's looking and which flags are on for them.
