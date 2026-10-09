@@ -12,7 +12,10 @@ for raw in refs:
  name,sha,date,subject=raw.split("|",3)
  if name in ("origin/HEAD",) or name.startswith("origin/foundation/") or name.startswith("foundation/"):continue
  if re.search(r"(token|secret|password|credential)",name,re.I):continue
- branches.append({"name":name,"sha":sha,"date":date,"subject":subject[:160],"url":"https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/"+sha})
+ base=git("merge-base","main",sha)
+ ahead=git("rev-list","--count",base+".."+sha)
+ behind=git("rev-list","--count",base+"..main")
+ branches.append({"fork_point":base,"ahead":int(ahead),"behind":int(behind),"is_main":sha==git("rev-parse","main"),"name":name,"sha":sha,"date":date,"subject":subject[:160],"url":"https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/"+sha})
 # Only explicit textual evidence qualifies for lifecycle status.
 evidence=[]
 for rel in ["README.md","PLANNING/README.md","docs/README.md"]:

@@ -1,6 +1,10 @@
 {
   "branches": [
     {
+      "fork_point": "78eaff59db6d7cb23bf7f162be87069f6d6556e3",
+      "ahead": 1,
+      "behind": 2012,
+      "is_main": false,
       "name": "backup/p3-events-local",
       "sha": "1b8bc76c4e77d30715976fa94cdf6963e1b9f454",
       "date": "2026-09-28T13:50:37-07:00",
@@ -8,20 +12,32 @@
       "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/1b8bc76c4e77d30715976fa94cdf6963e1b9f454"
     },
     {
+      "fork_point": "fa285138378d642ceda0c1dca37a8e774b86981b",
+      "ahead": 0,
+      "behind": 0,
+      "is_main": true,
       "name": "main",
-      "sha": "b70493ab86676aa6231355888210607f3df2f884",
-      "date": "2026-10-09T06:00:37-07:00",
-      "subject": "Save atlas investigations and trace potential dependency impact",
-      "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/b70493ab86676aa6231355888210607f3df2f884"
+      "sha": "fa285138378d642ceda0c1dca37a8e774b86981b",
+      "date": "2026-10-09T06:05:40-07:00",
+      "subject": "Add progressive architecture hierarchy historical branches and multihop tracing",
+      "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/fa285138378d642ceda0c1dca37a8e774b86981b"
     },
     {
+      "fork_point": "fa285138378d642ceda0c1dca37a8e774b86981b",
+      "ahead": 0,
+      "behind": 0,
+      "is_main": true,
       "name": "origin",
-      "sha": "b70493ab86676aa6231355888210607f3df2f884",
-      "date": "2026-10-09T06:00:37-07:00",
-      "subject": "Save atlas investigations and trace potential dependency impact",
-      "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/b70493ab86676aa6231355888210607f3df2f884"
+      "sha": "fa285138378d642ceda0c1dca37a8e774b86981b",
+      "date": "2026-10-09T06:05:40-07:00",
+      "subject": "Add progressive architecture hierarchy historical branches and multihop tracing",
+      "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/fa285138378d642ceda0c1dca37a8e774b86981b"
     },
     {
+      "fork_point": "1a817ed4837090dba9ab71c6256c77734bc9a7f4",
+      "ahead": 1,
+      "behind": 2051,
+      "is_main": false,
       "name": "origin/claude/admiring-brown-4io9py",
       "sha": "5a1ad1955bf3b3b9fd94ce0559a73a9294d041b8",
       "date": "2026-09-28T12:32:28Z",
@@ -29,6 +45,10 @@
       "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/5a1ad1955bf3b3b9fd94ce0559a73a9294d041b8"
     },
     {
+      "fork_point": "720a023c5755cce5a012259048b484f729b7f19f",
+      "ahead": 0,
+      "behind": 1450,
+      "is_main": false,
       "name": "origin/claude/gracious-cori-l6b8a5",
       "sha": "720a023c5755cce5a012259048b484f729b7f19f",
       "date": "2026-09-30T22:53:35Z",
@@ -36,6 +56,10 @@
       "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/720a023c5755cce5a012259048b484f729b7f19f"
     },
     {
+      "fork_point": "83950576a14107babc7204a03e5c62327c5dbea1",
+      "ahead": 6,
+      "behind": 1177,
+      "is_main": false,
       "name": "origin/feat/be8-hub-member-surface",
       "sha": "9c03448df6f5e90b4dd732669ded595f284923c5",
       "date": "2026-10-02T05:40:44-07:00",
@@ -43,6 +67,10 @@
       "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/9c03448df6f5e90b4dd732669ded595f284923c5"
     },
     {
+      "fork_point": "117a46244741666f34dfbd1594f842648586243f",
+      "ahead": 10,
+      "behind": 1178,
+      "is_main": false,
       "name": "origin/fix/tactics-playbook-integration",
       "sha": "8fd08b8e798a16a3c09ddf044c9885fa6d472537",
       "date": "2026-10-02T05:29:22-07:00",
@@ -50,11 +78,15 @@
       "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/8fd08b8e798a16a3c09ddf044c9885fa6d472537"
     },
     {
+      "fork_point": "fa285138378d642ceda0c1dca37a8e774b86981b",
+      "ahead": 0,
+      "behind": 0,
+      "is_main": true,
       "name": "origin/main",
-      "sha": "b70493ab86676aa6231355888210607f3df2f884",
-      "date": "2026-10-09T06:00:37-07:00",
-      "subject": "Save atlas investigations and trace potential dependency impact",
-      "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/b70493ab86676aa6231355888210607f3df2f884"
+      "sha": "fa285138378d642ceda0c1dca37a8e774b86981b",
+      "date": "2026-10-09T06:05:40-07:00",
+      "subject": "Add progressive architecture hierarchy historical branches and multihop tracing",
+      "url": "https://github.com/devroadtosucces15-boop/Norex-United-FC/tree/fa285138378d642ceda0c1dca37a8e774b86981b"
     }
   ],
   "lifecycle_evidence": [],
