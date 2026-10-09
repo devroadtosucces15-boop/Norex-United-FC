@@ -133,3 +133,22 @@ a.pb-mini:hover{border-color:var(--red);transform:translateY(-1px)}
 .pb-card:hover{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-2px)}
 .pb-card:hover::before{opacity:1}
 @media (prefers-reduced-motion: reduce){.pb-card,.pb-card:hover{transform:none}.pb-card::before{display:none}}
+
+/* phones: the board used to be one wrapped pile of controls – now three tidy bands, nothing hidden:
+   [sort chips | Post] · [search] · [mode chips] · [archetype] · [position | patch] · [MAX only] */
+@media (max-width:720px){
+  .pb-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px}
+  .pb-top .pb-q{grid-column:1/-1;grid-row:2;width:100%;box-sizing:border-box}
+  .pb-top .btn{grid-row:1;grid-column:2;white-space:nowrap}
+  .pb-sort{grid-row:1;grid-column:1;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .pb-sort::-webkit-scrollbar{display:none}
+  .pb-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0 2px;border-top:1px solid var(--line);margin-top:10px}
+  .pb-filters>.chipset{grid-column:1/-1}
+  .pb-filters select[data-f=arch]{grid-column:1/-1}
+  .pb-filters select{flex:none;width:100%;min-width:0}
+  .pb-filters .pb-check{grid-column:1/-1;justify-content:flex-start;padding:4px 2px}
+  .pb-count{grid-column:1/-1;margin:0;font-size:12px}
+  .pb-body footer{display:grid;grid-template-columns:auto auto 1fr auto auto;gap:6px 8px}
+  .pb-body footer .grow{display:none}
+  .pb-body footer .btn{padding:7px 12px}
+}
