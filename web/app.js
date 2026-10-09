@@ -63,7 +63,7 @@ const api = () => (apiCache ??= Promise.all(['players', 'clubs'].map((f) => fetc
   const active = document.body.dataset.active || '', activeGroup = document.body.dataset.group || '';
   const linkHtml = (l) => `<a class="lk${l.id === active ? ' hov' : ''}" href="${BASE}${l.href}"${l.flag ? ` data-flag="${l.flag}" hidden` : ''}><div class="ic">${l.icon}</div><div><b>${esc(l.label)}</b><small>${esc(l.desc)}</small></div></a>`;
   const body = $('.sheet-body', sheet);
-  const openSheet = () => { sheet.hidden = false; backdrop.hidden = false; requestAnimationFrame(() => { sheet.classList.add('open'); backdrop.classList.add('open'); }); };
+  const openSheet = (top) => { sheet.classList.toggle('sheet-top', !!top); sheet.hidden = false; backdrop.hidden = false; requestAnimationFrame(() => { sheet.classList.add('open'); backdrop.classList.add('open'); }); };
   const closeSheet = () => {
     sheet.classList.remove('open'); backdrop.classList.remove('open');
     setTimeout(() => {
@@ -93,7 +93,7 @@ const api = () => (apiCache ??= Promise.all(['players', 'clubs'].map((f) => fetc
     body.innerHTML = '<h4><span>👤</span>Me</h4>';
     if (slot) { authHome = document.createComment('auth-slot-home'); slot.after(authHome); body.appendChild(slot); const menu = $('.acct-menu', slot); if (menu) menu.hidden = false; }
     else body.insertAdjacentHTML('beforeend', '<p class="muted">Loading…</p>');
-    openSheet();
+    openSheet(true); // "Me" drops down from the top bar as one flat list (the group menus still rise from the bottom)
   });
   // phones: "Me" moved to a profile button in the top bar – it opens the same sheet
   $('.me-top')?.addEventListener('click', () => meTab?.click());
@@ -130,11 +130,13 @@ function countUp(el) {
 const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
   for (const e of entries) {
     if (!e.isIntersecting) continue;
+    // a block taller than ~8 screens can never show 12% of itself – it would stay invisible; reveal it as soon as it's touched
+    if (e.intersectionRatio < 0.12 && e.boundingClientRect.height < innerHeight * 8) continue;
     e.target.classList.add('in');
     $$('.count', e.target).forEach(countUp);
     io.unobserve(e.target);
   }
-}, { threshold: 0.12 }) : null;
+}, { threshold: [0, 0.12] }) : null;
 $$('.reveal').forEach((el) => (io ? io.observe(el) : el.classList.add('in')));
 
 // ---------- tooltips ----------

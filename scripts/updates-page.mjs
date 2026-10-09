@@ -43,7 +43,7 @@ ${checked ? `<span class="muted small">Checked EA's news <time class="ago" datet
     const tags = tagsOf(e);
     const build = [...new Map(e.hits.filter((h) => h.kind !== 'rush').map((h) => [h.kind, h])).values()];
     const text = [e.title, e.summary, ...e.sections.flatMap((s) => [s.title, s.summary, ...s.subs])].join(' ').toLowerCase();
-    return `<article class="upd card reveal" id="${esc(e.slug)}" data-tags="${esc([...tags].join(' '))}" data-text="${esc(text)}">
+    return `<article class="upd card" id="${esc(e.slug)}" data-tags="${esc([...tags].join(' '))}" data-text="${esc(text)}">
 <header class="upd-head"><time datetime="${esc(e.published)}">${esc(niceDay(e.published))}</time><div class="upd-badges">${e.clubs ? '<span class="tag home">⚽ Clubs impact</span>' : ''}${tags.has('levelCap') ? '<span class="tag gold">🔝 Level cap</span>' : ''}${tags.has('rush') ? '<span class="tag">⚡ Rush</span>' : ''}</div></header>
 <h3><a href="#${esc(e.slug)}">${esc(e.title)}</a></h3>
 ${e.summary ? `<p class="upd-sum">${esc(e.summary)}</p>` : ''}
@@ -56,7 +56,7 @@ ${build.length ? `<div class="upd-build"><b>🛠 What changed for builds</b><ul>
   const list = entries.length
     ? `<div class="upd-bar reveal"><input class="filter" type="search" placeholder="Search updates… (e.g. Amps, AXP, corners)" data-upd-search aria-label="Search updates">
 <div class="chipset" data-upd-filter>${FILTERS.map(([k, l], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-f="${k}">${l}</button>`).join('')}</div></div>
-<div class="upd-list">${entries.map(entryHtml).join('')}</div><div data-upd-none hidden>${emptyState('🔎', 'No update matches', 'Try another filter or search word.')}</div>`
+<div class="upd-list">${entries.map((e, i) => entryHtml(e).replace('<article class="upd card"', `<article class="upd card" style="--i:${Math.min(i, 8)}"`)).join('')}</div><div data-upd-none hidden>${emptyState('🔎', 'No update matches', 'Try another filter or search word.')}</div>`
     : emptyState('📢', 'No updates logged yet', 'EA’s news is checked every 6 hours – new Pitch Notes appear here automatically.');
 
   write('updates.html', page({

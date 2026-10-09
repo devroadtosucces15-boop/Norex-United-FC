@@ -631,7 +631,17 @@ th[aria-sort=ascending]::after{content:" ▲";color:var(--red)}th[aria-sort=desc
 tbody tr:last-child td{border-bottom:0}
 tbody tr{transition:background .15s}
 tbody tr:hover{background:rgba(255,255,255,.035)}
-.n{text-align:right;font-variant-numeric:tabular-nums}
+.n{font-variant-numeric:tabular-nums}
+/* tables: numbers and headers centred, short pills centred, calm zebra, first column pinned while the rest scrolls on phones */
+td.n,th.n,td:has(> .res:only-child),td:has(> .pill:only-child),td:has(> .tag:only-child){text-align:center}
+th,td{vertical-align:middle}
+tbody tr:nth-child(even){background:rgba(255,255,255,.018)}
+@media (max-width:860px){
+  th,td{padding:10px 9px}
+  .tbl td:first-child,.tbl th:first-child{position:sticky;left:0;z-index:1;background:var(--panel);box-shadow:1px 0 0 var(--line)}
+  .tbl th:first-child{background:var(--panel2)}
+  .tbl tbody tr:nth-child(even) td:first-child{background:color-mix(in srgb,var(--panel) 96%,#fff)}
+}
 td .crest{margin-right:6px;height:20px;width:auto}
 .filter{width:100%;max-width:340px;margin:0 0 12px;padding:10px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--text);font:inherit}
 .toolbar .filter{margin:0}
@@ -1527,3 +1537,16 @@ tr.world-me td:first-child{box-shadow:inset 4px 0 0 var(--red)}
 html.nx-hubin::after{content:'';position:fixed;inset:0;z-index:10000;pointer-events:none;background:radial-gradient(circle at 50% 92%,#fff0b8,var(--gold,#d4a84b) 30%,#4a3410 95%);animation:nxHubClose .75s cubic-bezier(.5,0,.2,1) .05s both}
 @keyframes nxHubClose{from{clip-path:circle(150vmax at 50% 92%)}to{clip-path:circle(0 at 50% 92%)}}
 @media (prefers-reduced-motion:reduce){.tab.hub-tab span,.tab.hub-tab span::before,.tab.hub-tab span b{animation:none}.nx-hubgo,html.nx-hubin::after{animation-duration:.01s}}
+
+/* "Me" (profile button, top right on phones): one flat list that drops from the top bar – no box inside a box, no sideways scroll,
+   as tall as its content needs up to the screen height */
+@media (max-width:860px){
+  .sheet.sheet-top{top:calc(58px + env(safe-area-inset-top));bottom:auto;padding:12px 14px 14px;border-radius:0 0 22px 22px;border-top:0;border-bottom:1px solid var(--line2);
+    max-height:calc(100vh - 58px - env(safe-area-inset-top) - 16px);max-height:calc(100dvh - 58px - env(safe-area-inset-top) - 16px);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;transform:translateY(-110%)}
+  .sheet.sheet-top.open{transform:none}
+  .sheet.sheet-top .sheet-grab,.sheet.sheet-top .me-btn{display:none}
+  .sheet.sheet-top .acct{margin:0}
+  .sheet.sheet-top .acct-menu{position:static;min-width:0;width:100%;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+  .sheet.sheet-top .acct-menu a,.sheet.sheet-top .acct-out{padding:13px 10px;font-size:15px;white-space:normal;overflow-wrap:anywhere}
+  .sheet.sheet-top *{max-width:100%;box-sizing:border-box}
+}

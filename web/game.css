@@ -70,3 +70,7 @@
 .ga-form .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .ga-cur td{background:color-mix(in srgb,var(--red) 8%,transparent)}
 @media (max-width:600px){.gr-cap b{font-size:38px}.upd-list{padding-left:16px}.upd::before{left:-16px}.upd-list::before{left:3px}}
+
+/* updates log: every card is there when the page opens (no waiting for a scroll) – they just ease in one after another */
+.upd{animation:updIn .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 70ms)}
+@keyframes updIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}

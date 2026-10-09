@@ -459,6 +459,7 @@ const NAV_GROUPS = [
     ...(MEMBER_API ? [{ id: 'docs', href: 'docs.html', icon: '📜', label: 'Club docs', desc: 'Rules and announcements', flag: 'docs' }] : []),
     ...(MEMBER_API ? [{ id: 'playstyle', href: 'playstyle.html', icon: '🧭', label: 'Play Style', desc: 'How we play', flag: 'playStyle' }] : []),
     ...(MEMBER_API ? [{ id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages', desc: 'Team chat', flag: 'messages' }] : []),
+    { id: 'updates', href: 'updates.html', icon: '📰', label: 'Game updates', desc: 'EA patch notes and what they mean for builds' },
     { id: 'about', href: 'about.html', icon: 'ℹ️', label: 'About', desc: 'Our story' },
   ] },
   { id: 'matches', icon: '⚽', label: 'Matches', links: [
@@ -476,7 +477,6 @@ const NAV_GROUPS = [
     { id: 'builder', href: 'builder.html', icon: '🧩', label: 'Builder', desc: 'Plan your pro', flag: 'builder' },
     { id: 'probuilds', href: 'probuilds.html', icon: '⭐', label: 'Pro Builds', desc: 'Squad builds that work', flag: 'proBuilds' },
     ...(MEMBER_API ? [{ id: 'tactics-studio', href: 'tactics.html', icon: '🧠', label: 'Tactics Studio', desc: 'Club playbook and drills', flag: 'tactics' }] : []),
-    { id: 'updates', href: 'updates.html', icon: '📰', label: 'Game updates', desc: 'Patch notes, level cap' },
   ] },
 ];
 const NAV_BY_ID = new Map(NAV_GROUPS.flatMap((g) => g.links.map((l) => [l.id, g.id])));
