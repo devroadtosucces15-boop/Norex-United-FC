@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-09T10:00:49.462Z",
+ "fetchedAt": "2026-10-09T10:10:55.328Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -909,6 +909,42 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "griffp420",
+   "gamesPlayed": "3",
+   "winRate": "0",
+   "goals": "5",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "45",
+   "passesMade": "48",
+   "passSuccessRate": "78",
+   "ratingAve": "7.7",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "G. Parry",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "174",
+   "proNationality": "14",
+   "proOverall": "82",
+   "proOverallStr": "82",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "1",
+   "prevGoals1": "1",
+   "prevGoals2": "2",
+   "prevGoals3": "2",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "Bdestroy10",
    "gamesPlayed": "12",
    "winRate": "75",
@@ -1668,7 +1704,7 @@
  "positionCount": {
   "midfielder": 14,
   "goalkeeper": 0,
-  "forward": 12,
+  "forward": 13,
   "defender": 11
  },
  "career": [
@@ -1978,6 +2014,17 @@
    "manOfTheMatch": "17",
    "ratingAve": "7.6",
    "prevGoals": "0",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "griffp420",
+   "proPos": "25",
+   "gamesPlayed": "68",
+   "goals": "51",
+   "assists": "38",
+   "manOfTheMatch": "6",
+   "ratingAve": "7.5",
+   "prevGoals": "1",
    "favoritePosition": "forward"
   },
   {
