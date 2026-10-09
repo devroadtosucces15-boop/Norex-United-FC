@@ -5,6 +5,7 @@
 //   GET  /api/bot/settings/public  keyed (X-Norex-Key, same shared-secret pattern as /api/overrides) – fetch.mjs reads
 //                                  this before posting a match result so the channel/colour/emoji/toggle stay in sync.
 import { can, loadFlagOverrides } from './roles.js';
+import { getCommandSettings } from './botcommands.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -59,5 +60,5 @@ export async function botSettingsRoute(p, method, body, me, env, log) {
 export async function botSettingsPublicRoute(request, env) {
   if (!env.DISCORD_CLIENT_SECRET || request.headers.get('X-Norex-Key') !== await settingsKey(env.DISCORD_CLIENT_SECRET)) return fail('Forbidden', 403);
   // flags = the Boardroom's live switches (fetch.mjs honours them for the result post); guildId lets it tell "@everyone" from a real role
-  return json({ ...(await getBotSettings(env)), flags: await loadFlagOverrides(env), guildId: env.DISCORD_GUILD_ID || '' });
+  return json({ ...(await getBotSettings(env)), flags: await loadFlagOverrides(env), guildId: env.DISCORD_GUILD_ID || '', commands: await getCommandSettings(env) });
 }

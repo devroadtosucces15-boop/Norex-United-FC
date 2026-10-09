@@ -44,6 +44,7 @@ import { playMediaRoute, playMediaUpload } from './playmedia.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
+import { botCommandsRoute } from './botcommands.js';
 import { crawlRoute } from './crawl.js';
 import { burnersRoute, burnersRelay } from './burners.js';
 import { issueSave } from './issues.js';
@@ -749,6 +750,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (cht) return cht;
   const bst = await botSettingsRoute(p, method, body, me, env, log); // P7.5 bot personalisation
   if (bst) return bst;
+  const bcm = await botCommandsRoute(p, method, body, me, env, log); // per-command bot control
+  if (bcm) return bcm;
   const pts = await pointsRoute(p, method, body, me, env); // P11.3 point system
   if (pts) return pts;
 

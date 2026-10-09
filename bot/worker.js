@@ -9,6 +9,7 @@
 //   DISCORD_BOT_TOKEN  – bot token: DMs (P7.1), Verified role sync (P2.5), Club Intelligence server reads (secret)
 //   DISCORD_PUBLIC_KEY, SITE_URL, GITHUB_REPO – public values in wrangler.toml
 
+import { getCommandSettings, commandBlocked, shapeReply } from './botcommands.js';
 import { handleMembers } from './members.js';
 import { updateLive } from './live.js';
 import { notifyCron } from './notify.js';
@@ -86,6 +87,13 @@ export default {
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
     if (i.type === 4) return json({ type: 8, data: { choices: await autocomplete(i, site, ctx) } });
     const who = discordUser(env, i);
+    const cmdName = i.type === 2 ? i.data?.name : null;
+    const cmdSettings = cmdName ? await getCommandSettings(env) : null;
+    if (cmdName) { // the owner's per-command rules (Boardroom → Bot commands)
+      const msg = await commandBlocked(env, cmdName, who, i.channel_id, cmdSettings);
+      if (msg) return json({ type: 4, data: { content: msg, flags: 64 } });
+    }
+    const respond = async () => {
     if (i.type === 3 && /^norex:mme?:/.test(i.data?.custom_id ?? '')) { // P7.2 "Show my match" menu + "My match" button
       try {
         return json(await matchInteraction(i, site, {
@@ -140,6 +148,8 @@ export default {
       }
     }
     return new Response('Unhandled', { status: 400 });
+    };
+    return cmdName ? shapeReply(env, cmdName, await respond(), cmdSettings) : respond();
   },
 
   // BE9's background jobs (JOBS queue, BE0) – currently just the insight writer; refreshStatInsights()

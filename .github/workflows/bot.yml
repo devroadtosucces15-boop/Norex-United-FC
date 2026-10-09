@@ -70,3 +70,4 @@ jobs:
         env:
           DISCORD_APP_ID: "1553967740543569970"
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
