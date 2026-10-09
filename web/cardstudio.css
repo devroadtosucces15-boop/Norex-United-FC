@@ -56,3 +56,13 @@
 .cs-card{width:min(100%,420px);aspect-ratio:1/1;object-fit:cover;border-radius:18px;border:2px solid var(--gold);background:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .cs-card.cs-live-card{aspect-ratio:5/7}
 .cs-review-images .cs-card{width:140px;max-width:40vw;height:140px;object-fit:contain}
+
+.cs-owner-list{display:grid;gap:14px;margin-top:14px}
+.cs-owner-row{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.cs-owner-row h5{margin:0 0 6px}
+.cs-owner-media{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.cs-owner-media figure{margin:0;display:flex;flex-direction:column;gap:6px;width:min(100%,200px)}
+.cs-owner-media .cs-photo,.cs-owner-media .cs-card{width:100%;height:190px;aspect-ratio:auto;object-fit:contain}
+.cs-owner-media figcaption{color:var(--muted);font-size:12px}
+.cs-owner .cs-form label{display:flex;flex-direction:column;gap:6px;max-width:100%}
+.cs-owner .cs-form select{max-width:100%;width:260px}

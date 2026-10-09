@@ -1022,7 +1022,7 @@ function leadersPodium(members, id, base) {
     return top.length ? { k, label, top, fmt: fmt ?? ((v) => v) } : null;
   }).filter(Boolean);
   if (!panels.length) return '';
-  const data = panels.map(({ k, top, fmt }) => ({ key: k, top3: top.slice(0, 3).map(({ pl, v }) => ({ name: pl.name, href: pUrl(pl, base), v: fmt(v) })) }));
+  const data = panels.map(({ k, top, fmt }) => ({ key: k, top3: top.slice(0, 3).map(({ pl, v }) => ({ player: pl.key, name: pl.name, href: pUrl(pl, base), v: fmt(v) })) }));
   return `<section class="block reveal" data-podium>
 <h2 class="banner-h">Leaders Podium <small>top performers this season</small></h2>
 <div class="tabs chipset podium-tabs" data-tabs>${panels.map(({ k, label }, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="pod-${k}">${label}</button>`).join('')}</div>
