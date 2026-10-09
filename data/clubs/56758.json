@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-09T00:30:31.807Z",
+ "fetchedAt": "2026-10-09T00:40:30.013Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -295,42 +295,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "xUnCrownKing",
-   "gamesPlayed": "9",
-   "winRate": "44",
-   "goals": "5",
-   "assists": "7",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "27",
-   "passesMade": "129",
-   "passSuccessRate": "82",
-   "ratingAve": "7.2",
-   "tacklesMade": "6",
-   "tackleSuccessRate": "27",
-   "proName": "K. KING",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "183",
-   "proNationality": "93",
-   "proOverall": "84",
-   "proOverallStr": "84",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "2",
-   "prevGoals1": "2",
-   "prevGoals2": "1",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "2",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "CGM Splash",
@@ -1524,7 +1488,7 @@
  "positionCount": {
   "midfielder": 14,
   "goalkeeper": 0,
-  "forward": 12,
+  "forward": 11,
   "defender": 7
  },
  "career": [
@@ -1593,17 +1557,6 @@
    "ratingAve": "7.3",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "xUnCrownKing",
-   "proPos": "25",
-   "gamesPlayed": "133",
-   "goals": "210",
-   "assists": "68",
-   "manOfTheMatch": "31",
-   "ratingAve": "7.9",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "CGM Splash",
