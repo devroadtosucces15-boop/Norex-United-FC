@@ -17,7 +17,7 @@ ${t.locked ? '<span class="cs-redeem" title="Redeeming with points is coming soo
   const gallery = (title, icon, list, kind, picked, empty) => `<section class="cs-sec"><h4>${icon} ${title}</h4>${list.length ? `<div class="cs-grid">${list.map((t) => tile(t, kind, picked === t.id)).join('')}</div>` : `<p class="muted">${empty}</p>`}</section>`;
 
   const ago = (t) => { const m = Math.max(1, Math.round((Date.now() - t) / 60000)); return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
-  const STATUS = { pending: ['⏳', 'Waiting for a manager'], approved: ['✅', 'Approved – your card is in the queue'], rejected: ['❌', 'Not approved'], generating: ['🎨', 'Your card is being made'], done: ['🏁', 'Ready'], failed: ['⚠️', 'It did not work after 3 tries – a manager has been told'] };
+  const STATUS = { pending: ['⏳', 'Waiting for a manager'], approved: ['✅', 'Approved – your card is in the queue'], rejected: ['❌', 'Not approved'], generating: ['🎨', 'Your card is being made'], done: ['🏁', 'Ready'], failed: ['⚠️', 'It did not work after 3 tries – a manager has been told'], review: ['🔎', 'Artwork awaiting manager quality review'] };
   // Photos are private: fetched with the login token and shown from a blob URL.
   const photoUrls = [];
   const loadPhotos = (el, ctx) => $$('[data-photo],[data-result],[data-portrait]', el).forEach(async (img) => {
@@ -60,8 +60,9 @@ ${open ? `<form id="cs-request" class="cs-form"><label class="cs-file"><input ty
   };
 
   const queueHtml = (list) => {
-    const pending = list.filter((x) => x.status === 'pending'), done = list.filter((x) => x.status !== 'pending');
+    const pending = list.filter((x) => x.status === 'pending'), reviews = list.filter((x) => x.status === 'review'), done = list.filter((x) => !['pending', 'review'].includes(x.status));
     return `<section class="cs-sec"><h4>📥 Card requests${pending.length ? ` <span class="cs-count">${pending.length}</span>` : ''}</h4>
+${reviews.length ? `<h5>🔎 Generated artwork awaiting review</h5><ul class="cs-queue">${reviews.map(x => `<li class="cs-qrow" data-req="${x.id}"><div class="cs-review-images">${x.hasResult ? `<img class="cs-card" data-result="${x.id}" alt="Cinematic avatar awaiting review">` : ''}${x.hasPortrait ? `<img class="cs-card" data-portrait="${x.id}" alt="Website portrait awaiting review">` : ''}</div><div class="cs-qinfo"><b>${esc(x.user)}</b><span class="muted">Inspect likeness, framing, kit colors and background before publishing</span></div><div class="cs-qact"><button type="button" class="btn small" data-review="publish">✅ Publish</button><button type="button" class="btn ghost small" data-review="regenerate">🔁 Regenerate</button></div></li>`).join('')}</ul>` : ''}
 ${pending.length ? `<ul class="cs-queue">${pending.map((x) => `<li class="cs-qrow" data-req="${x.id}"><img class="cs-photo" data-photo="${x.id}" alt="Photo from ${esc(x.user)}">
 <div class="cs-qinfo"><b>${esc(x.user)}</b><span class="muted">${esc(x.bg || '—')} + ${esc(x.pose || '—')} · ${ago(x.createdAt)}</span>
 <input data-note maxlength="200" placeholder="Reason (needed to reject)" aria-label="Reason"></div>
@@ -180,6 +181,7 @@ ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="car
           try { await ctx.call('/api/cards/requests/decide', { id: Number(row.dataset.req), decision: b.dataset.decide, note }); ctx.toast(b.dataset.decide === 'approve' ? 'Approved' : 'Rejected'); load(); } catch (err) { ctx.toast(err.message, true); $$('button', row).forEach((x) => { x.disabled = false; }); }
         };
       });
+      $$('[data-review]', el).forEach((b) => { b.onclick = async () => { const id = Number(b.closest('[data-req]').dataset.req); b.disabled = true; try { await ctx.call('/api/cards/requests/review', { id, decision: b.dataset.review }); ctx.toast(b.dataset.review === 'publish' ? 'Published' : 'Regeneration queued'); load(); } catch (e) { ctx.toast(e.message, true); b.disabled = false; } }; });
       $$('[data-retry]', el).forEach((b) => {
         b.onclick = async () => { b.disabled = true; try { await ctx.call('/api/cards/requests/retry', { id: Number(b.dataset.retry) }); ctx.toast('Retrying'); load(); } catch (err) { ctx.toast(err.message, true); b.disabled = false; } };
       });

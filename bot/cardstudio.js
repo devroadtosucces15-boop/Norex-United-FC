@@ -87,7 +87,7 @@ export function photoType(b) {
 const dropPhoto = (env, key) => (key && env.MEDIA ? env.MEDIA.delete(key).catch(() => {}) : null);
 
 const reqView = (r, extra = {}) => ({
-  id: r.id, month: r.month, status: r.status, note: r.note, bg: r.bg_name ?? null, pose: r.pose_name ?? null,
+  id: r.id, month: r.month, status: r.status === 'done' && r.published === 0 ? 'review' : r.status, note: r.note, bg: r.bg_name ?? null, pose: r.pose_name ?? null,
   createdAt: r.created_at, decidedAt: r.decided_at, hasResult: !!r.result_key, hasPortrait: !!r.portrait_key, avatarEnabled: r.avatar_enabled !== 0, portraitEnabled: r.portrait_enabled === 1, attempts: r.attempts, ...extra,
 });
 const REQ_SQL = `SELECT r.*, b.name AS bg_name, p.name AS pose_name FROM card_requests r
@@ -223,7 +223,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
     const rows = await all(env, `SELECT r.*, b.name AS bg_name, p.name AS pose_name, u.name AS user_name, d.name AS decider FROM card_requests r
       LEFT JOIN card_templates b ON b.id = r.bg_id LEFT JOIN card_templates p ON p.id = r.pose_id
       LEFT JOIN users u ON u.id = r.user_id LEFT JOIN users d ON d.id = r.decided_by
-      WHERE r.status = 'pending' OR r.decided_at > ? ORDER BY (r.status = 'pending') DESC, COALESCE(r.decided_at, r.created_at) DESC LIMIT 100`, Date.now() - 14 * 864e5);
+      WHERE r.status = 'pending' OR (r.status = 'done' AND r.published = 0) OR r.decided_at > ? ORDER BY (r.status = 'pending') DESC, COALESCE(r.decided_at, r.created_at) DESC LIMIT 100`, Date.now() - 14 * 864e5);
     return json({ requests: rows.map((r) => reqView(r, { user: r.user_name || 'Member', userId: r.user_id, decider: r.decider || null })) });
   }
 
@@ -249,6 +249,27 @@ export async function cardsRoute(p, method, body, me, env, log) {
     return json({ ok: true, status });
   }
 
+  if (p === '/api/cards/requests/review' && method === 'POST') {
+    if (!manage) return fail('Managers only.', 403);
+    if (!['publish', 'regenerate'].includes(body.decision)) return fail('Publish or regenerate.');
+    const r = await one(env, 'SELECT * FROM card_requests WHERE id = ?', Number(body.id));
+    if (!r || r.status !== 'done' || r.published !== 0) return fail('Artwork is not awaiting review.', 409);
+    if (body.decision === 'publish') {
+      const updated = await run(env, "UPDATE card_requests SET published = 1, photo_key = '' WHERE id = ? AND status = 'done' AND published = 0", r.id);
+      if (!updated.meta?.changes) return fail('Already reviewed.', 409);
+      await dropPhoto(env, r.photo_key);
+      // Private source photo is removed after publishing.
+      await safely(notify(env, [r.user_id], { type: 'card', icon: '🏁', title: 'Your NOREX artwork is ready', body: 'Manager-approved artwork is ready to download.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
+    } else {
+      const updated = await run(env, "UPDATE card_requests SET status = 'approved', published = 0, attempts = 0, started_at = NULL, result_key = NULL, portrait_key = NULL WHERE id = ? AND status = 'done' AND published = 0", r.id);
+      if (!updated.meta?.changes) return fail('Already reviewed.', 409);
+      await Promise.all([dropPhoto(env, r.result_key), dropPhoto(env, r.portrait_key)]);
+      kick = true;
+    }
+    await log(env, me, 'card-artwork-' + body.decision, `#${r.id}`);
+    return json({ ok: true });
+  }
+
   if (p === '/api/cards/requests/retry' && method === 'POST') {
     if (!manage) return fail('Managers only.', 403);
     const res = await run(env, "UPDATE card_requests SET status = 'approved', attempts = 0, started_at = NULL WHERE id = ? AND status = 'failed'", Number(body.id));
@@ -266,7 +287,9 @@ export async function cardsRoute(p, method, body, me, env, log) {
 export async function cardResult(request, me, env, id) {
   const blocked = gate(me, env);
   if (blocked) return blocked;
-  const r = await one(env, 'SELECT user_id, result_key, portrait_key FROM card_requests WHERE id = ?', Number(id));
+  const r = await one(env, 'SELECT user_id, result_key, portrait_key, status, published FROM card_requests WHERE id = ?', Number(id));
+  if (!r) return new Response('Not found', { status: 404 });
+  if ((r.status !== 'done' || r.published === 0) && !can(me, 'cards.templates')) return new Response('Not found', { status: 404 });
   const portrait = new URL(request.url).searchParams.get('kind') === 'portrait';
   const key = portrait ? r?.portrait_key : r?.result_key;
   if (!key || !env.MEDIA) return new Response('Not found', { status: 404 });
@@ -307,6 +330,8 @@ async function render(env, bg, pose, photo, portrait = false) {
   const bytes = Uint8Array.from(atob(out.image), (c) => c.charCodeAt(0));
   const type = photoType(bytes);
   if (bytes.length < 1000 || !type) throw new Error('The image model returned an unusable picture.');
+  const dimensions = type[1] === 'png' ? pngSize(bytes) : null;
+  if (dimensions && dimensions.w && dimensions.h && (dimensions.w !== CARD_SIZE || dimensions.h !== CARD_SIZE)) throw new Error('AI artwork must be exactly 1024 × 1024 pixels.');
   return { bytes, type };
 }
 
@@ -341,10 +366,9 @@ async function generateOne(env, r, now) {
       portraitKey = `cardresult/${hex(16)}.${portrait.type[1]}`;
       await env.MEDIA.put(portraitKey, portrait.bytes, { httpMetadata: { contentType: portrait.type[0] } });
     }
-    const res = await run(env, "UPDATE card_requests SET status = 'done', result_key = ?, portrait_key = ?, photo_key = '', started_at = NULL WHERE id = ? AND status = 'generating'", resultKey, portraitKey, r.id);
+    const res = await run(env, "UPDATE card_requests SET status = 'done', published = 0, result_key = ?, portrait_key = ?, started_at = NULL WHERE id = ? AND status = 'generating'", resultKey, portraitKey, r.id);
     if (!res.meta?.changes) { await dropPhoto(env, resultKey); await dropPhoto(env, portraitKey); return 'skipped'; }
-    await dropPhoto(env, r.photo_key); // the selfie has done its job
-    await safely(notify(env, [r.user_id], { type: 'card', icon: '🏁', title: 'Your club card is ready', body: 'Open Card Studio to see and save it.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
+    await safely(notifyManagers(env, { icon: '🎨', title: 'Card artwork awaiting review', body: `Request #${r.id} is ready for final approval.`, link: 'members.html#cards', ref: `cardreview:${r.id}` }));
     return 'done';
   } catch (e) {
     console.log('card generation failed', r.id, attempt, e.message);

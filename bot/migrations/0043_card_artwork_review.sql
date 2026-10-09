@@ -1,0 +1,1 @@
+ALTER TABLE card_requests ADD COLUMN published INTEGER NOT NULL DEFAULT 1;

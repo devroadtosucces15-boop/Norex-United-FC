@@ -155,7 +155,7 @@ t('after cancelling the month is free again', (await reqUp(m1, `bg=${bgId}&pose=
 
 // ---------- generation ----------
 const realAI = env.AI;
-const outPng = Buffer.alloc(3000, 7); outPng.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const outPng = Buffer.alloc(3000, 7); outPng.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]); outPng.writeUInt32BE(1024, 16); outPng.writeUInt32BE(1024, 20);
 const calls = [];
 let aiMode = 'ok';
 env.AI = {
@@ -188,8 +188,13 @@ t('uses the flux model with prompt, size, bg and photo', calls[0].model === CARD
 t('background is sent as image 0 untouched', Buffer.from(await calls[0].form.get('input_image_0').arrayBuffer()).equals(bgBytes) && !!calls[0].form.get('input_image_1'));
 t('result stored privately under cardresult/', done2.result_key.startsWith('cardresult/') && r2objects.get(done2.result_key).buf.equals(outPng));
 t('result is not served by /media', (await W(`/media/${done2.result_key}`)).status === 404);
-t('selfie is deleted once the card is made', done2.photo_key === '' && !r2objects.has(photoKey2));
-t('member notified the card is ready', (await env.DB.prepare("SELECT title FROM notifications WHERE user_id = '501' AND type = 'card' ORDER BY id DESC").first('title')) === 'Your club card is ready');
+t('source photo stays private until final review', done2.photo_key === photoKey2 && r2objects.has(photoKey2));
+t('generated artwork is held for manager review', (await call(m2, '/api/cards/request')).d.request.status === 'review');
+t('member cannot see unapproved artwork', (await resGet(m2, two.id)).status === 404);
+t('member cannot publish artwork', (await call(m2, '/api/cards/requests/review', { id: two.id, decision: 'publish' })).s === 403);
+t('manager can publish after inspecting', (await call(mgr, '/api/cards/requests/review', { id: two.id, decision: 'publish' })).s === 200);
+t('selfie is deleted after manager publishes', (await row(two.id)).photo_key === '' && !r2objects.has(photoKey2));
+t('member notified the card is ready', (await env.DB.prepare("SELECT title FROM notifications WHERE user_id = '501' AND type = 'card' ORDER BY id DESC").first('title')) === 'Your NOREX artwork is ready');
 t('requester sees the card', (await resGet(m2, two.id)).status === 200);
 t('manager sees the card', (await resGet(mgr, two.id)).status === 200);
 t('another member cannot', (await resGet(m3, two.id)).status === 404);
