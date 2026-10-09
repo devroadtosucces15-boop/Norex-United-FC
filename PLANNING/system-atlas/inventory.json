@@ -1,9 +1,9 @@
 {
-  "revision": "2ffa5ff80787f7c83ad60492c9a559aaf1ffe89d",
-  "files": 658,
+  "revision": "eb3a6f9f2993b744e2dd42983c850c92fdb83324",
+  "files": 659,
   "imports": 425,
   "api_paths": 220,
-  "tables": 270,
+  "tables": 271,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -6900,6 +6900,18 @@
       "endpoints": [],
       "tables": [
         "pathlib"
+      ],
+      "functions": []
+    },
+    {
+      "path": "scripts/build-atlas-private-view.py",
+      "layer": "scripts",
+      "lines": 27,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "pathlib",
+        "shutil"
       ],
       "functions": []
     },
