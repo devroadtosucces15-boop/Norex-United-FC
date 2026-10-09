@@ -1,5 +1,5 @@
 {
-  "revision": "fa285138378d642ceda0c1dca37a8e774b86981b",
+  "revision": "b7a8527363f5138fe81dd837892b4ee0c170d03b",
   "files": 661,
   "imports": 425,
   "api_paths": 220,
@@ -6895,7 +6895,7 @@
     {
       "path": "scripts/build-atlas-history.py",
       "layer": "scripts",
-      "lines": 27,
+      "lines": 30,
       "imports": [],
       "endpoints": [],
       "tables": [
