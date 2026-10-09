@@ -217,12 +217,13 @@ function syncRolesCommand(i, env, ctx, site, who) {
 // ---------- /exportcontent (owner): dump guide/rule/playstyle/announcement channels to the owner's DMs ----------
 function exportContentCommand(i, env, ctx, who) {
   if (!can(who, 'settings.bot')) return json({ type: 4, data: { content: '🔒 Owner only.', flags: 64 } });
-  const filter = flatOptions(i.data.options).find((o) => o.name === 'channel')?.value;
+  const opts = Object.fromEntries(flatOptions(i.data.options).map(o => [o.name,o.value]));
+  const options = {...opts,channelId:opts.channel || i.channel_id};
   ctx.waitUntil((async () => {
     let content;
     try {
-      const r = await exportContent(env, who, filter);
-      content = `📬 Sent to your DMs – ${r.channels.map((n) => `#${n}`).join(', ')} (${r.messages} message${r.messages === 1 ? '' : 's'}).`;
+      const r = await exportContent(env, who, options);
+      content = `📬 Sent to your DMs – ${r.channels.map((n) => `#${n}`).join(', ')} (${r.scanned} scanned, ${r.matched} matched, ${r.messages} DMs).`;
     } catch (e) {
       content = `⚠️ ${e.message}`;
     }

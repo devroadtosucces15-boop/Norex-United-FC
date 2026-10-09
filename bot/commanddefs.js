@@ -70,9 +70,16 @@ export const COMMANDS = [
   },
   { name: 'syncroles', description: 'Managers: give/remove the ✅ Verified role for every player claim', default_member_permissions: String(1 << 28), contexts: [0] },
   {
-    name: 'exportcontent', description: 'Owner: DM me pinned + recent messages from guide/rule/playstyle/announcement channels',
+    name: 'exportcontent', description: 'Owner: incremental channel history export to DMs',
     default_member_permissions: String(1 << 28), contexts: [0],
-    options: [{ type: STRING, name: 'channel', description: 'Only this channel (name/part of it) instead of the default guide/rule/playstyle/announce match' }],
+    options: [
+      { type: CHANNEL, name: 'channel', description: 'Default: current channel' },
+      { type: INTEGER, name: 'count', description: 'Messages to scan (max 250)', min_value: 1, max_value: 250 },
+      { type: STRING, name: 'mode', description: 'Next older batch or reset', choices: [{name:'Next',value:'next'},{name:'Reset',value:'reset'}] },
+      { type: STRING, name: 'type', description: 'Content type', choices: ['all','text','images','videos','audio','documents','attachments'].map(v=>({name:v,value:v})) },
+      { type: STRING, name: 'extension', description: 'File extension e.g. pdf', max_length: 12 },
+      { type: STRING, name: 'keyword', description: 'Filename keyword', max_length: 80 },
+    ],
   },
   { name: 'aispike', description: 'Owner: one-off test of the Workers AI image + text models (P11.1)', default_member_permissions: String(1 << 28), contexts: [0] },
   {

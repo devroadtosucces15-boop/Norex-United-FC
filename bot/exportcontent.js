@@ -1,85 +1,75 @@
-// /exportcontent (owner only) – dumps pinned + recent messages from the server's guide/rule/playstyle/announcement
-// channels to the owner's DMs, as plain text, so old Discord content can be copied into the site's docs (P5.2)
-// or just reviewed. Read-only: nothing is changed in Discord or the site. Needs DISCORD_BOT_TOKEN + View
-// Channels / Read Message History on those channels.
 import { can } from './roles.js';
-
 const API = 'https://discord.com/api/v10';
-const TEXT = [0, 5]; // text + announcement channel types
-const MATCH = /guide|rule|playstyle|play-style|announce|faq|requirement/i;
-const CHAN_CAP = 10; // channel reads per run (2 calls each: pins + messages)
-const MSG_CAP = 50; // recent messages per channel
-const CHUNK = 1900; // stay under Discord's 2000-char message limit
-
-async function dget(env, path) {
-  const r = await fetch(API + path, { headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` } });
-  if (r.ok) return r.json();
-  const e = await r.json().catch(() => ({}));
-  throw new Error(r.status === 403 || e.code === 50001 || e.code === 50013 ? 'no-access' : `discord-${r.status}`);
-}
-
-const dpost = (env, path, body) => fetch(`${API}${path}`, {
-  method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-});
-
-// One message → a few lines of plain text (author, time, content, attachment links).
-function line(m) {
-  const when = new Date(m.timestamp).toISOString().slice(0, 16).replace('T', ' ');
-  const who = m.author?.username ?? 'unknown';
-  const text = (m.content || '').trim();
-  const files = (m.attachments ?? []).map((a) => `  📎 ${a.filename} — ${a.url}`).join('\n');
-  return [`[${when}] ${who}${text ? `: ${text}` : ''}`, files].filter(Boolean).join('\n');
-}
-
-async function channelDump(env, ch) {
-  const out = [`\n━━━ #${ch.name} ━━━`];
-  try {
-    const pins = await dget(env, `/channels/${ch.id}/pins`);
-    if (pins.length) out.push('📌 Pinned:', ...pins.map(line));
-  } catch (e) {
-    out.push(`⚠️ pins: ${e.message}`);
+const KINDS = ['all','text','images','videos','audio','documents','attachments'];
+const FILE_TYPES = { images: /\.(png|jpe?g|gif|webp|avif)$/i, videos: /\.(mp4|mov|webm|mkv)$/i, audio: /\.(mp3|wav|ogg|m4a|flac)$/i, documents: /\.(pdf|docx?|xlsx?|pptx?|txt|csv|md)$/i };
+async function api(env, path, method = 'GET', payload) {
+  for (let n = 0; n < 4; n++) {
+    const r = await fetch(API + path, { method, headers: { Authorization: 'Bot ' + env.DISCORD_BOT_TOKEN, ...(payload ? {'Content-Type':'application/json'} : {}) }, ...(payload ? {body:JSON.stringify(payload)} : {}) });
+    if (r.ok) return r.json();
+    if (r.status === 429 && n < 3) {
+      const data = await r.json().catch(() => ({}));
+      await new Promise(resolve => setTimeout(resolve, Math.min(10000, Math.max(1000, (data.retry_after || 1)*1000))));
+      continue;
+    }
+    throw new Error('Discord API ' + r.status);
   }
-  try {
-    const msgs = await dget(env, `/channels/${ch.id}/messages?limit=${MSG_CAP}`);
-    if (msgs.length) out.push('🗒️ Recent:', ...msgs.reverse().map(line));
-    else out.push('(no messages)');
-  } catch (e) {
-    out.push(`⚠️ messages: ${e.message}`);
+}
+function classify(a) {
+  const mime = a.content_type || '';
+  if (mime.startsWith('image/')) return 'images';
+  if (mime.startsWith('video/')) return 'videos';
+  if (mime.startsWith('audio/')) return 'audio';
+  return Object.entries(FILE_TYPES).find(([,rx]) => rx.test(a.filename || ''))?.[0] || 'attachments';
+}
+function render(m, type, ext, keyword) {
+  const attachments = (m.attachments || []).filter(a =>
+    (!ext || (a.filename || '').toLowerCase().endsWith('.' + ext)) &&
+    (!keyword || (a.filename || '').toLowerCase().includes(keyword)) &&
+    (type === 'all' || type === 'attachments' || classify(a) === type));
+  const showText = !ext && !keyword && (type === 'all' || type === 'text') && !!m.content?.trim();
+  if (!showText && !attachments.length) return null;
+  return '[' + m.timestamp + '] ' + (m.author?.username || 'unknown') + ' id:' + m.id +
+    (showText ? '\n' + m.content : '') + attachments.map(a => '\n📎 ' + a.filename + ' — ' + a.url).join('');
+}
+function pieces(text) {
+  const result = [];
+  while (text.length) {
+    let cut = Math.min(1900, text.length);
+    if (cut < text.length) { const nl = text.lastIndexOf('\n', cut); if (nl > 900) cut = nl; }
+    result.push(text.slice(0, cut)); text = text.slice(cut).replace(/^\n/, '');
   }
-  return out.join('\n');
+  return result;
 }
-
-// Splits one long text into ≤CHUNK pieces without cutting a line in half where avoidable.
-function chunks(text) {
-  const out = [];
-  let buf = '';
-  for (const l of text.split('\n')) {
-    if (buf.length + l.length + 1 > CHUNK) { out.push(buf); buf = ''; }
-    buf += (buf ? '\n' : '') + l;
-  }
-  if (buf) out.push(buf);
-  return out;
-}
-
-async function dmChannel(env, userId) {
-  const r = await dpost(env, '/users/@me/channels', { recipient_id: userId });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d.id) throw new Error('Could not open a DM (check your Discord privacy settings allow DMs from server members).');
-  return d.id;
-}
-
-// Runs the export and DMs the owner the result in as many messages as needed.
-export async function exportContent(env, who, filter) {
+export async function exportContent(env, who, opts = {}) {
   if (!can(who, 'settings.bot')) throw new Error('Owner only.');
-  if (!env.DISCORD_BOT_TOKEN) throw new Error('DISCORD_BOT_TOKEN is not set.');
-  const channels = await dget(env, `/guilds/${env.DISCORD_GUILD_ID}/channels`);
-  const rx = filter ? new RegExp(filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : MATCH;
-  const matched = channels.filter((c) => TEXT.includes(c.type) && rx.test(c.name)).slice(0, CHAN_CAP);
-  if (!matched.length) throw new Error(filter ? `No text channel matched "${filter}".` : 'No channel names matched guide/rule/playstyle/announce/faq/requirement.');
-  const dm = await dmChannel(env, who.u);
-  const parts = await Promise.all(matched.map((c) => channelDump(env, c)));
-  const header = `📚 Export of ${matched.length} channel(s): ${matched.map((c) => `#${c.name}`).join(', ')}\n(pinned + last ${MSG_CAP} messages each — paste this to Claude to summarise/organise)`;
-  const pieces = chunks([header, ...parts].join('\n'));
-  for (const content of pieces) await dpost(env, `/channels/${dm}/messages`, { content });
-  return { channels: matched.map((c) => c.name), messages: pieces.length };
+  if (!env.DB || !env.DISCORD_BOT_TOKEN) throw new Error('Bot database or token missing.');
+  const { channelId, count = 100, mode = 'next', type = 'all', extension = '', keyword = '' } = opts;
+  if (!/^\d+$/.test(String(channelId))) throw new Error('Invalid channel.');
+  if (!Number.isInteger(count) || count < 1 || count > 250) throw new Error('Count must be 1–250.');
+  if (!KINDS.includes(type) || !['next','reset'].includes(mode)) throw new Error('Invalid mode/type.');
+  const ext = extension.toLowerCase().replace(/^\./,'').trim();
+  const word = keyword.toLowerCase().trim();
+  if (ext && !/^[a-z0-9]{1,12}$/.test(ext)) throw new Error('Invalid extension.');
+  const channel = await api(env, '/channels/' + channelId);
+  if (![0,5].includes(channel.type) || channel.guild_id !== env.DISCORD_GUILD_ID) throw new Error('Channel must be in this server.');
+  const key = JSON.stringify([who.u, channelId, type, ext, word]);
+  const saved = mode === 'next' ? await env.DB.prepare('SELECT before_id FROM export_content_cursors WHERE cursor_key = ?').bind(key).first() : null;
+  let before = saved?.before_id || null;
+  const matches = [];
+  let scanned = 0, exhausted = false;
+  while (scanned < count) {
+    const limit = Math.min(100, count - scanned);
+    const batch = await api(env, '/channels/' + channelId + '/messages?limit=' + limit + (before ? '&before=' + before : ''));
+    if (!batch.length) { exhausted = true; break; }
+    for (const msg of batch) { const result = render(msg,type,ext,word); if (result) matches.push(result); }
+    scanned += batch.length;
+    before = batch[batch.length-1].id;
+    if (batch.length < limit) { exhausted = true; break; }
+  }
+  const dm = await api(env, '/users/@me/channels', 'POST', {recipient_id:who.u});
+  const heading = '📚 #' + channel.name + ' | scanned ' + scanned + ' | matched ' + matches.length + ' | ' + type + (ext ? ' .' + ext : '') + (word ? ' filename:' + word : '') + (exhausted ? '\nBeginning of history reached.' : '');
+  const output = pieces([heading,...matches.reverse()].join('\n\n'));
+  for (const content of output) await api(env, '/channels/' + dm.id + '/messages', 'POST', {content,allowed_mentions:{parse:[]}});
+  if (before) await env.DB.prepare('INSERT INTO export_content_cursors (cursor_key,before_id,updated_at) VALUES (?,?,?) ON CONFLICT(cursor_key) DO UPDATE SET before_id=excluded.before_id,updated_at=excluded.updated_at').bind(key,before,Date.now()).run();
+  return {channels:[channel.name],messages:output.length,scanned,matched:matches.length,exhausted};
 }
