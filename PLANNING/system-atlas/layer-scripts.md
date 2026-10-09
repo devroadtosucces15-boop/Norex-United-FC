@@ -22,10 +22,11 @@ flowchart LR
   n15["scripts/messages-page.mjs"]
   n16["scripts/probuilds-page.mjs"]
   n17["scripts/rankings.mjs"]
-  n18["scripts/serve.mjs"]
-  n19["scripts/tactics-page.mjs"]
-  n20["scripts/updates-page.mjs"]
-  n21["scripts/updates.mjs"]
+  n18["scripts/serve-atlas-private.py"]
+  n19["scripts/serve.mjs"]
+  n20["scripts/tactics-page.mjs"]
+  n21["scripts/updates-page.mjs"]
+  n22["scripts/updates.mjs"]
   n4 --> n5
   n4 --> n6
   n4 --> n7
@@ -37,10 +38,10 @@ flowchart LR
   n4 --> n15
   n4 --> n16
   n4 --> n17
-  n4 --> n19
   n4 --> n20
+  n4 --> n21
   n11 --> n14
-  n18 --> n14
-  n20 --> n14
+  n19 --> n14
   n21 --> n14
+  n22 --> n14
 ```
