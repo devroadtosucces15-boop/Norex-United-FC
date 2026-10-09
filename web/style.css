@@ -484,7 +484,7 @@ button.chip{cursor:pointer}
 .tt-stage[hidden]{display:none}
 .tt-stage.dragging{cursor:grabbing}
 .tt-world{position:absolute;inset:8%;transform-style:preserve-3d;transform:scale(var(--tt-sc,1)) rotateX(var(--tt-rx,55deg)) rotateZ(var(--tt-rz,-16deg));transition:transform .5s cubic-bezier(.2,.8,.2,1)}
-.tt-stage.dragging .tt-world{transition:none}
+.tt-stage.dragging .tt-world,.tt-stage.tt-nofx .tt-world{transition:none}
 .tt-ground3d{position:absolute;inset:0;border-radius:12px;overflow:hidden;box-shadow:0 0 0 2px rgba(255,255,255,.25);
   background:repeating-linear-gradient(90deg,#14532d 0 10%,#166534 10% 20%)}
 .pp.on b,.tt-pin.on b{border-color:var(--red);box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 45%,transparent)}
@@ -523,6 +523,7 @@ button.chip{cursor:pointer}
    on the actual front card instead of whichever sibling happens to paint on top; dragging still works
    because those clicks fall through to the stage itself */
 .carousel-card:not(.front){opacity:1;filter:brightness(calc(1 - var(--dist,.3) * .62)) saturate(calc(1 - var(--dist,.3) * .35));pointer-events:none;transform:rotateY(calc(var(--i) * var(--car-step,0deg))) translateZ(var(--car-radius,280px)) scale(.88)}
+.carousel-card.far{visibility:hidden;opacity:0;pointer-events:none}
 /* names are never cut short: they wrap, and long ones get smaller (app.js sets --nm) */
 .carousel-front .fut-name{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.05;font-size:var(--nm,16px);display:grid;place-items:center;min-height:2.3em}
 .carousel-flip{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
@@ -1549,6 +1550,7 @@ html.nx-hubin::after{content:'';position:fixed;inset:0;z-index:10000;pointer-eve
   .sheet.sheet-top .sheet-grab,.sheet.sheet-top .me-btn{display:none}
   .sheet.sheet-top .acct{margin:0}
   .sheet.sheet-top .acct-menu{position:static;min-width:0;width:100%;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+  .sheet.sheet-top .acct-menu[hidden]{display:grid} /* something else (the outside-click closer) can re-hide the menu the sheet just opened – inside the sheet it is always shown */
   .sheet.sheet-top .acct-menu a,.sheet.sheet-top .acct-out{padding:13px 10px;font-size:15px;white-space:normal;overflow-wrap:anywhere}
   .sheet.sheet-top *{max-width:100%;box-sizing:border-box}
 }

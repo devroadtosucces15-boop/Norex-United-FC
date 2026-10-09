@@ -489,7 +489,26 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
     stage.style.setProperty('--tt-rz', `${CAM[name].rz}deg`);
     stage.style.setProperty('--tt-sc', CAM[name].sc);
     camBtns.forEach((b) => b.classList.toggle('on', b.dataset.cam === name));
+    fitCam();
   }
+
+  // The tilted/rotated pitch is wider than the stage on phones (it ran off the right edge): measure it with the
+  // transition off and shrink the preset's scale until the whole field is inside the stage.
+  function fitCam() {
+    const g = stage.querySelector('.tt-ground3d');
+    if (!g || stage.hidden) return;
+    stage.classList.add('tt-nofx');
+    const sc = parseFloat(stage.style.getPropertyValue('--tt-sc')) || 1;
+    const gr = g.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+    if (gr.width && sr.width) {
+      const cx = sr.left + sr.width / 2, half = Math.max(cx - gr.left, gr.right - cx); // perspective leaves the field a little off-centre, so measure from the stage's middle
+      const f = Math.min(1, (sr.width / 2 - 6) / half, (sr.height * 0.94) / gr.height);
+      if (f < 1) stage.style.setProperty('--tt-sc', (sc * f).toFixed(3));
+    }
+    void stage.offsetWidth;
+    stage.classList.remove('tt-nofx');
+  }
+  addEventListener('resize', () => { if (built) fitCam(); });
 
   statBtns.forEach((b) => b.addEventListener('click', () => {
     statBtns.forEach((x) => x.classList.toggle('on', x === b));
@@ -537,32 +556,33 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
     ring.style.setProperty('--car-rot', `${rot}deg`);
   }
 
+  // Coverflow on an arc: neighbours sit CAR_STEP° apart (enough that cards fan out instead of piling up), only the
+  // three either side of the front card are drawn, and the ring no longer wraps (a full 360° ring of 36 cards put
+  // them ~45px apart, so cards overlapped and the backs of the ones behind showed through).
+  const carStep = () => (innerWidth < 560 ? 24 : 20);
+  const clampRot = (r) => Math.max(-(Math.max(visible.length, 1) - 1) * carStep(), Math.min(0, r));
+
   function updateFront() {
     const n = visible.length;
     if (!n) return;
-    const step = 360 / n;
-    let best = 0, bestDist = Infinity;
-    for (let i = 0; i < n; i++) {
-      const angle = ((rot + i * step) % 360 + 360) % 360;
-      const dist = Math.min(angle, 360 - angle);
-      if (dist < bestDist) { bestDist = dist; best = i; }
-    }
+    const st = carStep();
+    const best = Math.max(0, Math.min(n - 1, Math.round(-rot / st)));
     front = best;
     let vi = -1;
     cards.forEach((c) => {
       if (c.hidden) return;
       vi++;
+      const off = Math.abs(vi - best);
       c.classList.toggle('front', vi === best);
-      // dim by distance from the front card instead of making the far ones see-through
-      const a = ((rot + vi * step) % 360 + 360) % 360;
-      c.style.setProperty('--dist', (Math.min(a, 360 - a) / 180).toFixed(3));
+      c.classList.toggle('far', off > 3);
+      c.style.setProperty('--dist', Math.min(off / 4, 1).toFixed(3)); // dim by distance, never see-through
     });
     if (countEl) countEl.textContent = `Drag to spin · ${best + 1} of ${n}`;
   }
 
   function step(dir) {
     const n = visible.length || 1;
-    rot -= dir * (360 / n);
+    rot = -((front + dir + n) % n) * carStep(); // wraps from the last card back to the first
     applyRot(true);
     updateFront();
   }
@@ -570,7 +590,7 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
   function layout() {
     visible = visibleData();
     const n = visible.length;
-    stage.style.setProperty('--car-step', `${360 / Math.max(n, 1)}deg`);
+    stage.style.setProperty('--car-step', `${carStep()}deg`);
     stage.style.setProperty('--car-radius', '260px'); // fixed depth: a shallow ring so the perspective(1400) scale stays sane regardless of squad size
     let vi = -1;
     cards.forEach((c) => {
@@ -624,11 +644,11 @@ function reset(c) { c.classList.remove('tilting'); c.style.setProperty('--rx', '
       const now = performance.now();
       if (lastT && now > lastT) vel = (e.clientX - lastX) / (now - lastT); // px/ms, for the fling on release
       lastX = e.clientX; lastT = now;
-      rot = dragRotStart + dx * 0.4;
+      rot = clampRot(dragRotStart + dx * 0.4);
       applyRot(false);
       updateFront();
     });
-    const endDrag = () => { if (dragStart == null) return; dragStart = null; const n = visible.length || 1; const st = 360 / n; if (moved && !reducedMotion()) rot += Math.max(-1.4, Math.min(1.4, vel)) * 0.4 * 240; vel = 0; lastT = 0; rot = Math.round(rot / st) * st; applyRot(true); updateFront(); };
+    const endDrag = () => { if (dragStart == null) return; dragStart = null; if (moved && !reducedMotion()) rot += Math.max(-1.4, Math.min(1.4, vel)) * 0.4 * 240; vel = 0; lastT = 0; rot = clampRot(Math.round(rot / carStep()) * carStep()); applyRot(true); updateFront(); };
     stage.addEventListener('pointerup', endDrag);
     stage.addEventListener('pointercancel', endDrag);
     stage.addEventListener('keydown', (e) => {
