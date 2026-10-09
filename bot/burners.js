@@ -75,7 +75,12 @@ export async function searchClubs(q, loadSite) {
   const lq = q.toLowerCase();
   const seen = clubs.size ? [...clubs.values()].filter((c) => c.name.toLowerCase().includes(lq)) : [];
   if (seen.length) return seen.sort((a, b) => (b.name.toLowerCase() === lq) - (a.name.toLowerCase() === lq) || a.name.length - b.name.length).slice(0, 10);
-  const hits = await eaGet('allTimeLeaderboard/search', { clubName: q });
+  return shapeHits(await eaGet('allTimeLeaderboard/search', { clubName: q }), q);
+}
+
+// EA's all-time leaderboard hits → [{ id, name, crest, gp, w, d, l, gf, ga, div }], exact name first then busiest.
+export function shapeHits(hits, q) {
+  const lq = String(q ?? '').trim().toLowerCase();
   const n = (v) => Number(v) || 0;
   return (Array.isArray(hits) ? hits : [])
     .map((h) => ({
@@ -111,6 +116,40 @@ export async function recentOpponents(home = HOME_CLUB, loadSite) {
   return [...seen.values()].sort((a, b) => b.ts - a.ts).slice(0, 25);
 }
 
+// ---------- EA relay: a name search the site data can't answer goes through a GitHub Actions job ----------
+// EA blocks the Worker's network but lets Actions through, so the Worker parks the waiting Discord reply in D1 (ea_relay),
+// dispatches .github/workflows/ea-relay.yml with only the club name, and scripts/ea-relay.mjs posts EA's raw answer back to
+// POST /api/burners/relay – which edits the reply. About a minute end to end; the interaction token never leaves D1.
+const MAX_WAITING = 6;
+export async function relayAsk(env, q, i) {
+  if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO || !env.DB || !i?.token) return false;
+  await env.DB.prepare('DELETE FROM ea_relay WHERE created_at < ?').bind(Date.now() - 20 * 60_000).run();
+  if ((await one(env, 'SELECT COUNT(*) AS n FROM ea_relay')).n >= MAX_WAITING) return false;
+  const ref = [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  await env.DB.prepare('INSERT INTO ea_relay (ref, kind, q, token, app_id, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(ref, 'search', q, i.token, String(env.DISCORD_APP_ID), Date.now()).run();
+  const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/ea-relay.yml/dispatches`, {
+    method: 'POST', headers: { Authorization: `Bearer ${env.GH_DISPATCH_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'norex-bot' },
+    body: JSON.stringify({ ref: 'main', inputs: { ref, kind: 'search', q } }),
+  }).catch(() => null);
+  if (!res?.ok) { await env.DB.prepare('DELETE FROM ea_relay WHERE ref = ?').bind(ref).run(); return false; }
+  return true;
+}
+
+// The Actions job's answer: { ref, hits } (hits null = EA did not answer) → edits the waiting Discord reply.
+export async function burnersRelay(request, env) {
+  if (!env.DISCORD_CLIENT_SECRET || request.headers.get('X-Norex-Key') !== await burnersKey(env.DISCORD_CLIENT_SECRET)) return json({ error: 'Forbidden' }, 403);
+  if (request.method !== 'POST' || !env.DB) return json({ error: 'Not found' }, 404);
+  const { ref, hits } = await request.json().catch(() => ({}));
+  const row = await one(env, 'SELECT * FROM ea_relay WHERE ref = ?', String(ref ?? ''));
+  if (!row) return json({ error: 'Unknown or expired request' }, 404);
+  await env.DB.prepare('DELETE FROM ea_relay WHERE ref = ?').bind(row.ref).run();
+  const body = hits == null ? { content: '⚠️ EA did not answer – try again in a minute.' } : await pickerBody(env, shapeHits(hits, row.q), row.q);
+  const res = await fetch(`https://discord.com/api/v10/webhooks/${row.app_id}/${row.token}/messages/@original`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ allowed_mentions: { parse: [] }, ...body }),
+  });
+  return json({ ok: res.ok });
+}
+
 // ---------- tracking ----------
 export async function trackClub(env, club, user, channelId) {
   const active = (await one(env, 'SELECT COUNT(*) AS n FROM burner_clubs WHERE active = 1')).n;
@@ -138,10 +177,12 @@ const trackedMsg = (club, site, already) => `${already ? '✅ Already tracking' 
 const who = (i) => { const u = i.member?.user ?? i.user ?? {}; return { id: String(u.id ?? ''), name: String(i.member?.nick || u.global_name || u.username || 'Manager').slice(0, 40) }; };
 const record = (c) => (c.gp ? `${c.w}W ${c.d}D ${c.l}L · ${c.gf}–${c.ga}${c.div ? ` · best div ${c.div}` : ''}` : c.unverified ? 'ID not seen yet – tracked by ID' : c.fromSite ? 'a club NOREX has played' : 'no games yet');
 
+const noMatch = (q) => `🔍 EA has no club matching **${q}** yet. Names only match clubs NOREX has played – for any other club paste its **club ID** (\`/burner track 1234567\`), or try again after their first game.`;
+
 // Search results → an embed + a pick menu (clubs already tracked are ticked).
 async function pickerBody(env, results, q) {
   const have = new Set((await all(env, 'SELECT club_id FROM burner_clubs WHERE active = 1')).map((r) => r.club_id));
-  if (!results.length) return { content: `🔍 EA has no club matching **${q}** yet. Names only match clubs NOREX has played – for any other club paste its **club ID** (\`/burner track 1234567\`), or try again after their first game.` };
+  if (!results.length) return { content: noMatch(q) };
   return {
     embeds: [{
       title: `🔍 ${results.length} club${results.length === 1 ? '' : 's'} matching “${q}”`, color: RED,
@@ -239,6 +280,12 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
     let body;
     try {
       const results = await searchClubs(q, loadSite);
+      if (!results.length && !/^\d{1,12}$/.test(q) && await relayAsk(env, q, i)) {
+        await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: `🔎 Asking EA for **${q}** through GitHub – this takes about a minute, the answer replaces this message.` }),
+        }).catch(() => {});
+        return;
+      }
       const exact = results.filter((c) => c.id === q || c.name.toLowerCase() === q.toLowerCase());
       if (sub.name === 'track' && exact.length === 1) {
         const r = await trackClub(env, exact[0], me, i.channel_id);

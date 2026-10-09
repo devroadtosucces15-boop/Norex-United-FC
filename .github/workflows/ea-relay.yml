@@ -1,0 +1,47 @@
+name: EA relay
+
+# The bot's network is blocked by EA, so a /burner name search it can't answer from the site data lands here: this job asks EA
+# (Actions is allowed through) and posts the raw answer back to the Worker, which edits the waiting Discord reply.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "waiting request id"
+        required: true
+      kind:
+        description: "search"
+        required: true
+        default: search
+      q:
+        description: "club name"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ea-relay
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            scripts
+            bot
+            config.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Ask EA and answer the bot
+        env:
+          RELAY_REF: ${{ inputs.ref }}
+          RELAY_KIND: ${{ inputs.kind }}
+          RELAY_Q: ${{ inputs.q }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+        run: node scripts/ea-relay.mjs

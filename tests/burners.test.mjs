@@ -64,6 +64,7 @@ const pick = (u, id, values) => send({ type: 3, data: { custom_id: id, values },
 // EA stub + a record of what gets patched back into Discord.
 const realFetch = globalThis.fetch;
 const patches = [];
+const dispatches = [];
 const BOARD = [
   { clubId: '1355341', gamesPlayed: '2', wins: '1', losses: '1', ties: '0', goals: '4', goalsAgainst: '4', bestDivision: '6', clubInfo: { name: 'TeloSico', customKit: { crestAssetId: '99' } } },
   { clubId: '1355999', gamesPlayed: '30', wins: '20', losses: '5', ties: '5', goals: '70', goalsAgainst: '30', bestDivision: '2', clubInfo: { name: 'TeloSico Reserves', customKit: { crestAssetId: '98' } } },
@@ -90,6 +91,7 @@ globalThis.fetch = async (url, init = {}) => {
         { matchId: 'x2', timestamp: String(nowS - 90000), clubs: { 80869: g(0, 'NOREX UNITED FC', 0, '0', '1'), 218552: g(0, 'Poundin Pitches', 2, '1', '0') } }]
       : mt === 'friendlyMatch' ? [{ matchId: 'x3', timestamp: String(nowS - 600), clubs: { 80869: g(0, 'NOREX UNITED FC', 2, '0', '0'), 1355341: g(0, 'TeloSico', 2, '0', '0') } }] : []);
   }
+  if (url.includes('api.github.com') && url.includes('ea-relay.yml/dispatches')) { dispatches.push(JSON.parse(init.body)); return new Response(null, { status: 204 }); }
   if (url.includes('/webhooks/') && init.method === 'PATCH') { patches.push(JSON.parse(init.body)); return new Response('{}'); }
   return realFetch(url, init);
 };
@@ -138,6 +140,30 @@ try {
   t('EA blocked: an unknown club ID can still be tracked (the Actions fetch fills in the real name)', /Now tracking/.test(idOnly.content) || idOnly.embeds?.[0]?.description.includes('999000111'));
   sqlite.prepare('DELETE FROM burner_clubs WHERE club_id = ?').run('999000111');
   siteData = null; globalThis.fetch = eaDown;
+
+  // EA relay: a name neither the site data nor EA-live can answer is handed to the Actions job and answered later.
+  env.GH_DISPATCH_TOKEN = 'ghp_test'; env.GITHUB_REPO = 'o/r';
+  const eaDown2 = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => (String(url).includes('proclubs.ea.com') ? new Response('blocked', { status: 403 }) : eaDown2(url, init));
+  siteData = { opponents: [], clubs: [], linked: [] };
+  await slash(MGR, 'search', 'splashbros');
+  const asking = await settle();
+  t('relay: an unanswerable name says it is asking EA through GitHub (token never in the dispatch)', /Asking EA for \*\*splashbros\*\*/.test(asking.content) && dispatches.length === 1
+    && dispatches[0].inputs.q === 'splashbros' && dispatches[0].inputs.kind === 'search' && !JSON.stringify(dispatches[0]).includes('tok'));
+  const waiting = sqlite.prepare('SELECT * FROM ea_relay').all();
+  t('relay: one waiting row keeps the interaction token server-side', waiting.length === 1 && waiting[0].token === 'tok' && waiting[0].ref === dispatches[0].inputs.ref);
+  t('relay: the answer endpoint rejects a missing key', (await W('/api/burners/relay', { method: 'POST', body: '{}' })).status === 403);
+  t('relay: an unknown ref is refused', (await W('/api/burners/relay', { method: 'POST', headers: { 'X-Norex-Key': key }, body: JSON.stringify({ ref: 'nope', hits: [] }) })).status === 404);
+  const ans = await W('/api/burners/relay', { method: 'POST', headers: { 'X-Norex-Key': key }, body: JSON.stringify({ ref: waiting[0].ref, hits: [BOARD[0]] }) });
+  const filled = patches.at(-1);
+  t('relay: the Actions answer edits the waiting reply with the pick menu and clears the row', ans.status === 200 && filled.embeds[0].description.includes('TeloSico') && filled.components[0].components[0].custom_id === 'norex:bn:pick'
+    && sqlite.prepare('SELECT COUNT(*) AS n FROM ea_relay').get().n === 0);
+  await slash(MGR, 'search', 'nothinghere');
+  await settle();
+  const w2 = sqlite.prepare('SELECT ref FROM ea_relay').get().ref;
+  await W('/api/burners/relay', { method: 'POST', headers: { 'X-Norex-Key': key }, body: JSON.stringify({ ref: w2, hits: null }) });
+  t('relay: EA not answering is reported, not left hanging', /did not answer/.test(patches.at(-1).content));
+  delete env.GH_DISPATCH_TOKEN; delete env.GITHUB_REPO; siteData = null; globalThis.fetch = eaDown2;
 
   const picked = await pick(MGR, 'norex:bn:pick', ['1355341']);
   t('picking from the menu tracks the club and confirms in place', picked.type === 7 && /Now tracking/.test(picked.data.content) && picked.data.components.length === 0);
