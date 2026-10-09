@@ -5,40 +5,41 @@ Source-level imports; isolated files appear without arrows.
 ```mermaid
 flowchart LR
   n0["scripts/build-atlas-explorer.py"]
-  n1["scripts/build-system-atlas.py"]
-  n2["scripts/build.mjs"]
-  n3["scripts/builder-page.mjs"]
-  n4["scripts/burners-page.mjs"]
-  n5["scripts/charts.mjs"]
-  n6["scripts/docs-page.mjs"]
-  n7["scripts/ea-relay.mjs"]
-  n8["scripts/feed-page.mjs"]
-  n9["scripts/fetch.mjs"]
-  n10["scripts/hub-page.mjs"]
-  n11["scripts/leaders-page.mjs"]
-  n12["scripts/lib.mjs"]
-  n13["scripts/messages-page.mjs"]
-  n14["scripts/probuilds-page.mjs"]
-  n15["scripts/rankings.mjs"]
-  n16["scripts/serve.mjs"]
-  n17["scripts/tactics-page.mjs"]
-  n18["scripts/updates-page.mjs"]
-  n19["scripts/updates.mjs"]
-  n2 --> n3
-  n2 --> n4
-  n2 --> n5
-  n2 --> n6
-  n2 --> n8
-  n2 --> n10
-  n2 --> n11
-  n2 --> n12
-  n2 --> n13
-  n2 --> n14
-  n2 --> n15
-  n2 --> n17
-  n2 --> n18
-  n9 --> n12
-  n16 --> n12
-  n18 --> n12
-  n19 --> n12
+  n1["scripts/build-atlas-local.py"]
+  n2["scripts/build-system-atlas.py"]
+  n3["scripts/build.mjs"]
+  n4["scripts/builder-page.mjs"]
+  n5["scripts/burners-page.mjs"]
+  n6["scripts/charts.mjs"]
+  n7["scripts/docs-page.mjs"]
+  n8["scripts/ea-relay.mjs"]
+  n9["scripts/feed-page.mjs"]
+  n10["scripts/fetch.mjs"]
+  n11["scripts/hub-page.mjs"]
+  n12["scripts/leaders-page.mjs"]
+  n13["scripts/lib.mjs"]
+  n14["scripts/messages-page.mjs"]
+  n15["scripts/probuilds-page.mjs"]
+  n16["scripts/rankings.mjs"]
+  n17["scripts/serve.mjs"]
+  n18["scripts/tactics-page.mjs"]
+  n19["scripts/updates-page.mjs"]
+  n20["scripts/updates.mjs"]
+  n3 --> n4
+  n3 --> n5
+  n3 --> n6
+  n3 --> n7
+  n3 --> n9
+  n3 --> n11
+  n3 --> n12
+  n3 --> n13
+  n3 --> n14
+  n3 --> n15
+  n3 --> n16
+  n3 --> n18
+  n3 --> n19
+  n10 --> n13
+  n17 --> n13
+  n19 --> n13
+  n20 --> n13
 ```

@@ -1,6 +1,6 @@
 {
-  "revision": "61bbc71bd799ed8318512d3cd5d6b2ccbd94d637",
-  "files": 657,
+  "revision": "2ffa5ff80787f7c83ad60492c9a559aaf1ffe89d",
+  "files": 658,
   "imports": 425,
   "api_paths": 220,
   "tables": 270,
@@ -6885,6 +6885,17 @@
       "path": "scripts/build-atlas-explorer.py",
       "layer": "scripts",
       "lines": 64,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "pathlib"
+      ],
+      "functions": []
+    },
+    {
+      "path": "scripts/build-atlas-local.py",
+      "layer": "scripts",
+      "lines": 27,
       "imports": [],
       "endpoints": [],
       "tables": [
