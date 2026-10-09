@@ -1,0 +1,42 @@
+name: Living System Atlas
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bot/**'
+      - 'web/**'
+      - 'scripts/**'
+      - 'data/**'
+      - 'tests/**'
+      - 'config.json'
+      - 'package.json'
+      - '.github/workflows/**'
+      - '!PLANNING/system-atlas/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: system-atlas-main
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build source maps
+        run: python3 scripts/build-system-atlas.py
+      - name: Commit generated maps
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f PLANNING/system-atlas
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: refresh living system atlas [skip ci]"
+            git push origin HEAD:main
+          fi
