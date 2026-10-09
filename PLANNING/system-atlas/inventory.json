@@ -1,8 +1,8 @@
 {
-  "revision": "6097d77418599d600ba9695f004b94d2008a99ee",
-  "files": 662,
+  "revision": "3c49db0860a518a84cc346fd82a0cf215f752f97",
+  "files": 664,
   "imports": 425,
-  "api_paths": 220,
+  "api_paths": 222,
   "tables": 273,
   "records": [
     {
@@ -480,7 +480,7 @@
     {
       "path": "bot/cardstudio.js",
       "layer": "bot",
-      "lines": 397,
+      "lines": 432,
       "imports": [
         "./roles.js",
         "./media.js",
@@ -489,6 +489,7 @@
       "endpoints": [
         "/api/cards/",
         "/api/cards/grant",
+        "/api/cards/kit-number",
         "/api/cards/request",
         "/api/cards/request/cancel",
         "/api/cards/requests",
@@ -503,6 +504,7 @@
         "card_requests",
         "card_templates",
         "card_unlocks",
+        "claims",
         "image",
         "the",
         "users"
@@ -527,6 +529,7 @@
         "one",
         "photoType",
         "pngSize",
+        "publicPortraits",
         "readAsset",
         "reference",
         "render",
@@ -1496,7 +1499,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1089,
+      "lines": 1090,
       "imports": [
         "./live.js",
         "./game.js",
@@ -1564,6 +1567,7 @@
         "/api/burners/relay",
         "/api/burners/tracked",
         "/api/cards/photo/",
+        "/api/cards/portraits",
         "/api/cards/request",
         "/api/cards/result/",
         "/api/cards/templates/upload",
@@ -2226,6 +2230,17 @@
     },
     {
       "path": "bot/migrations/0043_card_artwork_review.sql",
+      "layer": "bot",
+      "lines": 2,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "card_requests"
+      ],
+      "functions": []
+    },
+    {
+      "path": "bot/migrations/0044_card_kit_number.sql",
       "layer": "bot",
       "lines": 2,
       "imports": [],
@@ -7775,7 +7790,7 @@
     {
       "path": "tests/cardstudio.test.mjs",
       "layer": "tests",
-      "lines": 246,
+      "lines": 264,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
@@ -7783,6 +7798,8 @@
       ],
       "endpoints": [
         "/api/cards/grant",
+        "/api/cards/kit-number",
+        "/api/cards/portraits",
         "/api/cards/request",
         "/api/cards/request/cancel",
         "/api/cards/requests",
@@ -7797,6 +7814,7 @@
         "card_requests",
         "card_templates",
         "card_unlocks",
+        "claims",
         "members",
         "notifications"
       ],
@@ -9909,7 +9927,7 @@
     {
       "path": "web/cardcomposer.js",
       "layer": "web",
-      "lines": 64,
+      "lines": 92,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9921,15 +9939,17 @@
         "image",
         "isolate",
         "light",
+        "prepare",
         "safe"
       ]
     },
     {
       "path": "web/cardstudio.js",
       "layer": "web",
-      "lines": 241,
+      "lines": 249,
       "imports": [],
       "endpoints": [
+        "/api/cards/kit-number",
         "/api/cards/request",
         "/api/cards/request/cancel",
         "/api/cards/requests",
@@ -10563,7 +10583,7 @@
     {
       "path": "web/locker.js",
       "layer": "web",
-      "lines": 291,
+      "lines": 298,
       "imports": [],
       "endpoints": [
         "/api/events/rsvp",
@@ -10818,6 +10838,19 @@
         "rsPill",
         "tab",
         "text"
+      ]
+    },
+    {
+      "path": "web/playerportraits.js",
+      "layer": "web",
+      "lines": 54,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "get",
+        "hydrate",
+        "refresh"
       ]
     },
     {

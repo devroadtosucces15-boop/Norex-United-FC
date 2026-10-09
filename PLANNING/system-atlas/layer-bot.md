@@ -88,104 +88,105 @@ flowchart LR
   n81["bot/migrations/0041_export_content_cursors.sql"]
   n82["bot/migrations/0042_card_dual_outputs.sql"]
   n83["bot/migrations/0043_card_artwork_review.sql"]
-  n84["bot/monitor.js"]
-  n85["bot/notify.js"]
-  n86["bot/playmedia.js"]
-  n87["bot/plays.js"]
-  n88["bot/points.js"]
-  n89["bot/predict.js"]
-  n90["bot/probuilds.js"]
-  n91["bot/profanity.js"]
-  n92["bot/profiles.js"]
-  n93["bot/ratings.js"]
-  n94["bot/recs.js"]
-  n95["bot/register.mjs"]
-  n96["bot/roles.js"]
-  n97["bot/settings.js"]
-  n98["bot/social.js"]
-  n99["bot/squads.js"]
-  n100["bot/statinsights.js"]
-  n101["bot/trials.js"]
-  n102["bot/vapid-gen.mjs"]
-  n103["bot/voicerecap.js"]
-  n104["bot/webpush.js"]
-  n105["bot/worker.js"]
+  n84["bot/migrations/0044_card_kit_number.sql"]
+  n85["bot/monitor.js"]
+  n86["bot/notify.js"]
+  n87["bot/playmedia.js"]
+  n88["bot/plays.js"]
+  n89["bot/points.js"]
+  n90["bot/predict.js"]
+  n91["bot/probuilds.js"]
+  n92["bot/profanity.js"]
+  n93["bot/profiles.js"]
+  n94["bot/ratings.js"]
+  n95["bot/recs.js"]
+  n96["bot/register.mjs"]
+  n97["bot/roles.js"]
+  n98["bot/settings.js"]
+  n99["bot/social.js"]
+  n100["bot/squads.js"]
+  n101["bot/statinsights.js"]
+  n102["bot/trials.js"]
+  n103["bot/vapid-gen.mjs"]
+  n104["bot/voicerecap.js"]
+  n105["bot/webpush.js"]
+  n106["bot/worker.js"]
   n0 --> n1
-  n1 --> n96
+  n1 --> n97
   n4 --> n15
   n4 --> n19
-  n4 --> n85
-  n4 --> n96
+  n4 --> n86
   n4 --> n97
-  n5 --> n85
-  n5 --> n96
+  n4 --> n98
+  n5 --> n86
+  n5 --> n97
   n6 --> n4
   n6 --> n19
   n6 --> n21
   n6 --> n24
   n6 --> n40
-  n6 --> n85
-  n6 --> n87
+  n6 --> n86
   n6 --> n88
-  n6 --> n96
-  n6 --> n101
+  n6 --> n89
+  n6 --> n97
+  n6 --> n102
   n7 --> n16
   n7 --> n19
-  n7 --> n96
+  n7 --> n97
   n8 --> n25
-  n8 --> n96
+  n8 --> n97
   n9 --> n10
   n9 --> n14
-  n9 --> n96
+  n9 --> n97
   n11 --> n39
-  n11 --> n85
-  n11 --> n96
-  n12 --> n85
-  n12 --> n96
-  n19 --> n85
-  n19 --> n96
+  n11 --> n86
+  n11 --> n97
+  n12 --> n86
+  n12 --> n97
+  n19 --> n86
+  n19 --> n97
   n21 --> n15
   n21 --> n19
   n21 --> n35
   n21 --> n39
-  n21 --> n85
-  n21 --> n88
-  n21 --> n92
-  n21 --> n96
+  n21 --> n86
+  n21 --> n89
+  n21 --> n93
   n21 --> n97
-  n22 --> n96
+  n21 --> n98
+  n22 --> n97
   n23 --> n19
   n23 --> n39
-  n23 --> n85
-  n23 --> n96
-  n23 --> n98
-  n24 --> n85
-  n24 --> n96
-  n25 --> n85
-  n25 --> n96
-  n26 --> n96
-  n27 --> n89
-  n27 --> n96
+  n23 --> n86
+  n23 --> n97
+  n23 --> n99
+  n24 --> n86
+  n24 --> n97
+  n25 --> n86
+  n25 --> n97
+  n26 --> n97
+  n27 --> n90
+  n27 --> n97
   n28 --> n4
   n28 --> n19
-  n28 --> n85
-  n28 --> n96
+  n28 --> n86
+  n28 --> n97
   n29 --> n4
-  n29 --> n85
-  n29 --> n96
-  n29 --> n98
-  n31 --> n85
-  n33 --> n85
-  n33 --> n96
+  n29 --> n86
+  n29 --> n97
+  n29 --> n99
+  n31 --> n86
+  n33 --> n86
+  n33 --> n97
   n35 --> n0
   n35 --> n21
-  n35 --> n96
+  n35 --> n97
   n37 --> n4
   n37 --> n5
-  n37 --> n85
-  n37 --> n96
-  n39 --> n85
-  n39 --> n96
+  n37 --> n86
+  n37 --> n97
+  n39 --> n86
+  n39 --> n97
   n40 --> n0
   n40 --> n3
   n40 --> n4
@@ -212,90 +213,90 @@ flowchart LR
   n40 --> n36
   n40 --> n37
   n40 --> n39
-  n40 --> n85
   n40 --> n86
   n40 --> n87
   n40 --> n88
   n40 --> n89
   n40 --> n90
-  n40 --> n92
+  n40 --> n91
   n40 --> n93
   n40 --> n94
-  n40 --> n96
+  n40 --> n95
   n40 --> n97
   n40 --> n98
   n40 --> n99
   n40 --> n100
   n40 --> n101
-  n40 --> n104
-  n85 --> n15
-  n85 --> n96
-  n85 --> n104
-  n86 --> n19
-  n86 --> n96
-  n87 --> n15
+  n40 --> n102
+  n40 --> n105
+  n86 --> n15
+  n86 --> n97
+  n86 --> n105
   n87 --> n19
-  n87 --> n85
-  n87 --> n96
-  n88 --> n96
-  n89 --> n21
-  n89 --> n85
-  n89 --> n88
-  n89 --> n96
-  n90 --> n8
-  n90 --> n96
-  n91 --> n85
-  n91 --> n88
-  n91 --> n96
-  n92 --> n5
-  n92 --> n90
-  n92 --> n93
-  n92 --> n96
-  n93 --> n4
-  n93 --> n88
-  n93 --> n96
-  n94 --> n96
-  n95 --> n16
-  n97 --> n7
-  n97 --> n96
-  n98 --> n85
-  n98 --> n96
-  n99 --> n19
-  n99 --> n85
-  n99 --> n96
-  n100 --> n1
-  n100 --> n96
-  n101 --> n85
-  n101 --> n96
-  n103 --> n85
-  n105 --> n1
-  n105 --> n2
-  n105 --> n3
-  n105 --> n4
-  n105 --> n6
-  n105 --> n7
-  n105 --> n9
-  n105 --> n11
-  n105 --> n13
-  n105 --> n15
-  n105 --> n18
-  n105 --> n19
-  n105 --> n21
-  n105 --> n22
-  n105 --> n28
-  n105 --> n29
-  n105 --> n30
-  n105 --> n31
-  n105 --> n33
-  n105 --> n36
-  n105 --> n38
-  n105 --> n39
-  n105 --> n40
-  n105 --> n84
-  n105 --> n85
-  n105 --> n89
-  n105 --> n91
-  n105 --> n96
-  n105 --> n100
-  n105 --> n103
+  n87 --> n97
+  n88 --> n15
+  n88 --> n19
+  n88 --> n86
+  n88 --> n97
+  n89 --> n97
+  n90 --> n21
+  n90 --> n86
+  n90 --> n89
+  n90 --> n97
+  n91 --> n8
+  n91 --> n97
+  n92 --> n86
+  n92 --> n89
+  n92 --> n97
+  n93 --> n5
+  n93 --> n91
+  n93 --> n94
+  n93 --> n97
+  n94 --> n4
+  n94 --> n89
+  n94 --> n97
+  n95 --> n97
+  n96 --> n16
+  n98 --> n7
+  n98 --> n97
+  n99 --> n86
+  n99 --> n97
+  n100 --> n19
+  n100 --> n86
+  n100 --> n97
+  n101 --> n1
+  n101 --> n97
+  n102 --> n86
+  n102 --> n97
+  n104 --> n86
+  n106 --> n1
+  n106 --> n2
+  n106 --> n3
+  n106 --> n4
+  n106 --> n6
+  n106 --> n7
+  n106 --> n9
+  n106 --> n11
+  n106 --> n13
+  n106 --> n15
+  n106 --> n18
+  n106 --> n19
+  n106 --> n21
+  n106 --> n22
+  n106 --> n28
+  n106 --> n29
+  n106 --> n30
+  n106 --> n31
+  n106 --> n33
+  n106 --> n36
+  n106 --> n38
+  n106 --> n39
+  n106 --> n40
+  n106 --> n85
+  n106 --> n86
+  n106 --> n90
+  n106 --> n92
+  n106 --> n97
+  n106 --> n101
+  n106 --> n104
 ```
