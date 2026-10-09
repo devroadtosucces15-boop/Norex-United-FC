@@ -88,4 +88,15 @@ await tt('/history matches the Stats Centre\'s own head-to-head numbers exactly'
 });
 t('/history with an unknown opponent says so', /No matches found/.test((await slash('history', [{ name: 'opponent', value: 'Definitely Not A Real Club Zzz' }])).data.content ?? ''));
 
+
+// ---------- Boardroom live flags reach Discord (they used to apply to website requests only) ----------
+await tt('Discord honours a live Boardroom switch: suggestions off → /suggest is locked, back on → works', async () => {
+  const args = [{ name: 'title', value: 'More cones please' }];
+  sqlite.exec(`INSERT INTO flag_overrides (name, level, by_name, at) VALUES ('suggestions', 'off', 'Boss', ${now}) ON CONFLICT (name) DO UPDATE SET level = 'off'`);
+  const locked = (await slash('suggest', args)).data.content ?? '';
+  sqlite.exec("DELETE FROM flag_overrides WHERE name = 'suggestions'");
+  const open = (await slash('suggest', args)).data.content ?? '';
+  return /not switched on/.test(locked) && !/not switched on/.test(open);
+});
+
 done();

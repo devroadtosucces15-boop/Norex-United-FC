@@ -20,7 +20,7 @@ import { eventButton, playButton, memberCommand, MEMBER_COMMANDS } from './botcm
 import { insightsCron, insightsNow, reportEmbeds } from './insights.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
-import { can, discordRole, flagOn } from './roles.js';
+import { can, discordRole, flagOn, loadFlagOverrides, withFlagOverrides } from './roles.js';
 import { mediaCron, serveMedia } from './media.js';
 import { exportContent } from './exportcontent.js';
 import { checkUptime } from './monitor.js';
@@ -82,6 +82,7 @@ export default {
     const i = JSON.parse(body);
 
     if (i.type === 1) return json({ type: 1 }); // PING
+    env = withFlagOverrides(env, await loadFlagOverrides(env)); // the Boardroom's live flag switches apply to Discord too (they used to reach website requests only)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
     if (i.type === 4) return json({ type: 8, data: { choices: await autocomplete(i, site, ctx) } });
     const who = discordUser(env, i);

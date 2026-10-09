@@ -278,9 +278,11 @@ async function postToDiscord() {
     });
   let rest = items;
   const token = process.env.DISCORD_BOT_TOKEN;
-  const pingContent = settings.pingRole ? `<@&${settings.pingRole}>` : undefined;
-  const allowedMentions = settings.pingRole ? { roles: [settings.pingRole] } : { parse: [] };
-  if (token && ['members', 'public'].includes(config.features?.discordMatch)) {
+  // A "role" equal to the server's own ID is @everyone: <@&id> renders as "@@everyone" and pings nobody, so say it the way Discord expects.
+  const everyone = !!settings.pingRole && settings.pingRole === settings.guildId;
+  const pingContent = everyone ? '@everyone' : settings.pingRole ? `<@&${settings.pingRole}>` : undefined;
+  const allowedMentions = everyone ? { parse: ['everyone'] } : settings.pingRole ? { roles: [settings.pingRole] } : { parse: [] };
+  if (token && ['members', 'public'].includes(settings.flags?.discordMatch ?? config.features?.discordMatch)) { // live Boardroom switch first, committed config as the fallback
     // P7.5: a configured result channel overrides the webhook's own channel (still needs the bot token to redirect).
     const channel = settings.resultChannel || await fetch(hook).then((r) => (r.ok ? r.json() : null)).then((w) => w?.channel_id).catch(() => null);
     while (channel && rest.length) {
