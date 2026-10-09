@@ -16,3 +16,14 @@
 .bn-locked .nx-empty{margin:30px auto}
 @media (max-width:600px){.bn-grid{grid-template-columns:1fr}.bn-facts{gap:12px}}
 @media (prefers-reduced-motion:reduce){.bn-card{transition:none}.bn-card:hover{transform:none}}
+
+/* "what if" combined view – clearly marked as not official */
+.bn-whatif{margin:22px 0;padding:16px;border-radius:14px;border:1px dashed var(--gold);background:#ffffff05}
+.bn-whatif h2{margin:0 0 6px}
+.bn-wi-pick{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.bn-wi-pick label{padding:6px 10px;border-radius:999px;border:1px solid var(--line2);cursor:pointer;font:600 13px var(--body)}
+.bn-wi-pick label:has(input:checked){border-color:var(--gold);color:var(--gold)}
+.bn-wi-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;margin:8px 0 14px}
+.bn-wi-stat{padding:10px;border-radius:10px;background:#ffffff08;text-align:center}
+.bn-wi-stat b{display:block;font:700 22px var(--head)}
+.bn-wi-stat small{color:var(--muted)}

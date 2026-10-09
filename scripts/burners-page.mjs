@@ -22,7 +22,7 @@ export const burnersFeed = (list) => ({
 });
 
 export function buildBurners(h, list) {
-  const { write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config, homeNames = new Set(), playerLink = (n) => esc(n) } = h;
+  const { write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config, homeNames = new Set(), norex = null, playerLink = (n) => esc(n) } = h;
   const crestImg = (b, size = 44) => `<img class="crest" src="${b.crest ? `${CREST_CDN}${num(b.crest)}.png` : `assets/crest-ea.png`}" width="${size}" height="${size}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
   const when = (ts) => (ts ? new Date(ts * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : '–');
   const form = (arr) => `<div class="form">${arr.map(resPill).join('') || '<span class="muted small">no games yet</span>'}</div>`;
@@ -81,9 +81,23 @@ ${vsNorex(b)}
 <p class="muted small">Tracked since ${esc(when(Date.parse(b.trackedAt) / 1000))} · ${b.matches.length} game${b.matches.length === 1 ? '' : 's'} on file (EA only shows each club's last 5 per mode, so earlier games before tracking can't be recovered) · updated ${esc(new Date(b.fetchedAt).toISOString().slice(0, 16).replace('T', ' '))} UTC</p>`, { id: `c${esc(b.id)}`, sub: `club ${esc(b.id)}` });
   };
 
+  // 🧪 "What if" – NOREX (first division) + any burners (B team) added together, for fun only. Pure display: the numbers are
+  // copied into a JSON blob for web/burners-whatif.js; nothing here is written anywhere else, so League totals, player pages,
+  // records, awards and the Hall of Fame stay NOREX-only.
+  const whatIf = () => {
+    if (!norex || !list.length) return '';
+    const data = { norex, burners: list.map((b) => ({ id: b.id, name: b.name, rec: { gp: b.stats.gp, w: b.stats.w, d: b.stats.d, l: b.stats.l, gf: b.stats.gf, ga: b.stats.ga }, players: b.stats.players.map((p) => ({ n: p.n, gp: p.gp, g: p.g, a: p.a, motm: p.motm, rating: p.rating })) })) };
+    const json = JSON.stringify(data).replace(/</g, '\\u003c');
+    return `<section class="bn-whatif" data-whatif><h2 class="osw">🧪 What if – NOREX + burners</h2>
+<p class="muted small">Just for fun: ${esc(config.siteTitle)} is the first division, burners are the B team. These totals are <b>not official</b> – they never count towards the League record, player pages, records, awards or the Hall of Fame.</p>
+<div class="bn-wi-pick" data-wi-pick>${list.map((b) => `<label><input type="checkbox" value="${esc(b.id)}"> ${esc(b.name)}</label>`).join('')}</div>
+<div class="bn-wi-out" data-wi-out><p class="muted">Tick a burner to add it to NOREX.</p></div>
+<script type="application/json" id="bn-whatif-data">${json}</script><script src="assets/burners-whatif.js" defer></script></section>`;
+  };
+
   const body = `${pageHead('🔥 Burner clubs', 'Throwaway clubs we keep an eye on. A manager picks one with <b>/burner search</b> in Discord – we collect its squad and games, and the bot posts a stats report after every game it plays.', '')}
 <div data-flag="burners" hidden>
-${list.length ? `<section class="bn-grid reveal">${list.map(card).join('')}</section>${list.map(detail).join('')}`
+${list.length ? `<section class="bn-grid reveal">${list.map(card).join('')}</section>${whatIf()}${list.map(detail).join('')}`
     : emptyState('🔥', 'No burner clubs tracked yet', 'When someone makes a new one, run <b>/burner search</b> in Discord, pick the club, and it shows up here with every game.')}
 </div>
 <div class="bn-locked">${emptyState('🔒', 'Burner clubs are for members', 'Log in with Discord – this page opens up for you.')}</div>

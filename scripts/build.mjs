@@ -1282,7 +1282,11 @@ if (MEMBER_API) buildTactics({ write, page, pageHead, emptyState, config });
 // Burner-club tracker: data/burners/ (kept apart from the NOREX archive) → burners.html + the bot's compact feed.
 const burnerList = loadBurners(DATA, readJson);
 const burnerHomeNames = new Set((clubs.get(homeId)?.members ?? []).map((m) => String(m.name).toLowerCase()).filter((n) => n && !hidden.has(n)));
-buildBurners({ write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config, homeNames: burnerHomeNames, playerLink: (n) => pLinkByName(n, '') }, burnerList);
+const burnerNorex = { // "what if" view only: the first division's own record + players, read-only copies (never written back)
+  rec: { gp: num(homeC?.overall?.gamesPlayed), w: num(homeC?.overall?.wins), d: num(homeC?.overall?.ties), l: num(homeC?.overall?.losses), gf: num(homeC?.overall?.goals), ga: num(homeC?.overall?.goalsAgainst) },
+  players: (homeC?.members ?? []).filter((m) => m.name && !hidden.has(String(m.name).toLowerCase())).map((m) => ({ n: String(m.name), gp: num(m.gamesPlayed), g: num(m.goals), a: num(m.assists), motm: num(m.manOfTheMatch), rating: num(m.ratingAve) })),
+};
+buildBurners({ write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config, homeNames: burnerHomeNames, norex: burnerNorex, playerLink: (n) => pLinkByName(n, '') }, burnerList);
 write('api/burners.json', JSON.stringify(burnersFeed(burnerList)));
 
 // JSON API for search, the compare tool and the Discord bot.

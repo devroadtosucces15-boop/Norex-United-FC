@@ -28,4 +28,8 @@ t('Dugout hints: club + last-5 slots and a coach\'s note picker, kept across rep
   t('hubgold.js: locker is a card with a door, entrance skips under reduced motion, no burner room', /hubg-lockercard/.test(gold) && /hubg-door-card/.test(gold) && /reduced\(\) \|\| seen/.test(gold) && !/burner/i.test(gold + hub));
   t('moved nav links hidden by hubGold; burners stay in the nav', ['docs', 'playstyle', 'messages', 'builder', 'probuilds'].every((id) => new RegExp(`moved: true, id: '${id}'`).test(build)) && !/moved: true, id: 'burners'/.test(build) && /flagOn\('hubGold', role\)\) \$\$\('\[data-hubmove\]'\)/.test(app2));
 }
+{
+  const bp = read('scripts/burners-page.mjs'), wi = read('web/burners-whatif.js');
+  t('burner what-if is display-only: labelled not official, opt-in per burner, no API/storage writes', /not official/.test(bp) && /type="checkbox"/.test(bp) && !/fetch\(|localStorage|XMLHttpRequest/.test(wi));
+}
 done();
