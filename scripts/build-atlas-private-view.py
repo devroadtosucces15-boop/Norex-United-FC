@@ -22,6 +22,6 @@ nodes+=list(roots.values())
 out={"revision":public["revision"],"nodes":nodes,"edges":edges,"notice":"Locally combined view. Do not publish. Local filenames may be sensitive; links are not exported."}
 (PRIVATE/"explorer.json").write_text(json.dumps(out,separators=(",",":")))
 (PRIVATE/"explorer.json").chmod(0o600)
-for name in ("explorer.html","explorer-extensions.js","explorer-architecture.js","explorer-learning.js","explorer-navigation.js","explorer-allocation.js","history.json"):
+for name in ("explorer.html","explorer-extensions.js","explorer-architecture.js","explorer-learning.js","explorer-navigation.js","explorer-allocation.js","explorer-friendly.js","history.json"):
     if (PUBLIC/name).exists():copy2(PUBLIC/name,PRIVATE/name)
 print("Combined",len(nodes),"nodes,",len(edges),"edges in",PRIVATE)
