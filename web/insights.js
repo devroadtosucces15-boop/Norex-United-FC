@@ -57,8 +57,8 @@
 
     function render(r) {
       const written = ctx.showAt && r.at && window.UI ? `<p class="nx-ins-at muted small">✍️ Last written ${UI.time(r.at, false)}</p>` : ''; // only where asked (manager portal)
-      el.innerHTML = `<h4>${key.startsWith('note.') ? "✨ Coach's note" : '✨ Insight'}</h4>
-<p class="nx-ins-head">${esc(r.headline)}</p>
+      const DD = { club: '📈 Club form', 'match.latest': '⚽ Latest match', 'matches.last5': '🔟 Last five' }[key]; // home page: three cards become tidy dropdowns
+      const inner = `<p class="nx-ins-head">${esc(r.headline)}</p>
 <p class="nx-ins-body">${esc(r.body)}</p>
 ${r.watch ? `<p class="nx-ins-watch">👀 ${esc(r.watch)}</p>` : ''}
 ${written}
@@ -70,6 +70,10 @@ ${written}
 ${ctx.session ? '<button type="button" class="nx-ins-ask-btn">💬 Ask a follow-up</button>' : ''}
 </div>
 ${ctx.session ? '<div class="nx-ins-ask" hidden><input type="text" maxlength="200" placeholder="Ask a follow-up…"><button type="button" class="btn small">Ask</button><p class="nx-ins-answer"></p></div>' : ''}`;
+      el.innerHTML = DD
+        ? `<details class="nx-ins-dd"><summary><span class="nx-ins-kind">${DD}</span><span class="nx-ins-sum">${esc(r.headline)}</span></summary><div class="nx-ins-ddbody">${inner}</div></details>`
+        : `<h4>${key.startsWith('note.') ? "✨ Coach's note" : '✨ Insight'}</h4>${inner}`;
+      if (DD) el.classList.add('nx-ins-ddcard');
 
       el.querySelectorAll('[data-vote]').forEach((b) => b.addEventListener('click', async () => {
         if (!ctx.session) { ctx.toast?.('Log in to rate insights', true); return; }
