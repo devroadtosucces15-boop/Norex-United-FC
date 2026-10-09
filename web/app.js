@@ -1891,7 +1891,7 @@ ${[d.activity, d.claim?.history, d.roleHistory, u?.warnings, d.votes, d.ratings,
     for (const [id, file, glob, label] of [['#ratings-panel', 'ratings.js', 'NXRatings', 'star ratings'], ['#predict-panel', 'predict.js', 'NXPredict', 'predictions'], ['#teamup-panel', 'recs.js', 'NXRecs', 'recommendations'], ['#feedback-panel', 'feedback.js', 'NXFeedback', 'feedback'], ['#card-panel', 'avatarcard.js', 'NXAvatarCard', 'AI card'], ['#cards-panel', 'cardstudio.js', 'NXCardStudio', 'Card Studio']]) {
       const el = $(id, panel);
       if (el) (window[glob] ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/${file}`, onload: ok, onerror: no }))))
-        .then(() => window[glob].tab(el, { call, toast, api: MAPI, token: session.token, me: { u: session.u, n: session.n, a: session.a } })).catch(() => toast(`Could not load the ${label} – try again`, true));
+        .then(() => window[glob].tab(el, { call, toast, api: MAPI, token: session.token, me: { u: session.u, n: session.n, a: session.a }, claim: () => S.me?.claim, players: () => S.players })).catch(() => toast(`Could not load the ${label} – try again`, true));
     }
     const ip = $('#ideas-panel', panel); // P5.4 suggestion box – assets/docs.js
     if (ip) loadDocs().then(() => NXDocs.ideas(ip, { call, toast, me: { u: session.u, n: session.n, a: session.a } })).catch(() => toast('Could not load the ideas – try again', true));

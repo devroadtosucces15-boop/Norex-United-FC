@@ -6,6 +6,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   if (!$('link[href$="cardstudio.css"]')) document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: `${BASE}assets/cardstudio.css` }));
   const mediaUrl = (key) => `${MAPI}/media/${key}`;
+  const loadComposer = () => window.NXCardComposer ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/cardcomposer.js`, onload: ok, onerror: no })));
 
   const tile = (t, kind, picked) => `<button type="button" class="cs-tile${picked ? ' on' : ''}${t.locked ? ' locked' : ''}${t.active === false ? ' off' : ''}" data-id="${t.id}" data-kind="${kind}" ${t.locked ? 'aria-disabled="true"' : ''}>
 <span class="cs-thumb"><img src="${esc(mediaUrl(t.key))}" alt="" loading="lazy">${t.locked ? '<span class="cs-lock" aria-hidden="true">🔒</span>' : ''}</span>
@@ -49,7 +50,7 @@ ${t.locked ? '<span class="cs-redeem" title="Redeeming with points is coming soo
     const r = mine.request;
     const [icon, label] = r ? STATUS[r.status] || ['•', r.status] : [];
     const status = r ? `<div class="cs-status ${r.status}"><span class="cs-ico">${icon}</span><div><b>${esc(label)}</b><br><span class="muted">${esc(r.bg || '—')} + ${esc(r.pose || '—')} · ${esc(r.month)}${r.note ? ` · “${esc(r.note)}”` : ''}</span></div>${['pending', 'approved', 'generating', 'failed'].includes(r.status) ? `<img class="cs-photo" data-photo="${r.id}" alt="Your photo">` : ''}${r.status === 'pending' ? '<button type="button" class="btn ghost small" id="cs-cancel">Cancel</button>' : ''}</div>` : '';
-    const card = r?.status === 'done' && (r.hasResult || r.hasPortrait) ? `<div class="cs-done">${r.hasResult ? `<img class="cs-card" data-result="${r.id}" alt="Cinematic avatar"><a class="btn small" data-save-card download="norex-avatar-${esc(r.month)}.png" hidden>⬇ Save avatar</a>` : ''}${r.hasPortrait ? `<img class="cs-card" data-portrait="${r.id}" alt="Website portrait"><a class="btn small" data-save-card download="norex-portrait-${esc(r.month)}.png" hidden>⬇ Save portrait</a>` : ''}</div>` : '';
+    const card = r?.status === 'done' && (r.hasResult || r.hasPortrait) ? `<div class="cs-done">${r.hasResult ? `<img class="cs-card" data-result="${r.id}" alt="Cinematic avatar"><a class="btn small" data-save-card download="norex-avatar-${esc(r.month)}.png" hidden>⬇ Save avatar</a>` : ''}${r.hasPortrait ? `<img class="cs-card" data-portrait="${r.id}" alt="Website portrait"><a class="btn small" data-save-card download="norex-portrait-${esc(r.month)}.png" hidden>⬇ Save portrait</a><canvas class="cs-card cs-live-card" data-card-preview="${r.id}" aria-label="Player card with live statistics"></canvas><button type="button" class="btn small" data-export-live="${r.id}">⬇ Export player card</button><p class="muted small">Card statistics reflect the latest loaded club data; refresh to update.</p>` : ''}</div>` : '';
     const open = !r || r.status === 'rejected';
     return `<section class="cs-sec cs-req"><h4>📸 Request my card</h4>
 <p class="muted">One request per month (${esc(month)}). Pick a background and pose above, add a clear photo of your face, and a manager will approve it.</p>
@@ -110,12 +111,26 @@ ${gallery('Pose', '💪', d.poses.filter((t) => t.active !== false), 'pose', sel
 ${requestHtml(mine, mine.month)}</div>
 ${d.manage ? `<div class="card cs-wrap">${queueHtml(queue)}</div><div class="card cs-wrap">${adminHtml(d)}</div>` : ''}`;
       loadPhotos(el, ctx);
+      if (mine.request?.hasPortrait) {
+        loadComposer().then(async () => {
+          const portrait = $(`[data-portrait="${mine.request.id}"]`, el);
+          const canvas = $(`[data-card-preview="${mine.request.id}"]`, el);
+          if (!portrait || !canvas) return;
+          if (!portrait.complete || !portrait.naturalWidth) await new Promise(resolve => { portrait.addEventListener('load', resolve, {once:true}); portrait.addEventListener('error', resolve, {once:true}); });
+          if (!portrait.naturalWidth) return;
+          const player = NXCardComposer.getPlayer(ctx);
+          await NXCardComposer.draw(canvas, portrait.src, player, `${BASE}assets/crest.png`);
+          const exportBtn = $(`[data-export-live="${mine.request.id}"]`, el);
+          if (exportBtn) exportBtn.onclick = () => canvas.toBlob(blob => { if (!blob) return; const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'norex-player-card.png'; a.click(); setTimeout(() => URL.revokeObjectURL(u), 30000); }, 'image/png');
+        }).catch(err => ctx.toast('Card preview unavailable: ' + err.message, true));
+      }
       const pick = () => {
         const name = (list, id) => list.find((t) => t.id === id)?.name;
         $('#cs-pick', el).textContent = sel.bg || sel.pose ? `Selected: ${name(d.backgrounds, sel.bg) || '—'} + ${name(d.poses, sel.pose) || '—'}` : '';
       };
       const rform = $('#cs-request', el);
-      const sync = () => { if (rform) rform.querySelector('button').disabled = !(sel.bg && sel.pose && photo); };
+      const sync = () => { if (rform) rform.querySelector('button').disabled = !(sel.bg && sel.pose && photo && (rform.avatar.checked || rform.portrait.checked)); };
+      if (rform) rform.avatar.onchange = rform.portrait.onchange = sync;
       pick();
       sync();
       $$('.cs-tile', el).forEach((b) => {

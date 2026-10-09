@@ -296,11 +296,11 @@ async function reference(env, bytes, type) {
 async function render(env, bg, pose, photo, portrait = false) {
   if (!env.AI) throw new Error('The AI binding is not connected.');
   const form = new FormData();
-  form.append('prompt', portrait ? 'Image 1 is the person. Preserve their facial identity, hairstyle, skin tone and expression. Create a consistent clean semi-cartoon football player bust portrait, head and chest only, straight-on camera, neutral relaxed pose, centered with generous margins, wearing a generic black red and white football jersey, no text, no numbers, no logos, no badges, no frame, no scenery. Solid contrasting light background suitable for automated cutout. Match a repeatable professional game-card illustration style.' : cardPrompt(pose.prompt));
+  form.append('prompt', portrait ? 'Image 0 is the person. Preserve their facial identity, hairstyle, skin tone and expression. Create a consistent clean semi-cartoon football player bust portrait, head and chest only, straight-on camera, neutral relaxed pose, centered with generous margins, wearing a generic black red and white football jersey, no text, no numbers, no logos, no badges, no frame, no scenery. Solid contrasting light background suitable for automated cutout. Match a repeatable professional game-card illustration style.' : cardPrompt(pose.prompt));
   form.append('width', String(CARD_SIZE));
   form.append('height', String(CARD_SIZE));
-  form.append('input_image_0', await reference(env, bg.bytes, bg.type), 'background.png');
-  form.append('input_image_1', await reference(env, photo.bytes, photo.type), 'player.png');
+  if (!portrait) form.append('input_image_0', await reference(env, bg.bytes, bg.type), 'background.png');
+  form.append(portrait ? 'input_image_0' : 'input_image_1', await reference(env, photo.bytes, photo.type), 'player.png');
   const packed = new Response(form);
   const out = await env.AI.run(CARD_MODEL, { multipart: { body: packed.body, contentType: packed.headers.get('content-type') } });
   if (typeof out?.image !== 'string') throw new Error('The image model returned no picture.');
