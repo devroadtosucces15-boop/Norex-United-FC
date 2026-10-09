@@ -32,7 +32,7 @@ const EA = [
 
 export function buildDocs({ write, page, pageHead, esc, emptyState, config }) {
   const grid = (rows) => `<div class="gl-grid">${rows.map(([t, d]) => `<div><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('')}</div>`;
-  const scripts = '<link rel="stylesheet" href="assets/docs.css"><script src="assets/docs-md.js" defer></script><script src="assets/docs.js" defer></script>';
+  const scripts = '<link rel="stylesheet" href="assets/docs.css"><script src="assets/docs-md.js" defer></script><script src="assets/vthumb.js" defer></script><script src="assets/docs.js" defer></script>';
   write('docs.html', page({
     title: `Club docs – ${config.siteTitle}`, base: '', active: '',
     description: `${config.siteTitle} announcements, requirements, rules, FAQ and glossary.`,

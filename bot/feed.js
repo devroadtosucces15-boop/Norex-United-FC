@@ -101,11 +101,17 @@ const onePost = async (env, me, id) => {
 export async function feedPublic(env) {
   const rows = await all(env, `${POST_SQL} WHERE p.removed = 0 AND p.public = 1 ORDER BY p.id DESC LIMIT 6`);
   if (!rows.length) return { posts: [] };
-  const media = await mediaFor(env, rows.map((r) => r.id));
+  const ids = rows.map((r) => r.id);
+  const [media, rx, cm] = await Promise.all([
+    mediaFor(env, ids),
+    all(env, `SELECT post_id, COUNT(*) n FROM post_reactions WHERE post_id IN (${marks(ids.length)}) GROUP BY post_id`, ...ids),
+    all(env, `SELECT post_id, COUNT(*) n FROM post_comments WHERE removed = 0 AND post_id IN (${marks(ids.length)}) GROUP BY post_id`, ...ids),
+  ]);
+  const num = (list, id) => list.find((x) => x.post_id === id)?.n ?? 0;
   return {
     posts: rows.map((r) => ({
       id: r.id, by: author(r), text: excerpt(r.body, 220), tag: r.tag, at: r.at,
-      media: (media[r.id] ?? []).slice(0, 1),
+      media: (media[r.id] ?? []).slice(0, 1), nReacts: num(rx, r.id), nComments: num(cm, r.id),
     })),
   };
 }

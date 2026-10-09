@@ -1567,3 +1567,13 @@ html.nx-hubin::after{content:'';position:fixed;inset:0;z-index:10000;pointer-eve
 .lr-dots{display:flex;gap:6px}
 .lr-dots i{width:7px;height:7px;border-radius:50%;background:var(--line2);transition:background .2s,transform .2s}
 .lr-dots i.on{background:var(--red);transform:scale(1.25)}
+
+/* video facades (web/vthumb.js) */
+.vlite{position:relative;display:grid;place-items:center;width:100%;aspect-ratio:16/9;border:0;border-radius:12px;background:#111 center/cover no-repeat;color:#fff;cursor:pointer;overflow:hidden}
+.vlite.nothumb{background:linear-gradient(135deg,#1b2029,#0b0f16 60%,color-mix(in srgb,var(--red) 40%,#0b0f16))}
+.vlite.k-twitch.nothumb{background:linear-gradient(135deg,#2b1b4a,#0b0f16 70%,#9146ff55)}
+.vlite::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.55))}
+.vlite-play{position:relative;z-index:1;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:22px;padding-left:4px;background:rgba(0,0,0,.6);border:2px solid #fff;transition:transform .15s,background .15s}
+.vlite:hover .vlite-play{transform:scale(1.08);background:var(--red);border-color:var(--red)}
+.vlite small{position:absolute;z-index:1;left:10px;bottom:8px;font:600 11px var(--body);letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+.md-video .vlite,.md-video iframe{width:100%}
