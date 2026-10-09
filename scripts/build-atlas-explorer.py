@@ -14,7 +14,7 @@ for rel in sorted(set(paths)):
     p=ROOT/rel
     if not p.is_file():continue
     ext=p.suffix.lower()
-    node={"id":"file:"+rel,"label":p.name,"path":rel,"kind":ext.lstrip(".") or "file","status":"tracked","url":"https://github.com/devroadtosucces15-boop/Norex-United-FC/blob/main/"+"/".join(__import__("urllib.parse",fromlist=["quote"]).quote(x,safe="") for x in rel.split("/"))}
+    node={"id":"file:"+rel,"label":p.name,"path":rel,"kind":ext.lstrip(".") or "file","status":"tracked","bytes":p.stat().st_size,"url":"https://github.com/devroadtosucces15-boop/Norex-United-FC/blob/main/"+"/".join(__import__("urllib.parse",fromlist=["quote"]).quote(x,safe="") for x in rel.split("/"))}
     nodes.append(node)
     if ext not in allowed or p.stat().st_size>1000000:continue
     try:source=p.read_text(encoding="utf-8")
