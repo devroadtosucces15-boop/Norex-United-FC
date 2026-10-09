@@ -1,6 +1,6 @@
 // Club knowledge & management (roadmap P5.1 Play Style, P5.2 documentation hub, P5.3 announcements to Discord,
 // P5.4 suggestion box). One engine for every managed text: rows of `docs`, each edit versioned in `doc_versions`.
-//   GET  /api/docs                 docs hub (flag `docs`): guests get items marked public, members everything;
+//   GET  /api/docs                 docs hub (flag `docs`): members only – guests get an empty list (nothing here is public);
 //                                  + the rules version and whether I acknowledged it
 //   POST /api/docs                 managers: create / edit { id?, area, title, body, pinned, public, ack, notify, discord }
 //   POST /api/docs/remove          managers: take an item down (kept with removed_at)
@@ -63,7 +63,9 @@ async function bumpRules(env, me, title) {
 export async function docsList(env, me) {
   const member = !!me && can(me, 'docs.read');
   const manager = !!me && can(me, 'content.edit');
-  const rows = await all(env, `SELECT * FROM docs WHERE removed_at IS NULL AND area != 'playstyle'${member ? '' : ' AND public = 1'} ORDER BY pinned DESC, id LIMIT ?`, MAX_DOCS);
+  // Club docs, rules, requirements and FAQ are for the squad only – what's written there (how we play, how we behave) can be used against us,
+  // so a guest gets nothing, whatever an old row's `public` flag says. (Hub of the redesign: board 10.)
+  const rows = member ? await all(env, `SELECT * FROM docs WHERE removed_at IS NULL AND area != 'playstyle' ORDER BY pinned DESC, id LIMIT ?`, MAX_DOCS) : [];
   return {
     items: rows.map((r) => docOut(r, manager)),
     rules: member ? await rulesState(env, me) : undefined,
@@ -76,7 +78,7 @@ async function writeDoc(env, me, row, fields) {
   const now = Date.now();
   if (!row) {
     const r = await run(env, `INSERT INTO docs (area, mode, section, title, body, pinned, public, by_id, by_name, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      fields.area, fields.mode ?? null, fields.section ?? null, fields.title, fields.body, fields.pinned ? 1 : 0, fields.public ? 1 : 0, me.u, me.n, now);
+      fields.area, fields.mode ?? null, fields.section ?? null, fields.title, fields.body, fields.pinned ? 1 : 0, 0, me.u, me.n, now);
     return { id: r.meta.last_row_id, changed: true };
   }
   const changed = row.title !== fields.title || row.body !== fields.body;
@@ -86,7 +88,7 @@ async function writeDoc(env, me, row, fields) {
       env.DB.prepare('UPDATE docs SET title = ?, body = ?, version = version + 1, edited_by = ?, edited_at = ? WHERE id = ?').bind(fields.title, fields.body, me.n, now, row.id),
     ]);
   }
-  await run(env, 'UPDATE docs SET pinned = ?, public = ? WHERE id = ?', fields.pinned ? 1 : 0, fields.public ? 1 : 0, row.id);
+  await run(env, 'UPDATE docs SET pinned = ?, public = 0 WHERE id = ?', fields.pinned ? 1 : 0, row.id);
   return { id: row.id, changed };
 }
 

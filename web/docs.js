@@ -131,7 +131,7 @@ ${e.image ? `<img class="dx-preview-img" src="${esc(e.image.url)}" alt="">` : ''
     const s = session();
     const load = async () => { S = await call('/api/docs'); paint(); };
     const items = (area) => S.items.filter((x) => x.area === area).sort(area === 'announce' ? (a, b) => b.pinned - a.pinned || b.at - a.at : (a, b) => b.pinned - a.pinned || a.id - b.id);
-    const pills = (x) => UI.pills([x.pinned && { label: 'Pinned', emoji: '📌', tone: 'gold' }, S.canEdit && x.public && { label: 'Public', emoji: '🌍', tip: 'Guests see this on the public site' }, S.canEdit && !x.public && { label: 'Members', emoji: '🔒' }, S.canEdit && x.version > 1 && { label: `v${x.version}` }, S.canEdit && x.discord && { label: 'On Discord', emoji: '💬', tone: 'discord', tip: `Posted ${day(x.discord.at)}` }].filter(Boolean));
+    const pills = (x) => UI.pills([x.pinned && { label: 'Pinned', emoji: '📌', tone: 'gold' }, false && { label: 'Public', emoji: '🌍', tip: 'Guests see this on the public site' }, S.canEdit && !x.public && { label: 'Members', emoji: '🔒' }, S.canEdit && x.version > 1 && { label: `v${x.version}` }, S.canEdit && x.discord && { label: 'On Discord', emoji: '💬', tone: 'discord', tip: `Posted ${day(x.discord.at)}` }].filter(Boolean));
     const tools = (x) => (S.canEdit ? `<div class="dx-tools"><button type="button" class="btn sm ghost" data-edit="${x.id}">✏️ Edit</button>${x.version > 1 ? `<button type="button" class="btn sm ghost" data-hist="${x.id}">🕘 History</button>` : ''}${S.canDiscord ? `<button type="button" class="btn sm ghost" data-dc="${x.id}">📣 Discord</button>` : ''}<button type="button" class="btn sm ghost" data-rm="${x.id}">🗑</button></div>` : '');
     const meta = (x) => `<small class="muted dx-meta">${x.by ? `${esc(x.by)} · ` : ''}${day(x.at)}${x.editedAt ? ` · edited ${UI.time(x.editedAt)}${x.editedBy && x.editedBy !== x.by ? ` by ${esc(x.editedBy)}` : ''}` : ''}</small>`;
     const card = (x) => `<article class="card dx-item${x.pinned ? ' pinned' : ''}" id="d-${x.id}"><header><h3>${esc(x.title)}</h3>${pills(x)}</header><div class="md">${md(x.body)}</div><footer>${meta(x)}${tools(x)}</footer></article>`;
@@ -157,7 +157,7 @@ ${k === 'rules' ? rulesBox() : ''}${body}${k === 'glossary' ? '<div data-glossar
     function paint() {
       const shown = AREAS.filter(([k]) => S.canEdit || k === 'glossary' || items(k).length);
       root.innerHTML = `<nav class="dx-nav chipset" aria-label="Sections">${shown.map(([k, ic, l]) => `<a class="chip" href="#${k === 'announce' ? 'announcements' : k}">${ic} ${l}${items(k).length ? ` <em>${items(k).length}</em>` : ''}</a>`).join('')}</nav>
-${!s ? `<p class="dx-guest card">🔒 You’re seeing what’s public. <a href="${esc(loginUrl())}">Log in with Discord</a> for the members’ docs.</p>` : ''}${shown.map(section).join('')}`;
+${!s ? `<p class="dx-guest card">🔒 Club docs are for squad members only. <a href="${esc(loginUrl())}">Log in with Discord</a> for the members’ docs.</p>` : ''}${shown.map(section).join('')}`;
       const slot = $('[data-glossary-static]', root);
       if (slot && staticGlossary) { slot.append(staticGlossary); staticGlossary.hidden = false; }
       const target = location.hash.startsWith('#d-') && byHash(root);
@@ -173,7 +173,6 @@ ${!s ? `<p class="dx-guest card">🔒 You’re seeing what’s public. <a href="
         const t = area === 'announce' && !item && S.canDiscord ? await discordTargets() : null;
         const fields = [
           { name: 'pinned', label: '📌 Pin to the top' },
-          { name: 'public', label: '🌍 Show on the public site', tip: '(guests see it too)' },
           ...(area === 'announce' && !item ? [{ name: 'notify', label: '🔔 Notify members', tip: '(site bell + Discord DM, per their settings)' }, { name: 'ack', label: '✋ Members must acknowledge it' }] : []),
           ...(area === 'rules' ? [{ name: 'ack', label: '✋ Everyone must acknowledge the rules again', tip: '(untick for typo fixes)' }] : []),
           ...(t ? [{ name: 'discordOn', label: '💬 Also post it to Discord' }, { html: `<div class="dx-dc" hidden>${pickers(t)}</div>` }] : []),
