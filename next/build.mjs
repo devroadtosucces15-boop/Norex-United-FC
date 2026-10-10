@@ -10,6 +10,8 @@ const { players, matches } = await import('./lib/data.mjs');
 const W = (f, h) => fs.writeFileSync(path.join(out, f), h);
 for (const f of fs.readdirSync(path.join(here, 'static')).filter((f) => !f.startsWith('.'))) fs.copyFileSync(path.join(here, 'static', f), path.join(out, f));
 fs.copyFileSync(path.join(here, 'crest.png'), path.join(out, 'crest.png'));
+// the live site's markdown-lite renderer (club docs, play style), shared rather than copied
+const mdLib = path.join(here, '..', 'web', 'docs-md.js'); if (fs.existsSync(mdLib)) fs.copyFileSync(mdLib, path.join(out, 'docs-md.js'));
 fs.writeFileSync(path.join(out, 'manifest.webmanifest'), JSON.stringify({ id: 'norex-next', name: 'NOREX UNITED FC', short_name: 'NOREX', description: 'Results, squad, stats and the members Hub of NOREX UNITED FC.', start_url: 'index.html', scope: './', display: 'standalone', orientation: 'portrait', background_color: '#080b11', theme_color: '#080b11', icons: [{ src: 'crest.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: 'crest.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }], shortcuts: [{ name: 'Results', url: 'results.html' }, { name: 'Match Night', url: 'hub-matchnight.html' }, { name: 'Stats', url: 'stats.html' }] }));
 let n = 0; const P = (f, h) => { W(f, h); n++; };
 const mods = ['club', 'matches', 'stats', 'tactics', 'hub', 'lookbook', 'canvas'];
