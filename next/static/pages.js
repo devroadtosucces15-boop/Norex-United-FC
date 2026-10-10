@@ -12,6 +12,28 @@ addEventListener('DOMContentLoaded', () => {
   if ($('#rf')) tabs('#rf', 'f', (f) => $$('#rl .rrow').forEach((r) => { r.hidden = !!f && r.dataset.res !== f; }));
   if ($('#ot')) tabs('#ot', 't', (t) => { $('#po').hidden = t !== 'o'; $('#pb').hidden = t !== 'b'; });
   if ($('#bt')) tabs('#bt', 't', (t) => { $('#pb').hidden = t !== 'b'; $('#pp').hidden = t !== 'p'; });
+  // ---------- match night: real RSVPs and availability (signed-in members; answers are saved to the live club) ----------
+  if ($('#rsvppanel') && window.NOREX_API && window.NorexAuth && NorexAuth.token) {
+    const post = (path, body) => NorexAuth.call(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const when = (ms) => new Date(ms).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const OPT = [['yes', "✅ I'm in"], ['maybe', '❔ Maybe'], ['no', "❌ Can't"]];
+    const panel = $('#rsvppanel'), btns = (cur, attr) => OPT.map(([v, l]) => `<button class="chip${cur === v ? ' on' : ''}" ${attr} data-v="${v}">${l}</button>`).join('');
+    const drawEvents = (L) => {
+      const now = Date.now(), list = (L.events || []).filter((e) => e.status === 'scheduled' && e.end > now).slice(0, 6);
+      panel.innerHTML = '<h3>RSVP</h3>' + (list.length ? list.map((e) => { const me = (e.rsvps || []).find((r) => r.id === NorexAuth.session.u), yes = (e.rsvps || []).filter((r) => r.s === 'yes').length;
+        return `<div class="rsvprow" style="margin-top:14px"><div><b>${esc(e.title || (e.type ? e.type[0].toUpperCase() + e.type.slice(1) : 'Match night'))}</b> <span class="muted small">· ${esc(when(e.start))} · ${yes} in</span></div><div class="chips" style="margin-top:6px">${btns(me && me.s, `data-ev="${e.id}"`)}</div></div>`; }).join('') : '<p class="muted small">No match night is scheduled. When one is, you answer here and managers see who is in.</p>') + '<p class="muted small" id="rs" style="margin-top:8px"></p>';
+      panel.querySelectorAll('.chip[data-ev]').forEach((c) => c.onclick = () => { const cur = c.classList.contains('on'); c.disabled = true; post('/api/events/rsvp', { id: +c.dataset.ev, status: cur ? 'clear' : c.dataset.v }).then(drawEvents).catch((e) => { c.disabled = false; $('#rs').textContent = 'Could not save that. Try again.'; }); });
+    };
+    NorexAuth.call('/api/events').then(drawEvents).catch(() => { panel.querySelector('.muted.small').textContent = 'Could not load match nights right now.'; });
+    const ap = $('#availpanel'), box = $('#availbox');
+    const drawAvail = (A) => {
+      ap.style.display = '';
+      box.innerHTML = (A.days || []).map((d) => { const me = (d.people || []).find((x) => x.id === NorexAuth.session.u), yes = (d.people || []).filter((x) => x.status === 'yes').length;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px"><span>${esc(new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }))} <span class="muted small">· ${yes} in</span></span><span class="chips">${btns(me && me.status, `data-day="${d.date}"`)}</span></div>`; }).join('');
+      box.querySelectorAll('.chip[data-day]').forEach((c) => c.onclick = () => { const cur = c.classList.contains('on'); c.disabled = true; post('/api/availability', { date: c.dataset.day, status: cur ? 'clear' : c.dataset.v }).then(drawAvail).catch(() => { c.disabled = false; }); });
+    };
+    NorexAuth.call('/api/availability').then(drawAvail).catch(() => {});
+  } else
   if ($('#rsvp')) { const v = ls.get('norex.rsvp'); const show = (x) => { $$('#rsvp .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === x)); $('#rs').textContent = x ? 'Saved in this preview browser only.' : ''; }; show(v); $$('#rsvp .chip').forEach((c) => c.onclick = () => { ls.set('norex.rsvp', c.dataset.v); show(c.dataset.v); }); }
 
   // ---------- leaders + best XI ----------
