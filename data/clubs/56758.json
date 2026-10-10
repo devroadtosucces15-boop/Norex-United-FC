@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-10T21:40:31.050Z",
+ "fetchedAt": "2026-10-10T21:50:31.110Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -619,42 +619,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "Danial_Dano",
-   "gamesPlayed": "22",
-   "winRate": "81",
-   "goals": "19",
-   "assists": "12",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "76",
-   "passesMade": "234",
-   "passSuccessRate": "84",
-   "ratingAve": "8.3",
-   "tacklesMade": "30",
-   "tackleSuccessRate": "35",
-   "proName": "Dano",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "172",
-   "proNationality": "162",
-   "proOverall": "76",
-   "proOverallStr": "76",
-   "manOfTheMatch": "5",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "2",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "PATRICKSTARR11",
@@ -1450,7 +1414,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 15,
+  "midfielder": 14,
   "goalkeeper": 0,
   "forward": 6,
   "defender": 12
@@ -1651,17 +1615,6 @@
    "assists": "22",
    "manOfTheMatch": "8",
    "ratingAve": "6.7",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Danial_Dano",
-   "proPos": "14",
-   "gamesPlayed": "169",
-   "goals": "238",
-   "assists": "91",
-   "manOfTheMatch": "43",
-   "ratingAve": "8.2",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
