@@ -15,7 +15,7 @@
   const as = role === 'guest' ? 'guest' : role === 'manager' || role === 'owner' ? 'owner' : 'member'; // the page's two member tiers; the server enforces the real rules
   const loginUrl = () => `${API}/auth/login?return=${encodeURIComponent(location.href.split('#')[0])}`;
   const logout = () => { ls.set(KEY, null); ss.set('nx.me', null); location.href = 'index.html'; };
-  const call = async (path, opt = {}) => { const r = await fetch(API + path, { ...opt, headers: { ...(opt.headers || {}), ...(session ? { Authorization: 'Bearer ' + session.token } : {}) }, cache: 'no-store' }); if (!r.ok) throw new Error(path + ' ' + r.status); return r.json(); };
+  const call = async (path, opt = {}) => { const r = await fetch(API + path, { ...opt, headers: { ...(opt.headers || {}), ...(session ? { Authorization: 'Bearer ' + session.token } : {}) }, cache: 'no-store' }); if (!r.ok) { let m = ''; try { m = (await r.json()).error || ''; } catch {} const e = new Error(m || path + ' ' + r.status); e.status = r.status; throw e; } return r.json(); };
   let cached = null; try { cached = JSON.parse(ss.get('nx.me') || 'null'); } catch {}
   if (cached && (!session || cached.u !== session.u)) cached = null;
   const Auth = window.NorexAuth = { session, token: session?.token ?? null, role, as, player: cached?.player ?? null, name: session?.n ?? '', avatar: session?.a ?? '', loginUrl, logout, call };

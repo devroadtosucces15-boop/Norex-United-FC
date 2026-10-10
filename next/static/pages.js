@@ -33,6 +33,32 @@ addEventListener('DOMContentLoaded', () => {
       box.querySelectorAll('.chip[data-day]').forEach((c) => c.onclick = () => { const cur = c.classList.contains('on'); c.disabled = true; post('/api/availability', { date: c.dataset.day, status: cur ? 'clear' : c.dataset.v }).then(drawAvail).catch(() => { c.disabled = false; }); });
     };
     NorexAuth.call('/api/availability').then(drawAvail).catch(() => {});
+    // Rush log: members log a result, a manager confirms it (managers' own results count straight away)
+    const rpn = $('#rushpanel');
+    if (rpn) {
+      const today = new Date().toISOString().slice(0, 10), squad = (window.NOREX?.players || []).filter((x) => x.k);
+      const drawRush = (Q) => {
+        const mine = (Q && Q.mine) || [];
+        rpn.innerHTML = `<h3>Rush log</h3><p class="muted small">Rush is not in EA's data. Log your Rush result here and a manager confirms it.</p>
+        <button class="btn ghost" id="rushopen" style="margin-top:8px">Log a Rush game</button>
+        <form id="rushform" hidden style="margin-top:12px;display:none;gap:8px">
+          <div class="chips"><input type="date" name="date" value="${today}" max="${today}" required aria-label="Date" style="background:var(--p3);color:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 10px"><input name="opponent" placeholder="Opponent club" maxlength="60" required aria-label="Opponent" style="background:var(--p3);color:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 10px"></div>
+          <div class="chips" style="margin-top:8px"><span class="muted small">Score</span><input type="number" name="gf" min="0" max="40" value="0" aria-label="Goals for" style="width:64px;background:var(--p3);color:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 10px"><span>–</span><input type="number" name="ga" min="0" max="40" value="0" aria-label="Goals against" style="width:64px;background:var(--p3);color:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 10px"></div>
+          <p class="muted small" style="margin-top:10px">Who played (up to 5)</p>
+          ${[0, 1, 2, 3, 4].map((i) => `<div class="chips" style="margin-top:6px"><select name="p${i}" aria-label="Player ${i + 1}" style="background:var(--p3);color:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 10px"><option value="">${i ? '— none —' : '— choose —'}</option>${squad.map((x) => `<option value="${esc(x.k)}">${esc(x.n)}</option>`).join('')}</select><input type="number" name="g${i}" min="0" max="40" value="0" aria-label="Goals" title="Goals" style="width:56px;background:var(--p3);color:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 8px"><input type="number" name="a${i}" min="0" max="40" value="0" aria-label="Assists" title="Assists" style="width:56px;background:var(--p3);color:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 8px"></div>`).join('')}
+          <p class="muted small" style="margin-top:4px">Boxes after each name: goals, then assists.</p>
+          <div class="chips" style="margin-top:10px"><button class="btn gold" type="submit">Submit result</button><button class="btn ghost" type="button" id="rushcancel">Cancel</button></div><p class="muted small" id="rushmsg" style="margin-top:8px"></p></form>
+        ${mine.length ? `<p class="muted small" style="margin-top:12px">Your recent results</p>${mine.slice(0, 5).map((r) => `<p class="small" style="margin-top:4px">${esc(r.date)} · ${r.gf}–${r.ga} vs ${esc(r.opp)} <span class="muted">· ${esc(r.status)}</span></p>`).join('')}` : ''}`;
+        const f = $('#rushform'), open = $('#rushopen');
+        open.onclick = () => { f.style.display = 'block'; open.style.display = 'none'; };
+        $('#rushcancel').onclick = () => { f.style.display = 'none'; open.style.display = ''; };
+        f.onsubmit = (e) => { e.preventDefault(); const d = new FormData(f), ps = [0, 1, 2, 3, 4].map((i) => d.get('p' + i) ? { k: d.get('p' + i), g: +d.get('g' + i) || 0, a: +d.get('a' + i) || 0 } : null).filter(Boolean);
+          const btn = f.querySelector('[type=submit]'); btn.disabled = true;
+          post('/api/rush', { date: d.get('date'), opponent: d.get('opponent'), gf: +d.get('gf'), ga: +d.get('ga'), players: ps }).then((Q2) => { drawRush(Q2); $('#rushmsg') && ($('#rushmsg').textContent = ''); }).catch((er) => { btn.disabled = false; $('#rushmsg').textContent = er.message || 'Could not save that result.'; }); };
+      };
+      drawRush(null);
+      NorexAuth.call('/api/rush/queue').then(drawRush).catch(() => {});
+    }
     // MOTM vote on the latest matches (72 h window is enforced by the server)
     const mp = $('#motmpanel');
     const drawVote = (V) => {
