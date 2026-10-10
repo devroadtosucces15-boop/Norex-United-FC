@@ -184,9 +184,22 @@ addEventListener('DOMContentLoaded', () => {
     $('#rg').innerHTML = Object.values(R.types).map((t) => `<div class="rcard"><h3>${t.label}</h3><small>Slots: ${t.slots.join(', ')} · ${t.roles.length} roles</small>${t.roles.map((r) => `<div class="role"><b>${r.n}</b> — ${r.d}<br>${r.f.length ? r.f.map((x) => `<em>${x}</em>`).join('') : '<em>focus: set in game</em>'}</div>`).join('')}</div>`).join('');
     wall(); detail();
     // tabs and modes
-    tabs('#tabs', 'tab', (t) => $$('[data-pane]').forEach((p) => { p.hidden = p.dataset.pane !== t; if (!p.hidden) NorexMotion.watch(); }));
+    tabs('#tabs', 'tab', (t) => $$('[data-pane]').forEach((p) => { const was = p.hidden; p.hidden = p.dataset.pane !== t; if (!p.hidden) { if (was) { p.classList.remove('tx-in'); void p.offsetWidth; p.classList.add('tx-in'); } NorexMotion.watch(); } }));
+    // Rush log: confirmed results (public read of /api/rush; EA has no Rush data). Skeleton, then land.
+    const rushLog = () => { const body = $('#rushlogBody'); if (!body || body.dataset.done) return; body.dataset.done = 1;
+      if (!window.NOREX_API) { body.innerHTML = '<p class="muted small">The Rush log loads from the club server on the live preview.</p>'; return; }
+      NorexMotion.skeleton(body, 3);
+      fetch(window.NOREX_API + '/api/rush', { cache: 'no-store' }).then((r) => r.ok ? r.json() : Promise.reject(r.status)).then((R) => {
+        const M = (R.matches || []), w = M.filter((m) => m.res === 'W').length, dr = M.filter((m) => m.res === 'D').length, l = M.length - w - dr;
+        const pos = {}; M.forEach((m) => (m.players || []).forEach((p) => { const k = p.pos || '–'; const o = pos[k] ??= { g: 0, a: 0, n: 0 }; o.g += p.g || 0; o.a += p.a || 0; o.n++; }));
+        const html = !M.length ? '<p class="muted small">No Rush games confirmed yet. Log one from Match Night in the Hub after you play.</p>'
+          : `<div class="txf-kpi"><div><b data-count="${M.length}">${M.length}</b><span>confirmed Rush games</span></div><div><b class="num">${w}-${dr}-${l}</b><span>won · drawn · lost</span></div><div><b data-count="${Math.round(w / M.length * 100)}" data-suffix="%">${Math.round(w / M.length * 100)}%</b><span>win rate</span></div>${Object.entries(pos).sort((a, b) => b[1].g - a[1].g).slice(0, 1).map(([k, o]) => `<div><b class="num">${o.g}</b><span>goals from ${esc(k)} (most of any role)</span></div>`).join('')}</div>`
+            + M.slice(0, 5).map((m) => `<div class="rush-row"><span class="pill ${m.res.toLowerCase()}">${m.res}</span><span>${esc(m.opp || 'Opponent')} <small class="muted">${esc(m.date)}</small></span><b class="num">${m.gf}–${m.ga}</b></div>`).join('');
+        NorexMotion.land(body, html);
+      }).catch(() => { body.innerHTML = '<p class="muted small">Could not reach the club server just now. The Rush log will be back on the next visit.</p>'; });
+    };
     const rush = () => { if (mounted.r) return; mounted.r = 1; ['r31', 'r22'].forEach((id) => NorexPitch.mount($('#' + id), { mode: 'rush', orient: 'v', slots: NorexPitch.RUSH[$('#' + id).dataset.shape] })); };
-    tabs('#mode', 'mode', (m) => { $('#league').hidden = m !== 'league'; $('#rush').hidden = m !== 'rush'; $('#eb').textContent = m === 'rush' ? "Rush · 4 players + AI goalkeeper · the club's own formations" : 'The usual XI · from the club archive'; if (m === 'rush') rush(); });
+    tabs('#mode', 'mode', (m) => { $('#league').hidden = m !== 'league'; $('#rush').hidden = m !== 'rush'; $('#eb').textContent = m === 'rush' ? "Rush · 4 players + AI goalkeeper · the club's own formations" : 'The usual XI · from the club archive'; if (m === 'rush') { rush(); rushLog(); } });
     const h = location.hash.slice(1); if (h === 'rush') $('#mode [data-mode=rush]').click(); else if (['forms', 'roles', 'xi'].includes(h)) $('#tabs [data-tab=' + h + ']').click();
   }
 

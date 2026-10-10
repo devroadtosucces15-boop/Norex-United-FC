@@ -34,5 +34,10 @@ t('match: field view, table view, team comparison and result graphic', ['id="mfi
 t('match: comparison uses only fields EA sends (no possession)', !/possession<\/span>|Possession<\/span>/.test(mh));
 t('portraits: players carry their EA id (the Card Studio key)', /"players":\[\{"k":"[^"]+","id":"(\d+|n-[^"]+)"/.test(read('index.html')));
 t('reel: spotlight reel centres with spacers, not padding', read('index.html').includes('class="spot"') && /\.spot::before,\.wx \.spot::after/.test(read('widgets.css')));
+// ---- tactics detail pass: real fielded line-ups, line stats, set pieces, Rush log, archetype usage ----
+const th = read('tactics.html');
+t('tactics: fielded line-ups and line stats come from the archive', th.includes('tx-fielded') && th.includes('tx-lines') && /win rate with a full 11 \(\d+-\d+-\d+ in \d+\)/.test(th));
+t('tactics: set pieces panel in League and Rush, Rush log slot, pane transition', (th.match(/class="panel reveal tx-sp"/g) || []).length === 2 && th.includes('id="rushlogBody"') && (th.match(/class="txpane"/g) || []).length === 3);
+t('tactics: play style roles carry real line numbers, builds show archetype use', (read('playstyle.html').match(/class="ps-strip"/g) || []).length >= 5 && read('builds.html').includes('class="bld-use"'));
 fs.rmSync(out, { recursive: true, force: true });
 done();
