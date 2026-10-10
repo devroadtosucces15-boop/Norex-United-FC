@@ -47,35 +47,36 @@ flowchart LR
   n40["tests/mock.mjs"]
   n41["tests/moderation.test.mjs"]
   n42["tests/monitor.test.mjs"]
-  n43["tests/notify.test.mjs"]
-  n44["tests/packs.test.mjs"]
-  n45["tests/phonefix.test.mjs"]
-  n46["tests/playmedia.test.mjs"]
-  n47["tests/plays.test.mjs"]
-  n48["tests/points.test.mjs"]
-  n49["tests/polish.test.mjs"]
-  n50["tests/probuilds.test.mjs"]
-  n51["tests/profanity.test.mjs"]
-  n52["tests/profiles.test.mjs"]
-  n53["tests/push.test.mjs"]
-  n54["tests/pwa.test.mjs"]
-  n55["tests/quickcommands.test.mjs"]
-  n56["tests/rankings.test.mjs"]
-  n57["tests/run.mjs"]
-  n58["tests/rush.test.mjs"]
-  n59["tests/site.test.mjs"]
-  n60["tests/social.test.mjs"]
-  n61["tests/squads.test.mjs"]
-  n62["tests/statinsights.test.mjs"]
-  n63["tests/studio.test.mjs"]
-  n64["tests/submissions.test.mjs"]
-  n65["tests/tagline.test.mjs"]
-  n66["tests/trials.test.mjs"]
-  n67["tests/updates.test.mjs"]
-  n68["tests/voicerecap.test.mjs"]
-  n69["tests/wave10.test.mjs"]
-  n70["tests/wave11.test.mjs"]
-  n71["tests/wave8.test.mjs"]
+  n43["tests/next.test.mjs"]
+  n44["tests/notify.test.mjs"]
+  n45["tests/packs.test.mjs"]
+  n46["tests/phonefix.test.mjs"]
+  n47["tests/playmedia.test.mjs"]
+  n48["tests/plays.test.mjs"]
+  n49["tests/points.test.mjs"]
+  n50["tests/polish.test.mjs"]
+  n51["tests/probuilds.test.mjs"]
+  n52["tests/profanity.test.mjs"]
+  n53["tests/profiles.test.mjs"]
+  n54["tests/push.test.mjs"]
+  n55["tests/pwa.test.mjs"]
+  n56["tests/quickcommands.test.mjs"]
+  n57["tests/rankings.test.mjs"]
+  n58["tests/run.mjs"]
+  n59["tests/rush.test.mjs"]
+  n60["tests/site.test.mjs"]
+  n61["tests/social.test.mjs"]
+  n62["tests/squads.test.mjs"]
+  n63["tests/statinsights.test.mjs"]
+  n64["tests/studio.test.mjs"]
+  n65["tests/submissions.test.mjs"]
+  n66["tests/tagline.test.mjs"]
+  n67["tests/trials.test.mjs"]
+  n68["tests/updates.test.mjs"]
+  n69["tests/voicerecap.test.mjs"]
+  n70["tests/wave10.test.mjs"]
+  n71["tests/wave11.test.mjs"]
+  n72["tests/wave8.test.mjs"]
   n0 --> n34
   n0 --> n40
   n1 --> n34
@@ -183,8 +184,8 @@ flowchart LR
   n55 --> n34
   n55 --> n40
   n56 --> n34
-  n58 --> n34
-  n58 --> n40
+  n56 --> n40
+  n57 --> n34
   n59 --> n34
   n59 --> n40
   n60 --> n34
@@ -211,4 +212,6 @@ flowchart LR
   n70 --> n40
   n71 --> n34
   n71 --> n40
+  n72 --> n34
+  n72 --> n40
 ```
