@@ -138,6 +138,22 @@ addEventListener('DOMContentLoaded', () => {
     list();
   }
 
+  // ---------- hub landing: real next match night, alerts and medals (read-only, signed-in members) ----------
+  if ($('#nextpanel') && window.NOREX_API && window.NorexAuth && NorexAuth.token) {
+    const T = (ms, tz) => { try { return new Date(ms).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
+    const ago = (ms) => { const m = Math.max(1, Math.round((Date.now() - ms) / 60000)); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+    NorexAuth.call('/api/locker').then((L) => {
+      const n = L.next, np = $('#nextpanel');
+      if (n) {
+        const mine = { yes: 'You are in', no: 'You are out', maybe: 'Maybe' }[n.mine] || 'Not answered yet';
+        np.innerHTML = `<div class="eyebrow">Next match night</div><h3 style="margin:6px 0">${esc(n.title || (n.type ? n.type[0].toUpperCase() + n.type.slice(1) : 'Match night'))}</h3><p class="small">${esc(T(n.start))}</p><p class="muted small" style="margin:4px 0 8px">${n.inCount} in · <b>${mine}</b></p><a class="btn ghost" href="hub-matchnight.html">Match Night</a>`;
+      }
+      const ap = $('#alertpanel'), al = L.alerts || [];
+      ap.innerHTML = `<div class="eyebrow">Alerts${L.unread ? ` · ${L.unread} new` : ''}</div>` + (al.length ? al.map((a) => `<p class="small" style="margin-top:8px">${esc(a.icon || '🔔')} ${a.link ? `<a href="${esc(/^(https?:|\.\.\/)/.test(a.link) ? a.link : '../' + a.link.replace(/^\//, ''))}">${esc(a.title)}</a>` : esc(a.title)} <span class="muted">· ${ago(a.at)}</span></p>`).join('') : '<p class="muted small" style="margin-top:6px">No alerts yet. Approvals, RSVPs and mentions appear here.</p>');
+      const m = L.medals;
+      if (m && m.count) ap.insertAdjacentHTML('afterend', `<div class="panel reveal" style="--i:2"><div class="eyebrow">Medals · ${m.count}/${m.total}</div><div class="chips" style="margin-top:8px">${m.top.map((x) => `<span class="chip" title="${esc(x.tier)}">${esc(x.icon)} ${esc(x.name)}</span>`).join('')}</div></div>`);
+    }).catch(() => {});
+  }
   // ---------- hub landing: the card, in the exact place the entrance ends ----------
   if ($('#cardslot')) {
     const player = me.player || (!window.NOREX_API && me.as !== 'guest' ? N.players[0] : null);
