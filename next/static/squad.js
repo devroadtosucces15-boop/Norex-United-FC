@@ -1,5 +1,5 @@
 // Hub › Squad Room: five live panels from the member API, each loading on its own (skeleton → land, empty and error states
-// with a retry). Team up ranks with the live site's own NXRecs (recs.js, copied at build). The server decides what each member
+// with a retry). Three writes: Rush teammate picks, the weekly award vote and a score prediction. Team up ranks with the live site's own NXRecs (recs.js, copied at build). The server decides what each member
 // may see: scouting shows a member only their own tips; staff also get the pipeline counts, never applicants' details.
 (() => {
   const d = document, $ = (s, r = d) => r.querySelector(s);
@@ -25,6 +25,10 @@
 
   if (!window.NOREX_API || !A?.token) { Object.values(mounts).forEach((el) => (el.innerHTML = '<p class="muted small">This loads here for signed-in members.</p>')); return; }
   const staff = A.as === 'owner';
+  // The page's only writes: Rush teammate picks, the weekly award vote and a score prediction. Each returns the fresh state.
+  const post = (path, body) => A.call(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const busy = (btn, work) => (M ? M.submit(btn, work) : work());
+  const oops = (e) => M?.toast(e.message || 'Could not save that', { kind: 'err' });
 
   // ---------- 🎯 Team up (/api/recs?mode=league|rush) ----------
   const T = { mode: (() => { try { return localStorage.getItem('norex_mode') === 'rush' ? 'rush' : 'league'; } catch { return 'league'; } })(), only: true, all: false, squad: undefined, d: null, list: [] };
@@ -61,25 +65,52 @@ ${pool.length > 10 ? `<button type="button" class="btn ghost" data-tall>${T.all 
   mounts.team.addEventListener('change', (e) => { if (e.target.matches('[data-only]')) { T.only = e.target.checked; mounts.team.innerHTML = teamHtml(); fit(mounts.team); } });
 
   // ---------- 🏆 Awards (/api/awards) ----------
-  let W = null;
+  let W = null, wOpen = null;
   const name = (k) => W?.nominees?.find((n) => n.k === k)?.n || players[k]?.n || k;
+  const pickBox = () => {
+    const c = W.categories.find((x) => x.id === wOpen); if (!c) return '';
+    const fits = W.nominees.filter((n) => c.grp === 'any' || !c.grp || n.grp === c.grp), list = fits.length ? fits : W.nominees, pick = W.my[c.id];
+    return `<div class="sq-pickbox mx-pop" role="group" aria-label="${esc(c.name)} nominees"><div class="sq-pbh"><b>${esc(c.icon || '🏆')} ${esc(c.name)}</b><small class="muted">Tap a player. You can change your vote until the ballot closes.</small><button type="button" class="sq-x" data-cat="${c.id}" aria-label="Close">✕</button></div>
+<div class="sq-noms">${list.map((n) => { const self = n.k === A.player; return `<button type="button" class="sq-nom${n.k === pick ? ' on' : ''}" data-vote="${esc(n.k)}"${self ? ' disabled title="No voting for yourself"' : ''}><b class="fit">${esc(n.n)}</b><small class="muted">${esc(n.pos || '')}${n.played ? ' · <span class="sq-dot">●</span> played this week' : ''}${self ? ' · you' : ''}</small></button>`; }).join('')}</div>
+${pick ? '<button type="button" class="btn ghost sm" data-unvote>↩ Take my vote back</button>' : ''}</div>`;
+  };
   const awardsHtml = () => {
     const open = !W.closed && Date.now() < W.closes, voted = W.categories.filter((c) => W.my[c.id]).length;
     return `<div class="sq-head"><div><b class="sq-big">${open ? `Voting closes in ${until(W.closes)}` : 'Voting is closed this week'}</b><small class="muted">${esc(W.week)} · ${W.voters} member${W.voters === 1 ? ' has' : 's have'} voted${open ? ` · you voted in ${voted} of ${W.categories.length}` : ' · the next ballot opens Monday'}</small></div>${open ? `<span class="sq-ring" style="--p:${W.categories.length ? Math.round((voted / W.categories.length) * 100) : 0}" aria-label="${voted} of ${W.categories.length} voted"><b class="num">${voted}/${W.categories.length}</b></span>` : ''}</div>
-<div class="sq-cats">${W.categories.map((c) => { const pick = W.my[c.id]; return `<div class="sq-cat${pick ? ' done' : ''}"><span class="sq-ci">${esc(c.icon || '🏆')}</span><div><b class="fit">${esc(c.name)}</b><small class="muted">${pick ? `Your vote: <b class="gold-t">${esc(name(pick))}</b>` : open ? 'Not voted yet' : 'No vote'}${c.grp && c.grp !== 'any' ? ` · ${esc(c.grp)}` : ''}</small></div>${pick ? '<span class="sq-tick" aria-hidden="true">✓</span>' : ''}</div>`; }).join('') || '<p class="muted small">No vote categories this week.</p>'}</div>
+<div class="sq-cats">${W.categories.map((c) => { const pick = W.my[c.id], tag = open ? 'button' : 'div'; return `<${tag}${open ? ` type="button" data-cat="${c.id}" aria-expanded="${wOpen === c.id}"` : ''} class="sq-cat${pick ? ' done' : ''}${wOpen === c.id ? ' on' : ''}"><span class="sq-ci">${esc(c.icon || '🏆')}</span><div><b class="fit">${esc(c.name)}</b><small class="muted">${pick ? `Your vote: <b class="gold-t">${esc(name(pick))}</b>` : open ? 'Not voted yet' : 'No vote'}${c.grp && c.grp !== 'any' ? ` · ${esc(c.grp)}` : ''}</small></div>${pick ? '<span class="sq-tick" aria-hidden="true">✓</span>' : open ? '<span class="sq-go" aria-hidden="true">Vote ›</span>' : ''}</${tag}>`; }).join('') || '<p class="muted small">No vote categories this week.</p>'}</div>
+${open && wOpen != null ? pickBox() : ''}
 <div class="sq-stats"><div class="tiny muted" style="letter-spacing:.08em">DECIDED BY THE NUMBERS</div>${W.stats.map((s) => `<span class="pill s" title="${esc(s.how)}">${esc(s.icon)} ${esc(s.name)}</span>`).join('')}</div>
 ${W.last?.winners?.length ? `<h3 class="sq-sub">Last week · ${esc(W.last.week)}</h3><div class="sq-wins">${W.last.winners.filter((w) => w.k).map((w) => `<div class="sq-win${w.stat ? ' stat' : ''}"><span>${esc(w.icon)}</span><small class="muted fit">${esc(w.name)}</small><b class="fit">${esc(w.n || name(w.k))}</b>${w.value != null && w.value !== '' ? `<small class="num muted">${esc(w.value)}</small>` : ''}</div>`).join('')}</div>` : '<p class="muted small" style="margin-top:12px">No winners yet. The first results land here after Sunday’s close.</p>'}`;
   };
+  mounts.awards.addEventListener('click', async (e) => {
+    const c = e.target.closest('[data-cat]');
+    if (c) { const id = Number(c.dataset.cat); wOpen = wOpen === id ? null : id; mounts.awards.innerHTML = awardsHtml(); fit(mounts.awards); return; }
+    const v = e.target.closest('[data-vote],[data-unvote]'); if (!v || wOpen == null || v.disabled) return;
+    const cat = wOpen, player = v.dataset.vote ?? null;
+    if (player && W.my[cat] === player) return;
+    try {
+      W = await busy(v, () => post('/api/awards/vote', { category: cat, player }));
+      wOpen = null; mounts.awards.innerHTML = awardsHtml(); fit(mounts.awards);
+      const card = mounts.awards.querySelector(`[data-cat="${cat}"]`); card?.classList.add('mx-pop'); M?.pulse(card?.querySelector('.sq-tick'));
+      M?.toast(player ? `Vote saved: ${name(player)}` : 'Vote taken back', { kind: 'ok' });
+    } catch (er) { oops(er); }
+  });
   const loadAwards = () => { const el = mounts.awards; M?.skeleton(el, 4); A.call('/api/awards').then((r) => { W = r; put(el, awardsHtml(), fit); }).catch((e) => { el.removeAttribute('aria-busy'); el.innerHTML = failBox('awards', 'the awards', e); }); };
 
   // ---------- 🔮 Predictions (/api/predict) ----------
   let P = null, board = 'month';
+  const draft = {}; // event id → { gf, ga } being set on the steppers
   const score = (x) => (x ? `<b class="num">${x.gf}–${x.ga}</b>` : '<span class="muted">No pick</span>');
   const ptsPill = (n) => (n == null ? '' : `<span class="pill ${n === 3 ? 'w' : n ? 's' : ''}">${n === 3 ? '🎯 ' : ''}${n} pt${n === 1 ? '' : 's'}</span>`);
   const modePill = (m) => `<span class="pill">${m === 'rush' ? '⚡ Rush' : '🏆 League'}</span>`;
+  const stepper = (n) => {
+    const v = draft[n.id] ??= { gf: n.mine?.gf ?? 0, ga: n.mine?.ga ?? 0 }, same = n.mine && n.mine.gf === v.gf && n.mine.ga === v.ga;
+    const side = (k, l) => `<div class="sq-st"><small class="muted">${l}</small><div><button type="button" data-st="${n.id}:${k}:-1" aria-label="${l} minus one"${v[k] <= 0 ? ' disabled' : ''}>−</button><b class="num" data-sv="${n.id}:${k}">${v[k]}</b><button type="button" data-st="${n.id}:${k}:1" aria-label="${l} plus one"${v[k] >= 20 ? ' disabled' : ''}>+</button></div></div>`;
+    return `<div class="sq-stepw" data-sw="${n.id}"><div class="sq-step">${side('gf', 'NOREX')}<span class="sq-dash">–</span>${side('ga', 'Them')}</div><div class="sq-acts"><button type="button" class="btn sm" data-psave="${n.id}"${same ? ' disabled' : ''}>${n.mine ? '💾 Update pick' : '🔮 Save pick'}</button>${n.mine ? `<button type="button" class="btn ghost sm" data-pdel="${n.id}">↩ Take back</button>` : ''}</div></div>`;
+  };
   const predictHtml = () => {
     const rows = P.boards[board] ?? [];
-    return `${P.open.length ? `<div class="sq-nights">${P.open.map((n) => `<div class="sq-night"><div class="sq-nt">${modePill(n.mode)}<small class="muted">Kick-off in ${until(n.start)}</small></div><b class="fit">${esc(n.title || 'Match night')}</b><small class="muted">${when(n.start)}</small><div class="sq-pick">${n.mine ? `Your pick ${score(n.mine)}` : '<span class="muted">You have not picked yet</span>'}</div><small class="muted">${n.count} member${n.count === 1 ? '' : 's'} picked</small></div>`).join('')}</div>`
+    return `${P.open.length ? `<div class="sq-nights">${P.open.map((n) => `<div class="sq-night"><div class="sq-nt">${modePill(n.mode)}<small class="muted">Kick-off in ${until(n.start)}</small></div><b class="fit">${esc(n.title || 'Match night')}</b><small class="muted">${when(n.start)}</small><div class="sq-pick">${n.mine ? `Your pick ${score(n.mine)}` : '<span class="muted">You have not picked yet</span>'}</div>${stepper(n)}<small class="muted">${n.count} member${n.count === 1 ? '' : 's'} picked</small></div>`).join('')}</div>`
       : empty('🗓️', 'No match night to predict', 'Predictions open when the managers schedule a League or Rush night in the next three weeks.')}
 ${P.locked.length ? `<h3 class="sq-sub">🔒 Locked · waiting for the result</h3>${P.locked.map((n) => `<div class="sq-row"><div><b>${esc(n.title || 'Match night')}</b><small class="muted"> · ${day(n.start)}</small></div><div class="sq-picks">${n.picks.map((p) => `<span class="sq-chip meh" title="${esc(p.n)}">${esc(p.n)} ${p.gf}–${p.ga}</span>`).join('')}</div></div>`).join('')}` : ''}
 ${P.recent.length ? `<h3 class="sq-sub">Recent nights</h3>${P.recent.slice(0, 4).map((n) => `<div class="sq-row"><div><b>${esc(n.title || 'Match night')}</b><small class="muted"> · ${day(n.start)}</small></div><div class="sq-res">${n.result.status === 'void' ? '<span class="muted small">Void, no match played</span>' : `<span class="num sq-sc">${n.result.gf}–${n.result.ga}</span>${n.result.opp ? `<small class="muted fit">vs ${esc(n.result.opp)}</small>` : ''}`}<span class="muted small">You ${score(n.mine)}</span>${ptsPill(n.mine?.points)}</div></div>`).join('')}` : ''}
@@ -87,20 +118,53 @@ ${P.recent.length ? `<h3 class="sq-sub">Recent nights</h3>${P.recent.slice(0, 4)
 ${rows.length ? `<ol class="sq-table">${rows.slice(0, 8).map((r, i) => `<li${r.id === A.session?.u ? ' class="me"' : ''}><span class="num sq-rank">${i + 1}</span>${av(r.a, r.n, 26)}<b class="fit">${esc(r.n)}</b><small class="muted">${r.exact} exact · ${r.played} night${r.played === 1 ? '' : 's'}</small><b class="num gold-t">${r.pts}</b></li>`).join('')}</ol>` : '<p class="muted small" style="margin-top:10px">No points scored in this period yet.</p>'}`;
   };
   const loadPredict = () => { const el = mounts.predict; M?.skeleton(el, 4); A.call('/api/predict').then((r) => { P = r; put(el, predictHtml(), fit); }).catch((e) => { el.removeAttribute('aria-busy'); el.innerHTML = failBox('predict', 'predictions', e); }); };
-  mounts.predict.addEventListener('click', (e) => { const b = e.target.closest('[data-pb]'); if (!b || b.dataset.pb === board) return; board = b.dataset.pb; mounts.predict.innerHTML = predictHtml(); fit(mounts.predict); });
+  const repaint = () => { mounts.predict.innerHTML = predictHtml(); fit(mounts.predict); };
+  mounts.predict.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-pb]'); if (b) { if (b.dataset.pb !== board) { board = b.dataset.pb; repaint(); } return; }
+    const st = e.target.closest('[data-st]');
+    if (st) { const [id, k, by] = st.dataset.st.split(':'), v = draft[id]; v[k] = Math.max(0, Math.min(20, v[k] + Number(by)));
+      const n = P.open.find((x) => String(x.id) === id), box = st.closest('.sq-stepw'); box.outerHTML = stepper(n);
+      const nb = mounts.predict.querySelector(`[data-sw="${id}"]`); M?.pulse(nb.querySelector(`[data-sv="${id}:${k}"]`)); (nb.querySelector(`[data-st="${id}:${k}:${by}"]:not([disabled])`) || nb.querySelector('[data-psave]'))?.focus(); return; }
+    const sv = e.target.closest('[data-psave],[data-pdel]'); if (!sv) return;
+    const id = Number(sv.dataset.psave ?? sv.dataset.pdel), del = sv.hasAttribute('data-pdel'), v = draft[id];
+    try {
+      P = await busy(sv, () => post('/api/predict', del ? { event: id, gf: null } : { event: id, gf: v.gf, ga: v.ga }));
+      if (del) delete draft[id];
+      repaint(); M?.toast(del ? 'Prediction taken back' : `Pick saved: NOREX ${v.gf}–${v.ga}`, { kind: 'ok' });
+    } catch (er) { oops(er); }
+  });
 
   // ---------- 🤝 Rush squads (/api/squads) ----------
-  let S = null;
+  let S = null, edit = null; // edit = the picks list being changed (ids, best first)
+  const editor = (who, nm, me) => {
+    const rest = S.candidates.filter((c) => c.id !== me && !edit.includes(c.id));
+    return `<div class="sq-prefs edit"><div class="sq-pbh"><b>Your teammate picks</b><small class="muted">${edit.length} of 10 · best first. Only you and the managers see this list.</small></div>
+${edit.length ? `<ol>${edit.map((id, i) => `<li>${av(who[id]?.a, nm(id), 22)}<span class="fit">${esc(nm(id))}</span><span class="sq-ord"><button type="button" data-pm="${i}:-1" aria-label="Move ${esc(nm(id))} up"${i ? '' : ' disabled'}>↑</button><button type="button" data-pm="${i}:1" aria-label="Move ${esc(nm(id))} down"${i < edit.length - 1 ? '' : ' disabled'}>↓</button><button type="button" data-px="${i}" aria-label="Remove ${esc(nm(id))}">✕</button></span></li>`).join('')}</ol>` : '<p class="muted small">Tap players below to add them.</p>'}
+${rest.length ? `<div class="sq-cands">${rest.map((c) => `<button type="button" class="chip" data-padd="${esc(c.id)}"${edit.length >= 10 ? ' disabled' : ''}>＋ ${esc(c.n)} <small class="muted">${esc((c.pos || []).join('/'))}</small></button>`).join('')}</div>` : ''}
+<div class="sq-acts"><button type="button" class="btn gold sm" data-psv>💾 Save picks</button><button type="button" class="btn ghost sm" data-pcancel>Cancel</button></div></div>`;
+  };
   const squadsHtml = () => {
     const who = Object.fromEntries(S.candidates.map((c) => [c.id, c])), nm = (id) => who[id]?.n || 'Former member', pub = S.published, me = A.session?.u;
     const mine = S.me.unlocked
-      ? `<div class="sq-prefs"><b>Your teammate picks</b>${S.me.prefs.length ? `<ol>${S.me.prefs.map((id) => `<li>${av(who[id]?.a, nm(id), 22)}<span class="fit">${esc(nm(id))}</span></li>`).join('')}</ol>` : '<p class="muted small">You have not picked anyone yet. Up to ten teammates, best first.</p>'}</div>`
+      ? edit ? editor(who, nm, me) : `<div class="sq-prefs"><div class="sq-pbh"><b>Your teammate picks</b><button type="button" class="btn ghost sm" data-pedit>✏️ ${S.me.prefs.length ? 'Change' : 'Pick teammates'}</button></div>${S.me.prefs.length ? `<ol>${S.me.prefs.map((id) => `<li>${av(who[id]?.a, nm(id), 22)}<span class="fit">${esc(nm(id))}</span></li>`).join('')}</ol>` : '<p class="muted small">You have not picked anyone yet. Up to ten teammates, best first.</p>'}</div>`
       : `<div class="sq-prefs locked"><b>🔒 Teammate picks</b><p class="muted small">${S.me.reason === 'positions' ? 'Set your Rush positions (1st to 3rd) in My profile on the live Hub, then pick who you play best with.' : 'Link your Discord to your club player first. Rush squads are for verified players.'}</p></div>`;
     return `${pub ? `<div class="sq-head"><div><b class="sq-big fit">${esc(pub.title)}</b><small class="muted">Published ${day(pub.publishedAt || pub.at)}${pub.by ? ` by ${esc(pub.by)}` : ''} · ${pub.squads.length} squad${pub.squads.length === 1 ? '' : 's'}</small></div></div>
 <div class="sq-squads">${pub.squads.map((s, i) => `<div class="sq-squad${s.ids.includes(me) ? ' mine' : ''}"><div class="sq-sqh"><b>Squad ${i + 1}</b>${s.ids.includes(me) ? '<span class="pill s">You</span>' : ''}<span class="sq-chem"><i style="width:${Math.max(0, Math.min(100, s.chemistry))}%"></i></span><small class="num">${s.chemistry}/100</small></div>${s.ids.map((id) => `<div class="sq-mem${id === me ? ' me' : ''}"><span class="sq-role">${esc(s.roles?.[id] === 'FLEX' ? 'FLX' : s.roles?.[id] || '–')}</span>${av(who[id]?.a, nm(id), 24)}<span class="fit">${esc(nm(id))}</span></div>`).join('')}<div class="sq-mem ai"><span class="sq-role">GK</span><span class="muted small">AI keeper</span></div>${s.missing?.length ? `<small class="muted">Missing: ${esc(s.missing.join(', '))}</small>` : ''}</div>`).join('')}</div>
 ${pub.bench?.length ? `<p class="muted small" style="margin-top:10px">🪑 Bench: ${pub.bench.map((id) => esc(nm(id))).join(', ')}</p>` : ''}` : empty('🤝', 'No squads published yet', 'When the managers publish Rush squads, yours shows here with your role and chemistry.')}
 <div class="sq-foot">${mine}<p class="muted small">${S.candidates.length} verified player${S.candidates.length === 1 ? '' : 's'} with Rush positions can be picked.</p></div>`;
   };
+  mounts.squads.addEventListener('click', async (e) => {
+    const t = e.target.closest('button'); if (!t || t.disabled) return;
+    const redraw = () => { mounts.squads.innerHTML = squadsHtml(); fit(mounts.squads); };
+    if (t.hasAttribute('data-pedit')) { edit = [...S.me.prefs]; redraw(); return; }
+    if (t.hasAttribute('data-pcancel')) { edit = null; redraw(); return; }
+    if (t.dataset.padd) { if (edit.length < 10) edit.push(t.dataset.padd); redraw(); return; }
+    if (t.dataset.px != null) { edit.splice(Number(t.dataset.px), 1); redraw(); return; }
+    if (t.dataset.pm) { const [i, by] = t.dataset.pm.split(':').map(Number), j = i + by; [edit[i], edit[j]] = [edit[j], edit[i]]; redraw(); mounts.squads.querySelector(`[data-pm="${j}:${by}"]`)?.focus(); return; }
+    if (t.hasAttribute('data-psv')) {
+      try { S = await busy(t, () => post('/api/squads/prefs', { ids: edit })); edit = null; redraw(); M?.pulse(mounts.squads.querySelector('.sq-prefs')); M?.toast('Teammate picks saved', { kind: 'ok' }); } catch (er) { oops(er); }
+    }
+  });
   const loadSquads = () => { const el = mounts.squads; M?.skeleton(el, 4); A.call('/api/squads').then((r) => { S = r; put(el, squadsHtml(), fit); }).catch((e) => { el.removeAttribute('aria-busy'); el.innerHTML = failBox('squads', 'Rush squads', e); }); };
 
   // ---------- 🔭 Scouting (/api/scout, staff also /api/trials counts) ----------

@@ -51,6 +51,7 @@ t('play style: members only – the block lives in the Handbook, the old page fo
 const sq = read('hub-squad.html'), sj = read('squad.js');
 t('squad room: five live panels behind the member gate, ranking library shipped', ['sqteam', 'sqawards', 'sqpredict', 'sqsquads', 'sqscout'].every((k) => sq.includes(`id="${k}"`)) && sq.includes('src="squad.js"') && sq.includes('src="recs.js"') && sq.includes('data-for="member owner"') && fs.existsSync(path.join(out, 'recs.js')));
 t('squad room: reads only the member routes, each panel skeleton → land with a retry', ['/api/recs?mode=', "'/api/awards'", "'/api/predict'", "'/api/squads'", "'/api/scout'", "'/api/trials'"].every((k) => sj.includes(k)) && (sj.match(/M\?\.skeleton\(/g) || []).length >= 5 && sj.includes('data-sqretry') && sj.includes('NXRecs'));
+t('squad room: the only writes are teammate picks, the award vote and a prediction, each through submit with an error toast', (sj.match(/post\('\/api\/[a-z/]+'/g) || []).sort().join() === ["post('/api/awards/vote'", "post('/api/predict'", "post('/api/squads/prefs'"].join() && (sj.match(/method: 'POST'/g) || []).length === 1 && sj.includes('M.submit(btn, work)') && sj.includes('data-st=') && sj.includes("n.k === A.player"));
 t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includes('href="staff.html" class="" data-for="owner" hidden'));
 fs.rmSync(out, { recursive: true, force: true });
 done();
