@@ -17,14 +17,28 @@
     c.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = 0; } }, true);
   }
   function timeline(t) { $$('.dot', t).forEach((b) => b.addEventListener('click', () => { $$('.dot', t).forEach((x) => x.classList.toggle('on', x === b)); const o = $('#tlo') || t.nextElementSibling; o.textContent = b.dataset.t + ' · open'; o.href = b.dataset.h; o.classList.remove('pop'); void o.offsetWidth; o.classList.add('pop'); const dd = $('#tdet'); if (dd) dd.textContent = b.dataset.d || ''; })); const last = $$('.dot', t).pop(); if (last) { last.classList.add('on'); t.scrollLeft = t.scrollWidth; } }
+  // Spotlight reel: snaps the chosen card to the exact centre; neighbours scale/fade by distance; the score flips when a card takes centre.
   function reel(c) {
-    const wrap = c.closest('.reelwrap'), cards = $$('.ci', c), hint = $('.rhint b', wrap); let cur = cards.length - 1;
-    const center = (i, smooth) => { const x = cards[i]; if (!x) return; c.scrollTo({ left: x.offsetLeft - (c.clientWidth - x.offsetWidth) / 2, behavior: smooth && !calm ? 'smooth' : 'auto' }); };
-    const mark = () => { const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; let best = 0, bd = 1e9; cards.forEach((x, i) => { const b = x.getBoundingClientRect(), dd = Math.abs(b.left + b.width / 2 - cx); if (dd < bd) { bd = dd; best = i; } }); cur = best; if (hint) hint.textContent = best + 1; $$('.rchip', wrap).forEach((ch, k, all) => { const nxt = all[k + 1] ? +all[k + 1].dataset.i : 1e9; ch.classList.toggle('on', best >= +ch.dataset.i && best < nxt); }); };
+    const wrap = c.closest('.spotwrap'), items = $$('.si', c), dots = $$('.sdot', wrap); let cur = -1, raf = 0;
+    const full = () => !window.NorexMotion || NorexMotion.mode === 'full';
+    const center = (i, smooth) => { const x = items[i]; if (!x) return; c.scrollTo({ left: x.offsetLeft + x.offsetWidth / 2 - c.clientWidth / 2, behavior: smooth && full() ? 'smooth' : 'auto' }); };
+    const paint = () => { raf = 0; const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; let best = 0, bd = 1e9;
+      items.forEach((x, i) => { const b = x.getBoundingClientRect(), dist = (b.left + b.width / 2 - cx) / b.width, ad = Math.min(Math.abs(dist), 1.6);
+        if (Math.abs(dist) < bd) { bd = Math.abs(dist); best = i; }
+        x.style.transform = full() ? `perspective(1200px) translateZ(${-ad * 60}px) rotateY(${Math.max(-1, Math.min(1, dist)) * -16}deg) scale(${1 - Math.min(ad, 1) * .14})` : `scale(${1 - Math.min(ad, 1) * .08})`;
+        x.style.opacity = (1 - Math.min(ad, 1.4) * .45).toFixed(3); x.style.zIndex = 10 - Math.round(ad * 3); });
+      if (best !== cur) { cur = best; items.forEach((x, i) => { x.classList.toggle('on', i === cur); x.querySelector('a').tabIndex = i === cur ? 0 : -1; }); dots.forEach((dt, i) => { dt.classList.toggle('on', i === cur); dt.setAttribute('aria-current', i === cur); });
+        $$('.rchip', wrap).forEach((ch, k, all) => { const nxt = all[k + 1] ? +all[k + 1].dataset.i : 1e9; ch.classList.toggle('on', cur >= +ch.dataset.i && cur < nxt); });
+        if (full()) $$('.s-d', items[cur]).forEach((dg, k) => { dg.classList.remove('flap'); void dg.offsetWidth; dg.style.animationDelay = k * 90 + 'ms'; dg.classList.add('flap'); }); } };
+    const ask = () => { if (!raf) raf = requestAnimationFrame(paint); };
     $$('.rchip', wrap).forEach((b) => b.addEventListener('click', () => center(+b.dataset.i, true)));
-    $$('.rn', wrap).forEach((b) => b.addEventListener('click', () => center(Math.max(0, Math.min(cards.length - 1, cur + +b.dataset.d)), true)));
-    cards.forEach((x, i) => x.addEventListener('click', (e) => { if (i !== cur) { e.preventDefault(); center(i, true); } }, true));
-    c.addEventListener('scroll', mark, { passive: true }); setTimeout(() => { center(cards.length - 1, false); mark(); }, 60);
+    dots.forEach((b) => b.addEventListener('click', () => center(+b.dataset.i, true)));
+    $$('.sarrow', wrap).forEach((b) => b.addEventListener('click', () => center(Math.max(0, Math.min(items.length - 1, cur + +b.dataset.d)), true)));
+    items.forEach((x, i) => x.addEventListener('click', (e) => { if (i !== cur) { e.preventDefault(); e.stopPropagation(); center(i, true); } }, true));
+    c.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); center(Math.max(0, Math.min(items.length - 1, cur + (e.key === 'ArrowLeft' ? -1 : 1))), true); } });
+    c.addEventListener('scroll', ask, { passive: true }); addEventListener('resize', () => { center(cur < 0 ? items.length - 1 : cur, false); ask(); });
+    addEventListener('norex:motion', ask);
+    const start = () => { center(items.length - 1, false); paint(); }; start(); requestAnimationFrame(start); setTimeout(start, 300);
   }
   function deck(dk) {
     let dks = $$('.dk', dk); const lay = () => dks.forEach((c, i) => { c.style.zIndex = 20 - i; c.style.transform = `translateY(${i * 12}px) scale(${1 - i * .05}) rotateZ(${i % 2 ? 1.5 : -1.5}deg)`; c.style.opacity = i > 3 ? 0 : 1; }); lay();

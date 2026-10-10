@@ -1,8 +1,14 @@
 /* NOREX fx: follow-you menus, transition overlay, ripple, spotlight */
 #fxov{position:fixed;inset:0;z-index:9990;pointer-events:none}
 .fx-busy #fxov{pointer-events:auto}
-html[data-tin]:before{content:"";position:fixed;inset:0;z-index:9989;background:#0b0f16}
-html[data-tin=curtain]:before{background:linear-gradient(90deg,#8d231c,#c8352c 82%,#efcf7a)}html[data-tin=zoom]:before{background:linear-gradient(135deg,#efcf7a,#c8352c)}html[data-tin=lines]:before{background:#0a1a12}html[data-tin=shutter]:before{background:repeating-linear-gradient(90deg,#12192a 0 10%,#c8352c 10% 20%)}html[data-tin=doors]:before{background:linear-gradient(90deg,#a77a22,#efcf7a 50%,#a77a22)}
+html[data-tin]:before,html[data-tin]:after{content:"";position:fixed;inset:0;z-index:9989;pointer-events:none}
+html[data-tin]:before{background:#0b0f16}
+html[data-tin]:after{z-index:9990;background:url(crest.png) center/min(120px,26vw) no-repeat;filter:drop-shadow(0 0 26px rgba(239,207,122,.75))}
+html[data-tin=ribbon]:before{background:linear-gradient(100deg,#7e1d17 0%,#c8352c 55%,#d9473d 80%,#efcf7a 92%,#fff3c9 100%)}
+html[data-tin=flood]:before{background:radial-gradient(120% 80% at 50% 0%,#18233a 0%,#070a10 60%)}
+html[data-tin=sweep]:before{background:repeating-linear-gradient(90deg,#c8352c 0 12.5%,#d4a74e 12.5% 25%)}
+html[data-tin=pitch]:before{background:repeating-linear-gradient(180deg,#0f3a24 0 9%,#0c3220 9% 18%)}
+html[data-tin=locker]:before{background:linear-gradient(90deg,#8a6216,#c99a3a 20%,#efcf7a 42%,#f7e3a6 49.6%,#5a3f0d 49.6% 50.4%,#f7e3a6 50.4%,#efcf7a 58%,#c99a3a 80%,#8a6216)}
 .fx-rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);transform:scale(0);animation:fxrip .7s ease-out forwards;pointer-events:none}@keyframes fxrip{to{transform:scale(1);opacity:0}}
 /* header tucks away; the chosen menu style takes over */
 .bar,.sub{transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .4s}

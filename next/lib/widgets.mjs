@@ -1,6 +1,6 @@
 // Shared visual builders (picked from the lookbook). Each returns HTML wrapped in .wx; static/widgets.js brings them to life.
 import { players, clubStats as C, leaders, recent, matches, records, fmtDate } from './data.mjs';
-import { card, esc, slug, chip, oppCrest, tagChips } from './ui.mjs';
+import { card, esc, slug, chip, oppCrest, tagChips, matchTags } from './ui.mjs';
 
 const wx = (cls, inner, attrs = '') => `<div class="wx ${cls}" ${attrs}>${inner}</div>`;
 const J = (o) => esc(JSON.stringify(o));
@@ -76,15 +76,31 @@ const dayKey = (t) => new Date(t * 1000).toISOString().slice(0, 10);
 const dayLab = (t) => new Date(t * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).toUpperCase().replace(',', '');
 const typeLab = (t) => ({ leagueMatch: 'League', playoffMatch: 'Playoff', friendlyMatch: 'Friendly' })[t] || 'Match';
 const oppBadge = (m) => m.crest ? `<img src="${CREST}${esc(m.crest)}.png" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ob',textContent:'${esc((m.opp[0] || '?').toUpperCase())}'}))">` : `<span class="ob">${esc((m.opp[0] || '?').toUpperCase())}</span>`;
+// Spotlight reel: the newest game sits dead centre; everything on the card shares one centre axis (mirrored teams,
+// scorers either side of the score, labelled tags, MOTM below). Neighbours peek in smaller. Behaviour in widgets.js reel().
+const RES = { W: 'VICTORY', D: 'DRAW', L: 'DEFEAT' };
+const scorers = (L) => L.filter((l) => l.goals).sort((a, b) => b.goals - a.goals).slice(0, 3).map((l) => `<li><span class="fit" title="${esc(l.n)}">${esc(l.n)}</span>${l.goals > 1 ? `<em>×${l.goals}</em>` : ''}</li>`).join('');
 export const reel = (ms = matches.slice(0, 10)) => {
   const list = ms.slice().reverse(), days = [];
   list.forEach((m, i) => { const k = dayKey(m.t); let g = days.find((x) => x.k === k); if (!g) days.push(g = { k, t: m.t, first: i, w: 0, l: 0, d: 0 }); g[m.res.toLowerCase()]++; });
   const chips = days.map((g) => `<button class="rchip" type="button" data-i="${g.first}">${ic('calendar', 14)}${dayLab(g.t)} · ${[g.w && g.w + 'W', g.d && g.d + 'D', g.l && g.l + 'L'].filter(Boolean).join(' ')}</button>`).join('');
-  const cards = list.map((m, i) => { const sc = m.lines.filter((l) => l.goals).map((l) => `${esc(l.n)}${l.goals > 1 ? ' ×' + l.goals : ''}`), mo = m.lines.find((l) => l.mom) || m.lines.slice().sort((a, b) => b.rating - a.rating)[0];
-    return `<div class="ci"><a class="rcard ${m.res}" href="match-${m.id}.html" data-i="${i}"><div class="rtop"><span>${ic('trophy', 14)} ${typeLab(m.type)} · ${esc(new Date(m.t * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '').toUpperCase())}</span><b class="rbadge">${{ W: 'VICTORY', D: 'DRAW', L: 'DEFEAT' }[m.res]}</b></div>
-<div class="rmid"><div class="rc-t"><img src="crest.png" alt=""><span>NOREX UNITED FC</span></div><div class="rc-s"><b>${m.gf}</b><i>:</i><b>${m.ga}</b></div><div class="rc-t"><div class="oc">${oppBadge(m)}</div><span>${esc(m.opp)}</span>${sc.length ? `<small>⚽ ${sc.slice(0, 3).join(', ')}</small>` : '<small>⚽ no goals for us</small>'}</div></div>
-<div class="rtags">${tagChips(m, 4)}</div>${mo ? `<div class="rmo">⭐ <span>${m.lines.some((l) => l.mom) ? 'Man of the match' : 'Top rated'}</span> <b>${esc(mo.n)}</b><em>${mo.rating ? (+mo.rating).toFixed(1) : ''}</em></div>` : ''}</a></div>`; }).join('');
-  return wx('', `<div class="reelwrap"><div class="rchips">${chips}</div><div class="rail cover reel" data-w="reel">${cards}</div><div class="rnav"><button class="rn" type="button" data-d="-1" aria-label="Previous match">${ic('left', 16)}</button><span class="rhint">Drag the reel · match <b>${list.length}</b> of ${list.length}</span><button class="rn" type="button" data-d="1" aria-label="Next match">${ic('right', 16)}</button><a class="rcal" href="fixtures.html">${ic('calendar', 15)} Calendar</a></div></div>`);
+  const cards = list.map((m, i) => {
+    const mo = m.lines.find((l) => l.mom) || m.lines.slice().sort((a, b) => b.rating - a.rating)[0], isMom = m.lines.some((l) => l.mom);
+    const mp = mo && players.find((p) => p.n === mo.n);
+    const tags = matchTags(m).filter(([, l]) => l !== 'Man of the match').slice(0, 3).map(([e, l]) => `<span class="stag"><i>${e}</i>${esc(l)}</span>`).join('');
+    const date = new Date(m.t * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '');
+    const us = scorers(m.lines), them = scorers(m.olines || []);
+    return `<div class="si" data-i="${i}"><a class="scard ${m.res}" href="match-${m.id}.html" aria-label="${esc(`${RES[m.res]} ${m.gf}-${m.ga} against ${m.opp}, ${date}`)}">
+<div class="s-top"><b class="s-res">${RES[m.res]}</b><span class="s-meta">${ic('trophy', 13)} ${typeLab(m.type)} · ${esc(date)}</span></div>
+<div class="s-mid"><div class="s-team"><span class="s-crest"><img src="crest.png" alt="" width="64" height="64"></span><span class="s-nm">NOREX UNITED</span></div>
+<div class="s-score" aria-hidden="true"><b class="s-d">${m.gf}</b><i>:</i><b class="s-d">${m.ga}</b></div>
+<div class="s-team"><span class="s-crest">${oppCrest(m.crest, m.opp, 64)}</span><span class="s-nm" title="${esc(m.opp)}">${esc(m.opp)}</span></div></div>
+<div class="s-goals"><ul class="l">${us || '<li class="none">no goals</li>'}</ul><span class="s-ball">⚽</span><ul class="r">${them || '<li class="none">no goals</li>'}</ul></div>
+${tags ? `<div class="s-tags">${tags}</div>` : ''}
+${mo ? `<div class="s-motm">${mp ? chip(mp, .5) : '<span class="s-ini">⭐</span>'}<span class="s-ml">${isMom ? '🏅 Man of the match' : '⭐ Top rated'}</span><b class="fit" title="${esc(mo.n)}">${esc(mo.n)}</b><em class="${mo.rating >= 8 ? 'hi' : mo.rating >= 7 ? 'mid' : ''}">${mo.rating ? (+mo.rating).toFixed(1) : ''}</em></div>` : ''}
+</a></div>`; }).join('');
+  const dots = list.map((m, i) => `<button type="button" class="sdot ${m.res}" data-i="${i}" aria-label="${esc(`${RES[m.res]} ${m.gf}-${m.ga} vs ${m.opp}`)}"></button>`).join('');
+  return wx('', `<div class="spotwrap"><div class="rchips">${chips}</div><div class="spotstage"><button class="sarrow l" type="button" data-d="-1" aria-label="Previous match">${ic('left', 18)}</button><div class="spot" data-w="reel" tabindex="0" aria-label="Match reel, use arrow keys">${cards}</div><button class="sarrow r" type="button" data-d="1" aria-label="Next match">${ic('right', 18)}</button></div><div class="sfoot"><div class="sdots">${dots}</div><a class="rcal" href="fixtures.html">${ic('calendar', 15)} Calendar</a></div></div>`);
 };
 
 // ---- KPI deck: every club number, each shown in the form that suits it (ladder, record bar, mosaic, balance, dials, equaliser) ----

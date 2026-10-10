@@ -18,11 +18,17 @@ for (const f of fs.readdirSync(mdir)) {
   const m = J(path.join(mdir, f)); const me = m?.clubs?.[CLUB]; if (!me) continue;
   const oppId = Object.keys(m.clubs).find((k) => k !== CLUB); const opp = m.clubs[oppId] ?? {};
   const gf = num(me.goals), ga = num(me.goalsAgainst);
-  const lines = Object.values(m.players?.[CLUB] ?? {}).map((p) => ({ n: p.playername, line: LINE[p.pos] ?? 'MID', goals: num(p.goals), assists: num(p.assists), rating: num(p.rating), mom: num(p.mom), saves: num(p.saves), arch: ARCH[num(p.archetypeid) - 1] ?? '' }));
+  // every per-player number EA sends for a match (both sides); no possession, no event timeline exist in the feed
+  const toLine = (p) => ({ n: p.playername, line: LINE[p.pos] ?? 'MID', goals: num(p.goals), assists: num(p.assists), sa: num(p.secondassists), rating: num(p.rating), mom: num(p.mom), saves: num(p.saves),
+    shots: num(p.shots), pm: num(p.passesmade), pa: num(p.passattempts), tm: num(p.tacklesmade), ta: num(p.tackleattempts), drb: num(p.dribbles), red: num(p.redcards), secs: num(p.secondsPlayed), arch: ARCH[num(p.archetypeid) - 1] ?? '' });
+  const lines = Object.values(m.players?.[CLUB] ?? {}).map(toLine), olines = Object.values(m.players?.[oppId] ?? {}).map(toLine);
   for (const l of lines) { const a = arch.get(l.n) ?? {}; a[l.arch] = (a[l.arch] || 0) + 1; arch.set(l.n, a); }
-  matches.push({ id: m.matchId ?? f.replace('.json', ''), t: num(m.timestamp), type: m.matchType, oppId, crest: opp.kit?.crestAssetId ? String(opp.kit.crestAssetId) : '', opp: opp.name ?? `Club ${oppId}`, gf, ga, res: gf > ga ? 'W' : gf < ga ? 'L' : 'D', lines });
+  matches.push({ id: m.matchId ?? f.replace('.json', ''), t: num(m.timestamp), type: m.matchType, oppId, crest: opp.kit?.crestAssetId ? String(opp.kit.crestAssetId) : '', opp: opp.name ?? `Club ${oppId}`, gf, ga, res: gf > ga ? 'W' : gf < ga ? 'L' : 'D', lines, olines });
 }
 matches.sort((a, b) => b.t - a.t);
+// team totals for the comparison bars (only fields EA sends)
+export const teamTotals = (L) => { const s = (k) => L.reduce((a, l) => a + l[k], 0), pm = s('pm'), pa = s('pa'), tm = s('tm'), ta = s('ta');
+  return { goals: s('goals'), shots: s('shots'), pm, pa, pass: pa ? Math.round(pm / pa * 100) : null, drb: s('drb'), sa: s('sa'), tm, ta, tackle: ta ? Math.round(tm / ta * 100) : null, saves: s('saves'), rating: L.length ? +(s('rating') / L.length).toFixed(1) : null, red: s('red'), humans: L.length }; };
 
 // ---- players ----
 const careerBy = new Map((club.career ?? []).map((c) => [c.name, c]));

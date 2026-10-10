@@ -33,7 +33,7 @@
     $$('[data-login]').forEach((a) => (a.href = loginUrl()));
     const wrap = d.querySelector('.bar .wrap'), key = d.querySelector('.bar .keybtn'); if (!wrap || d.getElementById('acct')) return;
     const el = d.createElement('div'); el.id = 'acct';
-    el.innerHTML = session ? `<button type="button" class="ac" aria-haspopup="true" aria-expanded="false">${session.a ? `<img src="${String(session.a).replace(/"/g, '&quot;')}" alt="">` : ''}<span>${String(session.n ?? 'Member').replace(/[<>&"]/g, '')}</span></button><div class="acm"><div class="muted tiny">Signed in with Discord</div><a class="btn ghost" href="#" data-out>Sign out</a></div>` : `<a class="btn ghost" data-login href="${loginUrl()}">Sign in with Discord</a>`;
+    el.innerHTML = session ? `<button type="button" class="ac" aria-haspopup="true" aria-expanded="false">${session.a ? `<img src="${String(session.a).replace(/"/g, '&quot;')}" alt="">` : ''}<span>${String(session.n ?? 'Member').replace(/[<>&"]/g, '')}</span></button><div class="acm"><div class="muted tiny">Signed in with Discord</div><button type="button" class="btn ghost" data-motion-settings>🎬 Motion &amp; effects</button><a class="btn ghost" href="#" data-out>Sign out</a></div>` : `<a class="btn ghost" data-login href="${loginUrl()}">Sign in with Discord</a>`;
     wrap.insertBefore(el, key);
     const b = el.querySelector('.ac'); if (b) { b.onclick = () => { const o = el.classList.toggle('open'); b.setAttribute('aria-expanded', o); }; d.addEventListener('click', (e) => { if (!el.contains(e.target)) el.classList.remove('open'); }); el.querySelector('[data-out]').onclick = (e) => { e.preventDefault(); logout(); }; }
   };

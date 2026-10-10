@@ -1,4 +1,4 @@
-import { clubStats as C, players, matches, opponents, burners, fmtDate } from '../lib/data.mjs';
+import { clubStats as C, players, matches, opponents, burners, fmtDate, teamTotals } from '../lib/data.mjs';
 import * as W from '../lib/widgets.mjs';
 import { oppCrest, ownCrest, tagChips, matchTags, shell, esc, chip, card, pillRes, sbt, sample, slug, lineLabel } from '../lib/ui.mjs';
 
@@ -38,21 +38,71 @@ export function results() {
 }
 
 // ---------- MATCH PAGE (broadcast) ----------
+// ---------- MATCH FACTS: Field view (default) + Table view ----------
+// Only numbers EA sends per match. EA gives each player one of four roles (GK/DEF/MID/FWD), not an exact spot, so players are spread
+// evenly across their line. AI teammates are not recorded by EA and are only counted, never drawn.
+const ORDER = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
+const ROWY = { GK: 92.5, DEF: 80, MID: 68, FWD: 57.5 }, SOLOY = { GK: 89, DEF: 68, MID: 45, FWD: 21 };
+const rcls = (r) => (r >= 8 ? 'hi' : r >= 7 ? 'mid' : r >= 6 ? 'lo' : 'bad');
+const pct = (a, b) => (b ? Math.round(a / b * 100) : null);
+function markers(L, side) {
+  const by = { GK: [], DEF: [], MID: [], FWD: [] }; L.forEach((l) => by[l.line].push(l));
+  return Object.entries(by).flatMap(([line, arr]) => arr.sort((a, b) => b.rating - a.rating).map((l, i) => {
+    const x = ((i + 1) / (arr.length + 1)) * 100, y = side === 'us' ? ROWY[line] : 100 - ROWY[line], ys = side === 'us' ? SOLOY[line] : 100 - SOLOY[line], p = side === 'us' ? pmap.get(l.n) : null;
+    const st = { n: l.n, line, arch: l.arch, r: l.rating, g: l.goals, a: l.assists, sa: l.sa, sh: l.shots, pm: l.pm, pa: l.pa, drb: l.drb, tm: l.tm, ta: l.ta, sv: l.saves, red: l.red, mom: l.mom, min: Math.round(l.secs / 60), k: p ? p.k : '' };
+    const pips = `${l.goals ? `<i class="pg">⚽${l.goals > 1 ? l.goals : ''}</i>` : ''}${l.assists ? `<i class="pa">🅰️${l.assists > 1 ? l.assists : ''}</i>` : ''}${l.red ? '<i class="pr">🟥</i>' : ''}`;
+    return `<button type="button" class="fm ${side} ${rcls(l.rating)}${l.mom ? ' mom' : ''}" style="left:${x.toFixed(1)}%;--yb:${y}%;--ys:${ys}%" data-yb="${y}" data-ys="${ys}" data-s="${esc(JSON.stringify(st))}" aria-label="${esc(`${l.n}, ${line}, rated ${l.rating.toFixed(1)}`)}">
+<span class="fring">${p ? chip(p, .62) : `<span class="fini">${esc(ini(l.n) || '?')}</span>`}</span>${l.mom ? '<span class="fcrown" aria-hidden="true">👑</span>' : ''}<span class="frt">${l.rating ? l.rating.toFixed(1) : '–'}</span>${pips ? `<span class="fpips">${pips}</span>` : ''}<span class="fnm">${esc(l.n)}</span></button>`;
+  })).join('');
+}
+const CMP = [['goals', '⚽ Goals'], ['shots', '🎯 Shots'], ['pm', '🔁 Passes'], ['pass', '📐 Pass accuracy', '%'], ['drb', '🏃 Dribbles'], ['sa', '🪄 Pre-assists'], ['tm', '🛡️ Tackles won'], ['tackle', '🧲 Tackle success', '%'], ['saves', '🧤 Saves'], ['rating', '⭐ Avg rating'], ['red', '🟥 Red cards'], ['humans', '🎮 Real players']];
+function compare(a, b) {
+  return `<div class="cmp rv-g">${CMP.map(([k, l, suf = '']) => { const x = a[k] ?? 0, y = b[k] ?? 0, t = (+x) + (+y) || 1, win = k === 'red' ? (x < y ? 'l' : x > y ? 'r' : '') : (x > y ? 'l' : x < y ? 'r' : '');
+    return `<div class="crow ${win}"><b class="cv">${x ?? '–'}${x != null ? suf : ''}</b><span class="cl">${l}</span><b class="cv">${y ?? '–'}${y != null ? suf : ''}</b><span class="cbar l"><i style="--v:${(+x / t).toFixed(3)}"></i></span><span class="cbar r"><i style="--v:${(+y / t).toFixed(3)}"></i></span></div>`; }).join('')}</div>`;
+}
+function motmCard(l, p) {
+  const st = [[l.goals, 'Goals'], [l.assists, 'Assists'], [l.shots, 'Shots'], [l.pa ? `${pct(l.pm, l.pa)}%` : '–', 'Passing'], [l.drb, 'Dribbles'], [l.ta ? `${l.tm}/${l.ta}` : '0', 'Tackles']];
+  return `<div class="mcard"><div class="mc-top"><span class="mc-lab">🏅 Man of the match</span><b class="mc-r ${rcls(l.rating)}">${l.rating.toFixed(1)}</b></div>
+<div class="mc-who">${p ? chip(p, 1.3) : `<span class="fini big">${esc(ini(l.n))}</span>`}<div><b class="mc-n fit" title="${esc(l.n)}">${esc(l.n)}</b><span class="muted small">${l.line}${l.arch ? ' · ' + esc(l.arch) : ''} · ${Math.round(l.secs / 60)}′</span></div></div>
+<div class="mc-st">${st.map(([v, k]) => `<div><b class="num">${v}</b><span>${k}</span></div>`).join('')}</div><p class="muted tiny" style="margin:10px 0 0;text-align:center">This game only</p></div>`;
+}
+const head = ['Player', 'Pos', 'Rating', 'G', 'A', 'Pre-A', 'Shots', 'Passes', 'Drb', 'Tackles', 'Saves', ''];
+function table(L, us) {
+  return `<div class="tscroll"><table class="tb mt"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${[...L].sort((a, b) => b.rating - a.rating).map((l) => { const p = us ? pmap.get(l.n) : null;
+    return `<tr><td class="tn">${p ? chip(p, .5) : `<span class="fini sm">${esc(ini(l.n))}</span>`}${p ? `<a href="player-${slug(p.k)}.html" class="fit" title="${esc(l.n)}">${esc(l.n)}</a>` : `<span class="fit" title="${esc(l.n)}">${esc(l.n)}</span>`}</td><td class="muted">${l.line}</td><td><b class="rt ${rcls(l.rating)}">${l.rating ? l.rating.toFixed(1) : '–'}</b></td><td>${l.goals || ''}</td><td>${l.assists || ''}</td><td>${l.sa || ''}</td><td>${l.shots || ''}</td><td>${l.pm}/${l.pa}</td><td>${l.drb || ''}</td><td>${l.tm}/${l.ta}</td><td>${l.saves || ''}</td><td>${l.mom ? '🏅' : ''}${l.red ? '🟥' : ''}</td></tr>`; }).join('')}</tbody></table></div>`;
+}
 export function match(m) {
-  const lines = [...m.lines].sort((a, b) => ({ GK: 0, DEF: 1, MID: 2, FWD: 3 })[a.line] - ({ GK: 0, DEF: 1, MID: 2, FWD: 3 })[b.line]);
+  const us = teamTotals(m.lines), them = teamTotals(m.olines || []);
   const motm = m.lines.find((l) => l.mom), mp = motm && pmap.get(motm.n);
-  const top = [...m.lines].sort((a, b) => b.rating - a.rating)[0];
+  const omotm = (m.olines || []).find((l) => l.mom);
+  const sc = (L) => L.filter((l) => l.goals).map((l) => `<li>⚽ ${esc(l.n)}${l.goals > 1 ? ` <em>×${l.goals}</em>` : ''}</li>`).join('');
+  const ai = (L) => (L.length < 11 ? `<span class="fai">🤖 +${11 - L.length} AI</span>` : '');
+  const poster = { opp: m.opp, crest: m.crest, gf: m.gf, ga: m.ga, res: m.res, date: fmtDate(m.t, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }), type: TYPE[m.type] ?? 'Match',
+    us: m.lines.filter((l) => l.goals).map((l) => [l.n, l.goals]), them: (m.olines || []).filter((l) => l.goals).map((l) => [l.n, l.goals]), motm: motm ? [motm.n, motm.rating] : null, tags: matchTags(m).slice(0, 3).map(([e, l]) => e + ' ' + l) };
   const body = `<div class="wrap"><a class="muted small" href="results.html" style="display:inline-block;margin:24px 0 0">← Results</a>
-  <section class="panel reveal" style="view-transition-name:mcard;margin-top:12px;padding:34px 24px;text-align:center;background:radial-gradient(600px 220px at 50% 0,rgba(200,53,44,.25),transparent 70%),linear-gradient(180deg,var(--p2),var(--p1));overflow:hidden">
+  <section class="panel mhero ${m.res} reveal" style="view-transition-name:mcard">
    <div class="eyebrow">${TYPE[m.type] ?? 'Match'} · ${fmtDate(m.t, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
-   <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin-top:16px"><div><img src="crest.png" alt="" style="width:78px;margin:0 auto 8px"><div class="osw" style="font-size:22px">${esc(C.name)}</div></div>
-   <div><div class="num" style="font-size:clamp(60px,12vw,130px);line-height:1;text-shadow:0 8px 40px rgba(200,53,44,.5)">${m.gf}<span class="mute">:</span>${m.ga}</div>${pillRes(m.res)}</div>
-   <div>${oppCrest(m.crest, m.opp, 78)}<div class="osw" style="font-size:22px;margin-top:8px">${esc(m.opp)}</div></div></div><div class="mtags big" style="margin-top:16px;justify-content:center">${matchTags(m).map(([e, l]) => `<span class="mtag" title="${esc(l)}">${e} <small>${esc(l)}</small></span>`).join('')}</div>
-   ${m.lines.some((l) => l.goals) ? `<div class="chips" style="justify-content:center;margin-top:18px">${m.lines.filter((l) => l.goals).map((l) => `<span class="chip">⚽ ${esc(l.n)}${l.goals > 1 ? ' ×' + l.goals : ''}</span>`).join('')}</div>` : ''}</section>
-  <div class="grid g2" style="margin-top:20px;grid-template-columns:${mp ? '1fr 1.3fr' : '1fr'}">
-   ${mp ? `<div class="panel reveal" style="text-align:center"><div class="eyebrow" style="color:var(--g2)">Man of the match</div><div class="cardwrap" style="margin:12px auto 0;display:inline-block">${card(mp, { s: 1.05 })}</div><div class="muted small" style="margin-top:6px">rated ${motm.rating.toFixed(1)}</div></div>` : ''}
-   <div class="panel flat reveal"><h3>Player ratings</h3><div style="overflow-x:auto"><table class="tb"><thead><tr><th></th><th>Player</th><th>Pos</th><th>Rating</th><th>G</th><th>A</th></tr></thead><tbody>${lines.map((l) => { const p = pmap.get(l.n); return `<tr><td style="width:56px">${p ? chip(p, .6) : ''}</td><td>${p ? `<a href="player-${slug(p.k)}.html">${esc(l.n)}</a>` : esc(l.n)}</td><td class="muted">${l.line}${l.arch ? ' · ' + esc(l.arch) : ''}</td><td class="num" style="color:${l.rating >= 8 ? 'var(--g2)' : '#fff'}">${l.rating ? l.rating.toFixed(1) : '—'}${l.mom ? ' ⭐' : ''}</td><td>${l.goals || ''}</td><td>${l.assists || ''}</td></tr>`; }).join('')}</tbody></table></div></div></div>
-  <p class="muted small" style="margin:14px 0 0">Positions are EA's four match roles. Archetype names are inferred from EA's ids.</p></div>`;
+   <div class="mh-grid"><div class="mh-t"><img src="crest.png" alt="" width="84" height="84"><div class="osw mh-n">${esc(C.name)}</div><ul class="mh-sc">${sc(m.lines)}</ul></div>
+   <div class="mh-mid"><div class="num mh-score">${m.gf}<span>:</span>${m.ga}</div>${pillRes(m.res)}</div>
+   <div class="mh-t">${oppCrest(m.crest, m.opp, 84)}<div class="osw mh-n">${esc(m.opp)}</div><ul class="mh-sc">${sc(m.olines || [])}</ul></div></div>
+   <div class="mtags big" style="margin-top:16px;justify-content:center">${matchTags(m).map(([e, l]) => `<span class="mtag">${e} <small>${esc(l)}</small></span>`).join('')}</div>
+   <div class="mh-act"><div class="seg" role="tablist" aria-label="Match view"><button type="button" role="tab" class="on" aria-selected="true" data-mv="field">🏟️ Field</button><button type="button" role="tab" aria-selected="false" data-mv="table">📋 Table</button></div><button type="button" class="btn ghost" id="mposter">⬇️ Result graphic</button></div>
+   <script type="application/json" id="mposterdata">${JSON.stringify(poster).replace(/</g, '\\u003c')}</script></section>
+  <div id="mv-field" class="mv">
+   <div class="mfield-grid">
+    <div class="panel reveal mpitch-panel"><div class="seg sm pteam" role="tablist" aria-label="Show team"><button type="button" role="tab" class="on" aria-selected="true" data-pt="both">⚔️ Both</button><button type="button" role="tab" aria-selected="false" data-pt="us">🔴 Us</button><button type="button" role="tab" aria-selected="false" data-pt="them">⚪ ${esc(m.opp)}</button></div><div class="mp-head mp-them"><span>${oppCrest(m.crest, m.opp, 22)} ${esc(m.opp)}</span>${ai(m.olines || [])}</div>
+     <div class="mpitch" id="mfield"><svg class="mp-lines" viewBox="0 0 68 105" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".35"><rect x="1" y="1" width="66" height="103" pathLength="1"/><line x1="1" y1="52.5" x2="67" y2="52.5" pathLength="1"/><circle cx="34" cy="52.5" r="9.15" pathLength="1"/><rect x="13.8" y="1" width="40.3" height="16.5" pathLength="1"/><rect x="13.8" y="87.5" width="40.3" height="16.5" pathLength="1"/><rect x="24.8" y="1" width="18.3" height="5.5" pathLength="1"/><rect x="24.8" y="98.5" width="18.3" height="5.5" pathLength="1"/></g></svg>
+      ${markers(m.olines || [], 'them')}${markers(m.lines, 'us')}</div>
+     <div class="mp-head mp-us"><span><img src="crest.png" alt="" width="22" height="22"> ${esc(C.name)}</span>${ai(m.lines)}</div>
+     <p class="muted tiny mp-note">Tap a player for their numbers. Ring colour = rating (green 8+, gold 7+, grey 6+, red below).</p></div>
+    <div class="mside">
+     <div class="panel reveal"><h3>📊 Team comparison</h3><div class="cmp-h"><span><img src="crest.png" alt="" width="20" height="20"> Us</span><span>${esc(m.opp)} ${oppCrest(m.crest, m.opp, 20)}</span></div>${compare(us, them)}</div>
+     ${motm ? `<div class="panel reveal">${motmCard(motm, mp)}</div>` : omotm ? `<div class="panel reveal"><p class="muted" style="margin:0">🏅 Man of the match went to <b>${esc(omotm.n)}</b> (${esc(m.opp)}), rated ${omotm.rating.toFixed(1)}.</p></div>` : ''}
+    </div></div></div>
+  <div id="mv-table" class="mv" hidden>
+   <div class="panel flat reveal"><h3><img src="crest.png" alt="" width="22" height="22" style="vertical-align:-5px"> ${esc(C.name)}</h3>${table(m.lines, true)}</div>
+   <div class="panel flat reveal" style="margin-top:22px"><h3>${oppCrest(m.crest, m.opp, 22)} ${esc(m.opp)}</h3>${table(m.olines || [], false)}</div></div>
+  <p class="muted small" style="margin:14px 0 0">Every number comes from EA's match record. EA lists each player as GK, DEF, MID or FWD (not an exact spot) and does not publish possession or a goal timeline, so those are not shown. AI teammates are not recorded by EA.</p></div>`;
   return shell({ group: 'matches', page: 'results.html', title: `${C.name} ${m.gf}-${m.ga} ${m.opp}`, body });
 }
 

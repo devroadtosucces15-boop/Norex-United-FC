@@ -8,6 +8,53 @@ addEventListener('DOMContentLoaded', () => {
   const tabs = (rootSel, attr, on) => $$(rootSel + ' .chip').forEach((b) => b.addEventListener('click', () => { $$(rootSel + ' .chip').forEach((x) => x.classList.toggle('on', x === b)); on(b.dataset[attr], b); }));
   const wide = () => innerWidth >= 900;
 
+  // ---------- match facts: Field / Table toggle, player mini cards, pitch draw-in, result graphic ----------
+  if ($('#mfield')) {
+    const field = $('#mfield'), seg = $$('.seg [data-mv]'), MKEY = 'norex.mview';
+    let pop = null; const close = () => { pop?.remove(); pop = null; $$('.fm.sel', field).forEach((x) => x.classList.remove('sel')); };
+    const setView = (v, save) => { seg.forEach((b) => { const on = b.dataset.mv === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); $('#mv-field').hidden = v !== 'field'; $('#mv-table').hidden = v !== 'table'; if (save) ls.set(MKEY, v); window.NorexMotion?.watch(); };
+    seg.forEach((b) => b.addEventListener('click', () => setView(b.dataset.mv, true)));
+    if (ls.get(MKEY) === 'table') setView('table');
+    const pts = $$('.pteam [data-pt]'), setTeam = (t) => { pts.forEach((b) => { const on = b.dataset.pt === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); field.classList.toggle('solo', t !== 'both'); field.classList.toggle('solo-us', t === 'us'); field.classList.toggle('solo-them', t === 'them'); close(); };
+    pts.forEach((b) => b.addEventListener('click', () => setTeam(b.dataset.pt)));
+    if (innerWidth < 700) setTeam('us');
+    // keeper first, strikers last, both teams at once
+    $$('.fm', field).forEach((m) => { const y = +m.dataset.yb, fromGoal = m.classList.contains('us') ? 100 - y : y; m.style.setProperty('--fd', Math.round(fromGoal * 14)); });
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { requestAnimationFrame(() => field.classList.add('drawn')); io.disconnect(); } }), { threshold: .2 });
+    io.observe(field); setTimeout(() => field.classList.add('drawn'), 2500);
+    field.addEventListener('click', (e) => { const m = e.target.closest('.fm'); if (!m) return; const was = m.classList.contains('sel'); close(); if (was) return;
+      const s = JSON.parse(m.dataset.s), y = +(field.classList.contains('solo') ? m.dataset.ys : m.dataset.yb), x = Math.min(78, Math.max(22, parseFloat(m.style.left)));
+      const cells = [['Goals', s.g], ['Assists', s.a], ['Pre-assists', s.sa], ['Shots', s.sh], ['Passes', `${s.pm}/${s.pa}`], ['Pass %', s.pa ? Math.round(s.pm / s.pa * 100) + '%' : '–'], ['Dribbles', s.drb], ['Tackles', `${s.tm}/${s.ta}`], [s.line === 'GK' ? 'Saves' : 'Minutes', s.line === 'GK' ? s.sv : s.min + '′']];
+      pop = d.createElement('div'); pop.className = 'fpop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', s.n);
+      pop.innerHTML = `<h4><span>${esc(s.n)}</span><b class="rt ${s.r >= 8 ? 'hi' : s.r >= 7 ? 'mid' : s.r < 6 ? 'bad' : ''}">${(+s.r).toFixed(1)}</b></h4><div class="fp-sub">${s.line}${s.arch ? ' · ' + esc(s.arch) : ''}${s.mom ? ' · 🏅 Man of the match' : ''}${s.red ? ' · 🟥 sent off' : ''}</div><dl>${cells.map(([k, v]) => `<div><dt>${k}</dt><dd>${v ?? 0}</dd></div>`).join('')}</dl>${s.k ? `<a href="player-${encodeURIComponent(s.k)}.html">Open profile →</a>` : ''}`;
+      Object.assign(pop.style, { left: x + '%', [y > 50 ? 'bottom' : 'top']: (y > 50 ? 100 - y + 7 : y + 7) + '%' }); field.appendChild(pop); m.classList.add('sel'); window.NorexMotion?.haptic(); });
+    d.addEventListener('click', (e) => { if (pop && !e.target.closest('.fm,.fpop')) close(); }); d.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    // result graphic: drawn on a canvas from the same real numbers, downloaded as a PNG
+    const pb = $('#mposter'), P = JSON.parse($('#mposterdata')?.textContent || 'null');
+    if (pb && P) pb.addEventListener('click', () => window.NorexMotion ? NorexMotion.submit(pb, poster(P)).catch(() => NorexMotion.toast('Could not make the graphic. Try again.', { kind: 'err' })) : poster(P));
+    async function poster(P) {
+      const W = 1080, Hh = 1350, c = d.createElement('canvas'); c.width = W; c.height = Hh; const g = c.getContext('2d');
+      const img = (src, cors) => new Promise((ok) => { const i = new Image(); if (cors) i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
+      await d.fonts?.ready; const rc = { W: '#22b35e', D: '#d4a23c', L: '#d23a2f' }[P.res];
+      const bg = g.createLinearGradient(0, 0, 0, Hh); bg.addColorStop(0, '#141b27'); bg.addColorStop(1, '#07090e'); g.fillStyle = bg; g.fillRect(0, 0, W, Hh);
+      const glow = g.createRadialGradient(W / 2, 360, 40, W / 2, 360, 620); glow.addColorStop(0, rc + '55'); glow.addColorStop(1, 'transparent'); g.fillStyle = glow; g.fillRect(0, 0, W, Hh);
+      g.fillStyle = '#c8352c'; g.fillRect(0, 0, W, 14); g.fillStyle = '#efcf7a'; g.fillRect(0, 14, W, 4);
+      g.textAlign = 'center'; g.fillStyle = '#aab4c9'; g.font = '600 30px Oswald'; g.fillText(`${P.type.toUpperCase()} · ${P.date.toUpperCase()}`, W / 2, 110);
+      g.fillStyle = rc; const rl = { W: 'VICTORY', D: 'DRAW', L: 'DEFEAT' }[P.res]; g.font = '700 34px Oswald'; const rw = g.measureText(rl).width + 60; g.beginPath(); g.roundRect((W - rw) / 2, 140, rw, 56, 28); g.fill(); g.fillStyle = '#fff'; g.fillText(rl, W / 2, 180);
+      const own = await img('crest.png'), opp = P.crest && window.NOREX_API ? await img(`${window.NOREX_API}/crest/${P.crest}.png`, true) : null;
+      if (own) g.drawImage(own, 120, 260, 220, 220);
+      if (opp) g.drawImage(opp, W - 340, 260, 220, 220); else { g.fillStyle = '#2a3344'; g.beginPath(); g.arc(W - 230, 370, 110, 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = '700 110px Oswald'; g.fillText((P.opp[0] || '?').toUpperCase(), W - 230, 410); }
+      g.fillStyle = '#fff'; g.font = '700 230px Oswald'; g.fillText(`${P.gf}`, W / 2 - 95, 455); g.fillText(`${P.ga}`, W / 2 + 95, 455); g.fillStyle = rc; g.font = '700 150px Oswald'; g.fillText(':', W / 2, 430);
+      const fit = (t, max, size, w = 'bold') => { let s = size; do { g.font = `700 ${s}px Oswald`; s -= 2; } while (g.measureText(t).width > max && s > 16); return t; };
+      g.fillStyle = '#fff'; fit('NOREX UNITED FC', 320, 40); g.fillText('NOREX UNITED FC', 230, 540); fit(P.opp.toUpperCase(), 320, 40); g.fillText(P.opp.toUpperCase(), W - 230, 540);
+      g.font = '500 30px Inter'; g.fillStyle = '#d6dce6'; P.us.slice(0, 5).forEach(([n, k], i) => g.fillText(`⚽ ${n}${k > 1 ? ' ×' + k : ''}`, 230, 610 + i * 44)); P.them.slice(0, 5).forEach(([n, k], i) => g.fillText(`⚽ ${n}${k > 1 ? ' ×' + k : ''}`, W - 230, 610 + i * 44));
+      if (P.motm) { g.fillStyle = 'rgba(239,207,122,.12)'; g.beginPath(); g.roundRect(140, 900, W - 280, 150, 26); g.fill(); g.strokeStyle = 'rgba(239,207,122,.6)'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#efcf7a'; g.font = '700 28px Oswald'; g.fillText('🏅 MAN OF THE MATCH', W / 2, 950); g.fillStyle = '#fff'; fit(`${P.motm[0]} · ${(+P.motm[1]).toFixed(1)}`, W - 340, 52); g.fillText(`${P.motm[0]} · ${(+P.motm[1]).toFixed(1)}`, W / 2, 1015); }
+      g.font = '600 30px Inter'; g.fillStyle = '#cfd6e3'; g.fillText(P.tags.join('   '), W / 2, 1130);
+      g.fillStyle = '#6f7a8c'; g.font = '500 24px Inter'; g.fillText('NOREX UNITED FC · EA FC Pro Clubs · live EA data', W / 2, Hh - 60);
+      const blob = await new Promise((ok, no) => { try { c.toBlob((b) => (b ? ok(b) : no(new Error('blob'))), 'image/png'); } catch (e) { no(e); } });
+      const a = d.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `norex-${P.gf}-${P.ga}-${P.opp.replace(/\W+/g, '-').toLowerCase()}.png`; d.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    }
+  }
   // ---------- results / opponents / builds ----------
   if ($('#rf')) tabs('#rf', 'f', (f) => $$('#rl .rrow').forEach((r) => { r.hidden = !!f && r.dataset.res !== f; }));
   if ($('#ot')) tabs('#ot', 't', (t) => { $('#po').hidden = t !== 'o'; $('#pb').hidden = t !== 'b'; });
