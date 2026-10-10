@@ -1,5 +1,5 @@
 {
-  "revision": "dcb2ad564ca6ed1b2d8ea96395023d60f44d0e20",
+  "revision": "b0ff1255f52e62a2ceef22e1f799450c46f35ecd",
   "files": 688,
   "imports": 429,
   "api_paths": 224,
@@ -4136,7 +4136,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1978,
+      "lines": 1931,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8838,7 +8838,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 39,
+      "lines": 53,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -8847,10 +8847,15 @@
         "./mock.mjs",
         "./lib.mjs"
       ],
-      "endpoints": [],
+      "endpoints": [
+        "/api/docs",
+        "/api/docs/ack",
+        "/api/playstyle"
+      ],
       "tables": [
         "scrolls",
         "search",
+        "the",
         "view"
       ],
       "functions": [
