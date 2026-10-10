@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-09T23:50:31.482Z",
+ "fetchedAt": "2026-10-10T00:00:30.056Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -403,42 +403,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "GOAT_CR7_96",
-   "gamesPlayed": "12",
-   "winRate": "83",
-   "goals": "11",
-   "assists": "14",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "68",
-   "passesMade": "125",
-   "passSuccessRate": "67",
-   "ratingAve": "8.3",
-   "tacklesMade": "8",
-   "tackleSuccessRate": "57",
-   "proName": "Mohsen Ageel",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "166",
-   "proNationality": "162",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "2",
-   "prevGoals3": "2",
-   "prevGoals4": "2",
-   "prevGoals5": "1",
-   "prevGoals6": "1",
-   "prevGoals7": "0",
-   "prevGoals8": "1",
-   "prevGoals9": "0",
-   "prevGoals10": "1",
-   "favoritePosition": "forward"
   },
   {
    "name": "JessiRGZ",
@@ -1632,7 +1596,7 @@
  "positionCount": {
   "midfielder": 14,
   "goalkeeper": 0,
-  "forward": 12,
+  "forward": 11,
   "defender": 10
  },
  "career": [
@@ -1734,17 +1698,6 @@
    "ratingAve": "7.3",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "GOAT_CR7_96",
-   "proPos": "25",
-   "gamesPlayed": "83",
-   "goals": "104",
-   "assists": "82",
-   "manOfTheMatch": "14",
-   "ratingAve": "8.1",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "JessiRGZ",
@@ -2024,12 +1977,12 @@
   {
    "name": "MAYOROFCALI_510",
    "proPos": "25",
-   "gamesPlayed": "330",
+   "gamesPlayed": "331",
    "goals": "106",
-   "assists": "90",
+   "assists": "91",
    "manOfTheMatch": "6",
    "ratingAve": "7.0",
-   "prevGoals": "1",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
