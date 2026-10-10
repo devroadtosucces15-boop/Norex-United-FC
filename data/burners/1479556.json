@@ -3,7 +3,7 @@
  "name": "vagi noli",
  "crest": "99160128",
  "trackedAt": "2026-10-10T00:08:15.917Z",
- "fetchedAt": "2026-10-10T04:10:29.768Z",
+ "fetchedAt": "2026-10-10T04:20:29.382Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "vagi noli",
@@ -248,9 +248,9 @@
   {
    "name": "IM_Trash_Broski",
    "proPos": "25",
-   "gamesPlayed": "95",
-   "goals": "58",
-   "assists": "55",
+   "gamesPlayed": "96",
+   "goals": "59",
+   "assists": "56",
    "manOfTheMatch": "18",
    "ratingAve": "8.0",
    "prevGoals": "1",
@@ -258,31 +258,31 @@
   },
   {
    "name": "x_MrMike_x",
-   "proPos": "25",
-   "gamesPlayed": "48",
+   "proPos": "5",
+   "gamesPlayed": "49",
    "goals": "39",
    "assists": "25",
-   "manOfTheMatch": "7",
+   "manOfTheMatch": "8",
    "ratingAve": "7.6",
    "prevGoals": "0",
-   "favoritePosition": "forward"
+   "favoritePosition": "defender"
   },
   {
    "name": "rezy33pizza",
-   "proPos": "25",
-   "gamesPlayed": "7",
+   "proPos": "14",
+   "gamesPlayed": "8",
    "goals": "2",
    "assists": "2",
    "manOfTheMatch": "0",
-   "ratingAve": "7.4",
+   "ratingAve": "7.3",
    "prevGoals": "0",
-   "favoritePosition": "forward"
+   "favoritePosition": "midfielder"
   }
  ],
  "roster": {
   "DesiipherJay": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-10T04:10:29.768Z",
+   "last": "2026-10-10T04:20:29.382Z",
    "active": true,
    "gp": 3,
    "pos": "forward",
@@ -290,7 +290,7 @@
   },
   "IM_Trash_Broski": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-10T04:10:29.768Z",
+   "last": "2026-10-10T04:20:29.382Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -298,7 +298,7 @@
   },
   "x_MrMike_x": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-10T04:10:29.768Z",
+   "last": "2026-10-10T04:20:29.382Z",
    "active": true,
    "gp": 3,
    "pos": "midfielder",
@@ -306,7 +306,7 @@
   },
   "rezy33pizza": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-10T04:10:29.768Z",
+   "last": "2026-10-10T04:20:29.382Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
