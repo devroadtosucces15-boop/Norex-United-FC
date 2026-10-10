@@ -39,5 +39,7 @@ const th = read('tactics.html');
 t('tactics: fielded line-ups and line stats come from the archive', th.includes('tx-fielded') && th.includes('tx-lines') && /win rate with a full 11 \(\d+-\d+-\d+ in \d+\)/.test(th));
 t('tactics: set pieces panel in League and Rush, Rush log slot, pane transition', (th.match(/class="panel reveal tx-sp"/g) || []).length === 2 && th.includes('id="rushlogBody"') && (th.match(/class="txpane"/g) || []).length === 3);
 t('tactics: play style roles carry real line numbers, builds show archetype use', (read('playstyle.html').match(/class="ps-strip"/g) || []).length >= 5 && read('builds.html').includes('class="bld-use"'));
+const lh = read('leaders.html');
+t('insights: leaders carry goals/assists/rating/motm slots, stats carries club.records, all hidden until filled', ['goals', 'assists', 'rating', 'motm'].every((k) => lh.includes(`data-insight="leaders.${k}" hidden`)) && read('stats.html').includes('data-insight="club.records" hidden') && !/data-insight-sec(?! hidden)/.test(lh));
 fs.rmSync(out, { recursive: true, force: true });
 done();

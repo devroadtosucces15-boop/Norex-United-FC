@@ -383,3 +383,4 @@ html.mx .txpane.tx-in{animation:txPane var(--m-slow) var(--e-out) both}
 @keyframes txPane{from{opacity:0;clip-path:inset(0 50% 0 50%);transform:translate3d(0,14px,0)}to{opacity:1;clip-path:inset(0 0 0 0);transform:none}}
 html[data-motion=calm] .txpane.tx-in{animation:mxFade var(--m-base) ease both}
 @media(max-width:820px){.txsteps{grid-template-columns:1fr}.txf-kpi{grid-template-columns:1fr 1fr}.txf-kpi>div>b{font-size:24px}}
+.insgrid.ins1{margin-top:22px;max-width:780px}

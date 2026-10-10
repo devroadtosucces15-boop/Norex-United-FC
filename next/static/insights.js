@@ -5,7 +5,7 @@
 (() => {
   const d = document, $$ = (s, r = d) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-  const KIND = { club: ['📈', 'Club form'], 'match.latest': ['⚽', 'Latest match'], 'matches.last5': ['🔟', 'Last five'], 'club.records': ['🏆', 'Records'], 'leaders.goals': ['⚽', 'Scoring race'], 'leaders.rating': ['⭐', 'Ratings race'] };
+  const KIND = { club: ['📈', 'Club form'], 'match.latest': ['⚽', 'Latest match'], 'matches.last5': ['🔟', 'Last five'], 'club.records': ['🏆', 'Records'], 'leaders.goals': ['⚽', 'Scoring race'], 'leaders.rating': ['⭐', 'Ratings race'], 'leaders.assists': ['🅰️', 'Assists race'], 'leaders.motm': ['🏅', 'MOTM race'] };
   const kind = (k) => KIND[k] || (k.startsWith('player.') ? ['🧑‍🎤', 'Player'] : k.startsWith('note.') ? ['📝', "Coach's note"] : k.startsWith('h2h.') ? ['⚔️', 'Head to head'] : k.startsWith('match.') ? ['⚽', 'This match'] : ['✨', 'Insight']);
   const M = () => window.NorexMotion, A = () => window.NorexAuth;
   const OFF = 'norex.insights';
