@@ -4,7 +4,7 @@ import { shell, esc, sample, sbt, chip } from '../lib/ui.mjs';
 import { formations } from './stats.mjs';
 import { playstyleBlock } from './tactics.mjs';
 
-const ROOMS = [['hub.html', '🎽', 'My Locker', 'Your card, artwork, stats, trophies and alerts'], ['hub-matchnight.html', '🗓️', 'Match Night', 'RSVP, availability, MOTM votes, ratings, Rush log'], ['hub-squad.html', '🤝', 'Squad Room', 'Team up, awards, predictions, Rush squads and scouting'], ['hub-clubhouse.html', '💬', 'Clubhouse', 'Messages, feed and mentions'], ['hub-handbook.html', '📜', 'Handbook', 'Club rules, docs and how the site works']];
+const ROOMS = [['hub.html', '🎽', 'My Locker', 'Your card, artwork, stats, trophies and alerts'], ['hub-matchnight.html', '🗓️', 'Match Night', 'RSVP, availability, MOTM votes, ratings, Rush log'], ['hub-squad.html', '🤝', 'Squad Room', 'Team up, awards, predictions, Rush squads and scouting'], ['hub-clubhouse.html', '💬', 'Clubhouse', 'Club feed, ideas board and chat'], ['hub-handbook.html', '📜', 'Handbook', 'Club rules, docs and how the site works']];
 const hubShell = (page, title, body, extra = {}) => shell({ group: 'hub', page, title, body, bodyClass: 'hub-page', ...extra });
 
 
@@ -62,8 +62,14 @@ export function squadRoom() {
   return hubShell('hub-squad.html', 'Squad Room', body, { extraHead: '<script src="recs.js" defer></script><script src="squad.js" defer></script>' });
 }
 export function clubhouse() {
-  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Clubhouse</h2></div></header><div data-for="member owner" hidden class="panel"><h3>Messages and feed</h3><p class="muted">${sample()} Club chat, announcements and mentions live here. In the real build this room is the same chat that runs in Discord.</p></div></section></div>${gate('hub-clubhouse.html')}`;
-  return hubShell('hub-clubhouse.html', 'Clubhouse', body);
+  // Read from the live member API by clubhouse.js: the club feed (/api/feed) and the ideas board (/api/suggestions).
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Clubhouse</h2></div><p>The club feed and the ideas board, live from the club server. Chat stays in Discord.</p></header>
+  <div data-for="member owner" hidden><nav class="chips sq-jump" aria-label="Clubhouse sections"><a class="chip" href="#ch-feed">📰 Club feed</a><a class="chip" href="#ch-ideas">💡 Ideas</a><a class="chip" href="#ch-chat">💬 Chat</a></nav>
+  <section class="sec sq-sec" id="ch-feed"><header><div><span class="ribbon">📰 Club feed</span></div><p>Goals, results, Rush invites and clips from the squad. Pinned posts first.</p></header><div id="chfeed" class="sq-mount"></div></section>
+  <section class="sec sq-sec" id="ch-ideas"><header><div><span class="ribbon">💡 Ideas</span></div><p>Suggestions for the club, voted up by members and answered by the managers.</p></header><div id="chideas" class="sq-mount"></div></section>
+  <section class="sec sq-sec" id="ch-chat"><header><div><span class="ribbon">💬 Chat</span></div></header><div class="panel sq-empty"><span>💬</span><div><b>Club chat runs in Discord</b><p class="muted small">Messages, mentions and voice all happen in the club server. The Hub chat room joins this page in a later step.</p></div></div></section></div>
+  </section></div>${gate('hub-clubhouse.html')}`;
+  return hubShell('hub-clubhouse.html', 'Clubhouse', body, { extraHead: '<script src="docs-md.js" defer></script><script src="clubhouse.js" defer></script>' });
 }
 export function handbook() {
   const RULES = [['1', 'Channel acknowledgement', 'Mandatory channel acknowledgement and compliance. If it is in the channel, you have read it.'], ['2', 'Never quit', 'No quitting games intentionally. Finish what we started.'], ['3', 'One playstyle', 'Follow the club playstyle and organise roles before kick-off.'], ['4', 'Team first', 'Zero tolerance for selfish play.'], ['5', 'Every voice', 'Open space for opinions and ideas.'], ['6', 'Evaluate and enjoy', 'Use the evaluation surveys regularly, and have fun.']];
