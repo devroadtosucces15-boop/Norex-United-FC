@@ -47,5 +47,6 @@ const hh = read('hub-handbook.html'), hj = read('handbook.js');
 t('handbook: live docs + play style mounts, game updates, markdown helper shipped, gated for members', ['id="hbdocs"', 'id="hbps"', 'id="hb-up"', 'src="docs-md.js"', 'src="handbook.js"', 'data-for="member owner"'].every((k) => hh.includes(k)) && fs.existsSync(path.join(out, 'docs-md.js')));
 t('handbook: reads /api/docs + /api/playstyle, the only write is the rules acknowledge', hj.includes("'/api/docs'") && hj.includes("'/api/playstyle'") && (hj.match(/method: 'POST'/g) || []).length === 2 && (hj.match(/\/api\/[a-z/]+/g) || []).every((u) => ['/api/docs', '/api/playstyle', '/api/docs/ack'].includes(u)));
 t('tactics: set-piece link lands on a Handbook play-style anchor', read('tactics.html').includes('hub-handbook.html#league-setpieces') && hj.includes('`${mode}-${k}`') === false && hj.includes('id="${mode}-${k}"'));
+t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includes('href="staff.html" class="" data-for="owner" hidden'));
 fs.rmSync(out, { recursive: true, force: true });
 done();
