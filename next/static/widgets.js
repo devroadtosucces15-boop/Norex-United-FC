@@ -54,13 +54,17 @@
   }
   function digits(box) { inView(box, () => $$('.fd', box).forEach((f, j) => String(f.dataset.v).split('').forEach((dg, i) => { const s = $$('.dg span', f)[i]; setTimeout(() => (s.style.transform = `translateY(${-(+dg) * 56}px)`), calm ? 0 : j * 150 + i * 200); })), .5); }
   function count(e) { inView(e, () => { const to = +e.dataset.n, dec = +e.dataset.d || 0, t0 = performance.now(); const tick = (t) => { const k = Math.min(1, (t - t0) / 1400); e.textContent = dec ? (to * (1 - Math.pow(1 - k, 3))).toFixed(dec) : Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1 && !calm) requestAnimationFrame(tick); else e.textContent = dec ? to.toFixed(dec) : to; }; tick(t0); }, .5); }
+  // list animation (FLIP): call NorexWidgets.flip(container, () => change()) – children glide to their new place, new ones fade in
+  function flip(box, change) { if (calm) { change(); return; } const old = new Map([...box.children].map((c) => [c.dataset.key || c.id || c.textContent, c.getBoundingClientRect()])); change();
+    [...box.children].forEach((c) => { const k = c.dataset.key || c.id || c.textContent, o = old.get(k), n = c.getBoundingClientRect(); if (!o) { c.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' }); return; } const dx = o.left - n.left, dy = o.top - n.top; if (dx || dy) c.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.2,.8,.2,1)' }); }); }
   function init(root = d) {
     $$('[data-w=cover]', root).forEach((e) => once(e) && coverflow(e)); $$('[data-w=reel]', root).forEach((e) => once(e) && reel(e)); $$('[data-w=tl]', root).forEach((e) => once(e) && timeline(e)); $$('[data-w=deck]', root).forEach((e) => once(e) && deck(e));
     $$('[data-w=radar]', root).forEach((e) => once(e) && radar(e)); $$('[data-w=form]', root).forEach((e) => once(e) && form(e)); $$('[data-w=race]', root).forEach((e) => once(e) && race(e)); $$('[data-w=digits]', root).forEach((e) => once(e) && digits(e));
     $$('.wx .cnt', root).forEach((e) => once(e) && count(e));
+    $$('.wx .ccol i[data-h]', root).forEach((e) => once(e) && e.addEventListener('click', () => (location.href = e.dataset.h)));
     $$('.wx .flip', root).forEach((f) => once(f) && f.addEventListener('click', () => f.classList.toggle('on')));
     $$('.wx .xr > .tr', root).forEach((b) => once(b) && b.addEventListener('click', () => b.parentElement.classList.toggle('on')));
   }
-  window.NorexWidgets = { init };
+  window.NorexWidgets = { init, flip };
   d.readyState === 'loading' ? d.addEventListener('DOMContentLoaded', () => init()) : init();
 })();

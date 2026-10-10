@@ -126,7 +126,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb th{font:600
  .devbar{bottom:88px;left:10px;right:10px;flex-wrap:wrap;display:none}.devbar.open{display:flex}.devgear{display:grid!important;bottom:88px}.devbar.open{bottom:136px}}
 .devgear{display:none;position:fixed;left:10px;bottom:10px;z-index:91;width:34px;height:34px;border-radius:50%;place-items:center;background:rgba(13,17,25,.92);border:1px solid var(--line2);color:var(--soft);font-size:16px;cursor:pointer}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}.reveal{opacity:1;transform:none}}
-@view-transition{navigation:none}
+@view-transition{navigation:auto}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.38s;animation-timing-function:var(--ease)}
 
 /* ---------- Hub entrance (key -> light -> locker -> card) ---------- */
@@ -209,3 +209,18 @@ body.still .reveal{opacity:1;transform:none;transition:none}body.still *{animati
  .hero .stage .cardwrap:last-of-type{right:4%!important}
 }
 @media(max-width:560px){.sb>*:last-child:nth-child(odd){grid-column:1/-1}}
+
+::view-transition-group(pcard),::view-transition-group(mcard){animation-duration:.55s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+::view-transition-image-pair(pcard),::view-transition-image-pair(mcard){isolation:auto}
+@media(prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+/* skeleton loaders */
+.sk-wrap{display:grid;gap:10px;margin-top:14px}.sk{display:block;height:14px;border-radius:7px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.14) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:skm 1.3s linear infinite}.sk.s2{width:78%}.sk.s3{width:52%}
+@keyframes skm{to{background-position:-200% 0}}
+/* scroll-linked entrances (native, no JS) */
+@supports(animation-timeline:view()){
+ .sec>header .ribbon{animation:ribin both linear;animation-timeline:view();animation-range:entry 0% entry 60%}
+ .wx .kc,.wx .rcard{animation:kin both linear;animation-timeline:view();animation-range:entry 0% entry 55%}
+ @keyframes ribin{from{transform:translateX(-26px);opacity:0}to{transform:none;opacity:1}}
+ @keyframes kin{from{transform:translateY(22px) scale(.97);opacity:.2}to{transform:none;opacity:1}}
+}
+@media(prefers-reduced-motion:reduce){.sec>header .ribbon,.wx .kc,.wx .rcard{animation:none!important}.sk{animation:none}}

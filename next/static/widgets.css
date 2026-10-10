@@ -311,3 +311,32 @@
 @media(max-width:560px){.wx .fo{width:27px;height:27px;font-size:11px}.wx .formrow{gap:5px!important}.wx .fsum{grid-template-columns:repeat(5,1fr);gap:5px}.wx .fsum span{padding:7px 2px;font-size:8.5px;letter-spacing:.06em}.wx .fsum b{font-size:15px}.wx .tsum{grid-template-columns:repeat(3,1fr)}.wx .tsum b{font-size:17px}}
 .wx .rr b{white-space:nowrap;text-align:right;line-height:1.1}.wx .race b small{display:block;margin:2px 0 0;font-size:10.5px}
 @media(max-width:560px){.wx .rr{gap:8px}}
+
+/* ---- calendar heat map ---- */
+.wx .cal{overflow-x:auto;padding-bottom:4px}.wx .calgrid{display:flex;gap:6px;align-items:flex-start;min-width:max-content}
+.wx .cdays{display:grid;grid-template-rows:16px repeat(7,22px);gap:5px;font:500 10px Inter;color:#7f8ba3;padding-top:0}.wx .cdays span{height:22px;line-height:22px}.wx .cdays:before{content:""}
+.wx .ccol{display:grid;grid-template-rows:16px repeat(7,22px);gap:5px}.wx .ccol b{font:600 10px Inter;letter-spacing:.1em;text-transform:uppercase;color:#7f8ba3;white-space:nowrap}
+.wx .calgrid i,.wx .cleg i{display:block;border-radius:6px;background:rgba(255,255,255,.05);width:22px;height:22px;transition:transform .2s;cursor:default}.wx .ccol i[data-h]{cursor:pointer}.wx .ccol i:hover{transform:scale(1.25);position:relative;z-index:2}
+.wx .cal .w.lv1{background:#1d5a37}.wx .cal .w.lv2{background:#26834f}.wx .cal .w.lv3{background:#2fb067}.wx .cal .w.lv4{background:#59e08f}
+.wx .cal .d.lv1{background:#5e4b19}.wx .cal .d.lv2{background:#8a6e22}.wx .cal .d.lv3{background:#c19a33}.wx .cal .d.lv4{background:#efcf7a}
+.wx .cal .l.lv1{background:#6a2a24}.wx .cal .l.lv2{background:#963830}.wx .cal .l.lv3{background:#cd4a3f}.wx .cal .l.lv4{background:#ff7d72}
+.wx .cleg{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:12px;font:500 11.5px Inter;color:#aab4c9}.wx .cleg span{display:inline-flex;gap:6px;align-items:center}.wx .cleg i{width:14px;height:14px;border-radius:4px}
+/* ---- rating spread ---- */
+.wx .spread{display:grid;gap:6px}.wx .srow,.wx .sax{display:grid;grid-template-columns:minmax(110px,170px) 1fr 74px;gap:14px;align-items:center;color:#fff;text-decoration:none}
+.wx .srow{padding:6px 4px;border-radius:10px;transition:background .2s}.wx .srow:hover{background:rgba(255,255,255,.05)}
+.wx .sn{font:600 14px Inter;display:flex;flex-direction:column}.wx .sn small,.wx .sv small{font:500 11px Inter;color:#8e9ab2}.wx .sv{font:700 20px Oswald;text-align:right;color:#efcf7a;display:flex;flex-direction:column;line-height:1.1}
+.wx .strack{position:relative;height:26px;border-radius:13px;background:linear-gradient(90deg,rgba(200,53,44,.14),rgba(239,207,122,.1) 50%,rgba(46,203,120,.16))}
+.wx .strack .band{position:absolute;top:9px;height:8px;border-radius:4px;background:rgba(255,255,255,.12)}
+.wx .strack b{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#fff;opacity:.8;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+.wx .strack em{position:absolute;top:2px;bottom:2px;width:4px;margin-left:-2px;border-radius:2px;background:#efcf7a;box-shadow:0 0 10px rgba(239,207,122,.8)}
+.wx .sax{font:500 11px Inter;color:#7f8ba3}.wx .sax i{font-style:normal;position:absolute}.wx .sax{position:relative;height:16px}
+.wx .sax:after{content:"";grid-column:2}
+@media(max-width:560px){.wx .srow,.wx .sax{grid-template-columns:96px 1fr 52px;gap:8px}.wx .sn{font-size:12.5px}}
+/* ---- head-to-head ribbon ---- */
+.h2h{display:inline-flex;gap:3px;flex-wrap:wrap;max-width:140px}.h2h i{width:10px;height:18px;border-radius:3px;display:block}.h2h .W{background:#2fb067}.h2h .D{background:#c19a33}.h2h .L{background:#cd4a3f}
+.wx .calgrid{width:100%;min-width:560px}.wx .cdays{grid-template-rows:16px repeat(7,minmax(30px,1fr))}.wx .cdays span{height:auto;align-self:center;line-height:1}
+.wx .ccol{flex:1;grid-template-rows:16px repeat(7,minmax(30px,1fr));min-width:0}
+.wx .calgrid .ccol i{width:auto;height:auto;min-height:30px;border-radius:8px}
+.wx .sax .ax{display:flex;justify-content:space-between;font:600 11px Inter;color:#7f8ba3;padding:0 2px}.wx .sax i{position:static}
+.wx .calgrid{min-width:0}.wx .cdays{grid-template-rows:16px repeat(7,minmax(26px,1fr))}.wx .ccol{grid-template-rows:16px repeat(7,minmax(26px,1fr))}.wx .calgrid .ccol i{min-height:26px}
+@media(max-width:560px){.wx .cdays span{font-size:9px}.wx .calgrid{gap:4px}.wx .ccol{gap:4px}}

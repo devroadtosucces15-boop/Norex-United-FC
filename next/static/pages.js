@@ -200,6 +200,8 @@ addEventListener('DOMContentLoaded', () => {
     list();
   }
 
+  // skeleton placeholders while live panels load (cleared when each panel draws itself)
+  if (window.NOREX_API && window.NorexAuth && NorexAuth.token) ['#rsvppanel', '#motmpanel', '#ratepanel', '#nextpanel', '#alertpanel', '#availpanel'].forEach((s) => { const el = $(s); if (el) el.insertAdjacentHTML('beforeend', '<div class="sk-wrap" aria-hidden="true"><i class="sk"></i><i class="sk s2"></i><i class="sk s3"></i></div>'); });
   // ---------- hub landing: real next match night, alerts and medals (read-only, signed-in members) ----------
   if ($('#nextpanel') && window.NOREX_API && window.NorexAuth && NorexAuth.token) {
     const T = (ms, tz) => { try { return new Date(ms).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };

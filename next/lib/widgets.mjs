@@ -114,3 +114,31 @@ ${dial(+ppg.toFixed(2), 3, 'Points / game', `of a possible 3`, '#c8352c', '🔥'
 <div class="kc k-run"><div class="kh"><u>🔥 Current run</u><span><b class="cnt" data-n="${typeof rn === 'number' ? rn : 0}">0</b> ${esc(rl)}</span></div><div class="eq" role="img" aria-label="Points from each of the last 10 games">${last10.map((m, i) => `<i class="${m.res}" style="--h:${m.res === 'W' ? 100 : m.res === 'D' ? 45 : 16}%;--i:${i}" title="${esc(m.opp)} ${m.gf}–${m.ga}"></i>`).join('')}</div><small>Last 10 games · tall bar = win</small></div>
 </div><p class="wnote">Live from EA's club data · updated ${esc(fmtDate(Math.floor(Date.parse(C.fetched) / 1000)))} · ${C.gp} league games</p>`);
 };
+
+// ---- calendar heat map: one cell per day, shaded by games played, tinted by how the day went ----
+export const calendar = () => {
+  const DAY = 86400, day = (t) => Math.floor(t / DAY), by = new Map(), span = Math.ceil((day(matches[0]?.t ?? 0) - day(matches[matches.length - 1]?.t ?? 0)) / 7) + 1, weeks = Math.max(4, Math.min(14, span));
+  for (const m of matches) { const k = day(m.t), a = by.get(k) ?? []; a.push(m); by.set(k, a); }
+  const last = day(matches[0]?.t ?? 0), dow = (k) => (new Date(k * DAY * 1000).getUTCDay() + 6) % 7; // Monday = 0
+  const end = last + (6 - dow(last)), start = end - weeks * 7 + 1, cols = [];
+  for (let k = start; k <= end; k += 7) cols.push(Array.from({ length: 7 }, (_, i) => k + i));
+  const cell = (k) => { const g = by.get(k) || []; const wn = g.filter((m) => m.res === 'W').length, ls = g.filter((m) => m.res === 'L').length; const tone = !g.length ? '' : wn > ls ? 'w' : ls > wn ? 'l' : 'd'; const lv = Math.min(4, g.length);
+    const lab = new Date(k * DAY * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+    return `<i class="${tone} lv${lv}" title="${esc(lab)}${g.length ? ' · ' + g.map((m) => `${m.res} ${m.gf}–${m.ga} ${esc(m.opp)}`).join(', ') : ' · no games'}"${g.length ? ` data-h="match-${g[0].id}.html"` : ''}></i>`; };
+  const months = cols.map((c, i) => { const d = new Date(c[0] * DAY * 1000), prev = i ? new Date(cols[i - 1][0] * DAY * 1000) : null; return !prev || prev.getUTCMonth() !== d.getUTCMonth() ? d.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }) : ''; });
+  const total = matches.filter((m) => day(m.t) >= start).length, busiest = [...by.entries()].filter(([k]) => k >= start).sort((a, b) => b[1].length - a[1].length)[0];
+  return wx('', `<div class="cal"><div class="calgrid"><div class="cdays"><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span></div>${cols.map((c, i) => `<div class="ccol"><b>${months[i]}</b>${c.map(cell).join('')}</div>`).join('')}</div>
+<div class="cleg"><span><i class="w lv3"></i> good day</span><span><i class="d lv3"></i> level</span><span><i class="l lv3"></i> tough day</span><span class="muted">darker = more games</span></div>
+<p class="wnote">${total} games in the last ${weeks} weeks${busiest ? ` · busiest day ${busiest[1].length} games (${esc(new Date(busiest[0] * DAY * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }))})` : ''}</p></div>`);
+};
+
+// ---- rating spread: every match rating as a dot on a 5–10 track, the average as a tick ----
+export const ratingSpread = (n = 10) => {
+  const rows = players.filter((p) => p.gp >= 5).map((p) => ({ p, r: matches.flatMap((m) => m.lines.filter((l) => l.n === p.n && l.rating).map((l) => l.rating)) })).filter((x) => x.r.length >= 4).sort((a, b) => b.p.rating - a.p.rating).slice(0, n);
+  const x = (v) => Math.max(0, Math.min(100, (v - 5) / 5 * 100));
+  return wx('', `<div class="spread"><div class="sax"><span></span><div class="ax"><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>10</i></div><span></span></div>${rows.map(({ p, r }) => { const avg = r.reduce((a, b) => a + b, 0) / r.length, lo = Math.min(...r), hi = Math.max(...r);
+    return `<a class="srow" href="player-${slug(p.k)}.html"><span class="sn">${esc(p.n)}<small>${r.length} rated games</small></span><span class="strack"><i class="band" style="left:${x(lo)}%;width:${Math.max(1, x(hi) - x(lo))}%"></i>${r.map((v) => `<b style="left:${x(v)}%" title="${v}"></b>`).join('')}<em style="left:${x(avg)}%"></em></span><span class="sv">${avg.toFixed(1)}<small>${lo}–${hi}</small></span></a>`; }).join('')}</div><p class="wnote">Each dot is one match rating · the gold tick is the average · the faint band runs from the worst to the best game</p>`);
+};
+
+// ---- head-to-head ribbon: every meeting with an opponent, oldest to newest ----
+export const h2h = (oppId) => `<span class="h2h">${matches.filter((m) => m.oppId === oppId).slice().reverse().map((m) => `<i class="${m.res}" title="${esc(fmtDate(m.t))} · ${m.gf}–${m.ga}"></i>`).join('')}</span>`;

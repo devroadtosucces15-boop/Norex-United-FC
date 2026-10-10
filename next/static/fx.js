@@ -102,7 +102,11 @@
   }
   d.addEventListener('click', (e) => {
     if (calm || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const a = e.target.closest('a'); if (!internal(a)) return; e.preventDefault(); go(a, e);
+    const a = e.target.closest('a'); if (!internal(a)) return;
+    // shared-element morph: a player card grows into its profile, a result card into its match page (native View Transitions; other links keep the curtain)
+    const vt = a.matches('.pc-card[href^="player-"],.pc-hero') ? 'pcard' : a.matches('.rcard,.rrow') ? 'mcard' : '';
+    if (vt && 'onpageswap' in window && !a.closest('[data-no-vt]')) { a.style.viewTransitionName = vt; ss.set('norex.vt', vt); return; }
+    e.preventDefault(); go(a, e);
   });
   // arrival: the page is already hidden behind a matching cover (set by the inline head script); uncover it
   async function arrive() {
@@ -136,4 +140,7 @@
   const start = () => { buildNav(); arrive(); };
   d.readyState === 'loading' ? d.addEventListener('DOMContentLoaded', start) : start();
   window.NorexFx = { burst, go: (href, kind) => go({ href, getBoundingClientRect: () => ({ left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 }), getAttribute: () => href, matches: () => false }, { clientX: innerWidth / 2, clientY: innerHeight / 2 }) };
+// native cross-document transition: only animate when a shared-element click set the flag
+addEventListener('pageswap', (e) => { if (!e.viewTransition) return; if (!ss.get('norex.vt')) e.viewTransition.skipTransition(); });
+addEventListener('pagereveal', (e) => { if (!e.viewTransition) return; if (!ss.get('norex.vt')) { e.viewTransition.skipTransition(); return; } ss.del('norex.vt'); });
 })();
