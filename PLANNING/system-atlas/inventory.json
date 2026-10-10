@@ -1,9 +1,9 @@
 {
-  "revision": "54d36a736dbbf377aba85b0bd7ba08aee3687a83",
-  "files": 667,
+  "revision": "dcb2ad564ca6ed1b2d8ea96395023d60f44d0e20",
+  "files": 688,
   "imports": 429,
   "api_paths": 224,
-  "tables": 273,
+  "tables": 274,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -3729,6 +3729,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/426400.json",
+      "layer": "data",
+      "lines": 427,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/426688.json",
       "layer": "data",
       "lines": 469,
@@ -4793,6 +4802,15 @@
       "functions": []
     },
     {
+      "path": "data/matches/38518902760364.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/38880796950280.json",
       "layer": "data",
       "lines": 448,
@@ -4814,6 +4832,15 @@
       "path": "data/matches/39012749540124.json",
       "layer": "data",
       "lines": 588,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/39018004960158.json",
+      "layer": "data",
+      "lines": 466,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5011,6 +5038,15 @@
       "functions": []
     },
     {
+      "path": "data/matches/51096921470054.json",
+      "layer": "data",
+      "lines": 505,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/51122062650279.json",
       "layer": "data",
       "lines": 468,
@@ -5032,6 +5068,15 @@
       "path": "data/matches/51202521050149.json",
       "layer": "data",
       "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/51234911530381.json",
+      "layer": "data",
+      "lines": 394,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5068,6 +5113,15 @@
       "path": "data/matches/51446406350150.json",
       "layer": "data",
       "lines": 542,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/51474227860116.json",
+      "layer": "data",
+      "lines": 394,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6685,6 +6739,141 @@
       "functions": []
     },
     {
+      "path": "data/matches/85716853450301.json",
+      "layer": "data",
+      "lines": 501,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86040198780283.json",
+      "layer": "data",
+      "lines": 725,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86046875250180.json",
+      "layer": "data",
+      "lines": 653,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86052397070272.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86068060420342.json",
+      "layer": "data",
+      "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86068247430482.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86078868590049.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86138133730101.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86324380900252.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86328178490181.json",
+      "layer": "data",
+      "lines": 579,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86446267030173.json",
+      "layer": "data",
+      "lines": 542,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86506184160021.json",
+      "layer": "data",
+      "lines": 764,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86594225380117.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86596132790237.json",
+      "layer": "data",
+      "lines": 614,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/86770025320480.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/meta.json",
       "layer": "data",
       "lines": 5,
@@ -6696,7 +6885,7 @@
     {
       "path": "data/state.json",
       "layer": "data",
-      "lines": 9574,
+      "lines": 9582,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -8649,7 +8838,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 26,
+      "lines": 39,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -8660,7 +8849,9 @@
       ],
       "endpoints": [],
       "tables": [
-        "search"
+        "scrolls",
+        "search",
+        "view"
       ],
       "functions": [
         "read"
