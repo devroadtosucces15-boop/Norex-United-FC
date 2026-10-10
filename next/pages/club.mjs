@@ -29,7 +29,7 @@ export function home() {
   </div>
  </section>
 
- <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header>${W.bento()}
+ <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header>${W.kpi()}
   <div class="grid g2" style="margin-top:18px"><div class="panel reveal"><h3>Form · last ${recent.length} games</h3>${W.formWave()}</div><div class="panel reveal" style="--i:1"><h3>Season reel</h3><p class="muted small">Drag along the line. Tap a game to open it.</p>${W.timeline()}</div></div></section>
 
  <section class="sec"><header><div><span class="ribbon">Match reel</span></div><p>Tap a night to jump to it. Drag the reel.</p></header>${W.reel()}</section>

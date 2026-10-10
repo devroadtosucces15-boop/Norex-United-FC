@@ -53,7 +53,7 @@
     tabs && tabs.addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; $$('.chip', tabs).forEach((x) => x.classList.toggle('on', x === b)); draw(b.dataset.k, false); });
   }
   function digits(box) { inView(box, () => $$('.fd', box).forEach((f, j) => String(f.dataset.v).split('').forEach((dg, i) => { const s = $$('.dg span', f)[i]; setTimeout(() => (s.style.transform = `translateY(${-(+dg) * 56}px)`), calm ? 0 : j * 150 + i * 200); })), .5); }
-  function count(e) { inView(e, () => { const to = +e.dataset.n, t0 = performance.now(); const tick = (t) => { const k = Math.min(1, (t - t0) / 1400); e.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1 && !calm) requestAnimationFrame(tick); else e.textContent = to; }; tick(t0); }, .5); }
+  function count(e) { inView(e, () => { const to = +e.dataset.n, dec = +e.dataset.d || 0, t0 = performance.now(); const tick = (t) => { const k = Math.min(1, (t - t0) / 1400); e.textContent = dec ? (to * (1 - Math.pow(1 - k, 3))).toFixed(dec) : Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1 && !calm) requestAnimationFrame(tick); else e.textContent = dec ? to.toFixed(dec) : to; }; tick(t0); }, .5); }
   function init(root = d) {
     $$('[data-w=cover]', root).forEach((e) => once(e) && coverflow(e)); $$('[data-w=reel]', root).forEach((e) => once(e) && reel(e)); $$('[data-w=tl]', root).forEach((e) => once(e) && timeline(e)); $$('[data-w=deck]', root).forEach((e) => once(e) && deck(e));
     $$('[data-w=radar]', root).forEach((e) => once(e) && radar(e)); $$('[data-w=form]', root).forEach((e) => once(e) && form(e)); $$('[data-w=race]', root).forEach((e) => once(e) && race(e)); $$('[data-w=digits]', root).forEach((e) => once(e) && digits(e));

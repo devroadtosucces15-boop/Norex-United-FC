@@ -86,3 +86,31 @@ export const reel = (ms = matches.slice(0, 10)) => {
 <div class="rtags">${tagChips(m, 4)}</div>${mo ? `<div class="rmo">⭐ <span>${m.lines.some((l) => l.mom) ? 'Man of the match' : 'Top rated'}</span> <b>${esc(mo.n)}</b><em>${mo.rating ? (+mo.rating).toFixed(1) : ''}</em></div>` : ''}</a></div>`; }).join('');
   return wx('', `<div class="reelwrap"><div class="rchips">${chips}</div><div class="rail cover reel" data-w="reel">${cards}</div><div class="rnav"><button class="rn" type="button" data-d="-1" aria-label="Previous match">${ic('left', 16)}</button><span class="rhint">Drag the reel · match <b>${list.length}</b> of ${list.length}</span><button class="rn" type="button" data-d="1" aria-label="Next match">${ic('right', 16)}</button><a class="rcal" href="fixtures.html">${ic('calendar', 15)} Calendar</a></div></div>`);
 };
+
+// ---- KPI deck: every club number, each shown in the form that suits it (ladder, record bar, mosaic, balance, dials, equaliser) ----
+const arc = (v, max, r = 30) => { const c = 2 * Math.PI * r, k = Math.max(0, Math.min(1, v / max)); return `stroke-dasharray:${(c * k).toFixed(1)} ${c.toFixed(1)}`; };
+export const kpi = () => {
+  const gp = Math.max(1, C.gp), wr = Math.round(C.w / gp * 100), gdv = C.gf - C.ga, ppg = (3 * C.w + C.d) / gp, [rn, rl] = runNow(), tr = pointsTrend(), sp = sparkPath(tr);
+  const old = matches.slice().reverse(), last10 = matches.slice(0, 10).reverse(), sh = matches.filter((m) => m.ga === 0).length;
+  const div = Math.max(1, Math.min(10, C.div || 1));
+  const ladder = Array.from({ length: 10 }, (_, i) => { const d = 10 - i; return `<i class="${d >= div ? 'on' : ''}${d === div ? ' cur' : ''}" title="Division ${d}"></i>`; }).join('');
+  const tot = C.w + C.d + C.l || 1, pc = (v) => (v / tot * 100).toFixed(2);
+  const forPct = (C.gf / Math.max(1, C.gf + C.ga) * 100).toFixed(1);
+  const dial = (v, max, label, sub, col, emo, dp = 1) => `<div class="kc dial"><svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="30" class="bg"/><circle cx="40" cy="40" r="30" class="fg" style="${arc(v, max)};stroke:${col}"/></svg><div class="dv"><b class="cnt" data-n="${v}" data-d="${dp}">0</b><u>${emo} ${label}</u></div><small>${sub}</small></div>`;
+  return wx('', `<div class="kpi">
+<div class="kc k-rate"><u>💎 Skill rating</u><b class="cnt" data-n="${C.sr}">0</b><div class="ladder" aria-label="Division ${div} of 10">${ladder}<span>Division ${div}</span></div><small>${C.promotions ?? 0} promotion${C.promotions === 1 ? '' : 's'} · ${C.pts ?? 0} pts</small><svg class="sp" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><path d="${sp.line}" class="spark"/><circle cx="${sp.end[0].toFixed(1)}" cy="${sp.end[1].toFixed(1)}" r="1.6" class="sdot"/></svg><i class="cap">League points · last ${tr.length} games</i></div>
+<div class="kc k-rec"><div class="kh"><u>🎮 Season record</u><span><b class="cnt" data-n="${C.gp}">0</b> played</span></div>
+<div class="rbar" role="img" aria-label="${C.w} wins, ${C.d} draws, ${C.l} losses"><i class="w" style="flex:${C.w}"><b>${C.w}</b></i><i class="d" style="flex:${Math.max(C.d, .001)}"><b>${C.d}</b></i><i class="l" style="flex:${Math.max(C.l, .001)}"><b>${C.l}</b></i></div>
+<div class="rleg"><span class="w">🏆 ${C.w} wins · ${pc(C.w)}%</span><span class="d">🤝 ${C.d} draws</span><span class="l">💔 ${C.l} losses</span></div>
+<div class="mosaic" role="img" aria-label="Result of each of the last ${old.length} games, oldest first">${old.map((m, i) => `<a href="match-${m.id}.html" class="${m.res}${m.ga === 0 ? ' cs' : ''}" style="--i:${i}" title="${esc(m.opp)} ${m.gf}–${m.ga}"></a>`).join('')}</div>
+<i class="cap">Every game as a tile, oldest to newest · a dot marks a clean sheet</i></div>
+<div class="kc k-bal"><div class="kh"><u>⚽ Goals for and against</u><span class="gdv">${gdv >= 0 ? '+' : ''}${gdv}</span></div>
+<div class="tug" role="img" aria-label="${C.gf} scored, ${C.ga} conceded"><i class="f" style="width:${forPct}%"><b class="cnt" data-n="${C.gf}">0</b></i><i class="a" style="width:${(100 - forPct).toFixed(1)}%"><b class="cnt" data-n="${C.ga}">0</b></i></div>
+<div class="rleg"><span class="w">scored · ${(C.gf / gp).toFixed(1)} a game</span><span class="l">conceded · ${(C.ga / gp).toFixed(1)} a game</span></div></div>
+<div class="kc dial k-win"><svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="30" class="bg"/><circle cx="40" cy="40" r="30" class="fg" style="${arc(C.w, tot)};stroke:#2ecb78"/></svg><div class="dv"><b>${wr}%</b><u>📈 Win rate</u></div><small>${C.w} of ${C.gp} games won</small></div>
+${dial(+(C.gf / gp).toFixed(1), 5, 'Goals / game', `of ${C.gf} scored`, '#efcf7a', '⚽')}
+${dial(+(C.ga / gp).toFixed(1), 5, 'Conceded / game', `${sh} clean sheets in last ${matches.length}`, '#6ac7ff', '🧤')}
+${dial(+ppg.toFixed(2), 3, 'Points / game', `of a possible 3`, '#c8352c', '🔥', 2)}
+<div class="kc k-run"><div class="kh"><u>🔥 Current run</u><span><b class="cnt" data-n="${typeof rn === 'number' ? rn : 0}">0</b> ${esc(rl)}</span></div><div class="eq" role="img" aria-label="Points from each of the last 10 games">${last10.map((m, i) => `<i class="${m.res}" style="--h:${m.res === 'W' ? 100 : m.res === 'D' ? 45 : 16}%;--i:${i}" title="${esc(m.opp)} ${m.gf}–${m.ga}"></i>`).join('')}</div><small>Last 10 games · tall bar = win</small></div>
+</div><p class="wnote">Live from EA's club data · updated ${esc(fmtDate(Math.floor(Date.parse(C.fetched) / 1000)))} · ${C.gp} league games</p>`);
+};
