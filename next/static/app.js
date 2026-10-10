@@ -5,6 +5,7 @@
   const N = window.NOREX, me = window.NorexMe();
   window.NorexAs = me.as; d.documentElement.dataset.as = me.as;
   // ---- preview identity + entrance preference (stands in for Discord login while we design) ----
+  if (!window.NOREX_API) {
   const bar = d.createElement('div'); bar.className = 'devbar';
   bar.innerHTML = `<span>Preview as</span><select id="dvAs" aria-label="Preview role"><option value="guest">Guest</option><option value="member">Member</option><option value="owner">Owner</option></select><select id="dvMe" aria-label="Preview player">${(N.players || []).map((p) => `<option value="${p.k.replace(/"/g, '&quot;')}">${p.n}</option>`).join('')}</select><select id="dvEn" aria-label="Hub entrance"><option value="auto">Entrance: auto</option><option value="full">Entrance: full</option><option value="short">Entrance: short</option><option value="skip">Entrance: skip</option></select><select id="dvNav" aria-label="Menu style"><option value="orb">Menu: gold orb</option><option value="island">Menu: island pill</option><option value="rail">Menu: side rail</option></select><select id="dvFx" aria-label="Page transitions"><option value="on">Transitions: on</option><option value="off">Transitions: off</option></select>`;
   const gear = d.createElement('button'); gear.className = 'devgear'; gear.type = 'button'; gear.textContent = '⚙'; gear.setAttribute('aria-label', 'Preview settings'); gear.onclick = () => bar.classList.toggle('open');
@@ -18,6 +19,7 @@
   $('#dvNav').value = raw.get('norex.nav', 'orb'); $('#dvFx').value = raw.get('norex.fx', 'on');
   $('#dvNav').onchange = (e) => { raw.set('norex.nav', e.target.value); document.documentElement.dataset.nav = e.target.value; };
   $('#dvFx').onchange = (e) => { raw.set('norex.fx', e.target.value); location.reload(); };
+  }
   // ---- role gating ----
   $$('[data-for]').forEach((el) => { el.hidden = !el.dataset.for.split(/\s+/).includes(me.as); });
   // ---- squad filters ----

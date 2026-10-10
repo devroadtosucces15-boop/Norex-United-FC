@@ -8,9 +8,10 @@ const hubShell = (page, title, body, extra = {}) => shell({ group: 'hub', page, 
 
 // ---------- MY LOCKER (landing, the end of the cinematic entrance) ----------
 export function locker() {
-  const body = `<div data-for="guest" class="wrap" style="padding-top:60px"><div class="panel" style="max-width:560px;margin:0 auto;text-align:center;padding:50px 30px"><img src="crest.png" alt="" style="width:90px;margin:0 auto 10px"><h2>The Hub is for members</h2><p class="muted" style="margin:10px 0 18px">Sign in with Discord to open your locker. In this preview use the “Preview as” switcher at the bottom of the screen.</p><a class="btn gold" href="join.html">Not a member yet? Join</a></div></div>
+  const body = `<div data-for="guest" class="wrap" style="padding-top:60px"><div class="panel" style="max-width:560px;margin:0 auto;text-align:center;padding:50px 30px"><img src="crest.png" alt="" style="width:90px;margin:0 auto 10px"><h2>The Hub is for members</h2><p class="muted" style="margin:10px 0 18px">${process.env.NEXT_PREVIEW ? 'Sign in with Discord to open your locker.' : 'Sign in with Discord to open your locker. In this design build use the “Preview as” switcher at the bottom of the screen.'}</p>${process.env.NEXT_PREVIEW ? '<a class="btn gold" data-login href="#">Sign in with Discord</a> ' : ''}<a class="btn ghost" href="join.html">Not a member yet? Join</a></div></div>
   <div data-for="member owner" hidden>
    <div id="cardslot"></div>
+   <div id="noclaim" hidden class="wrap"><div class="panel" style="max-width:620px;margin:40px auto;text-align:center"><h3>Link your player to get your card</h3><p class="muted" style="margin:8px 0 14px">You are signed in, but your Discord is not linked to a club player yet. Link it in the live Hub, then come back and your locker opens with your own card.</p><a class="btn gold" href="../members.html">Open the live Hub</a></div></div>
    <section class="lockstage" id="lockstage"><div class="side l"><div class="panel reveal"><div class="eyebrow">Next match night</div><h3 style="margin:6px 0">None scheduled</h3><p class="muted small">You'll be alerted here the moment the managers schedule one.</p><a class="btn ghost" href="hub-matchnight.html" style="margin-top:6px">Match Night</a></div>
      <div class="panel reveal" style="--i:1"><div class="eyebrow">Alerts</div><p class="muted small" style="margin-top:6px">${sample()} No new alerts. Approvals, RSVPs and mentions appear here.</p></div></div>
     <div class="side r"><div class="panel reveal" id="mystats"></div><div class="panel reveal" style="--i:1" id="artpanel"></div></div></section>
@@ -49,7 +50,7 @@ export function handbook() {
 }
 
 // ---------- STAFF ----------
-const staffGate = `<div data-for="guest member" class="panel" style="text-align:center;padding:40px"><h3>Staff only</h3><p class="muted">Switch “Preview as” to Owner to see the staff tools.</p></div>`;
+const staffGate = `<div data-for="guest member" class="panel" style="text-align:center;padding:40px"><h3>Staff only</h3><p class="muted">${process.env.NEXT_PREVIEW ? 'Managers and the owner see the staff tools here after signing in.' : 'Switch “Preview as” to Owner to see the staff tools.'}</p></div>`;
 export function staff() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Owner and managers</div><h2>Staff</h2></div></header>${staffGate}<div data-for="owner" hidden class="grid g3">${[['staff-dugout.html', '🧢', 'Dugout', 'Build the lineup for match night on the real pitch'], ['staff-boardroom.html', '👑', 'Boardroom', 'Club health, recruitment and feature switches'], ['staff-artwork.html', '🎨', 'Artwork studio', 'Submit, inspect, download, approve or revoke player artwork']].map(([h, i, t, d]) => `<a class="panel room" href="${h}"><div style="font-size:30px">${i}</div><h3 style="margin:6px 0 2px">${t}</h3><p class="muted small">${d}</p></a>`).join('')}</div></section></div>`;
   return hubShell('staff.html', 'Staff', body);

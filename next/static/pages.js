@@ -140,7 +140,8 @@ addEventListener('DOMContentLoaded', () => {
 
   // ---------- hub landing: the card, in the exact place the entrance ends ----------
   if ($('#cardslot')) {
-    const player = me.player || (me.as !== 'guest' ? N.players[0] : null);
+    const player = me.player || (!window.NOREX_API && me.as !== 'guest' ? N.players[0] : null);
+    if (!player && window.NOREX_API && me.as !== 'guest') { const nc = $('#noclaim'); if (nc) nc.hidden = false; $('#lockstage')?.setAttribute('hidden', ''); }
     if (player) {
       const T = NorexHub.hubCardRect(), slot = $('#cardslot'); const arrived = /[?&]arrived=1/.test(location.search);
       Object.assign(slot.style, { position: 'absolute', left: T.left + 'px', top: T.top + 'px', width: T.w + 'px', height: T.h + 'px', zIndex: 3 }); d.documentElement.style.setProperty('--cardH', T.h + 'px');

@@ -27,3 +27,6 @@ html[data-tin=curtain]:before{background:linear-gradient(90deg,#8d231c,#c8352c 8
 @media(prefers-reduced-motion:reduce){.fx-orb .ob{animation:none}}
 .prevrib{position:fixed;left:0;right:0;bottom:0;z-index:95;pointer-events:none;text-align:center;font:700 10px Inter;letter-spacing:.3em;color:#1a1405;background:linear-gradient(90deg,#c9993a,#efcf7a,#c9993a);padding:3px 0}
 @media(max-width:820px){.prevrib{bottom:auto;top:0}}
+#acct{position:relative;display:flex;align-items:center}#acct .ac{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--p3);border:1px solid var(--line2);font:600 13px Inter;color:#fff}#acct .ac img{width:26px;height:26px;border-radius:50%}#acct .ac span{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#acct .acm{position:absolute;right:0;top:calc(100% + 10px);min-width:190px;padding:12px;border-radius:14px;background:var(--p1);border:1px solid var(--line2);box-shadow:0 20px 40px rgba(0,0,0,.6);display:grid;gap:8px;opacity:0;visibility:hidden;transform:translateY(8px);transition:.25s}#acct.open .acm{opacity:1;visibility:visible;transform:none}
+@media(max-width:820px){#acct{display:none}}
