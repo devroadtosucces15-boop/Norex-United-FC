@@ -262,27 +262,46 @@ addEventListener('DOMContentLoaded', () => {
   }
 
   // skeleton placeholders while live panels load (cleared when each panel draws itself)
-  if (window.NOREX_API && window.NorexAuth && NorexAuth.token) ['#rsvppanel', '#motmpanel', '#ratepanel', '#nextpanel', '#alertpanel', '#availpanel'].forEach((s) => { const el = $(s); if (el) el.insertAdjacentHTML('beforeend', '<div class="sk-wrap" aria-hidden="true"><i class="sk"></i><i class="sk s2"></i><i class="sk s3"></i></div>'); });
+  if (window.NOREX_API && window.NorexAuth && NorexAuth.token) ['#rsvppanel', '#motmpanel', '#ratepanel', '#availpanel'].forEach((s) => { const el = $(s); if (el) el.insertAdjacentHTML('beforeend', '<div class="sk-wrap" aria-hidden="true"><i class="sk"></i><i class="sk s2"></i><i class="sk s3"></i></div>'); });
   // ---------- hub landing: real next match night, alerts and medals (read-only, signed-in members) ----------
   if ($('#nextpanel') && window.NOREX_API && window.NorexAuth && NorexAuth.token) {
     const T = (ms, tz) => { try { return new Date(ms).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
     const ago = (ms) => { const m = Math.max(1, Math.round((Date.now() - ms) / 60000)); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
-    NorexAuth.call('/api/locker').then((L) => {
-      const n = L.next, np = $('#nextpanel');
-      if (n) {
-        const mine = { yes: 'You are in', no: 'You are out', maybe: 'Maybe' }[n.mine] || 'Not answered yet';
-        np.innerHTML = `<div class="eyebrow">Next match night</div><h3 style="margin:6px 0">${esc(n.title || (n.type ? n.type[0].toUpperCase() + n.type.slice(1) : 'Match night'))}</h3><p class="small">${esc(T(n.start))}</p><p class="muted small" style="margin:4px 0 8px">${n.inCount} in · <b>${mine}</b></p><a class="btn ghost" href="hub-matchnight.html">Match Night</a>`;
-      }
-      const ap = $('#alertpanel'), al = L.alerts || [];
-      ap.innerHTML = `<div class="eyebrow">Alerts${L.unread ? ` · ${L.unread} new` : ''}</div>` + (al.length ? al.map((a) => `<p class="small" style="margin-top:8px">${esc(a.icon || '🔔')} ${a.link ? `<a href="${esc(/^(https?:|\.\.\/)/.test(a.link) ? a.link : '../' + a.link.replace(/^\//, ''))}">${esc(a.title)}</a>` : esc(a.title)} <span class="muted">· ${ago(a.at)}</span></p>`).join('') : '<p class="muted small" style="margin-top:6px">No alerts yet. Approvals, RSVPs and mentions appear here.</p>');
-      const m = L.medals;
-      if (m && m.count) ap.insertAdjacentHTML('afterend', `<div class="panel reveal" style="--i:2"><div class="eyebrow">Medals · ${m.count}/${m.total}</div><div class="chips" style="margin-top:8px">${m.top.map((x) => `<span class="chip" title="${esc(x.tier)}">${esc(x.icon)} ${esc(x.name)}</span>`).join('')}</div></div>`);
-    }).catch(() => {});
+    const M = NorexMotion, np = $('#nextpanel'), ap = $('#alertpanel'), mp = $('#medalpanel');
+    // countdown ring: a full lap is the last 7 days before kick-off; inside 30 minutes it pulses, during the night it reads "On now"
+    const span = (ms) => { const m = Math.max(0, Math.round(ms / 60000)), dd = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60; return dd ? `${dd}d ${h}h` : h ? `${h}h ${mm}m` : `${mm}m`; };
+    let tick = 0;
+    const ring = (n) => { const box = $('.lk-ring', np); if (!box) return; const now = Date.now(), left = n.start - now, on = left <= 0 && now < n.start + (n.duration || 120) * 60000, f = on ? 1 : Math.max(0, Math.min(1, 1 - left / (7 * 864e5)));
+      box.style.setProperty('--f', f.toFixed(4)); $('.lk-rt', box).textContent = on ? 'On now' : span(left); $('.lk-rs', box).textContent = on ? 'join the lobby' : 'to kick-off';
+      box.classList.toggle('soon', !on && left <= 30 * 60000); box.classList.toggle('live', on);
+      clearTimeout(tick); if (now < n.start + (n.duration || 120) * 60000) tick = setTimeout(() => ring(n), left < 3600e3 ? 1000 : 30000); };
+    const load = () => {
+      [np, ap].forEach((el) => M.skeleton(el, 4)); mp.hidden = false; M.skeleton(mp, 2);
+      NorexAuth.call('/api/locker').then((L) => {
+        const n = L.next;
+        if (n) {
+          const mine = { yes: '✅ You are in', no: '❌ You are out', maybe: '🤔 Maybe' }[n.mine] || '⏳ Not answered yet';
+          M.land(np, `<div class="eyebrow">🗓️ Next match night</div><div class="lk-next"><div class="lk-ring" role="timer" aria-live="off"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="t" cx="50" cy="50" r="44"/><circle class="v" cx="50" cy="50" r="44" pathLength="100"/></svg><div><b class="lk-rt">–</b><small class="lk-rs"></small></div></div>
+<div class="lk-nt"><h3 class="fit">${esc(n.title || (n.type ? n.type[0].toUpperCase() + n.type.slice(1) : 'Match night'))}</h3><p class="small">${esc(T(n.start))}</p><p class="small" style="margin-top:4px"><b class="num">${n.inCount}</b> in · <b>${mine}</b></p>${(n.in || []).length ? `<div class="lk-in">${n.in.slice(0, 6).map((u) => u.a ? `<img src="${esc(u.a)}" alt="${esc(u.n)}" title="${esc(u.n)}" loading="lazy">` : `<span title="${esc(u.n)}">${esc((u.n || '?')[0])}</span>`).join('')}${n.inCount > 6 ? `<span>+${n.inCount - 6}</span>` : ''}</div>` : ''}</div></div>
+<a class="btn ${n.mine ? 'ghost' : 'gold'}" href="hub-matchnight.html" style="margin-top:10px;width:100%">${n.mine ? 'Match Night' : '🙋 Answer the RSVP'}</a>`, () => ring(n));
+        } else M.land(np, `<div class="eyebrow">🗓️ Next match night</div><h3 style="margin:6px 0">None scheduled</h3><p class="muted small">You'll be alerted here the moment the managers schedule one.</p><a class="btn ghost" href="hub-matchnight.html" style="margin-top:6px">Match Night</a>`);
+        const al = L.alerts || [];
+        M.land(ap, `<div class="eyebrow"><span class="lk-bell" aria-hidden="true">🔔</span> Alerts${L.unread ? ` <span class="lk-badge">${L.unread} new</span>` : ''}</div>` + (al.length ? `<ul class="lk-al">${al.map((a) => `<li class="${a.read ? '' : 'new'}"><span>${esc(a.icon || '🔔')}</span><span>${a.link ? `<a href="${esc(/^(https?:|\.\.\/)/.test(a.link) ? a.link : '../' + a.link.replace(/^\//, ''))}">${esc(a.title)}</a>` : esc(a.title)}<small class="muted"> · ${ago(a.at)}</small></span></li>`).join('')}</ul>` : '<p class="muted small" style="margin-top:6px">No alerts yet. Approvals, RSVPs and mentions appear here.</p>'),
+          () => { if (L.unread) setTimeout(() => M.ring($('.lk-bell', ap)), 500); });
+        const m = L.medals;
+        if (m && m.count) M.land(mp, `<div class="eyebrow">🏅 Medals · ${m.count}/${m.total}</div><div class="lk-med">${m.top.map((x) => `<span class="lk-m t-${esc(String(x.tier).toLowerCase())}" title="${esc(x.name)} · ${esc(x.tier)}"><i>${esc(x.icon)}</i><small>${esc(x.name)}</small></span>`).join('')}</div>${m.count > m.top.length ? `<p class="muted tiny" style="margin-top:8px">+${m.count - m.top.length} more on your profile</p>` : ''}`);
+        else M.land(mp, '<div class="eyebrow">🏅 Medals</div><p class="muted small" style="margin-top:6px">No medals yet. Play, vote and RSVP to unlock your first.</p>');
+      }).catch((e) => { clearTimeout(tick); const err = `<p class="muted small" style="margin-top:6px">Could not load this just now.</p><button type="button" class="btn ghost" data-lkretry style="margin-top:8px">↻ Try again</button>`;
+        [np, ap, mp].forEach((el) => { el.removeAttribute('aria-busy'); el.innerHTML = `<div class="eyebrow">${el === np ? '🗓️ Next match night' : el === ap ? '🔔 Alerts' : '🏅 Medals'}</div>` + err; });
+        M.toast(e.message || 'Could not reach the club server', { kind: 'err' }); });
+    };
+    d.addEventListener('click', (e) => { if (e.target.closest('[data-lkretry]')) load(); });
+    load();
   }
   // ---------- hub landing: the card, in the exact place the entrance ends ----------
   if ($('#cardslot')) {
     const player = me.player || (!window.NOREX_API && me.as !== 'guest' ? N.players[0] : null);
-    if (!player && window.NOREX_API && me.as !== 'guest') { const nc = $('#noclaim'); if (nc) nc.hidden = false; $('#lockstage')?.setAttribute('hidden', ''); }
+    if (!player && window.NOREX_API && me.as !== 'guest') { const nc = $('#noclaim'); if (nc) nc.hidden = false; $('#lockstage')?.classList.add('nocard'); }
     if (player) {
       const T = NorexHub.hubCardRect(), slot = $('#cardslot'); const arrived = /[?&]arrived=1/.test(location.search);
       Object.assign(slot.style, { position: 'absolute', left: T.left + 'px', top: T.top + 'px', width: T.w + 'px', height: T.h + 'px', zIndex: 3 }); d.documentElement.style.setProperty('--cardH', T.h + 'px');
@@ -292,6 +311,10 @@ addEventListener('DOMContentLoaded', () => {
       let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { const n = NorexHub.hubCardRect(); Object.assign(slot.style, { left: n.left + 'px', top: n.top + 'px', width: n.w + 'px', height: n.h + 'px' }); card.style.setProperty('--s', n.s); d.documentElement.style.setProperty('--cardH', n.h + 'px'); }, 120); });
       const mp = N.players.find((p) => p.k === player.k) || player;
       $('#mystats').innerHTML = `<div class="eyebrow">${esc(mp.n)}</div><div class="sb" style="margin-top:10px;grid-template-columns:repeat(3,1fr)"><div class="sbt gold"><b>${mp.goals}</b><span>Goals</span></div><div class="sbt"><b>${mp.assists}</b><span>Assists</span></div><div class="sbt gold"><b>${mp.rating ? (+mp.rating).toFixed(1) : '—'}</b><span>Rating</span></div></div><a class="btn ghost" href="player-${encodeURIComponent(mp.k)}.html" style="margin-top:12px;width:100%">Open my profile</a>`;
+      // form: the last three match ratings (fire 8.0+, frost 6.0 or lower), same rule as the cards and profile
+      const fp = $('#formpanel'), ff = N.full && N.full.find((p) => p.k === mp.k);
+      if (fp && ff) { fp.hidden = false; const f3 = ff.form3 || [], st = ff.hot ? ['🔥', 'On fire', 'hot'] : ff.cold ? ['🧊', 'Gone cold', 'cold'] : f3.length === 3 ? ['〰️', 'Steady', ''] : ['⏳', 'Needs three games', ''];
+        fp.innerHTML = `<div class="eyebrow">📈 Form · last ${f3.length || 3}</div><div class="lk-form ${st[2]}"><span class="lk-fe">${st[0]}</span><div><b>${st[1]}</b><small class="muted">${ff.formAvg != null ? `average <b class="num">${(+ff.formAvg).toFixed(1)}</b>` : `${f3.length} of 3 rated games on record`}</small></div></div><div class="lk-orbs">${f3.map((r, i) => `<span class="${r >= 8 ? 'hi' : r <= 6 ? 'lo' : ''}" style="--i:${i}"><b class="num">${(+r).toFixed(1)}</b><small>${i ? i === 1 ? '2nd last' : '3rd last' : 'latest'}</small></span>`).join('')}</div>`; }
       if ($('#myviz') && N.full) { const mf = N.full.find((p) => p.k === mp.k) || mp, pool = N.full.filter((p) => p.gp >= 8), AX = [['Goals / game', (p) => p.goals / Math.max(1, p.gp)], ['Assists / game', (p) => p.assists / Math.max(1, p.gp)], ['Rating', (p) => p.rating], ['Passing', (p) => p.pass], ['Tackling', (p) => p.tackleRate], ['Win rate', (p) => p.win]], mxs = AX.map(([, f]) => Math.max(1e-9, ...pool.map(f))), tier = (mf.ovr || 0) >= 85 ? 3 : (mf.ovr || 0) >= 80 ? 2 : (mf.ovr || 0) >= 75 ? 1 : 0;
         $('#myviz').innerHTML = `<div class="wx"><div class="radar" data-w="radar" data-j="${esc(JSON.stringify({ axes: AX.map((a) => a[0]), series: [{ n: mf.n, v: AX.map(([, f], i) => +(f(mf) / mxs[i]).toFixed(3)) }] }))}"></div></div><div class="tiernote muted small" style="text-align:center">Your tier: <b class="gold-t">${['Bronze', 'Silver', 'Gold', 'Elite'][tier]}</b> (overall ${mf.ovr ?? '—'})</div>`; window.NorexWidgets && NorexWidgets.init($('#myviz')); }
       (async () => { const box = $('#artpanel'); if (window.NOREX_API) { box.innerHTML = '<div class="eyebrow">Card artwork</div><p class="muted small" style="margin-top:8px">You submit and manage your card artwork in the Hub card studio. Approved portraits already appear on every card here.</p>'; return; } const r = await fetch('api/art/mine?k=' + encodeURIComponent(player.k)).then((x) => x.json()).catch(() => ({ status: 'none' }));

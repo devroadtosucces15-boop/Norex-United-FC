@@ -41,5 +41,7 @@ t('tactics: set pieces panel in League and Rush, Rush log slot, pane transition'
 t('tactics: play style roles carry real line numbers, builds show archetype use', (read('playstyle.html').match(/class="ps-strip"/g) || []).length >= 5 && read('builds.html').includes('class="bld-use"'));
 const lh = read('leaders.html');
 t('insights: leaders carry goals/assists/rating/motm slots, stats carries club.records, all hidden until filled', ['goals', 'assists', 'rating', 'motm'].every((k) => lh.includes(`data-insight="leaders.${k}" hidden`)) && read('stats.html').includes('data-insight="club.records" hidden') && !/data-insight-sec(?! hidden)/.test(lh));
+const hb = read('hub.html'), pj = read('pages.js');
+t('locker: medals, form and room quick links on the landing; ring, bell and skeleton→land wired', ['id="medalpanel"', 'id="formpanel"', 'class="panel reveal lk-quick"'].every((k) => hb.includes(k)) && ['lk-ring', 'M.ring(', 'M.skeleton(', 'M.land(np', 'data-lkretry', "classList.add('nocard')"].every((k) => pj.includes(k)) && /\.lk-ring\.soon\{[^}]*mxSoon/.test(read('style.css')));
 fs.rmSync(out, { recursive: true, force: true });
 done();
