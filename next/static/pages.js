@@ -33,6 +33,20 @@ addEventListener('DOMContentLoaded', () => {
       box.querySelectorAll('.chip[data-day]').forEach((c) => c.onclick = () => { const cur = c.classList.contains('on'); c.disabled = true; post('/api/availability', { date: c.dataset.day, status: cur ? 'clear' : c.dataset.v }).then(drawAvail).catch(() => { c.disabled = false; }); });
     };
     NorexAuth.call('/api/availability').then(drawAvail).catch(() => {});
+    // MOTM vote on the latest matches (72 h window is enforced by the server)
+    const mp = $('#motmpanel');
+    const drawVote = (V) => {
+      mp.innerHTML = '<h3>MOTM vote</h3>' + ((V.matches || []).length ? V.matches.map((m) => `<div style="margin-top:14px"><b>vs ${esc(m.opp)}</b> <span class="muted small">· ${m.gf}–${m.ga} · ${m.total} vote${m.total === 1 ? '' : 's'}</span><div class="chips" style="margin-top:6px">${(m.players || []).map((x) => `<button class="chip${m.mine === x.k ? ' on' : ''}" data-m="${esc(m.id)}" data-p="${esc(x.k)}">${esc(x.n)}${m.tally && m.tally[x.k] ? ` · ${m.tally[x.k]}` : ''}</button>`).join('')}</div></div>`).join('') : '<p class="muted small">Voting opens after the final whistle.</p>') + '<p class="muted small" id="mv" style="margin-top:8px"></p>';
+      mp.querySelectorAll('.chip[data-m]').forEach((c) => c.onclick = () => { c.disabled = true; post('/api/vote', { match: isNaN(+c.dataset.m) ? c.dataset.m : +c.dataset.m, player: c.dataset.p }).then(drawVote).catch(() => { c.disabled = false; $('#mv').textContent = 'Could not save that vote. It may have closed.'; }); });
+    };
+    NorexAuth.call('/api/vote').then(drawVote).catch(() => {});
+    // weekly star ratings of teammates
+    const rp = $('#ratepanel');
+    const drawRate = (R) => {
+      rp.innerHTML = `<h3>Ratings</h3><p class="muted small">Rate your teammates this week. Averages feed the leaderboards.</p>` + (R.players || []).filter((x) => x.k !== R.self).map((x) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px"><span>${esc(x.n)}${x.played ? ' <span class="muted small">· played</span>' : ''}</span><span class="stars" style="white-space:nowrap">${[1, 2, 3, 4, 5].map((s) => `<button type="button" class="star" data-k="${esc(x.k)}" data-s="${s}" aria-label="${s} stars" style="background:none;border:0;cursor:pointer;font-size:22px;color:${(R.my && R.my[x.k]) >= s ? 'var(--gold,#e8b84a)' : 'rgba(255,255,255,.3)'}">★</button>`).join('')}</span></div>`).join('') + '<p class="muted small" id="rr" style="margin-top:8px"></p>';
+      rp.querySelectorAll('.star').forEach((c) => c.onclick = () => { const s = +c.dataset.s, cur = R.my && R.my[c.dataset.k]; post('/api/ratings/rate', { player: c.dataset.k, stars: cur === s ? 0 : s }).then(drawRate).catch(() => { $('#rr').textContent = 'Could not save that rating.'; }); });
+    };
+    NorexAuth.call('/api/ratings').then(drawRate).catch(() => {});
   } else
   if ($('#rsvp')) { const v = ls.get('norex.rsvp'); const show = (x) => { $$('#rsvp .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === x)); $('#rs').textContent = x ? 'Saved in this preview browser only.' : ''; }; show(v); $$('#rsvp .chip').forEach((c) => c.onclick = () => { ls.set('norex.rsvp', c.dataset.v); show(c.dataset.v); }); }
 
