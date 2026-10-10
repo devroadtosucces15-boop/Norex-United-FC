@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-10T10:30:28.643Z",
+ "fetchedAt": "2026-10-10T10:40:30.232Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,42 +80,6 @@
   "leagueAppearances": "231"
  },
  "members": [
-  {
-   "name": "BayRain",
-   "gamesPlayed": "1",
-   "winRate": "100",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "9",
-   "passSuccessRate": "75",
-   "ratingAve": "7.3",
-   "tacklesMade": "1",
-   "tackleSuccessRate": "25",
-   "proName": "Your Newborn",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "196",
-   "proNationality": "83",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
   {
    "name": "SVG Delus1ve",
    "gamesPlayed": "8",
@@ -1561,20 +1525,9 @@
   "midfielder": 16,
   "goalkeeper": 0,
   "forward": 7,
-  "defender": 13
+  "defender": 12
  },
  "career": [
-  {
-   "name": "BayRain",
-   "proPos": "5",
-   "gamesPlayed": "172",
-   "goals": "26",
-   "assists": "15",
-   "manOfTheMatch": "10",
-   "ratingAve": "7.3",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
-  },
   {
    "name": "SVG Delus1ve",
    "proPos": "25",
