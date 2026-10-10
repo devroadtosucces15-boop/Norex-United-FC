@@ -16,7 +16,7 @@
     addEventListener('pointerup', () => { if (!down) return; down = 0; c.style.scrollSnapType = ''; });
     c.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = 0; } }, true);
   }
-  function timeline(t) { $$('.dot', t).forEach((b) => b.addEventListener('click', () => { $$('.dot', t).forEach((x) => x.classList.toggle('on', x === b)); const o = $('#tlo') || t.nextElementSibling; o.textContent = b.dataset.t + ' · open'; o.href = b.dataset.h; o.classList.remove('pop'); void o.offsetWidth; o.classList.add('pop'); })); const last = $$('.dot', t).pop(); if (last) t.scrollLeft = t.scrollWidth; }
+  function timeline(t) { $$('.dot', t).forEach((b) => b.addEventListener('click', () => { $$('.dot', t).forEach((x) => x.classList.toggle('on', x === b)); const o = $('#tlo') || t.nextElementSibling; o.textContent = b.dataset.t + ' · open'; o.href = b.dataset.h; o.classList.remove('pop'); void o.offsetWidth; o.classList.add('pop'); const dd = $('#tdet'); if (dd) dd.textContent = b.dataset.d || ''; })); const last = $$('.dot', t).pop(); if (last) { last.classList.add('on'); t.scrollLeft = t.scrollWidth; } }
   function deck(dk) {
     let dks = $$('.dk', dk); const lay = () => dks.forEach((c, i) => { c.style.zIndex = 20 - i; c.style.transform = `translateY(${i * 12}px) scale(${1 - i * .05}) rotateZ(${i % 2 ? 1.5 : -1.5}deg)`; c.style.opacity = i > 3 ? 0 : 1; }); lay();
     dk.addEventListener('click', () => { const t = dks.shift(); t.style.transform = 'translateX(260px) rotateZ(22deg) translateY(-40px)'; t.style.opacity = 0; setTimeout(() => { dks.push(t); t.style.transition = 'none'; lay(); void t.offsetWidth; t.style.transition = ''; }, calm ? 0 : 450); lay(); });
@@ -39,7 +39,7 @@
   }
   function race(box) {
     const R = J(box); if (!R) return; const tabs = box.previousElementSibling; let cur = 'goals';
-    const draw = (k, first) => { const rows = R[k] || [], mx = Math.max(...rows.map((r) => r.v), 1); if (first) box.innerHTML = rows.map(() => '<div class="rr"><span></span><div class="t"><i></i></div><b></b></div>').join(''); $$('.rr', box).forEach((e, i) => { const r = rows[i]; if (!r) return; $('span', e).textContent = r.n; $('b', e).textContent = r.v; requestAnimationFrame(() => ($('i', e).style.width = (r.v / mx * 100) + '%')); }); };
+    const draw = (k, first) => { const rows = R[k] || [], mx = Math.max(...rows.map((r) => r.v), 1); if (first) box.innerHTML = rows.map(() => '<div class="rr"><span></span><div class="t"><i></i></div><b></b></div>').join(''); $$('.rr', box).forEach((e, i) => { const r = rows[i]; if (!r) return; $('span', e).textContent = r.n; $('b', e).innerHTML = r.v + (r.s ? ` <small>${r.s}</small>` : ''); requestAnimationFrame(() => ($('i', e).style.width = (r.v / mx * 100) + '%')); }); };
     draw(cur, true);
     tabs && tabs.addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; $$('.chip', tabs).forEach((x) => x.classList.toggle('on', x === b)); draw(b.dataset.k, false); });
   }

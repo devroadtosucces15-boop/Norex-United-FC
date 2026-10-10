@@ -42,6 +42,6 @@ export function marker(p, { x, y, slot, ai = false, gk = false, s = 1, label }) 
 }
 export function row(p, i, val, label) { return `<a class="pc-row reveal" style="--i:${i}" href="player-${slug(p.k)}.html"><span class="rk">${i + 1}</span>${chip(p, .8)}<span><b>${esc(p.n)}</b><br><span class="muted tiny">${lineLabel(p)} · ${p.gp} games · ${label}</span></span><span class="v">${val}</span></a>`; }
 export function hero(p) { return `<div class="pc pc-hero" data-k="${esc(p.k)}"><span class="bignum">${p.ovr ?? ''}</span>${art(p)}<span class="floor"></span></div>`; }
-export const sbt = (v, l, cls = '') => `<div class="sbt ${cls}"><b data-count="${v}">${v}</b><span>${l}</span></div>`;
+export const sbt = (v, l, cls = '', sub = '') => `<div class="sbt ${cls}"><b data-count="${v}">${v}</b><span>${l}</span>${sub ? `<em>${sub}</em>` : ''}</div>`;
 export const pillRes = (r) => `<span class="pill ${r.toLowerCase()}">${r === 'W' ? 'WIN' : r === 'L' ? 'LOSS' : 'DRAW'}</span>`;
 export const sample = (t = 'SAMPLE') => `<span class="sample">${t}</span>`;
