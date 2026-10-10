@@ -101,7 +101,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb th{font:600
 .pc-hero{position:relative;aspect-ratio:4/5;width:min(420px,86vw);display:block}
 .pc-hero .bignum{position:absolute;left:0;right:0;top:4%;text-align:center;font:700 clamp(150px,22vw,260px)/1 Oswald;color:transparent;-webkit-text-stroke:2px rgba(239,207,122,.4);text-shadow:0 0 60px rgba(200,53,44,.35)}
 .pc-hero .art{inset:6% 6% 0}.pc-hero .art .cut{object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 24px 28px rgba(0,0,0,.65))}.pc-hero .floor{position:absolute;left:8%;right:8%;bottom:-2%;height:12%;border-radius:50%;background:radial-gradient(closest-side,rgba(239,207,122,.55),transparent);filter:blur(4px)}
-.pc-hero .kit{font-size:clamp(34px,6vw,64px);top:52%}
+.pc-hero .kit{font-size:clamp(34px,6vw,64px)}
 /* fallback art */
 .fb .sil{fill:#6f5522;opacity:.85}.fb .num{font:700 62px Oswald;fill:#2d1f06;opacity:.18}.pc-chip .fb .sil,.pc-marker .fb .sil{fill:#7d899f}.pc-hero .fb .sil{fill:#58441b;opacity:.55}.dark .fb .sil{fill:#4b5668}
 /* card grids */
@@ -292,3 +292,15 @@ html.mx .cmp.rv-g:not(.in) .cbar i{transform:scaleX(0)}.cmp.rv-g .cbar i{transit
 .mpitch.solo .fm{top:var(--ys)}.mpitch.solo-us .fm.them,.mpitch.solo-them .fm.us{display:none}
 .mpitch-panel:has(.mpitch.solo-us) .mp-them,.mpitch-panel:has(.mpitch.solo-them) .mp-us{display:none}
 .seg.sm{display:flex;width:max-content;max-width:100%;margin:0 auto 12px;overflow-x:auto;scrollbar-width:none}.seg.sm button{padding:7px 13px;font-size:13px;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+/* ---------- image fit: circles zoom to the same head-and-shoulders band (vars set per portrait by cards.js) ---------- */
+.pc-chip .art,.pc-marker .art{container-type:inline-size}
+.pc-chip .art img.cut,.pc-marker .art img.cut{inset:auto;top:0;left:0;width:100%;height:auto;object-fit:fill;transform-origin:0 0;transform:translate(calc(var(--fx,-26) * 1cqw),calc(var(--fy,-3) * 1cqw)) scale(var(--fs,1.52))}
+.pc .art .fb{transition:opacity .4s}
+.pc-card .name{z-index:2}
+.tnum,.num,.pc .ovr,.pc-card .stats b{font-variant-numeric:tabular-nums}
+.fit{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* small phones: two cards across must fit inside the gutters */
+@media(max-width:460px){.cards .pc-card{--s:.68!important}}
+@media(max-width:400px){.cards .pc-card{--s:.6!important}.cards{gap:16px 8px!important}}
+@media(max-width:350px){.cards .pc-card{--s:.54!important}}
+@media(max-width:420px){.wx .tbl .tr{grid-template-columns:34px minmax(0,1fr) minmax(0,.8fr) 38px 44px;gap:8px;padding:9px 10px}.wx .tbl .tr>*{min-width:0}}

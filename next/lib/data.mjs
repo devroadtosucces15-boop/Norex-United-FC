@@ -13,7 +13,7 @@ const LINE = { goalkeeper: 'GK', defender: 'DEF', midfielder: 'MID', forward: 'F
 export const ARCH = ['Shot Stopper', 'Sweeper Keeper', 'Progressor', 'Boss', 'Engine', 'Marauder', 'Recycler', 'Maestro', 'Creator', 'Spark', 'Magician', 'Finisher', 'Target'];
 
 // ---- matches (club perspective) ----
-const mdir = path.join(root, "data/matches"); export const matches = []; const arch = new Map();
+const mdir = path.join(root, "data/matches"); export const matches = []; const arch = new Map(); const pidBy = new Map(); // EA player id by gamer tag (same key the live site and the Card Studio use)
 for (const f of fs.readdirSync(mdir)) {
   const m = J(path.join(mdir, f)); const me = m?.clubs?.[CLUB]; if (!me) continue;
   const oppId = Object.keys(m.clubs).find((k) => k !== CLUB); const opp = m.clubs[oppId] ?? {};
@@ -21,6 +21,7 @@ for (const f of fs.readdirSync(mdir)) {
   // every per-player number EA sends for a match (both sides); no possession, no event timeline exist in the feed
   const toLine = (p) => ({ n: p.playername, line: LINE[p.pos] ?? 'MID', goals: num(p.goals), assists: num(p.assists), sa: num(p.secondassists), rating: num(p.rating), mom: num(p.mom), saves: num(p.saves),
     shots: num(p.shots), pm: num(p.passesmade), pa: num(p.passattempts), tm: num(p.tacklesmade), ta: num(p.tackleattempts), drb: num(p.dribbles), red: num(p.redcards), secs: num(p.secondsPlayed), arch: ARCH[num(p.archetypeid) - 1] ?? '' });
+  for (const [pid, p] of Object.entries(m.players?.[CLUB] ?? {})) if (p.playername) pidBy.set(p.playername.toLowerCase(), pid);
   const lines = Object.values(m.players?.[CLUB] ?? {}).map(toLine), olines = Object.values(m.players?.[oppId] ?? {}).map(toLine);
   for (const l of lines) { const a = arch.get(l.n) ?? {}; a[l.arch] = (a[l.arch] || 0) + 1; arch.set(l.n, a); }
   matches.push({ id: m.matchId ?? f.replace('.json', ''), t: num(m.timestamp), type: m.matchType, oppId, crest: opp.kit?.crestAssetId ? String(opp.kit.crestAssetId) : '', opp: opp.name ?? `Club ${oppId}`, gf, ga, res: gf > ga ? 'W' : gf < ga ? 'L' : 'D', lines, olines });
@@ -38,7 +39,8 @@ export const players = (club.members ?? []).map((m) => {
   const lc = {}; mine.forEach((l) => (lc[l.line] = (lc[l.line] || 0) + 1)); const dom = Object.entries(lc).sort((a, b) => b[1] - a[1])[0];
   const line = dom && dom[1] >= 3 ? dom[0] : (LINE[m.favoritePosition] ?? 'MID');
   const ar = Object.entries(arch.get(m.name) ?? {}).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
-  return { k: m.name, n: m.name, line, ovr: num(m.proOverall) || null, h: num(m.proHeight) || null,
+  const slugN = String(m.name).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '') || 'x'; // same slug as scripts/build.mjs
+  return { k: m.name, n: m.name, id: pidBy.get(String(m.name).toLowerCase()) ?? `n-${slugN}`, line, ovr: num(m.proOverall) || null, h: num(m.proHeight) || null,
     gp: num(m.gamesPlayed), goals: num(m.goals), assists: num(m.assists), rating: num(m.ratingAve), mom: num(m.manOfTheMatch), win: num(m.winRate), cs: num(m.cleanSheetsDef) + num(m.cleanSheetsGK),
     pass: num(m.passSuccessRate), tackles: num(m.tacklesMade), tackleRate: num(m.tackleSuccessRate), red: num(m.redCards),
     cgp: num(c.gamesPlayed), cgoals: num(c.goals), cassists: num(c.assists), cmom: num(c.manOfTheMatch), crating: num(c.ratingAve),

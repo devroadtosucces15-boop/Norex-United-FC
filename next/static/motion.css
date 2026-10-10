@@ -108,3 +108,27 @@ html[data-motion=calm] .mx-hot::before{animation:none}html[data-motion=calm] .mx
 .ftb{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#e6ebf2;border-radius:999px;padding:9px 14px;font:600 13px Inter;cursor:pointer}
 .ftb:hover{border-color:#efcf7a}
 @media(max-width:820px){.ft{padding-bottom:calc(110px + env(safe-area-inset-bottom))}.ft .wrap{justify-content:center;text-align:center}}
+
+/* ---------- app feel (phones + installed app) ---------- */
+html{-webkit-tap-highlight-color:transparent}
+body{touch-action:manipulation}
+input,select,textarea{font-size:max(16px,1em)}                       /* iOS never zooms on focus */
+.tabbar,.bar,.sub,.seg,.chip,.btn,.keybtn,.rchip,.sdot,.sarrow,.fm,.mx-opt,.ftb{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+img{-webkit-touch-callout:none}
+.tscroll,.spot,.rail,.sub .wrap{overscroll-behavior-x:contain}
+html.standalone,html.standalone body{overscroll-behavior-y:none}
+html.standalone .bar{padding-top:env(safe-area-inset-top)}
+html.standalone body{min-height:100dvh}
+.tabbar{padding-bottom:calc(8px + env(safe-area-inset-bottom) * .5);transition:transform .3s var(--e-out)}
+html.kb-open .tabbar,html.kb-open #nx-inst{transform:translateY(160%)}
+@media (orientation:landscape) and (max-height:500px){.tabbar{bottom:6px!important;padding-top:3px!important}.tabbar a span{font-size:17px!important}.tabbar .key{width:48px!important;height:48px!important;min-width:48px!important;margin-top:-16px!important}}
+.wrap{padding-left:max(var(--gut),env(safe-area-inset-left));padding-right:max(var(--gut),env(safe-area-inset-right))}
+/* install hint */
+#nx-inst{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:9970;width:min(460px,calc(100vw - 24px));display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:18px;background:rgba(17,23,34,.97);border:1px solid rgba(239,207,122,.45);box-shadow:0 20px 44px rgba(0,0,0,.6);animation:mxToastIn .5s var(--e-spring) both}
+@media(max-width:820px){#nx-inst{bottom:calc(96px + env(safe-area-inset-bottom))}}
+#nx-inst>div{flex:1;display:grid;gap:2px;font:500 12.5px Inter;color:#c9d1df}#nx-inst b{color:#fff}#nx-inst>div>b{font:700 15px Oswald;letter-spacing:.04em}
+#nx-inst .btn{padding:8px 14px}#nx-inst .x{background:none;border:0;color:#8d98aa;font-size:16px;cursor:pointer;padding:6px}
+#nx-inst.out{animation:mxToastOut .3s both}
+/* gyroscope tilt (opt-in): cards, crests, trophies and hero art follow the phone */
+html.gyro-on .pc-card:not(.live),html.gyro-on .pc-hero,html.gyro-on .tilt:not(.live){transform:perspective(900px) rotateX(calc(var(--gy,0) * 1deg)) rotateY(calc(var(--gx,0) * 1deg));--mx:calc(50% + var(--gx,0) * 4%);--my:calc(50% + var(--gy,0) * -4%);--go:.7}
+html.gyro-on .mh-t img,html.gyro-on .s-crest,html.gyro-on .lg img,html.gyro-on [data-gyro]{transform:translate3d(calc(var(--gx,0) * .6px),calc(var(--gy,0) * -.6px),0) rotateY(calc(var(--gx,0) * 1.2deg))}
