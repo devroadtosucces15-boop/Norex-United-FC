@@ -1,4 +1,4 @@
-import { cfg, features, players, usualXI, clubStats as C } from '../lib/data.mjs';
+import { cfg, features, players, usualXI, clubStats as C, matches } from '../lib/data.mjs';
 import * as W from '../lib/widgets.mjs';
 import { shell, esc, sample, sbt, chip } from '../lib/ui.mjs';
 import { formations } from './stats.mjs';
@@ -6,9 +6,21 @@ import { formations } from './stats.mjs';
 const ROOMS = [['hub.html', '🎽', 'My Locker', 'Your card, artwork, stats, trophies and alerts'], ['hub-matchnight.html', '🗓️', 'Match Night', 'RSVP, availability, MOTM votes, ratings, Rush log'], ['hub-squad.html', '🤝', 'Squad Room', 'Team up, Rush squads, ideas and feedback'], ['hub-clubhouse.html', '💬', 'Clubhouse', 'Messages, feed and mentions'], ['hub-handbook.html', '📜', 'Handbook', 'Club rules, docs and how the site works']];
 const hubShell = (page, title, body, extra = {}) => shell({ group: 'hub', page, title, body, bodyClass: 'hub-page', ...extra });
 
+
+// ---------- guest gate: what is behind the door, one clear way in (shared by the landing and every room) ----------
+const gate = (here = 'hub.html') => `<div data-for="guest" class="wrap gatewrap"><section class="gate reveal">
+ <div class="gate-crest" data-gyro><img src="crest.png" alt="" width="104" height="104"><span class="gate-key" aria-hidden="true">🔑</span></div>
+ <h2 class="gate-t">The Hub is for members</h2>
+ <p class="gate-s">${process.env.NEXT_PREVIEW ? 'Sign in with the Discord account you use in the club server. Your locker, RSVPs, votes and alerts open straight away.' : 'Sign in with Discord to open your locker. In this design build use the “Preview as” switcher at the bottom of the screen.'}</p>
+ <div class="gate-stats"><span><b>${players.length}</b> players</span><span><b>${matches.length}</b> games on record</span><span><b>${ROOMS.length}</b> rooms</span></div>
+ <div class="gate-btns">${process.env.NEXT_PREVIEW ? '<a class="btn gold big" data-login href="#">🎮 Sign in with Discord</a>' : ''}<a class="btn ghost big" href="join.html">✍️ Not a member yet? Join</a></div>
+ <p class="gate-dc" data-discord-hint hidden>📱 Opened inside Discord? Tap <b>•••</b> then <b>Open in browser</b> so you stay signed in.</p>
+ <div class="gate-rooms rv-g">${ROOMS.map(([h, i, t, d]) => `<div class="gate-room${h === here ? ' here' : ''}"><span class="gr-i">${i}</span><b>${t}</b><small>${d}</small><span class="gr-lock" aria-label="Locked">🔒</span></div>`).join('')}</div>
+</section></div>`;
+
 // ---------- MY LOCKER (landing, the end of the cinematic entrance) ----------
 export function locker() {
-  const body = `<div data-for="guest" class="wrap" style="padding-top:60px"><div class="panel" style="max-width:560px;margin:0 auto;text-align:center;padding:50px 30px"><img src="crest.png" alt="" style="width:90px;margin:0 auto 10px"><h2>The Hub is for members</h2><p class="muted" style="margin:10px 0 18px">${process.env.NEXT_PREVIEW ? 'Sign in with Discord to open your locker.' : 'Sign in with Discord to open your locker. In this design build use the “Preview as” switcher at the bottom of the screen.'}</p>${process.env.NEXT_PREVIEW ? '<a class="btn gold" data-login href="#">Sign in with Discord</a> ' : ''}<a class="btn ghost" href="join.html">Not a member yet? Join</a></div></div>
+  const body = `${gate('hub.html')}
   <div data-for="member owner" hidden>
    <div id="cardslot"></div>
    <div id="noclaim" hidden class="wrap"><div class="panel" style="max-width:620px;margin:40px auto;text-align:center"><h3>Link your player to get your card</h3><p class="muted" style="margin:8px 0 14px">You are signed in, but your Discord is not linked to a club player yet. Link it in the live Hub, then come back and your locker opens with your own card.</p><a class="btn gold" href="../members.html">Open the live Hub</a></div></div>
@@ -25,7 +37,7 @@ export function locker() {
 // ---------- MATCH NIGHT ----------
 export function matchNight() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Match night</h2></div></header>
-  <div data-for="guest" class="panel" style="text-align:center;padding:40px"><h3>Members only</h3><a class="btn gold" data-hub href="hub.html" style="margin-top:10px">🔑 Enter the Hub</a></div>
+  </section></div>${gate('hub-matchnight.html')}<div class="wrap"><section class="sec">
   <div data-for="member owner" hidden><div class="grid g2"><div class="panel reveal" id="rsvppanel"><h3>RSVP</h3><p class="muted small">${sample()} No match night is scheduled. When one is, you answer here and managers see who is in.</p><div class="chips" id="rsvp" style="margin-top:12px"><button class="chip" data-v="y">✅ I'm in</button><button class="chip" data-v="m">❔ Maybe</button><button class="chip" data-v="n">❌ Can't</button></div><p class="muted small" id="rs" style="margin-top:8px"></p></div>
   <div class="panel reveal" id="availpanel" style="--i:1;display:none"><h3>Availability this week</h3><p class="muted small">Tell the managers which days you can play.</p><div id="availbox" style="margin-top:10px"></div></div>
   <div class="panel reveal" style="--i:1" id="motmpanel"><h3>MOTM vote</h3><p class="muted small">${sample()} Voting opens after the final whistle. The winner's card gets the gold treatment on the Hall of Fame.</p></div>
@@ -34,11 +46,11 @@ export function matchNight() {
   return hubShell('hub-matchnight.html', 'Match Night', body);
 }
 export function squadRoom() {
-  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Squad room</h2></div></header><div data-for="member owner" hidden class="grid g2"><div class="panel"><h3>Team up</h3><p class="muted small">${sample()} Post what you're playing (League or Rush) and who you need.</p></div><div class="panel"><h3>Rush squads</h3><p class="muted small">Rush is 4 humans plus an AI keeper. Build a squad of four here.</p></div><div class="panel"><h3>Ideas</h3><p class="muted small">Suggest anything for the club. Managers reply.</p></div><div class="panel"><h3>Feedback</h3><p class="muted small">Regular evaluation surveys help us improve.</p></div></div><div data-for="guest" class="panel" style="text-align:center;padding:40px"><h3>Members only</h3></div></section></div>`;
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Squad room</h2></div></header><div data-for="member owner" hidden class="grid g2"><div class="panel"><h3>Team up</h3><p class="muted small">${sample()} Post what you're playing (League or Rush) and who you need.</p></div><div class="panel"><h3>Rush squads</h3><p class="muted small">Rush is 4 humans plus an AI keeper. Build a squad of four here.</p></div><div class="panel"><h3>Ideas</h3><p class="muted small">Suggest anything for the club. Managers reply.</p></div><div class="panel"><h3>Feedback</h3><p class="muted small">Regular evaluation surveys help us improve.</p></div></div></section></div>${gate('hub-squad.html')}`;
   return hubShell('hub-squad.html', 'Squad Room', body);
 }
 export function clubhouse() {
-  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Clubhouse</h2></div></header><div data-for="member owner" hidden class="panel"><h3>Messages and feed</h3><p class="muted">${sample()} Club chat, announcements and mentions live here. In the real build this room is the same chat that runs in Discord.</p></div><div data-for="guest" class="panel" style="text-align:center;padding:40px"><h3>Members only</h3></div></section></div>`;
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Clubhouse</h2></div></header><div data-for="member owner" hidden class="panel"><h3>Messages and feed</h3><p class="muted">${sample()} Club chat, announcements and mentions live here. In the real build this room is the same chat that runs in Discord.</p></div></section></div>${gate('hub-clubhouse.html')}`;
   return hubShell('hub-clubhouse.html', 'Clubhouse', body);
 }
 export function handbook() {
@@ -46,7 +58,7 @@ export function handbook() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Handbook</h2></div></header>
   <div data-for="member owner" hidden><div class="panel reveal" style="margin-bottom:18px"><h3 style="font-size:28px" class="gold-t">The six club rules</h3><div class="grid g3" data-stagger style="margin-top:14px">${RULES.map(([n, t, d]) => `<div class="panel flat"><div class="num gold-t" style="font-size:40px">${n}</div><h3 style="font-size:17px">${t}</h3><p class="muted small">${d}</p></div>`).join('')}</div></div>
   <div class="grid g2"><div class="panel"><h3>How the site works</h3><p class="muted small">Club, Matches, Stats and Tactics are public. The gold key opens the Hub: your locker, match night, squad room, clubhouse and this handbook.</p></div><div class="panel"><h3>Club docs</h3><p class="muted small">${sample()} Docs the managers publish (set-piece sheets, role guides) appear here.</p></div></div></div>
-  <div data-for="guest" class="panel" style="text-align:center;padding:40px"><h3>Members only</h3></div></section></div>`;
+  </section></div>${gate('hub-handbook.html')}`;
   return hubShell('hub-handbook.html', 'Handbook', body);
 }
 

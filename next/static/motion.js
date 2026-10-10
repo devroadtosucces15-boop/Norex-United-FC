@@ -73,8 +73,8 @@
   // ================= loading: skeleton -> real content =================
   // M.land(el, html) swaps a skeleton for real content: skeleton fades, children rise in one by one, counters run, new reveals arm.
   M.skeleton = (el, rows = 3) => { el.setAttribute('aria-busy', 'true'); el.innerHTML = `<div class="sk-wrap">${Array.from({ length: rows }, (_, i) => `<span class="sk${i % 3 ? ' s' + (i % 3 + 1) : ''}"></span>`).join('')}</div>`; };
-  M.land = (el, html) => new Promise((ok) => {
-    const put = () => { if (html != null) el.innerHTML = html; el.removeAttribute('aria-busy'); [...el.children].forEach((c, i) => c.style.setProperty('--li', Math.min(i, 10)));
+  M.land = (el, html, onPut) => new Promise((ok) => {
+    const put = () => { if (html != null) el.innerHTML = html; el.removeAttribute('aria-busy'); onPut?.(el); [...el.children].forEach((c, i) => c.style.setProperty('--li', Math.min(i, 10)));
       el.classList.remove('mx-land'); void el.offsetWidth; el.classList.add('mx-land'); countIn(el); watch(el); M.tilt?.(); setTimeout(() => { el.classList.remove('mx-land'); ok(); }, 900); };
     const sk = el.querySelector(':scope>.sk-wrap'); if (sk && mode !== 'off') { sk.classList.add('mx-out'); setTimeout(put, 200); } else put();
   });

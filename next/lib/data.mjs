@@ -44,7 +44,9 @@ export const players = (club.members ?? []).map((m) => {
     gp: num(m.gamesPlayed), goals: num(m.goals), assists: num(m.assists), rating: num(m.ratingAve), mom: num(m.manOfTheMatch), win: num(m.winRate), cs: num(m.cleanSheetsDef) + num(m.cleanSheetsGK),
     pass: num(m.passSuccessRate), tackles: num(m.tacklesMade), tackleRate: num(m.tackleSuccessRate), red: num(m.redCards),
     cgp: num(c.gamesPlayed), cgoals: num(c.goals), cassists: num(c.assists), cmom: num(c.manOfTheMatch), crating: num(c.ratingAve),
-    saves: mine.reduce((a, b) => a + b.saves, 0), arch: ar, archived: mine.length };
+    saves: mine.reduce((a, b) => a + b.saves, 0), arch: ar, archived: mine.length,
+    // form = the last three match ratings (matches are newest first); hot 8.0+, cold 6.0 or lower, needs 3 games
+    ...(() => { const f = mine.slice(0, 3).map((l) => l.rating).filter((r) => r > 0), avg = f.length === 3 ? +(f.reduce((a, b) => a + b, 0) / 3).toFixed(1) : null; return { form3: f, formAvg: avg, hot: avg != null && avg >= 8, cold: avg != null && avg <= 6 }; })() };
 }).sort((a, b) => b.gp - a.gp);
 
 // ---- club ----

@@ -27,8 +27,8 @@
   if (grid && $('#lines')) {
     let line = '', sort = 'gp'; const cards = $$('.cardwrap', grid);
     const run = () => { cards.filter((c) => !line || c.dataset.line === line).sort((a, b) => b.dataset[sort] - a.dataset[sort]).forEach((c, i) => { c.hidden = false; c.style.order = i; }); cards.filter((c) => line && c.dataset.line !== line).forEach((c) => c.hidden = true); window.NorexMotion.watch(); };
-    $$('#lines .chip').forEach((b) => b.onclick = () => { $$('#lines .chip').forEach((x) => x.classList.toggle('on', x === b)); line = b.dataset.l; run(); });
-    $$('#sort .chip').forEach((b) => b.onclick = () => { $$('#sort .chip').forEach((x) => x.classList.toggle('on', x === b)); sort = b.dataset.s; run(); });
+    $$('#lines .chip').forEach((b) => b.onclick = () => { $$('#lines .chip').forEach((x) => x.classList.toggle('on', x === b)); line = b.dataset.l; window.NorexMotion?.flip ? NorexMotion.flip(grid, run) : run(); });
+    $$('#sort .chip').forEach((b) => b.onclick = () => { $$('#sort .chip').forEach((x) => x.classList.toggle('on', x === b)); sort = b.dataset.s; window.NorexMotion?.flip ? NorexMotion.flip(grid, run) : run(); });
     run();
   }
 })();

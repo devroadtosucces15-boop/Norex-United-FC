@@ -97,6 +97,7 @@ export function match(m) {
      <p class="muted tiny mp-note">Tap a player for their numbers. Ring colour = rating (green 8+, gold 7+, grey 6+, red below).</p></div>
     <div class="mside">
      <div class="panel reveal"><h3>📊 Team comparison</h3><div class="cmp-h"><span><img src="crest.png" alt="" width="20" height="20"> Us</span><span>${esc(m.opp)} ${oppCrest(m.crest, m.opp, 20)}</span></div>${compare(us, them)}</div>
+     <div data-insight="${matches[0] === m ? 'match.latest' : 'match.' + esc(m.id)}" hidden></div><div data-insight="h2h.${esc(m.oppId)}" hidden></div>
      ${motm ? `<div class="panel reveal">${motmCard(motm, mp)}</div>` : omotm ? `<div class="panel reveal"><p class="muted" style="margin:0">🏅 Man of the match went to <b>${esc(omotm.n)}</b> (${esc(m.opp)}), rated ${omotm.rating.toFixed(1)}.</p></div>` : ''}
     </div></div></div>
   <div id="mv-table" class="mv" hidden>
