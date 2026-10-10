@@ -199,3 +199,13 @@ body.still .reveal{opacity:1;transform:none;transition:none}body.still *{animati
 .mtags.big .mtag{padding:6px 12px;font-size:16px}.mtags.big .mtag small{font:600 12px Inter;color:#c5cdde}
 .rrow .rt{display:inline-flex;align-items:center;gap:8px}.rrow .rt.r{justify-content:flex-end}.rrow .rp{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .rtags{display:flex;justify-content:center;gap:6px;margin-top:10px;min-height:22px}
+.cabsplit{grid-template-columns:1.5fr 1fr;align-items:stretch}
+@media(max-width:820px){
+ .cabsplit{grid-template-columns:1fr}
+ .hero .stage{min-height:380px;overflow:visible}
+ .hero .stage .crestwrap{width:62vw}
+ .hero .stage .pc-card{--s:.5!important}
+ .hero .stage .cardwrap:first-of-type{left:4%!important}
+ .hero .stage .cardwrap:last-of-type{right:4%!important}
+}
+@media(max-width:560px){.sb>*:last-child:nth-child(odd){grid-column:1/-1}}

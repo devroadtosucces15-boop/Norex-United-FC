@@ -19,7 +19,7 @@ export function home() {
    <div class="eyebrow reveal">EA SPORTS FC 27 · DIVISION ${C.div || 1} · LEAGUE &amp; RUSH</div>
    <h1 class="reveal" style="--i:1">One club.<br><em>One crown.</em></h1>
    <p class="lead reveal" style="--i:2">${esc(C.name)} is always looking for committed players who want to compete. Every card, every match and every number below is the club's own record.</p>
-   <div class="ticker reveal" style="--i:3" aria-label="Last five results, oldest first">${form.map((m) => `<i class="${m.res}" title="${esc(m.opp)} ${m.gf}-${m.ga}">${m.res}</i>`).join('')}<span class="muted small" style="align-self:center;margin-left:6px">last ${form.length} · ${C.streak} win streak</span></div>
+   <div class="ticker reveal" style="--i:3" aria-label="Last five results, oldest first">${form.map((m) => `<i class="${m.res}" title="${esc(m.opp)} ${m.gf}-${m.ga}">${m.res}</i>`).join('')}<span class="muted small" style="align-self:center;margin-left:6px">last ${form.length} · ${W.runNow()[0]} ${W.runNow()[1]}</span></div>
    <div class="chips reveal" style="--i:4"><a class="btn" href="join.html">Apply for a trial</a><a class="btn ghost" href="results.html">Results</a><a class="btn ghost" href="tactics.html">Our tactics</a></div>
   </div>
   <div class="stage" aria-hidden="true">
@@ -43,7 +43,7 @@ export function home() {
 
  <section class="sec"><header><div><span class="ribbon">Meet the squad</span></div><a class="btn ghost" href="squad.html">All ${players.length}</a></header>${W.coverflow()}<p class="hint">Swipe or drag sideways</p></section>
 
- <section class="sec"><header><div><span class="ribbon">Trophy cabinet</span></div><a class="btn ghost" href="halloffame.html">Hall of Fame</a></header><div class="grid" style="grid-template-columns:1.5fr 1fr;align-items:stretch"><div class="panel reveal" style="display:grid;align-content:center">${W.cabinet()}</div>${W.poster()}</div></section>
+ <section class="sec"><header><div><span class="ribbon">Trophy cabinet</span></div><a class="btn ghost" href="halloffame.html">Hall of Fame</a></header><div class="grid cabsplit"><div class="panel reveal" style="display:grid;align-content:center">${W.cabinet()}</div>${W.poster()}</div></section>
 
  <section class="sec"><header><div><span class="ribbon">How we play</span></div><a class="btn ghost" href="tactics.html">Tactics table</a></header>
   <div class="grid g2"><div class="panel reveal"><h3>The shape</h3><p class="muted">In ${shapes[0]?.[1] ?? 0} of ${shapes.reduce((a, s) => a + s[1], 0)} full 11-player league games we lined up <b class="gold-t">${shapes[0]?.[0]?.replace(/^1-/, '') ?? '3-5-2'}</b>: three at the back, wingers dropping into a back five, a front four in attack.</p><div class="chips" style="margin-top:12px"><a class="chip" href="tactics.html">🏆 League · 11v11</a><a class="chip" href="tactics.html#rush">⚡ Rush · 5v5</a></div></div>
