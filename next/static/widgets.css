@@ -1,0 +1,212 @@
+/* NOREX widgets (rails, charts, tables, trophies). Every rule is scoped under .wx so it cannot leak into page styles. */
+.wx .rail{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:14px 8px 20px;scrollbar-width:thin;scrollbar-color:#efcf7a transparent;-webkit-overflow-scrolling:touch}
+.wx .cover{perspective:1100px;padding:30px 40vw 40px;gap:0}
+.wx .cover .ci{flex:0 0 190px;scroll-snap-align:center;display:grid;place-items:center;transition:transform .12s linear,opacity .12s;transform-style:preserve-3d}
+.wx .cover .ci .pc{--s:.9}
+.wx .film{gap:0;padding:20px 12px;background:#0c101a;border-radius:12px}
+.wx .fr{flex:0 0 150px;scroll-snap-align:start;background:linear-gradient(#202c46,#18223a);margin:0 6px;padding:26px 12px 22px;border-radius:6px;text-align:center;position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.wx .fr:hover{transform:translateY(-10px) scale(1.05);box-shadow:0 18px 30px rgba(0,0,0,.5)}
+.wx .fr .perf{position:absolute;left:8px;right:8px;top:7px;height:8px;background:repeating-linear-gradient(90deg,#0c101a 0 10px,transparent 10px 18px);border-radius:2px}
+.wx .fr .perf.b{top:auto;bottom:7px}
+.wx .fr .sc{font:700 38px Oswald;margin:6px 0}
+.wx .fr .sc b{padding:0 3px}
+.wx .fr.W .sc{color:#5be39a;text-shadow:0 0 18px rgba(75,224,138,.5)}
+.wx .fr.L .sc{color:#ff7d72;text-shadow:0 0 18px rgba(255,125,114,.5)}
+.wx .fr.D .sc{color:#efcf7a}
+.wx .fr .d{font:600 11px Inter;color:#8f9bb2;letter-spacing:.1em}
+.wx .fr .o{font:600 13px Inter;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wx .fr .r{position:absolute;right:10px;top:22px;font:700 11px Inter;opacity:.7}
+.wx .tl{position:relative;gap:0;padding:56px 30px 20px}
+.wx .tl .line{position:absolute;left:10px;right:10px;top:84px;height:3px;background:linear-gradient(90deg,transparent,#efcf7a,#c8352c,transparent);box-shadow:0 0 14px rgba(239,207,122,.7)}
+.wx .tl .dot{flex:0 0 96px;scroll-snap-align:center;background:none;border:0;color:#eef2fb;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:22px;position:relative;z-index:1}
+.wx .tl .pt{width:20px;height:20px;border-radius:50%;background:#2a3a5e;border:3px solid #efcf7a;box-shadow:0 0 14px rgba(239,207,122,.7);transition:.35s cubic-bezier(.3,1.6,.4,1)}
+.wx .tl .dot.W .pt{background:#2ecb78}
+.wx .tl .dot.L .pt{background:#e0493f}
+.wx .tl .dot:hover .pt,.wx .tl .dot.on .pt{transform:scale(1.7)}
+.wx .tl .lbl{font:600 11px Inter;color:#c5cdde}
+.wx .tlo{margin-top:8px;text-align:center;font:600 22px Oswald;min-height:34px;color:#efcf7a}
+.wx .tlo.pop{animation:pop .5s}
+.wx .deck{position:relative;height:370px;max-width:260px;margin:0 auto;perspective:900px}
+.wx .dk{position:absolute;left:50%;top:0;margin-left:-110px;transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .4s;cursor:pointer;transform-origin:50% 100%}
+.wx .flipwrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.wx .flip{background:none;border:0;padding:0;perspective:900px;width:200px;height:290px;cursor:pointer}
+.wx .flip .f{position:relative;display:block;width:100%;height:100%;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,1.2,.3,1)}
+.wx .flip.on .f{transform:rotateY(180deg)}
+.wx .flip .ft,.wx .flip .bk{position:absolute;inset:0;backface-visibility:hidden;display:grid;place-items:center}
+.wx .flip .bk{transform:rotateY(180deg);background:linear-gradient(160deg,#efcf7a,#a77a22);color:#1a1405;border-radius:18px;padding:16px;align-content:center;gap:6px;text-align:center;box-shadow:0 0 30px rgba(239,207,122,.4)}
+.wx .flip .bk b{font:700 22px Oswald}
+.wx .flip .bk em{font:600 12px Inter;font-style:normal;opacity:.7}
+.wx .flip .bk i{font-style:normal;display:flex;justify-content:space-between;width:100%;font:600 12px Inter;border-top:1px solid rgba(0,0,0,.2);padding-top:5px}
+.wx .flip .bk u{text-decoration:none;font:700 18px Oswald}
+.wx .radar{display:grid;place-items:center}
+.wx .radar svg{width:min(420px,100%)}
+.wx .radar .leg{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.wx .radar .leg button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:5px 12px;color:#fff;font:600 12px Inter;cursor:pointer}
+.wx .stage3{perspective:800px;height:230px;display:grid;place-items:end center}
+.wx .towers{display:flex;gap:18px;align-items:flex-end;transform-style:preserve-3d;transform:rotateX(-18deg) rotateY(-24deg);animation:spin 14s ease-in-out infinite alternate;padding-bottom:20px}
+@keyframes spin{to{transform:rotateX(-18deg) rotateY(24deg)}}
+.wx .tw{width:36px;height:var(--h);position:relative;transform-style:preserve-3d;transform-origin:bottom;animation:grow 1.2s calc(var(--i)*.1s) both cubic-bezier(.2,.8,.2,1)}
+@keyframes grow{from{transform:scaleY(.02)}}
+.wx .tw i{position:absolute;bottom:0;width:36px;height:100%}
+.wx .tw .f1{background:linear-gradient(#ff6a5c,#8d231c);transform:translateZ(18px)}
+.wx .tw .f2{background:linear-gradient(#c8352c,#5d1713);transform:rotateY(90deg) translateZ(18px);width:36px}
+.wx .tw .f3{background:#ffb4ac;height:36px;top:0;bottom:auto;transform:rotateX(90deg) translateZ(18px);transform-origin:top}
+.wx .tw .top{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) rotateY(24deg) rotateX(18deg);margin-bottom:8px;text-align:center;font:600 10px Inter;white-space:nowrap}
+.wx .tw .top b{display:block;font:700 22px Oswald;color:#efcf7a}
+.wx .formrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+.wx .fo{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 13px Inter;color:#0d1119;animation:orbin .6s both cubic-bezier(.3,1.6,.4,1);transition:transform .3s}
+.wx .fo:hover{transform:scale(1.3) translateY(-4px)}
+.wx .fo.W{background:radial-gradient(circle at 30% 30%,#9cf5c4,#22b35e);box-shadow:0 0 18px #22b35e}
+.wx .fo.L{background:radial-gradient(circle at 30% 30%,#ffb4ac,#c8352c);box-shadow:0 0 18px #c8352c}
+.wx .fo.D{background:radial-gradient(circle at 30% 30%,#fff1c2,#c9993a);box-shadow:0 0 18px #c9993a}
+@keyframes orbin{from{transform:scale(0)}}
+.wx .wave{width:100%;height:120px}
+.wx .wave path.l{fill:none;stroke:#efcf7a;stroke-width:3;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 2s .2s forwards}
+.wx .wave path.a{fill:url(#wg);opacity:0;animation:fi 1s 1.4s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fi{to{opacity:1}}
+.wx .race{display:grid;gap:10px;margin-top:14px}
+.wx .race .rr{display:grid;grid-template-columns:110px 1fr 46px;gap:10px;align-items:center;font:600 13px Inter}
+.wx .race .t{height:22px;border-radius:999px;background:rgba(0,0,0,.25);overflow:hidden}
+.wx .race .t i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#c8352c,#efcf7a);transition:width 1s cubic-bezier(.2,.9,.2,1);box-shadow:0 0 16px rgba(239,207,122,.5)}
+.wx .race b{font:700 18px Oswald;text-align:right}
+.wx .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.wx .tile{padding:18px;display:flex;flex-direction:column;justify-content:space-between;min-height:120px;transition:transform .35s cubic-bezier(.3,1.5,.4,1)}
+.wx .tile:hover{transform:translateY(-5px) scale(1.03)}
+.wx .tile.big{grid-column:span 2;grid-row:span 2}
+.wx .tile u{text-decoration:none;font:600 11px Inter;letter-spacing:.14em;text-transform:uppercase;color:#c5cdde}
+.wx .tile b{font:700 54px/1 Oswald}
+.wx .tile.big b{font-size:96px;background:linear-gradient(#fff,#efcf7a);-webkit-background-clip:text;color:transparent}
+.wx .tile.gold{background:linear-gradient(160deg,#efcf7a,#a77a22);color:#1a1405}
+.wx .tile.gold u{color:#4a3910}
+.wx .tile svg{width:100%;height:60px}
+.wx .spark{fill:none;stroke:#efcf7a;stroke-width:2;stroke-dasharray:200;stroke-dashoffset:200;animation:draw2 2s forwards}
+@keyframes draw2{to{stroke-dashoffset:0}}
+.wx .tile.ring{align-items:center;position:relative}
+.wx .tile.ring svg{width:84px;height:84px;transform:rotate(-90deg)}
+.wx .tile.ring circle{fill:none;stroke:rgba(255,255,255,.12);stroke-width:9}
+.wx .tile.ring .v{stroke:#2ecb78;stroke-dasharray:201;stroke-dashoffset:calc(201 - 201*var(--p));stroke-linecap:round;animation:ringg 1.6s both}
+@keyframes ringg{from{stroke-dashoffset:201}}
+.wx .tile.ring b{position:absolute;top:34px;font-size:22px}
+.wx .flips{display:flex;gap:18px;flex-wrap:wrap}
+.wx .fl{text-align:center}
+.wx .fl u{display:block;text-decoration:none;font:600 11px Inter;letter-spacing:.14em;color:#c5cdde;text-transform:uppercase;margin-top:6px}
+.wx .fd{display:inline-flex;gap:4px}
+.wx .dg{width:38px;height:56px;border-radius:7px;background:linear-gradient(#0e1422 49%,#000 50%,#0e1422 51%);overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.wx .dg span{position:absolute;left:0;right:0;transition:transform 1.4s cubic-bezier(.2,.9,.2,1)}
+.wx .dg span i{display:block;height:56px;line-height:56px;text-align:center;font:700 38px Oswald;font-style:normal}
+.wx .tbl{display:grid;gap:8px}
+.wx .tbl .tr{display:grid;grid-template-columns:44px 1fr 1fr 46px 56px;gap:12px;align-items:center;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);animation:rowin .6s calc(var(--i,0)*.06s) both cubic-bezier(.2,.8,.2,1);transition:.3s;position:relative;text-align:left;color:#eef2fb;font:inherit}
+@keyframes rowin{from{opacity:0;transform:translateX(-24px)}}
+.wx .tbl .tr:hover{background:rgba(255,255,255,.12);transform:translateX(6px);box-shadow:-4px 0 0 #efcf7a,0 10px 24px rgba(0,0,0,.3)}
+.wx .rk{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 16px Oswald;background:rgba(255,255,255,.1)}
+.wx .rk.r1{background:linear-gradient(135deg,#fff1c2,#c9993a);color:#1a1405;box-shadow:0 0 16px rgba(239,207,122,.6)}
+.wx .rk.r2{background:linear-gradient(135deg,#f4f6fb,#98a2b5);color:#1a1d24}
+.wx .rk.r3{background:linear-gradient(135deg,#f0b27a,#9c5a2a);color:#1a0f05}
+.wx .nm b{display:block;font:600 16px Inter}
+.wx .nm em{font:500 12px Inter;font-style:normal;color:#8f9bb2}
+.wx .tbl .bar{height:10px;border-radius:99px;background:rgba(0,0,0,.3);overflow:hidden}
+.wx .tbl .bar i{display:block;height:100%;width:var(--w);border-radius:99px;background:linear-gradient(90deg,#c8352c,#efcf7a);box-shadow:0 0 12px rgba(239,207,122,.5);animation:barg 1.2s both cubic-bezier(.2,.9,.2,1)}
+@keyframes barg{from{width:0}}
+.wx .tbl .v{font:700 22px Oswald;text-align:right}
+.wx .pill2{font:700 13px Inter;padding:4px 10px;border-radius:99px;background:rgba(46,203,120,.2);color:#6be7a0;text-align:center}
+.wx .tbl.mini .tr{grid-template-columns:40px 1fr 50px}
+.wx .tbl.led .tr{grid-template-columns:80px 1fr 80px 40px;border-left:5px solid #888}
+.wx .tbl.led .tr.W{border-left-color:#2ecb78}
+.wx .tbl.led .tr.L{border-left-color:#e0493f}
+.wx .tbl.led .tr.D{border-left-color:#efcf7a}
+.wx .sc2{font:700 22px Oswald;text-align:center;background:rgba(0,0,0,.3);border-radius:8px;padding:2px 0}
+.wx .led .dt{font:600 12px Inter;color:#8f9bb2}
+.wx .led .rs{font:700 13px Inter;text-align:center}
+.wx .hscroll{overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.14)}
+.wx .heat{border-collapse:separate;border-spacing:0;width:100%;min-width:620px;font:600 14px Inter}
+.wx .heat th,.wx .heat td{padding:11px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,.14)}
+.wx .heat thead th{position:sticky;top:0;background:rgba(0,0,0,.45);font:700 11px Inter;letter-spacing:.12em;text-transform:uppercase;color:#c5cdde}
+.wx .heat tbody th{text-align:left;position:sticky;left:0;background:rgba(18,21,26,.92);font:600 14px Inter;z-index:1}
+.wx .heat td{transition:.25s}
+.wx .heat tr:hover td{filter:brightness(1.4)}
+.wx .podium{display:flex;gap:10px;justify-content:center;align-items:flex-end;margin:10px 0 18px;perspective:700px}
+.wx .pd{text-align:center;width:30%;max-width:150px}
+.wx .pd .who{margin-bottom:6px}
+.wx .pd .who b{display:block;font:600 14px Inter}
+.wx .pd .who em{font:700 12px Inter;font-style:normal;color:#efcf7a}
+.wx .pd .blk{border-radius:10px 10px 4px 4px;display:grid;place-items:center;font:700 44px Oswald;color:#1a1405;transform:rotateX(14deg);transform-origin:bottom;box-shadow:0 14px 28px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.5);animation:pdg 1.2s both cubic-bezier(.2,.9,.2,1)}
+@keyframes pdg{from{height:0!important;opacity:0}}
+.wx .pd.p1 .blk{height:120px;background:linear-gradient(#fff1c2,#c9993a)}
+.wx .pd.p2 .blk{height:88px;background:linear-gradient(#f4f6fb,#98a2b5)}
+.wx .pd.p3 .blk{height:64px;background:linear-gradient(#f0b27a,#9c5a2a)}
+.wx .xp .xr{border-radius:14px;overflow:hidden}
+.wx .xp .tr{grid-template-columns:1fr 56px 24px;width:100%;cursor:pointer}
+.wx .xp .chev{font-style:normal;transition:transform .35s}
+.wx .xr.on .chev{transform:rotate(180deg)}
+.wx .xd{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;max-height:0;overflow:hidden;transition:max-height .5s cubic-bezier(.2,.8,.2,1),padding .4s;padding:0 14px;background:rgba(0,0,0,.25)}
+.wx .xr.on .xd{max-height:120px;padding:12px 14px}
+.wx .xd div{text-align:center}
+.wx .xd u{display:block;text-decoration:none;font:600 10px Inter;letter-spacing:.12em;text-transform:uppercase;color:#8f9bb2}
+.wx .xd b{font:700 24px Oswald}
+.wx .cabinet{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;padding:22px 14px 8px;border-radius:16px;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.1));box-shadow:inset 0 -6px 0 rgba(239,207,122,.35);perspective:700px}
+.wx .cab{text-align:center;transition:transform .5s cubic-bezier(.3,1.5,.4,1)}
+.wx .cab:hover{transform:translateY(-8px) rotateY(12deg) scale(1.06)}
+.wx .cab .cup{width:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(239,207,122,.35))}
+.wx .cab b{display:block;font:700 28px Oswald;color:#efcf7a}
+.wx .cab u{text-decoration:none;font:600 11px Inter;letter-spacing:.12em;text-transform:uppercase;color:#c5cdde}
+.wx .cab.dim{opacity:.4;filter:grayscale(1)}
+.wx .shine{animation:shn 3.2s infinite ease-in-out}
+@keyframes shn{0%,45%{transform:translateX(0) skewX(-20deg)}100%{transform:translateX(190px) skewX(-20deg)}}
+.wx .medals{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
+.wx .md{text-align:center;animation:mdin .8s calc(var(--i)*.1s) both cubic-bezier(.3,1.6,.4,1);transform-origin:top;transition:.4s}
+.wx .md:hover{transform:rotate(6deg) scale(1.07)}
+@keyframes mdin{from{opacity:0;transform:rotate(-40deg) scale(.5)}}
+.wx .md svg{width:86px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45))}
+.wx .md b{display:block;font:700 15px Oswald;letter-spacing:.06em;text-transform:uppercase;color:#efcf7a}
+.wx .md em{display:block;font:600 14px Inter;font-style:normal}
+.wx .md u{text-decoration:none;font:500 12px Inter;color:#8f9bb2}
+.wx .icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px}
+.wx .ic{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 6px 10px;color:#eef2fb;cursor:pointer;display:grid;gap:6px;justify-items:center;font:600 11px Inter;letter-spacing:.08em;text-transform:uppercase;transition:.3s cubic-bezier(.3,1.6,.4,1)}
+.wx .ic svg{width:34px;height:34px;transition:.4s}
+.wx .ic:hover{color:#efcf7a;border-color:#efcf7a;transform:translateY(-4px);box-shadow:0 0 20px rgba(239,207,122,.35)}
+.wx .ic:hover svg{transform:rotate(-8deg) scale(1.2);filter:drop-shadow(0 0 8px #efcf7a)}
+.wx .poster{position:relative;display:grid;place-items:center;padding:26px 10px;border-radius:16px;overflow:hidden;background:radial-gradient(circle at 50% 40%,rgba(239,207,122,.3),transparent 60%),rgba(0,0,0,.35)}
+.wx .rays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,rgba(239,207,122,.14) 0 8deg,transparent 8deg 20deg);animation:rot 40s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.wx .poster .pt{position:relative;text-align:center}
+.wx .poster .pt>span{display:block;font:700 12px Inter;letter-spacing:.3em;color:#efcf7a;margin-bottom:8px}
+.wx .poster .pt>b{display:block;font:700 28px Oswald;margin-top:8px}
+.wx .poster .pt>em{font:500 13px Inter;font-style:normal;color:#c5cdde}
+.wx .poster .pc{margin:0 auto}
+.wx .tiers{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.wx .tr2{text-align:center;animation:mdin .8s calc(var(--i)*.15s) both cubic-bezier(.3,1.6,.4,1)}
+.wx .tr2 svg{width:70px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));transition:.4s}
+.wx .tr2:hover svg{transform:translateY(-6px) rotate(-5deg) scale(1.1)}
+.wx .tr2 b{display:block;font:700 13px Oswald;letter-spacing:.1em;text-transform:uppercase}
+@media(max-width:820px){.wx .tbl .tr{grid-template-columns:36px 1fr 50px 50px}
+.wx .tbl .bar{display:none}
+.wx .tbl.led .tr{grid-template-columns:62px 1fr 64px 28px}
+.wx .xd{grid-template-columns:repeat(3,1fr)}
+.wx .xr.on .xd{max-height:170px}}
+@keyframes rg{from{transform:scale(0);opacity:0}}
+.wx .tr2.off{opacity:.35;filter:grayscale(.6)}
+.wx a.tw,.wx a.pd,.wx a.md,.wx a.tr{color:inherit}
+.wx .ico{vertical-align:-3px}
+.wx .tlo{display:block;text-align:center;font:600 22px Oswald;min-height:34px;color:#efcf7a}
+/* glossy surfaces for widget tiles (Look A) */
+.wx .tile,.wx .xr,.wx .ic{background:linear-gradient(180deg,var(--p2,#171f2d),var(--p1,#111722));border:1px solid var(--line,rgba(255,255,255,.075));box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 12px 26px rgba(0,0,0,.35);border-radius:16px;position:relative;overflow:hidden}
+.wx .tile.gold{background:var(--gold,linear-gradient(160deg,#efcf7a,#a77a22));color:#1a1405}
+.wx .tile.big b{background:linear-gradient(#fff,#efcf7a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.wx .cab{padding:14px 6px 10px;background:none;border:0;box-shadow:none}
+.wx .tl .lbl small{display:block;font-weight:500;opacity:.7}
+.wx .tl .dot{flex:0 0 104px}
+.wx .tl .line{top:63px;left:30px;right:30px}
+.wx .tl{padding-top:54px}
+.wx .tl .line{display:none}
+.wx .tl .dot{position:relative}
+.wx .tl .dot:before{content:"";position:absolute;left:0;right:0;top:9px;height:3px;background:linear-gradient(90deg,rgba(239,207,122,.9),rgba(200,53,44,.9));box-shadow:0 0 14px rgba(239,207,122,.6)}
+.wx .tl .dot .pt{position:relative;z-index:1}
+.lead2{grid-template-columns:minmax(260px,.7fr) 1.5fr}
+@media(max-width:820px){.lead2{grid-template-columns:1fr}}
+@media(max-width:820px){
+.wx .bento{grid-template-columns:repeat(2,1fr)}.wx .bento .tile.big{grid-column:span 2;grid-row:auto}.wx .bento .tile[style*="span 2"]{grid-column:span 2!important}.wx .tile b{font-size:42px}.wx .tile.big b{font-size:72px}
+.wx .xp .tr{grid-template-columns:1fr 46px 22px!important}
+.wx .cabinet{grid-template-columns:repeat(3,1fr)}
+.wx .tbl .tr{padding:9px 10px;gap:9px}
+}

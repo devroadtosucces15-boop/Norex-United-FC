@@ -1,0 +1,54 @@
+import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
+import { clubStats as C, players, matches, recent, leaders, usualXI, fmtDate } from '../lib/data.mjs';
+import * as W from '../lib/widgets.mjs';
+import { shell, esc, slug, chip, row, sbt, pillRes, lineLabel } from '../lib/ui.mjs';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+export const formations = JSON.parse(fs.readFileSync(path.join(here, '../data/formations.json'), 'utf8'));
+export const roles = JSON.parse(fs.readFileSync(path.join(here, '../data/roles.json'), 'utf8'));
+
+// Best XI by rating within each archive line (3-5-2 slot map; slots are illustrative like everywhere else)
+export function bestXI() {
+  const lineOf = (n) => { const c = {}; matches.forEach((m) => m.lines.filter((l) => l.n === n).forEach((l) => (c[l.line] = (c[l.line] || 0) + 1))); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0]; };
+  const pool = players.filter((p) => p.gp >= 8).map((p) => ({ ...p, al: lineOf(p.n) })).filter((p) => p.al);
+  const pick = (line, k) => pool.filter((p) => p.al === line).sort((a, b) => b.rating - a.rating).slice(0, k);
+  const gk = pick('GK', 1), df = pick('DEF', 3), md = pick('MID', 5), fw = pick('FWD', 2);
+  const cam = [...md].sort((a, b) => b.assists - a.assists)[0], rest = md.filter((p) => p !== cam).sort((a, b) => b.goals - a.goals);
+  return { GK: gk[0]?.k, LCB: df[0]?.k, CB: df[1]?.k, RCB: df[2]?.k, LM: rest[0]?.k, RM: rest[1]?.k, LDM: rest[2]?.k, RDM: rest[3]?.k, CAM: cam?.k, LS: fw[0]?.k, RS: fw[1]?.k };
+}
+const donut = (w, d, l) => { const t = w + d + l || 1, r = 52, c = 2 * Math.PI * r; const seg = (v, off, col) => `<circle cx="70" cy="70" r="${r}" fill="none" stroke="${col}" stroke-width="16" stroke-dasharray="${(v / t) * c} ${c}" stroke-dashoffset="${-off * c / t}" transform="rotate(-90 70 70)" stroke-linecap="butt"/>`; return `<svg viewBox="0 0 140 140" width="180" height="180" role="img" aria-label="${w} wins, ${d} draws, ${l} losses">${seg(w, 0, '#22b35e')}${seg(d, w, '#c9993a')}${seg(l, w + d, '#c8352c')}<text x="70" y="68" text-anchor="middle" class="num" style="font:700 34px Oswald;fill:#fff">${Math.round((w / t) * 100)}%</text><text x="70" y="88" text-anchor="middle" style="font:600 9px Inter;fill:#9ba7bd;letter-spacing:.2em">WIN RATE</text></svg>`; };
+
+export function overview() {
+  const gd = recent.slice(0, 10).reverse();
+  const mini = (title, arr, k, fmt, href) => `<div class="panel reveal"><div style="display:flex;justify-content:space-between;align-items:center"><h3>${title}</h3><a class="muted small" href="leaders.html#${href}">All →</a></div><div style="display:grid;gap:8px">${arr.slice(0, 5).map((p, i) => row(p, i, fmt(p), `${p[k]}`)).join('')}</div></div>`;
+  const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><header><div><div class="eyebrow">Division ${C.div || 1} · skill rating ${C.sr}</div><h2>Club stats</h2></div></header>
+  <div class="sb" data-stagger>${sbt(C.gp, 'Played')}${sbt(C.w, 'Won', 'gold')}${sbt(C.d, 'Drawn')}${sbt(C.l, 'Lost', 'red')}${sbt(C.gf, 'Goals')}${sbt(C.ga, 'Conceded')}${sbt(C.streak, 'Win streak', 'gold')}${sbt((C.gf / (C.gp || 1)).toFixed(1), 'Goals / game')}</div></section>
+  <div class="grid g3" style="margin-top:20px"><div class="panel reveal" style="display:grid;place-items:center">${donut(C.w, C.d, C.l)}<div class="chips" style="margin-top:8px"><span class="pill w">${C.w} W</span><span class="pill d">${C.d} D</span><span class="pill l">${C.l} L</span></div></div>
+   <div class="panel reveal" style="--i:1"><h3>Goal difference · last ${gd.length}</h3><div style="display:flex;align-items:flex-end;gap:6px;height:130px;margin-top:10px">${gd.map((m) => { const g = m.gf - m.ga, mx = Math.max(1, ...gd.map((x) => Math.abs(x.gf - x.ga))); return `<div style="flex:1;text-align:center" title="${esc(m.opp)} ${m.gf}-${m.ga}"><div style="height:${Math.max(6, (Math.abs(g) / mx) * 92)}px;background:${g >= 0 ? 'linear-gradient(#4be08a,#12683a)' : 'linear-gradient(#ff7d72,#7a2a24)'};border-radius:5px 5px 2px 2px;margin-top:auto;transform-origin:bottom;animation:fillbar 1s var(--ease) both"></div><div class="tiny muted">${g >= 0 ? '+' : ''}${g}</div></div>`; }).join('')}</div></div>
+   <div class="panel reveal" style="--i:2"><h3>Attack and defence</h3><div class="bars"><div class="r"><span>Scored</span><div class="t"><i style="--w:${Math.min(100, (C.gf / (C.gp || 1)) * 28)}%"></i></div><b class="num">${(C.gf / (C.gp || 1)).toFixed(1)}</b></div><div class="r"><span>Conceded</span><div class="t"><i style="--w:${Math.min(100, (C.ga / (C.gp || 1)) * 28)}%"></i></div><b class="num">${(C.ga / (C.gp || 1)).toFixed(1)}</b></div><div class="r"><span>Win rate</span><div class="t"><i style="--w:${Math.round((C.w / (C.gp || 1)) * 100)}%"></i></div><b class="num">${Math.round((C.w / (C.gp || 1)) * 100)}%</b></div></div><p class="muted small">Per game, whole season in Division ${C.div || 1}.</p></div></div>
+  <section class="sec"><header><div><span class="ribbon">Scoreboard</span></div></header><div class="panel reveal">${W.digits()}</div></section>
+  <section class="sec"><header><div><span class="ribbon">Goal towers</span></div><p>Top scorers as towers on a turning stage. Tap a tower for the profile.</p></header><div class="grid g2"><div class="panel reveal">${W.towers(leaders.goals, 'goals')}</div><div class="panel reveal" style="--i:1"><h3>Form · last 10</h3>${W.formWave()}</div></div></section>
+  <section class="sec"><header><div><span class="ribbon">Leaderboard race</span></div></header><div class="panel reveal">${W.race()}</div></section>
+  <div class="grid g3" style="margin-top:20px">${mini('Top scorers', leaders.goals, 'goals', (p) => p.goals, 'goals')}${mini('Most assists', leaders.assists, 'assists', (p) => p.assists, 'assists')}${mini('Best rated', leaders.rating, 'rating', (p) => p.rating.toFixed(1), 'rating')}</div></div>`;
+  return shell({ group: 'stats', page: 'stats.html', title: 'Club stats', body });
+}
+
+export function leadersPage() {
+  const TABS = [['goals', 'Goals', (p) => p.goals, 'goals'], ['assists', 'Assists', (p) => p.assists, 'assists'], ['rating', 'Rating', (p) => p.rating.toFixed(1), 'avg rating'], ['mom', 'MOTM', (p) => p.mom, 'man of the match'], ['cs', 'Clean sheets', (p) => p.cs, 'clean sheets'], ['tackles', 'Tackles', (p) => p.tackles, 'tackles']];
+  const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><header><div><div class="eyebrow">Season tables</div><h2>Leaders</h2></div><div class="chips" id="lt">${TABS.map(([k, l], i) => `<button class="chip${i ? '' : ' on'}" data-t="${k}">${l}</button>`).join('')}</div></header>
+  ${TABS.map(([k, l, f, lab], i) => `<div class="lp" data-p="${k}" ${i ? 'hidden' : ''}><div class="grid lead2" style="align-items:start"><div class="panel reveal" style="padding-top:30px">${W.podium(leaders[k], k, lab, false)}</div><div>${W.glassTable(leaders[k].slice(0, 8), k, k === 'rating' ? (v) => v.toFixed(1) : (v) => v)}</div></div></div>`).join('')}
+  </section>
+  <section class="sec"><header><div><span class="ribbon">Every stat at once</span></div><p>Cells are tinted by how strong the number is. Scroll sideways on a phone.</p></header><div class="panel flat reveal">${W.heatTable(players.filter((p) => p.gp >= 8).sort((a, b) => b.rating - a.rating).slice(0, 12))}</div></section>
+  <section class="sec"><header><div><span class="ribbon">Open a player</span></div><p>Tap a row to open their season in place.</p></header><div class="panel flat reveal">${W.expRows(players.filter((p) => p.gp >= 8).sort((a, b) => b.ovr - a.ovr).slice(0, 6))}</div></section>
+  <section class="sec"><header><div><span class="ribbon">Best XI</span></div><p>The top-rated players in each line, placed on the real 3-5-2. Tap a player for their card.</p></header><div class="panel flat reveal" style="padding:34px 14px 18px"><div id="bxi"></div><div id="bxiCard" style="display:grid;place-items:center;margin-top:14px"></div></div></section></div>`;
+  return shell({ group: 'stats', page: 'leaders.html', title: 'Leaders', body, extraHead: '<script src="pitch.js" defer></script>', data: { formations: formations.formations.filter((f) => f.main), bestXI: bestXI() } });
+}
+
+export function playersPage() {
+  const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><header><div><div class="eyebrow">${players.length} players</div><h2>Players</h2></div><div class="chips"><input id="q" type="search" placeholder="Search players" aria-label="Search players" style="padding:9px 14px;border-radius:999px;background:var(--p3);border:1px solid var(--line2);color:#fff;font:500 13px Inter"><span id="pl" style="display:contents"><button class="chip on" data-l="">All</button><button class="chip" data-l="GK">GK</button><button class="chip" data-l="DEF">DEF</button><button class="chip" data-l="MID">MID</button><button class="chip" data-l="FWD">FWD</button></span></div></header>
+  <div id="cmpRoot" class="panel reveal" style="margin-bottom:24px" hidden></div>
+  <div class="panel flat" style="padding:6px 14px;overflow-x:auto"><table class="tb" id="dir"><thead><tr><th></th><th>Player</th><th>Pos</th><th>OVR</th><th>GP</th><th>G</th><th>A</th><th>Rtg</th><th>MOTM</th><th></th></tr></thead><tbody>${players.map((p) => `<tr data-n="${esc(p.n.toLowerCase())}" data-l="${p.line}"><td style="width:58px">${chip(p, .7)}</td><td><a href="player-${slug(p.k)}.html"><b>${esc(p.n)}</b></a><div class="muted tiny">${esc(p.arch)}</div></td><td>${p.line}</td><td class="num">${p.ovr ?? '—'}</td><td class="num">${p.gp}</td><td class="num">${p.goals}</td><td class="num">${p.assists}</td><td class="num">${p.rating ? p.rating.toFixed(1) : '—'}</td><td class="num">${p.mom}</td><td><button class="cmpbtn" data-k="${esc(p.k)}" aria-label="Compare ${esc(p.n)}" aria-pressed="false">+</button></td></tr>`).join('')}</tbody></table></div></section></div>`;
+  return shell({ group: 'stats', page: 'players.html', title: 'Players', body, data: { full: players } });
+}
+
+export default function (P) { P('stats.html', overview()); P('leaders.html', leadersPage()); P('players.html', playersPage()); }

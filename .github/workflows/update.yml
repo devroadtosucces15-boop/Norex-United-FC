@@ -72,6 +72,12 @@ jobs:
         env:
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} # reads approved "hide me" requests (P5.6)
 
+      # New-design preview at /next/ (same live data). Failure here never blocks the official site.
+      - name: Build new-design preview (/next/)
+        if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
+        continue-on-error: true
+        run: node next/build.mjs --out site/next --preview
+
       - uses: actions/configure-pages@v5
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
 
