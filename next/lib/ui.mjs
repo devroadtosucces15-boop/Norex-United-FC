@@ -28,10 +28,11 @@ const SIL = '<svg class="fb" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax
 export const lineLabel = (p) => ({ GK: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD' })[p.line] ?? '';
 const inits = (n) => n.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
 function art(p, kit = true) { return `<div class="art"><svg class="fb" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><path class="sil" d="M50 14c-9 0-16 8-16 18 0 8 4 14 9 17-14 3-27 12-30 27v8h74v-8c-3-15-16-24-30-27 5-3 9-9 9-17 0-10-7-18-16-18z"/><text class="num" x="50" y="97" text-anchor="middle">${esc(inits(p.n))}</text></svg><img class="cut" alt="" decoding="async" loading="lazy">${kit ? '<span class="kit"></span>' : ''}</div>`; }
-const stat3 = (p) => [[p.goals, 'GLS'], [p.assists, 'AST'], [p.rating ? p.rating.toFixed(1) : '—', 'RAT']].map(([v, l]) => `<div><b class="num">${v}</b><span>${l}</span></div>`).join('');
+export const cardTier = (o) => (o >= 88 ? 'icon' : o >= 80 ? 'gold' : o >= 70 ? 'silver' : o > 0 ? 'bronze' : 'plain');
+const stat6 = (p) => [[p.goals, 'GLS'], [p.assists, 'AST'], [p.rating ? p.rating.toFixed(1) : '—', 'RAT'], [p.pass != null ? p.pass + '%' : '—', 'PAS'], [p.tackleRate != null ? p.tackleRate + '%' : '—', 'TKL'], [p.gp ?? '—', 'GP']].map(([v, l]) => `<div><b class="num">${v}</b><span>${l}</span></div>`).join('');
 export function card(p, { s = 1, dark = false, link = true } = {}) {
-  const inner = `<span class="shell"></span>${art(p)}<span class="ovr">${p.ovr ?? '—'}</span><span class="pos">${lineLabel(p)}</span><span class="crestm"><img src="crest.png" alt=""></span><span class="name">${esc(p.n)}</span><span class="stats">${stat3(p)}</span><span class="glare"></span><span class="gloss"><i></i></span>`;
-  const attrs = `class="pc pc-card${dark ? ' dark' : ''} tilt" style="--s:${s}" data-k="${esc(p.k)}" data-pos="${p.line}"`;
+  const inner = `<span class="shell"></span>${art(p)}<span class="ovr">${p.ovr ?? '—'}</span><span class="pos">${lineLabel(p)}</span><span class="crestm"><img src="crest.png" alt=""></span><span class="name">${esc(p.n)}</span>${p.arch ? `<span class="arch">${esc(p.arch)}</span>` : ''}<span class="stats">${stat6(p)}</span><span class="glare"></span><span class="gloss"><i></i></span>`;
+  const attrs = `class="pc pc-card t-${cardTier(p.ovr)}${dark ? ' dark' : ''} tilt" style="--s:${s}" data-k="${esc(p.k)}" data-pos="${p.line}"`;
   return link ? `<a ${attrs} href="player-${slug(p.k)}.html" aria-label="${esc(p.n)}, rated ${p.ovr ?? 'unrated'}">${inner}</a>` : `<div ${attrs}>${inner}</div>`;
 }
 export function chip(p, s = 1) { return `<span class="pc pc-chip" style="--s:${s}" data-k="${esc(p.k)}"><span class="face">${art(p, false)}</span>${p.ovr ? `<span class="ovr">${p.ovr}</span>` : ''}</span>`; }

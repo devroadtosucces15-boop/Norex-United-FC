@@ -164,3 +164,30 @@ body.still .reveal{opacity:1;transform:none;transition:none}body.still *{animati
 .lacquer{background:linear-gradient(120deg,#1b1210,#140f0f 60%,#1a1608)!important;border-color:rgba(200,53,44,.45)!important}
 .ico{display:inline-block;flex:none}
 .hint{text-align:center;color:var(--soft);font-size:12px;margin-top:6px}
+
+/* ---- card tiers, six stats, archetype, richer shine (keeps the original gold/silver tier colours) ---- */
+.pc-card .stats{top:76.2%;grid-template-columns:repeat(3,1fr);gap:calc(var(--s)*3px) 0}
+.pc-card .stats b{font-size:calc(var(--s)*18px)}.pc-card .stats span{font-size:calc(var(--s)*8.5px)}
+.pc-card .name{top:66%;font-size:calc(var(--s)*18px)}
+.pc-card .arch{position:absolute;left:8%;right:8%;top:72%;text-align:center;font:600 calc(var(--s)*9.5px)/1 Inter;letter-spacing:.14em;text-transform:uppercase;color:rgba(45,31,6,.72)}
+.pc-card.t-silver .shell{background:linear-gradient(145deg,#fafcff 0%,#d7dde6 30%,#a3adbb 64%,#6e7886 100%)}
+.pc-card.t-silver .shell:before{background:radial-gradient(120% 70% at 50% 18%,rgba(255,255,255,.7),transparent 55%),linear-gradient(160deg,#eef1f6,#c5ccd7 55%,#9aa5b4)}
+.pc-card.t-bronze .shell{background:linear-gradient(145deg,#f0c398 0%,#cf9566 30%,#9a6234 64%,#6a3f1e 100%)}
+.pc-card.t-bronze .shell:before{background:radial-gradient(120% 70% at 50% 18%,rgba(255,235,210,.5),transparent 55%),linear-gradient(160deg,#e4b58a,#b9794a 55%,#8a5128)}
+.pc-card.t-icon .shell{background:linear-gradient(145deg,#ff8a7a 0%,#c8352c 32%,#7a1712 66%,#2a0707 100%)}
+.pc-card.t-icon .shell:before{background:radial-gradient(120% 70% at 50% 18%,rgba(255,220,180,.55),transparent 55%),linear-gradient(160deg,#e0483d,#a02019 55%,#4a0d0a)}
+.pc-card.t-icon .ovr,.pc-card.t-icon .pos,.pc-card.t-icon .name,.pc-card.t-icon .stats b{color:#ffe9b8}.pc-card.t-icon .stats span,.pc-card.t-icon .arch{color:rgba(255,233,184,.8)}.pc-card.t-icon .name{border-color:rgba(255,210,122,.6)}
+.pc-card.t-silver .ovr,.pc-card.t-silver .pos,.pc-card.t-silver .name,.pc-card.t-silver .stats b{color:#141a22}.pc-card.t-silver .arch{color:rgba(20,26,34,.7)}
+.pc-card:before{content:"";position:absolute;inset:0;clip-path:polygon(8.7% 2%,91.3% 2%,97.3% 6.2%,97.3% 86.2%,50% 98.6%,2.7% 86.2%,2.7% 6.2%);z-index:4;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 46%,rgba(255,255,255,.08) 52%,transparent 62%) var(--sx,-120%) 0/260% 100% no-repeat;mix-blend-mode:soft-light;transition:background-position .9s var(--ease)}
+.pc-card:hover:before{--sx:120%;background-position:120% 0}
+.pc-card .stats>div+div{border-left:1px solid rgba(45,31,6,.12)}.pc-card .stats>div:nth-child(4){border-left:0}
+.pc-card.t-silver .stats>div+div{border-color:rgba(20,26,34,.12)}.pc-card.t-icon .stats>div+div{border-color:rgba(255,233,184,.2)}
+.pc-card .stats>div:nth-child(n+4){margin-top:calc(var(--s)*3px);padding-top:calc(var(--s)*3px);border-top:1px solid rgba(45,31,6,.14)}
+.pc-card .art{top:21%;height:34%}
+.pc-card .name{top:56.5%}
+.pc-card .arch{top:63%}
+.pc-card .stats{top:68%}
+.pc-card .art{top:20%;height:31%}
+.pc-card .name{top:52.5%}
+.pc-card .arch{top:60.5%}
+.pc-card .stats{top:65.5%}
