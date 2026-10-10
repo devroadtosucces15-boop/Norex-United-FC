@@ -17,6 +17,15 @@
     c.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = 0; } }, true);
   }
   function timeline(t) { $$('.dot', t).forEach((b) => b.addEventListener('click', () => { $$('.dot', t).forEach((x) => x.classList.toggle('on', x === b)); const o = $('#tlo') || t.nextElementSibling; o.textContent = b.dataset.t + ' · open'; o.href = b.dataset.h; o.classList.remove('pop'); void o.offsetWidth; o.classList.add('pop'); const dd = $('#tdet'); if (dd) dd.textContent = b.dataset.d || ''; })); const last = $$('.dot', t).pop(); if (last) { last.classList.add('on'); t.scrollLeft = t.scrollWidth; } }
+  function reel(c) {
+    const wrap = c.closest('.reelwrap'), cards = $$('.ci', c), hint = $('.rhint b', wrap); let cur = cards.length - 1;
+    const center = (i, smooth) => { const x = cards[i]; if (!x) return; c.scrollTo({ left: x.offsetLeft - (c.clientWidth - x.offsetWidth) / 2, behavior: smooth && !calm ? 'smooth' : 'auto' }); };
+    const mark = () => { const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; let best = 0, bd = 1e9; cards.forEach((x, i) => { const b = x.getBoundingClientRect(), dd = Math.abs(b.left + b.width / 2 - cx); if (dd < bd) { bd = dd; best = i; } }); cur = best; if (hint) hint.textContent = best + 1; $$('.rchip', wrap).forEach((ch, k, all) => { const nxt = all[k + 1] ? +all[k + 1].dataset.i : 1e9; ch.classList.toggle('on', best >= +ch.dataset.i && best < nxt); }); };
+    $$('.rchip', wrap).forEach((b) => b.addEventListener('click', () => center(+b.dataset.i, true)));
+    $$('.rn', wrap).forEach((b) => b.addEventListener('click', () => center(Math.max(0, Math.min(cards.length - 1, cur + +b.dataset.d)), true)));
+    cards.forEach((x, i) => x.addEventListener('click', (e) => { if (i !== cur) { e.preventDefault(); center(i, true); } }, true));
+    c.addEventListener('scroll', mark, { passive: true }); setTimeout(() => { center(cards.length - 1, false); mark(); }, 60);
+  }
   function deck(dk) {
     let dks = $$('.dk', dk); const lay = () => dks.forEach((c, i) => { c.style.zIndex = 20 - i; c.style.transform = `translateY(${i * 12}px) scale(${1 - i * .05}) rotateZ(${i % 2 ? 1.5 : -1.5}deg)`; c.style.opacity = i > 3 ? 0 : 1; }); lay();
     dk.addEventListener('click', () => { const t = dks.shift(); t.style.transform = 'translateX(260px) rotateZ(22deg) translateY(-40px)'; t.style.opacity = 0; setTimeout(() => { dks.push(t); t.style.transition = 'none'; lay(); void t.offsetWidth; t.style.transition = ''; }, calm ? 0 : 450); lay(); });
@@ -46,7 +55,7 @@
   function digits(box) { inView(box, () => $$('.fd', box).forEach((f, j) => String(f.dataset.v).split('').forEach((dg, i) => { const s = $$('.dg span', f)[i]; setTimeout(() => (s.style.transform = `translateY(${-(+dg) * 56}px)`), calm ? 0 : j * 150 + i * 200); })), .5); }
   function count(e) { inView(e, () => { const to = +e.dataset.n, t0 = performance.now(); const tick = (t) => { const k = Math.min(1, (t - t0) / 1400); e.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1 && !calm) requestAnimationFrame(tick); else e.textContent = to; }; tick(t0); }, .5); }
   function init(root = d) {
-    $$('[data-w=cover]', root).forEach((e) => once(e) && coverflow(e)); $$('[data-w=tl]', root).forEach((e) => once(e) && timeline(e)); $$('[data-w=deck]', root).forEach((e) => once(e) && deck(e));
+    $$('[data-w=cover]', root).forEach((e) => once(e) && coverflow(e)); $$('[data-w=reel]', root).forEach((e) => once(e) && reel(e)); $$('[data-w=tl]', root).forEach((e) => once(e) && timeline(e)); $$('[data-w=deck]', root).forEach((e) => once(e) && deck(e));
     $$('[data-w=radar]', root).forEach((e) => once(e) && radar(e)); $$('[data-w=form]', root).forEach((e) => once(e) && form(e)); $$('[data-w=race]', root).forEach((e) => once(e) && race(e)); $$('[data-w=digits]', root).forEach((e) => once(e) && digits(e));
     $$('.wx .cnt', root).forEach((e) => once(e) && count(e));
     $$('.wx .flip', root).forEach((f) => once(f) && f.addEventListener('click', () => f.classList.toggle('on')));

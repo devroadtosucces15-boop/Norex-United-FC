@@ -10,7 +10,8 @@ export const MAP = [
 ];
 const HUBSUB = [['hub.html', 'My Locker'], ['hub-matchnight.html', 'Match Night'], ['hub-squad.html', 'Squad Room'], ['hub-clubhouse.html', 'Clubhouse'], ['hub-handbook.html', 'Handbook'], ['staff.html', 'Staff']];
 const PREVIEW = !!process.env.NEXT_PREVIEW;
-export function shell({ group = '', page = '', title, body, extraHead = '', bodyClass = '', data = {} }) {
+export function shell(o) { return dress(shellRaw(o)); }
+function shellRaw({ group = '', page = '', title, body, extraHead = '', bodyClass = '', data = {} }) {
   const nav = MAP.map((g) => `<div class="g"><a href="${g.href}" class="${g.k === group ? 'on' : ''}">${g.l}</a><div class="drop">${g.subs.map(([h, l, d]) => `<a href="${h}">${l}<small>${d}</small></a>`).join('')}</div></div>`).join('');
   const subList = group === 'hub' ? HUBSUB : MAP.find((g) => g.k === group)?.subs ?? [];
   const sub = subList.map(([h, l]) => `<a href="${h}" class="${h === page || (h === 'staff.html' && page.startsWith('staff')) ? 'on' : ''}">${l}</a>`).join('');
@@ -45,3 +46,42 @@ export function hero(p) { return `<div class="pc pc-hero" data-k="${esc(p.k)}"><
 export const sbt = (v, l, cls = '', sub = '') => `<div class="sbt ${cls}"><b data-count="${v}">${v}</b><span>${l}</span>${sub ? `<em>${sub}</em>` : ''}</div>`;
 export const pillRes = (r) => `<span class="pill ${r.toLowerCase()}">${r === 'W' ? 'WIN' : r === 'L' ? 'LOSS' : 'DRAW'}</span>`;
 export const sample = (t = 'SAMPLE') => `<span class="sample">${t}</span>`;
+
+// ---- icons + emoji everywhere: ribbons get a custom line icon, headings / labels / chips / nav get an emoji ----
+const EMO = [[/^(played|games|matches)\b/i, '🎮'], [/^(won|wins?)$/i, '🏆'], [/^draw/i, '🤝'], [/^(lost|loss|losses)$/i, '💔'], [/goals? (scored|for)|^goals?$|^scored|golden boot|top scorers?|goal towers|^gls$/i, '⚽'], [/conceded|let in|against/i, '🧤'], [/assist|playmaker|^ast$/i, '🅰️'], [/skill rating|^rank/i, '💎'], [/goal diff/i, '⚖️'], [/rating|rated|^rat$/i, '⭐'], [/motm|man of the match/i, '🏅'], [/clean sheet|the wall/i, '🧤'], [/win rate|win %|^win$/i, '📈'], [/skill rating|^rank/i, '💎'], [/streak|current run|best win run/i, '🔥'], [/pass/i, '🎯'], [/tackle|^tkl$/i, '🛡️'], [/promotion/i, '⬆️'], [/division/i, '🏟️'], [/form/i, '📊'], [/season reel|match reel/i, '🎞️'], [/trophy|cabinet/i, '🏆'], [/legend/i, '👑'], [/hall of fame/i, '🏛️'], [/^home$/i, '🏠'], [/squad|team up/i, '👥'], [/^join|apply|recruit|trial/i, '✍️'], [/scout/i, '🔭'], [/fixture|calendar|schedule/i, '🗓️'], [/result/i, '📋'], [/opponent/i, '🆚'], [/leader/i, '🥇'], [/^players?$|^compare/i, '🧑‍🤝‍🧑'], [/tactics table|^table/i, '📐'], [/play style|how we play|playstyle/i, '🧠'], [/studio/i, '🎨'], [/build/i, '🛠️'], [/update|patch|title update/i, '📰'], [/locker/i, '🎽'], [/match night|rsvp/i, '🌙'], [/clubhouse/i, '🛋️'], [/handbook|rules/i, '📖'], [/staff|dugout/i, '🧢'], [/boardroom/i, '👑'], [/rush/i, '⚡'], [/alert|notif/i, '🔔'], [/medal|award/i, '🎖️'], [/best xi|spotlight|top performers/i, '✨'], [/scoreboard|every stat|at a glance|overview|club stats/i, '📊'], [/shape|radar/i, '🕸️'], [/tier/i, '🪙'], [/hub/i, '🔑'], [/available|availability/i, '✅'], [/vote/i, '🗳️'], [/rate|ratings/i, '⭐']];
+const emo = (t) => { const s = t.replace(/&amp;/g, '&').trim(); for (const [r, e] of EMO) if (r.test(s)) return e; return ''; };
+const hasEmoji = (t) => /^[^\x00-\x7F]/.test(t.trim());
+const RIB = [[/glance|scoreboard|stat/i, 'chart'], [/reel|timeline/i, 'calendar'], [/trophy|cabinet|legend|tier/i, 'trophy'], [/award|medal|player of/i, 'medal'], [/tower|score|goal|performer|leaderboard|race/i, 'ball'], [/squad|meet|xi|player|spotlight|open/i, 'users'], [/shape|play|how|tactic/i, 'board'], [/hub|key/i, 'key'], [/recent|game|result/i, 'pitch'], [/flick|flip|card/i, 'spark']];
+const ribIcon = (t) => (RIB.find(([r]) => r.test(t)) || [0, 'star'])[1];
+function dress(h) {
+  h = h.replace(/(<span class="ribbon">)([^<]+)(<\/span>)/g, (m, a, t, c) => `${a}<span class="ri">${ic(ribIcon(t), 15)}</span>${t}${c}`);
+  h = h.replace(/<(h[23])([^>]*)>([^<]{2,60})</g, (m, tag, at, t) => { if (hasEmoji(t) || /^(\d|[A-Z]{1,3}\b ×)/.test(t.trim())) return m; const e = emo(t); return e ? `<${tag}${at}><span class="em" aria-hidden="true">${e}</span> ${t}<` : m; });
+  h = h.replace(/(<a href="[^"]+"(?: class="[^"]*")?>)([A-Za-z][A-Za-z &\/-]{1,24})(<(?:\/a|small))/g, (m, a, t, c) => { const e = emo(t); return e && !a.includes('class="btn') ? `${a}<span class="em" aria-hidden="true">${e}</span> ${t}${c}` : m; });
+  h = h.replace(/(<b data-count="[^"]*">[^<]*<\/b><span>)([^<]+)(<\/span>)/g, (m, a, t, c) => { const e = emo(t); return e ? `${a}${e} ${t}${c}` : m; });
+  h = h.replace(/(<u>)([^<]{2,28})(<\/u>)/g, (m, a, t, c) => { const e = emo(t); return e && !hasEmoji(t) ? `${a}${e} ${t}${c}` : m; });
+  h = h.replace(/(<button class="chip[^"]*"[^>]*>)([^<]{1,22})(<\/button>)/g, (m, a, t, c) => { if (hasEmoji(t)) return m; const POS = { GK: '🧤', DEF: '🛡️', MID: '⚙️', FWD: '🎯', All: '✨', Wins: '✅', Draws: '🤝', Losses: '❌', Goalkeepers: '🧤', Defenders: '🛡️', Midfielders: '⚙️', Forwards: '🎯', Games: '🎮', Assists: '🅰️', Goals: '⚽', Rating: '⭐', MOTM: '🏅', Tackles: '🛡️', 'Clean sheets': '🧤' }; const e = POS[t.trim()] || ''; return e ? `${a}${e} ${t}${c}` : m; });
+  return h;
+}
+
+// ---- team emblems + match emoji tags ----
+const CRESTCDN = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
+export const oppCrest = (crest, name = '', size = 28) => crest
+  ? `<img class="ecrest" src="${CRESTCDN}${esc(crest)}.png" alt="" width="${size}" height="${size}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ecrest eb',textContent:'${esc((name[0] || '?').toUpperCase())}'}))">`
+  : `<span class="ecrest eb" style="width:${size}px;height:${size}px">${esc((name[0] || '?').toUpperCase())}</span>`;
+export const ownCrest = (size = 28) => `<img class="ecrest" src="crest.png" alt="" width="${size}" height="${size}">`;
+export function matchTags(m) {
+  const L = m.lines || [], t = [], margin = m.gf - m.ga;
+  const hat = L.find((l) => l.goals >= 3); if (hat) t.push(['🎩', `Hat-trick · ${hat.n}`]);
+  else if (L.some((l) => l.goals === 2)) t.push(['✌️', 'Brace']);
+  if (m.ga === 0) t.push(['🧤', 'Clean sheet']);
+  if (m.gf >= 5) t.push(['🔥', `${m.gf} goals scored`]);
+  if (margin >= 4) t.push(['💥', 'Thrashing']);
+  if (m.res === 'D' && m.gf >= 2) t.push(['🎭', 'Goal-fest draw']);
+  if (m.res === 'W' && margin === 1) t.push(['😅', 'Narrow win']);
+  if (m.res === 'L' && margin <= -3) t.push(['🥶', 'Heavy defeat']);
+  if (L.some((l) => l.mom)) t.push(['🏅', 'Man of the match']);
+  if (L.some((l) => l.rating >= 9)) t.push(['⭐', 'A 9+ performance']);
+  if (m.type === 'playoffMatch') t.push(['🏟️', 'Playoff']);
+  return t;
+}
+export const tagChips = (m, max = 3) => matchTags(m).slice(0, max).map(([e, l]) => `<span class="mtag" title="${esc(l)}">${e}</span>`).join('');

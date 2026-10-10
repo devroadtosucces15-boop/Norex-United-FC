@@ -32,13 +32,7 @@ export function home() {
  <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header>${W.bento()}
   <div class="grid g2" style="margin-top:18px"><div class="panel reveal"><h3>Form · last ${recent.length} games</h3>${W.formWave()}</div><div class="panel reveal" style="--i:1"><h3>Season reel</h3><p class="muted small">Drag along the line. Tap a game to open it.</p>${W.timeline()}</div></div></section>
 
- ${last ? `<section class="sec"><header><div><span class="ribbon">Last match</span></div></header>
- <a class="panel reveal lacquer" href="match-${last.id}.html" style="display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center;text-align:center;overflow:hidden">
-  <div><img src="crest.png" alt="" style="width:64px;margin:0 auto 6px"><div class="osw" style="font-size:20px">${esc(C.name)}</div></div>
-  <div><div class="num" style="font-size:clamp(46px,9vw,92px);line-height:1">${last.gf}<span class="mute"> : </span>${last.ga}</div>${pillRes(last.res)}<div class="muted small" style="margin-top:6px">${fmtDate(last.t, { weekday: 'long', day: 'numeric', month: 'long' })} · ${last.type === 'leagueMatch' ? 'League' : last.type === 'playoffMatch' ? 'Playoff' : 'Match'}</div></div>
-  <div><div class="osw" style="font-size:20px;width:64px;height:64px;border-radius:50%;background:var(--p3);border:1px solid var(--line2);display:grid;place-items:center;margin:0 auto 6px">${esc(last.opp.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase())}</div><div class="osw" style="font-size:20px">${esc(last.opp)}</div></div>
-  ${scorers ? `<div class="muted small" style="grid-column:1/-1;border-top:1px solid var(--line);padding-top:10px">⚽ ${scorers}</div>` : ''}
- </a></section>` : ''}
+ <section class="sec"><header><div><span class="ribbon">Match reel</span></div><p>Tap a night to jump to it. Drag the reel.</p></header>${W.reel()}</section>
 
  <section class="sec"><header><div><span class="ribbon">Top performers</span></div><a class="btn ghost" href="leaders.html">All leaders</a></header>
   <div class="cards c" data-stagger>

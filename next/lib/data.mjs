@@ -20,7 +20,7 @@ for (const f of fs.readdirSync(mdir)) {
   const gf = num(me.goals), ga = num(me.goalsAgainst);
   const lines = Object.values(m.players?.[CLUB] ?? {}).map((p) => ({ n: p.playername, line: LINE[p.pos] ?? 'MID', goals: num(p.goals), assists: num(p.assists), rating: num(p.rating), mom: num(p.mom), saves: num(p.saves), arch: ARCH[num(p.archetypeid) - 1] ?? '' }));
   for (const l of lines) { const a = arch.get(l.n) ?? {}; a[l.arch] = (a[l.arch] || 0) + 1; arch.set(l.n, a); }
-  matches.push({ id: m.matchId ?? f.replace('.json', ''), t: num(m.timestamp), type: m.matchType, oppId, opp: opp.name ?? `Club ${oppId}`, gf, ga, res: gf > ga ? 'W' : gf < ga ? 'L' : 'D', lines });
+  matches.push({ id: m.matchId ?? f.replace('.json', ''), t: num(m.timestamp), type: m.matchType, oppId, crest: opp.kit?.crestAssetId ? String(opp.kit.crestAssetId) : '', opp: opp.name ?? `Club ${oppId}`, gf, ga, res: gf > ga ? 'W' : gf < ga ? 'L' : 'D', lines });
 }
 matches.sort((a, b) => b.t - a.t);
 
@@ -45,7 +45,7 @@ export const clubStats = { name: club.info?.name ?? cfg.siteTitle, sr: num(o.ski
 export const recent = matches.slice(0, 10);
 // ---- opponents ----
 const opps = new Map();
-for (const m of matches) { const r = opps.get(m.oppId) ?? { id: m.oppId, n: m.opp, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, last: 0 }; r.p++; r[m.res.toLowerCase()]++; r.gf += m.gf; r.ga += m.ga; r.last = Math.max(r.last, m.t); opps.set(m.oppId, r); }
+for (const m of matches) { const r = opps.get(m.oppId) ?? { id: m.oppId, crest: m.crest, n: m.opp, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, last: 0 }; r.p++; r[m.res.toLowerCase()]++; r.gf += m.gf; r.ga += m.ga; r.last = Math.max(r.last, m.t); opps.set(m.oppId, r); }
 const wmap = new Map(world.clubs.map((c) => [String(c.id), c]));
 export const opponents = [...opps.values()].map((r) => ({ ...r, sr: wmap.get(r.id)?.sr ?? null, rank: wmap.get(r.id)?.rank ?? null, div: wmap.get(r.id)?.div ?? null })).sort((a, b) => b.last - a.last);
 export const burners = (J(path.join(root, 'data/burners/index.json'), { ids: [] }).ids ?? []).map((id) => { const b = J(path.join(root, `data/burners/${id}.json`)); if (!b) return null; const o = b.overall ?? {}; return { id, n: b.name, gp: num(o.gamesPlayed), w: num(o.wins), d: num(o.ties), l: num(o.losses), gf: num(o.goals), ga: num(o.goalsAgainst), sr: num(o.skillRating), div: num(b.leaderboard?.currentDivision), roster: (b.members ?? []).length, tracked: b.trackedAt, fetched: b.fetchedAt, recent: (b.matches ?? []).length }; }).filter(Boolean);
