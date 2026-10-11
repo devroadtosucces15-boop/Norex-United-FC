@@ -27,16 +27,26 @@
 <p class="tiny muted" style="margin-top:10px">Ticks are shared with the live Playbook and the Discord “Learned it” button. Managers see who is ready in the Dugout.</p>`; };
   const paint = () => views.forEach(([el, kind]) => { el.innerHTML = kind === 'row' ? row() : full(); });
 
+  // the one "Learned it" write on /next/ (Match Night, the locker card and the Playbook viewer all call this): POST /api/plays/:id/learned,
+  // then every view that holds the play redraws. Resolves to the new state; throws the server's message.
+  async function learn(id, want, btn, title) {
+    const p = next?.plays?.find((x) => x.id === +id), job = () => A.call(`/api/plays/${+id}/learned`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ learned: !!want }) });
+    await (M && btn ? M.submit(btn, job, { burst: want }) : job());
+    note(id, want); const c = count(), nm = p?.title || title || 'Play';
+    M?.toast(want ? (p && c.got === c.n ? 'All plays learned. Ready for kick-off' : `${nm}: learned`) : `${nm}: marked not learned`, { kind: 'ok', icon: want ? (p && c.got === c.n ? '🎉' : '✅') : '↺' });
+    return !!want;
+  }
+  // keep the model in step when the server changed it some other way (a perfect quiz ticks the play as learned)
+  function note(id, learned) { const p = next?.plays?.find((x) => x.id === +id); if (!p) return; p.learned = !!learned; if (learned) p.assigned = true; setTimeout(paint, M?.off() ? 0 : 450); }
+
   d.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-learn]'); if (!b || !next) return;
     const p = next.plays.find((x) => x.id === +b.dataset.learn); if (!p) return;
-    const want = !p.learned, job = () => A.call(`/api/plays/${p.id}/learned`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ learned: want }) });
-    try { await (M ? M.submit(b, job, { burst: want }) : job()); p.learned = want; if (want) p.assigned = true; setTimeout(paint, M?.off() ? 0 : 450);
-      const c = count(); M?.toast(want ? (c.got === c.n ? 'All plays learned. Ready for kick-off' : `${p.title}: learned`) : `${p.title}: marked not learned`, { kind: 'ok', icon: want ? (c.got === c.n ? '🎉' : '✅') : '↺' }); }
-    catch (er) { M?.toast(er.message || 'Could not save that', { kind: 'err' }); }
+    try { await learn(p.id, !p.learned, b); } catch (er) { M?.toast(er.message || 'Could not save that', { kind: 'err' }); }
   });
 
   window.NorexTonight = {
+    learn, note,
     // the locker already loads /api/locker: hand it the `next` object and a mount for the compact row
     use(n, el) { next = n || null; if (el) { views.add([el, 'row']); el.innerHTML = row(); } },
     // Match Night: loads /api/locker itself

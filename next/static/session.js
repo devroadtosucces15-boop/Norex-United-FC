@@ -27,6 +27,15 @@
     if ((cached?.player ?? null) !== claim && !ss.get('nx.reloaded')) { ss.set('nx.reloaded', '1'); location.reload(); } // first sign-in only: re-render with their card
     Auth.player = claim;
   }).catch(() => {});
+  // 🐞 the owner's issue tool (live web/report.js + report.css, copied at build; flag issueTool): pin, arrow, circle, box or pen on
+  // any /next/ page, type or dictate the note, Save. Notes go to POST /api/issues with the page, element, role and device, like on the live site.
+  if (session && role === 'owner') Auth.ready.then(() => {
+    if (!(Auth.features || []).includes('issueTool') || window.NXReport) return;
+    d.head.append(Object.assign(d.createElement('link'), { rel: 'stylesheet', href: 'report.css' }));
+    d.head.append(Object.assign(d.createElement('script'), { src: 'report.js', onload: () => window.NXReport?.init({
+      call: (path, body) => call(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
+      toast: (m) => window.NorexMotion?.toast(m, { kind: 'ok', icon: '🐞' }), role, viewAs: null, user: { u: session.u, n: session.n } }) }));
+  });
   // account chip in the header + any [data-login] link
   const chip = () => {
     $$ = (s) => [...d.querySelectorAll(s)];
