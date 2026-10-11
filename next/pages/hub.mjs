@@ -31,13 +31,17 @@ export function locker() {
     <div class="side r"><div class="panel reveal" id="mystats"></div><div class="panel reveal" style="--i:1" id="formpanel" hidden></div>
      <nav class="panel reveal lk-quick" style="--i:2" aria-label="Rooms"><div class="eyebrow">🚪 Rooms</div><div class="lk-q">${ROOMS.filter(([h]) => h !== 'hub.html').map(([h, i, t]) => `<a href="${h}"><span>${i}</span>${t}</a>`).join('')}</div></nav>
      <div class="panel reveal" style="--i:3" id="artpanel"></div></div></section>
+   <nav class="wrap lk-jump" aria-label="In your locker"><a href="#lk-me">🪪 My profile</a><a href="#lk-mystats">📊 My stats</a><a href="#lk-medals">🏅 Medals</a><a href="#lk-alerts">🔔 Alerts</a><a href="#lk-alertset">⚙️ Settings</a></nav>
+   <div class="wrap"><section class="sec sq-sec" id="lk-me" style="margin-top:20px"><header><div><span class="ribbon">🪪 My profile</span></div><p>What teammates see on your card, hover card and in Team up. Only what you change is saved.</p></header><div id="lkme" class="sq-mount"></div></section>
+   <section class="sec sq-sec" id="lk-mystats"><header><div><span class="ribbon">📊 My stats</span></div><p>Your League season and your all-time numbers, ranked against everyone with eight or more games.</p></header><div id="lkstats" class="sq-mount"></div></section>
+   <section class="sec sq-sec" id="lk-medals"><header><div><span class="ribbon">🏅 Badges and achievements</span></div><p>Achievements unlock from your games, votes and RSVPs. Badges are shout-outs from teammates.</p></header><div id="lkmedals" class="sq-mount"></div></section></div>
    <div class="wrap lk-al2"><section class="sec sq-sec" id="lk-alerts" style="margin-top:20px"><header><div><span class="ribbon">🔔 Alerts inbox</span></div><p>Everything the club sent you, newest first. Open one to jump straight to it.</p></header><div id="lkinbox" class="sq-mount"></div></section>
    <section class="sec sq-sec" id="lk-alertset"><header><div><span class="ribbon">⚙️ Alert settings</span></div><p>Pick how each kind of alert reaches you: a Discord DM, only here, or not at all.</p></header><div id="lkprefs" class="sq-mount"></div></section></div>
    <div class="wrap"><section class="sec" style="margin-top:20px"><header><div><span class="ribbon">Your shape</span></div><p>How your game compares with the squad. Each axis is scaled to the best player.</p></header><div class="grid g2"><div class="panel reveal" id="myviz"></div><div class="panel reveal" style="--i:1"><h3>Your tier</h3>${W.tiers()}<h3 style="margin-top:16px">Trophy cabinet</h3>${W.cabinet()}</div></div></section></div>
    <div class="wrap"><section class="sec" style="margin-top:20px"><header><div><span class="ribbon">The Hub</span></div><p>Five rooms, one key. Staff tools sit with them for managers and the owner.</p></header>
     <div class="grid g3" data-stagger>${ROOMS.map(([h, i, t, d]) => `<a class="panel room" href="${h}"><div style="font-size:30px">${i}</div><h3 style="margin:6px 0 2px">${t}</h3><p class="muted small">${d}</p></a>`).join('')}<a class="panel room" data-for="owner" hidden href="staff.html" style="border-color:rgba(239,207,122,.5)"><div style="font-size:30px">🛡️</div><h3 style="margin:6px 0 2px" class="gold-t">Staff</h3><p class="muted small">Dugout, Boardroom and the Artwork studio</p></a></div></section></div>
   </div>`;
-  return hubShell('hub.html', 'My Locker', body, { extraHead: '<link rel="stylesheet" href="tactics.css"><script src="alerts.js" defer></script>', data: { full: players } });
+  return hubShell('hub.html', 'My Locker', body, { extraHead: '<link rel="stylesheet" href="tactics.css"><script src="alerts.js" defer></script><script src="mylocker.js" defer></script><script src="tonight.js" defer></script>', data: { full: players } });
 }
 
 // ---------- MATCH NIGHT ----------
@@ -48,8 +52,9 @@ export function matchNight() {
   <div class="panel reveal" id="availpanel" style="--i:1;display:none"><h3>Availability this week</h3><p class="muted small">Tell the managers which days you can play.</p><div id="availbox" style="margin-top:10px"></div></div>
   <div class="panel reveal" style="--i:1" id="motmpanel"><h3>MOTM vote</h3><p class="muted small">${sample()} Voting opens after the final whistle. The winner's card gets the gold treatment on the Hall of Fame.</p></div>
   <div class="panel reveal" style="--i:2" id="rushpanel"><h3>Rush log</h3><p class="muted small">Rush is not in EA's data. Log your Rush result here and a manager confirms it.</p><a class="btn ghost" href="#" onclick="return false">Log a Rush game</a></div>
-  <div class="panel reveal" style="--i:3" id="ratepanel"><h3>Ratings</h3><p class="muted small">Rate your teammates after the game. Averages feed the leaderboards.</p></div></div></div></section></div>`;
-  return hubShell('hub-matchnight.html', 'Match Night', body);
+  <div class="panel reveal" style="--i:3" id="ratepanel"><h3>Ratings</h3><p class="muted small">Rate your teammates after the game. Averages feed the leaderboards.</p></div></div>
+  <section class="sec sq-sec" id="mn-plays" style="margin-top:22px"><header><div><span class="ribbon">📋 Tonight’s plays</span></div><p>What the managers want the squad to know for the next match night. Study each one, then tick it off.</p></header><div id="mnplays" class="sq-mount"></div></section></div></section></div>`;
+  return hubShell('hub-matchnight.html', 'Match Night', body, { extraHead: '<script src="tonight.js" defer></script>' });
 }
 export function squadRoom() {
   // Read from the live member API by squad.js (Team up, awards, predictions, Rush squads, scouting). Each panel loads on its own.

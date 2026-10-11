@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-11T02:30:27.950Z",
+ "fetchedAt": "2026-10-11T05:40:28.990Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -621,42 +621,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "PATRICKSTARR11",
-   "gamesPlayed": "18",
-   "winRate": "77",
-   "goals": "0",
-   "assists": "1",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "167",
-   "passSuccessRate": "84",
-   "ratingAve": "7.6",
-   "tacklesMade": "30",
-   "tackleSuccessRate": "50",
-   "proName": "EA IS TRASH",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "186",
-   "proNationality": "47",
-   "proOverall": "78",
-   "proOverallStr": "78",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "wygsy",
    "gamesPlayed": "11",
    "winRate": "72",
@@ -1017,42 +981,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "CatchMyDrift3",
-   "gamesPlayed": "12",
-   "winRate": "41",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "93",
-   "passSuccessRate": "80",
-   "ratingAve": "6.5",
-   "tacklesMade": "8",
-   "tackleSuccessRate": "13",
-   "proName": "C. Drift",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "184",
-   "proNationality": "95",
-   "proOverall": "78",
-   "proOverallStr": "78",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Futxpert6",
    "gamesPlayed": "54",
    "winRate": "77",
@@ -1342,10 +1270,10 @@
   }
  ],
  "positionCount": {
-  "midfielder": 13,
+  "midfielder": 12,
   "goalkeeper": 0,
   "forward": 6,
-  "defender": 11
+  "defender": 10
  },
  "career": [
   {
@@ -1383,14 +1311,14 @@
   },
   {
    "name": "Biophonyy",
-   "proPos": "14",
-   "gamesPlayed": "74",
-   "goals": "11",
-   "assists": "17",
-   "manOfTheMatch": "3",
+   "proPos": "5",
+   "gamesPlayed": "78",
+   "goals": "14",
+   "assists": "19",
+   "manOfTheMatch": "4",
    "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
+   "prevGoals": "1",
+   "favoritePosition": "defender"
   },
   {
    "name": "CGM Splash",
@@ -1547,17 +1475,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "PATRICKSTARR11",
-   "proPos": "5",
-   "gamesPlayed": "171",
-   "goals": "33",
-   "assists": "32",
-   "manOfTheMatch": "16",
-   "ratingAve": "7.3",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "wygsy",
    "proPos": "5",
    "gamesPlayed": "212",
@@ -1582,12 +1499,12 @@
   {
    "name": "Ox_Baki",
    "proPos": "25",
-   "gamesPlayed": "104",
-   "goals": "76",
+   "gamesPlayed": "106",
+   "goals": "77",
    "assists": "56",
    "manOfTheMatch": "23",
    "ratingAve": "7.4",
-   "prevGoals": "3",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
@@ -1626,10 +1543,10 @@
   {
    "name": "Scosmort",
    "proPos": "5",
-   "gamesPlayed": "60",
-   "goals": "27",
-   "assists": "18",
-   "manOfTheMatch": "5",
+   "gamesPlayed": "65",
+   "goals": "30",
+   "assists": "21",
+   "manOfTheMatch": "6",
    "ratingAve": "7.3",
    "prevGoals": "0",
    "favoritePosition": "defender"
@@ -1637,12 +1554,12 @@
   {
    "name": "GuzuDemon",
    "proPos": "25",
-   "gamesPlayed": "88",
-   "goals": "165",
-   "assists": "122",
-   "manOfTheMatch": "10",
-   "ratingAve": "7.4",
-   "prevGoals": "3",
+   "gamesPlayed": "93",
+   "goals": "172",
+   "assists": "124",
+   "manOfTheMatch": "13",
+   "ratingAve": "7.5",
+   "prevGoals": "4",
    "favoritePosition": "forward"
   },
   {
@@ -1659,12 +1576,12 @@
   {
    "name": "MAYOROFCALI_510",
    "proPos": "25",
-   "gamesPlayed": "361",
-   "goals": "117",
-   "assists": "102",
+   "gamesPlayed": "366",
+   "goals": "119",
+   "assists": "106",
    "manOfTheMatch": "7",
    "ratingAve": "7.0",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "forward"
   },
   {
@@ -1690,26 +1607,15 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "CatchMyDrift3",
-   "proPos": "14",
-   "gamesPlayed": "32",
-   "goals": "0",
-   "assists": "0",
-   "manOfTheMatch": "2",
-   "ratingAve": "6.8",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Futxpert6",
-   "proPos": "25",
-   "gamesPlayed": "155",
+   "proPos": "14",
+   "gamesPlayed": "156",
    "goals": "90",
    "assists": "113",
    "manOfTheMatch": "27",
    "ratingAve": "7.8",
-   "prevGoals": "1",
-   "favoritePosition": "forward"
+   "prevGoals": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "DR7M70",
