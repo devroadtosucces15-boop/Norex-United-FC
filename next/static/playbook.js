@@ -126,9 +126,9 @@ ${p.published ? `<button type="button" class="btn ${p.mine?.learned ? 'ghost' : 
 
   // ---- 🎬 recordings: the Studio's tab-capture videos and voice-overs, fetched with the session (they are members-only) ----
   let media = null, mediaFor = 0, mediaUrl = '';
-  const mb = (b) => `${(b / 1e6).toFixed(b < 1e7 ? 1 : 0)} MB`;
+  const mb = (b) => (b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} KB` : `${(b / 1e6).toFixed(b < 1e7 ? 1 : 0)} MB`);
   const mediaHtml = () => { if (media === null) return `<div class="panel" id="pb-media"><div class="eyebrow">🎬 Recordings</div><p class="small muted" style="margin:8px 0 0">Loading…</p></div>`;
-    if (!media.length) return manager ? `<div class="panel" id="pb-media"><div class="eyebrow">🎬 Recordings</div><p class="small muted" style="margin:8px 0 0">No video or voice-over yet. Record one in the <a href="${live(P.id)}" target="_blank" rel="noopener">live Studio</a>: it shows here for every member.</p></div>` : '<div id="pb-media" hidden></div>';
+    if (!media.length) return manager ? `<div class="panel" id="pb-media"><div class="eyebrow">🎬 Recordings</div><p class="small muted" style="margin:8px 0 0">No video or voice-over yet. Record one in the ${studioOn() ? `<a href="#edit${P.id}">Studio</a>` : `<a href="${live(P.id)}" target="_blank" rel="noopener">live Studio</a>`}: it shows here for every member.</p></div>` : '<div id="pb-media" hidden></div>';
     return `<div class="panel" id="pb-media"><div class="eyebrow">🎬 Recordings · ${media.length}</div><ul class="pb-md">${media.map((m) => `<li><span class="pb-mi" aria-hidden="true">${m.kind === 'video' ? '🎬' : '🎙️'}</span><div><b>${m.kind === 'video' ? 'Video walkthrough' : 'Voice-over'}</b><small class="muted">${esc(new Date(m.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))} · ${mb(m.size)}</small></div><button type="button" class="btn ghost" data-pbwatch="${esc(m.id)}">${m.kind === 'video' ? '▶ Watch' : '🔊 Listen'}</button><button type="button" class="btn ghost pb-mdl" data-pbsave="${esc(m.id)}" aria-label="Save the ${m.kind === 'video' ? 'video' : 'voice-over'} file" title="Save the file">⬇</button></li>`).join('')}</ul><div class="pb-player" id="pb-player"></div></div>`; };
   const paintMedia = () => { const old = $('#pb-media', el); if (old) old.outerHTML = mediaHtml(); };
   async function loadMedia(id) { media = null; mediaFor = id; if (mediaUrl) { URL.revokeObjectURL(mediaUrl); mediaUrl = ''; }
@@ -150,7 +150,7 @@ ${p.published ? `<button type="button" class="btn ${p.mine?.learned ? 'ghost' : 
     const ed = +(location.hash.match(/^#edit(\d+)$/)?.[1] || 0);
     if (window.NorexStudio?.active() && window.NorexStudio.active() !== ed) window.NorexStudio.close();
     if (ed) { if (!studioOn()) { history.replaceState(null, '', '#play' + ed); return route(land); } M?.skeleton(el, 5);
-      try { const p = await A.call(`/api/plays/${ed}`); stop(); window.NorexStudio.open({ el, play: p, onClose: (np) => { if (np) { P = np; const it = plays.find((x) => x.id === np.id); if (it) Object.assign(it, { title: np.title, category: np.category, version: np.version, published: np.published, updatedAt: np.updatedAt }); } location.hash = '#play' + ed; } }); el.scrollIntoView?.({ block: 'start' }); }
+      try { const p = await A.call(`/api/plays/${ed}`); stop(); window.NorexStudio.open({ el, play: p, onClose: (np) => { if (np) { P = np; const it = plays.find((x) => x.id === np.id); if (it) Object.assign(it, { title: np.title, category: np.category, version: np.version, published: np.published, updatedAt: np.updatedAt }); } location.hash = '#play' + ed; }, onArchive: (id) => { plays = plays.filter((x) => x.id !== id); P = null; location.hash = ''; } }); el.scrollIntoView?.({ block: 'start' }); }
       catch (e) { M?.toast(e.message, { kind: 'err' }); location.hash = ''; }
       return; }
     const id = idOf(); if (!id) { P = null; paintList(land); return; }
