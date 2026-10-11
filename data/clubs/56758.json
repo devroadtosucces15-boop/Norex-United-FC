@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-11T21:10:19.884Z",
+ "fetchedAt": "2026-10-11T21:18:30.643Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -179,42 +179,6 @@
    "prevGoals1": "0",
    "prevGoals2": "0",
    "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Biophonyy",
-   "gamesPlayed": "9",
-   "winRate": "88",
-   "goals": "2",
-   "assists": "4",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "66",
-   "passesMade": "103",
-   "passSuccessRate": "76",
-   "ratingAve": "7.4",
-   "tacklesMade": "13",
-   "tackleSuccessRate": "48",
-   "proName": "Orihime",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "165",
-   "proNationality": "163",
-   "proOverall": "79",
-   "proOverallStr": "79",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "1",
    "prevGoals4": "0",
    "prevGoals5": "0",
    "prevGoals6": "0",
@@ -1126,7 +1090,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 11,
+  "midfielder": 10,
   "goalkeeper": 0,
   "forward": 5,
   "defender": 9
@@ -1164,17 +1128,6 @@
    "ratingAve": "7.2",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Biophonyy",
-   "proPos": "5",
-   "gamesPlayed": "81",
-   "goals": "14",
-   "assists": "20",
-   "manOfTheMatch": "4",
-   "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "CGM Splash",
@@ -1398,14 +1351,14 @@
   },
   {
    "name": "MAYOROFCALI_510",
-   "proPos": "14",
-   "gamesPlayed": "369",
+   "proPos": "25",
+   "gamesPlayed": "370",
    "goals": "119",
    "assists": "106",
    "manOfTheMatch": "7",
    "ratingAve": "7.0",
    "prevGoals": "0",
-   "favoritePosition": "midfielder"
+   "favoritePosition": "forward"
   },
   {
    "name": "Mr-Yaqo-_-",
