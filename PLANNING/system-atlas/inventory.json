@@ -1,6 +1,6 @@
 {
-  "revision": "289c7d44387bdad8adfe8bd095ab793854cbcdc0",
-  "files": 699,
+  "revision": "aee80d1c98460368156e5e3753588433e36d6620",
+  "files": 704,
   "imports": 429,
   "api_paths": 224,
   "tables": 274,
@@ -3947,7 +3947,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 991,
+      "lines": 944,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4136,7 +4136,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1743,
+      "lines": 1649,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6946,6 +6946,15 @@
       "functions": []
     },
     {
+      "path": "data/matches/89464397350364.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/89468169380194.json",
       "layer": "data",
       "lines": 503,
@@ -6964,9 +6973,45 @@
       "functions": []
     },
     {
+      "path": "data/matches/89556480080216.json",
+      "layer": "data",
+      "lines": 283,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/89592117020067.json",
       "layer": "data",
       "lines": 353,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89654172150003.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89702009060203.json",
+      "layer": "data",
+      "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89780003670124.json",
+      "layer": "data",
+      "lines": 357,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8937,7 +8982,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 75,
+      "lines": 85,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -8949,10 +8994,22 @@
       "endpoints": [
         "/api/achievements",
         "/api/achievements/seen",
+        "/api/avatarcard",
         "/api/awards",
         "/api/awards/vote",
         "/api/badges",
         "/api/badges/remove",
+        "/api/cards/kit-number",
+        "/api/cards/owner/requests",
+        "/api/cards/owner/revoke",
+        "/api/cards/request",
+        "/api/cards/request/cancel",
+        "/api/cards/requests",
+        "/api/cards/requests/decide",
+        "/api/cards/requests/retry",
+        "/api/cards/requests/review",
+        "/api/cards/templates",
+        "/api/cards/templates/update",
         "/api/docs",
         "/api/docs/ack",
         "/api/feed/comment",
@@ -8966,6 +9023,7 @@
         "/api/notify/prefs",
         "/api/notify/read",
         "/api/notify/test",
+        "/api/plays",
         "/api/playstyle",
         "/api/predict",
         "/api/profile",
@@ -8985,6 +9043,7 @@
         "view"
       ],
       "functions": [
+        "fitInto",
         "read"
       ]
     },
