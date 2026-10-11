@@ -930,6 +930,7 @@ button.ch-up{cursor:pointer;font:inherit;transition:transform var(--m-fast) var(
 .bx-tattrs{display:grid;gap:5px}.bx-tattr{display:grid;grid-template-columns:minmax(0,1fr) 34% 28px;gap:8px;align-items:center;font-size:12.5px}.bx-tattr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bx-tattr.sig span{color:var(--g2)}.bx-tattr i{height:6px;border-radius:4px;background:linear-gradient(90deg,var(--red) var(--w),var(--p3) var(--w))}.bx-tattr b{text-align:right}
 .bx-ch{margin:6px 0 0}.bx-coms{list-style:none;margin:0;padding:0;display:grid;gap:10px}.bx-coms li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--p1)}.bx-coms li p{grid-column:1/-1;margin:0;font-size:13.5px;overflow-wrap:anywhere;white-space:pre-line}.bx-coms li>span:empty{display:none}
 .bx-cform{display:flex;gap:8px;align-items:flex-end}.bx-cform textarea{flex:1;min-width:0;background:var(--p0);color:#fff;border:1px solid var(--line2);border-radius:10px;padding:9px 11px;font-family:inherit;resize:vertical}
+.bx-radio{cursor:pointer;position:relative}.bx-radio input{position:absolute;opacity:0;pointer-events:none}.bx-radio:has(input:checked){background:var(--red);border-color:var(--red);color:#fff}.bx-radio:has(input:focus-visible){outline:2px solid var(--g2);outline-offset:2px}
 .bx-sure{background:linear-gradient(180deg,#7a2a24,#5a1c18)!important}
 input[type=range]{accent-color:var(--red)}
 .bx-dock{display:none}
