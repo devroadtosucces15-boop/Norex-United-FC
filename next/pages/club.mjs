@@ -1,6 +1,6 @@
 import { cfg, clubStats as C, players, matches, recent, records, leaders, shapes, updates, fmtDate } from '../lib/data.mjs';
 import * as W from '../lib/widgets.mjs';
-import { shell, esc, slug, card, hero, chip, row, sbt, pillRes, sample, lineLabel } from '../lib/ui.mjs';
+import { oppCrest, shell, esc, slug, card, hero, chip, row, sbt, pillRes, sample, lineLabel } from '../lib/ui.mjs';
 
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 const top = (arr, k) => [...arr].sort((a, b) => b[k] - a[k])[0];
@@ -19,7 +19,7 @@ export function home() {
    <div class="eyebrow reveal">EA SPORTS FC 27 · DIVISION ${C.div || 1} · LEAGUE &amp; RUSH</div>
    <h1 class="reveal" style="--i:1">One club.<br><em>One crown.</em></h1>
    <p class="lead reveal" style="--i:2">${esc(C.name)} is always looking for committed players who want to compete. Every card, every match and every number below is the club's own record.</p>
-   <div class="ticker reveal" style="--i:3" aria-label="Last five results, oldest first">${form.map((m) => `<i class="${m.res}" title="${esc(m.opp)} ${m.gf}-${m.ga}">${m.res}</i>`).join('')}<span class="muted small" style="align-self:center;margin-left:6px">last ${form.length} · ${W.runNow()[0]} ${W.runNow()[1]}</span></div>
+   <div class="ticker reveal" style="--i:3" aria-label="Last five results, oldest first">${form.map((m) => `<a class="fd ${m.res}" href="match-${m.id}.html" title="${esc(m.opp)} ${m.gf}-${m.ga}">${oppCrest(m.crest, m.opp, 26)}<b>${m.res}</b></a>`).join('')}<span class="muted small" style="align-self:center;margin-left:6px">last ${form.length} · ${W.runNow()[0]} ${W.runNow()[1]}</span></div>
    <div class="chips reveal" style="--i:4"><a class="btn" href="join.html">Apply for a trial</a><a class="btn ghost" href="results.html">Results</a><a class="btn ghost" href="tactics.html">Our tactics</a></div>
   </div>
   <div class="stage" aria-hidden="true">
@@ -29,8 +29,8 @@ export function home() {
   </div>
  </section>
 
- <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header>${W.kpi()}
-  <div class="grid g2" style="margin-top:18px"><div class="panel reveal"><h3>Form · last ${recent.length} games</h3>${W.formWave()}</div><div class="panel reveal" style="--i:1"><h3>Season reel</h3><p class="muted small">Drag along the line. Tap a game to open it.</p>${W.timeline()}</div></div></section>
+ <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header><div class="panel reveal">${W.digits()}</div>
+  <div class="panel reveal" style="margin-top:22px"><h3>Form · last ${recent.length} games</h3>${W.formWave()}</div></section>
 
  <section class="sec" data-insight-sec hidden><header><div><span class="ribbon">Insights</span></div><p>Short notes written from our own numbers, for members.</p></header><div class="grid g3 insgrid"><div data-insight="club" hidden></div><div data-insight="match.latest" hidden></div><div data-insight="matches.last5" hidden></div></div></section>
  <section class="sec"><header><div><span class="ribbon">Match reel</span></div><p>Tap a night to jump to it. Drag the reel.</p></header>${W.reel()}</section>

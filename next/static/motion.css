@@ -162,3 +162,27 @@ table.tb th:nth-child(n+3),table.tb td:nth-child(n+3){text-align:center}
 html[data-motion=full] .panel.amb:after,html[data-motion=full] .sbt.amb:after,html[data-motion=full] .kc.amb:after,html[data-motion=full] .tile.amb:after{opacity:.5;transition:opacity .25s}
 html[data-motion=full] .panel.amb:hover:after,html[data-motion=full] .sbt.amb:hover:after,html[data-motion=full] .kc.amb:hover:after{opacity:1}
 .kc{position:relative;overflow:hidden}.kc:after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.13),transparent 60%);opacity:0}
+[hidden]{display:none!important}
+
+/* ===== Results › Sessions view (FEEDBACK-1 #8, #9) ===== */
+.sesl{display:grid;gap:14px}.sess{padding:16px 18px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01)),#10151e;border:1px solid var(--line);position:relative;overflow:hidden;display:grid;gap:10px}
+.sess:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line2)}.sess.W:before{background:#22b35e}.sess.L:before{background:var(--red)}.sess.D:before{background:var(--g3)}
+.sess .sh{display:flex;justify-content:space-between;align-items:baseline}.sess .sh b{font:700 18px Oswald;letter-spacing:.04em;text-transform:uppercase}.sess .sh span{font:600 12px Inter;color:#8e9ab2}
+.sess .sr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.sess .sr span{font:700 13px Oswald;padding:3px 10px;border-radius:999px}.sess .sr .w{background:#12331f;color:#4be08a}.sess .sr .d{background:#332b12;color:#efcf7a}.sess .sr .l{background:#3a1613;color:#ff7d72}.sess .sr strong{margin-left:auto;font:700 30px/1 Oswald}
+.sess .sm{display:flex;flex-wrap:wrap;gap:6px 16px;font:500 13px Inter;color:#aab4c9}.sess .sm b{color:#fff}
+.sess .sd{display:flex;flex-wrap:wrap;gap:6px}.sess .sd a{font:700 12px Oswald;padding:4px 10px;border-radius:8px;color:#fff}.sess .sd .W{background:#12683a}.sess .sd .L{background:#7a2a24}.sess .sd .D{background:#8c6a1f}
+
+/* ===== form row with opponent crests (FEEDBACK-1 #1) ===== */
+.ticker .fd{position:relative;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;border:2px solid;transition:transform .25s}.ticker .fd:hover{transform:translateY(-3px) scale(1.06)}
+.ticker .fd.W{background:#12331f;border-color:#22b35e}.ticker .fd.L{background:#3a1613;border-color:#c8352c}.ticker .fd.D{background:#332b12;border-color:#c9993a}
+.ticker .fd .ecrest{width:28px;height:28px}.ticker .fd b{position:absolute;right:-6px;bottom:-6px;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;font:700 10px Oswald;color:#fff;box-shadow:0 2px 5px rgba(0,0,0,.5)}
+.ticker .fd.W b{background:#22b35e}.ticker .fd.L b{background:#c8352c}.ticker .fd.D b{background:#c9993a}
+
+/* ===== feed videos (FEEDBACK-1 #24): frame as thumbnail, sound button ===== */
+.ch-vid{position:relative;min-height:160px;background:var(--p3)}.ch-vid video{display:block;width:100%}.ch-snd{position:absolute;right:10px;top:10px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(10,14,22,.7);backdrop-filter:blur(6px);font-size:16px;color:#fff}
+
+/* ===== 3D broadcast camera on a portrait pitch (FEEDBACK-1 #16): phones used to ignore the toggle ===== */
+.camera .pitchbox.tilt3d[data-orient=v]{transform:rotateX(34deg) scale(.9);transform-origin:50% 60%;margin-top:-4px}
+.camera .pitchbox.tilt3d[data-orient=v] .pc-marker{transform:translate(-50%,-100%) rotateX(-34deg)}
+.camera .pitchbox.tilt3d[data-orient=v] .pc-marker:hover,.camera .pitchbox.tilt3d[data-orient=v] .pc-marker.sel{transform:translate(-50%,-100%) rotateX(-34deg) scale(1.15)}
+#xiForm{width:auto;min-width:140px}

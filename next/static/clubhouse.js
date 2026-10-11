@@ -31,7 +31,7 @@
   const media = (list) => {
     const live = list.filter((m) => !m.gone), gone = list.length - live.length; if (!list.length) return '';
     return `<div class="ch-media n${Math.min(live.length, 4)}">${live.map((m) => m.kind === 'video'
-      ? `<video src="${esc(`${API}/media/${m.key}`)}" controls preload="metadata" playsinline></video>`
+      ? `<div class="ch-vid"><video src="${esc(`${API}/media/${m.key}`)}#t=0.1" controls muted loop preload="auto" playsinline webkit-playsinline></video><button type="button" class="ch-snd" data-snd aria-label="Sound on or off">🔇</button></div>`
       : `<img src="${esc(`${API}/media/${m.key}`)}" alt="" loading="lazy"${m.w && m.h ? ` width="${m.w}" height="${m.h}"` : ''}>`).join('')}</div>${gone ? `<p class="muted tiny">${gone} photo or clip no longer available</p>` : ''}`;
   };
   // reactions: every club emoji someone used is a toggle; ＋ opens the rest
@@ -182,4 +182,9 @@ ${list.length ? `<div class="ch-ideas">${list.map(idea).join('')}</div>`
 
   d.addEventListener('click', (e) => { const b = e.target.closest('[data-chretry]'); if (b) (b.dataset.chretry === 'feed' ? loadFeed : loadIdeas)(); });
   (A.ready || Promise.resolve()).then(() => { loadFeed(); loadIdeas(); });
+  // videos play (muted) while they are on screen and pause when you scroll away; the frame stays as the thumbnail. 🔇/🔊 turns sound on.
+  if ('IntersectionObserver' in window) { const vio = new IntersectionObserver((es) => es.forEach((e) => { const v = e.target; if (e.isIntersecting && e.intersectionRatio > .55) v.play?.().catch(() => {}); else v.pause?.(); }), { threshold: [0, .55, 1] });
+    const hook = (root) => root.querySelectorAll?.('.ch-media video:not([data-ap])').forEach((v) => { v.dataset.ap = 1; vio.observe(v); });
+    new MutationObserver(() => hook(d)).observe(d.body, { childList: true, subtree: true }); hook(d);
+    d.addEventListener('click', (e) => { const b = e.target.closest('[data-snd]'); if (!b) return; const v = b.parentElement.querySelector('video'); v.muted = !v.muted; b.textContent = v.muted ? '🔇' : '🔊'; if (!v.muted) v.play?.().catch(() => {}); }); }
 })();

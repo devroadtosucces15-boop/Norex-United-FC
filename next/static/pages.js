@@ -157,10 +157,26 @@ addEventListener('DOMContentLoaded', () => {
   if ($('#xiPitch')) {
     const F = N.formations, main = F.find((f) => f.main), LS = { get: ls.get, set: ls.set };
     const mounted = {}; let cam = '3d';
-    const slotsMain = NorexPitch.leagueSlots(main), assign = slotsMain.map((s) => byK(N.xi[s.s]));
+    // XI: formation picker (remembered), usual / best-from-stats fill, tap two players to swap (remembered per formation)
+    const fById = (id) => F.find((f) => f.id === id) || main; let xiF = fById(LS.get('norex.xiF', main.id)).id, picked = -1, assign = [], slotsX = [];
+    const lineOfSlot = (f, s) => { if (s === 'GK') return 'GK'; const k = f.rows.findIndex((r) => r.includes(s)); return k === 0 ? 'DEF' : k === f.rows.length - 1 ? 'FWD' : 'MID'; };
+    const fill = (f, best) => { const sl = NorexPitch.leagueSlots(f), used = new Set();
+      if (!best && f.id === main.id) return sl.map((s) => byK(N.xi[s.s]));
+      const pool = (line) => N.players.filter((p) => p.line === line && (best ? (p.gp ?? 0) >= 5 : true)).sort((a, b) => best ? (b.rating || 0) - (a.rating || 0) : (b.gp ?? 0) - (a.gp ?? 0));
+      return sl.map((s) => { const c = pool(lineOfSlot(f, s.s)).find((p) => !used.has(p.k)) || null; if (c) used.add(c.k); return c; }); };
+    const savedA = (f) => { const m = LS.get('norex.xiA.' + f.id, null); return m ? NorexPitch.leagueSlots(f).map((s, i) => byK(m[i])) : null; };
+    const load = (best) => { const f = fById(xiF); slotsX = NorexPitch.leagueSlots(f); assign = (!best && savedA(f)) || fill(f, best); picked = -1; };
+    const save = () => LS.set('norex.xiA.' + xiF, assign.map((p) => (p ? p.k : null)));
+    const paintXI = () => { const o = { mode: 'league', orient: 'auto', slots: slotsX, assign, three: cam === '3d', onPick }; if (mounted.xi) mounted.xi.update(o); else mounted.xi = NorexPitch.mount($('#xiPitch'), o); };
+    const onPick = (i) => { if (picked >= 0 && picked !== i) { [assign[picked], assign[i]] = [assign[i], assign[picked]]; save(); picked = -1; paintXI(); pop(assign[i]); $('#xiHint').textContent = 'Swapped. Tap a player for their card · tap two to swap them'; return; }
+      picked = i; pop(assign[i]); $('#xiHint').textContent = assign[i] ? `${assign[i].n} selected · tap another spot to swap` : 'Tap a player'; };
     const pop = (p) => { $('#pop').innerHTML = p ? `<div class="pop">${NorexCards.cardHTML(p, { s: .95 })}</div>` : ''; NorexMotion.tilt(); NorexArt.apply($('#pop')); };
-    mounted.xi = NorexPitch.mount($('#xiPitch'), { mode: 'league', orient: 'auto', slots: slotsMain, assign, three: cam === '3d', onPick: (i) => pop(assign[i]) });
-    $$('[data-cam]').forEach((b) => b.onclick = () => { cam = b.dataset.cam; $$('[data-cam]').forEach((x) => x.classList.toggle('on', x === b)); mounted.xi.update({ three: cam === '3d' }); });
+    $('#xiForm').innerHTML = F.map((f) => `<option value="${esc(f.id)}"${f.id === xiF ? ' selected' : ''}>${esc(f.id)}${f.main ? ' · ours' : ''}</option>`).join('');
+    $('#xiForm').onchange = (e) => { xiF = e.target.value; LS.set('norex.xiF', xiF); load(false); paintXI(); };
+    $('#xiBest').onclick = () => { load(true); save(); paintXI(); };
+    $('#xiReset').onclick = () => { LS.set('norex.xiA.' + xiF, null); load(false); paintXI(); };
+    load(false); paintXI();
+    $$('[data-cam]').forEach((b) => b.onclick = () => { cam = b.dataset.cam; $$('[data-cam]').forEach((x) => x.classList.toggle('on', x === b)); paintXI(); });
     // formation wall
     let sel = LS.get('norex.sel', '3-5-2'), clubF = LS.get('norex.clubF', '3-5-2'), lobby = new Set(LS.get('norex.lobby', [])), back = 0;
     const mini = (f) => `<svg viewBox="0 0 68 105"><rect width="68" height="105" fill="#14502e"/><rect x=".5" y=".5" width="67" height="104" fill="none" stroke="#fff6" stroke-width=".6"/><line x1="0" y1="52.5" x2="68" y2="52.5" stroke="#fff6" stroke-width=".5"/>${NorexPitch.leagueSlots(f).map((p) => `<circle cx="${p.lat * 68}" cy="${(1 - p.depth) * 105}" r="3.6" fill="${p.s === 'GK' ? '#4aa3ff' : '#f6dc92'}"/>`).join('')}</svg>`;

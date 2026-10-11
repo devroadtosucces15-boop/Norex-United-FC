@@ -65,7 +65,7 @@
       const mode = state.mode, orient = state.orient === 'auto' ? (root.clientWidth >= 640 ? 'h' : 'v') : state.orient;
       const mw = Math.min(root.clientWidth || 600, maxW[mode][orient]), r = ratio(mode, orient);
       const size = mode === 'league' ? (mw < 420 ? .78 : orient === 'h' ? 1.05 : .95) : (mw < 360 ? 1 : 1.2);
-      const three = state.three && orient === 'h' && !(window.NorexMotion && window.NorexMotion.lite);
+      const three = state.three && !(window.NorexMotion && window.NorexMotion.lite && window.NorexMotion.mode === 'off');
       const mk = state.slots.map((m, i) => markerHTML(m, state.assign && state.assign[i], at(mode, orient, m.depth, m.lat), size, m.ai)).join('');
       const dir = orient === 'h'
         ? `<span class="dir" style="left:50%;bottom:-26px;transform:translateX(-50%);white-space:nowrap">own goal ◂ attacking ▸ opposition goal</span>`
