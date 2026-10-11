@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import { ROOT } from './mock.mjs';
 import worker from '../bot/worker.js';
+import { plainText, isV2 } from '../bot/ui.js';
 import { t, tt, done } from './lib.mjs';
 
 const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
@@ -13,7 +14,8 @@ async function send(payload, { badSig = false, raw } = {}) {
   return { s: res.status, d: await res.json().catch(() => null) };
 }
 const cmd = async (name, options) => (await send({ type: 2, data: { name, options } })).d?.data;
-const embed = (d) => d?.embeds?.[0];
+// every reply is a design-system panel (bot/ui.js): V2 flag + a '## title' header
+const title = (d) => (isV2(d) ? plainText(d).match(/^#{2,3} (.+)$/m)?.[1] : null);
 
 t('bad signature → 401', (await send({ type: 1 }, { badSig: true })).s === 401);
 t('ping → pong', (await send({ type: 1 })).d?.type === 1);
@@ -44,10 +46,10 @@ const sample = {
 };
 for (const name of Object.keys(sample)) {
   if (!registered.includes(name) || !sample[name]) continue;
-  await tt(`/${name} answers with an embed`, async () => { const d = await cmd(name, sample[name]); return !!embed(d)?.title && !d.content?.startsWith('⚠️'); });
+  await tt(`/${name} answers with a design-system panel`, async () => { const d = await cmd(name, sample[name]); return !!title(d) && !/Something went wrong|Unknown command/.test(plainText(d)); });
 }
 t('every registered command has a test here', registered.length >= 7 && registered.every((n) => n in sample));
-await tt('/player unknown gamertag → friendly message', async () => { const d = await cmd('player', [{ name: 'gamertag', value: 'zz_nobody_zz' }]); return !!d.content || !!embed(d); });
+await tt('/player unknown gamertag → friendly message', async () => { const d = await cmd('player', [{ name: 'gamertag', value: 'zz_nobody_zz' }]); return (d.flags & 64) === 64 && /No player called zz_nobody_zz/.test(plainText(d)); });
 await tt('/site has no repo link (P0.1)', async () => !JSON.stringify(await cmd('site', [])).includes('github.com'));
 await tt('autocomplete returns choices', async () => { const r = await send({ type: 4, data: { name: 'player', options: [{ name: 'gamertag', value: players[0].n.slice(0, 3), focused: true }] } }); return r.d.type === 8 && r.d.data.choices.length > 0; });
 await tt('insight opponent autocomplete lists h2h clubs by id', async () => { const h = JSON.parse(fs.readFileSync(ROOT + 'site/api/h2h.json', 'utf8')); const r = await send({ type: 4, data: { name: 'insight', options: [{ name: 'opponent', value: h[0].n.slice(0, 3).toLowerCase(), focused: true }] } }); const c = r.d.data.choices; return r.d.type === 8 && c.length > 0 && c.length <= 25 && c.some((x) => x.value === String(h[0].o)); });
