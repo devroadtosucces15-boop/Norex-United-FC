@@ -24,7 +24,8 @@ import { notify, notifyMembers, safely } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
-import { message, header, text, sep, facts, footer, buttons, toLegacy } from './ui.js';
+import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy } from './ui.js';
+import { facesOf } from './faces.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
 import { recommendRoute } from './lineuprec.js';
@@ -207,10 +208,11 @@ const rsvpButtons = (env) => (flags(env).discordRsvp ?? 'off') !== 'off';
 // The match-night post (design system, bot/ui.js) – shared by /schedule, /nextevent, /availability, the post a manager
 // sends from the Squad Hub, its live refresh and the 24 h / 2 h reminders. opts: ping (line above the panel), mentions,
 // who (list everyone's answer, for /availability).
-export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, mentions, who = false } = {}) {
+export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, mentions, who = false, faces = null } = {}) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), unix = Math.floor(e.start / 1000);
   const needs = typeof e.needs === 'string' ? parse(e.needs, {}) : e.needs ?? {};
   const yes = rsvps.filter((r) => r.status === 'yes'), names = (st) => rsvps.filter((r) => r.status === st).map((r) => r.name);
+  const posOf = (r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] ?? '';
   const missing = Object.entries(needs).filter(([k]) => k !== 'players').map(([k, v]) => [k, v - yes.filter((r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] === k).length]).filter(([, left]) => left > 0);
   const short = needs.players && yes.length < needs.players ? needs.players - yes.length : 0;
   const cancelled = e.status === 'cancelled', done = cancelled || e.start + e.duration * MIN < Date.now();
@@ -221,8 +223,11 @@ export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, me
     header({ eyebrow: `NOREX UNITED · ${EVENT_TYPES[e.type][1] ?? 'Match night'}`, title: `${EVENT_TYPES[e.type][0]} ${cancelled ? '🚫 Cancelled · ' : ''}${heading}${label(e)}`.slice(0, 200), sub: `<t:${unix}:F> · <t:${unix}:R> · ${length}` }),
     e.notes ? text(`📝 ${String(e.notes).slice(0, 1500)}`) : null,
     sep(),
-    who ? facts([[`✅ In (${yes.length})`, list(names('yes'))], [`❔ Maybe (${names('maybe').length})`, list(names('maybe'))], [`❌ Out (${names('no').length})`, list(names('no'))]])
-      : facts([['Answers', `✅ ${yes.length} · ❔ ${names('maybe').length} · ❌ ${names('no').length}`], ['In', yes.length ? list(names('yes')) : null]]),
+    facts([['Answers', `✅ ${yes.length} · ❔ ${names('maybe').length} · ❌ ${names('no').length}`]]),
+    // who's in: one row each with their face on the right (card if shipped, else Discord picture – bot/faces.js)
+    faces ? yes.slice(0, FACE_ROWS).map((r) => side(`✅ **${r.name}**${posOf(r) ? ` · ${posOf(r)}` : ''}`, thumb(faces.get(String(r.user_id))))) : null,
+    faces && yes.length > FACE_ROWS ? text(`+ ${list(names('yes').slice(FACE_ROWS))}`) : !faces && yes.length ? facts([['In', list(names('yes'))]]) : null,
+    who ? facts([[`❔ Maybe (${names('maybe').length})`, list(names('maybe'))], [`❌ Out (${names('no').length})`, list(names('no'))]]) : null,
     still ? facts([['🧩 Still needed', still]]) : null,
     footer(done ? 'This event is closed' : 'Tap a button to answer · only you see the confirmation'),
     buttons([
@@ -231,13 +236,20 @@ export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, me
     ]),
   ] });
 }
+// Six rows of faces keeps the post under Discord's 40-component limit with room for the buttons and /schedule's 2nd panel.
+const FACE_ROWS = 6;
+// eventMessage plus everyone's face – what every caller uses unless it's building a post with no answers yet.
+export async function eventPost(env, e, rsvps = [], heading = '', opts = {}) {
+  const yes = rsvps.filter((r) => r.status === 'yes').slice(0, FACE_ROWS).map((r) => r.user_id);
+  return eventMessage(env, e, rsvps, heading, { ...opts, faces: await facesOf(env, yes) });
+}
 const rsvpRows = (env, id) => all(env, 'SELECT r.status, r.name, r.user_id, p.positions, p.rush_positions FROM event_rsvps r LEFT JOIN profiles p ON p.user_id = r.user_id WHERE r.event_id = ? ORDER BY r.at', id);
 // Keeps the Discord post's counts in step with the site. Never throws.
 export async function refreshEventPost(env, id) {
   try {
     const e = await one(env, 'SELECT * FROM events WHERE id = ?', id);
     if (!e?.discord_msg || !e.discord_channel || !env.DISCORD_BOT_TOKEN) return;
-    const msg = eventMessage(env, e, await rsvpRows(env, id), e.series ? 'Weekly · ' : '');
+    const msg = await eventPost(env, e, await rsvpRows(env, id), e.series ? 'Weekly · ' : '');
     const patch = (body) => fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages/${e.discord_msg}`, {
       method: 'PATCH', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
@@ -599,7 +611,7 @@ export async function eventReminders(env) {
     const head = `${soon ? '⏰ Starting soon' : '📅 Tomorrow'} · ${label(e)}`;
     if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
       const pings = e.remind === 'mention' ? quiet.slice(0, 50) : [];
-      const msg = eventMessage(env, e, rsvps, soon ? '⏰ ' : '📅 ', {
+      const msg = await eventPost(env, e, rsvps, soon ? '⏰ ' : '📅 ', {
         ping: `**${head}** – ${yes} ✅ so far${pings.length ? `\nNot answered yet: ${pings.map((id) => `<@${id}>`).join(' ')}` : ''}`, mentions: { users: pings },
       });
       await safely(fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages`, {

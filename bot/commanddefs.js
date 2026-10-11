@@ -172,6 +172,25 @@ export const COMMANDS = [
     ],
   },
   { name: 'reminders', description: 'Your waiting reminders – cancel any of them', contexts: [0] },
+  // /host – schedule + post a session or friendly in one go (bot/host.js); times show in everyone's own zone
+  {
+    name: 'host', description: 'Managers: schedule a League or Rush session or friendly – posted with sign-up buttons',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: STRING, name: 'mode', description: 'League or Rush', required: true, choices: [{ value: 'league', name: '🏆 League' }, { value: 'rush', name: '⚡ Rush' }] },
+      { type: STRING, name: 'kind', description: 'A session for us, or a friendly against another club', required: true, choices: [{ value: 'session', name: 'Session' }, { value: 'friendly', name: 'Friendly' }] },
+      { type: STRING, name: 'when', description: 'tonight 9pm · tomorrow 20:30 · fri 8:30pm · oct 14 9pm · in 2h', required: true, max_length: 40 },
+      { type: STRING, name: 'timezone', description: 'Your time zone (default: the one in your Squad Hub profile)', autocomplete: true, max_length: 64 },
+      { type: INTEGER, name: 'players', description: 'Players needed (default 11 League, 5 Rush)', min_value: 1, max_value: 30 },
+      { type: INTEGER, name: 'length', description: 'How long, in minutes (default 120 League, 90 Rush)', min_value: 15, max_value: 600 },
+      { type: STRING, name: 'opponent', description: 'Friendly: the club we play', max_length: 60 },
+      { type: STRING, name: 'notes', description: 'Lobby info, kit, anything else', max_length: 500 },
+      { type: BOOLEAN, name: 'weekly', description: 'Repeat every week for 4 weeks' },
+      { type: CHANNEL, name: 'channel', description: 'Where to post it (default: here)', channel_types: [0, 5] },
+      { type: ROLE, name: 'ping', description: 'Role to ping (default: the Match night / Rush LFG ping role)' },
+      { type: BOOLEAN, name: 'silent', description: 'Post without pinging anyone' },
+    ],
+  },
 ];
 
 // ---------- per-command settings → what Discord is told ----------

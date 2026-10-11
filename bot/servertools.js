@@ -10,6 +10,7 @@
 // Reading the member list needs "Server Members Intent" switched on (Discord developer portal → Bot).
 import { can, flagOn } from './roles.js';
 import { message, notice, reply, header, text, facts, footer, side, button, buttons, IS_V2 } from './ui.js';
+import { facesOf } from './faces.js';
 
 const API = 'https://discord.com/api/v10';
 const MIN = 60e3, HOUR = 36e5, DAY = 864e5;
@@ -141,6 +142,7 @@ async function postMemberChanges(env, st, joined, left, now) {
   const gamertag = (uid) => env.DB.prepare("SELECT player_name FROM claims WHERE user_id = ? AND status = 'approved'").bind(uid).first('player_name');
   const roleList = (r) => JSON.parse(r.roles || '[]').map((id) => roleName.get(id)).filter((n) => n && n !== '@everyone').join(', ') || 'none';
   const stamp = `Spotted by the 10-minute member check · <t:${unix(now)}:R>`;
+  const faces = await facesOf(env, left.slice(0, POST_CAP).map((k) => k.user_id)); // a leaver's Card Studio card beats their Discord picture
   const posts = [];
   if (left.length > POST_CAP) {
     posts.push(message({ accent: 'steel', blocks: [header({ eyebrow: 'Staff · Member log', title: `${left.length} members left`, size: 3 }), text(left.map((k) => `• ${k.name} (<@${k.user_id}>)`).join('\n')), footer(stamp)] }));
@@ -149,7 +151,7 @@ async function postMemberChanges(env, st, joined, left, now) {
       const tag = await gamertag(k.user_id);
       const j = Date.parse(k.joined_at);
       posts.push(message({ accent: 'steel', blocks: [
-        header({ eyebrow: 'Staff · Member log', title: `${k.name} left the server`, size: 3, sub: `<@${k.user_id}> · was here ${Number.isFinite(j) ? since(j, now) : 'an unknown time'}`, thumb: k.avatar }),
+        header({ eyebrow: 'Staff · Member log', title: `${k.name} left the server`, size: 3, sub: `<@${k.user_id}> · was here ${Number.isFinite(j) ? since(j, now) : 'an unknown time'}`, thumb: faces.get(String(k.user_id)) || k.avatar }),
         facts([['🎮 Gamertag', tag ?? '—'], ['Roles', roleList(k).slice(0, 1000)], ['Joined', Number.isFinite(j) ? `<t:${unix(j)}:D>` : null]]),
         footer(stamp),
       ] }));

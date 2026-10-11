@@ -36,7 +36,9 @@ import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordIn
 import { handleHubWaveJob } from './hub.js';
 import { burnerCommand, burnerPick } from './burners.js';
 import { generateCards } from './cardstudio.js';
-import { message, notice, header, cards, facts, text, sep, label, footer, buttons, cardUrl, resultAccent, RESULT_ICON } from './ui.js';
+import { message, notice, header, cards, facts, text, sep, side, thumb, label, footer, buttons, cardUrl, resultAccent, RESULT_ICON } from './ui.js';
+import { playerFaces } from './faces.js';
+import { zoneChoices } from './host.js';
 import { SERVER_COMMANDS, SERVER_BUTTON, serverCommand, serverButton, memberWatch, sendDueReminders, tagChoices } from './servertools.js';
 
 
@@ -92,6 +94,7 @@ export default {
     if (i.type === 1) return json({ type: 1 }); // PING
     env = withFlagOverrides(env, await loadFlagOverrides(env)); // the Boardroom's live flag switches apply to Discord too (they used to reach website requests only)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
+    if (i.type === 4 && i.data?.name === 'host') return json({ type: 8, data: { choices: zoneChoices(flatOptions(i.data.options).find((o) => o.focused)?.value) } });
     if (i.type === 4 && /^tags?$/.test(i.data?.name) && env.DB) return json({ type: 8, data: { choices: await tagChoices(env, flatOptions(i.data.options).find((o) => o.focused)?.value).catch(() => []) } });
     if (i.type === 4) return json({ type: 8, data: { choices: await autocomplete(i, site, ctx) } });
     const who = discordUser(env, i);
@@ -135,8 +138,8 @@ export default {
         const loadSite = (f) => load(site, f, ctx);
         const club = await loadSite('club');
         return json(await memberCommand(i, env, who, site, {
-          load: loadSite, playerMessage: async (p, o) => playerMessage(p, club, site, await loadSite('cards').catch(() => null), o),
-          top: async (stat) => ({ type: 4, data: await command({ name: 'top', options: [{ name: 'stat', value: stat }] }, site, ctx) }),
+          load: loadSite, playerMessage: async (p, o) => playerMessage(p, club, site, await loadSite('cards').catch(() => null), { ...o, env, origin: new URL(request.url).origin }),
+          top: async (stat) => ({ type: 4, data: await command({ name: 'top', options: [{ name: 'stat', value: stat }] }, site, ctx, { env }) }),
         }));
       } catch (e) {
         return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
@@ -146,7 +149,7 @@ export default {
     if (i.type === 2) {
       try {
         // P7.2: /last carries the same "Show my match" controls as the auto-posted result, inside its panel.
-        const data = await command(i.data, site, ctx, { matchControls: flagOn(env, who, 'discordMatch') });
+        const data = await command(i.data, site, ctx, { matchControls: flagOn(env, who, 'discordMatch'), env, origin: new URL(request.url).origin });
         return json({ type: 4, data });
       } catch (e) {
         return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
@@ -423,7 +426,7 @@ function findPlayer(players, v) {
 // or match, a footer line and buttons last. A card that isn't drawn yet (new match, card step failed) falls back to text.
 const r1 = (v) => (+v || 0).toFixed(1);
 const goalsLine = (m) => (m.scorers ?? []).map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join(', ');
-async function command(data, site, ctx, { matchControls = false } = {}) {
+async function command(data, site, ctx, { matchControls = false, env = {}, origin } = {}) {
   const opt = Object.fromEntries(flatOptions(data.options).map((o) => [o.name, o.value]));
   const club = await load(site, 'club', ctx);
   const deck = await load(site, 'cards', ctx).catch(() => null); // drawn cards manifest
@@ -450,7 +453,12 @@ async function command(data, site, ctx, { matchControls = false } = {}) {
       return message({ accent: resultAccent(m.res), blocks: [
         header({ eyebrow: brand('Match centre · League'), title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: `<t:${m.ts}:f> · ${{ W: 'Win', D: 'Draw', L: 'Defeat' }[m.res]}`, thumb: score ? null : m.oppCrest || club.crest }),
         cards(score && { url: score, alt: `${club.name} ${m.gf}–${m.ga} ${m.opp}` }),
-        facts([['⚽ Goals', goalsLine(m) || 'none'], ['⭐ Man of the match', m.motm], ['📊 Team rating', avg != null ? r1(avg) : null]]),
+        facts([['⚽ Goals', goalsLine(m) || 'none'], ['📊 Team rating', avg != null ? r1(avg) : null]]),
+        m.motm ? await (async () => { // man of the match gets a row with their face (card if shipped, else Discord picture)
+          const star = m.ps?.find((p) => p.n === m.motm);
+          const face = star && (await playerFaces(env, [star.k], { origin })).get(String(star.k));
+          return face ? side(`⭐ **Man of the match**\n${m.motm}${star?.r ? ` · ${r1(star.r)}` : ''}`, thumb(face)) : facts([['⭐ Man of the match', m.motm]]);
+        })() : null,
         sep(),
         field ? [label('Field view · ratings'), cards({ url: field, alt: 'Our players on the pitch with their match ratings' })]
           : m.ps?.length ? text((m.ps ?? []).slice().sort((a, b) => b.r - a.r).map((p) => `\`${r1(p.r)}\` ${p.n}`).join('\n')) : null,
@@ -475,7 +483,7 @@ async function command(data, site, ctx, { matchControls = false } = {}) {
       const players = await load(site, 'players', ctx);
       const p = findPlayer(players, opt.gamertag);
       if (!p) return notice(`No player called ${opt.gamertag}`, 'Start typing and pick a name from the list.');
-      return playerMessage(p, club, site, deck);
+      return playerMessage(p, club, site, deck, { env, origin });
     }
     case 'compare': {
       const players = await load(site, 'players', ctx);
@@ -521,13 +529,13 @@ async function command(data, site, ctx, { matchControls = false } = {}) {
 }
 
 // /player and /me share this: header with the club crest, the drawn player card, then career + recent form as text.
-function playerMessage(p, club, site, deck, { eyebrow = 'Player card' } = {}) {
+async function playerMessage(p, club, site, deck, { eyebrow = 'Player card', env = {}, origin } = {}) {
   const s = p.s, c = p.car;
   const card = cardUrl(deck, 'player', p.k);
   const recent = (p.tr ?? []).slice(-5);
   const dot = (r) => (r >= 8 ? '🟢' : r >= 7 ? '🟡' : r >= 6 ? '🟠' : '🔴');
   return message({ blocks: [
-    header({ eyebrow: `${club.name} · ${eyebrow}`, title: `${p.n}${p.ovr ? ` · ${p.ovr} OVR` : ''}`, sub: `${p.pos} · ${p.c.join(', ')}`, thumb: p.crest }),
+    header({ eyebrow: `${club.name} · ${eyebrow}`, title: `${p.n}${p.ovr ? ` · ${p.ovr} OVR` : ''}`, sub: `${p.pos} · ${p.c.join(', ')}`, thumb: (await playerFaces(env, [p.k], { origin })).get(String(p.k)) || p.crest }),
     cards(card && { url: card, alt: `${p.n}: season stats and match ratings` }),
     !card && s?.gp ? facts([[p.src === 'archive' ? `${p.sc ?? 'Club'} (archived matches)` : `${p.sc ?? 'Club'} this season`, `${s.gp} games · ${s.g} goals · ${s.a} assists · rating ${r1(s.r)} · MOTM ${s.m}`]]) : null,
     facts([['🌍 Career', c?.gp ? `${c.gp} games · ${c.g} goals · ${c.a} assists · rating ${r1(c.r)}` : null], ['📈 Last 5', recent.length ? `${recent.map((r) => `${dot(r)} ${r1(r)}`).join('  ')}  → newest` : null]]),
