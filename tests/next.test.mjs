@@ -139,5 +139,11 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('builds: share code round-trips archetype, level, points, PlayStyles, body and the dataset version', back.arch === b.arch && back.level === b.level && Object.keys(b.spent).length === 2 && Object.entries(b.spent).every(([k, v]) => back.spent[k] === v) && Object.keys(back.spent).length === 2 && back.ps[0] === b.ps[0] && back.h === 185 && back.version === gj.version);
   t('builds: archetype cards show signature attributes and open the builder', (bh.match(/class="bx-sig"/g) || []).length >= 10 && bh.includes('data-bxtry="finisher"'));
 }
+{
+  const bj = read('boardroom.js'), bh = read('staff-boardroom.html');
+  t('boardroom: page loads the script, carries the committed levels and keeps the offline stub', bh.includes('src="boardroom.js"') && bh.includes('id="brLive"') && bh.includes('data-committed="{') && bh.includes('id="brLocal"'));
+  t('boardroom: flag edits use the live routes and body names and ask first', bj.includes("'/api/admin/flags', { name, level }") && bj.includes("'/api/admin/flags/reset'") && /confirm\(`Change/.test(bj));
+  t('boardroom: announcements preview then confirm; Discord posts preview then confirm; HoF removal confirms', bj.includes("preview: true") && (bj.match(/confirm\(/g) || []).length >= 6 && bj.includes("'/api/hof/remove'"));
+}
 fs.rmSync(out, { recursive: true, force: true });
 done();
