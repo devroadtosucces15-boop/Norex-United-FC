@@ -1,5 +1,5 @@
 {
-  "revision": "f768327472131dc97b641b6d48d05c8cdaaf15d8",
+  "revision": "cd602c8d0150bfde73f7945ad9f8d1702c2b4fa5",
   "files": 704,
   "imports": 429,
   "api_paths": 224,
@@ -8982,7 +8982,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 102,
+      "lines": 115,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9026,6 +9026,7 @@
         "/api/notify/read",
         "/api/notify/test",
         "/api/plays",
+        "/api/plays/discord",
         "/api/playstyle",
         "/api/predict",
         "/api/profile",
