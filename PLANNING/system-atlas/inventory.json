@@ -1,6 +1,6 @@
 {
-  "revision": "976e13baa7be32230c0d41c7e9d3b9e4e95ca48d",
-  "files": 689,
+  "revision": "2e598318fe667cb6f40ba91064c5ad811ec4767e",
+  "files": 692,
   "imports": 429,
   "api_paths": 224,
   "tables": 274,
@@ -6883,6 +6883,33 @@
       "functions": []
     },
     {
+      "path": "data/matches/89146904550073.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89340449220450.json",
+      "layer": "data",
+      "lines": 283,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89468169380194.json",
+      "layer": "data",
+      "lines": 503,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/meta.json",
       "layer": "data",
       "lines": 5,
@@ -8847,7 +8874,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 60,
+      "lines": 67,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -8861,12 +8888,21 @@
         "/api/awards/vote",
         "/api/docs",
         "/api/docs/ack",
+        "/api/feed/comment",
+        "/api/feed/post",
+        "/api/feed/react",
+        "/api/notify",
+        "/api/notify/ack",
+        "/api/notify/prefs",
+        "/api/notify/read",
+        "/api/notify/test",
         "/api/playstyle",
         "/api/predict",
         "/api/scout",
         "/api/squads",
         "/api/squads/prefs",
         "/api/suggestions",
+        "/api/suggestions/vote",
         "/api/trials"
       ],
       "tables": [
