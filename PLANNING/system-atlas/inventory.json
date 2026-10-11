@@ -1,5 +1,5 @@
 {
-  "revision": "890f07bc51f7a7834fd931a1ca3a0e2314da0334",
+  "revision": "4ca479e8712fab6e643d0ce08d3e7faef90b315d",
   "files": 707,
   "imports": 429,
   "api_paths": 224,
@@ -4136,7 +4136,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1461,
+      "lines": 1414,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9009,7 +9009,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 144,
+      "lines": 150,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9021,6 +9021,8 @@
       "endpoints": [
         "/api/achievements",
         "/api/achievements/seen",
+        "/api/admin/flags",
+        "/api/admin/flags/reset",
         "/api/admin/overview",
         "/api/avatarcard",
         "/api/awards",
@@ -9046,6 +9048,7 @@
         "/api/feed/comment",
         "/api/feed/post",
         "/api/feed/react",
+        "/api/hof/remove",
         "/api/issues",
         "/api/locker",
         "/api/me",
