@@ -41,6 +41,8 @@ Until then the web side can build against the shapes below with sample data.
 | 3 | **Discoveries** (member FYI posts approved by managers) | `/share` in Discord, manager approve/reject, `GET /api/discoveries`, `POST /api/discoveries/:id/useful` | Discoveries feed page (and a Hub widget) | Planned |
 | 4 | **Fun stats on profiles** | jail count, trivia points, birthdays in `GET /api/member` | badges / counters on the member profile page | Planned |
 | 5 | **Music** (Norex DJ) | the music bot (Oracle server), room state, controls, playlist import, `GET /api/music/rooms`, a live room socket, `GET/POST /api/music/playlists` | Music page (live player: queue, search, skip, volume) and a playlist section on profiles | Later (needs the Oracle server) |
+| 6 | **Owner floating button** (Mike's request) | `GET /api/manager/queue` → what's waiting (same counts as Discord's `/panel`), for a badge | A floating button only the owner sees, with its own **owner stamp/crest**, premium look (gold, sheen, spring animations, its own colours – richer than anything members get), opening owner tools: the approvals queue with the badge, Boardroom, flags, preview-as, health, announcements, issue reporter | Bot side built (PR #22) – web side to build |
+| 7 | **Faces everywhere** | `bot/faces.js` in Discord: a shipped Card Studio card beats the Discord picture beats the default. `GET /api/faces?ids=` for the site | The same rule on the site wherever a person has a picture (sign-ups, profiles, chat, rosters, votes) | Discord done (PR #22), site API planned |
 
 ### API shapes (draft – the bot side fills these in as each lands)
 
@@ -59,6 +61,9 @@ Until then the web side can build against the shapes below with sample data.
 [{ "id": 1, "title": "…", "body": "…", "link": "https://…", "image": "https://…", "by": { "id": "…", "name": "Jez" },
    "approvedBy": { "id": "…", "name": "Kruger" }, "at": 1791600000, "useful": 12, "mine": false }]
 
+// GET /api/manager/queue (managers) – built in PR #22
+{ "claims": 1, "cards": 0, "rush": 2, "requests": 0, "ideas": 3, "at": 1791600000000 } // only the queues this person may decide
+
 // GET /api/member?id=… (existing) – new block
 { "fun": { "jail": 3, "trivia": 120, "birthday": "07-14" } }
 ```
@@ -68,5 +73,8 @@ Until then the web side can build against the shapes below with sample data.
 - **PR #17** – server tools: leave/join alerts, welcome posts, `/purge`, `/tag`, `/remind`, ping-role buttons.
 - **PR #18** (stacked on #17) – bot design system: every Discord message in the site's look, plus drawn PNG cards
   (`scripts/cards.mjs` → `site/cards/*.png` + `site/api/cards.json`) made after each site build.
+- **PR #20** (stacked on #18) – the member commands and match-night posts on the design system.
+- **PR #22** (stacked on #20) – `/host` (schedule a session or friendly in one command), `/panel` (manager approvals in
+  Discord), faces everywhere, `GET /api/manager/queue`.
 
 Next on the bot side: the rest of the commands on the design system, then features 1–4 above, then music.
