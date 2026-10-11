@@ -97,5 +97,21 @@ t('bug reporter: the live 🐞 issue tool on every /next/ page for the owner (fl
 t('playbook: deep links use the live #play<id> hash, keyframes carry pieces forward, the live chalk shapes, tall view attacks up', pbj.includes("location.hash.match(/^#play(\\d+)$/)") && pbj.includes('cur = { ...cur, ...s.pieces }') && ['free', 'dot', 'text', 'circle', 'rect', 'curve', 'darrow'].every((k) => pbj.includes(`'${k}'`)) && pbj.includes('vert ? [y, W - x] : [x, y]'));
 t('locker: claims match a player by EA id as well as by name (the live site stores the EA id)', read('cards.js').includes('x.k === A.player || x.id === A.player'));
 t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includes('href="staff.html" class="" data-for="owner" hidden'));
+const bh = read('builds.html'), bj = read('builder.js'), pj2 = read('probuilds.js');
+const newest = fs.readdirSync(path.join(ROOT, 'data/game')).filter((f) => /^fc\d+-.+\.json$/.test(f)).map((f) => JSON.parse(fs.readFileSync(path.join(ROOT, 'data/game', f), 'utf8'))).sort((a, b) => String(b.published).localeCompare(String(a.published)))[0];
+t('builds: Tactics › Builds page with Builder, Pro builds and My builds tabs, the live maths shared, the newest game-rules version shipped as the seed', read('tactics.html').includes('href="builds.html"') && ['data-bxt="b"', 'data-bxt="p"', 'data-bxt="m"', 'id="bxb"', 'id="bxpro"', 'id="bxmine"'].every((k) => bh.includes(k))
+  && bh.indexOf('src="build-math.js"') < bh.indexOf('src="builder.js"') && bh.indexOf('src="builder.js"') < bh.indexOf('src="probuilds.js"') && read('build-math.js') === fs.readFileSync(path.join(ROOT, 'web/build-math.js'), 'utf8')
+  && JSON.parse(read('game.json')).version === newest.version && bh.includes(`max level <span data-bxcap>${newest.levelCap.value}</span>`) && bh.includes('<div data-for="guest" hidden><div class="panel sq-empty">'));
+t('builder: rules from GET /api/game first then the seed, older builds diffed by /api/game/changes, live share-link format and deep links (#a=, ?build=, #b=, #mine)', bj.includes("fetch(API + '/api/game'") && bj.includes(".catch(() => fetch('game.json')") && bj.includes('/api/game/changes?from=${encodeURIComponent(from)}')
+  && bj.includes('B.encode(g, b)') && bj.includes('B.decode(g, code)') && bj.includes("/[#&]a=/.test(h)") && bj.includes("get('build')") && bj.includes("h === '#mine'") && bj.includes("/^#b=\\d+$/.test(h)") && bj.includes("PENDING = 'norex_builder_pending'"));
+t('builder: My builds reads /api/builds, the impact badges and one build by id; Pro builds reads the public board and one post with comments', bj.includes("A.call('/api/builds')") && bj.includes("A.call('/api/builds/impact')") && bj.includes('A.call(`/api/builds/get?id=${encodeURIComponent(want)}`)')
+  && pj2.includes("A.call('/api/probuilds')") && pj2.includes('A.call(`/api/probuilds/get?id=${id}`)') && pj2.includes("'norex_pb_view'") && pj2.includes('rel="noopener nofollow ugc"') && pj2.includes('history.replaceState(null, \'\', `#b=${id}`)'));
+{ // the shipped maths + seed: a build encodes to the live share code and decodes back, MAX is the dataset's level cap, spending stays within the AP budget
+  const G = JSON.parse(read('game.json')); new Function(read('build-math.js'))(); const BM = globalThis.NXBuildMath;
+  const arch = G.archetypes.find((a) => a.group === 'FWD'), name = G.attributeGroups.find((x) => x.id === 'shooting').attributes[0];
+  const code = BM.encode(G, { arch: arch.id, level: BM.capOf(G), spent: { [name]: 12 } }), back = BM.decode(G, code), ev = BM.evaluate(G, back);
+  t('builder maths: the seed round-trips a share code at MAX, AP never goes negative and the level cap is the dataset value', new URLSearchParams(code).get('v') === G.version && back.arch === arch.id && back.spent[name] === 12 && ev.level === G.levelCap.value && ev.cap === G.levelCap.value && ev.left >= 0 && ev.total > 0
+    && BM.evaluate(G, BM.fit(G, { arch: arch.id, level: 1, spent: { [name]: 99 } })).left >= 0);
+}
 fs.rmSync(out, { recursive: true, force: true });
 done();
