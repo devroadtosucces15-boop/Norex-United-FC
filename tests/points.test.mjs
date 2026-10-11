@@ -1,6 +1,7 @@
 // Point system (P11.3): awardPoints(), the /api/points + /api/points/leaderboard route, and the /points
 // Discord command. Category wiring (check-in, MOTM vote, rating, prediction) is exercised in-place by
 // events/wave8/wave10 tests already passing with awardPoints() added – this file covers the engine itself.
+import { plainText, isV2 } from '../bot/ui.js';
 import { call, env, login } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
@@ -48,6 +49,5 @@ async function slash(name, id = '701') {
   return res.json();
 }
 const cmd = await slash('points');
-const embed = cmd.data?.embeds?.[0];
-t('/points replies with an embed showing the total', !!embed && embed.description.includes('17') && cmd.data.flags === 64);
+t('/points: a private panel showing the total', isV2(cmd.data) && /⭐ 17 points/.test(plainText(cmd.data)) && (cmd.data.flags & 64) === 64);
 done();

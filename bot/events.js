@@ -24,6 +24,7 @@ import { notify, notifyMembers, safely } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
+import { message, header, text, sep, facts, footer, buttons, toLegacy } from './ui.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
 import { recommendRoute } from './lineuprec.js';
@@ -203,28 +204,32 @@ function readEvent(body, existing) {
 // buttons; eventButton then checks who may press them).
 const rsvpButtons = (env) => (flags(env).discordRsvp ?? 'off') !== 'off';
 // Discord message for an event: embed with a live timestamp, answers so far, positions still missing + ✅ ❔ ❌ buttons (P3.3).
-export function eventMessage(env, e, rsvps = [], heading = '') {
+// The match-night post (design system, bot/ui.js) – shared by /schedule, /nextevent, /availability, the post a manager
+// sends from the Squad Hub, its live refresh and the 24 h / 2 h reminders. opts: ping (line above the panel), mentions,
+// who (list everyone's answer, for /availability).
+export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, mentions, who = false } = {}) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), unix = Math.floor(e.start / 1000);
   const needs = typeof e.needs === 'string' ? parse(e.needs, {}) : e.needs ?? {};
-  const yes = rsvps.filter((r) => r.status === 'yes'), n = (st) => rsvps.filter((r) => r.status === st).length;
+  const yes = rsvps.filter((r) => r.status === 'yes'), names = (st) => rsvps.filter((r) => r.status === st).map((r) => r.name);
   const missing = Object.entries(needs).filter(([k]) => k !== 'players').map(([k, v]) => [k, v - yes.filter((r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] === k).length]).filter(([, left]) => left > 0);
   const short = needs.players && yes.length < needs.players ? needs.players - yes.length : 0;
-  const done = e.status === 'cancelled' || e.start + e.duration * MIN < Date.now();
-  return {
-    embeds: [{
-      title: `${EVENT_TYPES[e.type][0]} ${e.status === 'cancelled' ? '🚫 Cancelled · ' : ''}${heading}${label(e)}`.slice(0, 250), url: `${site}members.html#schedule-${e.id ?? ''}`, color: e.status === 'cancelled' ? 0x555555 : RED,
-      description: [`🗓️ <t:${unix}:F> · <t:${unix}:R>`, `⏱️ ${e.duration >= 60 ? `${Math.floor(e.duration / 60)} h${e.duration % 60 ? ` ${e.duration % 60} min` : ''}` : `${e.duration} min`}`, e.notes && `📝 ${e.notes}`].filter(Boolean).join('\n').slice(0, 3000),
-      fields: [
-        { name: 'Answers', value: `✅ ${n('yes')} · ❔ ${n('maybe')} · ❌ ${n('no')}${yes.length ? `\n${yes.slice(0, 20).map((r) => r.name).join(', ')}${yes.length > 20 ? ' …' : ''}` : ''}`.slice(0, 1000) },
-        ...(missing.length || short ? [{ name: '🧩 Still needed', value: [short && `${short} more player${short > 1 ? 's' : ''}`, ...missing.map(([k, left]) => `${left} ${k}`)].filter(Boolean).join(' · ') }] : []),
-      ],
-      footer: { text: done ? 'NOREX UNITED · this event is closed' : 'NOREX UNITED · tap a button to answer (only you see the confirmation)' },
-    }],
-    components: [{ type: 1, components: [
-      ...(done || !rsvpButtons(env) ? [] : [['yes', '✅', 'I’m in', 3], ['maybe', '❔', 'Maybe', 2], ['no', '❌', 'Can’t make it', 4]].map(([st, emoji, lbl, style]) => ({ type: 2, style, label: lbl, emoji: { name: emoji }, custom_id: `norex:ev:${e.id}:${st}` }))),
-      { type: 2, style: 5, label: 'Squad Hub', url: `${site}members.html#schedule` },
-    ] }],
-  };
+  const cancelled = e.status === 'cancelled', done = cancelled || e.start + e.duration * MIN < Date.now();
+  const length = e.duration >= 60 ? `${Math.floor(e.duration / 60)} h${e.duration % 60 ? ` ${e.duration % 60} min` : ''}` : `${e.duration} min`;
+  const list = (arr) => (arr.length ? `${arr.slice(0, 25).join(', ')}${arr.length > 25 ? ' …' : ''}` : '–');
+  const still = [short && `${short} more player${short > 1 ? 's' : ''}`, ...missing.map(([k, left]) => `${left} ${k}`)].filter(Boolean).join(' · ');
+  return message({ ping, mentions, accent: cancelled ? 'steel' : 'red', blocks: [
+    header({ eyebrow: `NOREX UNITED · ${EVENT_TYPES[e.type][1] ?? 'Match night'}`, title: `${EVENT_TYPES[e.type][0]} ${cancelled ? '🚫 Cancelled · ' : ''}${heading}${label(e)}`.slice(0, 200), sub: `<t:${unix}:F> · <t:${unix}:R> · ${length}` }),
+    e.notes ? text(`📝 ${String(e.notes).slice(0, 1500)}`) : null,
+    sep(),
+    who ? facts([[`✅ In (${yes.length})`, list(names('yes'))], [`❔ Maybe (${names('maybe').length})`, list(names('maybe'))], [`❌ Out (${names('no').length})`, list(names('no'))]])
+      : facts([['Answers', `✅ ${yes.length} · ❔ ${names('maybe').length} · ❌ ${names('no').length}`], ['In', yes.length ? list(names('yes')) : null]]),
+    still ? facts([['🧩 Still needed', still]]) : null,
+    footer(done ? 'This event is closed' : 'Tap a button to answer · only you see the confirmation'),
+    buttons([
+      ...(done || !rsvpButtons(env) ? [] : [['yes', '✅', 'I’m in', 'ok'], ['maybe', '❔', 'Maybe', 'grey'], ['no', '❌', 'Can’t make it', 'no']].map(([st, emoji, lbl, style]) => ({ label: lbl, emoji, style, id: `norex:ev:${e.id}:${st}` }))),
+      { label: 'Squad Hub', url: `${site}members.html#schedule-${e.id ?? ''}` },
+    ]),
+  ] });
 }
 const rsvpRows = (env, id) => all(env, 'SELECT r.status, r.name, r.user_id, p.positions, p.rush_positions FROM event_rsvps r LEFT JOIN profiles p ON p.user_id = r.user_id WHERE r.event_id = ? ORDER BY r.at', id);
 // Keeps the Discord post's counts in step with the site. Never throws.
@@ -233,9 +238,12 @@ export async function refreshEventPost(env, id) {
     const e = await one(env, 'SELECT * FROM events WHERE id = ?', id);
     if (!e?.discord_msg || !e.discord_channel || !env.DISCORD_BOT_TOKEN) return;
     const msg = eventMessage(env, e, await rsvpRows(env, id), e.series ? 'Weekly · ' : '');
-    await fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages/${e.discord_msg}`, {
-      method: 'PATCH', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ embeds: msg.embeds, components: msg.components }),
+    const patch = (body) => fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages/${e.discord_msg}`, {
+      method: 'PATCH', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
+    // posts made before the design system can't always switch layout → keep them up to date in the old embed style
+    const r = await patch({ components: msg.components, flags: msg.flags });
+    if (!r.ok) await patch(toLegacy(msg));
   } catch (err) { console.log('event post refresh failed', err.message); }
 }
 // People to tell about a change: everyone who said yes or maybe.
@@ -590,11 +598,12 @@ export async function eventReminders(env) {
     const yes = rsvps.filter((r) => r.status === 'yes').length;
     const head = `${soon ? '⏰ Starting soon' : '📅 Tomorrow'} · ${label(e)}`;
     if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
-      const msg = eventMessage(env, e, rsvps, soon ? '⏰ ' : '📅 ');
       const pings = e.remind === 'mention' ? quiet.slice(0, 50) : [];
+      const msg = eventMessage(env, e, rsvps, soon ? '⏰ ' : '📅 ', {
+        ping: `**${head}** – ${yes} ✅ so far${pings.length ? `\nNot answered yet: ${pings.map((id) => `<@${id}>`).join(' ')}` : ''}`, mentions: { users: pings },
+      });
       await safely(fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages`, {
-        method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...msg, content: `**${head}** – ${yes} ✅ so far${pings.length ? `\nNot answered yet: ${pings.map((id) => `<@${id}>`).join(' ')}` : ''}`, allowed_mentions: { users: pings } }),
+        method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(msg),
       }));
     }
     if (e.remind === 'dm' && quiet.length) await safely(notify(env, quiet, { type: 'event', icon: soon ? '⏰' : '📅', title: `${head} – can you make it?`, body: `${yes} said yes so far. Answer ✅ ❔ ❌ in the Squad Hub${e.discord_channel ? ' or on the Discord post' : ''}.`, link: `members.html#schedule-${e.id}` }));
