@@ -1,6 +1,6 @@
 {
-  "revision": "b0ff1255f52e62a2ceef22e1f799450c46f35ecd",
-  "files": 688,
+  "revision": "976e13baa7be32230c0d41c7e9d3b9e4e95ca48d",
+  "files": 689,
   "imports": 429,
   "api_paths": 224,
   "tables": 274,
@@ -3947,7 +3947,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 1038,
+      "lines": 991,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4136,7 +4136,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1931,
+      "lines": 1743,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6874,6 +6874,15 @@
       "functions": []
     },
     {
+      "path": "data/matches/88598129260284.json",
+      "layer": "data",
+      "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/meta.json",
       "layer": "data",
       "lines": 5,
@@ -8838,7 +8847,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 53,
+      "lines": 60,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -8848,9 +8857,17 @@
         "./lib.mjs"
       ],
       "endpoints": [
+        "/api/awards",
+        "/api/awards/vote",
         "/api/docs",
         "/api/docs/ack",
-        "/api/playstyle"
+        "/api/playstyle",
+        "/api/predict",
+        "/api/scout",
+        "/api/squads",
+        "/api/squads/prefs",
+        "/api/suggestions",
+        "/api/trials"
       ],
       "tables": [
         "scrolls",
