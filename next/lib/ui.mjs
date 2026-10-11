@@ -6,7 +6,7 @@ export const MAP = [
   { k: 'club', l: 'Club', i: 'shield', href: 'index.html', subs: [['index.html', 'Home', 'Where the club stands'], ['squad.html', 'Squad', 'Every player card'], ['halloffame.html', 'Hall of Fame', 'Awards and records'], ['join.html', 'Join', 'Apply to play'], ['scouting.html', 'Scouting', 'Members only']] },
   { k: 'matches', l: 'Matches', i: 'pitch', href: 'results.html', subs: [['fixtures.html', 'Fixtures', 'Match nights'], ['results.html', 'Results', 'Every game, broadcast style'], ['opponents.html', 'Opponents', 'Rivals and burner clubs']] },
   { k: 'stats', l: 'Stats', i: 'chart', href: 'stats.html', subs: [['stats.html', 'Overview', 'Club numbers'], ['leaders.html', 'Leaders', 'Every table'], ['players.html', 'Players', 'Directory and Compare']] },
-  { k: 'tactics', l: 'Tactics', i: 'brain', href: 'tactics.html', subs: [['tactics.html', 'Tactics table', 'Our XI and every formation'], ['studio.html', 'Studio', 'Chalkboard and playbook'], ['builds.html', 'Builds', 'Builder and pro builds'], ['updates.html', 'Game updates', 'FC 27 patch notes']] },
+  { k: 'tactics', l: 'Tactics', i: 'brain', href: 'tactics.html', subs: [['tactics.html', 'Tactics table', 'Our XI and every formation'], ['studio.html', 'Studio', 'Chalkboard and keyframes'], ['playbook.html', 'Playbook', 'Members: plays to learn'], ['builds.html', 'Builds', 'Builder and pro builds'], ['updates.html', 'Game updates', 'FC 27 patch notes']] },
 ];
 const HUBSUB = [['hub.html', 'My Locker'], ['hub-matchnight.html', 'Match Night'], ['hub-squad.html', 'Squad Room'], ['hub-clubhouse.html', 'Clubhouse'], ['hub-handbook.html', 'Handbook'], ['staff.html', 'Staff']];
 const PREVIEW = !!process.env.NEXT_PREVIEW;

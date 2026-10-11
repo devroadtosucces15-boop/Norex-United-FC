@@ -117,6 +117,14 @@ export function studio() {
   return shell({ group: 'tactics', page: 'studio.html', title: 'Studio', body, extraHead: '<script src="pitch.js" defer></script><link rel="stylesheet" href="tactics.css">', data: { formations: formations.formations, xi: xiKeys } });
 }
 
+// ---------- PLAYBOOK (B1, members: the live /api/plays, read-only first) ----------
+export function playbook() {
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Set pieces · shapes · drills</div><h2>Playbook</h2></div><p>The plays the managers drew in the Studio. Watch each one move, pause on the key moments, then tick it off before match night.</p></header>
+  <div data-for="guest" hidden><div class="panel sq-empty"><span>🔐</span><div><b>Members only</b><p class="muted small">${process.env.NEXT_PREVIEW ? 'Sign in with Discord to study the club’s plays.' : 'Switch “Preview as” to Member to see the Playbook.'}</p>${process.env.NEXT_PREVIEW ? '<a class="btn gold" data-login href="#">Sign in with Discord</a>' : ''}</div></div></div>
+  <div data-for="member owner" hidden><div id="pbook" class="sq-mount"></div></div></section></div>`;
+  return shell({ group: 'tactics', page: 'playbook.html', title: 'Playbook', body, extraHead: '<script src="playbook.js" defer></script>' });
+}
+
 // ---------- BUILDS (Builder + Pro builds) ----------
 export function builds() {
   const groups = game.archetypeGroups ?? [];
@@ -135,4 +143,4 @@ export function updatesPage() {
   return shell({ group: 'tactics', page: 'updates.html', title: 'Game updates', body });
 }
 
-export default function (P) { P('tactics.html', tactics()); P('playstyle.html', playstyle()); P('studio.html', studio()); P('builds.html', builds()); P('updates.html', updatesPage()); }
+export default function (P) { P('tactics.html', tactics()); P('playstyle.html', playstyle()); P('studio.html', studio()); P('playbook.html', playbook()); P('builds.html', builds()); P('updates.html', updatesPage()); }

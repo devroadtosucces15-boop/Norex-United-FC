@@ -6,7 +6,7 @@
   const d = document, A = window.NorexAuth, M = window.NorexMotion;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const CAT = { 'set-piece': ['🎯', 'Set piece'], formation: ['🧩', 'Formation'], drill: ['🏃', 'Drill'] };
-  const study = (id) => `../tactics.html#play${encodeURIComponent(id)}`; // the live Playbook until the Studio is ported (B1)
+  const study = (id) => `playbook.html#play${encodeURIComponent(id)}`; // the /next/ Playbook viewer (B1)
   let next = null; const views = new Set();
   const state = (p) => p.learned ? ['got', '✅', 'Learned'] : p.assigned ? ['todo', '📌', 'Assigned to you'] : ['opt', '▶', 'Optional'];
   const count = () => { const l = next?.plays || []; return { n: l.length, got: l.filter((p) => p.learned).length, todo: l.filter((p) => p.assigned && !p.learned).length }; };
@@ -23,7 +23,7 @@
     const f = c.n ? c.got / c.n : 0;
     return `<div class="tp-head panel"><div class="tp-ring" style="--f:${f.toFixed(3)}" role="img" aria-label="${c.got} of ${c.n} learned"><b class="num">${c.got}/${c.n}</b><small>learned</small></div><div><div class="eyebrow">📋 ${esc(name(next))}</div><p class="small" style="margin:4px 0 0">${esc(when(next.start))}</p><p class="small muted" style="margin:4px 0 0">${c.got === c.n ? '🎉 All learned. You are ready for kick-off.' : c.todo ? `📌 <b>${c.todo}</b> assigned to you still to learn.` : 'Study them before kick-off and tick each one off.'}</p></div></div>
 <ul class="tp-list">${l.map((p, i) => { const [k, ic, lab] = state(p), [ci, cl] = CAT[p.category] || ['📋', 'Play'];
-      return `<li class="tp-c ${k}" style="--i:${i}"><span class="tp-ci" aria-hidden="true">${ci}</span><div class="tp-t"><b>${esc(p.title)}</b><small class="muted">${cl} · <span class="tp-s">${ic} ${lab}</span></small></div><div class="tp-a"><a class="btn ghost" href="${study(p.id)}" target="_blank" rel="noopener">▶ Study it</a><button type="button" class="btn ${p.learned ? 'ghost' : 'gold'}" data-learn="${p.id}" aria-pressed="${!!p.learned}">${p.learned ? '↺ Not yet' : '✅ Learned it'}</button></div></li>`; }).join('')}</ul>
+      return `<li class="tp-c ${k}" style="--i:${i}"><span class="tp-ci" aria-hidden="true">${ci}</span><div class="tp-t"><b>${esc(p.title)}</b><small class="muted">${cl} · <span class="tp-s">${ic} ${lab}</span></small></div><div class="tp-a"><a class="btn ghost" href="${study(p.id)}">▶ Study it</a><button type="button" class="btn ${p.learned ? 'ghost' : 'gold'}" data-learn="${p.id}" aria-pressed="${!!p.learned}">${p.learned ? '↺ Not yet' : '✅ Learned it'}</button></div></li>`; }).join('')}</ul>
 <p class="tiny muted" style="margin-top:10px">Ticks are shared with the live Playbook and the Discord “Learned it” button. Managers see who is ready in the Dugout.</p>`; };
   const paint = () => views.forEach(([el, kind]) => { el.innerHTML = kind === 'row' ? row() : full(); });
 
