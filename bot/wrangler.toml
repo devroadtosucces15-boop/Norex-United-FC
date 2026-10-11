@@ -3,7 +3,7 @@ main = "worker.js"
 compatibility_date = "2025-01-01"
 
 [triggers]
-crons = ["*/10 * * * *"]
+crons = ["*/10 * * * *", "* * * * *"] # every 10 min: site update + checks; every minute: /remind only
 
 [vars]
 SITE_URL = "https://devroadtosucces15-boop.github.io/Norex-United-FC/"

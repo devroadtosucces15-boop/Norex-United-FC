@@ -40,6 +40,7 @@ const sample = {
   ask: null, // deferred reply, flag-gated + needs the real Workers AI binding – tests/ask.test.mjs (P11.11)
   burner: null, // managers only, deferred EA search + pick menus – tests/burners.test.mjs
   nextevent: null, feedback: null, suggest: null, announce: null, trial: null, motm: null, history: null, // P11.16 – need the member DB: tests/quickcommands.test.mjs
+  setup: null, purge: null, tag: null, tags: null, remind: null, reminders: null, // server tools – need the member DB + Discord: tests/servertools.test.mjs
 };
 for (const name of Object.keys(sample)) {
   if (!registered.includes(name) || !sample[name]) continue;
