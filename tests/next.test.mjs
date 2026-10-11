@@ -110,5 +110,27 @@ t('bug reporter: the live 🐞 issue tool on every /next/ page for the owner (fl
 t('playbook: deep links use the live #play<id> hash, keyframes carry pieces forward, the live chalk shapes, tall view attacks up', pbj.includes("location.hash.match(/^#play(\\d+)$/)") && pbj.includes('cur = { ...cur, ...s.pieces }') && ['free', 'dot', 'text', 'circle', 'rect', 'curve', 'darrow'].every((k) => pbj.includes(`'${k}'`)) && pbj.includes('vert ? [y, W - x] : [x, y]'));
 t('locker: claims match a player by EA id as well as by name (the live site stores the EA id)', read('cards.js').includes('x.k === A.player || x.id === A.player'));
 t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includes('href="staff.html" class="" data-for="owner" hidden'));
+// ---- B2 Builds: builder + pro builds + my builds on the live routes, the live build maths, the newest game-rules dataset ----
+{
+  const bh = read('builds.html'), bj = read('builds.js'), gj = JSON.parse(read('game.json'));
+  const gdir = path.join(ROOT, 'data/game'), newest = fs.readdirSync(gdir).filter((f) => /^fc\d+-.+\.json$/.test(f)).map((f) => JSON.parse(fs.readFileSync(path.join(gdir, f), 'utf8'))).sort((a, b) => String(b.published).localeCompare(String(a.published)))[0];
+  t('builds: four panes (Builder, Pro builds, My builds, Archetypes), live build maths loaded before builds.js, pages.js no longer drives the tabs',
+    ['data-pane="b"', 'data-pane="p"', 'data-pane="m"', 'data-pane="a"', 'id="bxb"', 'id="bxp"', 'id="bxm"', 'data-t="m"'].every((k) => bh.includes(k))
+    && bh.indexOf('src="build-math.js"') > -1 && bh.indexOf('src="build-math.js"') < bh.indexOf('src="builds.js"') && read('build-math.js') === fs.readFileSync(path.join(ROOT, 'web/build-math.js'), 'utf8') && !read('pages.js').includes("$('#pp')"));
+  t('builds: ships the newest versioned dataset as the offline seed and asks the Worker first', gj.version === newest.version && bh.includes(`max level ${newest.levelCap?.value}`) && bj.includes('`${API}/api/game`') && bj.includes("fetch('game.json')"));
+  const posts = [...bj.matchAll(/send\('([^']+)'/g)].map((m) => m[1]).sort(), gets = [...bj.matchAll(/get\(`?'?(\/api\/[a-z/]+)/g)].map((m) => m[1]);
+  const routes = fs.readFileSync(path.join(ROOT, 'bot/builds.js'), 'utf8') + fs.readFileSync(path.join(ROOT, 'bot/probuilds.js'), 'utf8');
+  t('builds: writes are only save/update, delete, copy and post/take down, all existing Worker routes', JSON.stringify([...new Set(posts)]) === JSON.stringify(['/api/builds', '/api/builds/delete', '/api/builds/fork', '/api/probuilds/post', '/api/probuilds/unpost'])
+    && [...new Set([...posts, ...gets])].every((r) => routes.includes(`'${r}'`)) && !/\/api\/probuilds\/(vote|comment|feature)/.test(bj));
+  t('builds: delete and take down need two taps, unsaved edits warn before leaving, the build survives the Discord login', /twoTap\(t, 'Tap again to delete'\)/.test(bj) && bj.includes("twoTap(btn, 'Tap again to take it down')") && bj.includes('beforeunload') && bj.includes("sessionStorage.setItem(PENDING"));
+  t('builds: older game rules show what changed (/api/game/changes) and upgrade to MAX', bj.includes('/api/game/changes?from=') && bj.includes('X.fit(g, { ...b, level: cap() })'));
+  // the share code round-trips through the live maths with the shipped dataset
+  const ctx = {}; new Function('globalThis', read('build-math.js'))(ctx); const X = ctx.NXBuildMath;
+  const arch = gj.archetypes.find((a) => a.group === 'FWD'), b = { arch: arch.id, level: gj.levelCap.value, spent: {}, ps: [gj.playstyles[0].id], plus: [], h: 185, w: 80 };
+  for (const a of ['Finishing', 'Positioning']) for (let i = 0; i < 4; i++) { const ev = X.evaluate(gj, b); if (X.canAdd(gj, ev, a) != null) b.spent[a] = (b.spent[a] || 0) + 1; }
+  const back = X.decode(gj, X.encode(gj, b));
+  t('builds: share code round-trips archetype, level, points, PlayStyles, body and the dataset version', back.arch === b.arch && back.level === b.level && Object.keys(b.spent).length === 2 && Object.entries(b.spent).every(([k, v]) => back.spent[k] === v) && Object.keys(back.spent).length === 2 && back.ps[0] === b.ps[0] && back.h === 185 && back.version === gj.version);
+  t('builds: archetype cards show signature attributes and open the builder', (bh.match(/class="bx-sig"/g) || []).length >= 10 && bh.includes('data-bxtry="finisher"'));
+}
 fs.rmSync(out, { recursive: true, force: true });
 done();

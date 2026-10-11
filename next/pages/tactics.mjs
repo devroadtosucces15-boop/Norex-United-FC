@@ -125,16 +125,23 @@ export function playbook() {
   return shell({ group: 'tactics', page: 'playbook.html', title: 'Playbook', body, extraHead: '<script src="tonight.js" defer></script><script src="playbook.js" defer></script><script src="studio.js" defer></script>' });
 }
 
-// ---------- BUILDS (Builder + Pro builds) ----------
+// ---------- BUILDS (B2: Builder + Pro builds + My builds, live /api/builds + /api/probuilds; builds.js) ----------
 export function builds() {
   const groups = game.archetypeGroups ?? [];
   const top = [...archUse].sort((a, b) => b[1].apps - a[1].apps).slice(0, 3);
-  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">FC 27 · ${(game.archetypes ?? []).length} archetypes</div><h2>Builds</h2></div><div class="chips" id="bt"><button class="chip on" data-t="b">Builder</button><button class="chip" data-t="p">Pro builds</button></div></header>
-  <div id="pb"><p class="muted" style="max-width:760px">Every archetype is unlocked from the start, and levelling one unlocks Masteries. Attribute values EA has not published are left empty rather than guessed: managers enter them from the in-game screens.</p>
+  const cap = game.levelCap ?? {};
+  const tabs = [['b', '🛠️', 'Builder'], ['p', '🏆', 'Pro builds'], ['m', '📂', 'My builds'], ['a', '🧬', 'Archetypes']];
+  const arch = `<p class="muted" style="max-width:760px">Every archetype is unlocked from the start, and levelling one unlocks Masteries. ★ marks the attributes each archetype is built around.</p>
   ${top.length ? `<div class="panel reveal" style="margin-top:16px"><h3 class="rv-c">🧬 What our players actually build</h3><p class="muted small rv-c">From the archetype EA records for every player in every archived match.</p><div class="txf-kpi rv-g">${top.map(([n, u]) => `<div><b class="num">${u.apps}</b><span><b>${esc(n)}</b><br>${u.who.size} player${u.who.size === 1 ? '' : 's'} · ⭐ ${u.rating}</span></div>`).join('')}</div></div>` : ''}
-  ${groups.map((g) => `<h3 style="margin:22px 0 10px">${esc(g.name)}</h3><div class="grid g4" data-stagger>${(game.archetypes ?? []).filter((a) => a.group === g.id).map((a) => `<div class="panel"><div class="osw gold-t" style="font-size:24px">${esc(a.name)}</div><div class="muted small">${esc(g.name.replace(/s$/, ''))} archetype</div>${(() => { const u = archUse.get(a.name); return u ? `<div class="bld-use"><b class="num">${u.apps}</b> apps · ${u.who.size} player${u.who.size === 1 ? '' : 's'}<i style="--w:${Math.round(u.apps / archMax * 100)}%"></i></div>` : '<div class="bld-use muted">Not used in the archive yet</div>'; })()}<div class="pill" style="margin-top:10px">${Object.keys(a.base || {}).length ? 'Base values entered' : 'Values not entered yet'}</div></div>`).join('')}</div>`).join('')}</div>
-  <div id="pp" hidden><div class="panel" style="text-align:center;padding:40px"><div style="font-size:40px">🧩</div><h3>Pro builds</h3><p class="muted">Pro builds appear here once the managers publish them from the Hub. Nothing is shown rather than made up.</p></div></div></section></div>`;
-  return shell({ group: 'tactics', page: 'builds.html', title: 'Builds', body });
+  ${groups.map((g) => `<h3 style="margin:22px 0 10px">${esc(g.name)}</h3><div class="grid g4" data-stagger>${(game.archetypes ?? []).filter((a) => a.group === g.id).map((a) => `<div class="panel bx-ac"><div class="osw gold-t" style="font-size:24px">${esc(a.name)}</div><div class="muted small">${esc(g.name.replace(/s$/, ''))} archetype${a.positions?.length ? ` · ${a.positions.map(esc).join(' ')}` : ''}</div>${(() => { const u = archUse.get(a.name); return u ? `<div class="bld-use"><b class="num">${u.apps}</b> apps · ${u.who.size} player${u.who.size === 1 ? '' : 's'}<i style="--w:${Math.round(u.apps / archMax * 100)}%"></i></div>` : '<div class="bld-use muted">Not used in the archive yet</div>'; })()}${a.signature?.length ? `<div class="bx-sig">${a.signature.map((x) => `<span>★ ${esc(x)}</span>`).join('')}</div>` : ''}<a class="btn ghost sm bx-try" href="#a=${encodeURIComponent(a.id)}&amp;l=${cap.value ?? 1}" data-bxtry="${esc(a.id)}">🛠️ Build one</a></div>`).join('')}</div>`).join('')}`;
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">FC 27 · ${(game.archetypes ?? []).length} archetypes · max level ${cap.value ?? '–'}</div><h2>Builds</h2></div><div class="chips" id="bt" role="tablist" aria-label="Builds">${tabs.map(([k, i, l], n) => `<button type="button" role="tab" class="chip${n ? '' : ' on'}" aria-selected="${!n}" data-t="${k}">${i} ${l}</button>`).join('')}</div></header>
+  <div id="bx" data-version="${esc(game.version ?? '')}">
+  <div data-pane="b"><div id="bxb" class="sq-mount" aria-busy="true"><div class="panel bx-load"><span class="sk" style="height:220px"></span></div></div></div>
+  <div data-pane="p" hidden><div id="bxp" class="sq-mount"></div></div>
+  <div data-pane="m" hidden><div id="bxm" class="sq-mount"></div></div>
+  <div data-pane="a" hidden>${arch}</div></div>
+  <noscript><p class="muted">The builder needs JavaScript.</p></noscript></section></div>`;
+  return shell({ group: 'tactics', page: 'builds.html', title: 'Builds', body, extraHead: '<script src="build-math.js" defer></script><script src="builds.js" defer></script>' });
 }
 
 // ---------- GAME UPDATES ----------

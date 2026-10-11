@@ -61,7 +61,8 @@ export const opponents = [...opps.values()].map((r) => ({ ...r, sr: wmap.get(r.i
 export const burners = (J(path.join(root, 'data/burners/index.json'), { ids: [] }).ids ?? []).map((id) => { const b = J(path.join(root, `data/burners/${id}.json`)); if (!b) return null; const o = b.overall ?? {}; return { id, n: b.name, gp: num(o.gamesPlayed), w: num(o.wins), d: num(o.ties), l: num(o.losses), gf: num(o.goals), ga: num(o.goalsAgainst), sr: num(o.skillRating), div: num(b.leaderboard?.currentDivision), roster: (b.members ?? []).length, tracked: b.trackedAt, fetched: b.fetchedAt, recent: (b.matches ?? []).length }; }).filter(Boolean);
 export const updates = (() => { const d = path.join(root, 'data/updates'); return fs.readdirSync(d).filter((f) => f.endsWith('.json') && f !== 'index.json').map((f) => J(path.join(d, f))).filter(Boolean).sort((a, b) => String(b.published).localeCompare(String(a.published))); })();
 export const features = cfg.features ?? {};
-export const game = J(path.join(root, 'data/game/fc27-launch.json'), {});
+// newest versioned game-rules dataset (same pick as scripts/updates-page.mjs loadGame, the seed the Worker serves until a manager publishes a version)
+export const game = (() => { const d = path.join(root, 'data/game'); return fs.readdirSync(d).filter((f) => /^fc\d+-.+\.json$/.test(f)).map((f) => J(path.join(d, f))).filter(Boolean).sort((a, b) => String(b.published).localeCompare(String(a.published)))[0] ?? {}; })();
 export const shapes = (() => { const s = new Map(); for (const m of matches) { if (m.lines.length !== 11) continue; const c = { GK: 0, DEF: 0, MID: 0, FWD: 0 }; m.lines.forEach((l) => c[l.line]++); const k = `${c.GK}-${c.DEF}-${c.MID}-${c.FWD}`; s.set(k, (s.get(k) || 0) + 1); } return [...s].sort((a, b) => b[1] - a[1]); })();
 // the usual XI by line (illustrative slots; EA does not publish slots)
 export function usualXI() {
