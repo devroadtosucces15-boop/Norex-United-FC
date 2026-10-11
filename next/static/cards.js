@@ -60,7 +60,12 @@
   // preview/live: approved portraits come from the real Card Studio API; the local mock server is used only when no API is configured
   async function realMap() { const api = window.NOREX_API; const r = await fetch(`${api}/api/cards/portraits`, { cache: 'no-store' }); if (!r.ok) throw new Error('portraits'); const d = (await r.json()).portraits || {}, out = {}; for (const p of (window.NOREX?.players || [])) { const a = d[p.id] || d[p.k] || d[p.n]; if (a) out[p.k] = { v: a.id, kit: a.kitNumber, url: `${api}/api/cards/portraits?id=${a.id}` }; } return out; }
   async function refresh() { try { if (window.NOREX_API) map = await realMap(); else { const r = await fetch('api/art', { cache: 'no-store' }); map = r.ok ? await r.json() : {}; } } catch { map = {}; } window.NorexArt.map = map; await apply(); }
-  window.NorexArt = { map, refresh, apply, ready: null };
+  // the same clean + fit for a picture that is not published yet (Card Studio previews: a blob URL, so canvas reads are allowed)
+  async function fitInto(el, u, kit) { const cut = el?.querySelector('.cut'); if (!cut) return;
+    const i = new Image(); i.src = u; await i.decode(); const r = (await clean(i)) || { u, m: measure(i) }; cut.src = r.u;
+    for (const [n, val] of Object.entries(fitVars(r.m))) el.style.setProperty(n, val); el.classList.add('has-art');
+    const k = el.querySelector('.kit'), has = kit != null && kit !== ''; if (k) k.textContent = has ? kit : ''; el.classList.toggle('has-kit', has); }
+  window.NorexArt = { map, refresh, apply, fitInto, ready: null };
   window.NorexArt.ready = refresh();
   try { const bc = new BroadcastChannel('norex-art'); bc.onmessage = refresh; window.NorexArt.notify = () => bc.postMessage(1); } catch { window.NorexArt.notify = () => {}; }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
