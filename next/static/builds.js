@@ -3,7 +3,9 @@
 // (copied at build, window.NXBuildMath), so a build reads the same here as on the live builder. A build travels as the live share code
 // (#a=<archetype>&l=<level>&p=…&v=<dataset version>), which is also what /api/builds stores.
 // Reads: GET /api/probuilds (+ /get?id=, public), GET /api/builds (+ /get?id=, /impact), GET /api/game/changes?from= (older rules).
-// Writes (members): POST /api/builds (save new / update mine), /api/builds/delete, /api/builds/fork, /api/probuilds/post + /unpost (share to the board).
+// Writes (members): POST /api/builds (save new / update mine), /api/builds/delete, /api/builds/fork, /api/probuilds/post + /unpost (share to the board),
+// /api/probuilds/vote, /comment, /comment/delete, /api/mybuild (⭐ my League / Rush build); managers: /api/probuilds/feature (⭐ Club recommended) + /unpost (remove a post).
+// Everyone: ⚖️ Compare (the build on screen against a saved build, a pro build or a share link) and the 🖼️ image card (1080×1350 PNG, drawn here).
 // Share links need no login. Deep links: #a=… (a build), #b=<id> (a posted build), #build<id> (a saved build), #pro, #mine, #arch.
 (() => {
   const d = document, $ = (s, r = d) => r.querySelector(s), $$ = (s, r = d) => [...r.querySelectorAll(s)];
@@ -26,6 +28,8 @@
 
   let g = null, b = null, hist = [], cur = null, xt = 'playstyles', openAttr = null, mig = null, titleDraft = null, postOpen = false, postDraft = null, busy = false;
   let mine = null, mineErr = null, impact = new Map(), board = null, boardErr = null, detail = null, detailId = null, pane = 'b';
+  let useAt = null, useDraft = null, cmp = { open: false, key: '', link: '', all: false, extra: null }, comDraft = '';
+  const staff = () => signed() && (A.role === 'manager' || A.role === 'owner'); // shows the manager buttons; the Worker checks the real permission
   const F = { sort: 'hot', mode: 'all', line: '', q: '' };
 
   // ---------- helpers on the dataset ----------
@@ -50,9 +54,9 @@
     try { if (navigator.share && matchMedia('(pointer:coarse)').matches) { await navigator.share({ title, url }); return; } } catch (e) { if (e?.name === 'AbortError') return; }
     try { await navigator.clipboard.writeText(url); toast('Link copied. Anyone can open this build, no login needed.', 'ok', '🔗'); } catch { prompt('Copy this link:', url); }
   }
-  const login = (then) => {
+  const login = (then, back) => {
     if (!API || !A) { toast('Saving needs the club server. This preview copy has none.', 'err'); return; }
-    try { sessionStorage.setItem(PENDING, JSON.stringify({ code: code(), cur, then, title: titleDraft })); } catch {}
+    try { sessionStorage.setItem(PENDING, JSON.stringify({ code: code(), cur, then, title: titleDraft, back })); } catch {}
     location.href = A.loginUrl();
   };
   const gate = (what) => `<div class="panel sq-empty"><span>🔐</span><div><b>Sign in to ${what}</b><p class="muted small">Building and share links are open to everyone. Saving needs a NOREX Discord login. The build on screen comes with you.</p>${API ? '<button type="button" class="btn gold" data-bxlogin>Sign in with Discord</button>' : '<p class="tiny muted">Not available in this preview copy.</p>'}</div></div>`;
@@ -178,10 +182,11 @@ ${cur ? `<div class="bx-cur"><span aria-hidden="true">${cur.mine ? '📂' : '�
 <div class="bx-face">${ev.face.map(([k, v]) => `<div><small>${k}</small><b class="num ${v >= 80 ? 'hi' : v >= 65 ? 'mid' : ''}">${v}</b></div>`).join('')}</div>
 <div class="bx-fit"><small class="muted">📍 Best positions*</small>${ev.fit.slice(0, 3).map(([p, v], i) => `<div class="${i ? '' : 'best'}"><b>${esc(p)}</b><span class="bx-bar"><i class="a" style="left:0;width:${Math.min(100, (v / ev.top) * 100).toFixed(1)}%"></i></span><em class="num">${v}</em></div>`).join('')}</div>
 <div class="bx-row-acts"><button type="button" class="btn ghost sm" data-bxundo${hist.length ? '' : ' disabled'}>↶ Undo</button><button type="button" class="btn ghost sm" data-bxreset${ev.used ? '' : ' disabled'}>⟲ Reset</button><button type="button" class="btn ghost sm" data-bxshare>🔗 Share</button></div>
+<div class="bx-row-acts"><button type="button" class="btn ghost sm" data-bxcmp aria-expanded="${cmp.open}">⚖️ Compare</button><button type="button" class="btn ghost sm" data-bximg>🖼️ Image card</button>${pickPills(cur?.mine && cur.id)}</div>
 <div class="bx-save"><label><span class="tiny muted">Name</span><input data-bxtitle maxlength="60" value="${esc(title)}" aria-label="Build name"></label>
-${signed() ? `<div class="bx-row-acts"><button type="button" class="btn gold sm" data-bxsave${busy ? ' disabled' : ''}>💾 ${cur?.mine ? 'Save' : 'Save to My builds'}</button>${cur?.mine ? `<button type="button" class="btn ghost sm" data-bxsavenew${busy ? ' disabled' : ''}>＋ Save as new</button>` : ''}<button type="button" class="btn ghost sm" data-bxpostgo aria-expanded="${postOpen}">📣 ${cur?.posted && cur.mine ? 'Update post' : 'Post'}</button></div>${cur?.posted && cur.mine ? `<button type="button" class="bx-link" data-bxunpost="${cur.id}">Take the post down</button>` : ''}`
+${signed() ? `<div class="bx-row-acts"><button type="button" class="btn gold sm" data-bxsave${busy ? ' disabled' : ''}>💾 ${cur?.mine ? 'Save' : 'Save to My builds'}</button>${cur?.mine ? `<button type="button" class="btn ghost sm" data-bxsavenew${busy ? ' disabled' : ''}>＋ Save as new</button>` : ''}<button type="button" class="btn ghost sm" data-bxpostgo aria-expanded="${postOpen}">📣 ${cur?.posted && cur.mine ? 'Update post' : 'Post'}</button><button type="button" class="btn ghost sm" data-bxusego="side" aria-expanded="${useAt === 'side'}">⭐ Use as my build</button></div>${cur?.posted && cur.mine ? `<button type="button" class="bx-link" data-bxunpost="${cur.id}">Take the post down</button>` : ''}`
     : `<button type="button" class="btn gold sm" data-bxlogin>🔐 Sign in to save</button>`}
-${postOpen && signed() ? postHtml(ev) : ''}</div>
+${postOpen && signed() ? postHtml(ev) : ''}${useAt === 'side' && signed() ? useHtml('side', cur?.position || ev.fit[0]?.[0], cur?.mode) : ''}</div>
 <p class="tiny muted">* Face stats are group averages and OVR is an estimate: EA does not publish its formula. Game rules <code>${esc(g.version)}</code>, max level ${ev.cap} (${capWord()}).</p>
 ${masteries.length ? `<div class="bx-mast"><b>🏅 Masteries</b>${masteries.map((m) => `<span class="${ev.level >= m.level ? 'on' : ''}">L${m.level}: ${Object.entries(m.bonus).map(([k, v]) => `+${v} ${esc(k)}`).join(', ')}</span>`).join('')}</div>` : ''}
 </aside>`;
@@ -190,7 +195,7 @@ ${masteries.length ? `<div class="bx-mast"><b>🏅 Masteries</b>${masteries.map(
     const ev = X.evaluate(g, b), st = ev.status;
     return `${migHtml(ev)}${st.preview ? `<div class="panel bx-note"><b>🧪 Placeholder numbers</b> <span class="muted small">${[!st.base && 'base attributes', !st.ap && 'points per level', !st.costs && 'point costs'].filter(Boolean).join(', ')} for this archetype are not entered from the game yet, so the builder uses placeholders.</span></div>` : ''}
 <div class="panel bx-pick">${(g.archetypeGroups || []).map((grp) => `<div class="bx-pg"><small class="muted">${ICON[grp.id] ?? ''} ${esc(grp.name)}</small><div class="chips">${(g.archetypes || []).filter((a) => a.group === grp.id).map((a) => `<button type="button" class="chip${a.id === ev.arch.id ? ' on' : ''}" data-arch="${esc(a.id)}" aria-pressed="${a.id === ev.arch.id}">${esc(a.name)}</button>`).join('')}</div></div>`).join('')}</div>
-<div class="bx-main">${sideHtml(ev)}<div class="bx-left"><div class="bx-grps">${(g.attributeGroups || []).map((grp) => grpHtml(ev, grp)).join('')}</div>${xtHtml(ev)}</div></div>`;
+<div class="bx-main">${sideHtml(ev)}<div class="bx-left"><div class="bx-grps">${(g.attributeGroups || []).map((grp) => grpHtml(ev, grp)).join('')}</div>${xtHtml(ev)}</div></div>${cmp.open ? cmpPanel() : ''}`;
   }
   const draw = () => {
     if (!g || !b) return;
@@ -257,11 +262,167 @@ ${masteries.length ? `<div class="bx-mast"><b>🏅 Masteries</b>${masteries.map(
     busy = false; draw();
   }
   async function unpost(id, btn) {
-    if (!twoTap(btn, 'Tap again to take it down')) return;
+    if (btn.dataset.bxremove != null ? !twoTap(btn, 'Tap again to remove the post') : !twoTap(btn, 'Tap again to take it down')) return;
     busy = true;
-    try { await send('/api/probuilds/unpost', { id }); if (cur?.id === id) cur.posted = false; board = null; mine = null; toast('Taken off the Pro Builds board. It stays in My builds.', 'ok', '📣'); } catch (e) { toast(e.message, 'err'); }
-    busy = false; draw();
+    try {
+      await send('/api/probuilds/unpost', { id }); if (cur?.id === id) cur.posted = false; board = null; mine = null;
+      toast(btn.dataset.bxremove != null ? 'Post removed from the board. The build stays in its author’s My builds.' : 'Taken off the Pro Builds board. It stays in My builds.', 'ok', '📣');
+      if (pane === 'p') { busy = false; detailId = null; history.replaceState(null, '', '#pro'); return paintBoard(true); }
+    } catch (e) { toast(e.message, 'err'); }
+    busy = false; repaint();
   }
+
+  // ---------- ⭐ use as my build (League / Rush pick, shows on the profile) ----------
+  const repaint = () => (pane === 'b' ? draw() : pane === 'p' ? (detailId ? paintDetail() : paintBoard()) : pane === 'm' ? paintMine() : null);
+  const pickPills = (id) => (id && mine?.picks ? Object.entries(MODES).filter(([k]) => mine.picks[k] === id).map(([, [ic, l]]) => `<span class="pill s">${ic} My ${l} build</span>`).join('') : '');
+  function useHtml(at, pos, mode) {
+    const d = useDraft ?? { mode: mode || 'league', position: pos || 'ST' };
+    const note = at === 'side' ? (cur?.mine ? 'Your saved build is updated with what is on screen.' : 'It is saved to My builds too.') : at[0] === 'd' && !detail?.build?.mine ? 'You get your own copy, so it stays yours even if the author changes theirs.' : '';
+    return `<form class="bx-post bx-use" data-bxuse="${esc(at)}"><div class="eyebrow">⭐ Use as my build</div><p class="tiny muted">It shows on your profile, your hover card and your player page. ${note}</p>
+<div class="bx-2"><fieldset><legend>This is my…</legend>${Object.entries(MODES).map(([k, [i, l]]) => `<label class="chip bx-radio"><input type="radio" name="mode" value="${k}"${d.mode === k ? ' checked' : ''}> ${i} ${l}</label>`).join('')}</fieldset><label><span>Position</span><select name="position">${POS.map((x) => `<option${x === d.position ? ' selected' : ''}>${x}</option>`).join('')}</select></label></div>
+<div class="bx-row-acts"><button type="submit" class="btn gold sm"${busy ? ' disabled' : ''}>⭐ Use this build</button><button type="button" class="btn ghost sm" data-bxusex>Cancel</button></div></form>`;
+  }
+  const refreshMine = () => { if (signed()) get('/api/builds').then((r) => { mine = r; repaint(); }).catch(() => {}); };
+  const setPicks = (r) => {
+    const ids = Object.fromEntries(Object.entries(r.picks || {}).filter(([, x]) => x).map(([k, x]) => [k, x.id]));
+    if (mine && (!r.saved || mine.builds.some((x) => x.id === r.saved))) mine = { ...mine, picks: ids }; else { mine = null; refreshMine(); }
+  };
+  async function useIt(form) {
+    const at = form.dataset.bxuse, fd = new FormData(form), v = { mode: fd.get('mode') || 'league', position: fd.get('position') };
+    busy = true; repaint();
+    try {
+      let r;
+      if (at === 'side') {
+        const ev = X.evaluate(g, b);
+        if (cur?.mine && cur.id) {
+          if (dirty()) { mine = await send('/api/builds', { id: cur.id, title: cur.title, code: code() }); cur.base = code(); }
+          r = await send('/api/mybuild', { id: cur.id, ...v });
+        } else {
+          const title = (titleDraft ?? '').trim() || `${ev.arch.name} L${ev.level}`;
+          r = await send('/api/mybuild', { code: code(), title, ...v });
+          cur = { id: r.saved, title, mine: true, by: A.name, posted: false, position: v.position, mode: v.mode, version: g.version, base: code() }; titleDraft = null;
+        }
+      } else r = await send('/api/mybuild', { id: +at.slice(1), ...v });
+      setPicks(r); useAt = null; useDraft = null;
+      toast(`Now your ${MODES[v.mode][1]} build (${v.position}). It shows on your profile.`, 'ok', '⭐');
+    } catch (e) { toast(e.message, 'err'); }
+    busy = false; repaint();
+  }
+  async function unpick(mode) {
+    try { setPicks(await send('/api/mybuild', { mode, id: null })); toast(`No ${MODES[mode][1]} build picked now.`, 'ok', '⭐'); } catch (e) { toast(e.message, 'err'); }
+    repaint();
+  }
+  root.addEventListener('click', (e) => {
+    const t = e.target.closest('button'); if (!t || t.disabled) return;
+    if (t.dataset.bxusego) {
+      if (!signed()) return login('mybuild', pane === 'p' && detailId ? `b=${detailId}` : null);
+      const at = t.dataset.bxusego; useAt = useAt === at ? null : at; useDraft = null; repaint();
+      if (useAt) $(`[data-bxuse="${at}"] input:checked`, root)?.focus();
+    } else if ('bxusex' in t.dataset) { useAt = null; useDraft = null; repaint(); }
+    else if (t.dataset.bxunpick) unpick(t.dataset.bxunpick);
+  });
+  root.addEventListener('submit', (e) => { const f = e.target.closest('[data-bxuse]'); if (f) { e.preventDefault(); if (!busy) useIt(f); } });
+  root.addEventListener('change', (e) => { const f = e.target.closest('[data-bxuse]'); if (f) { const fd = new FormData(f); useDraft = { mode: fd.get('mode') || 'league', position: fd.get('position') }; } });
+
+  // ---------- ⚖️ compare: the build on screen (A) against a saved build, a pro build or a share link (B) ----------
+  function compareHtml(A1, B1, la, lb) {
+    const ea = X.evaluate(g, A1), eb = X.evaluate(g, B1);
+    const d = (x, y) => (x === y ? '' : `<em class="${x > y ? 'pos' : 'neg'}">${x > y ? '▲' : '▼'}${Math.abs(x - y)}</em>`);
+    const line = (k, x, y) => `<tr${x === y ? ' class="same"' : ''}><td class="${x > y ? 'win' : ''}">${x}${d(x, y)}</td><th scope="row">${esc(k)}</th><td class="${y > x ? 'win' : ''}">${y}${d(y, x)}</td></tr>`;
+    const ps = (ev) => [...ev.choices.plus.map((id) => `${nameIn(g.playstyles, id)}+`), ...ev.choices.ps.map((id) => nameIn(g.playstyles, id))].map(esc).join(', ') || '–';
+    const all = ea.rows.map((r) => [r.name, r.value, eb.rows.find((q) => q.name === r.name)?.value ?? 0]);
+    const aw = all.filter(([, x, y]) => x > y).length, bw = all.filter(([, x, y]) => y > x).length, rows = all.filter(([, x, y]) => cmp.all || x !== y);
+    return `<p class="small bx-cmp-sum"><b>A</b> is higher on <b class="num">${aw}</b> attribute${aw === 1 ? '' : 's'}, <b>B</b> on <b class="num">${bw}</b>${all.length - aw - bw ? ` · ${all.length - aw - bw} level` : ''}.</p>
+<div class="bx-cmp-t"><table class="bx-cmpt"><thead><tr><th>A · ${esc(la)}<small>${esc(ea.arch.name)} · L${ea.level}</small></th><th></th><th>B · ${esc(lb)}<small>${esc(eb.arch.name)} · L${eb.level}</small></th></tr></thead>
+<tbody>${line('OVR*', ea.ovr, eb.ovr)}${ea.face.map(([k, v], i) => line(k, v, eb.face[i]?.[1] ?? 0)).join('')}${line('Points left', ea.left, eb.left)}
+<tr class="ex"><td>${ps(ea)}</td><th scope="row">💫 PlayStyles</th><td>${ps(eb)}</td></tr><tr class="ex"><td>${ea.choices.h} cm · ${ea.choices.w} kg</td><th scope="row">📏 Body</th><td>${eb.choices.h} cm · ${eb.choices.w} kg</td></tr>
+<tr class="grp"><th colspan="3">${cmp.all ? 'All attributes' : `Attributes that differ (${rows.length})`}</th></tr>${rows.map(([k, x, y]) => line(k, x, y)).join('') || '<tr><td colspan="3" class="muted">Same attributes.</td></tr>'}</tbody></table></div>`;
+  }
+  const cmpOpts = () => [...(cmp.extra ? [['x', cmp.extra.title, cmp.extra.code, '']] : []),
+    ...(mine?.builds || []).filter((x) => x.id !== cur?.id).map((x) => [`m${x.id}`, x.title, x.code, '📂 My builds']),
+    ...(board || []).filter((x) => !x.mine && x.id !== cur?.id).map((x) => [`p${x.id}`, `${x.title} · ${x.by?.n || 'Member'}`, x.code, '🏆 Pro builds'])];
+  function cmpOut() {
+    const o = cmpOpts(), pick = o.find(([k]) => k === cmp.key);
+    const c = pick ? pick[2] : cmp.key === 'link' ? (cmp.link.split('#')[1] || cmp.link).trim() : '';
+    const B = c && fromCode(c);
+    return B ? compareHtml(b, plain(B), cur?.title || 'On screen', pick ? pick[1].split(' · ')[0] : 'Shared build')
+      : `<p class="muted small">${c ? '⚠️ That isn’t a builder link. Copy it with 🔗 Share in the Builder.' : o.length ? 'Pick a build or paste a share link.' : 'Paste a share link to compare.'}</p>`;
+  }
+  function cmpPanel() {
+    const o = cmpOpts(); if (!cmp.key || (cmp.key !== 'link' && !o.some(([k]) => k === cmp.key))) cmp.key = o[0]?.[0] || 'link';
+    const groups = [...new Set(o.map((x) => x[3]))];
+    const opts = groups.map((gr) => { const l = o.filter((x) => x[3] === gr).map(([k, t]) => `<option value="${k}"${cmp.key === k ? ' selected' : ''}>${esc(t)}</option>`).join(''); return gr ? `<optgroup label="${esc(gr)}">${l}</optgroup>` : l; }).join('');
+    return `<section class="panel bx-cmp" id="bxcmp"><header class="bx-cmp-h"><div class="eyebrow">⚖️ Compare builds</div><button type="button" class="bx-x" data-bxcmpx aria-label="Close compare">×</button></header>
+<div class="bx-cmp-pick"><span class="bx-cmp-a"><b>A</b> ${esc(cur?.title || 'Build on screen')} <small class="muted">changes as you build</small></span><label><b>B</b> <select data-bxcmpb aria-label="Build B">${opts}<option value="link"${cmp.key === 'link' ? ' selected' : ''}>🔗 Paste a share link…</option></select></label>
+${cmp.key === 'link' ? `<input data-bxcmplink placeholder="Paste a builder share link" value="${esc(cmp.link)}" aria-label="Share link">` : ''}<label class="small bx-cmp-all"><input type="checkbox" data-bxcmpall${cmp.all ? ' checked' : ''}> All attributes</label></div>
+${signed() ? '' : '<p class="tiny muted">🔐 Sign in to compare with your saved builds. Pro builds and share links work for everyone.</p>'}<div data-bxcmpout>${cmpOut()}</div></section>`;
+  }
+  async function openCmp(extra) {
+    cmp.open = true; if (extra) { cmp.extra = extra; cmp.key = 'x'; }
+    draw(); $('#bxcmp')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const want = [];
+    if (signed() && !mine) want.push(get('/api/builds').then((r) => { mine = r; }).catch(() => {}));
+    if (API && !board) want.push(get('/api/probuilds').then((r) => { board = r.builds || []; }).catch(() => {}));
+    if (want.length) { await Promise.all(want); if (pane === 'b' && cmp.open) draw(); }
+  }
+
+  // ---------- 🖼️ image card: branded 1080×1350 PNG (club colours, crest, face stats, top attributes, PlayStyles) ----------
+  async function image(bb, title) {
+    const ev = X.evaluate(g, bb), W = 1080, H = 1350;
+    const c = d.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d');
+    const css = getComputedStyle(d.documentElement);
+    const red = css.getPropertyValue('--red').trim() || '#c8352c', gold = css.getPropertyValue('--g2').trim() || '#efcf7a';
+    await d.fonts?.ready;
+    const bg = x.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#1d0d0e'); bg.addColorStop(0.55, '#0b0f16'); bg.addColorStop(1, '#07090d');
+    x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    x.save(); x.globalAlpha = 0.05; x.fillStyle = '#fff';
+    for (let i = -H; i < W; i += 60) { x.beginPath(); x.moveTo(i, H); x.lineTo(i + 6, H); x.lineTo(i + 6 + H * 0.47, 0); x.lineTo(i + H * 0.47, 0); x.fill(); }
+    x.restore();
+    x.fillStyle = red; x.fillRect(0, 0, W, 12); x.fillRect(0, H - 12, W, 12);
+    const crest = new Image(); crest.src = 'crest.png'; await crest.decode().catch(() => {});
+    if (crest.naturalWidth) { const h = 170, w = (crest.naturalWidth / crest.naturalHeight) * h; x.drawImage(crest, 60, 50, w, h); }
+    const T = (txt, px, py, font, col = '#fff', align = 'left') => { x.font = font; x.fillStyle = col; x.textAlign = align; x.fillText(txt, px, py); };
+    T('NOREX UNITED · PRO BUILD', 250, 100, '600 34px Oswald, Impact, sans-serif', '#9aa3b2');
+    T((title || ev.arch.name).toUpperCase().slice(0, 24), 250, 160, '700 58px Oswald, Impact, sans-serif');
+    T('★★★★★', 250, 205, '400 28px sans-serif', gold);
+    x.fillStyle = red; x.beginPath(); x.roundRect(W - 230, 50, 170, 190, 22); x.fill();
+    T(String(ev.ovr), W - 145, 170, '700 104px Oswald, Impact, sans-serif', '#fff', 'center');
+    T('OVR*', W - 145, 220, '600 28px Oswald, Impact, sans-serif', '#fff', 'center');
+    const grp = (g.archetypeGroups || []).find((q) => q.id === ev.arch.group)?.name ?? '';
+    T(`${ICON[ev.arch.group] ?? ''} ${ev.arch.name.toUpperCase()}`, 60, 310, '700 52px Oswald, Impact, sans-serif');
+    T(`${grp.toUpperCase()} · LEVEL ${ev.level}${ev.level === ev.cap ? ' · MAX' : ` / ${ev.cap}`}`, 60, 360, '600 30px Oswald, Impact, sans-serif', ev.level === ev.cap ? gold : '#9aa3b2');
+    ev.face.forEach(([k, v], i) => {
+      const bx = 60 + i * 162, by = 400;
+      x.fillStyle = 'rgba(255,255,255,.06)'; x.beginPath(); x.roundRect(bx, by, 148, 130, 16); x.fill();
+      T(String(v), bx + 74, by + 78, '700 64px Oswald, Impact, sans-serif', v >= 80 ? '#6ee7a0' : v >= 65 ? gold : '#fff', 'center');
+      T(k, bx + 74, by + 114, '600 26px Oswald, Impact, sans-serif', '#9aa3b2', 'center');
+    });
+    T('TOP ATTRIBUTES', 60, 595, '600 30px Oswald, Impact, sans-serif', red);
+    [...ev.rows].sort((p, q) => q.value - p.value || q.sig - p.sig).slice(0, 10).forEach((r, i) => {
+      const bx = 60 + (i % 2) * 490, by = 640 + Math.floor(i / 2) * 72;
+      T(`${r.sig ? '★ ' : ''}${r.name}`, bx, by, '500 28px Inter, sans-serif', r.sig ? gold : '#e5e7eb');
+      T(String(r.value), bx + 450, by, '700 32px Oswald, Impact, sans-serif', '#fff', 'right');
+      x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(bx, by + 14, 450, 8);
+      x.fillStyle = red; x.fillRect(bx, by + 14, 450 * Math.min(1, r.value / ev.top), 8);
+    });
+    const ps = [...ev.choices.plus.map((id) => `${nameIn(g.playstyles, id)}+`), ...ev.choices.ps.map((id) => nameIn(g.playstyles, id))];
+    let y = 1030;
+    const line = (label, val) => { if (!val) return; T(label, 60, y, '600 28px Oswald, Impact, sans-serif', '#9aa3b2'); T(val.slice(0, 50), 330, y, '500 28px Inter, sans-serif'); y += 52; };
+    line('PLAYSTYLES', ps.join(' · '));
+    line('SPECIALIZATION', ev.choices.sp && nameIn(g.specializations, ev.choices.sp));
+    line('BODY', `${ev.choices.h} cm · ${ev.choices.w} kg`);
+    line('BEST FIT', ev.fit.slice(0, 3).map(([p, v]) => `${p} ${v}`).join(' · '));
+    T(`Game rules ${g.version}${ev.status.preview ? ' · placeholder numbers' : ''} · * estimate`, 60, H - 50, '500 24px Inter, sans-serif', '#6b7280');
+    T('NOREX UNITED FC', W - 60, H - 50, '600 26px Oswald, Impact, sans-serif', '#9aa3b2', 'right');
+    const blob = await new Promise((ok, no) => c.toBlob((bl) => (bl ? ok(bl) : no(new Error('The picture could not be drawn.'))), 'image/png'));
+    const name = `norex-build-${title || ev.arch.name}-L${ev.level}.png`.replace(/[^\w.-]+/g, '_');
+    const file = new File([blob], name, { type: 'image/png' });
+    if (matchMedia('(pointer:coarse)').matches && navigator.canShare?.({ files: [file] })) { try { await navigator.share({ files: [file], title: title || ev.arch.name }); return; } catch (e) { if (e?.name === 'AbortError') return; } }
+    const a = d.createElement('a'); a.download = name; a.href = URL.createObjectURL(blob); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('Build card saved as a picture. Post it anywhere.', 'ok', '🖼️');
+  }
+  const imageOf = (bb, title) => image(bb, title).catch((e) => toast(e.message || 'Couldn’t draw the image.', 'err'));
 
   bxb.addEventListener('click', (e) => {
     const t = e.target.closest('button'); if (!t || t.disabled) return;
@@ -300,12 +461,17 @@ ${masteries.length ? `<div class="bx-mast"><b>🏅 Masteries</b>${masteries.map(
     else if ('bxup' in t.dataset) upgradeHere();
     else if ('bxmigx' in t.dataset) { mig = null; draw(); }
     else if ('bxlogin' in t.dataset) login('save');
+    else if ('bxcmp' in t.dataset) { if (cmp.open) { cmp.open = false; draw(); } else openCmp(); }
+    else if ('bxcmpx' in t.dataset) { cmp.open = false; cmp.extra = null; draw(); }
+    else if ('bximg' in t.dataset) imageOf(b, cur?.title || (titleDraft ?? '').trim());
   });
   bxb.addEventListener('submit', (e) => { if (e.target.matches('[data-bxpost]')) { e.preventDefault(); if (!busy) postIt(e.target); } });
   let dragging = false; // one undo step per slider drag
   bxb.addEventListener('input', (e) => {
     const el = e.target;
     if (el.matches('[data-bxtitle]')) { titleDraft = el.value; return; }
+    if (el.matches('[data-bxcmpb]')) { cmp.key = el.value; draw(); $('[data-bxcmplink]', bxb)?.focus(); return; }
+    if (el.matches('[data-bxcmplink], [data-bxcmpall]')) { if (el.type === 'checkbox') cmp.all = el.checked; else cmp.link = el.value; $('[data-bxcmpout]', bxb).innerHTML = cmpOut(); return; }
     if (el.closest('[data-bxpost]')) { const fd = new FormData(el.form); postDraft = { position: fd.get('position'), mode: fd.get('mode') || 'league', description: fd.get('description') || '', clip: fd.get('clip') || '', tags: fd.get('tags') || '' }; return; }
     if (el.matches('[data-level], [data-body]') && !dragging) { push(); dragging = true; }
     if (el.matches('[data-body]')) { b = { ...b, [el.dataset.body]: +el.value }; $(`[data-bv="${el.dataset.body}"]`, bxb).textContent = el.value; setHash(); return; }
@@ -367,6 +533,7 @@ ${list.length ? `<p class="tiny muted">${list.length} build${list.length === 1 ?
     keepScroll(() => { bxp.innerHTML = html; });
   }
   async function openDetail(id) {
+    if (detailId !== id) { comDraft = ''; if (useAt?.[0] === 'd') useAt = null; }
     detailId = id; detail = null;
     if (!API) return loadBoard();
     bxp.innerHTML = '<div class="panel"><div class="sk-wrap"><span class="sk"></span><span class="sk s2"></span><span class="sk s3"></span></div></div>';
@@ -376,14 +543,46 @@ ${list.length ? `<p class="tiny muted">${list.length} build${list.length === 1 ?
   function paintDetail() {
     if (!detail) return;
     if (detail.err) { bxp.innerHTML = `<a class="bx-back" href="#pro">← All pro builds</a>${failBox('this build', detail.err, 'detail')}`; return; }
-    const x = detail.build, [mi, ml] = MODES[x.mode] || ['', ''];
-    bxp.innerHTML = `<a class="bx-back" href="#pro">← All pro builds</a><article class="panel bx-det"><header class="bx-dh"><div><div class="eyebrow">${mi} ${ml} · ${esc(x.position || '–')}${x.featured ? ` · ⭐ ${esc(x.featured)}` : ''}</div><h3>${esc(x.title)}</h3>
+    const x = detail.build, [mi, ml] = MODES[x.mode] || ['', ''], cs = detail.comments, v = x.myVote || 0;
+    const vb = (n, ic, label) => `<button type="button" class="bx-vb${v === n ? ' on' : ''}" data-bxvote="${n}" aria-pressed="${v === n}" aria-label="${label}"${x.mine ? ' disabled title="You can’t vote on your own build"' : ''}>${ic}</button>`;
+    const staffBox = staff() ? `<div class="bx-staff"><div class="eyebrow">🧢 Managers</div>${x.featured
+      ? `<div class="bx-row-acts"><span class="small">⭐ Club recommended · <b>${esc(x.featured)}</b></span><button type="button" class="btn ghost sm" data-bxunfeat${busy ? ' disabled' : ''}>Remove ⭐</button></div>`
+      : `<form class="bx-feat-f" data-bxfeat><input name="label" maxlength="30" placeholder="${esc(`${x.position || ''} · ${ml}`)}" aria-label="Label on the Club recommended badge"><button type="submit" class="btn gold sm"${busy ? ' disabled' : ''}>⭐ Club recommended</button></form>`}
+${x.mine ? '' : '<button type="button" class="bx-link" data-bxremove>🗑️ Remove this post</button>'}<p class="tiny muted">Recommended builds sit on the ⭐ shelf at the top of the board. Removing a post keeps the build in its author’s My builds.</p></div>` : '';
+    const com = (c) => `<li><span class="bx-by">${c.by?.a ? `<img src="${esc(c.by.a)}" alt="">` : '👤 '}<b>${esc(c.by?.n || 'Member')}</b>${c.mine ? ' <small class="muted">(you)</small>' : ''}</span><span class="bx-cm"><small class="muted">${esc(ago(c.at))}</small>${c.canDelete ? `<button type="button" class="bx-cdel" data-bxcdel="${c.id}" aria-label="Delete this comment" title="${c.mine ? 'Delete' : 'Remove (manager)'}">🗑️</button>` : ''}</span><p>${esc(c.text)}</p></li>`;
+    keepScroll(() => { bxp.innerHTML = `<a class="bx-back" href="#pro">← All pro builds</a><article class="panel bx-det"><header class="bx-dh"><div class="bx-vote${x.score > 0 ? ' pos' : x.score < 0 ? ' neg' : ''}" role="group" aria-label="Vote on this build">${vb(1, '▲', 'Vote up')}<b class="num" title="${x.up} up · ${x.down} down">${x.score}</b>${vb(-1, '▼', 'Vote down')}</div><div><div class="eyebrow">${mi} ${ml} · ${esc(x.position || '–')}${x.featured ? ` · ⭐ ${esc(x.featured)}` : ''}</div><h3>${esc(x.title)}</h3>
 <p class="small muted"><span class="bx-by">${x.by?.a ? `<img src="${esc(x.by.a)}" alt="">` : '👤 '}${esc(x.by?.n || 'Member')}</span> · posted ${esc(ago(x.at))} · ▲ <b class="num">${x.up}</b> ▼ <b class="num">${x.down}</b> · rules <code>${esc(x.version || '–')}</code>${outdated(x) ? ' <span class="bx-old">older rules</span>' : ''}</p></div></header>
 ${x.desc ? `<p class="bx-dd">${esc(x.desc)}</p>` : ''}${x.tags?.length || x.clip ? `<div class="bx-tags">${(x.tags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}${x.clip ? `<a href="${esc(x.clip)}" target="_blank" rel="noopener noreferrer">🎬 Watch the clip</a>` : ''}</div>` : ''}
 ${sheet(x.code)}
-<div class="bx-row-acts"><button type="button" class="btn gold sm" data-bxopen>🛠️ ${x.mine ? 'Edit in the Builder' : 'Try it in the Builder'}</button>${signed() && !x.mine ? `<button type="button" class="btn ghost sm" data-bxfork2="${x.id}">🍴 Copy to My builds</button>` : ''}<button type="button" class="btn ghost sm" data-bxshare2>🔗 Share</button><a class="btn ghost sm" href="../probuilds.html#b=${x.id}">💬 Vote &amp; comment</a></div></article>
-<section class="panel bx-com"><div class="eyebrow">💬 Comments · ${detail.comments.length}</div>${detail.comments.length ? `<ul>${detail.comments.map((c) => `<li><span class="bx-by">${c.by?.a ? `<img src="${esc(c.by.a)}" alt="">` : '👤 '}<b>${esc(c.by?.n || 'Member')}</b></span><small class="muted">${esc(ago(c.at))}</small><p>${esc(c.text)}</p></li>`).join('')}</ul>` : '<p class="muted small">No comments yet.</p>'}<p class="tiny muted">Voting and comments stay on the live board for now.</p></section>`;
+<div class="bx-row-acts"><button type="button" class="btn gold sm" data-bxopen>🛠️ ${x.mine ? 'Edit in the Builder' : 'Try it in the Builder'}</button>${signed() && !x.mine ? `<button type="button" class="btn ghost sm" data-bxfork2="${x.id}">🍴 Copy to My builds</button>` : ''}<button type="button" class="btn ghost sm" data-bxusego="d${x.id}" aria-expanded="${useAt === `d${x.id}`}">⭐ Use as my build</button></div>
+<div class="bx-row-acts"><button type="button" class="btn ghost sm" data-bxcmp2>⚖️ Compare</button><button type="button" class="btn ghost sm" data-bximg2>🖼️ Image card</button><button type="button" class="btn ghost sm" data-bxshare2>🔗 Share</button>${x.mine ? `<button type="button" class="bx-link" data-bxunpost2="${x.id}">Take the post down</button>` : ''}</div>
+${useAt === `d${x.id}` && signed() ? useHtml(`d${x.id}`, x.position, x.mode) : ''}${staffBox}</article>
+<section class="panel bx-com" id="bxcom"><div class="eyebrow">💬 Comments · ${cs.length}</div>${cs.length ? `<ul>${cs.map(com).join('')}</ul>` : '<p class="muted small">No comments yet. Ask how it plays or share a tip.</p>'}
+${signed() ? `<form class="bx-cform" data-bxcom><textarea name="text" maxlength="500" rows="2" placeholder="Ask how it plays, or say what worked…" aria-label="Write a comment">${esc(comDraft)}</textarea><div class="bx-row-acts"><button type="submit" class="btn sm"${busy ? ' disabled' : ''}>💬 Post comment</button><span class="tiny muted" data-bxcn>${comDraft.length}/500</span></div></form>`
+    : `<div class="bx-row-acts"><button type="button" class="btn ghost sm" data-bxlogin2>🔐 Sign in to vote and comment</button></div>`}</section>`; });
   }
+  const patchBoard = (x) => { const c = board?.find((q) => q.id === x.id); if (c) Object.assign(c, { up: x.up, down: x.down, score: x.score, myVote: x.myVote, comments: x.comments, featured: x.featured }); };
+  async function vote(n) {
+    const x = detail.build, was = { up: x.up, down: x.down, score: x.score, myVote: x.myVote }, v = x.myVote === n ? 0 : n;
+    x.up += (v === 1) - (was.myVote === 1); x.down += (v === -1) - (was.myVote === -1); x.score = x.up - x.down; x.myVote = v; paintDetail(); // optimistic
+    try { Object.assign(x, await send('/api/probuilds/vote', { id: x.id, v })); patchBoard(x); } catch (e) { Object.assign(x, was); toast(e.message, 'err'); }
+    paintDetail();
+  }
+  async function detailWrite(fn, ok) {
+    busy = true; paintDetail();
+    try { const r = await fn(); if (r?.build) { detail = r; patchBoard(r.build); } if (ok) toast(...ok); } catch (e) { toast(e.message, 'err'); }
+    busy = false; paintDetail();
+  }
+  bxp.addEventListener('submit', (e) => {
+    const f = e.target; if (busy) { e.preventDefault(); return; }
+    if (f.matches('[data-bxcom]')) {
+      e.preventDefault(); const text = f.text.value.trim(); if (text.length < 2) { toast('Write a little more.', 'err'); return; }
+      detailWrite(async () => { const r = await send('/api/probuilds/comment', { id: detail.build.id, text }); comDraft = ''; r.build.comments = r.comments.length; return r; }, ['Comment posted.', 'ok', '💬']);
+    } else if (f.matches('[data-bxfeat]')) {
+      e.preventDefault(); board = null;
+      detailWrite(() => send('/api/probuilds/feature', { id: detail.build.id, label: f.label.value.trim() }), ['Club recommended. It sits on the ⭐ shelf now.', 'ok', '⭐']);
+    }
+  });
   bxp.addEventListener('click', (e) => {
     const t = e.target.closest('button'); if (!t) return;
     if (t.dataset.fsort != null) F.sort = t.dataset.fsort; else if (t.dataset.fmode != null) F.mode = t.dataset.fmode; else if (t.dataset.fline != null) F.line = t.dataset.fline;
@@ -391,11 +590,26 @@ ${sheet(x.code)}
     else if ('bxopen' in t.dataset) return openBuild({ ...detail.build, posted: true });
     else if (t.dataset.bxfork2) return fork(+t.dataset.bxfork2);
     else if ('bxshare2' in t.dataset) return share(`b=${detail.build.id}`, detail.build.title);
+    else if (t.dataset.bxvote) return signed() ? vote(+t.dataset.bxvote) : login('vote', `b=${detailId}`);
+    else if ('bxlogin2' in t.dataset) return login('vote', `b=${detailId}`);
+    else if ('bxcmp2' in t.dataset) { const x = detail.build; show('b'); history.replaceState(null, '', '#' + code()); return openCmp({ title: `${x.title} · ${x.by?.n || 'Member'}`, code: x.code }); }
+    else if ('bximg2' in t.dataset) { const nb = fromCode(detail.build.code); return nb ? imageOf(plain(nb), detail.build.title) : toast('This build can’t be read with today’s game rules.', 'err'); }
+    else if (t.dataset.bxunpost2) return unpost(+t.dataset.bxunpost2, t);
+    else if ('bxremove' in t.dataset) return unpost(detail.build.id, t);
+    else if ('bxunfeat' in t.dataset) { board = null; return detailWrite(() => send('/api/probuilds/feature', { id: detail.build.id, label: null }), ['No longer Club recommended.', 'ok', '⭐']); }
+    else if (t.dataset.bxcdel) {
+      if (!twoTap(t, 'Delete?')) return;
+      const id = +t.dataset.bxcdel;
+      return detailWrite(async () => { const r = await send('/api/probuilds/comment/delete', { comment: id }); if (r.build) r.build.comments = r.comments.length; return r; }, ['Comment deleted.', 'ok', '🗑️']);
+    }
     else return;
     try { sessionStorage.setItem('nx.bx.f', JSON.stringify(F)); } catch {}
     paintBoard();
   });
-  bxp.addEventListener('input', (e) => { if (e.target.matches('[data-bxq2]')) { F.q = e.target.value; const at = e.target.selectionStart; paintBoard().then(() => { const i = $('[data-bxq2]', bxp); if (i) { i.focus(); i.setSelectionRange(at, at); } }); } });
+  bxp.addEventListener('input', (e) => {
+    if (e.target.matches('[data-bxcom] textarea')) { comDraft = e.target.value; const n = $('[data-bxcn]', bxp); if (n) n.textContent = `${comDraft.length}/500`; return; }
+    if (e.target.matches('[data-bxq2]')) { F.q = e.target.value; const at = e.target.selectionStart; paintBoard().then(() => { const i = $('[data-bxq2]', bxp); if (i) { i.focus(); i.setSelectionRange(at, at); } }); }
+  });
   try { Object.assign(F, JSON.parse(sessionStorage.getItem('nx.bx.f') || '{}'), { q: '' }); } catch {}
 
   // ---------- 📂 MY BUILDS ----------
@@ -409,13 +623,13 @@ ${sheet(x.code)}
     if (pane !== 'm') return;
     if (mineErr) { bxm.innerHTML = failBox('your builds', mineErr, 'mine'); return; }
     const list = mine.builds || [], picks = mine.picks || {}, old = list.filter(outdated);
-    const html = `<div class="bx-mtop"><div class="panel bx-msum"><div class="tp-ring" style="--f:${(list.length / (mine.max || 50)).toFixed(3)}" role="img" aria-label="${list.length} of ${mine.max} builds saved"><b class="num">${list.length}</b><small>of ${mine.max}</small></div><div><div class="eyebrow">📂 My builds</div><h3>${list.length ? `${list.length} saved build${list.length === 1 ? '' : 's'}` : 'Nothing saved yet'}</h3><p class="small muted">${Object.entries(MODES).map(([k, [i, l]]) => { const p = list.find((x) => x.id === picks[k]); return `${i} ${l} build: <b>${p ? esc(p.title) : 'not picked'}</b>`; }).join(' · ')}</p></div></div>
+    const html = `<div class="bx-mtop"><div class="panel bx-msum"><div class="tp-ring" style="--f:${(list.length / (mine.max || 50)).toFixed(3)}" role="img" aria-label="${list.length} of ${mine.max} builds saved"><b class="num">${list.length}</b><small>of ${mine.max}</small></div><div><div class="eyebrow">📂 My builds</div><h3>${list.length ? `${list.length} saved build${list.length === 1 ? '' : 's'}` : 'Nothing saved yet'}</h3><p class="small muted">${Object.entries(MODES).map(([k, [i, l]]) => { const p = list.find((x) => x.id === picks[k]); return `${i} ${l} build: <b>${p ? esc(p.title) : 'not picked'}</b>${p ? ` <button type="button" class="bx-link bx-unpick" data-bxunpick="${k}" aria-label="Clear my ${l} build">✕</button>` : ''}`; }).join(' · ')}</p></div></div>
 ${old.length ? `<div class="panel bx-mig"><b>⚠️ ${old.length} build${old.length === 1 ? ' is' : 's are'} on older game rules</b><p class="small muted">Now <code>${esc(g.version)}</code>, max level ${cap()}. Upgrading keeps your points and moves the level to MAX.</p><button type="button" class="btn sm" data-bxupall>⬆ Upgrade ${old.length === 1 ? 'it' : `all ${old.length}`}</button></div>` : '<div class="panel bx-tip"><div class="eyebrow">💡 Tip</div><p class="small muted">Open a build to change it in the 🛠️ Builder, then press 💾 Save. 🔗 Share sends a link anyone can open.</p></div>'}</div>
 ${list.length ? `<ul class="bx-mlist">${list.map((x, i) => { const imp = impact.get(x.id);
       return `<li style="--i:${Math.min(i, 10)}" class="panel${cur?.id === x.id ? ' on' : ''}"><div class="bx-mh"><span class="bx-ic" aria-hidden="true">${ICON[archOf(x.arch)?.group] ?? '⚽'}</span><div class="bx-ct"><b>${esc(x.title)}</b><small class="muted">${esc(archName(x.arch))} · L${x.level}${x.level >= cap() && !outdated(x) ? ' MAX' : ''} · ${esc(ago(x.updated))}${x.forkedFrom ? ' · 🍴 copy' : ''}</small>
 <span class="bx-badges">${x.posted ? '<span class="pill">📣 Posted</span>' : ''}${Object.entries(MODES).filter(([k]) => picks[k] === x.id).map(([, [ic, l]]) => `<span class="pill s">${ic} My ${l} build</span>`).join('')}${outdated(x) ? `<span class="bx-old" title="${esc(imp?.changes?.map((c) => c.text).join(' · ') || `Made on ${x.version}`)}">⚠ ${imp?.breaking ? esc(imp.changes[0]?.text ?? 'needs attention') : 'older rules'}</span>` : ''}</span></div></div>
-<div class="bx-row-acts"><button type="button" class="btn sm" data-bxedit="${x.id}">🛠️ Edit</button><button type="button" class="btn ghost sm" data-bxpeek="${x.id}" aria-expanded="${peek === x.id}">👁 ${peek === x.id ? 'Hide' : 'Details'}</button><button type="button" class="btn ghost sm" data-bxsh="${x.id}">🔗 Share</button>${outdated(x) ? `<button type="button" class="btn ghost sm" data-bxup1="${x.id}">⬆ Upgrade</button>` : ''}<button type="button" class="btn ghost sm bx-del" data-bxdel="${x.id}" aria-label="Delete ${esc(x.title)}">🗑️</button></div>
-${peek === x.id ? sheet(x.code, { compact: true }) : ''}</li>`; }).join('')}</ul>`
+<div class="bx-row-acts"><button type="button" class="btn sm" data-bxedit="${x.id}">🛠️ Edit</button><button type="button" class="btn ghost sm" data-bxpeek="${x.id}" aria-expanded="${peek === x.id}">👁 ${peek === x.id ? 'Hide' : 'Details'}</button><button type="button" class="btn ghost sm" data-bxsh="${x.id}">🔗 Share</button><button type="button" class="btn ghost sm" data-bxusego="m${x.id}" aria-expanded="${useAt === `m${x.id}`}">⭐ Use</button>${outdated(x) ? `<button type="button" class="btn ghost sm" data-bxup1="${x.id}">⬆ Upgrade</button>` : ''}<button type="button" class="btn ghost sm bx-del" data-bxdel="${x.id}" aria-label="Delete ${esc(x.title)}">🗑️</button></div>
+${useAt === `m${x.id}` ? useHtml(`m${x.id}`, x.position || fromCode(x.code) && X.evaluate(g, plain(fromCode(x.code))).fit[0]?.[0], x.mode) : ''}${peek === x.id ? sheet(x.code, { compact: true }) : ''}</li>`; }).join('')}</ul>`
     : `<div class="panel sq-empty"><span>📂</span><div><b>No saved builds yet</b><p class="muted small">Make a build in the 🛠️ Builder and press 💾 Save. It lands here.</p><button type="button" class="btn ghost sm" data-bxgo>🛠️ Open the Builder</button></div></div>`}`;
     keepScroll(() => { bxm.innerHTML = html; });
   }
@@ -455,6 +669,7 @@ ${peek === x.id ? sheet(x.code, { compact: true }) : ''}</li>`; }).join('')}</ul
       try { pending = JSON.parse(sessionStorage.getItem(PENDING) || 'null'); sessionStorage.removeItem(PENDING); } catch {}
       const start = (pending?.code && fromCode(pending.code)) || null;
       b = start ? plain(start) : { arch: g.archetypes[0].id, level: cap(), spent: {} };
+      if (pending?.back) { cur = pending.cur || null; history.replaceState(null, '', '#' + pending.back); route(); return; }
       if (pending) { cur = pending.cur || null; titleDraft = pending.title ?? null; history.replaceState(null, '', '#' + code()); if (signed() && pending.then) setTimeout(() => toast('Signed in. Your build is back: press 💾 Save to keep it.', 'ok', '🔐'), 400); show('b'); draw(); return; }
       route();
     })

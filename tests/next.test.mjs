@@ -120,8 +120,15 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('builds: ships the newest versioned dataset as the offline seed and asks the Worker first', gj.version === newest.version && bh.includes(`max level ${newest.levelCap?.value}`) && bj.includes('`${API}/api/game`') && bj.includes("fetch('game.json')"));
   const posts = [...bj.matchAll(/send\('([^']+)'/g)].map((m) => m[1]).sort(), gets = [...bj.matchAll(/get\(`?'?(\/api\/[a-z/]+)/g)].map((m) => m[1]);
   const routes = fs.readFileSync(path.join(ROOT, 'bot/builds.js'), 'utf8') + fs.readFileSync(path.join(ROOT, 'bot/probuilds.js'), 'utf8');
-  t('builds: writes are only save/update, delete, copy and post/take down, all existing Worker routes', JSON.stringify([...new Set(posts)]) === JSON.stringify(['/api/builds', '/api/builds/delete', '/api/builds/fork', '/api/probuilds/post', '/api/probuilds/unpost'])
-    && [...new Set([...posts, ...gets])].every((r) => routes.includes(`'${r}'`)) && !/\/api\/probuilds\/(vote|comment|feature)/.test(bj));
+  t('builds: writes are save/update, delete, copy, post/take down, vote, comment + delete, my build pick and Club recommended, all existing Worker routes',
+    JSON.stringify([...new Set(posts)]) === JSON.stringify(['/api/builds', '/api/builds/delete', '/api/builds/fork', '/api/mybuild', '/api/probuilds/comment', '/api/probuilds/comment/delete', '/api/probuilds/feature', '/api/probuilds/post', '/api/probuilds/unpost', '/api/probuilds/vote'])
+    && [...new Set([...posts, ...gets])].every((r) => routes.includes(`'${r}'`)) && !bj.includes('../probuilds.html'));
+  t('builds: votes toggle (same arrow again clears), are optimistic and rolled back on error, never on your own build', bj.includes('x.myVote === n ? 0 : n') && bj.includes('Object.assign(x, was)') && bj.includes('x.mine ? \' disabled'));
+  t('builds: comments write (500 chars) and delete with two taps, only where the Worker says canDelete', bj.includes('maxlength="500"') && bj.includes("twoTap(t, 'Delete?')") && bj.includes('c.canDelete ?') && bj.includes('{ comment: id }'));
+  t('builds: ⭐ my build for League or Rush from the Builder, a pro build or My builds, and a pick can be cleared', ['data-bxusego="side"', 'data-bxusego="d${x.id}"', 'data-bxusego="m${x.id}"', "{ mode, id: null }"].every((k) => bj.includes(k)));
+  t('builds: managers get Club recommended + remove post (two taps); the Worker checks the role', bj.includes("A.role === 'manager' || A.role === 'owner'") && bj.includes("label: null") && bj.includes("twoTap(btn, 'Tap again to remove the post')"));
+  t('builds: ⚖️ compare against my builds, pro builds or a share link, and a 🖼️ 1080×1350 image card with the crest',
+    bj.includes('function compareHtml(') && bj.includes('🔗 Paste a share link') && bj.includes('W = 1080, H = 1350') && bj.includes("crest.src = 'crest.png'") && fs.existsSync(path.join(out, 'crest.png')));
   t('builds: delete and take down need two taps, unsaved edits warn before leaving, the build survives the Discord login', /twoTap\(t, 'Tap again to delete'\)/.test(bj) && bj.includes("twoTap(btn, 'Tap again to take it down')") && bj.includes('beforeunload') && bj.includes("sessionStorage.setItem(PENDING"));
   t('builds: older game rules show what changed (/api/game/changes) and upgrade to MAX', bj.includes('/api/game/changes?from=') && bj.includes('X.fit(g, { ...b, level: cap() })'));
   // the share code round-trips through the live maths with the shipped dataset
