@@ -97,13 +97,18 @@ export function handbook() {
 // ---------- STAFF ----------
 const staffGate = `<div data-for="guest member" class="panel" style="text-align:center;padding:40px"><h3>Staff only</h3><p class="muted">${process.env.NEXT_PREVIEW ? 'Managers and the owner see the staff tools here after signing in.' : 'Switch “Preview as” to Owner to see the staff tools.'}</p></div>`;
 export function staff() {
-  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Owner and managers</div><h2>Staff</h2></div></header>${staffGate}<div data-for="owner" hidden class="grid g3">${[['staff-dugout.html', '🧢', 'Dugout', 'Build the lineup for match night on the real pitch'], ['staff-boardroom.html', '👑', 'Boardroom', 'Club health, recruitment and feature switches'], ['staff-artwork.html', '🎨', 'Artwork studio', 'Submit, inspect, download, approve or revoke player artwork']].map(([h, i, t, d]) => `<a class="panel room" href="${h}"><div style="font-size:30px">${i}</div><h3 style="margin:6px 0 2px">${t}</h3><p class="muted small">${d}</p></a>`).join('')}</div></section></div>`;
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Owner and managers</div><h2>Staff</h2></div></header>${staffGate}<div data-for="owner" hidden class="grid g3">${[['staff-schedule.html', '🗓️', 'Schedule', 'Create, edit and cancel match nights, check in, send session reports'], ['staff-dugout.html', '🧢', 'Dugout', 'Build the lineup for match night on the real pitch'], ['staff-boardroom.html', '👑', 'Boardroom', 'Club health, recruitment and feature switches'], ['staff-artwork.html', '🎨', 'Artwork studio', 'Submit, inspect, download, approve or revoke player artwork']].map(([h, i, t, d]) => `<a class="panel room" href="${h}"><div style="font-size:30px">${i}</div><h3 style="margin:6px 0 2px">${t}</h3><p class="muted small">${d}</p></a>`).join('')}</div></section></div>`;
   return hubShell('staff.html', 'Staff', body);
 }
 export function dugout() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Staff · match night</div><h2>Dugout</h2></div><div class="chips"><select id="dgF" aria-label="Formation" style="background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:999px;padding:8px 14px;font:600 13px Inter"></select><button class="chip" id="dgFill">Fill with usual XI</button><button class="chip" id="dgClear">Clear</button></div></header>${staffGate}
   <div data-for="owner" hidden><div id="dgLive" hidden></div><div id="dgLocal"><div class="split"><div><div id="dgPitch"></div></div><aside class="panel detail"><h3>Squad</h3><p class="muted small">Tap a marker on the pitch, then a player here to put them in that slot. Each player can hold one slot.</p><div id="dgList" style="display:grid;gap:6px;max-height:520px;overflow:auto"></div><p class="muted small" id="dgMsg" style="margin-top:8px"></p></aside></div></div></div></section></div>`;
   return hubShell('staff-dugout.html', 'Dugout', body, { extraHead: '<script src="pitch.js" defer></script><link rel="stylesheet" href="tactics.css"><script src="dugout.js" defer></script>', data: { formations: formations.formations, xi: Object.fromEntries(Object.entries(usualXI()).map(([s, p]) => [s, p?.k])) } });
+}
+export function schedule() {
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Staff · match nights</div><h2>Schedule</h2></div></header>${staffGate}
+  <div data-for="owner" hidden><div id="scLive" hidden></div><div id="scLocal" class="panel sq-empty"><span>🗓️</span><div><b>Sign in to the live Hub</b><p class="muted small">Creating match nights, cancelling, check-in and session reports work on the live club data, so they open when you are signed in as a manager or the owner.</p></div></div></div></section></div>`;
+  return hubShell('staff-schedule.html', 'Schedule', body, { extraHead: '<script src="schedule.js" defer></script>' });
 }
 export function boardroom() {
   const flags = Object.entries(features);
@@ -123,5 +128,5 @@ export function artwork() {
 
 export default function (P) {
   P('hub.html', locker()); P('hub-matchnight.html', matchNight()); P('hub-squad.html', squadRoom()); P('hub-clubhouse.html', clubhouse()); P('hub-handbook.html', handbook());
-  P('staff.html', staff()); P('staff-dugout.html', dugout()); P('staff-boardroom.html', boardroom()); P('staff-artwork.html', artwork());
+  P('staff.html', staff()); P('staff-dugout.html', dugout()); P('staff-schedule.html', schedule()); P('staff-boardroom.html', boardroom()); P('staff-artwork.html', artwork());
 }
