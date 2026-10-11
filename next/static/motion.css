@@ -186,3 +186,24 @@ html[data-motion=full] .panel.amb:hover:after,html[data-motion=full] .sbt.amb:ho
 .camera .pitchbox.tilt3d[data-orient=v] .pc-marker{transform:translate(-50%,-100%) rotateX(-34deg)}
 .camera .pitchbox.tilt3d[data-orient=v] .pc-marker:hover,.camera .pitchbox.tilt3d[data-orient=v] .pc-marker.sel{transform:translate(-50%,-100%) rotateX(-34deg) scale(1.15)}
 #xiForm{width:auto;min-width:140px}
+
+/* ===== Dugout (Phase C1) ===== */
+.dg-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}.dg-head h3{margin:0;font:700 22px Oswald;letter-spacing:.03em}.dg-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dg-live{font:600 12px Inter;color:#4be08a}.dg-top{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(300px,1.5fr) minmax(220px,.9fr);gap:22px;align-items:start}
+@media(max-width:1000px){.dg-top{grid-template-columns:1fr}}
+.dg-sec{padding:16px}.dg-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:12px}.dg-h h3{margin:0;font:700 17px Oswald;letter-spacing:.04em;text-transform:uppercase}.dg-tag{margin-left:auto;font:600 11px Inter;color:#8e9ab2}
+.dg-form{font:600 12px Inter;color:#aab4c9;display:flex;gap:6px;align-items:center}.dg-form select{background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:999px;padding:6px 10px;font:600 12px Inter}
+.dg-avail{display:grid;gap:6px;max-height:560px;overflow:auto}
+.dg-p{display:grid;grid-template-columns:34px 1fr auto auto;gap:10px;align-items:center;text-align:left;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid transparent;color:#fff;cursor:grab}
+.dg-p b{display:block;font:600 14px Inter}.dg-p small{display:block;color:#8e9ab2;font:500 11px Inter}.dg-p em{font:700 11px Oswald;color:#efcf7a;font-style:normal}
+.dg-p.sel{border-color:#efcf7a;box-shadow:0 0 0 2px rgba(239,207,122,.3)}.dg-p.placed{opacity:.55}.dg-p.s-no{opacity:.4;cursor:not-allowed}.dg-p.s-yes{border-left:3px solid #22b35e}.dg-p.s-maybe{border-left:3px solid #c9993a}
+.dg-av{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#2a3344}.dg-ini{display:grid;place-items:center;font:700 14px Oswald}
+.dg-pitch-wrap{display:grid}.dg-pitch{position:relative;aspect-ratio:3/4;border-radius:16px;background:linear-gradient(180deg,#14502e,#0f3d24);border:2px solid rgba(255,255,255,.25);overflow:hidden;max-width:520px;width:100%;margin:0 auto}
+.dg-mark{position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.28)) 0 50%/100% 2px no-repeat,radial-gradient(circle at 50% 50%,transparent 46px,rgba(255,255,255,.28) 47px,rgba(255,255,255,.28) 49px,transparent 50px)}
+.dg-slot{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:3px;background:none;border:0;color:#fff;width:70px;padding:0}
+.dg-slot .dg-av,.dg-slot .dg-dot{width:46px;height:46px;border:2px solid rgba(255,255,255,.7);box-shadow:0 6px 14px rgba(0,0,0,.45)}.dg-dot{border-radius:50%;display:grid;place-items:center;background:rgba(10,14,22,.55);font:700 12px Oswald;border-style:dashed!important}
+.dg-slot small{font:600 11px Inter;text-shadow:0 1px 3px #000;white-space:nowrap}.dg-slot.on .dg-av{border-color:#efcf7a}.dg-slot.warn .dg-av{border-color:#ff7d72}.dg-slot.glow .dg-dot{border-color:#efcf7a;animation:dgpulse 1s ease-in-out infinite}
+@keyframes dgpulse{50%{transform:scale(1.12);box-shadow:0 0 18px rgba(239,207,122,.7)}}
+.dg-help{margin-top:10px}.dg-ready{list-style:none;margin:0;padding:0;display:grid;gap:6px}.dg-ready li{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);font:500 13px Inter}.dg-ready li.ok{border-left:3px solid #22b35e}.dg-ready li.warn{border-left:3px solid #c9993a}.dg-ready li.bad{border-left:3px solid #c8352c}
+.dg-short{display:flex;flex-wrap:wrap;gap:8px}.dg-skel{display:grid;gap:12px}.dg-skel i{height:120px;border-radius:16px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));background-size:200% 100%;animation:dgsk 1.4s linear infinite}@keyframes dgsk{to{background-position:-200% 0}}
+.dragging .dg-slot:not(.on) .dg-dot{border-color:#efcf7a}
