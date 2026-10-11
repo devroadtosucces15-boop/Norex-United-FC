@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-11T00:10:28.121Z",
+ "fetchedAt": "2026-10-11T00:20:31.153Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -729,42 +729,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "KBribiesca0420",
-   "gamesPlayed": "8",
-   "winRate": "75",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "48",
-   "passSuccessRate": "84",
-   "ratingAve": "6.8",
-   "tacklesMade": "7",
-   "tackleSuccessRate": "29",
-   "proName": "Magic",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "163",
-   "proNationality": "14",
-   "proOverall": "84",
-   "proOverallStr": "84",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Austin110486",
    "gamesPlayed": "51",
    "winRate": "64",
@@ -1046,42 +1010,6 @@
    "prevGoals4": "0",
    "prevGoals5": "0",
    "prevGoals6": "1",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
-   "name": "pt2frankie",
-   "gamesPlayed": "3",
-   "winRate": "100",
-   "goals": "1",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "50",
-   "passesMade": "32",
-   "passSuccessRate": "84",
-   "ratingAve": "8.1",
-   "tacklesMade": "6",
-   "tackleSuccessRate": "50",
-   "proName": "e. el cucuy",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "178",
-   "proNationality": "14",
-   "proOverall": "78",
-   "proOverallStr": "78",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
    "prevGoals7": "0",
    "prevGoals8": "0",
    "prevGoals9": "0",
@@ -1414,10 +1342,10 @@
   }
  ],
  "positionCount": {
-  "midfielder": 14,
+  "midfielder": 13,
   "goalkeeper": 0,
   "forward": 6,
-  "defender": 12
+  "defender": 11
  },
  "career": [
   {
@@ -1652,17 +1580,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "KBribiesca0420",
-   "proPos": "25",
-   "gamesPlayed": "169",
-   "goals": "59",
-   "assists": "64",
-   "manOfTheMatch": "15",
-   "ratingAve": "7.2",
-   "prevGoals": "1",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Ox_Baki",
    "proPos": "25",
    "gamesPlayed": "104",
@@ -1742,7 +1659,7 @@
   {
    "name": "MAYOROFCALI_510",
    "proPos": "14",
-   "gamesPlayed": "355",
+   "gamesPlayed": "356",
    "goals": "114",
    "assists": "99",
    "manOfTheMatch": "7",
@@ -1771,17 +1688,6 @@
    "ratingAve": "7.5",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "pt2frankie",
-   "proPos": "5",
-   "gamesPlayed": "242",
-   "goals": "240",
-   "assists": "104",
-   "manOfTheMatch": "48",
-   "ratingAve": "8.1",
-   "prevGoals": "1",
-   "favoritePosition": "defender"
   },
   {
    "name": "CatchMyDrift3",
