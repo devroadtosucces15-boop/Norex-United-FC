@@ -17,7 +17,8 @@ import { eventReminders } from './events.js';
 import { closeDue } from './awards.js';
 import { hotwDue } from './hotw.js';
 import { scoreDue } from './predict.js';
-import { eventButton, playButton, memberCommand, MEMBER_COMMANDS } from './botcmds.js';
+import { eventButton, playButton, memberCommand, memberOf, MEMBER_COMMANDS } from './botcmds.js';
+import { panelInteraction, PANEL_ID } from './panel.js';
 import { insightsCron, insightsNow, reportEmbeds } from './insights.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
@@ -115,6 +116,10 @@ export default {
       } catch (e) {
         return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
       }
+    }
+    if ((i.type === 2 && i.data.name === 'panel') || ((i.type === 3 || i.type === 5) && PANEL_ID.test(i.data?.custom_id ?? ''))) { // the manager panel
+      if (!env.DB) return json({ type: 4, data: notice('The member database isn’t connected') });
+      return json(await panelInteraction(i, env, await memberOf(i, who, env), site, (f) => load(site, f, ctx)));
     }
     if (i.type === 2 && SERVER_COMMANDS.has(i.data.name)) return json(await serverCommand(i, env, ctx, who)); // /setup /purge /tag /tags /remind /reminders
     if (i.type === 3 && SERVER_BUTTON.test(i.data?.custom_id ?? '')) return json(await serverButton(i, env, who)); // ping-role panel, reminder cancel

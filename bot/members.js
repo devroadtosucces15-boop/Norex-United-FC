@@ -551,6 +551,9 @@ export async function currentRole(env, me, request) {
 }
 
 // ---------- API ----------
+// Any /api route, called as `me` from inside the Worker – the Discord manager panel (bot/panel.js) decides claims, cards,
+// Rush results, requests and ideas through the exact same code (checks, logs, notifications) as the Squad Hub.
+export const apiAs = (p, method, body, me, env, loadSite) => route(p, method, body ?? {}, me, env, loadSite, new URL(`https://bot.invalid${p}`));
 async function route(p, method, body, me, env, loadSite, url) {
   if (!can(me, 'hub.use')) return fail('Members only.', 403);
   if (p === '/api/me' && method === 'GET') {

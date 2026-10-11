@@ -172,6 +172,8 @@ export const COMMANDS = [
     ],
   },
   { name: 'reminders', description: 'Your waiting reminders – cancel any of them', contexts: [0] },
+  // /panel – the manager panel: everything waiting for a decision, approve / reject in place (bot/panel.js)
+  { name: 'panel', description: 'Managers: everything waiting for a decision – approve or reject right here', default_member_permissions: String(1 << 28), contexts: [0] },
   // /host – schedule + post a session or friendly in one go (bot/host.js); times show in everyone's own zone
   {
     name: 'host', description: 'Managers: schedule a League or Rush session or friendly – posted with sign-up buttons',

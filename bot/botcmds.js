@@ -42,7 +42,7 @@ const flag = (c) => (/^[A-Z]{2}$/.test(c ?? '') ? String.fromCodePoint(...[...c]
 // The Discord user behind an interaction as a member ("me" in the member API): id, display name, avatar URL,
 // role – elevated to 'claimed' when they have an approved player claim, same as a web session (P11.16: some
 // wrapped routes, e.g. feedback.send, gate on 'claimed' and Discord's own roles never reach that tier).
-async function memberOf(i, who, env) {
+export async function memberOf(i, who, env) {
   const u = i.member?.user ?? i.user ?? {};
   const avatar = i.member?.avatar && env.DISCORD_GUILD_ID ? `https://cdn.discordapp.com/guilds/${env.DISCORD_GUILD_ID}/users/${u.id}/avatars/${i.member.avatar}.png?size=128`
     : u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=128` : null;
