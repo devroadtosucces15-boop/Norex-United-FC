@@ -7,8 +7,15 @@
   const inView = (el, fn, th = .35) => { if (calm) return fn(); const o = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { o.disconnect(); fn(); } }), { threshold: th }); o.observe(el); };
 
   function coverflow(c) {
-    const run = () => { const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; $$('.ci', c).forEach((x) => { const b = x.getBoundingClientRect(), k = Math.max(-1, Math.min(1, (b.left + b.width / 2 - cx) / 320)); x.style.transform = `translateX(${-k * 70}px) rotateY(${-k * 52}deg) scale(${1 - Math.abs(k) * .22}) translateZ(${-Math.abs(k) * 90}px)`; x.style.opacity = 1 - Math.abs(k) * .45; x.style.zIndex = 10 - Math.round(Math.abs(k) * 9); }); };
-    c.addEventListener('scroll', run, { passive: true }); addEventListener('resize', run);
+    // geometry from offsetLeft/scrollLeft (no layout reads per frame), one paint per animation frame, no transform transitions:
+    // the cards track the finger exactly instead of easing behind it.
+    const items = $$('.ci', c); let raf = 0;
+    const run = () => { raf = 0; const mid = c.scrollLeft + c.clientWidth / 2;
+      items.forEach((x) => { const k = Math.max(-1, Math.min(1, (x.offsetLeft + x.offsetWidth / 2 - mid) / 320)), a = Math.abs(k);
+        x.style.transform = `translate3d(${(-k * 70).toFixed(1)}px,0,${(-a * 90).toFixed(1)}px) rotateY(${(-k * 52).toFixed(1)}deg) scale(${(1 - a * .22).toFixed(3)})`;
+        x.style.opacity = (1 - a * .45).toFixed(3); x.style.zIndex = 10 - Math.round(a * 9); }); };
+    const ask = () => { if (!raf) raf = requestAnimationFrame(run); };
+    c.addEventListener('scroll', ask, { passive: true }); addEventListener('resize', ask);
     requestAnimationFrame(() => { c.scrollLeft = (c.scrollWidth - c.clientWidth) / 2 - 120; run(); });
     // drag to scroll with a mouse
     let down = 0, sx = 0, sl = 0, moved = 0; c.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') return; down = 1; moved = 0; sx = e.clientX; sl = c.scrollLeft; c.style.scrollSnapType = 'none'; });
@@ -22,14 +29,14 @@
     const wrap = c.closest('.spotwrap'), items = $$('.si', c), dots = $$('.sdot', wrap); let cur = -1, raf = 0;
     const full = () => !window.NorexMotion || NorexMotion.mode === 'full';
     const center = (i, smooth) => { const x = items[i]; if (!x) return; c.scrollTo({ left: x.offsetLeft + x.offsetWidth / 2 - c.clientWidth / 2, behavior: smooth && full() ? 'smooth' : 'auto' }); };
-    const paint = () => { raf = 0; const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; let best = 0, bd = 1e9;
-      items.forEach((x, i) => { const b = x.getBoundingClientRect(), dist = (b.left + b.width / 2 - cx) / b.width, ad = Math.min(Math.abs(dist), 1.6);
+    const paint = () => { raf = 0; const mid = c.scrollLeft + c.clientWidth / 2; let best = 0, bd = 1e9;
+      items.forEach((x, i) => { const w = x.offsetWidth || 1, dist = (x.offsetLeft + w / 2 - mid) / w, ad = Math.min(Math.abs(dist), 1.6);
         if (Math.abs(dist) < bd) { bd = Math.abs(dist); best = i; }
-        x.style.transform = full() ? `perspective(1200px) translateZ(${-ad * 60}px) rotateY(${Math.max(-1, Math.min(1, dist)) * -16}deg) scale(${1 - Math.min(ad, 1) * .14})` : `scale(${1 - Math.min(ad, 1) * .08})`;
-        x.style.opacity = (1 - Math.min(ad, 1.4) * .45).toFixed(3); x.style.zIndex = 10 - Math.round(ad * 3); });
+        x.style.transform = full() ? `perspective(1000px) translate3d(0,0,${(-ad * 110).toFixed(1)}px) rotateY(${(Math.max(-1, Math.min(1, dist)) * -26).toFixed(1)}deg) scale(${(1 - Math.min(ad, 1) * .26).toFixed(3)})` : `scale(${1 - Math.min(ad, 1) * .12})`;
+        x.style.opacity = (1 - Math.min(ad, 1.4) * .5).toFixed(3); x.style.zIndex = 10 - Math.round(ad * 3); });
       if (best !== cur) { cur = best; items.forEach((x, i) => { x.classList.toggle('on', i === cur); x.querySelector('a').tabIndex = i === cur ? 0 : -1; }); dots.forEach((dt, i) => { dt.classList.toggle('on', i === cur); dt.setAttribute('aria-current', i === cur); });
         $$('.rchip', wrap).forEach((ch, k, all) => { const nxt = all[k + 1] ? +all[k + 1].dataset.i : 1e9; ch.classList.toggle('on', cur >= +ch.dataset.i && cur < nxt); });
-        if (full()) $$('.s-d', items[cur]).forEach((dg, k) => { dg.classList.remove('flap'); void dg.offsetWidth; dg.style.animationDelay = k * 90 + 'ms'; dg.classList.add('flap'); }); } };
+        if (full()) $$('.s-d,.s-crest', items[cur]).forEach((dg, k) => { dg.classList.remove('flap', 'pop'); void dg.offsetWidth; dg.style.animationDelay = (120 + (k % 2) * 110) + 'ms'; dg.classList.add(dg.classList.contains('s-d') ? 'flap' : 'pop'); }); } };
     const ask = () => { if (!raf) raf = requestAnimationFrame(paint); };
     $$('.rchip', wrap).forEach((b) => b.addEventListener('click', () => center(+b.dataset.i, true)));
     dots.forEach((b) => b.addEventListener('click', () => center(+b.dataset.i, true)));

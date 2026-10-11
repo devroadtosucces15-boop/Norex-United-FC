@@ -124,19 +124,41 @@
   };
   d.addEventListener('click', (e) => { const t = e.target.closest('[data-motion-settings]'); if (t) { e.preventDefault(); M.settings(); } });
 
-  // ================= tilt with moving reflection (mouse = hover, touch = drag) =================
+  // ================= tilt with moving reflection =================
+  // Cards rest at an angle and lean with where they sit on screen (scroll / rail position), like the iPhone home screen.
+  // Mouse hover and touch-hold take over instantly (fast, no easing lag); the glare + sheen follow the same angle.
+  const isCard = (el) => el.classList.contains('pc-card') || el.classList.contains('pc-hero');
+  const ambient = new Set(); let ambRaf = 0, tio = null;
+  const lean = (el) => { const r = el.getBoundingClientRect(), vw = innerWidth, vh = innerHeight; if (r.width < 8) return;
+    const nx = Math.max(-1.4, Math.min(1.4, (r.left + r.width / 2 - vw / 2) / (vw / 2))), ny = Math.max(-1.4, Math.min(1.4, (r.top + r.height / 2 - vh / 2) / (vh / 2)));
+    const sc = Math.min(1, r.width / 150);   // tiny cards lean less
+    const ry = (-6 + nx * -11) * sc, rx = (3.5 + ny * 7) * sc;
+    el.style.transform = `perspective(700px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(0)`;
+    el.style.setProperty('--mx', (50 + nx * 38).toFixed(1) + '%'); el.style.setProperty('--my', (30 + ny * 30).toFixed(1) + '%'); el.style.setProperty('--go', '.55'); };
+  // glass panels: no tilt, but the light slides across them as you scroll (glare follows position on screen)
+  const glass = new Set(); let glio = null;
+  const shine = (el) => { const r = el.getBoundingClientRect(), nx = (r.left + r.width / 2 - innerWidth / 2) / innerWidth, ny = (r.top + r.height / 2 - innerHeight / 2) / innerHeight;
+    el.style.setProperty('--mx', (50 + nx * 60 + ny * 25).toFixed(1) + '%'); el.style.setProperty('--my', (40 + ny * 70).toFixed(1) + '%'); };
+  const watchGlass = (root = d) => { if (!('IntersectionObserver' in window)) return; glio ||= new IntersectionObserver((es) => { es.forEach((e) => { if (e.isIntersecting) { glass.add(e.target); e.target.classList.add('amb'); } else glass.delete(e.target); }); ambAsk(); }, { rootMargin: '60px' });
+    $$('.panel,.sbt,.kc,.tile', root).forEach((el) => { if (!el.dataset.g) { el.dataset.g = 1; glio.observe(el); } }); };
+  const ambTick = () => { ambRaf = 0; if (mode !== 'full' || d.documentElement.classList.contains('gyro-on')) return; ambient.forEach((el) => { if (!el.classList.contains('live') && el.isConnected) lean(el); }); glass.forEach((el) => { if (el.isConnected) shine(el); }); };
+  const ambAsk = () => { if (!ambRaf) ambRaf = requestAnimationFrame(ambTick); };
+  const ambClear = () => ambient.forEach((el) => { if (!el.classList.contains('live')) { el.style.transform = ''; el.style.setProperty('--go', 0); } });
+  addEventListener('scroll', ambAsk, { passive: true, capture: true }); addEventListener('resize', ambAsk);
+  addEventListener('norex:motion', () => { mode !== 'full' ? ambClear() : ambAsk(); });
   function tilt(el) {
-    const max = +(el.dataset.tilt || 11); let raf = 0, active = false;
+    const max = +(el.dataset.tilt || (isCard(el) ? 16 : 9)); let raf = 0, active = false;
     const gloss = el.querySelector('.gloss i'); let sw = null;
+    if (isCard(el) && 'IntersectionObserver' in window) { tio ||= new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? ambient.add(e.target) : ambient.delete(e.target))); ambAsk(); }, { rootMargin: '120px' }); tio.observe(el); }
     const set = (cx, cy) => { const r = el.getBoundingClientRect(), x = (cx - r.left) / r.width, y = (cy - r.top) / r.height;
-      cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { el.style.transform = `perspective(900px) rotateX(${((.5 - y) * max * 2).toFixed(2)}deg) rotateY(${((x - .5) * max * 2).toFixed(2)}deg) translateZ(0)`; el.style.setProperty('--mx', x * 100 + '%'); el.style.setProperty('--my', y * 100 + '%'); el.style.setProperty('--go', 1); }); };
-    const rest = () => { active = false; cancelAnimationFrame(raf); el.classList.remove('live'); el.style.transform = ''; el.style.setProperty('--go', 0); };
-    el.addEventListener('pointerenter', (e) => { if (mode !== 'full') return; active = true; el.classList.add('live'); if (gloss) { sw?.cancel(); sw = gloss.animate([{ transform: 'translateX(-130%)' }, { transform: 'translateX(130%)' }], { duration: 900, easing: 'cubic-bezier(.2,.9,.2,1)' }); } set(e.clientX, e.clientY); });
+      cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { el.style.transform = `perspective(700px) rotateX(${((.5 - y) * max * 2).toFixed(2)}deg) rotateY(${((x - .5) * max * 2).toFixed(2)}deg) scale(1.03) translateZ(0)`; el.style.setProperty('--mx', x * 100 + '%'); el.style.setProperty('--my', y * 100 + '%'); el.style.setProperty('--go', 1); }); };
+    const rest = () => { active = false; cancelAnimationFrame(raf); el.classList.remove('live'); el.style.transform = ''; el.style.setProperty('--go', 0); if (isCard(el)) ambAsk(); };
+    el.addEventListener('pointerenter', (e) => { if (mode !== 'full') return; active = true; el.classList.add('live'); if (gloss) { sw?.cancel(); sw = gloss.animate([{ transform: 'translateX(-130%)' }, { transform: 'translateX(130%)' }], { duration: 700, easing: 'cubic-bezier(.2,.9,.2,1)' }); } set(e.clientX, e.clientY); });
     el.addEventListener('pointermove', (e) => { if (active) set(e.clientX, e.clientY); });
     el.addEventListener('pointerleave', rest); el.addEventListener('pointercancel', rest); el.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') rest(); });
     d.addEventListener('visibilitychange', rest); addEventListener('pagehide', rest);
   }
-  M.tilt = () => $$('.tilt:not([data-t])').forEach((el) => { el.dataset.t = 1; tilt(el); }); M.tilt();
+  M.tilt = () => { $$('.tilt:not([data-t])').forEach((el) => { el.dataset.t = 1; tilt(el); }); watchGlass(); ambAsk(); }; M.tilt();
 
   // ================= layered parallax =================
   const par = $$('[data-par]'); if (par.length) { let tick = false; addEventListener('scroll', () => { if (tick || mode !== 'full') return; tick = true; requestAnimationFrame(() => { const y = scrollY; par.forEach((el) => { el.style.transform = `translate3d(0,${(y * +el.dataset.par).toFixed(1)}px,0)`; }); tick = false; }); }, { passive: true });

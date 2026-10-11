@@ -19,7 +19,8 @@
     } catch { return null; }   // cross-origin without CORS: fall back to defaults
   }
   const fitVars = (m) => { m = m || DEF; const fig = (m.bot - m.top) * m.ar, S = Math.min(3.2, Math.max(1.1, .95 / (fig * .46)));
-    return { '--fs': S.toFixed(3), '--fx': ((.5 - S * m.cx) * 100).toFixed(2), '--fy': ((.07 - S * m.top * m.ar) * 100).toFixed(2), '--numY': ((m.top + (m.bot - m.top) * .7) * 100).toFixed(1) + '%' }; };
+    const kk = Math.max(.5, Math.min(1, (m.w / m.ar) / .6 * .72));   // kit number scales with the figure so it always sits inside the shirt
+    return { '--fs': S.toFixed(3), '--fx': ((.5 - S * m.cx) * 100).toFixed(2), '--fy': ((.07 - S * m.top * m.ar) * 100).toFixed(2), '--numY': ((m.top + (m.bot - m.top) * .66) * 100).toFixed(1) + '%', '--kk': kk.toFixed(2) }; };
   // Studio images may arrive on a near-white studio background: remove only light, border-connected pixels (same rule as the
   // live site's card composer), crop to the subject and hand every placement the same clean cut-out.
   async function clean(img) {
@@ -45,7 +46,7 @@
       const k = el.dataset.k, a = map[k]; const cut = el.querySelector('.cut'); if (!cut) continue;
       if (!a) { el.classList.remove('has-art', 'has-kit'); continue; }
       try { const { u, m } = await preload(k, a.v); if (cut.getAttribute('src') !== u) cut.src = u;
-        const vars = fitVars(m); for (const [n, val] of Object.entries(vars)) el.style.setProperty(n, val); el.classList.add('has-art'); const kit = el.querySelector('.kit');
+        const vars = fitVars(m); if (a.numY) vars['--numY'] = /%$/.test(a.numY) ? a.numY : a.numY + '%'; for (const [n, val] of Object.entries(vars)) el.style.setProperty(n, val); el.classList.add('has-art'); const kit = el.querySelector('.kit');
         if (kit && a.kit) { kit.textContent = a.kit; el.classList.add('has-kit'); } else el.classList.remove('has-kit'); } catch { el.classList.remove('has-art'); }
     }
   }
