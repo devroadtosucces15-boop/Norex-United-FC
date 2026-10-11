@@ -1,6 +1,6 @@
 {
-  "revision": "2e598318fe667cb6f40ba91064c5ad811ec4767e",
-  "files": 692,
+  "revision": "289c7d44387bdad8adfe8bd095ab793854cbcdc0",
+  "files": 699,
   "imports": 429,
   "api_paths": 224,
   "tables": 274,
@@ -3180,7 +3180,7 @@
     {
       "path": "data/burners/1479556.json",
       "layer": "data",
-      "lines": 539,
+      "lines": 492,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6892,6 +6892,24 @@
       "functions": []
     },
     {
+      "path": "data/matches/89202902250082.json",
+      "layer": "data",
+      "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89236917840319.json",
+      "layer": "data",
+      "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/89340449220450.json",
       "layer": "data",
       "lines": 283,
@@ -6901,9 +6919,54 @@
       "functions": []
     },
     {
+      "path": "data/matches/89342582450175.json",
+      "layer": "data",
+      "lines": 316,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89406466960139.json",
+      "layer": "data",
+      "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89458244460286.json",
+      "layer": "data",
+      "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/89468169380194.json",
       "layer": "data",
       "lines": 503,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89508268480060.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/89592117020067.json",
+      "layer": "data",
+      "lines": 353,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8874,7 +8937,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 67,
+      "lines": 75,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -8884,13 +8947,20 @@
         "./lib.mjs"
       ],
       "endpoints": [
+        "/api/achievements",
+        "/api/achievements/seen",
         "/api/awards",
         "/api/awards/vote",
+        "/api/badges",
+        "/api/badges/remove",
         "/api/docs",
         "/api/docs/ack",
         "/api/feed/comment",
         "/api/feed/post",
         "/api/feed/react",
+        "/api/locker",
+        "/api/me",
+        "/api/member",
         "/api/notify",
         "/api/notify/ack",
         "/api/notify/prefs",
@@ -8898,6 +8968,9 @@
         "/api/notify/test",
         "/api/playstyle",
         "/api/predict",
+        "/api/profile",
+        "/api/push/subscribe",
+        "/api/push/unsubscribe",
         "/api/scout",
         "/api/squads",
         "/api/squads/prefs",
