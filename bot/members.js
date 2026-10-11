@@ -10,6 +10,7 @@
 // Data saved by the first (KV-only) version is copied into D1 once, on the first request after the switch.
 // Who may do what: bot/roles.js (can(user, action)).
 
+import { panelCounts } from './panel.js';
 import { getLive } from './live.js';
 import { gameChanges, gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
@@ -568,6 +569,10 @@ async function route(p, method, body, me, env, loadSite, url) {
     return json({ user, claim, profile: profileOut(profile) ?? null });
   }
 
+  if (p === '/api/manager/queue' && method === 'GET') { // what's waiting for a decision – the same counts as Discord's /panel (for the owner's floating button badge)
+    if (!can(me, 'portal.view')) return fail('Managers only.', 403);
+    return json({ ...(await panelCounts(env, me)), at: Date.now() });
+  }
   if (p === '/api/insights/ask' && method === 'POST') { // BE9 – follow-up question, answered only from the stored fact pack
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
     return json(await statAskRoute(env, me, body));

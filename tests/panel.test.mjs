@@ -67,5 +67,13 @@ t('pressing an old button again → the Hub route decides (re-approving is harml
 t('back to the panel: all clear', /All clear – nothing waiting/.test(txt(await press('norex:mp:home'))));
 await tt('a member pressing a panel button is refused', async () => /Managers only/.test(txt(await press('norex:mp:q:claims', as('950')))));
 
+globalThis.fetch = realFetch; // the login round trip needs the mock's own Discord OAuth stub
+const { W, login } = await import('./mock.mjs');
+await tt('GET /api/manager/queue: the same counts, managers only', async () => {
+  const mgr = await login('961', ['mgr']), member = await login('962');
+  const q = await (await W('/api/manager/queue', { headers: { Authorization: `Bearer ${mgr.token ?? mgr}` } })).json();
+  const no = await W('/api/manager/queue', { headers: { Authorization: `Bearer ${member.token ?? member}` } });
+  return Number.isInteger(q.claims) && q.ideas === 0 && q.rush === 0 && typeof q.at === 'number' && no.status === 403;
+});
 globalThis.fetch = realFetch;
 done();
