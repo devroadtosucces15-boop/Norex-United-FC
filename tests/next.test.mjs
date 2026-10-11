@@ -58,6 +58,9 @@ t('clubhouse: the only writes are post, react, comment/reply, suggest and vote, 
 const cc = read('clubchat.js');
 t('chat room: live socket with the session token, typing, polling fallback, offline banner and a stored retry queue', cc.includes('/api/chats/${id}/ws?t=${encodeURIComponent(A.token)}') && cc.includes("JSON.stringify({ t: 'typing' })") && cc.includes('startPoll()') && cc.includes("addEventListener('online'") && cc.includes("addEventListener('offline'") && cc.includes("QK = 'nx.chatq'") && cc.includes('!e.status || e.status >= 500') && (cc.match(/post\(`?'?\/api\/chats[^,)]*/g) || []).length >= 3 && !/\/api\/(feed|suggestions)/.test(cc));
 t('on discord: reads the public widget feed only, bots hidden, voice channel links', cc.includes('https://discord.com/api/guilds/${G}/widget.json') && cc.includes('ch-discord') === false && cc.includes('/bot$/i') && cc.includes('https://discord.com/channels/${G}/') && read('style.css').includes('.dl-f.idle::after'));
+const aj = read('alerts.js');
+t('locker alerts: inbox + settings mounts behind the gate, the alert card links down to the inbox', ['id="lk-alerts"', 'id="lkinbox"', 'id="lkprefs"', 'src="alerts.js"'].every((k) => hb.includes(k)) && pj.includes('href="#lk-alerts"'));
+t('locker alerts: reads /api/notify, writes only read / ack / prefs / test, due rules pinned on top, live-site links mapped to rooms', aj.includes("A.call('/api/notify')") && (aj.match(/post\('\/api\/[a-z/]+'/g) || []).every((u) => ["post('/api/notify/read'", "post('/api/notify/ack'", "post('/api/notify/prefs'", "post('/api/notify/test'"].includes(u)) && aj.includes('Needs your OK') && aj.includes("'hub-clubhouse.html#ch-ideas'") && aj.includes("v === 'off' && !t.mute"));
 t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includes('href="staff.html" class="" data-for="owner" hidden'));
 fs.rmSync(out, { recursive: true, force: true });
 done();
