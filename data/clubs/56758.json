@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-11T04:50:28.441Z",
+ "fetchedAt": "2026-10-11T05:00:29.221Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -981,42 +981,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "CatchMyDrift3",
-   "gamesPlayed": "12",
-   "winRate": "41",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "93",
-   "passSuccessRate": "80",
-   "ratingAve": "6.5",
-   "tacklesMade": "8",
-   "tackleSuccessRate": "13",
-   "proName": "C. Drift",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "184",
-   "proNationality": "95",
-   "proOverall": "78",
-   "proOverallStr": "78",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Futxpert6",
    "gamesPlayed": "54",
    "winRate": "77",
@@ -1306,7 +1270,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 13,
+  "midfielder": 12,
   "goalkeeper": 0,
   "forward": 6,
   "defender": 10
@@ -1639,17 +1603,6 @@
    "assists": "17",
    "manOfTheMatch": "2",
    "ratingAve": "7.5",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "CatchMyDrift3",
-   "proPos": "14",
-   "gamesPlayed": "32",
-   "goals": "0",
-   "assists": "0",
-   "manOfTheMatch": "2",
-   "ratingAve": "6.8",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
