@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-11T08:40:21.256Z",
+ "fetchedAt": "2026-10-11T08:50:19.626Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -439,42 +439,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "Tiki-ELPristo",
-   "gamesPlayed": "22",
-   "winRate": "90",
-   "goals": "22",
-   "assists": "9",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "47",
-   "passesMade": "169",
-   "passSuccessRate": "88",
-   "ratingAve": "7.9",
-   "tacklesMade": "13",
-   "tackleSuccessRate": "20",
-   "proName": "Kante",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "194",
-   "proNationality": "83",
-   "proOverall": "84",
-   "proOverallStr": "84",
-   "manOfTheMatch": "5",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "1",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "1",
-   "prevGoals9": "1",
-   "prevGoals10": "1",
-   "favoritePosition": "forward"
   },
   {
    "name": "ShadowchemTTV",
@@ -1200,7 +1164,7 @@
  "positionCount": {
   "midfielder": 11,
   "goalkeeper": 0,
-  "forward": 6,
+  "forward": 5,
   "defender": 9
  },
  "career": [
@@ -1326,17 +1290,6 @@
    "favoritePosition": ""
   },
   {
-   "name": "Tiki-ELPristo",
-   "proPos": "14",
-   "gamesPlayed": "132",
-   "goals": "141",
-   "assists": "45",
-   "manOfTheMatch": "28",
-   "ratingAve": "7.8",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "ShadowchemTTV",
    "proPos": "25",
    "gamesPlayed": "2",
@@ -1382,14 +1335,14 @@
   },
   {
    "name": "zNemxsis",
-   "proPos": "5",
-   "gamesPlayed": "21",
+   "proPos": "14",
+   "gamesPlayed": "22",
    "goals": "3",
-   "assists": "12",
+   "assists": "13",
    "manOfTheMatch": "7",
    "ratingAve": "8.3",
    "prevGoals": "0",
-   "favoritePosition": "defender"
+   "favoritePosition": "midfielder"
   },
   {
    "name": "Delandon19",
