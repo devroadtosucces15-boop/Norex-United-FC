@@ -26,13 +26,13 @@ export function isMatch(want, cand) {
   return true;
 }
 
-export async function findEquivalent(node, want, sources = ['ytmsearch', 'ytsearch', 'scsearch']) {
+export async function findEquivalent(node, want, sources = ['ytmsearch', 'ytsearch', 'scsearch'], skip = new Set()) {
   const q = `${String(want.author || '').split(/,|&/)[0].trim()} ${want.title}`.trim();
   for (const src of sources) {
     try {
       const r = await node.rest.resolve(`${src}:${q}`);
       if (r?.loadType !== 'search') continue;
-      const hit = r.data.slice(0, 8).find((t) => isMatch(want, t.info));
+      const hit = r.data.slice(0, 8).find((t) => !skip.has(t.info.identifier) && isMatch(want, t.info));
       if (hit) return hit;
     } catch { /* next source */ }
   }
