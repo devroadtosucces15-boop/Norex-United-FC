@@ -9,6 +9,8 @@ import { store } from './store.js';
 import * as panel from './panel.js';
 import { startReportWatch } from './watch.js';
 import * as rooms from './bubbles.js';
+import * as plcmd from './playlistcmd.js';
+import * as plist from './playlists.js';
 import { panel as v2panel, small, btn } from './v2.js';
 import { MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
 
@@ -78,8 +80,11 @@ async function ensureRoom(i) {
   return { room, binding: b };
 }
 
+const plCtx = { node: () => main.shoukaku.getIdealNode(), ensureRoom: (i) => ensureRoom(i), roomOf: (i) => bindingFor(i)?.room };
 main.client.on('interactionCreate', async (i) => {
   try {
+    if (i.isAutocomplete()) return plcmd.autocomplete(i).catch(() => {});
+    if (i.isModalSubmit() && i.customId.startsWith('pl:bulk:')) return plcmd.bulkSubmit(i, plCtx);
     if ((i.isButton() || i.isModalSubmit()) && i.customId.startsWith('room:')) return roomComponent(i);
     if ((i.isButton() || i.isStringSelectMenu()) && i.customId.startsWith('dj:')) return component(i);
     if (!i.isChatInputCommand()) return;
@@ -107,6 +112,7 @@ main.client.on('interactionCreate', async (i) => {
     }
 
     if (i.commandName === 'room') return roomCommand(i);
+    if (i.commandName === 'playlist') return plcmd.run(i, plCtx);
 
     if (i.commandName === 'setup') {
       if (!isManager(i.member)) return i.reply(err('Only managers can set up a player channel.'));
@@ -263,6 +269,13 @@ async function component(i) {
   else if (a === 'vdown') await room.setVolume(Math.max(1, s.volume - 10));
   else if (a === 'vup') await room.setVolume(Math.min(150, s.volume + 10));
   else if (a === 'auto') room.setAutoplay(!s.autoplay);
+  else if (a === 'like' || a === 'dislike') {
+    const cur = room.current?.info; if (!cur) return i.reply(small('Nothing is playing', 'Start a song first.'));
+    plist.react(i.user.id, cur, a === 'like' ? 1 : -1);
+    return i.reply(v2panel({ color: a === 'like' ? 'green' : 'steel', eyebrow: 'Playlists', picture: false, ephemeral: true,
+      title: a === 'like' ? 'Saved to ❤ Liked songs' : 'Noted, no more of this one', detail: `${cur.title}${cur.author ? ` · ${cur.author}` : ''}`,
+      body: [a === 'like' ? 'Find it in `/playlist play name:Liked songs`.' : 'Autoplay will skip it whenever you are in the room.'] }));
+  }
   else if (a === 'fxreset') { s.effects = {}; await room.applyFilters(); }
   else if (a === 'fx') {
     const picked = new Set(i.values);
