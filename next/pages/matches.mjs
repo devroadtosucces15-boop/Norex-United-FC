@@ -115,15 +115,53 @@ export function match(m) {
 
 // ---------- OPPONENTS (+ burner clubs) ----------
 export function opps() {
-  const tr = opponents.map((o) => `<tr><td>${oppCrest(o.crest, o.n, 38)}</td><td><b>${esc(o.n)}</b><div class="muted tiny">${o.div ? 'Division ' + o.div : ''}${o.sr ? ' · SR ' + o.sr : ''}</div></td><td class="num">${o.p}</td><td><span class="pill w">${o.w}</span> <span class="pill d">${o.d}</span> <span class="pill l">${o.l}</span></td><td>${W.h2h(o.id)}</td><td class="num">${o.gf}–${o.ga}</td><td class="muted">${fmtDate(o.last, { day: 'numeric', month: 'short' })}</td></tr>`).join('');
+  const tr = opponents.map((o) => `<tr><td>${oppCrest(o.crest, o.n, 38)}</td><td><a href="opp-${esc(o.id)}.html" class="opl"><b>${esc(o.n)}</b></a><div class="muted tiny">${o.div ? 'Division ' + o.div : ''}${o.sr ? ' · SR ' + o.sr : ''}</div></td><td class="num">${o.p}</td><td><span class="pill w">${o.w}</span> <span class="pill d">${o.d}</span> <span class="pill l">${o.l}</span></td><td>${W.h2h(o.id)}</td><td class="num">${o.gf}–${o.ga}</td><td class="muted">${fmtDate(o.last, { day: 'numeric', month: 'short' })}</td><td><a class="chip" href="opp-${esc(o.id)}.html" aria-label="Scouting report on ${esc(o.n)}">🔍 Report</a></td></tr>`).join('');
   const bur = burners.map((b) => `<div class="panel reveal"><div style="display:flex;gap:12px;align-items:center">${badge(b.n, true)}<div><h3 style="margin:0">${esc(b.n)}</h3><div class="muted small">Division ${b.div} · SR ${b.sr} · ${b.roster} players seen</div></div></div><div class="sb" style="margin-top:14px;grid-template-columns:repeat(4,1fr)">${sbt(b.gp, 'Played')}${sbt(b.w, 'Won', 'gold')}${sbt(b.l, 'Lost', 'red')}${sbt(b.gf - b.ga >= 0 ? '+' + (b.gf - b.ga) : b.gf - b.ga, 'GD')}</div><p class="muted tiny" style="margin-top:10px">Tracked since ${fmtDate(Date.parse(b.tracked) / 1000, { day: 'numeric', month: 'short' })}. Burner clubs are opponent tracking: they never count in our League totals.</p></div>`).join('');
   const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><header><div><div class="eyebrow">Know your rivals</div><h2>Opponents</h2></div><div class="chips" id="ot"><button class="chip on" data-t="o">Rivals we have played</button><button class="chip" data-t="b">Burner clubs · ${burners.length}</button></div></header>
-  <div id="po" class="panel flat reveal" style="overflow-x:auto"><table class="tb"><thead><tr><th></th><th>Club</th><th>P</th><th>W · D · L</th><th>Meetings</th><th>Goals</th><th>Last</th></tr></thead><tbody>${tr}</tbody></table></div>
+  <div id="po" class="panel flat reveal" style="overflow-x:auto"><table class="tb"><thead><tr><th></th><th>Club</th><th>P</th><th>W · D · L</th><th>Meetings</th><th>Goals</th><th>Last</th><th></th></tr></thead><tbody>${tr}</tbody></table></div>
   <div id="pb" hidden><p class="muted" style="margin-bottom:14px">Burner clubs are throwaway clubs the managers track as opponents. They are not scouting: scouting is recruitment and lives in Club.</p><div class="grid g2">${bur}</div></div></section></div>`;
   return shell({ group: 'matches', page: 'opponents.html', title: 'Opponents', body });
+}
+
+// ---------- OPPONENT SCOUTING REPORT (D4) ----------
+// Everything below is counted from the match records EA sends for the games we played against this club (their side's players are listed per game).
+const OPP_CSS = '<style>.olist{display:grid;gap:8px}.om{display:grid;grid-template-columns:92px 1fr auto auto;gap:14px;align-items:center;padding:12px 16px;border-radius:14px;background:linear-gradient(90deg,var(--p2),var(--p1));border:1px solid var(--line);position:relative;overflow:hidden;transition:.25s}.om:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line2)}.om[data-res=W]:before{background:#22b35e}.om[data-res=L]:before{background:var(--red)}.om[data-res=D]:before{background:var(--g3)}.om:hover{transform:translateX(4px);border-color:rgba(239,207,122,.4)}.omt{color:var(--soft);font-size:13px}.oms{font:600 24px Oswald}a.opl{color:inherit}a.opl:hover{color:var(--g2)}</style>';
+export function oppPage(o) {
+  const ms = matches.filter((m) => m.oppId === o.id); // newest first
+  const agg = new Map();
+  for (const m of ms) for (const l of m.olines || []) { const a = agg.get(l.n) ?? { n: l.n, g: 0, goals: 0, assists: 0, mom: 0, r: 0, rn: 0, lines: {} }; a.g++; a.goals += l.goals; a.assists += l.assists; a.mom += l.mom; if (l.rating > 0) { a.r += l.rating; a.rn++; } a.lines[l.line] = (a.lines[l.line] || 0) + 1; agg.set(l.n, a); }
+  const them = [...agg.values()].map((a) => ({ ...a, avg: a.rn ? a.r / a.rn : null, line: Object.entries(a.lines).sort((x, y) => y[1] - x[1])[0][0] })).sort((a, b) => (b.goals + b.assists) - (a.goals + a.assists) || b.g - a.g || (b.avg ?? 0) - (a.avg ?? 0));
+  const shapeOf = (L) => { const c = { DEF: 0, MID: 0, FWD: 0 }; L.forEach((l) => c[l.line] != null && c[l.line]++); return `${c.DEF}-${c.MID}-${c.FWD}`; };
+  const shp = new Map(); ms.forEach((m) => { if ((m.olines || []).length === 11) { const k = shapeOf(m.olines); shp.set(k, (shp.get(k) || 0) + 1); } });
+  const shape = [...shp].sort((a, b) => b[1] - a[1])[0];
+  const avg = (L) => { const r = L.filter((l) => l.rating > 0); return r.length ? r.reduce((a, l) => a + l.rating, 0) / r.length : null; };
+  const ourR = avg(ms.flatMap((m) => m.lines)), theirR = avg(ms.flatMap((m) => m.olines || []));
+  const best = ms.reduce((a, m) => (!a || m.gf - m.ga > a.gf - a.ga ? m : a), null), worst = ms.reduce((a, m) => (!a || m.gf - m.ga < a.gf - a.ga ? m : a), null);
+  const cs = ms.filter((m) => m.ga === 0).length;
+  const ourStars = (() => { const t = new Map(); ms.forEach((m) => m.lines.forEach((l) => { const a = t.get(l.n) ?? { n: l.n, g: 0, goals: 0, assists: 0 }; a.g++; a.goals += l.goals; a.assists += l.assists; t.set(l.n, a); })); return [...t.values()].sort((a, b) => (b.goals + b.assists) - (a.goals + a.assists))[0]; })();
+  const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const facts = [
+    shape && ['🧩', `Usual shape: ${shape[0]}`, `${shape[1]} of ${ms.length} meeting${ms.length === 1 ? '' : 's'} when EA listed all eleven players.`],
+    them[0] && them[0].goals + them[0].assists > 0 && ['🎯', `Biggest threat: ${them[0].n}`, `${pl(them[0].goals, 'goal')} and ${pl(them[0].assists, 'assist')} against us in ${pl(them[0].g, 'game')}.`],
+    ['🥅', `${o.gf} scored, ${o.ga} conceded`, `${(o.gf / o.p).toFixed(1)} a game for us, ${(o.ga / o.p).toFixed(1)} against.${cs ? ` Clean sheet in ${cs} of ${o.p}.` : ''}`],
+    ourR && theirR && ['📈', `Rating: us ${ourR.toFixed(1)} · them ${theirR.toFixed(1)}`, ourR >= theirR ? 'Our players have rated higher in these games.' : 'Their players have rated higher in these games.'],
+    ourStars && ourStars.goals + ourStars.assists > 0 && ['⭐', `Best against them: ${ourStars.n}`, `${pl(ourStars.goals, 'goal')} and ${pl(ourStars.assists, 'assist')} in ${pl(ourStars.g, 'game')}.`],
+  ].filter(Boolean);
+  const game = (m) => `<a class="om" href="match-${m.id}.html" data-res="${m.res}"><span class="muted small">${fmtDate(m.t)}</span><span class="omt">${m.type === 'playoffMatch' ? 'Playoff' : 'League'}</span><b class="oms">${m.gf}–${m.ga}</b>${pillRes(m.res)}</a>`;
+  const prow = (a) => `<tr><td><b>${esc(a.n)}</b></td><td>${a.line}</td><td class="num">${a.g}</td><td class="num">${a.goals}</td><td class="num">${a.assists}</td><td class="num">${a.avg != null ? a.avg.toFixed(1) : '–'}</td><td class="num">${a.mom || ''}</td></tr>`;
+  const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><a class="muted small" href="opponents.html">← All opponents</a>
+  <header style="margin-top:10px"><div style="display:flex;gap:16px;align-items:center;min-width:0">${oppCrest(o.crest, o.n, 84)}<div style="min-width:0"><div class="eyebrow">Scouting report</div><h2 style="margin:0;overflow-wrap:anywhere">${esc(o.n)}</h2><div class="muted small">${[o.div ? 'Division ' + o.div : '', o.sr ? 'SR ' + o.sr : '', o.rank ? 'Rank #' + o.rank : ''].filter(Boolean).join(' · ') || 'No league standing in our data'}</div></div></div></header>
+  <div class="sb" style="margin-top:18px;grid-template-columns:repeat(auto-fit,minmax(86px,1fr))">${sbt(o.p, 'Played')}${sbt(o.w, 'Won', 'gold')}${sbt(o.d, 'Drawn')}${sbt(o.l, 'Lost', 'red')}${sbt(o.gf, 'Scored')}${sbt(o.ga, 'Conceded', 'red')}</div>
+  <p style="margin:10px 0 0" class="muted small">Form against them (oldest → newest) ${W.h2h(o.id)}${best ? ` · best result ${best.gf}–${best.ga}${worst && worst.gf < worst.ga ? `, heaviest loss ${worst.gf}–${worst.ga}` : ''}` : ''}</p></section>
+  <section class="sec"><header><div><span class="ribbon">What we know</span></div><p>Counted from the ${pl(o.p, 'game')} we have played them, taken from our saved match archive.</p></header><div class="grid g2" data-stagger>${facts.map(([e, t, d]) => `<div class="panel" style="height:100%"><div style="display:flex;gap:12px"><span style="font-size:26px" aria-hidden="true">${e}</span><div><b>${esc(t)}</b><p class="muted small" style="margin:4px 0 0">${esc(d)}</p></div></div></div>`).join('')}</div>
+   <div data-insight="h2h.${esc(o.id)}" hidden></div></section>
+  <section class="sec"><header><div><span class="ribbon">Players we have faced</span></div><p>Only humans EA records; AI teammates are not listed. Sorted by goals plus assists.</p></header>${them.length ? `<div class="panel flat" style="overflow-x:auto"><table class="tb"><thead><tr><th>Player</th><th>Line</th><th>GP</th><th>G</th><th>A</th><th>Avg rating</th><th>MOM</th></tr></thead><tbody>${them.map(prow).join('')}</tbody></table></div>` : '<p class="muted">EA did not list their players for these games.</p>'}</section>
+  <section class="sec"><header><div><span class="ribbon">Every meeting</span></div></header><div class="olist">${ms.map(game).join('')}</div></section></div>`;
+  return shell({ group: 'matches', page: 'opponents.html', title: `Scouting report · ${o.n}`, body, extraHead: OPP_CSS });
 }
 
 export default function (P) {
   P('fixtures.html', fixtures()); P('results.html', results()); P('opponents.html', opps());
   for (const m of matches) P(`match-${m.id}.html`, match(m));
+  for (const o of opponents) P(`opp-${o.id}.html`, oppPage(o));
 }
