@@ -119,8 +119,9 @@ img{-webkit-touch-callout:none}
 html.standalone,html.standalone body{overscroll-behavior-y:none}
 html.standalone .bar{padding-top:env(safe-area-inset-top)}
 html.standalone body{min-height:100dvh}
-.tabbar{padding-bottom:calc(8px + env(safe-area-inset-bottom) * .5);transition:transform .3s var(--e-out)}
-html.kb-open .tabbar,html.kb-open #nx-inst{transform:translateY(160%)}
+.tabbar{padding-bottom:calc(8px + env(safe-area-inset-bottom) * .5);transition:transform .3s var(--e-out);transform:translate3d(0,var(--tbfix,0px),0);-webkit-backface-visibility:hidden;backface-visibility:hidden}
+html,body{overflow-x:clip}
+html.kb-open .tabbar,html.kb-open #nx-inst{transform:translate3d(0,160%,0)}
 @media (orientation:landscape) and (max-height:500px){.tabbar{bottom:6px!important;padding-top:3px!important}.tabbar a span{font-size:17px!important}.tabbar .key{width:48px!important;height:48px!important;min-width:48px!important;margin-top:-16px!important}}
 .wrap{padding-left:max(var(--gut),env(safe-area-inset-left));padding-right:max(var(--gut),env(safe-area-inset-right))}
 /* install hint */

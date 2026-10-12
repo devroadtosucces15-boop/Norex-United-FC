@@ -27,7 +27,7 @@ const finalize = (h) => {
   return h.replace('<link rel="icon" href="crest.png">', '<link rel="icon" href="crest-sm.png">');
 };
 let n = 0; const built = []; const P = (f, h) => { W(f, finalize(h)); built.push(f); n++; };
-const mods = ['club', 'matches', 'rush', 'stats', 'burners', 'tactics', 'hub', 'swap', 'lookbook', 'canvas'];
+const mods = ['club', 'matches', 'rush', 'stats', 'about', 'burners', 'tactics', 'hub', 'swap', 'lookbook', 'canvas'];
 for (const m of mods) { const file = path.join(here, 'pages', m + '.mjs'); if (!fs.existsSync(file)) continue; const mod = await import('./pages/' + m + '.mjs'); await mod.default?.(P) ; }
 if (PUBLIC) { const { emitSwap } = await import('./lib/swap.mjs'); const api = emitSwap({ out, root: path.join(here, '..'), classic: arg('--classic'), pages: built }); console.log(`public: ${api.length} api files, sw.js, offline/404, robots, sitemap`);
   // old addresses (Discord embeds, bookmarks, installed apps) → new pages, or the same page under classic/

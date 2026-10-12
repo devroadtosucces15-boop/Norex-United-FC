@@ -35,6 +35,13 @@
     }); };
     vv.addEventListener('resize', onVV); vv.addEventListener('scroll', onVV);
   }
+  // iOS can leave the fixed tab bar floating mid-screen after a long scroll (#40): once scrolling settles, measure where it sits
+  // against the visual viewport and nudge it back to the bottom edge when it has drifted
+  const tb = d.querySelector('.tabbar');
+  if (tb && vv) { let st = 0; const heal = () => { if (typing || H.classList.contains('kb-open')) return; const was = H.style.getPropertyValue('--tbfix'); H.style.removeProperty('--tbfix');
+      const r = tb.getBoundingClientRect(); if (!r.height || getComputedStyle(tb).display === 'none') return; const drift = (vv.offsetTop + vv.height) - r.bottom - 12;
+      if (Math.abs(drift) > 24 && vv.scale < 1.05) H.style.setProperty('--tbfix', Math.round(drift) + 'px'); else if (was) H.style.removeProperty('--tbfix'); };
+    const later = () => { clearTimeout(st); st = setTimeout(heal, 180); }; addEventListener('scroll', later, { passive: true }); vv.addEventListener('resize', later); addEventListener('orientationchange', later); addEventListener('pageshow', later); }
   // block double-tap zoom and pinch in the installed app (the browser keeps them for normal tabs' accessibility)
   if (standalone) { d.addEventListener('gesturestart', (e) => e.preventDefault()); d.addEventListener('dblclick', (e) => { if (!e.target.closest('input,textarea')) e.preventDefault(); }, { passive: false }); }
   addEventListener('pageshow', () => { if (vv && vv.scale > 1.01) resetZoom(); });

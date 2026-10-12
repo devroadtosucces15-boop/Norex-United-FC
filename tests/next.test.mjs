@@ -251,5 +251,13 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('handbook (#52): suggestion box and anonymous feedback entries live with the docs, a rules reminder dots the Handbook link', hbk.includes('id="hb-voice"') && hbk.includes('Anonymous feedback') && hx.includes('rules-due') && hxc.includes('a.rules-due:after'));
   t('hub (#1–2): the crest on the gold tile with a light sweep is the site logo on every page, motion-aware', hdc.includes('.bar .lg img') && hdc.includes('lgSweep') && hdc.includes('prefers-reduced-motion') && ['index.html', 'results.html', 'hub.html', 'squad.html', 'staff.html'].every((f) => read(f).includes('href="header.css"')));
 }
+// ---- bulk 5: burners what-if, about, scout, iOS tab bar, glow, background ----
+{ const bn = read('burners.html'), bw = read('burnerswhatif.js'), ab = read('about.html'), sc = read('scout.html'), sj = read('scout.js'), mc = read('motion.css'), pw = read('pwa.js'), st = read('style.css'), rd = fs.readFileSync(path.join(ROOT, 'next/lib/redirects.mjs'), 'utf8');
+  t('burners what-if: opt-in tick-box + club picker, labelled unofficial, remembered per viewer, never touches official numbers', bn.includes('id="bn-wi-on"') && bn.includes('id="bn-wi-pick"') && bn.includes('burnerswhatif.js') && bn.includes('<b>unofficial</b>') && bw.includes("'norex.burnerWhatIf'") && bw.includes('Unofficial') && !/fetch\(|XMLHttpRequest|sendBeacon/.test(bw) && JSON.parse(bn.match(/id="bn-data">([\s\S]*?)<\/script>/)[1]).norex.players.length > 0);
+  t('about page exists, is linked from every footer and carries no repo link', ab.includes('About') && ab.includes('ab-card') && read('index.html').includes('href="about.html"') && !/github\.com/i.test(ab));
+  t('scout page: profile for players outside the squad from api/players.json, old players/<id> links land there', sc.includes('src="scout.js"') && sj.includes('api/players.json') && rd.includes('scout.html#k='));
+  t('#40 tab bar: composited, horizontal overflow clipped, and a settle-time drift check pulls it back to the bottom edge', mc.includes('html,body{overflow-x:clip}') && mc.includes('--tbfix') && pw.includes('--tbfix') && pw.includes('visualViewport') === true);
+  t('#28 card glow paints on first frame: no blend-mode overlay on the shell, shell is its own layer', !/\.pc-card \.shell:after\{[^}]*mix-blend-mode/.test(st) && st.includes('.pc-card .shell{isolation:isolate'));
+  t('#34 canvas lifted: brighter base and red glows behind every page', st.includes('linear-gradient(180deg,#201a26,#151119)') && st.includes('rgba(200,53,44,.42)')); }
 fs.rmSync(out, { recursive: true, force: true });
 done();

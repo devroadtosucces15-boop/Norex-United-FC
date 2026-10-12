@@ -69,9 +69,9 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb th{font:600
 .pc .kit{z-index:3;position:absolute;left:50%;top:var(--numY,47%);transform:translate(-50%,-50%);font:700 calc(var(--s)*34px*var(--kk,1)) Oswald;color:rgba(255,255,255,.92);text-shadow:0 2px 0 rgba(0,0,0,.5),0 0 12px rgba(0,0,0,.4);opacity:0;pointer-events:none;letter-spacing:.02em}.pc.has-art.has-kit .kit{opacity:1}
 /* collectible card: gold shield, 5:7 */
 .pc-card{width:calc(var(--s)*240px);aspect-ratio:600/840;filter:drop-shadow(0 18px 24px rgba(0,0,0,.55));transform-style:preserve-3d;will-change:transform}
-.pc-card .shell{position:absolute;inset:0;clip-path:polygon(8.7% 2%,91.3% 2%,97.3% 6.2%,97.3% 86.2%,50% 98.6%,2.7% 86.2%,2.7% 6.2%);background:linear-gradient(145deg,#fff0b8 0%,#e8c56e 28%,#c9993a 62%,#9a7222 100%)}
+.pc-card .shell{isolation:isolate;transform:translateZ(0);-webkit-backface-visibility:hidden;position:absolute;inset:0;clip-path:polygon(8.7% 2%,91.3% 2%,97.3% 6.2%,97.3% 86.2%,50% 98.6%,2.7% 86.2%,2.7% 6.2%);background:linear-gradient(145deg,#fff0b8 0%,#e8c56e 28%,#c9993a 62%,#9a7222 100%)}
 .pc-card .shell:before{content:"";position:absolute;inset:2.2%;clip-path:inherit;background:radial-gradient(120% 70% at 50% 18%,rgba(255,255,255,.55),transparent 55%),linear-gradient(160deg,#f6dc92,#d4aa4e 55%,#b88a2f);}
-.pc-card .shell:after{content:"";position:absolute;inset:0;clip-path:inherit;background:repeating-linear-gradient(115deg,rgba(255,255,255,.07) 0 2px,transparent 2px 9px);mix-blend-mode:overlay}
+.pc-card .shell:after{content:"";position:absolute;inset:0;clip-path:inherit;background:repeating-linear-gradient(115deg,rgba(255,255,255,.07) 0 2px,transparent 2px 9px)}
 .pc-card .art{left:12%;right:12%;top:23.5%;height:39.5%;}
 .pc-card .art:before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(70% 70% at 50% 85%,rgba(255,255,255,.4),transparent 70%)}
 .pc-card .art svg,.pc-card .art img{z-index:1}
@@ -986,7 +986,7 @@ html{touch-action:manipulation}
 .pc-card:before{opacity:0;transition:opacity .2s,background-position .9s var(--ease)}.pc-card:hover:before,.pc-card.live:before{opacity:1}
 .pc-card .glare{visibility:hidden}.pc-card.live .glare,.pc-card:hover .glare{visibility:visible}
 /* #34 club canvas (Carbon & Crimson, brightened a touch): near-black with the red tint, plus a very faint mismatched diagonal line pattern between the canvas and everything else. Hub keeps its own look. */
-body:not(.hub-page):before{background:radial-gradient(900px 560px at 80% -10%,rgba(200,53,44,.34),transparent 62%),radial-gradient(760px 520px at 8% 105%,rgba(200,53,44,.2),transparent 62%),radial-gradient(600px 420px at 3% 30%,rgba(200,53,44,.07),transparent 60%),linear-gradient(180deg,#17121a,#0f0d13)}
+body:not(.hub-page):before{background:radial-gradient(900px 560px at 80% -10%,rgba(200,53,44,.42),transparent 62%),radial-gradient(760px 520px at 8% 105%,rgba(200,53,44,.27),transparent 62%),radial-gradient(600px 420px at 3% 30%,rgba(200,53,44,.07),transparent 60%),linear-gradient(180deg,#201a26,#151119)}
 body:not(.hub-page):after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(45deg,rgba(255,255,255,.032) 0 1px,transparent 1px 9px),repeating-linear-gradient(-38deg,rgba(255,255,255,.022) 0 2px,transparent 2px 15px),repeating-linear-gradient(72deg,rgba(0,0,0,.18) 0 1px,transparent 1px 23px)}
 .rfsum{margin:0 0 16px;padding:14px;border-radius:16px;background:linear-gradient(180deg,var(--p2),var(--p1));border:1px solid var(--line)}.rfsum[hidden]{display:none}
 .rsbar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.06);margin-bottom:12px}.rsbar i{display:block;transition:width .4s var(--ease)}.rsbar .w{background:#2fb067}.rsbar .d{background:#c19a33}.rsbar .l{background:#cd4a3f}

@@ -37,7 +37,7 @@ export function planRedirects({ oldFiles, newFiles, players = [] }) {
     if (/^(assets|api)\//.test(f)) continue;
     let t = null, m;
     if (ROOT_MAP[f]) t = ROOT_MAP[f];
-    else if ((m = f.match(/^players\/(.+)\.html$/))) { const k = byId.get(m[1]); if (k != null && have.has(`player-${encodeURIComponent(k)}.html`)) t = `player-${encodeURIComponent(k)}.html`; }
+    else if ((m = f.match(/^players\/(.+)\.html$/))) { const k = byId.get(m[1]); if (k != null && have.has(`player-${encodeURIComponent(k)}.html`)) t = `player-${encodeURIComponent(k)}.html`; else if (have.has('scout.html')) t = `scout.html#k=${m[1]}`; }
     else if ((m = f.match(/^matches\/(.+)\.html$/))) { if (have.has(`match-${m[1]}.html`)) t = `match-${m[1]}.html`; }
     else if ((m = f.match(/^clubs\/(\d+)(?:-results)?\.html$/))) { if (have.has(`opp-${m[1]}.html`)) t = `opp-${m[1]}.html`; }
     if (t && !have.has(t.split('#')[0])) t = null; // never point at a page the new build lacks
