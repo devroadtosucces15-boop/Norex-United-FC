@@ -8,6 +8,9 @@ import { EFFECTS, EFFECT_NAMES, effectState } from './effects.js';
 import { store } from './store.js';
 import * as panel from './panel.js';
 import { startReportWatch } from './watch.js';
+import * as rooms from './bubbles.js';
+import { panel as v2panel, small, btn } from './v2.js';
+import { MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
 
 const env = process.env;
 const lavalink = { host: env.LAVALINK_HOST || 'lavalink:2333', password: env.LAVALINK_PASSWORD };
@@ -20,13 +23,17 @@ const helpers = tokens.map((t, i) => new Helper(i === 0 ? 'Norex DJ' : `DJ ${i}`
 const main = helpers[0];
 const pool = new Pool(helpers);
 store.load();
+rooms.load();
 panel.init(main.client);
+rooms.init(main.client);
 
 await Promise.all(helpers.map((h) => h.login()));
 await Promise.all(helpers.map((h) => (h.client.isReady() ? 1 : h.ready())));
 await new REST().setToken(env.MAIN_TOKEN).put(Routes.applicationGuildCommands(env.MAIN_APP_ID, env.GUILD_ID), { body: DEFS });
 for (const b of store.bindings.values()) panel.refresh(b, 1500);
 startReportWatch(main.client);
+rooms.reconcile();
+main.client.on('voiceStateUpdate', (o, n) => rooms.onVoice(o, n).catch((e) => console.error('rooms voice', e.message)));
 console.log(`Norex DJ ready: ${helpers.length} room(s), ${store.bindings.size} player channel(s)`);
 
 const isManager = (m) => m.permissions.has('ManageGuild') || m.roles.cache.some((r) => managerRoles.includes(r.id));
@@ -73,6 +80,7 @@ async function ensureRoom(i) {
 
 main.client.on('interactionCreate', async (i) => {
   try {
+    if ((i.isButton() || i.isModalSubmit()) && i.customId.startsWith('room:')) return roomComponent(i);
     if ((i.isButton() || i.isStringSelectMenu()) && i.customId.startsWith('dj:')) return component(i);
     if (!i.isChatInputCommand()) return;
 
@@ -97,6 +105,8 @@ main.client.on('interactionCreate', async (i) => {
       const msg = found.fallback ? `YouTube blocked that link, so I played the exact same song from SoundCloud: **${found.title}**` : found.viaSpotify ? `Queued **${found.title}** (matched from Spotify on ${found.matchedOn === 'soundcloud' ? 'SoundCloud' : 'YouTube'})` : found.playlist ? `Queued **${found.tracks.length}** tracks from **${found.title}**` : `Queued **${found.title}**`;
       return i.editReply(ok(`${msg} · ${r.room.helper.name}${where !== 'link' ? ` · ${where}` : ''}`));
     }
+
+    if (i.commandName === 'room') return roomCommand(i);
 
     if (i.commandName === 'setup') {
       if (!isManager(i.member)) return i.reply(err('Only managers can set up a player channel.'));
@@ -167,6 +177,57 @@ main.client.on('interactionCreate', async (i) => {
     (i.deferred || i.replied ? i.followUp(msg) : i.reply(msg)).catch(() => {});
   }
 });
+
+const fresh = (m) => ({ components: m.components, files: m.files, flags: MessageFlags.IsComponentsV2 });
+async function roomCommand(i) {
+  const sub = i.options.getSubcommand();
+  if (sub === 'create') {
+    await i.deferReply({ flags: MessageFlags.Ephemeral });
+    const mine = Object.entries(rooms.all()).find(([, r]) => r.ownerId === i.user.id && r.guildId === i.guildId);
+    if (mine) { const vc = await i.guild.channels.fetch(mine[0]).catch(() => null); if (vc) return i.editReply(fresh(rooms.dialog(vc, mine[1].code, mine[1].name))); }
+    try {
+      const vc = await rooms.create(i.guild, i.member, i.options.getString('name'));
+      return i.editReply(fresh(rooms.dialog(vc, rooms.info(vc.id).code, rooms.info(vc.id).name)));
+    } catch (e) {
+      console.error('room create', e.message);
+      return i.editReply(fresh(small('Could not open a room', 'Ask a manager to give Norex DJ Manage Channels, then try again.')));
+    }
+  }
+  const here = i.member.voice?.channelId || i.channelId;
+  if (!rooms.isBubble(here)) return i.reply(small('This is not a pop-up room', 'Use it from a room, or open one with /room create.'));
+  if (sub === 'status') {
+    await rooms.setStatus(here, i.options.getString('text') || '').catch(() => {});
+    return i.reply(v2panel({ color: 'steel', title: 'Status updated', detail: i.options.getString('text') || 'Status cleared', picture: false, ephemeral: true }));
+  }
+  if (sub === 'close') {
+    if (!isManager(i.member) && rooms.info(here).ownerId !== i.user.id) return i.reply(small('Only the host or a manager can close this room', 'Ask them, or leave and it closes when empty.'));
+    await i.reply(v2panel({ color: 'steel', title: 'Closing the room', detail: 'Everything gets tidied up', picture: false, ephemeral: true }));
+    return rooms.remove(here, 'closed');
+  }
+}
+async function roomComponent(i) {
+  const [, action, id] = i.customId.split(':');
+  const r = rooms.info(id);
+  if (!r) return i.reply(small('That room is gone', 'Open a new one with /room create.'));
+  if (action === 'move') {
+    if (!i.member.voice?.channelId) return i.reply(small('Join any voice channel first', 'Then tap Move me in again, or use Open room.'));
+    await i.member.voice.setChannel(id).catch(() => null);
+    return i.update(fresh(v2panel({ color: 'green', eyebrow: 'Rooms', title: 'You are in', detail: `${r.code} · ${r.name}`, picture: false, ephemeral: true, body: ['Enjoy the room. Type `/play` in its chat for music.'] })));
+  }
+  if (action === 'status') {
+    return i.showModal(new ModalBuilder().setCustomId(`room:statusmodal:${id}`).setTitle('Room status')
+      .addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('text').setLabel('What is the room about?').setStyle(TextInputStyle.Short).setMaxLength(100).setRequired(false))));
+  }
+  if (action === 'statusmodal') {
+    await rooms.setStatus(id, i.fields.getTextInputValue('text')).catch(() => {});
+    return i.reply(v2panel({ color: 'steel', title: 'Status updated', detail: i.fields.getTextInputValue('text') || 'Status cleared', picture: false, ephemeral: true }));
+  }
+  if (action === 'close') {
+    if (!isManager(i.member) && r.ownerId !== i.user.id) return i.reply(small('Only the host or a manager can close this room', 'Ask them, or leave and it closes when empty.'));
+    await i.update(fresh(v2panel({ color: 'steel', title: 'Room closed', detail: `${r.code} · ${r.name}`, picture: false, ephemeral: true })));
+    return rooms.remove(id, 'closed');
+  }
+}
 
 async function component(i) {
   const b = store.byPanel(i.message.id) || bindingFor(i);
