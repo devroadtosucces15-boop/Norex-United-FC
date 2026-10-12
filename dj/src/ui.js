@@ -1,6 +1,7 @@
 // NOREX look: crest-red stripe embeds, steel for errors. The panel is the main surface.
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, ThumbnailBuilder, MessageFlags, AttachmentBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder } from 'discord.js';
 import { COLOR, CREST } from './v2.js';
+import { ic } from './icons.js';
 import { EFFECTS, EFFECT_NAMES, effectState, activeEffects } from './effects.js';
 
 export const RED = 0xc8352c, GREEN = 0x3fa56b, STEEL = 0x6b7785;
@@ -25,7 +26,12 @@ const bar = (pos, len, n = 16) => {
   const at = Math.min(n - 1, Math.max(0, Math.floor((pos / len) * n)));
   return `\`${fmt(pos)}\` ${'▬'.repeat(at)}🔘${'▬'.repeat(n - 1 - at)} \`${fmt(len)}\``;
 };
-const btn = (id, label, style = ButtonStyle.Secondary) => new ButtonBuilder().setCustomId(`dj:${id}`).setLabel(label).setStyle(style);
+const btn = (id, label, style = ButtonStyle.Secondary, icon) => {
+  const b = new ButtonBuilder().setCustomId(`dj:${id}`).setStyle(style);
+  if (label) b.setLabel(label);
+  const e = icon && ic(icon); if (e) b.setEmoji(e);
+  return b;
+};
 
 export function panelPayload(b, card = null) {
   const room = b.room; const s = b.settings; const cur = room?.current; const t = cur?.info;
@@ -71,10 +77,13 @@ export function panelPayload(b, card = null) {
   c.addSeparatorComponents(sep());
   c.addTextDisplayComponents(td(`**Up next**${room.queue.length > 5 ? `  -# +${room.queue.length - 5} more` : ''}\n${next || (s.autoplay ? '🔮 Finding songs you will like…' : 'Queue is empty. Add songs with /play')}`));
   c.addSeparatorComponents(sep());
+  const loopLabel = { off: 'Off', track: 'Song', queue: 'Queue' }[s.loop];
   c.addActionRowComponents(new ActionRowBuilder().addComponents(
-    btn('pause', paused ? '▶ Play' : '⏸ Pause'), btn('skip', '⏭ Skip'), btn('shuffle', '🔀'), btn('loop', LOOP[s.loop].slice(0, 2)), btn('stop', '⏹ Stop', ButtonStyle.Danger)));
+    btn('pause', paused ? 'Play' : 'Pause', ButtonStyle.Secondary, paused ? 'play' : 'pause'), btn('skip', 'Skip', ButtonStyle.Secondary, 'skip'), btn('shuffle', '', ButtonStyle.Secondary, 'shuffle'),
+    btn('loop', loopLabel, ButtonStyle.Secondary, s.loop === 'track' ? 'loop1' : 'loop'), btn('stop', 'Stop', ButtonStyle.Danger, 'stop')));
   c.addActionRowComponents(new ActionRowBuilder().addComponents(
-    btn('vdown', '🔉 −10'), btn('vup', '🔊 +10'), btn('auto', '🔮', s.autoplay ? ButtonStyle.Success : ButtonStyle.Secondary), btn('like', '❤'), btn('dislike', '👎')));
+    btn('vdown', '−10', ButtonStyle.Secondary, 'voldown'), btn('vup', '+10', ButtonStyle.Secondary, 'volup'),
+    btn('auto', '', s.autoplay ? ButtonStyle.Success : ButtonStyle.Secondary, 'spark'), btn('like', '', ButtonStyle.Secondary, 'heart'), btn('dislike', '', ButtonStyle.Secondary, 'thumbdown')));
   c.addActionRowComponents(new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('dj:fx').setPlaceholder('🎚 Effects: pick any to turn on').setMinValues(0).setMaxValues(EFFECT_NAMES.length)
     .addOptions(EFFECT_NAMES.map((n) => ({ label: EFFECTS[n].label, value: n, emoji: EFFECTS[n].emoji, description: `${EFFECTS[n].blurb} · level ${effectState(s, n).level}`, default: Boolean(s.effects?.[n]?.on) })))));
   c.addSeparatorComponents(sep(false));
