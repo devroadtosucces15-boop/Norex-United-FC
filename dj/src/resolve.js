@@ -39,6 +39,14 @@ export async function resolve(node, query, source = 'auto') {
     if (r.error) { lastError = r.error; if (id.startsWith('spsearch:')) spotifyDownUntil = Date.now() + 600_000; continue; }
     return r;
   }
+  // A YouTube link that YouTube refuses to serve: read its title from oEmbed and play the SoundCloud version instead.
+  if (link && /youtu/i.test(link)) {
+    try {
+      const o = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(link)}`, { signal: AbortSignal.timeout(8000) }).then((r) => r.json());
+      const r = shape(await node.rest.resolve(`scsearch:${o.author_name} ${o.title}`));
+      if (r && !r.error) return { ...r, fallback: true };
+    } catch { /* fall through */ }
+  }
   if (lastError && order.length === 1) throw new Error(lastError);
   return null;
 }

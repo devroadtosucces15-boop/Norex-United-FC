@@ -16,8 +16,12 @@ export class Room {
     this.player = await this.helper.shoukaku.joinVoiceChannel({ guildId: this.guildId, channelId: this.channelId, shardId: 0, deaf: true });
     await this.player.setGlobalVolume(this.settings.volume);
     await this.applyFilters();
-    this.player.on('end', (e) => { if (e.reason !== 'replaced') this.next(e.reason === 'finished'); });
-    this.player.on('exception', () => this.next(false));
+    this.player.on('end', async (e) => {
+      if (e.reason === 'replaced') return;
+      if (this.recovering) await this.recovering;
+      this.next(e.reason === 'finished');
+    });
+    this.player.on('exception', () => { this.recovering = this.recover().finally(() => { this.recovering = null; }); });
     this.player.on('closed', () => this.destroy());
   }
   async add(tracks) {
@@ -40,6 +44,16 @@ export class Room {
     await this.player.playTrack({ track: { encoded: this.current.encoded } });
     this.changed();
     this.fill();
+  }
+  // A track that fails to stream (e.g. YouTube "requires login") is retried once from SoundCloud, then skipped.
+  async recover() {
+    const t = this.current;
+    if (!t || t.retried) return;
+    try {
+      const r = await this.helper.shoukaku.getIdealNode().rest.resolve(`scsearch:${t.info.author} ${t.info.title}`);
+      const alt = r?.loadType === 'search' ? r.data[0] : null;
+      if (alt) { alt.retried = true; alt.auto = t.auto; this.queue.unshift(alt); }
+    } catch (e) { console.error('recover', e.message); }
   }
   // Autoplay: keep a few suggested songs queued, based on what this session has played.
   fill() {
