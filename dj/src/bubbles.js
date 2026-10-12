@@ -93,14 +93,24 @@ function controlsPayload(id) {
     buttons: [btn(`room:lock:${id}`, r.locked ? 'Unlock' : 'Lock', ButtonStyle.Secondary, r.locked ? 'unlock' : 'lock'), btn(`room:limit:${id}:-1`, 'Limit', ButtonStyle.Secondary, 'minus'), btn(`room:limit:${id}:1`, 'Limit', ButtonStyle.Secondary, 'plus'), btn(`room:status:${id}`, 'Status', ButtonStyle.Secondary, 'pencil'), btn(`room:close:${id}`, 'Close', ButtonStyle.Danger, 'close')]
   });
 }
-export async function ctlSync(id, repost = false) {
+const ctlQueue = new Map();
+// One at a time per room, so two quick changes can never post two panels.
+export function ctlSync(id, repost = false) {
+  const run = (ctlQueue.get(id) || Promise.resolve()).then(() => ctlDo(id, repost)).catch((e) => console.error('controls', e.message));
+  ctlQueue.set(id, run); return run;
+}
+const isCtl = (m, me) => m.author?.id === me && JSON.stringify(m.components || []).includes('room:close:');
+async function ctlDo(id, repost) {
   const r = db.rooms[id]; if (!r) return;
   const ch = await client.channels.fetch(id).catch(() => null); if (!ch) return;
   const payload = controlsPayload(id);
   if (r.ctl && !repost) { const ok = await ch.messages.edit(r.ctl, payload).then(() => true, () => false); if (ok) return; }
-  if (r.ctl) await ch.messages.delete(r.ctl).catch(() => {});
   const m = await ch.send(payload).catch((e) => { console.error('controls send', e.message); return null; });
-  r.ctl = m?.id || null; save();
+  if (!m) return;
+  r.ctl = m.id; save();
+  // Sweep every older controls block (also leftovers from before a restart) so only the newest stays.
+  const recent = await ch.messages.fetch({ limit: 40 }).catch(() => null);
+  for (const old of recent?.values() || []) if (old.id !== m.id && isCtl(old, client.user.id)) await old.delete().catch(() => {});
 }
 export function ctlRefresh(id, delay = 800) { clearTimeout(ctlTimers.get(id)); ctlTimers.set(id, setTimeout(() => ctlSync(id).catch(() => {}), delay)); }
 // New message in the room chat: put the player panel and the controls back at the bottom, in that order.
