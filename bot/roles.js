@@ -89,6 +89,7 @@ export const PERMS = {
   'reports.view': 'manager', // P8.3 – unified reported-content queue (posts, feedback, messages)
   'moderation.manage': 'manager', // P8.3 – warn / mute members
   'points.view': 'member', // P11.3 – point system: my total/breakdown + leaderboard
+  'medals.manage': 'owner', // C4 – Boardroom: edit, hide, add and hand out medals (meta `medal_config`)
   'flags.manage': 'owner', // BE5 – Boardroom: live-edit feature flag levels (flag_overrides table)
   'preview.viewAs': 'manager', // BE5 – Boardroom: preview the site/API as a lower role
   'health.view': 'owner', // BE6 – Boardroom: Cloudflare Analytics + GitHub Actions health/usage dashboard

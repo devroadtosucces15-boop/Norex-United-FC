@@ -112,9 +112,40 @@ export const ACHIEVEMENTS = [
   ['goals-100', '🐐', 'Hundred club', '100 goals', 'legendary', 'goals', 100],
   ['motm-50', '🏆', 'Main character', '50 Man of the Match awards', 'legendary', 'motm', 50],
   ['wins-10', '☄️', 'Unstoppable', '10 League wins in a row', 'legendary', 'winStreak', 10],
+  ['all-medals', '🏅', 'Got them all', 'Unlock every regular medal', 'legendary', 'others', 1],
 ].map(([id, icon, name, desc, tier, fact, goal]) => ({ id, icon, name, desc, tier, pts: TIERS[tier].pts, fact, goal }));
-const ACH = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));
+export const BASE_ACHIEVEMENTS = ACHIEVEMENTS.slice();
+// ACHIEVEMENTS / ACH are the live catalogue: the code list above, plus the owner's edits, hidden medals and custom
+// medals from the Boardroom (D1 meta `medal_config`). loadMedals() rewrites them in place so importers see changes.
+export const ACH = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));
 export const pointsOf = (ids) => ids.reduce((s, id) => s + (ACH[id]?.pts ?? 0), 0);
+// Facts a medal can be tied to (key → label); 'manual' medals are handed out by the owner.
+export const FACT_LABELS = { manual: 'Awarded by the owner', apps: 'League appearances', goals: 'League goals', assists: 'League assists', motm: 'Man of the Match awards', bestGoals: 'Most goals in one match', bestAssists: 'Most assists in one match', bestRating: 'Best match rating', unbeaten: 'Longest unbeaten run', winStreak: 'Longest win streak', scoring: 'Longest scoring run', votes: 'MOTM votes cast', yesDays: 'Days said “I’m in”', weekStreak: 'Weeks in a row “I’m in”', gave: 'Teammates given badges', givers: 'Teammates who gave you badges', rushApps: 'Rush matches', rushGoals: 'Rush goals', rushBestGoals: 'Most goals in one Rush match', rushMotm: 'Rush MOTM awards', bootMonths: 'Golden Boot months' };
+const NAME_MAX = 40, DESC_MAX = 120, CUSTOM_MAX = 40;
+let medalCache = { at: 0, cfg: null };
+const blankCfg = () => ({ edits: {}, hidden: [], custom: [] });
+export async function medalConfig(env, fresh) {
+  if (!fresh && medalCache.cfg && Date.now() - medalCache.at < 20000) return medalCache.cfg;
+  let cfg = blankCfg();
+  try { const r = await env.DB.prepare("SELECT value FROM meta WHERE key = 'medal_config'").first(); if (r?.value) cfg = { ...cfg, ...JSON.parse(r.value) }; } catch {}
+  medalCache = { at: Date.now(), cfg };
+  return cfg;
+}
+async function saveMedalConfig(env, cfg) {
+  await env.DB.prepare("INSERT INTO meta (key, value) VALUES ('medal_config', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(JSON.stringify(cfg)).run();
+  medalCache = { at: Date.now(), cfg };
+}
+function applyMedalConfig(cfg) {
+  const mk = (a) => ({ ...a, pts: TIERS[a.tier].pts });
+  const list = BASE_ACHIEVEMENTS.filter((a) => !cfg.hidden.includes(a.id)).map((a) => mk({ ...a, ...(cfg.edits[a.id] || {}) }));
+  for (const c of cfg.custom) if (!cfg.hidden.includes(c.id) && TIERS[c.tier]) list.push(mk(c));
+  const regular = list.filter((a) => a.fact !== 'manual' && a.fact !== 'others').length;
+  for (const a of list) if (a.fact === 'others') a.goal = Math.max(1, regular);
+  ACHIEVEMENTS.length = 0; ACHIEVEMENTS.push(...list);
+  for (const k of Object.keys(ACH)) delete ACH[k];
+  for (const a of list) ACH[a.id] = a;
+}
+export async function loadMedals(env) { applyMedalConfig(await medalConfig(env)); }
 
 // Runs over a list of results (oldest → newest): best + current streak where ok(x) holds.
 function streak(list, ok) {
@@ -211,10 +242,16 @@ export async function allFacts(env, loadSite) {
   return out;
 }
 
-export const evaluate = (f) => ACHIEVEMENTS.map((a) => ({ id: a.id, v: Math.min(f[a.fact] ?? 0, a.goal), done: (f[a.fact] ?? 0) >= a.goal }));
+// `have` = ids already unlocked and stored (they stay unlocked). 'others' counts regular medals done, for "Got them all".
+export const evaluate = (f, have = new Set()) => {
+  const base = ACHIEVEMENTS.filter((a) => a.fact !== 'others').map((a) => ({ id: a.id, v: a.fact === 'manual' ? (have.has(a.id) ? 1 : 0) : Math.min(f[a.fact] ?? 0, a.goal), done: have.has(a.id) || (a.fact !== 'manual' && (f[a.fact] ?? 0) >= a.goal) }));
+  const others = base.filter((x) => ACH[x.id].fact !== 'manual' && x.done).length;
+  return ACHIEVEMENTS.map((a) => a.fact === 'others' ? { id: a.id, v: Math.min(others, a.goal), done: have.has(a.id) || others >= a.goal } : base.find((x) => x.id === a.id));
+};
 
 // Computes everyone, stores new unlocks, notifies members about unlocks after their first (quiet) batch.
 export async function syncAchievements(env, loadSite) {
+  await loadMedals(env);
   const facts = await allFacts(env, loadSite);
   const stored = await all(env, 'SELECT user_id, id, at, seen FROM achievements');
   const have = new Map();
@@ -222,7 +259,7 @@ export async function syncAchievements(env, loadSite) {
   const now = Date.now(), stmts = [], news = [];
   for (const [uid, f] of facts) {
     const mine = have.get(uid) ?? new Map();
-    const fresh = evaluate(f).filter((x) => x.done && !mine.has(x.id)).map((x) => x.id);
+    const fresh = evaluate(f, new Set(mine.keys())).filter((x) => x.done && !mine.has(x.id)).map((x) => x.id);
     if (!fresh.length) continue;
     for (const id of fresh) { stmts.push(env.DB.prepare('INSERT OR IGNORE INTO achievements (user_id, id, at, seen) VALUES (?, ?, ?, 0)').bind(uid, id, now)); mine.set(id, { id, at: now, seen: 0 }); }
     have.set(uid, mine);
@@ -239,7 +276,7 @@ export async function syncAchievements(env, loadSite) {
 const FACT_KEYS = ['apps', 'goals', 'assists', 'motm', 'bestGoals', 'bestAssists', 'bestRating', 'unbeaten', 'unbeatenNow', 'winStreak', 'winsNow', 'scoring', 'scoringNow', 'votes', 'yesDays', 'weekStreak', 'weekNow', 'gave', 'givers', 'rushApps', 'rushGoals', 'rushBestGoals', 'rushMotm', 'bootMonths'];
 function achievementsView(f, mine, isMe) {
   const got = mine ?? new Map();
-  const list = evaluate(f).map((x) => { const a = ACH[x.id]; const s = got.get(x.id); return { ...a, v: x.v, done: !!s, at: s?.at, fresh: isMe && s && !s.seen ? true : undefined }; });
+  const list = evaluate(f, new Set(got.keys())).map((x) => { const a = ACH[x.id]; const s = got.get(x.id); return { ...a, v: x.v, done: !!s, at: s?.at, fresh: isMe && s && !s.seen ? true : undefined }; });
   const done = list.filter((x) => x.done);
   const tiers = Object.fromEntries(Object.keys(TIERS).map((t) => [t, done.filter((x) => x.tier === t).length]));
   return { pts: pointsOf(done.map((x) => x.id)), count: done.length, total: list.length, tiers, list, facts: Object.fromEntries(FACT_KEYS.map((k) => [k, f[k] ?? 0])) };
@@ -247,14 +284,94 @@ function achievementsView(f, mine, isMe) {
 
 // Hover card / profile summary from the stored rows only (no recompute).
 export async function achSummary(env, userId) {
+  await loadMedals(env);
   const rows = await all(env, 'SELECT id, at FROM achievements WHERE user_id = ?', userId);
   const ids = rows.map((r) => r.id).filter((id) => ACH[id]);
   const top = ids.map((id) => ACH[id]).sort((a, b) => TIER_RANK[b.tier] - TIER_RANK[a.tier]).slice(0, 4).map((a) => ({ icon: a.icon, name: a.name, tier: a.tier }));
   return { pts: pointsOf(ids), count: ids.length, total: ACHIEVEMENTS.length, top };
 }
 
+
+// ---------- Boardroom: medal definitions (owner) ----------
+const IDRE = /^[a-z0-9][a-z0-9-]{1,30}$/;
+const medalRow = (a, cfg, held) => ({ id: a.id, icon: a.icon, name: a.name, desc: a.desc, tier: a.tier, pts: a.pts, fact: a.fact, goal: a.goal, source: BASE_ACHIEVEMENTS.some((b) => b.id === a.id) ? 'built-in' : 'custom', edited: !!cfg.edits[a.id], holders: held.get(a.id) ?? 0 });
+async function medalsAdmin(p, method, body, me, env, loadSite, log) {
+  if (!can(me, 'medals.manage')) return fail('Only the owner can edit medals.', 403);
+  const cfg = await medalConfig(env, true);
+  const view = async () => {
+    applyMedalConfig(cfg);
+    const held = new Map((await all(env, 'SELECT id, COUNT(*) AS n FROM achievements GROUP BY id')).map((r) => [r.id, r.n]));
+    const hidden = BASE_ACHIEVEMENTS.filter((a) => cfg.hidden.includes(a.id)).map((a) => ({ ...medalRow({ ...a, pts: TIERS[a.tier].pts }, cfg, held), hidden: true }));
+    return json({ defs: ACHIEVEMENTS.map((a) => medalRow(a, cfg, held)), hidden, facts: FACT_LABELS, tiers: TIERS, max: CUSTOM_MAX, members: (await all(env, 'SELECT id, name FROM users ORDER BY name')).map((u) => ({ id: u.id, n: u.name })) });
+  };
+  if (method === 'GET') return view();
+  if (method !== 'POST') return fail('Not found', 404);
+  const op = String(body.op ?? ''), id = String(body.id ?? '').toLowerCase();
+  const base = BASE_ACHIEVEMENTS.find((a) => a.id === id), cust = cfg.custom.find((c) => c.id === id);
+  if (op === 'save') {
+    const icon = [...String(body.icon ?? '').trim()].slice(0, 4).join(''), name = clean(body.name, NAME_MAX), desc = clean(body.desc, DESC_MAX);
+    const tier = String(body.tier ?? ''), fact = String(body.fact ?? ''), goal = Number(body.goal);
+    if (!icon || name.length < 2) return fail('Give the medal an emoji and a name.');
+    if (!TIERS[tier]) return fail('Pick a rarity.');
+    if (base) {
+      if (base.fact === 'others') { cfg.edits[id] = { icon, name, desc, tier }; }
+      else {
+        if (!(goal > 0) || goal > 100000) return fail('The target must be a positive number.');
+        cfg.edits[id] = { icon, name, desc, tier, goal };
+      }
+    } else {
+      if (!FACT_LABELS[fact]) return fail('Pick what the medal counts.');
+      const g = fact === 'manual' ? 1 : goal;
+      if (!(g > 0) || g > 100000) return fail('The target must be a positive number.');
+      if (cust) Object.assign(cust, { icon, name, desc, tier, fact, goal: g });
+      else {
+        if (cfg.custom.length >= CUSTOM_MAX) return fail(`At most ${CUSTOM_MAX} custom medals.`);
+        const nid = IDRE.test(id) ? id : 'x-' + (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24) || Date.now().toString(36));
+        if (ACH[nid] || BASE_ACHIEVEMENTS.some((b) => b.id === nid) || cfg.custom.some((c) => c.id === nid)) return fail('That id is already used – change the name.');
+        cfg.custom.push({ id: nid, icon, name, desc, tier, fact, goal: g });
+      }
+    }
+    await saveMedalConfig(env, cfg); await log(env, me, 'medal-save', name);
+    return view();
+  }
+  if (op === 'hide') {
+    if (!base && !cust) return fail('Medal not found', 404);
+    const on = !!body.hidden;
+    cfg.hidden = cfg.hidden.filter((h) => h !== id); if (on) cfg.hidden.push(id);
+    await saveMedalConfig(env, cfg); await log(env, me, on ? 'medal-hide' : 'medal-show', (base || cust).name);
+    return view();
+  }
+  if (op === 'reset') {
+    if (!base) return fail('Only built-in medals can be reset.', 404);
+    delete cfg.edits[id]; await saveMedalConfig(env, cfg); await log(env, me, 'medal-reset', base.name);
+    return view();
+  }
+  if (op === 'delete') {
+    if (!cust) return fail('Only custom medals can be deleted.', 404);
+    cfg.custom = cfg.custom.filter((c) => c.id !== id); cfg.hidden = cfg.hidden.filter((h) => h !== id);
+    await run(env, 'DELETE FROM achievements WHERE id = ?', id);
+    await saveMedalConfig(env, cfg); await log(env, me, 'medal-delete', cust.name);
+    return view();
+  }
+  if (op === 'award' || op === 'revoke') {
+    applyMedalConfig(cfg);
+    const a = ACH[id]; if (!a || a.fact !== 'manual') return fail('Only “awarded by the owner” medals can be handed out here.');
+    const to = String(body.to ?? '').slice(0, 24), u = await one(env, 'SELECT id, name FROM users WHERE id = ?', to);
+    if (!u) return fail('Member not found', 404);
+    if (op === 'award') {
+      const r = await run(env, 'INSERT OR IGNORE INTO achievements (user_id, id, at, seen) VALUES (?, ?, ?, 0)', to, id, Date.now());
+      if (r.meta?.changes) await safely(notify(env, [to], { type: 'badge', icon: a.icon, title: `Medal awarded: ${a.name}`, body: a.desc || null, link: 'members.html#stats' }));
+    } else await run(env, 'DELETE FROM achievements WHERE user_id = ? AND id = ?', to, id);
+    await log(env, me, op === 'award' ? 'medal-award' : 'medal-revoke', `${a.name} · ${u.name}`);
+    return view();
+  }
+  return fail('Unknown action.');
+}
+
 // ---------- routes (behind login; called from members.js route()) ----------
 export async function badgesRoute(p, method, body, me, env, loadSite, log, url) {
+  if (p === '/api/admin/medals') return medalsAdmin(p, method, body, me, env, loadSite, log);
+  if (p.startsWith('/api/achievements')) await loadMedals(env);
   if (p === '/api/badges' || p === '/api/badges/remove') {
     if (!flagOn(env, me, 'badges')) return fail('Not available yet.', 404);
     if (method === 'GET' && p === '/api/badges') {

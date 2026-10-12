@@ -7,7 +7,7 @@
 import { flagOn } from './roles.js';
 import { weekOf } from './awards.js';
 import { counts as notifyCounts } from './notify.js';
-import { ACHIEVEMENTS } from './badges.js';
+import { ACHIEVEMENTS, ACH, loadMedals } from './badges.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -15,7 +15,6 @@ const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then(
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const opt = (v) => v ?? undefined;
 const marks = (n) => Array(n).fill('?').join(',');
-const ACH = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));
 const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
 async function nextEvent(env, me) {
@@ -49,12 +48,14 @@ async function openVote(env, me) {
   return { week: week.key, closes: week.end, voted: mine.n > 0 };
 }
 async function newAchievements(env, me) {
+  await loadMedals(env);
   const rows = await all(env, 'SELECT id, at FROM achievements WHERE user_id = ? AND seen = 0 ORDER BY at DESC LIMIT 10', me.u);
   return rows.filter((r) => ACH[r.id]).map((r) => ({ id: r.id, icon: ACH[r.id].icon, name: ACH[r.id].name, tier: ACH[r.id].tier, at: r.at }));
 }
 
 // Board 07 medal shelf: everything I've unlocked, rarest first then newest – top 5 shown, the rest counted.
 async function medals(env, me) {
+  await loadMedals(env);
   const rows = (await all(env, 'SELECT id, at FROM achievements WHERE user_id = ?', me.u)).filter((r) => ACH[r.id]);
   rows.sort((a, b) => RANK[ACH[b.id].tier] - RANK[ACH[a.id].tier] || b.at - a.at);
   return { count: rows.length, total: ACHIEVEMENTS.length, top: rows.slice(0, 5).map((r) => ({ id: r.id, icon: ACH[r.id].icon, name: ACH[r.id].name, tier: ACH[r.id].tier, at: r.at })) };

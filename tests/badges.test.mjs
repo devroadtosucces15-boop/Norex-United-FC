@@ -103,6 +103,36 @@ setFlags({ badges: 'owner' });
 t('member card: no badges while flag is off for the viewer', !('badges' in (await call(a, '/api/member?u=702')).d));
 setFlags({ badges: 'members' });
 
+// ----- C4 Boardroom: medal definitions -----
+const m0 = await call(owner, '/api/admin/medals');
+t('medals admin: owner lists built-ins with holders + fact labels', m0.s === 200 && m0.d.defs.length === ACHIEVEMENTS.length && m0.d.defs.some((x) => x.id === 'all-medals') && m0.d.facts.manual && m0.d.members.length > 0);
+t('medals admin: managers and members are refused', (await call(mgr, '/api/admin/medals')).s === 403 && (await call(a, '/api/admin/medals')).s === 403 && (await call(mgr, '/api/admin/medals', { op: 'hide', id: 'debut', hidden: true })).s === 403);
+const n0 = m0.d.defs.length;
+const mk = await call(owner, '/api/admin/medals', { op: 'save', icon: '🧤', name: 'Clean sheet king', desc: 'Keeper of the year', tier: 'epic', fact: 'manual' });
+const cid = mk.d.defs.find((x) => x.name === 'Clean sheet king')?.id;
+t('medals admin: custom special medal created (owner-awarded)', mk.s === 200 && cid?.startsWith('x-') && mk.d.defs.length === n0 + 1 && mk.d.defs.find((x) => x.id === cid).pts === 50);
+t('medals admin: validation', (await call(owner, '/api/admin/medals', { op: 'save', icon: '', name: 'x', tier: 'epic', fact: 'manual' })).s === 400 && (await call(owner, '/api/admin/medals', { op: 'save', icon: '🔥', name: 'Burner', tier: 'mythic', fact: 'goals', goal: 5 })).s === 400 && (await call(owner, '/api/admin/medals', { op: 'save', icon: '🔥', name: 'Burner', tier: 'rare', fact: 'goals', goal: 0 })).s === 400 && (await call(owner, '/api/admin/medals', { op: 'save', icon: '🔥', name: 'Burner', tier: 'rare', fact: 'nope', goal: 3 })).s === 400);
+const cn = await call(owner, '/api/admin/medals', { op: 'save', icon: '🔥', name: 'Ten goals', desc: '10 League goals', tier: 'rare', fact: 'goals', goal: 10 });
+t('medals admin: counting medal tied to a fact', cn.s === 200 && cn.d.defs.find((x) => x.name === 'Ten goals').goal === 10);
+const aw = await call(owner, '/api/admin/medals', { op: 'award', id: cid, to: '702' });
+t('medals admin: award + member sees it + notified', aw.s === 200 && (await call(b, '/api/achievements')).d.list.find((x) => x.id === cid).done && !!sqlite.prepare("SELECT 1 FROM notifications WHERE user_id = '702' AND title LIKE 'Medal awarded%'").get());
+t('medals admin: counting medals cannot be handed out', (await call(owner, '/api/admin/medals', { op: 'award', id: 'debut', to: '702' })).s === 400);
+const ed = await call(owner, '/api/admin/medals', { op: 'save', id: 'debut', icon: '🥾', name: 'First cap', desc: 'Play a League match', tier: 'common', goal: 1 });
+t('medals admin: built-in edit shows on the member list; reset restores', ed.d.defs.find((x) => x.id === 'debut').name === 'First cap' && (await call(b, '/api/achievements')).d.list.find((x) => x.id === 'debut').name === 'First cap' && (await call(owner, '/api/admin/medals', { op: 'reset', id: 'debut' })).d.defs.find((x) => x.id === 'debut').name === 'Debut');
+const hd = await call(owner, '/api/admin/medals', { op: 'hide', id: 'wins-10', hidden: true });
+t('medals admin: hide removes a medal from members and lists it as hidden', !hd.d.defs.some((x) => x.id === 'wins-10') && hd.d.hidden.some((x) => x.id === 'wins-10') && !(await call(b, '/api/achievements')).d.list.some((x) => x.id === 'wins-10'));
+t('medals admin: show brings it back', (await call(owner, '/api/admin/medals', { op: 'hide', id: 'wins-10', hidden: false })).d.defs.some((x) => x.id === 'wins-10'));
+// "Got them all": unlock every regular medal for a member, then the collector medal follows
+const regular = ACHIEVEMENTS.filter((x) => x.fact !== 'manual' && x.fact !== 'others').map((x) => x.id);
+for (const id of regular) sqlite.prepare('INSERT OR IGNORE INTO achievements (user_id, id, at, seen) VALUES (?, ?, ?, 1)').run('702', id, Date.now());
+const all1 = await call(b, '/api/achievements');
+t('got them all: unlocks once every regular medal is held (special ones not required)', all1.d.list.find((x) => x.id === 'all-medals').done && !all1.d.list.find((x) => x.id === 'all-medals' && x.v < x.goal));
+const nobody = await call(a, '/api/achievements');
+t('got them all: others do not have it', !nobody.d.list.find((x) => x.id === 'all-medals').done);
+t('medals admin: revoke + delete clean up', (await call(owner, '/api/admin/medals', { op: 'revoke', id: cid, to: '702' })).s === 200 && !(await call(b, '/api/achievements')).d.list.find((x) => x.id === cid).done && (await call(owner, '/api/admin/medals', { op: 'delete', id: cid })).d.defs.every((x) => x.id !== cid));
+await call(owner, '/api/admin/medals', { op: 'delete', id: cn.d.defs.find((x) => x.name === 'Ten goals').id });
+t('medals admin: back to the built-in catalogue', (await call(owner, '/api/admin/medals')).d.defs.length === n0);
+
 // ----- client -----
 t('assets shipped', ['badges.js', 'badges.css', 'mystats.js', 'mystats.css'].every((f) => fs.existsSync(ROOT + 'site/assets/' + f)));
 const app = fs.readFileSync(ROOT + 'web/app.js', 'utf8');

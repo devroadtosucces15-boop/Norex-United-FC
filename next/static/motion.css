@@ -293,3 +293,12 @@ html[data-motion=full] .panel.amb:hover:after,html[data-motion=full] .sbt.amb:ho
 .wt-off{text-align:center;padding:26px}
 .wt-ch{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}.wt-ch a{display:flex;gap:14px;align-items:center;padding:18px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:inherit;text-decoration:none;transition:transform .2s,border-color .2s}.wt-ch a:hover{transform:translateY(-3px);border-color:var(--c)}.wt-ch .em{font-size:30px}.wt-ch b{display:block;font:600 20px var(--head);text-transform:uppercase;letter-spacing:.05em}
 @media (prefers-reduced-motion:reduce){.wt-bar,.wt-dot{animation:none}}
+
+.br-meds{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
+.br-med{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:start;padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.03);min-width:0}.br-med .dk-btns{grid-column:1/-1;justify-content:flex-start}
+.br-med[data-tier=epic]{border-color:rgba(241,196,15,.35)}.br-med[data-tier=legendary]{border-color:rgba(200,53,44,.55);background:rgba(200,53,44,.07)}.br-med.off{opacity:.6}
+.br-medt{display:grid;gap:3px;min-width:0}.br-medt b{font:700 15px Oswald;letter-spacing:.02em;overflow-wrap:anywhere}.br-medt small{font:500 12px/1.4 Inter;color:#c4cddf;overflow-wrap:anywhere}.br-medt small.muted{color:#8e9ab2}
+.br-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:99px;border:1px solid var(--line2);font:600 10px Inter;letter-spacing:.06em;text-transform:uppercase;color:#aab4c9;vertical-align:middle}
+.br-medprev{display:flex;gap:14px;align-items:center;padding:12px;border-radius:14px;border:1px dashed var(--line2)}.br-medprev div{display:grid;gap:3px;min-width:0}.br-medprev small{overflow-wrap:anywhere}
+.br-tro{flex:none;width:44px;display:inline-grid}.dk-log li:has(.br-tro){align-items:center}.br-emo{font-size:28px}.nt{display:block;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+.br-med:hover .nt{animation:ntshine 1.2s ease}@keyframes ntshine{40%{transform:translateY(-3px) rotate(-3deg)}}@media (prefers-reduced-motion:reduce){.br-med:hover .nt{animation:none}}

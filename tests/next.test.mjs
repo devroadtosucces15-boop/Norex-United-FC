@@ -143,6 +143,9 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   const bj = read('boardroom.js'), bh = read('staff-boardroom.html');
   t('boardroom: page loads the script, carries the committed levels and keeps the offline stub', bh.includes('src="boardroom.js"') && bh.includes('id="brLive"') && bh.includes('data-committed="{') && bh.includes('id="brLocal"'));
   t('boardroom: flag edits use the live routes and body names and ask first', bj.includes("'/api/admin/flags', { name, level }") && bj.includes("'/api/admin/flags/reset'") && /confirm\(`Change/.test(bj));
+  t('boardroom: Medals tab uses /api/admin/medals ops, confirms destructive ones; Backup tab downloads a JSON copy and restores medals', ['save', 'hide', 'reset', 'delete', 'award', 'revoke'].every((o) => bj.includes(`'${o}'`) || bj.includes(`op === '${o}'`) || bj.includes(`${o}:`)) && bj.includes("'/api/admin/medals'") && bj.includes("data-tab") && /TABS = .*medals.*backup/.test(bj) && bj.includes('norex-boardroom-backup') && bh.includes('src="trophy.js"'));
+  const tj = read('trophy.js');
+  t('trophies: SVG per shape and rarity, picked from the award wording', ['cup', 'boot', 'glove', 'star', 'shield', 'ball', 'crown'].every((x) => tj.includes(x + ':')) && ['common', 'rare', 'epic', 'legendary'].every((x) => tj.includes(x)) && tj.includes('window.NorexTrophy'));
   t('boardroom: announcements preview then confirm; Discord posts preview then confirm; HoF removal confirms', bj.includes("preview: true") && (bj.match(/confirm\(/g) || []).length >= 6 && bj.includes("'/api/hof/remove'"));
   const ij = read('intel.js'), ih = read('staff-insights.html');
   t('insights: page loads the script, keeps the offline stub and is linked from Staff', ih.includes('src="intel.js"') && ih.includes('id="ixLive"') && ih.includes('id="ixLocal"') && read('staff.html').includes('staff-insights.html'));
