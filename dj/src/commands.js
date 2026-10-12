@@ -6,6 +6,10 @@ export const DEFS = [
   new SlashCommandBuilder().setName('play').setDescription('Play a song or link (YouTube → Spotify → SoundCloud)')
     .addStringOption((o) => o.setName('song').setDescription('Song name or link').setRequired(true))
     .addStringOption((o) => o.setName('source').setDescription('Force a platform (default: YouTube, then Spotify, then SoundCloud)').addChoices({ name: 'YouTube', value: 'youtube' }, { name: 'Spotify', value: 'spotify' }, { name: 'SoundCloud', value: 'soundcloud' })),
+  new SlashCommandBuilder().setName('room').setDescription('Pop-up rooms: your own voice channel and chat that tidies itself away')
+    .addSubcommand((c) => c.setName('create').setDescription('Open a new room').addStringOption((o) => o.setName('name').setDescription('Room name (optional)').setMaxLength(60)))
+    .addSubcommand((c) => c.setName('status').setDescription('Set what this room is about').addStringOption((o) => o.setName('text').setDescription('Status text (leave empty to clear)').setMaxLength(100)))
+    .addSubcommand((c) => c.setName('close').setDescription('Close your room now')),
   new SlashCommandBuilder().setName('setup').setDescription('Managers: make this text channel the player for a voice channel')
     .addChannelOption((o) => o.setName('voice').setDescription('Voice channel the music plays in').setRequired(true).addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)),
   new SlashCommandBuilder().setName('unsetup').setDescription('Managers: remove the player from this text channel'),
