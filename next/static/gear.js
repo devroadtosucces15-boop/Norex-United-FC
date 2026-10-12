@@ -2,6 +2,9 @@
 // It opens a sheet with what can be changed for THIS page, using the same live routes the Staff rooms use:
 //   News  – GET /api/feed?f=all, POST /api/feed/setpublic {id, public}, POST /api/feed/pin {id, pinned}
 //   Join  – GET /api/trials, POST /api/trials/update {id, status}   (declining is a two-tap)
+//   Fixtures – GET /api/events, POST /api/events/cancel {id}   (two-tap)
+//   Squad – GET /api/squads (drafts + live), POST /api/squads/save {…, publish}, /api/squads/delete {id}
+//   Hall of Fame – GET /api/hof, POST /api/hof/remove {id}   (two-tap)
 // Every other page gets shortcuts to the matching Staff room. Nothing here is a second copy of a Staff tool – the server decides who may do what.
 (() => {
   const d = document, API = window.NOREX_API, A = window.NorexAuth, M = window.NorexMotion, page = (window.NOREX && window.NOREX.page) || '';
@@ -39,6 +42,45 @@
       async act(btn, t) { await call('/api/trials/update', { id: t.id, status: btn.dataset.act }); return null; }, // null = row leaves the list
       confirm: { declined: 'Tap again to decline' },
       empty: 'No applications waiting. 🎉',
+    },
+    'fixtures.html': {
+      title: 'Upcoming fixtures', icon: '🗓️', hint: 'Cancel a match night that will not happen. Members are told straight away. New nights are made in the Schedule room.',
+      async load() { const r = await call('/api/events'); return (r.events || []).filter((e) => e.status === 'scheduled' && e.end > Date.now()).slice(0, 12); },
+      row(e) {
+        const when = new Date(e.start).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }), yes = (e.rsvps || []).filter((x) => x.status === 'yes').length;
+        return `<li class="gr-row" data-id="${e.id}"><div class="gr-main"><b class="fit">${esc(e.title || e.type || 'Match night')}</b><small class="muted">${esc(when)} · ${yes} in${e.public ? ' · 🌍 public' : ''}</small></div>
+<div class="gr-acts"><button type="button" class="gr-sw warn" data-act="cancel">🚫 Cancel</button></div></li>`;
+      },
+      async act(btn, e) { await call('/api/events/cancel', { id: e.id }); return null; },
+      confirm: { cancel: 'Tap again to cancel' },
+      empty: 'No upcoming fixtures.',
+    },
+    'squad.html': {
+      title: 'Rush squads', icon: '🛡️', hint: 'Draft squad sets wait here. Publish one to show it to members, or throw it away. Building squads is in the Artwork/Dugout rooms.',
+      async load() { const r = await call('/api/squads'); return [...(r.drafts || []), ...(r.published ? [r.published] : [])].slice(0, 8); },
+      row(q) {
+        const live = q.status === 'published';
+        return `<li class="gr-row" data-id="${q.id}"><div class="gr-main"><b class="fit">${esc(q.title)}</b><small class="muted">${live ? '✅ live' : '📝 draft'} · ${(q.squads || []).length} squads · ${esc(q.by || '')} · ${ago(q.at)}</small></div>
+<div class="gr-acts">${live ? '' : '<button type="button" class="gr-sw" data-act="publish">📣 Publish</button>'}<button type="button" class="gr-sw warn" data-act="delete">🗑️ Delete</button></div></li>`;
+      },
+      async act(btn, q) {
+        if (btn.dataset.act === 'delete') { await call('/api/squads/delete', { id: q.id }); return null; }
+        await call('/api/squads/save', { id: q.id, title: q.title, event: q.event, squads: (q.squads || []).map((s) => ({ ids: s.ids, locked: !!s.locked })), bench: q.bench || [], publish: true });
+        return { ...q, status: 'published' };
+      },
+      confirm: { delete: 'Tap again to delete' },
+      empty: 'No squad sets saved yet.',
+    },
+    'halloffame.html': {
+      title: 'Hall of Fame', icon: '🏛️', hint: 'Take an entry down. Inducting legends and adding moments is in the Boardroom.',
+      async load() { const r = await call('/api/hof'); return [...(r.legends || []), ...(r.moments || [])].slice(0, 20); },
+      row(h) {
+        return `<li class="gr-row" data-id="${h.id}"><div class="gr-main"><b class="fit">${h.kind === 'legend' ? '⭐' : '📜'} ${esc(h.n)}</b><small class="muted">${esc(h.title || (h.kind === 'legend' ? 'Legend' : 'Club moment'))}${h.date ? ' · ' + esc(h.date) : ''}</small></div>
+<div class="gr-acts"><button type="button" class="gr-sw warn" data-act="remove">✖ Remove</button></div></li>`;
+      },
+      async act(btn, h) { await call('/api/hof/remove', { id: h.id }); return null; },
+      confirm: { remove: 'Tap again to remove' },
+      empty: 'Nothing inducted yet.',
     },
   };
 
