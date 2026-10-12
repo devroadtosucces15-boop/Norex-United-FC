@@ -203,5 +203,11 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('public: member.html loads member.js, reads /api/member only, guests are told to sign in', pr('member.html').includes('src="member.js"') && has('member.js') && pr('member.js').includes('/api/member?u=') && pr('member.js').includes('Members only') && pr('member.js').includes('esc(m.n)') && !pr('member.html').includes('noindex,nofollow'));
   t('public: manifest keeps the installed app id', JSON.parse(pr('manifest.webmanifest')).id === './');
   fs.rmSync(classic, { recursive: true, force: true }); fs.rmSync(pub, { recursive: true, force: true }); }
+
+// ---- Staff › Tools (swap-over blockers: submissions, reports, game data, bot settings, awards admin) ----
+{ const tj = read('tools.js'), th = read('staff-tools.html');
+  t('tools: page, staff index tile, navigator and gear entries, script shipped', th.includes('id="tlLive"') && th.includes('src="tools.js"') && th.includes('data-for="owner"') && read('staff.html').includes('staff-tools.html') && read('navigator.js').includes('staff-tools.html') && read('gear.js').includes('staff-tools.html'));
+  t('tools: every live route the classic portal used is called', ['/api/admin/submissions', '/api/admin/reports', '/api/feed/delete', '/api/feed/unreport', '/api/feedback/hide', '/api/chats/reports/', '/api/game/admin', '/api/game/publish', '/api/game/dismiss', '/api/bot/settings', '/api/bot/commands', '/api/bot/commands/sync', '/api/awards', '/api/awards/category', '/api/awards/category/remove', '/api/awards/close', '/api/awards/settings'].every((k) => tj.includes(k)));
+  t('tools: destructive actions are two-taps, member text is escaped, errors are shown not swallowed', tj.includes('Sure? Tap again') && ['rm:', 'aw:close', 'aw:rm:'].every((k) => tj.includes(k)) && tj.includes('esc(r.author') && tj.includes('esc(r.excerpt') && tj.includes('esc(p.quote)') && tj.includes('toast(e.message, true)') && tj.includes("['manager', 'owner'].includes(A.role)")); }
 fs.rmSync(out, { recursive: true, force: true });
 done();

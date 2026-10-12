@@ -3,7 +3,7 @@
 (() => {
   const d = document, A = window.NorexAuth, API = window.NOREX_API, page = (window.NOREX && window.NOREX.page) || '';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-  const ROOMS = [['staff-desk.html', '🗂️', 'Desk'], ['staff-schedule.html', '🗓️', 'Schedule'], ['staff-dugout.html', '🧢', 'Dugout'], ['staff-boardroom.html', '👑', 'Boardroom'], ['staff-artwork.html', '🎨', 'Artwork'], ['staff-insights.html', '🔎', 'Insights']];
+  const ROOMS = [['staff-desk.html', '🗂️', 'Desk'], ['staff-tools.html', '🛠️', 'Tools'], ['staff-schedule.html', '🗓️', 'Schedule'], ['staff-dugout.html', '🧢', 'Dugout'], ['staff-boardroom.html', '👑', 'Boardroom'], ['staff-artwork.html', '🎨', 'Artwork'], ['staff-insights.html', '🔎', 'Insights']];
   let fab = null, panel = null, heads = [];
   const root = () => d.querySelector('main') || d.body;
   const collect = () => {
