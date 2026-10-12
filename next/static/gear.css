@@ -20,3 +20,5 @@
 .gr-room{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#fff;font:600 13px Inter;text-decoration:none}
 .gr-room.near{border-color:rgba(239,207,122,.5)}
 @media(min-width:560px){.gr-row{grid-template-columns:1fr auto;align-items:center}}
+/* the issue-tool bug sits at the same corner: tuck it away while the gear sheet is open */
+body:has(.gr-sheet) .nxr-fab,body:has(.gr-sheet) .gr-fab{visibility:hidden}
