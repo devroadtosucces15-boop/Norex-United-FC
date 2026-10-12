@@ -48,36 +48,38 @@ flowchart LR
   n41["tests/mock.mjs"]
   n42["tests/moderation.test.mjs"]
   n43["tests/monitor.test.mjs"]
-  n44["tests/next.test.mjs"]
-  n45["tests/notify.test.mjs"]
-  n46["tests/packs.test.mjs"]
-  n47["tests/phonefix.test.mjs"]
-  n48["tests/playmedia.test.mjs"]
-  n49["tests/plays.test.mjs"]
-  n50["tests/points.test.mjs"]
-  n51["tests/polish.test.mjs"]
-  n52["tests/probuilds.test.mjs"]
-  n53["tests/profanity.test.mjs"]
-  n54["tests/profiles.test.mjs"]
-  n55["tests/push.test.mjs"]
-  n56["tests/pwa.test.mjs"]
-  n57["tests/quickcommands.test.mjs"]
-  n58["tests/rankings.test.mjs"]
-  n59["tests/run.mjs"]
-  n60["tests/rush.test.mjs"]
-  n61["tests/site.test.mjs"]
-  n62["tests/social.test.mjs"]
-  n63["tests/squads.test.mjs"]
-  n64["tests/statinsights.test.mjs"]
-  n65["tests/studio.test.mjs"]
-  n66["tests/submissions.test.mjs"]
-  n67["tests/tagline.test.mjs"]
-  n68["tests/trials.test.mjs"]
-  n69["tests/updates.test.mjs"]
-  n70["tests/voicerecap.test.mjs"]
-  n71["tests/wave10.test.mjs"]
-  n72["tests/wave11.test.mjs"]
-  n73["tests/wave8.test.mjs"]
+  n44["tests/next-quality.test.mjs"]
+  n45["tests/next-runtime.test.mjs"]
+  n46["tests/next.test.mjs"]
+  n47["tests/notify.test.mjs"]
+  n48["tests/packs.test.mjs"]
+  n49["tests/phonefix.test.mjs"]
+  n50["tests/playmedia.test.mjs"]
+  n51["tests/plays.test.mjs"]
+  n52["tests/points.test.mjs"]
+  n53["tests/polish.test.mjs"]
+  n54["tests/probuilds.test.mjs"]
+  n55["tests/profanity.test.mjs"]
+  n56["tests/profiles.test.mjs"]
+  n57["tests/push.test.mjs"]
+  n58["tests/pwa.test.mjs"]
+  n59["tests/quickcommands.test.mjs"]
+  n60["tests/rankings.test.mjs"]
+  n61["tests/run.mjs"]
+  n62["tests/rush.test.mjs"]
+  n63["tests/site.test.mjs"]
+  n64["tests/social.test.mjs"]
+  n65["tests/squads.test.mjs"]
+  n66["tests/statinsights.test.mjs"]
+  n67["tests/studio.test.mjs"]
+  n68["tests/submissions.test.mjs"]
+  n69["tests/tagline.test.mjs"]
+  n70["tests/trials.test.mjs"]
+  n71["tests/updates.test.mjs"]
+  n72["tests/voicerecap.test.mjs"]
+  n73["tests/wave10.test.mjs"]
+  n74["tests/wave11.test.mjs"]
+  n75["tests/wave8.test.mjs"]
   n0 --> n35
   n0 --> n41
   n1 --> n35
@@ -189,10 +191,10 @@ flowchart LR
   n57 --> n35
   n57 --> n41
   n58 --> n35
+  n58 --> n41
+  n59 --> n35
+  n59 --> n41
   n60 --> n35
-  n60 --> n41
-  n61 --> n35
-  n61 --> n41
   n62 --> n35
   n62 --> n41
   n63 --> n35
@@ -217,4 +219,8 @@ flowchart LR
   n72 --> n41
   n73 --> n35
   n73 --> n41
+  n74 --> n35
+  n74 --> n41
+  n75 --> n35
+  n75 --> n41
 ```

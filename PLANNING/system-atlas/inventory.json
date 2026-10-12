@@ -1,7 +1,7 @@
 {
-  "revision": "4a2d3e485fcab078de548da29d577e4f13464beb",
-  "files": 711,
-  "imports": 431,
+  "revision": "2e8e267f3d2d2d512f995c01c58e58598747b480",
+  "files": 713,
+  "imports": 435,
   "api_paths": 230,
   "tables": 277,
   "records": [
@@ -3173,7 +3173,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 116,
+      "lines": 118,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9079,9 +9079,44 @@
       "functions": []
     },
     {
+      "path": "tests/next-quality.test.mjs",
+      "layer": "tests",
+      "lines": 25,
+      "imports": [
+        "node:child_process",
+        "node:fs",
+        "node:os",
+        "node:path",
+        "./mock.mjs",
+        "./lib.mjs",
+        "../next/tools/static-audit.mjs"
+      ],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "bad"
+      ]
+    },
+    {
+      "path": "tests/next-runtime.test.mjs",
+      "layer": "tests",
+      "lines": 16,
+      "imports": [
+        "node:fs",
+        "node:path",
+        "./mock.mjs",
+        "./lib.mjs"
+      ],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "rd"
+      ]
+    },
+    {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 180,
+      "lines": 186,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9122,9 +9157,11 @@
         "/api/docs",
         "/api/docs/ack",
         "/api/feed/comment",
+        "/api/feed/pin",
         "/api/feed/post",
         "/api/feed/public",
         "/api/feed/react",
+        "/api/feed/setpublic",
         "/api/hof/remove",
         "/api/intel",
         "/api/intel/act",
@@ -9161,7 +9198,8 @@
         "/api/suggestions",
         "/api/suggestions/vote",
         "/api/trials",
-        "/api/trials/apply"
+        "/api/trials/apply",
+        "/api/trials/update"
       ],
       "tables": [
         "Staff",
@@ -13822,6 +13860,26 @@
     {
       "source": "tests/monitor.test.mjs",
       "target": "bot/monitor.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/next-quality.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/next-quality.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/next-runtime.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/next-runtime.test.mjs",
+      "target": "tests/lib.mjs",
       "kind": "imports"
     },
     {
