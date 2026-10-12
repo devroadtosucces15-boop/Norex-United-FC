@@ -10,7 +10,7 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'nx-'));
 execFileSync(process.execPath, ['next/build.mjs', '--out', out, '--preview'], { cwd: ROOT, stdio: 'pipe' });
 const html = fs.readdirSync(out).filter((f) => f.endsWith('.html'));
 const read = (f) => fs.readFileSync(path.join(out, f), 'utf8');
-const need = ['index', 'squad', 'halloffame', 'join', 'results', 'fixtures', 'opponents', 'stats', 'leaders', 'players', 'tactics', 'playstyle', 'studio', 'builds', 'updates', 'hub', 'staff-dugout'];
+const need = ['index', 'watch', 'squad', 'halloffame', 'join', 'results', 'fixtures', 'opponents', 'stats', 'leaders', 'players', 'tactics', 'playstyle', 'studio', 'builds', 'updates', 'hub', 'staff-dugout'];
 
 t('preview: every main page is built', need.every((n) => html.includes(n + '.html')));
 t('preview: one profile page per player and a page per match', html.filter((f) => f.startsWith('player-')).length >= 30 && html.filter((f) => f.startsWith('match-')).length >= 30);
@@ -150,5 +150,11 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('insights: three cards on phones (one at a time) and all three on wide screens', ij.includes('data-card') && css.includes('.ix-card{display:none}') && css.includes('.ix-cards{display:grid;grid-template-columns:repeat(3'));
   t('insights: burners track/stop ask first, use the staff routes and say burners are never official', ij.includes("'/api/burners/track'") && ij.includes("'/api/burners/remove'") && (ij.match(/confirm\(/g) || []).length >= 3 && /never official/.test(ij) && !/data\/matches|league totals count/i.test(ij));
 }
+// ---- Phase D1: Watch + embeds ----
+{ const wh = read('watch.html'), wj = read('watch.js');
+  t('watch: page has the live slot, channels and the Watch menu entry', wh.includes('data-watch-live') && wh.includes('twitch.tv') && read('index.html').includes('watch.html'));
+  t('watch: script on every page, reads /api/live, clip blurs after 10 s with a prompt', pages.every((f) => read(f).includes('watch.js')) && wj.includes('/api/live') && wj.includes('CLIP_MS = 10000') && wj.includes('Tap to keep watching'));
+  t('watch: feed/doc video links become posters that load only on tap', wj.includes('.md-video') && wj.includes('i.ytimg.com') && wj.includes("wt-play').addEventListener('click'"));
+  t('watch: Twitch parent is the page host, no autoplay with sound', wj.includes('parent=${encodeURIComponent(location.hostname)}') && wj.includes('muted=true')); }
 fs.rmSync(out, { recursive: true, force: true });
 done();

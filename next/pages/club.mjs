@@ -128,6 +128,15 @@ export function join() {
   return shell({ group: 'club', page: 'join.html', title: 'Join', body });
 }
 
+// ---------- WATCH (live player + channels) ----------
+export function watch() {
+  const S = cfg.streams ?? {}, ch = [['twitch', 'Twitch', '🟣', '#9146ff', 'Live match nights, Rush sessions and trials'], ['youtube', 'YouTube', '🔴', '#ff0033', 'Highlights, goals of the week and full streams']].filter(([k]) => S[k]);
+  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Watch NOREX</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Live &amp; <em>replays</em></h1><p class="lead reveal" style="--i:2">When we stream a match night the player opens here on its own. Clips play for a few seconds, then wait for you.</p></div></section>
+  <section class="sec"><div data-watch-live><div class="panel wt-off"><b>📺 Checking if we are live…</b></div></div></section>
+  <section class="sec"><header><div><span class="ribbon">Our channels</span></div></header><div class="wt-ch" data-stagger>${ch.map(([k, l, e, c, d]) => `<a href="${esc(S[k])}" target="_blank" rel="noopener" style="--c:${c}"><span class="em">${e}</span><span><b>${l}</b><small class="muted">${esc(d)}</small></span></a>`).join('') || '<p class="muted">No channels set yet.</p>'}</div></section></div>`;
+  return shell({ group: 'club', page: 'watch.html', title: 'Watch', body });
+}
+
 // ---------- SCOUTING (members only) ----------
 export function scouting() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><header><div><div class="eyebrow">Recruitment · members only</div><h2>Scouting</h2></div></header>
@@ -141,6 +150,6 @@ export function scouting() {
 }
 
 export default function (P) {
-  P('index.html', home()); P('squad.html', squad()); P('halloffame.html', hall()); P('join.html', join()); P('scouting.html', scouting());
+  P('index.html', home()); P('squad.html', squad()); P('halloffame.html', hall()); P('join.html', join()); P('watch.html', watch()); P('scouting.html', scouting());
   for (const p of players) P(`player-${slug(p.k)}.html`, player(p));
 }
