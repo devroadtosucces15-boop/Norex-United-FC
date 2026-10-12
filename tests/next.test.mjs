@@ -183,5 +183,11 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('compare v2: owner flag compareView, loaded on Players, portraits via the shared art resolver, share link and 3-player cap', cfgF.compareView === 'owner' && ph.includes('compare.js') && ph.includes('compare.css') && cj.includes("includes('compareView')") && cj.includes('pc-hero') && cj.includes('NorexArt?.apply') && cj.includes('data-cp-share') && cj.includes('slice(0, 3)'));
   t('navigator (#18): on every page, owner flag staffNav, owner/manager only, jumps to headings, panel escapes text', nh2.includes('navigator.js') && nh2.includes('navigator.css') && cfgF.staffNav === 'owner' && read('navigator.js').includes("includes('staffNav')") && read('navigator.js').includes("window.NorexAs === 'owner'") && read('navigator.js').includes('esc(h.t)') && read('navigator.js').includes('scrollIntoView'));
   t('compare v2: pages.js hands over only when the new view is on', read('pages.js').includes('NorexCompareV2.on()')); }
+
+// ---- Desk › Members + Requests (swap-over blocker: moderation tools) ----
+{ const dj = read('desk.js');
+  t('desk: Members tab on the live admin routes (overview, member log, warn, mute) with every name escaped', ['/api/admin/overview', '/api/admin/member/', '/api/admin/warn', '/api/admin/mute', "'members'", 'esc(u.n)', 'esc(w.reason)'].every((k) => dj.includes(k)));
+  t('desk: Requests tab approves/rejects/undoes through /api/admin/requests, flag-gated, undo is a two-tap', ['/api/admin/requests/decide', "flagOn('requests')", 'Tap again to undo', 'esc(r.subject)', 'esc(r.note)'].every((k) => dj.includes(k)));
+}
 fs.rmSync(out, { recursive: true, force: true });
 done();

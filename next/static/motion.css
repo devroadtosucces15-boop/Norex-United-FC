@@ -328,3 +328,14 @@ html em.hi,html .rt.hi,.wx .s-motm em.hi{background:#0f6a36}html em.mid,html .rt
 .wx .sdot,.dot,button.cmpbtn,.fx-orb .ob{position:relative}
 .wx .sdot::after,.dot::after{content:"";position:absolute;inset:-8px}
 @media(pointer:coarse){a.fo,a.gdb,.hubk{min-height:32px;display:inline-flex;align-items:center}}
+/* Staff › Desk › Members + Requests */
+.dm-bar{display:grid;gap:12px;margin-bottom:16px}.dm-bar input{width:100%;background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:12px;padding:11px 14px;font:500 15px Inter}
+.dm-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}.dm-row{padding:0;overflow:hidden}.dm-head{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:none;border:0;color:inherit;text-align:left;cursor:pointer;min-height:56px}
+.dm-name{flex:1;min-width:0;display:grid}.dm-name b{font:700 16px Oswald;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dm-name small{color:#8e9ab2;font:500 12px Inter;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-badges{display:flex;gap:8px;align-items:center;flex-shrink:0;font:600 12px Inter}.dm-tag{padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.08);color:#cfd6e6;font:600 11px Inter}.dm-tag.gold{background:rgba(239,207,122,.16);color:#efcf7a}.dm-tag.red{background:rgba(200,53,44,.2);color:#ff9d94}
+.dm-detail{padding:4px 16px 16px;border-top:1px solid var(--line);display:grid;gap:12px}.dm-facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;color:#8e9ab2;font:500 12px Inter}.dm-facts b{color:#fff}
+.dm-detail h5{margin:6px 0 6px;font:700 13px Oswald;letter-spacing:.06em;text-transform:uppercase;color:#aab4c9}.dm-ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.dm-ul li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);font:500 13px Inter}.dm-ul em{color:#aab4c9;font-style:normal}.dm-ul small{color:#8e9ab2}
+.dm-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.dm-form input{flex:1;min-width:180px;background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:10px;padding:9px 12px}
+.dm-cid{width:150px;background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:10px;padding:8px 10px}.dm-form .btn.danger{background:var(--red)}
+@media(max-width:560px){.dm-badges{flex-direction:column;align-items:flex-end;gap:4px}}
