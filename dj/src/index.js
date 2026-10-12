@@ -87,7 +87,7 @@ main.client.on('interactionCreate', async (i) => {
       }
       await r.room.add(found.tracks);
       const where = platformOf(normalizeLink(q) || '') ;
-      const msg = found.playlist ? `Queued **${found.tracks.length}** tracks from **${found.title}**` : `Queued **${found.title}**`;
+      const msg = found.fallback ? `YouTube blocked that link, so I found it on SoundCloud: **${found.title}**` : found.playlist ? `Queued **${found.tracks.length}** tracks from **${found.title}**` : `Queued **${found.title}**`;
       return i.editReply(ok(`${msg} · ${r.room.helper.name}${where !== 'link' ? ` · ${where}` : ''}`));
     }
 

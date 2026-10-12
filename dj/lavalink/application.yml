@@ -27,7 +27,11 @@ plugins:
   youtube:
     enabled: true
     allowSearch: true
-    clients: [MUSIC, ANDROID_VR, WEB, TVHTML5EMBEDDED]
+    oauth:
+      enabled: true
+      refreshToken: "${YOUTUBE_REFRESH_TOKEN}"
+      skipInitialization: true
+    clients: [MUSIC, TV, WEB, WEBEMBEDDED, ANDROID_VR]
   lavasrc:
     providers: ["ytmsearch:%QUERY%", "ytsearch:%QUERY%", "scsearch:%QUERY%"]   # Spotify tracks are mirrored to audio: YouTube Music, YouTube, then SoundCloud   # Spotify tracks are mirrored to audio: YouTube Music, YouTube, then SoundCloud
     sources: { spotify: true, youtube: false }
