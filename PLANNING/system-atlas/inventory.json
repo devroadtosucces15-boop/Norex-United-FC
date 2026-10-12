@@ -1,5 +1,5 @@
 {
-  "revision": "033fc6b503830929bb9b367c66764e81eb9b9297",
+  "revision": "522899fe2c023214b76c0aed2abd05fcd9f41ee8",
   "files": 725,
   "imports": 437,
   "api_paths": 230,
@@ -9227,7 +9227,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 241,
+      "lines": 264,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9250,6 +9250,7 @@
         "/api/admin/squadweek",
         "/api/admin/submissions",
         "/api/admin/warn",
+        "/api/availability",
         "/api/avatarcard",
         "/api/awards",
         "/api/awards/category",
@@ -9287,6 +9288,7 @@
         "/api/docs/remind",
         "/api/docs/remove",
         "/api/docs/restore",
+        "/api/events",
         "/api/events/cancel",
         "/api/feed/comment",
         "/api/feed/delete",
@@ -9332,6 +9334,7 @@
         "/api/profile",
         "/api/push/subscribe",
         "/api/push/unsubscribe",
+        "/api/ratings",
         "/api/rush",
         "/api/rush/",
         "/api/scout",
@@ -9345,11 +9348,14 @@
         "/api/suggestions/vote",
         "/api/trials",
         "/api/trials/apply",
-        "/api/trials/update"
+        "/api/trials/update",
+        "/api/vote"
       ],
       "tables": [
         "Staff",
         "a",
+        "api",
+        "every",
         "flow",
         "match",
         "scrolls",
