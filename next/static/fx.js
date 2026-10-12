@@ -14,15 +14,26 @@
     if (!NAV.length || $('#fxnav')) return;
     const w = d.createElement('div'); w.id = 'fxnav';
     const cur = NAV.find((g) => g.k === N.group);
-    w.innerHTML = `<div class="fx-orb"><button class="ob" type="button" aria-label="Menu" aria-expanded="false"><img src="crest.png" alt=""></button><div class="fan">${NAV.map((g, k) => `<a href="${g.href}" style="--k:${k}" class="${g.k === N.group ? 'on' : ''}">${g.l}</a>`).join('')}<a href="hub.html" data-hub class="hubk" style="--k:${NAV.length}">Hub</a></div></div>
+    w.innerHTML = `<div class="fx-orb"><button class="ob" type="button" aria-label="Menu" aria-expanded="false"><img src="crest-sm.png" alt="" width="40" height="58"></button><div class="fan">${NAV.map((g, k) => `<a href="${g.href}" style="--k:${k}" class="${g.k === N.group ? 'on' : ''}">${g.l}</a>`).join('')}<a href="hub.html" data-hub class="hubk" style="--k:${NAV.length}">Hub</a></div></div>
 <div class="fx-isl"><button class="ib" type="button" aria-expanded="false"><span class="cur">${cur ? cur.l : 'NOREX'} · ${N.title || ''}</span><i class="bar"><u></u></i></button><div class="il"><div class="r1">${NAV.map((g) => `<a href="${g.href}" class="${g.k === N.group ? 'on' : ''}">${g.l}</a>`).join('')}<a href="hub.html" data-hub class="hubk">Hub</a></div>${cur ? `<div class="r2">${cur.subs.map(([h, l]) => `<a href="${h}">${l}</a>`).join('')}</div>` : ''}</div></div>
 <div class="fx-rail"></div>`;
     d.body.appendChild(w);
     const orb = $('.fx-orb', w), isl = $('.fx-isl', w), rail = $('.fx-rail', w);
-    $('.ob', orb).onclick = () => { const o = orb.classList.toggle('open'); $('.ob', orb).setAttribute('aria-expanded', o); };
-    $('.ib', isl).onclick = () => isl.classList.add('open');
-    d.addEventListener('click', (e) => { if (!orb.contains(e.target)) orb.classList.remove('open'); if (!isl.contains(e.target)) isl.classList.remove('open'); });
-    d.addEventListener('keydown', (e) => { if (e.key === 'Escape') { orb.classList.remove('open'); isl.classList.remove('open'); } });
+    // E1: only the menu that is showing may take keyboard focus – the hidden styles, the closed fan/list and the pre-scroll state are inert
+    const fan = $('.fan', orb), il = $('.il', isl), ibtn = $('.ib', isl), obtn = $('.ob', orb);
+    const sync = () => {
+      const away = H.classList.contains('fx-away'), m = mode();
+      const set = (el, off) => { if (off) el.setAttribute('inert', ''); else el.removeAttribute('inert'); };
+      set(orb, m !== 'orb' || !away); set(isl, m !== 'island' || !away); set(rail, m !== 'rail' || !away);
+      set(fan, !orb.classList.contains('open')); set(il, !isl.classList.contains('open'));
+      obtn.setAttribute('aria-expanded', orb.classList.contains('open')); ibtn.setAttribute('aria-expanded', isl.classList.contains('open'));
+    };
+    const close = (back) => { const was = orb.classList.contains('open') || isl.classList.contains('open'); orb.classList.remove('open'); isl.classList.remove('open'); sync(); if (was && back) (mode() === 'island' ? ibtn : obtn).focus(); };
+    obtn.onclick = () => { orb.classList.toggle('open'); sync(); if (orb.classList.contains('open')) setTimeout(() => $('a', fan)?.focus(), 30); };
+    ibtn.onclick = () => { isl.classList.add('open'); sync(); setTimeout(() => $('a', il)?.focus(), 30); };
+    d.addEventListener('click', (e) => { if (!orb.contains(e.target)) orb.classList.remove('open'); if (!isl.contains(e.target)) isl.classList.remove('open'); sync(); });
+    d.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(true); });
+    new MutationObserver(sync).observe(H, { attributes: true, attributeFilter: ['class', 'data-nav'] });
     // rail dots from the page's own sections
     const secs = $$('main .sec').filter((s) => $('h2,.ribbon', s));
     if (secs.length >= 3) { rail.innerHTML = secs.map((s, i) => { const t = ($('h2,.ribbon', s).textContent || '').trim().slice(0, 22); s.id = s.id || 'sec' + i; return `<a href="#${s.id}" data-s="${s.id}"><i></i><span>${t}</span></a>`; }).join('') + '<u></u>'; } else rail.dataset.empty = '1';
@@ -36,6 +47,7 @@
     };
     addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); upd();
     H.dataset.nav = mode();
+    sync();
   }
 
   // ================= page transitions: one per main section =================

@@ -314,3 +314,12 @@ html[data-motion=full] .panel.amb:hover:after,html[data-motion=full] .sbt.amb:ho
 .jn-msg{margin:0;min-height:1.4em;font-size:13px}.jn-msg.err{color:#ff8a80}.jn-msg.ok{color:#7be29b}.jn-done{text-align:center;padding:20px 8px}
 .jn-ct{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}.jn-c{display:flex;gap:12px;align-items:center;min-width:0}.jn-c>div{min-width:0}.jn-c b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.jn-c img{border-radius:50%;flex:none}.jn-av{width:46px;height:46px;border-radius:50%;background:var(--p3);display:grid;place-items:center;flex:none}
 @media(max-width:560px){.om{grid-template-columns:1fr auto auto;gap:6px 10px}.om .muted{grid-column:1/-1}.om .omt{grid-column:1}}
+
+/* ===== Phase E runtime pass (E1/E2): no layout jumps while JS builds a page, visible focus on scroll rails ===== */
+main{min-height:calc(100dvh - 240px)}
+#xiPitch:empty{min-height:600px}@media(max-width:820px){#xiPitch:empty{min-height:550px}}
+.wx .spot:focus-visible,[tabindex="0"][role="region"]:focus-visible{outline:2px solid #efcf7a;outline-offset:-3px;border-radius:14px}
+/* AA contrast for white text on the rating / result colours, and 24px+ hit areas on the carousel dots */
+html em.hi,html .rt.hi,.wx .s-motm em.hi{background:#157a3f}html em.mid,html .rt.mid,.wx .s-motm em.mid{background:#8a6a1c}
+.wx .s-res{background:linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),var(--rc)}
+.sdot{position:relative}.sdot::after{content:"";position:absolute;inset:-9px -4px}
