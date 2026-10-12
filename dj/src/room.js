@@ -63,13 +63,16 @@ export class Room {
     this.changed();
     this.fill();
   }
-  // A track that fails to stream (e.g. YouTube "requires login") is retried once from SoundCloud, then skipped.
+  // A track that fails to stream (e.g. YouTube "requires login") is retried from another upload of the same song
+  // (other YouTube versions first, then SoundCloud), up to 3 times, then skipped with a message.
   async recover() {
     const t = this.current;
-    if (!t || t.retried) return;
+    if (!t) return;
+    const tried = new Set([...(t.tried || []), t.info.identifier]);
+    if (tried.size > 3) { this.notify?.(this, `Could not play **${t.info.title}**, skipped.`); return; }
     try {
-      const alt = await findEquivalent(this.helper.shoukaku.getIdealNode(), t.info, ['scsearch']);
-      if (alt) { alt.retried = true; alt.auto = t.auto; this.queue.unshift(alt); }
+      const alt = await findEquivalent(this.helper.shoukaku.getIdealNode(), t.info, ['ytmsearch', 'ytsearch', 'scsearch'], tried);
+      if (alt) { alt.tried = tried; alt.auto = t.auto; alt.from = t.from; this.queue.unshift(alt); }
       else this.notify?.(this, `Could not play **${t.info.title}** and found no exact match elsewhere, skipped.`);
     } catch (e) { console.error('recover', e.message); }
   }
