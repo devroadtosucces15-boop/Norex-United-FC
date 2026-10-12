@@ -1,9 +1,9 @@
 {
-  "revision": "5478a985452ada01ff408f3171ce5bcbb69d758b",
+  "revision": "4a2d3e485fcab078de548da29d577e4f13464beb",
   "files": 711,
   "imports": 431,
-  "api_paths": 229,
-  "tables": 275,
+  "api_paths": 230,
+  "tables": 277,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -9081,7 +9081,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 164,
+      "lines": 180,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9118,10 +9118,12 @@
         "/api/cards/requests/review",
         "/api/cards/templates",
         "/api/cards/templates/update",
+        "/api/contacts",
         "/api/docs",
         "/api/docs/ack",
         "/api/feed/comment",
         "/api/feed/post",
+        "/api/feed/public",
         "/api/feed/react",
         "/api/hof/remove",
         "/api/intel",
@@ -9151,15 +9153,20 @@
         "/api/profile",
         "/api/push/subscribe",
         "/api/push/unsubscribe",
+        "/api/rush",
+        "/api/rush/",
         "/api/scout",
         "/api/squads",
         "/api/squads/prefs",
         "/api/suggestions",
         "/api/suggestions/vote",
-        "/api/trials"
+        "/api/trials",
+        "/api/trials/apply"
       ],
       "tables": [
         "Staff",
+        "flow",
+        "match",
         "scrolls",
         "search",
         "the",
