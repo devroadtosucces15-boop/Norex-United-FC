@@ -2,6 +2,21 @@
 // re-posted at the bottom (debounced) when other messages arrive, so it stays visible.
 import { store } from './store.js';
 import { panelPayload } from './ui.js';
+import { nowPlayingPng } from './cards.js';
+import { activeEffects } from './effects.js';
+
+// The drawn "Now playing" banner is rendered fresh for every update, so the progress and equalizer move.
+async function build(b) {
+  const room = b.room; const t = room?.current?.info; let card = null;
+  if (t) {
+    try {
+      card = nowPlayingPng({ title: t.title, pos: room.player?.position || 0, len: t.length || 0, paused: Boolean(room.player?.paused), live: Boolean(t.isStream),
+        source: ({ youtube: 'YouTube', soundcloud: 'SoundCloud', spotify: 'Spotify', bandcamp: 'Bandcamp' })[t.sourceName] || 'Link', volume: b.settings.volume,
+        effects: activeEffects(b.settings).length, listeners: room.memberIds?.().length ?? 0, loop: b.settings.loop });
+    } catch (e) { console.error('card', e.message); }
+  }
+  return panelPayload(b, card);
+}
 
 let client;
 export const init = (c) => { client = c; };
@@ -13,9 +28,9 @@ export function refresh(b, delay = 700) {
 async function doRefresh(b) {
   const ch = await chan(b);
   if (!ch?.isTextBased()) return;
-  const payload = panelPayload(b);
+  const payload = await build(b);
   if (b.panelId) {
-    const ok = await ch.messages.edit(b.panelId, payload).then(() => true, () => false);
+    const ok = await ch.messages.edit(b.panelId, { ...payload, attachments: [] }).then(() => true, () => false);
     if (ok) return;
     await ch.messages.delete(b.panelId).catch(() => {}); // an old-style panel cannot be edited into the new layout
     b.panelId = null;
