@@ -160,7 +160,7 @@ const calls = [];
 const described = [];
 let aiMode = 'ok';
 let describeMode = 'ok';
-env.AI = {
+const mockAI = env.AI = {
   run: async (model, input) => {
     if (model === DESCRIBE_MODEL) {
       described.push(input);
@@ -304,4 +304,26 @@ await env.DB.prepare("UPDATE claims SET status = 'approved' WHERE user_id = '501
 await env.DB.prepare("INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, target_player, published) VALUES ('501', '2025-01', 0, 0, '', 'done', 1, 'different-player', 1)").run();
 t('owner revokes claimed-player artwork', (await call(owner, '/api/cards/owner/revoke', {id:two.id})).s === 200);
 t('revocation preserves explicit artwork assigned to a different player', (await env.DB.prepare("SELECT published FROM card_requests WHERE target_player = 'different-player'").first('published')) === 1);
+
+// editable AI notes and deleting
+const noteReq = (await env.DB.prepare("SELECT id FROM card_requests WHERE user_id = '501' AND target_player = 'different-player'").first('id'));
+t('member cannot edit AI notes', (await call(m2, '/api/cards/requests/notes', { id: noteReq, notes: 'x' })).s === 403);
+t('manager saves AI notes', (await call(mgr, '/api/cards/requests/notes', { id: noteReq, notes: 'A woman with a scrum cap' })).d.manual === true);
+t('staff list shows the notes', (await call(owner, '/api/cards/owner/requests')).d.requests.find((r) => r.id === noteReq).aiNotes === 'A woman with a scrum cap');
+t('member view never shows the notes', !('aiNotes' in ((await call(m2, '/api/cards/request')).d.request ?? {})));
+await env.DB.prepare("UPDATE card_requests SET status = 'approved', published = 0, attempts = 0, started_at = NULL, photo_key = ?, bg_id = ?, pose_id = ? WHERE id = ?").bind(photoKey2, bgId, poseId, noteReq).run();
+env.AI = mockAI; aiMode = 'ok'; described.length = 0; calls.length = 0;
+t('request with manager notes generates', (await generateCards(env, { now: 4e12 }))[0] === 'done');
+t('manager notes replace the vision description', described.length === 0 && calls[0].form.get('prompt').includes('A woman with a scrum cap'));
+await call(mgr, '/api/cards/requests/notes', { id: noteReq, notes: '' });
+t('clearing the notes goes back to automatic', (await row(noteReq)).ai_notes_manual === 0);
+const keys = await row(noteReq);
+const delKeys = [keys.result_key, keys.portrait_key].filter(Boolean);
+env.AI = realAI;
+t('manager can delete unpublished artwork and its files', (await call(mgr, '/api/cards/requests/delete', { id: noteReq })).s === 200 && (await row(noteReq)) === null && delKeys.every((k) => !r2objects.has(k)));
+await env.DB.prepare("INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, target_player, published) VALUES ('501', '2025-02', 0, 0, '', 'done', 1, 'pub-player', 1)").run();
+const pubId = await env.DB.prepare("SELECT id FROM card_requests WHERE target_player = 'pub-player'").first('id');
+t('manager cannot delete published artwork', (await call(mgr, '/api/cards/requests/delete', { id: pubId })).s === 403);
+t('owner can delete published artwork', (await call(owner, '/api/cards/requests/delete', { id: pubId })).s === 200 && (await row(pubId)) === null);
+t('deleting a missing request is a 404', (await call(owner, '/api/cards/requests/delete', { id: pubId })).s === 404);
 done();

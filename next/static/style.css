@@ -783,6 +783,7 @@ button.ch-up{cursor:pointer;font:inherit;transition:transform var(--m-fast) var(
 .cs-q .btn[hidden],.cs-la .btn[hidden],.cs-orf [hidden],.cs-prev .btn[hidden],.cs-ofg [hidden],.cs-fig .btn[hidden]{display:none}
 @media(max-width:900px){.cs-top,.cs-fg{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:640px){.cs-qr{grid-template-columns:auto minmax(0,1fr)}.cs-qa{grid-column:1/-1;grid-template-columns:1fr 1fr}.cs-qr>.cs-fig,.cs-qr .cs-figs.sm .cs-fig{width:88px}.cs-qr .cs-figs.sm{grid-column:1/-1}
+.cs-qi textarea,.cs-or textarea{width:100%;resize:vertical;min-height:64px;font:inherit;color:inherit;background:var(--panel2,rgba(255,255,255,.04));border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;padding:8px 10px}.cs-or{display:grid;gap:8px}
  .cs-lr{grid-template-columns:64px minmax(0,1fr)}.cs-la{grid-column:1/-1;grid-auto-flow:column;justify-content:start;align-items:center}.cs-steps small{font-size:10px}.cs-tiles{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}.cs-send .btn{width:100%}}
 .cs-ofg .seg{justify-self:start;max-width:100%}.cs-ofg .seg button,.cs-tier button{white-space:nowrap}
 .cs-ofg input[type=file]{font:13px Inter;color:var(--soft);padding:6px!important}.cs-ofg input[type=file]::file-selector-button{margin-right:10px;padding:7px 12px;border-radius:9px;border:1px solid var(--line2);background:var(--p3);color:#fff;font:600 13px Inter;cursor:pointer}
