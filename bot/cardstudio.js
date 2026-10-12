@@ -9,6 +9,7 @@ const RETRY_AFTER = 2 * 60e3; // a failed try waits this long before the next on
 const DAY = 86400e3;
 const quotaHit = (e) => /\b4006\b|daily free allocation|neurons/i.test(String(e?.message || e)); // Workers AI free tier used up until 00:00 UTC
 const STALE_AFTER = 10 * 60e3; // a "generating" row older than this was abandoned by a dead Worker run
+const NOTES_MAX = 400;
 const REF_MAX = 500; // FLUX.2 wants reference images under 512×512
 
 export const CARD_SIZE = 1024;
@@ -93,6 +94,7 @@ const reqView = (r, extra = {}) => ({
   id: r.id, month: r.month, status: r.status === 'done' && r.published === 0 ? 'review' : r.status, note: r.note, bg: r.bg_name ?? null, pose: r.pose_name ?? null,
   createdAt: r.created_at, decidedAt: r.decided_at, hasPhoto: !!r.photo_key, targetPlayer: r.target_player ?? null, hasResult: !!r.result_key, hasPortrait: !!r.portrait_key, kitNumber: r.kit_number ?? null, avatarEnabled: r.avatar_enabled !== 0, portraitEnabled: r.portrait_enabled === 1, attempts: r.attempts, ...extra,
 });
+const staffView = (r, extra = {}) => reqView(r, { aiNotes: r.ai_notes ?? '', notesManual: r.ai_notes_manual === 1, ...extra });
 const REQ_SQL = `SELECT r.*, b.name AS bg_name, p.name AS pose_name FROM card_requests r
   LEFT JOIN card_templates b ON b.id = r.bg_id LEFT JOIN card_templates p ON p.id = r.pose_id`;
 
@@ -239,7 +241,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
     const rows = await all(env, `SELECT r.*, u.name AS user_name, COALESCE(r.target_player, c.player) AS player FROM card_requests r
       LEFT JOIN users u ON u.id = r.user_id LEFT JOIN claims c ON c.user_id = r.user_id AND c.status = 'approved'
       ORDER BY r.created_at DESC, r.id DESC LIMIT 500`);
-    return json({ requests: rows.map(r => reqView(r, { user: r.user_name || r.player || 'Member', userId: r.user_id, player: r.player })) });
+    return json({ requests: rows.map(r => staffView(r, { user: r.user_name || r.player || 'Member', userId: r.user_id, player: r.player })) });
   }
   if (p === '/api/cards/owner/revoke' && method === 'POST') {
     if (me.role !== 'owner') return fail('Owner only.', 403);
@@ -263,7 +265,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
       LEFT JOIN card_templates b ON b.id = r.bg_id LEFT JOIN card_templates p ON p.id = r.pose_id
       LEFT JOIN users u ON u.id = r.user_id LEFT JOIN users d ON d.id = r.decided_by
       WHERE r.status = 'pending' OR (r.status = 'done' AND r.published = 0) OR r.decided_at > ? ORDER BY (r.status = 'pending') DESC, COALESCE(r.decided_at, r.created_at) DESC LIMIT 100`, Date.now() - 14 * 864e5);
-    return json({ requests: rows.map((r) => reqView(r, { user: r.user_name || 'Member', userId: r.user_id, decider: r.decider || null })) });
+    return json({ requests: rows.map((r) => staffView(r, { user: r.user_name || 'Member', userId: r.user_id, decider: r.decider || null })) });
   }
 
   if (p === '/api/cards/requests/decide' && method === 'POST') {
@@ -288,6 +290,28 @@ export async function cardsRoute(p, method, body, me, env, log) {
     return json({ ok: true, status });
   }
 
+  if (p === '/api/cards/requests/notes' && method === 'POST') {
+    if (!manage) return fail('Managers only.', 403);
+    const r = await one(env, 'SELECT id FROM card_requests WHERE id = ?', Number(body.id));
+    if (!r) return fail('Request not found.', 404);
+    const notes = clean(body.notes, NOTES_MAX);
+    await run(env, 'UPDATE card_requests SET ai_notes = ?, ai_notes_manual = ? WHERE id = ?', notes, notes ? 1 : 0, r.id);
+    await log(env, me, 'card-notes', `#${r.id}`);
+    return json({ ok: true, notes, manual: !!notes });
+  }
+
+  // Delete removes the request and every file it made. Owners can delete anything; managers only what is not on the site.
+  if (p === '/api/cards/requests/delete' && method === 'POST') {
+    if (!manage) return fail('Managers only.', 403);
+    const r = await one(env, 'SELECT * FROM card_requests WHERE id = ?', Number(body.id));
+    if (!r) return fail('Request not found.', 404);
+    if (r.published === 1 && me.role !== 'owner') return fail('Only the owner can delete published artwork.', 403);
+    await run(env, 'DELETE FROM card_requests WHERE id = ?', r.id);
+    await Promise.all([dropPhoto(env, r.photo_key), dropPhoto(env, r.result_key), dropPhoto(env, r.portrait_key)]);
+    await log(env, me, 'card-delete', `#${r.id} ${r.target_player || r.user_id}`);
+    return json({ ok: true });
+  }
+
   if (p === '/api/cards/kit-number' && method === 'POST') {
     const value = body.kitNumber;
     if (value !== null && (!Number.isInteger(value) || value < 0 || value > 99)) return fail('Kit number must be between 0 and 99.');
@@ -309,6 +333,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
       // Retain uploaded photos privately for owner inspection and download.
       if (!r.user_id.startsWith('player:')) await safely(notify(env, [r.user_id], { type: 'card', icon: '🏁', title: 'Your NOREX artwork is ready', body: 'Manager-approved artwork is ready to download.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
     } else {
+      if (typeof body.notes === 'string') { const notes = clean(body.notes, NOTES_MAX); await run(env, 'UPDATE card_requests SET ai_notes = ?, ai_notes_manual = ? WHERE id = ?', notes, notes ? 1 : 0, r.id); }
       const updated = await run(env, "UPDATE card_requests SET status = 'approved', published = 0, attempts = 0, started_at = NULL, result_key = NULL, portrait_key = NULL WHERE id = ? AND status = 'done' AND published = 0", r.id);
       if (!updated.meta?.changes) return fail('Already reviewed.', 409);
       await Promise.all([dropPhoto(env, r.result_key), dropPhoto(env, r.portrait_key)]);
@@ -401,10 +426,9 @@ async function reference(env, bytes, type) {
   return new Blob([await out.response().arrayBuffer()], { type: 'image/png' });
 }
 
-async function render(env, bg, pose, photo, portrait = false) {
+async function render(env, bg, pose, photo, portrait, notes) {
   if (!env.AI) throw new Error('The AI binding is not connected.');
   const form = new FormData();
-  const notes = await describe(env, photo);
   form.append('prompt', portrait ? portraitPrompt(notes) : cardPrompt(pose.prompt, notes));
   form.append('width', String(CARD_SIZE));
   form.append('height', String(CARD_SIZE));
@@ -442,13 +466,17 @@ async function generateOne(env, r, now) {
     const [bg, photo] = await Promise.all([readAsset(env, bgT?.asset_key), readAsset(env, r.photo_key)]);
     if (r.avatar_enabled !== 0 && (!bg || !poseT)) throw new Error('The chosen background or pose is gone.');
     if (!photo) throw new Error('The photo is gone.');
+    // A manager's notes win; otherwise the photo is described once and shared by both outputs. The notes used are saved so staff can edit them.
+    const manual = r.ai_notes_manual === 1;
+    const notes = manual ? clean(r.ai_notes, NOTES_MAX) : await describe(env, photo);
+    if (!manual && notes !== (r.ai_notes ?? '')) await run(env, 'UPDATE card_requests SET ai_notes = ? WHERE id = ?', notes, r.id);
     if (r.avatar_enabled !== 0) {
-      const card = await render(env, bg, poseT, photo);
+      const card = await render(env, bg, poseT, photo, false, notes);
       resultKey = `cardresult/${hex(16)}.${card.type[1]}`;
       await env.MEDIA.put(resultKey, card.bytes, { httpMetadata: { contentType: card.type[0] } });
     }
     if (r.portrait_enabled === 1) {
-      const portrait = await render(env, bg, poseT, photo, true);
+      const portrait = await render(env, bg, poseT, photo, true, notes);
       portraitKey = `cardresult/${hex(16)}.${portrait.type[1]}`;
       await env.MEDIA.put(portraitKey, portrait.bytes, { httpMetadata: { contentType: portrait.type[0] } });
     }
