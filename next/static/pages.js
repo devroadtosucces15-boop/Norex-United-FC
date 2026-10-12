@@ -141,6 +141,7 @@ addEventListener('DOMContentLoaded', () => {
     const render = () => {
       let keys = []; const m = location.hash.match(/compare=([^&?]+)/); if (m) keys = decodeURIComponent(m[1]).split(',').filter(Boolean); else keys = NorexCmp.get();
       const ps = keys.map((k) => N.full.find((p) => p.k === k)).filter(Boolean).slice(0, 3), root = $('#cmpRoot');
+      if (window.NorexCompareV2 && NorexCompareV2.on()) { NorexCompareV2.render(root, ps); return; }
       if (ps.length < 1) { root.hidden = true; return; } root.hidden = false;
       const best = Object.fromEntries(KEYS.map(([k]) => [k, Math.max(...ps.map((p) => p[k] || 0))]));
       const AXN = [['Goals / game', (p) => p.goals / Math.max(1, p.gp)], ['Assists / game', (p) => p.assists / Math.max(1, p.gp)], ['Rating', (p) => p.rating], ['Passing', (p) => p.pass], ['Tackling', (p) => p.tackleRate], ['Win rate', (p) => p.win]], pool = N.full.filter((p) => p.gp >= 8), mxs = AXN.map(([, f]) => Math.max(1e-9, ...pool.map(f)));

@@ -175,5 +175,11 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('news: docs stay squad-only – guests get links, members their pinned docs from /api/docs', nj.includes("'/api/docs'") && nj.includes('pinned') && nh.includes('hub-handbook.html') && nh.includes('Requirements to join'));
   t('opponents: every rival has a report page, linked from the table', oppFiles.length >= 1 && oh.includes('href="opp-') && oh.includes('🔍 Report'));
   t('opponent report: record, facts, players faced and every meeting, all from match data', ['Scouting report', 'What we know', 'Players we have faced', 'Every meeting', 'data-insight="h2h.'].every((k) => op.includes(k)) && op.includes('href="match-')); }
+// ---- D2 follow-up gear (#18) + D5 compare v2 ----
+{ const gj = read('gear.js'), cj = read('compare.js'), ph = read('players.html'), nh2 = read('news.html'), cfgF = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8')).features;
+  t('gear: on every page, owner flag editGear, real owner/manager only, design build only as Owner', nh2.includes('gear.js') && nh2.includes('gear.css') && cfgF.editGear === 'owner' && gj.includes("includes('editGear')") && gj.includes("window.NorexAs === 'owner'") && gj.includes("A.role === 'owner' || A.role === 'manager'"));
+  t('gear: edits through the live routes (feed public/pin, trials update), decline is a two-tap, every name escaped', ['/api/feed/setpublic', '/api/feed/pin', '/api/trials/update'].every((k) => gj.includes(k)) && gj.includes('Tap again to decline') && gj.includes('esc(p.by?.n') && gj.includes('esc(t.ea)'));
+  t('compare v2: owner flag compareView, loaded on Players, portraits via the shared art resolver, share link and 3-player cap', cfgF.compareView === 'owner' && ph.includes('compare.js') && ph.includes('compare.css') && cj.includes("includes('compareView')") && cj.includes('pc-hero') && cj.includes('NorexArt?.apply') && cj.includes('data-cp-share') && cj.includes('slice(0, 3)'));
+  t('compare v2: pages.js hands over only when the new view is on', read('pages.js').includes('NorexCompareV2.on()')); }
 fs.rmSync(out, { recursive: true, force: true });
 done();

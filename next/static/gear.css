@@ -1,0 +1,22 @@
+/* ⚙️ edit-in-place gear (gear.js): one round button, bottom-left above the bug tool; a sheet of page-specific editors */
+.gr-fab{position:fixed;z-index:9975;left:12px;bottom:calc(148px + env(safe-area-inset-bottom));width:46px;height:46px;border-radius:50%;border:1px solid rgba(239,207,122,.45);background:linear-gradient(180deg,#1b2433,#0f1520);color:#fff;font-size:20px;display:grid;place-items:center;cursor:pointer;box-shadow:0 10px 24px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .2s}
+.gr-fab:hover,.gr-fab:focus-visible{border-color:#efcf7a;transform:rotate(60deg)}
+@media(min-width:861px){.gr-fab{bottom:72px}}
+.gr-h{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.gr-h h3{font:700 20px Oswald;letter-spacing:.04em;margin:0}
+.gr-x{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#fff;font-size:15px;cursor:pointer}
+.gr-sec{margin-top:18px}.gr-sec h4{font:700 14px Oswald;letter-spacing:.14em;text-transform:uppercase;margin:0 0 4px;color:#efcf7a}
+.gr-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px}
+.gr-row{display:grid;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);transition:opacity .2s}
+.gr-row.busy{opacity:.5;pointer-events:none}
+.gr-main{min-width:0}.gr-main b{display:block;font:600 14px Inter}.gr-main small{display:block;margin-top:2px}.gr-main p{margin:6px 0 0;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.gr-acts{display:flex;flex-wrap:wrap;gap:8px}
+.gr-sw{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:#cfd6e2;font:600 13px Inter;cursor:pointer}
+.gr-sw.on{border-color:#efcf7a;color:#efcf7a;background:rgba(239,207,122,.1)}
+.gr-sw.warn.armed{border-color:#c8352c;background:#c8352c;color:#fff}
+.gr-sw:disabled{opacity:.5}
+.gr-note{padding:14px;text-align:center;font-size:13px}.gr-note.err{color:#ff8b83}
+.gr-rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
+.gr-room{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#fff;font:600 13px Inter;text-decoration:none}
+.gr-room.near{border-color:rgba(239,207,122,.5)}
+@media(min-width:560px){.gr-row{grid-template-columns:1fr auto;align-items:center}}
