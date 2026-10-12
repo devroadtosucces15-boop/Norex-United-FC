@@ -448,3 +448,20 @@ html[data-motion=off] .wx .si{transform:none!important}
 .wx .sdot .ecrest{width:16px;height:16px}
 .wx .sdot.on{width:26px;border-radius:50%;opacity:1;transform:scale(1.25);box-shadow:0 0 12px var(--rc)}
 .wx .sdots{gap:9px}
+
+/* squad card stack: one stage, swipe = move, tap = flip. Only the dragged card is animated by script; the rest are CSS transitions. */
+.wx .stk{max-width:300px;margin:0 auto;outline:0}
+.wx .stk-stage{position:relative;height:392px;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.wx .sk{position:absolute;left:50%;top:0;width:220px;height:340px;margin-left:-110px;transition:transform .42s cubic-bezier(.2,.8,.2,1),opacity .3s;transform-origin:50% 100%;cursor:grab;will-change:transform}
+.wx .sk.far{visibility:hidden}
+.wx .sk-in{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.1,.3,1)}
+.wx .sk.on .sk-in{transform:rotateY(180deg)}
+.wx .sk-ft,.wx .sk-bk{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
+.wx .sk-bk{transform:rotateY(180deg);background:linear-gradient(160deg,#efcf7a,#a77a22);color:#1a1405;border-radius:18px;padding:16px;align-content:center;gap:6px;text-align:center;box-shadow:0 0 30px rgba(239,207,122,.35)}
+.wx .sk-bk b{font:700 22px Oswald}.wx .sk-bk em{font:600 12px Inter;font-style:normal;opacity:.7}
+.wx .sk-bk i{font-style:normal;display:flex;justify-content:space-between;width:100%;font:600 12px Inter;border-top:1px solid rgba(0,0,0,.2);padding-top:5px}
+.wx .sk-bk u{text-decoration:none;font:700 18px Oswald}.wx .sk-bk .btn{margin-top:6px;min-height:44px}
+.wx .stk-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px}
+.wx .stk-bar button{min-width:44px;min-height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font:600 24px/1 Inter}
+.wx .stk-n{font:600 14px Oswald;letter-spacing:.1em;color:#c5cdde}
+@media (prefers-reduced-motion:reduce){.wx .sk,.wx .sk-in{transition:none}}

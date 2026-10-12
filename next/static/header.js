@@ -60,7 +60,7 @@ ${state.ok ? `<div class="ps"><h4>🟢 ${state.online} online now</h4>${on.lengt
 ${state.recent.length ? `<h4>🕐 Earlier this hour</h4><ul class="pl">${state.recent.slice(0, 4).map((u) => person(u, since(u.at))).join('')}</ul>` : ''}
 ${state.canHide ? `<label class="phide"><input type="checkbox" data-hide${state.hidden ? ' checked' : ''}><span>🙈 Appear offline</span><small>you still see who is on</small></label>` : ''}</div>` : ''}
 <div class="pa"><a href="hub.html"><span aria-hidden="true">🔑</span>My Locker</a><button type="button" data-motion-settings><span aria-hidden="true">🎬</span>Motion &amp; effects</button>
-${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁️ Preview as</span><button type="button" data-va="" class="${va ? '' : 'on'}">Owner</button><button type="button" data-va="member" class="${va === 'member' ? 'on' : ''}">Member</button></div>` : ''}
+${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁️ Preview as</span><button type="button" data-va="" class="${va ? '' : 'on'}">Owner</button><button type="button" data-va="member" class="${va === 'member' ? 'on' : ''}">Member</button><button type="button" data-va="guest" class="${va === 'guest' ? 'on' : ''}">Guest</button></div>` : ''}
 <button type="button" data-out class="pout"><span aria-hidden="true">🚪</span>Sign out</button></div>`;
     badge && state.ok && (badge.textContent = state.hidden ? '' : String(state.online), badge.hidden = state.hidden || state.online < 1);
   };
@@ -103,7 +103,7 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
       const ac = d.createElement('button'); ac.type = 'button'; ac.className = 'ac'; ac.setAttribute('aria-haspopup', 'dialog'); ac.setAttribute('aria-expanded', 'false'); ac.setAttribute('aria-label', `Account: ${A.name || 'Member'}`);
       ac.innerHTML = `<span class="pav">${A.avatar ? `<img src="${esc(A.avatar)}" alt="" width="34" height="34">` : esc((A.name || 'M')[0].toUpperCase())}</span><span class="acn">${esc(A.name || 'Member')}</span><i class="acb" hidden></i>`;
       badge = ac.querySelector('.acb'); ac.onclick = toggleMenu; box.appendChild(ac);
-      if (viewAs() && realOwner()) { const ribbon = d.createElement('div'); ribbon.className = 'hdr-va'; ribbon.innerHTML = '👁️ Viewing the site as a <b>member</b> <button type="button">Back to owner</button>'; ribbon.querySelector('button').onclick = () => setViewAs(''); d.body.insertBefore(ribbon, d.body.firstChild); }
+      if (viewAs() && realOwner()) { const ribbon = d.createElement('div'); ribbon.className = 'hdr-va'; ribbon.innerHTML = '👁️ Viewing the site as a <b>' + (viewAs() === 'guest' ? 'guest' : 'member') + '</b> <button type="button">Back to owner</button>'; ribbon.querySelector('button').onclick = () => setViewAs(''); d.body.insertBefore(ribbon, d.body.firstChild); }
       poll(); timer = setInterval(poll, 120e3); d.addEventListener('visibilitychange', () => { if (!d.hidden) poll(); });
     } else if (API) {
       const a = d.createElement('a'); a.className = 'btn ghost hdr-in'; a.href = A?.loginUrl ? A.loginUrl() : '#'; a.setAttribute('data-login', ''); a.textContent = 'Sign in'; box.appendChild(a);
@@ -112,4 +112,17 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
     box.querySelector('.hdr-s').onclick = openPal;
   };
   d.readyState === 'loading' ? d.addEventListener('DOMContentLoaded', mount) : mount();
+})();
+
+// ?nx=<css selector> or ?nx=~<heading text>: arrive on a page already scrolled to that section (used by the Boardroom's Go to / Show me). Waits for late-rendered blocks.
+(() => {
+  const d = document, q = new URLSearchParams(location.search).get('nx'); if (!q) return;
+  const calm = matchMedia('(prefers-reduced-motion:reduce)').matches; let n = 0;
+  const find = () => {
+    let el = null;
+    if (q[0] === '~') { const t = q.slice(1).toLowerCase(); el = [...d.querySelectorAll('h1,h2,h3,h4,.ribbon,.eyebrow,summary')].find((h) => !h.closest('[hidden]') && h.textContent.toLowerCase().includes(t)); } else { try { el = d.querySelector(q); } catch {} }
+    if (el && !el.closest('[hidden]')) { const box = el.closest('section,.panel') || el; box.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' }); box.classList.add('nx-hit'); setTimeout(() => box.classList.add('fade'), 1200); setTimeout(() => box.classList.remove('nx-hit', 'fade'), 3800); return; }
+    if (++n < 25) setTimeout(find, 250);
+  };
+  d.readyState === 'loading' ? d.addEventListener('DOMContentLoaded', () => setTimeout(find, 300)) : setTimeout(find, 300);
 })();

@@ -991,3 +991,18 @@ body:not(.hub-page):after{content:"";position:fixed;inset:0;z-index:-1;pointer-e
 .rfsum{margin:0 0 16px;padding:14px;border-radius:16px;background:linear-gradient(180deg,var(--p2),var(--p1));border:1px solid var(--line)}.rfsum[hidden]{display:none}
 .rsbar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.06);margin-bottom:12px}.rsbar i{display:block;transition:width .4s var(--ease)}.rsbar .w{background:#2fb067}.rsbar .d{background:#c19a33}.rsbar .l{background:#cd4a3f}
 .rsg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}.rst{display:grid;gap:2px;min-width:0}.rst b{font:700 24px Oswald;overflow:hidden;text-overflow:ellipsis}.rst small{color:var(--mute);font-size:12px;overflow-wrap:anywhere}
+
+/* hall of fame record cards: black-and-gold slab, wing stripes, a dimmed black-and-white portrait of the holder (or the crest for club records) */
+.panel.rec{text-align:center;padding:26px 18px 22px;background:linear-gradient(180deg,#141a26,#0b0f16);border-color:rgba(239,207,122,.22);isolation:isolate;min-height:250px}
+.panel.rec:before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(115deg,transparent 0 16px,rgba(239,207,122,.045) 16px 18px),radial-gradient(120% 70% at 50% 0,rgba(239,207,122,.14),transparent 60%)}
+.panel.rec.gold{border-color:rgba(239,207,122,.55);box-shadow:0 0 40px rgba(239,207,122,.14),0 18px 40px rgba(0,0,0,.35)}
+.panel.rec:after{background:none}.panel.rec>.rec-bg{position:absolute}
+.rec-bg{inset:0;z-index:-1;overflow:hidden;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 38%);mask-image:linear-gradient(90deg,transparent 0,#000 38%)}
+.rec-art{position:absolute;right:-8%;bottom:-6%;width:62%;opacity:.3;filter:grayscale(1) contrast(1.15) brightness(1.1)}
+.rec-art .pc-hero{width:100%}.rec-art .bignum{display:none}.rec-art .floor{display:none}
+.rec-crest{position:absolute;right:-10%;bottom:-12%;width:62%;opacity:.12;filter:grayscale(1)}
+.rec-no{position:absolute;top:12px;left:14px;font:700 13px Oswald;letter-spacing:.14em;color:var(--g3);opacity:.9}
+.rec-ic{width:54px;height:54px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:radial-gradient(circle at 35% 30%,rgba(255,241,194,.25),rgba(201,153,58,.1));box-shadow:0 0 0 2px rgba(239,207,122,.55),0 0 22px rgba(239,207,122,.25)}
+.rec-big{font-size:54px;line-height:1.1}.rec-who{font-size:18px}
+.panel.rec .small{position:relative}
+@media (max-width:640px){.rec-art{width:54%;opacity:.26}}

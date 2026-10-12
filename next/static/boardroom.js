@@ -29,7 +29,7 @@
     ['👑 Staff and Discord', ['boardroom', 'managerNotes', 'roleSync', 'discordMatch', 'platformLink', 'liveBanner', 'burners']],
   ];
   const FREE = { requests: 100000 };
-  const S = { tab: 'switches', flags: null, canEdit: false, activity: null, health: undefined, ping: null, filter: '', undo: [], busy: false,
+  const S = { tab: 'tools', open: new Set(),  flags: null, canEdit: false, activity: null, health: undefined, ping: null, filter: '', undo: [], busy: false,
     aud: { sub: 'log', q: '', type: '', n: 12, subs: {}, subType: 'feedback', reports: null }, err: {},
     ann: { title: '', body: '', audience: 'all', ack: false, preview: false }, docs: null, targets: undefined, dc: { doc: '', channel: '', role: '', preview: null },
     hof: null, hofForm: { kind: 'legend', player: '', name: '', title: '', text: '' },
@@ -40,6 +40,42 @@
   const act = async (fn) => { try { await fn(); } catch (er) { toast(er.message, true); } };
   const nice = (k) => k.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
 
+  // ---------- where each switch lives (page + the heading to scroll to) and the places the owner works from ----------
+  const WHERE = {
+    events: ['hub-matchnight.html', 'Match night'], matchNight: ['hub-matchnight.html', 'Match night'], discordRsvp: ['hub-matchnight.html', 'Match night'], discordMatch: ['hub-matchnight.html', 'Match night'], rushLog: ['rush.html', ''], lockerRoom: ['hub.html', ''], locker: ['hub.html', ''], dugout: ['staff-dugout.html', ''],
+    myStats: ['hub.html', ''], badges: ['hub.html', 'Medals'], profiles: ['players.html', ''], leaders: ['leaders.html', ''], hallOfFame: ['halloffame.html', ''], scouting: ['scouting.html', ''], trials: ['join.html', ''], statInsights: ['stats.html', ''], insightWidget: ['stats.html', ''], aiInsights: ['stats.html', ''], insights: ['staff-insights.html', ''],
+    builder: ['builds.html', ''], proBuilds: ['builds.html', ''], tactics: ['tactics.html', ''], gameRules: ['updates.html', ''], playStyle: ['playstyle.html', ''], nxStudio: ['studio.html', ''],
+    notifications: ['hub.html', 'Alerts'], push: ['hub.html', 'Alerts'], suggestions: ['hub-clubhouse.html', ''], docs: ['hub-handbook.html', ''], requests: ['join.html', ''], hub: ['hub-clubhouse.html', ''], hubLive: ['hub-clubhouse.html', ''], hubGold: ['hub-clubhouse.html', ''], awards: ['hub-squad.html', ''], predictions: ['hub-squad.html', ''], points: ['hub-squad.html', ''], feed: ['news.html', ''], hotw: ['hub-squad.html', ''], mentions: ['hub-clubhouse.html', ''], messages: ['hub-clubhouse.html', ''], presence: ['hub-clubhouse.html', ''], starRatings: ['hub-matchnight.html', ''], feedback: ['hub.html', ''], recommendations: ['hub-squad.html', ''], ask: ['stats.html', ''], scoutReport: ['scout.html', ''], rushSquads: ['rush.html', ''],
+    boardroom: ['staff-boardroom.html', ''], managerNotes: ['staff-desk.html', ''], roleSync: ['staff-tools.html', ''], platformLink: ['hub.html', ''], liveBanner: ['index.html', ''], burners: ['burners.html', ''], lineupRec: ['staff-dugout.html', ''], editGear: ['staff-tools.html', ''], staffNav: ['staff.html', ''], issueTool: ['index.html', ''], compareView: ['players.html', ''], cardStudio: ['staff-artwork.html', ''], avatarCard: ['hub.html', ''],
+  };
+  const go = (page, find) => page + (find ? `?nx=${encodeURIComponent('~' + find)}` : '');
+  const TOOLS = [
+    ['🏠 Site pages for staff', [['🧢 Dugout', 'Lineups and match plans', 'staff-dugout.html'], ['🗓️ Schedule', 'Match nights and RSVPs', 'staff-schedule.html'], ['📋 Desk', 'Trials, claims, notes', 'staff-desk.html'], ['🧰 Tools', 'Roles, gear, feedback', 'staff-tools.html'], ['📰 Content', 'News, docs, rules', 'staff-content.html'], ['🧠 Insights', 'Club Intelligence', 'staff-insights.html'], ['🎨 Artwork', 'Card Studio approvals', 'staff-artwork.html'], ['🧭 Staff home', 'Everything staff', 'staff.html']]],
+    ['🔗 Outside the site', [['💬 Discord server', 'Open the club server', 'https://discord.com/channels/1371311947894489299'], ['🤖 Discord bot', 'Developer portal for the bot', 'https://discord.com/developers/applications/1553967740543569970'], ['☁️ Cloudflare', 'Worker, KV, D1, analytics', 'https://dash.cloudflare.com/'], ['📺 YouTube', '@NorexUnitedFC', 'https://www.youtube.com/@NorexUnitedFC'], ['🎮 Twitch', 'norexunitedfc', 'https://www.twitch.tv/norexunitedfc'], ['📨 Apply link', 'The Discord invite for new players', 'https://discord.gg/ZsMqKcqwUq']]],
+    ['📊 The public site', [['🏆 Hall of Fame', 'As guests see it', 'halloffame.html'], ['⚽ Squad', 'Card stack', 'squad.html'], ['📈 Stats', 'League and Rush', 'stats.html'], ['🧩 Tactics', 'Formations and 3D pitch', 'tactics.html'], ['🔥 Burners', 'Unofficial clubs', 'burners.html'], ['🚪 Join', 'Recruitment page', 'join.html']]],
+  ];
+  const VIEWS = [['', '👑', 'Me (owner)', 'Everything I can see'], ['member', '🧑', 'Member', 'A signed-in club member'], ['guest', '👤', 'Guest', 'Someone not signed in']];
+
+  function tools() {
+    const q = S.filter.toLowerCase();
+    const card = ([n, sub, href]) => { const ext = /^https?:/.test(href); return `<a class="br-tool" href="${esc(href)}"${ext ? ' target="_blank" rel="noopener"' : ''}><b>${esc(n)}</b><small>${esc(sub)}</small><span aria-hidden="true">${ext ? '↗' : '→'}</span></a>`; };
+    const groups = TOOLS.map(([t, items]) => [t, items.filter((it) => !q || `${it[0]} ${it[1]}`.toLowerCase().includes(q))]).filter(([, it]) => it.length);
+    const jump = Object.keys(S.flags || {}).filter((k) => q && (k.toLowerCase().includes(q) || nice(k).toLowerCase().includes(q)) && WHERE[k]).slice(0, 8);
+    return `<div class="br-bar"><input type="search" class="br-in" data-filter placeholder="Find a tool or a feature…" value="${esc(S.filter)}" aria-label="Find a tool or feature"></div>
+${jump.length ? `<h4 class="dk-h">🎯 Features</h4><div class="br-tools">${jump.map((k) => card([nice(k), 'Go to where it lives', go(...WHERE[k])])).join('')}</div>` : ''}
+${groups.map(([t, it]) => `<h4 class="dk-h">${esc(t)}</h4><div class="br-tools">${it.map(card).join('')}</div>`).join('') || '<p class="muted small">Nothing matches.</p>'}
+<p class="muted small">Every feature switch also has its own <b>Go to</b> and <b>Show me</b> buttons under Switches.</p>`;
+  }
+  function showMe(k) {
+    const [pg, find] = WHERE[k] || ['index.html', '']; const dlg = d.createElement('div'); dlg.className = 'br-modal'; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-modal', 'true'); dlg.setAttribute('aria-label', `Show me ${nice(k)}`);
+    const cur = window.NorexAuth?.viewAs || '';
+    dlg.innerHTML = `<div class="br-sheet"><h4>Show me <b>${esc(nice(k))}</b> as…</h4><p class="muted small">Opens ${esc(pg.replace('.html', ''))}${find ? ` at “${esc(find)}”` : ''} and shows it the way that person sees the site. Display only: the server still treats you as the owner. A red bar on every page takes you back.</p>
+<div class="br-views">${VIEWS.map(([v, ic, n, sub]) => `<button type="button" data-v="${v}"${v === cur ? ' class="on"' : ''}><span aria-hidden="true">${ic}</span><b>${n}</b><small>${sub}</small></button>`).join('')}</div><button type="button" class="chip" data-x>Cancel</button></div>`;
+    const close = () => { dlg.remove(); d.removeEventListener('keydown', esc_); }; const esc_ = (e) => { if (e.key === 'Escape') close(); };
+    dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target.closest('[data-x]')) return close(); const b = e.target.closest('[data-v]'); if (!b) return; try { b.dataset.v ? localStorage.setItem('norex.viewas', b.dataset.v) : localStorage.removeItem('norex.viewas'); } catch {} location.href = go(pg, find); });
+    d.addEventListener('keydown', esc_); d.body.appendChild(dlg); dlg.querySelector('[data-v]').focus();
+  }
+
   // ---------- ① switches ----------
   function switches() {
     if (!S.flags) return S.err.flags ? empty('⚠️', 'Could not load the switches', S.err.flags) : skel;
@@ -48,12 +84,12 @@
     groups.forEach(([, ks]) => ks.forEach((k) => used.add(k)));
     const rest = all.filter((k) => !used.has(k)); if (rest.length) groups.push(['⚙️ Everything else', rest]);
     const row = (k) => {
-      const v = S.flags[k], over = committed[k] !== undefined && committed[k] !== v;
-      return `<div class="br-flag"><span class="br-name"><b>${esc(nice(k))}</b><code>${esc(k)}</code>${over ? `<span class="br-over">live override · committed: ${esc(committed[k])}</span>` : ''}</span>
+      const v = S.flags[k], over = committed[k] !== undefined && committed[k] !== v, w = WHERE[k];
+      return `<div class="br-flag" data-lvl="${esc(v)}"><span class="br-name"><b>${esc(nice(k))}</b><code>${esc(k)}</code>${over ? `<span class="br-over">live override · committed: ${esc(committed[k])}</span>` : ''}</span>
 <span class="br-seg" role="radiogroup" aria-label="${esc(k)}">${LEVELS.map((l) => `<button type="button" role="radio" aria-checked="${l === v}" class="${l === v ? 'on' : ''}" title="${esc(LVL_HELP[l])}" data-flag="${esc(k)}" data-level="${l}"${S.canEdit ? '' : ' disabled'}>${l[0].toUpperCase() + l.slice(1)}</button>`).join('')}</span>
-${over && S.canEdit ? `<button type="button" class="chip" data-reset="${esc(k)}">↺ Back to committed</button>` : ''}</div>`;
+<span class="br-acts">${w ? `<a class="chip" href="${esc(go(...w))}">↗ Go to</a><button type="button" class="chip" data-show="${esc(k)}">👁 Show me</button>` : ''}${over && S.canEdit ? `<button type="button" class="chip" data-reset="${esc(k)}">↺ Back to committed</button>` : ''}</span></div>`;
     };
-    const html = groups.map(([t, ks]) => { const hit = ks.filter((k) => !q || k.toLowerCase().includes(q) || nice(k).toLowerCase().includes(q)); return hit.length ? `<h4 class="dk-h">${esc(t)}</h4><div class="br-flags">${hit.map(row).join('')}</div>` : ''; }).join('');
+    const html = groups.map(([t, ks]) => { const hit = ks.filter((k) => !q || k.toLowerCase().includes(q) || nice(k).toLowerCase().includes(q)); if (!hit.length) return ''; const on = ks.filter((k) => S.flags[k] !== 'off').length; return `<details class="br-grp" data-g="${esc(t)}"${q || S.open.has(t) ? ' open' : ''}><summary><span>${esc(t)}</span><small>${hit.length} switch${hit.length === 1 ? '' : 'es'} · ${on} on</small></summary><div class="br-flags">${hit.map(row).join('')}</div></details>`; }).join('');
     const nOver = all.filter((k) => committed[k] !== undefined && committed[k] !== S.flags[k]).length;
     return `<div class="br-bar"><input type="search" class="br-in" data-filter placeholder="Find a feature…" value="${esc(S.filter)}" aria-label="Find a feature"><span class="muted small">${all.length} switches · ${nOver} live override${nOver === 1 ? '' : 's'}</span><button type="button" class="chip" data-undo${S.undo.length ? '' : ' disabled'}>↶ Undo${S.undo.length ? ` (${esc(S.undo[S.undo.length - 1].name)})` : ''}</button></div>
 ${S.canEdit ? '' : '<p class="muted small">Only the owner can change switches; you can see them.</p>'}
@@ -266,18 +302,19 @@ ${form}${aw}<div class="br-meds">${hit.map(medCard).join('') || '<p class="muted
   }
 
   // ---------- frame ----------
-  const TABS = [['switches', '🎛️ Switches'], ['health', '🩺 Health'], ['audit', '🛡️ Audit'], ['announce', '📣 Announce'], ['hof', '🏛️ Hall of Fame'], ['medals', '🏅 Medals'], ['backup', '💾 Backup']];
+  const TABS = [['tools', '🧰 Tools'], ['switches', '🎛️ Switches'], ['health', '🩺 Health'], ['audit', '🛡️ Audit'], ['announce', '📣 Announce'], ['hof', '🏛️ Hall of Fame'], ['medals', '🏅 Medals'], ['backup', '💾 Backup']];
   function paint() {
     if (!root.isConnected) return;
     const keep = d.activeElement?.matches?.('input[data-filter],input[data-aq],input[data-medq]') ? (d.activeElement.dataset.filter !== undefined ? 'data-filter' : d.activeElement.dataset.aq !== undefined ? 'data-aq' : 'data-medq') : null;
-    root.innerHTML = `<div class="chips dk-tabs">${TABS.map(([k, n]) => `<button class="chip${S.tab === k ? ' on' : ''}" data-tab="${k}">${n}</button>`).join('')}${S.tab === 'health' ? '<button class="chip" data-hrefresh>↻ Refresh</button>' : ''}</div><div class="dk-pane">${{ switches, health, audit, announce, hof, medals, backup }[S.tab]()}</div>`;
+    root.innerHTML = `<div class="chips dk-tabs">${TABS.map(([k, n]) => `<button class="chip${S.tab === k ? ' on' : ''}" data-tab="${k}">${n}</button>`).join('')}${S.tab === 'health' ? '<button class="chip" data-hrefresh>↻ Refresh</button>' : ''}</div><div class="dk-pane">${{ tools, switches, health, audit, announce, hof, medals, backup }[S.tab]()}</div>`;
     if (keep) { const i = root.querySelector(`[${keep}]`); if (i) { i.focus(); const n = i.value.length; i.setSelectionRange(n, n); } }
   }
   const openTab = (k) => { S.tab = k; paint(); if (k === 'health' && S.health === undefined) loadHealth(); if (k === 'announce') loadAnnounce(); if (k === 'hof') loadHof(); if (k === 'medals') loadMedals(); if (k === 'audit' && S.aud.sub === 'reports') loadReports(); };
 
   root.addEventListener('click', (ev) => {
     const t = ev.target.closest('button'); if (!t) return; const k = t.dataset;
-    if (k.tab) openTab(k.tab);
+    if (k.show) showMe(k.show);
+    else if (k.tab) openTab(k.tab);
     else if (k.flag) act(() => setFlag(k.flag, k.level));
     else if (k.reset) act(async () => { if (!confirm(`Drop the live override for “${nice(k.reset)}” and go back to the committed level (${committed[k.reset]})?`)) return; S.flags = (await call('/api/admin/flags/reset', { name: k.reset })).flags; toast(`${nice(k.reset)}: back to committed`); paint(); });
     else if ('undo' in k) act(async () => { const u = S.undo.pop(); if (u) await setFlag(u.name, u.level, true); });
@@ -307,6 +344,7 @@ ${form}${aw}<div class="br-meds">${hit.map(medCard).join('') || '<p class="muted
     else if (k.hofkind) { S.hofForm.kind = k.hofkind; paint(); }
     else if (k.hofdel) act(async () => { if (!confirm(`Remove “${k.name}” from the Hall of Fame? It is kept in the database but disappears from the site.`)) return; S.hof = await call('/api/hof/remove', { id: Number(k.hofdel) }); paint(); toast('Removed'); });
   });
+  root.addEventListener('toggle', (ev) => { const g = ev.target.closest?.('.br-grp'); if (!g || S.filter) return; g.open ? S.open.add(g.dataset.g) : S.open.delete(g.dataset.g); }, true);
   root.addEventListener('input', (ev) => {
     const t = ev.target;
     if (t.matches('[data-filter]')) { S.filter = t.value; paint(); }

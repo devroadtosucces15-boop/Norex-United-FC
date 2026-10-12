@@ -51,6 +51,23 @@
     let dks = $$('.dk', dk); const lay = () => dks.forEach((c, i) => { c.style.zIndex = 20 - i; c.style.transform = `translateY(${i * 12}px) scale(${1 - i * .05}) rotateZ(${i % 2 ? 1.5 : -1.5}deg)`; c.style.opacity = i > 3 ? 0 : 1; }); lay();
     dk.addEventListener('click', () => { const t = dks.shift(); t.style.transform = 'translateX(260px) rotateZ(22deg) translateY(-40px)'; t.style.opacity = 0; setTimeout(() => { dks.push(t); t.style.transition = 'none'; lay(); void t.offsetWidth; t.style.transition = ''; }, calm ? 0 : 450); lay(); });
   }
+  // Squad stack: pointer drag moves only the top card (transform written once per frame), neighbours are plain CSS transitions; a tap flips it.
+  function stack(st) {
+    const cards = $$('.sk', st), n = cards.length, stage = $('.stk-stage', st), num = $('.stk-n', st); let i = 0, x0 = 0, dx = 0, dragging = false, moved = false, raf = 0, t0 = 0;
+    const lay = () => { cards.forEach((c, k) => { const o = k - i; c.classList.toggle('far', o < -1 || o > 2); c.style.zIndex = 10 - Math.abs(o); if (o === 0) c.style.transform = ''; else c.style.transform = o < 0 ? 'translateX(-120%) rotate(-14deg)' : `translateY(${o * 14}px) scale(${1 - o * .06})`; c.style.opacity = o < 0 || o > 2 ? 0 : o === 0 ? 1 : 1 - o * .25; c.classList.toggle('on', k === i && c.classList.contains('on')); c.inert = k !== i; });
+      num.textContent = `${i + 1} / ${n}`; };
+    const go = (d) => { const j = Math.min(n - 1, Math.max(0, i + d)); if (j === i) return; cards[i].classList.remove('on'); i = j; lay(); };
+    const paint = () => { raf = 0; cards[i].style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`; };
+    stage.addEventListener('pointerdown', (e) => { if (e.target.closest('a,button')) return; dragging = true; moved = false; x0 = e.clientX; dx = 0; t0 = performance.now(); cards[i].style.transition = 'none'; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener('pointermove', (e) => { if (!dragging) return; dx = e.clientX - x0; if (Math.abs(dx) > 8) moved = true; if (moved && !raf) raf = requestAnimationFrame(paint); });
+    const end = () => { if (!dragging) return; dragging = false; const c = cards[i]; c.style.transition = ''; if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (!moved) { c.classList.toggle('on'); c.style.transform = ''; return; }
+      const fast = Math.abs(dx) / Math.max(1, performance.now() - t0) > .5; if (Math.abs(dx) > 70 || fast && Math.abs(dx) > 25) { const d = dx < 0 ? 1 : -1; if ((d > 0 && i < n - 1) || (d < 0 && i > 0)) { go(d); return; } } c.style.transform = ''; };
+    stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+    $('.stk-prev', st).onclick = () => go(-1); $('.stk-next', st).onclick = () => go(1);
+    st.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') { go(1); e.preventDefault(); } else if (e.key === 'ArrowLeft') { go(-1); e.preventDefault(); } else if (e.key === 'Enter' || e.key === ' ') { if (!e.target.closest('a,button')) { cards[i].classList.toggle('on'); e.preventDefault(); } } });
+    lay();
+  }
   function radar(el) {
     const R = J(el); if (!R) return; const cx = 150, cy = 150, r = 105, n = R.axes.length, col = ['#efcf7a', '#c8352c', '#6ac7ff'];
     const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [cx + Math.cos(a) * r * v, cy + Math.sin(a) * r * v]; };
@@ -79,7 +96,7 @@
   function flip(box, change) { if (calm) { change(); return; } const old = new Map([...box.children].map((c) => [c.dataset.key || c.id || c.textContent, c.getBoundingClientRect()])); change();
     [...box.children].forEach((c) => { const k = c.dataset.key || c.id || c.textContent, o = old.get(k), n = c.getBoundingClientRect(); if (!o) { c.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' }); return; } const dx = o.left - n.left, dy = o.top - n.top; if (dx || dy) c.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.2,.8,.2,1)' }); }); }
   function init(root = d) {
-    $$('[data-w=cover]', root).forEach((e) => once(e) && coverflow(e)); $$('[data-w=reel]', root).forEach((e) => once(e) && reel(e)); $$('[data-w=tl]', root).forEach((e) => once(e) && timeline(e)); $$('[data-w=deck]', root).forEach((e) => once(e) && deck(e));
+    $$('[data-w=cover]', root).forEach((e) => once(e) && coverflow(e)); $$('[data-w=reel]', root).forEach((e) => once(e) && reel(e)); $$('[data-w=tl]', root).forEach((e) => once(e) && timeline(e)); $$('[data-w=deck]', root).forEach((e) => once(e) && deck(e)); $$('[data-w=stack]', root).forEach((e) => once(e) && stack(e));
     $$('[data-w=radar]', root).forEach((e) => once(e) && radar(e)); $$('[data-w=form]', root).forEach((e) => once(e) && form(e)); $$('[data-w=race]', root).forEach((e) => once(e) && race(e)); $$('[data-w=digits]', root).forEach((e) => once(e) && digits(e));
     $$('.wx .cnt', root).forEach((e) => once(e) && count(e));
     $$('.wx .ccol i[data-h]', root).forEach((e) => once(e) && e.addEventListener('click', () => (location.href = e.dataset.h)));

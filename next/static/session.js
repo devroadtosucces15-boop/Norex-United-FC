@@ -13,8 +13,8 @@
   if (!session) ls.set(KEY, null);
   const role = session ? (session.role ?? (session.adm ? 'manager' : 'member')) : 'guest';
   const realAs = role === 'guest' ? 'guest' : role === 'manager' || role === 'owner' ? 'owner' : 'member'; // the page's two member tiers; the server enforces the real rules
-  // 👁️ "Preview as" (#53): the owner can look at the site as a member (menu, gated blocks). Display only – the server still sees the owner.
-  const viewAs = realAs === 'owner' && ls.get('norex.viewas') === 'member' ? 'member' : '';
+  // 👁️ "Preview as" (#53): the owner can look at the site as a member or a guest (menu, gated blocks). Display only – the server still sees the owner.
+  const viewAs = realAs === 'owner' && ['member', 'guest'].includes(ls.get('norex.viewas')) ? ls.get('norex.viewas') : '';
   const as = viewAs || realAs;
   const loginUrl = () => `${API}/auth/login?return=${encodeURIComponent(location.href.split('#')[0])}`;
   const logout = () => { ls.set(KEY, null); ss.set('nx.me', null); location.href = 'index.html'; };

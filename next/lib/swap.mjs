@@ -25,7 +25,7 @@ export const swSource = () => `// Service worker: Web Push receiver + offline ca
 const V = 'nx-v2';
 const PAGES = V + '-pages';
 const MEDIA = V + '-media';
-const PRECACHE = ['offline.html', 'index.html', 'style.css', 'app.js', 'crest-sm.png', 'crest.png'];
+const PRECACHE = ['offline.html', 'index.html', 'style.css', 'app.js', 'crest-sm.png', 'crest.png', 'icon-192.png'];
 const MAX = { [PAGES]: 60, [MEDIA]: 120 };
 
 self.addEventListener('install', (e) => {
