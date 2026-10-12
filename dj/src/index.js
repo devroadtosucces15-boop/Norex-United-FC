@@ -178,6 +178,7 @@ main.client.on('interactionCreate', async (i) => {
   }
 });
 
+const mayRun = (i, id) => isManager(i.member) || rooms.info(id)?.ownerId === i.user.id;
 const fresh = (m) => ({ components: m.components, files: m.files, flags: MessageFlags.IsComponentsV2 });
 async function roomCommand(i) {
   const sub = i.options.getSubcommand();
@@ -188,11 +189,12 @@ async function roomCommand(i) {
     try {
       const vc = await rooms.create(i.guild, i.member, i.options.getString('name'));
       const r = rooms.info(vc.id);
-      await i.editReply(fresh(rooms.dialog(vc, r.code, r.name, i.member.displayName)));
+      await i.editReply(fresh(rooms.dialog(vc, r)));
       const msg = await i.fetchReply();
       rooms.remember(vc.id, msg.channelId, msg.id);
       return;
     } catch (e) {
+      if (e.message === 'FULL') return i.editReply(fresh(small(`All ${rooms.maxRooms} rooms are open`, 'Join one that is open, or wait for one to close.')));
       console.error('room create', e.message);
       return i.editReply(fresh(small('Could not open a room', 'Ask a manager to give Norex DJ Manage Channels, then try again.')));
     }
@@ -202,6 +204,12 @@ async function roomCommand(i) {
   if (sub === 'status') {
     await rooms.setStatus(here, i.options.getString('text') || '').catch(() => {});
     return i.reply(v2panel({ color: 'steel', title: 'Status updated', detail: i.options.getString('text') || 'Status cleared', picture: false, ephemeral: true }));
+  }
+  if (['lock', 'unlock', 'limit'].includes(sub)) {
+    if (!mayRun(i, here)) return i.reply(small('Only the host or a manager can do that', 'Ask them, or open your own room with /room create.'));
+    if (sub === 'limit') { const n = i.options.getInteger('people'); await rooms.setLimit(i.guild, here, n); return i.reply(v2panel({ color: 'steel', title: n ? `Limit set to ${n}` : 'Limit removed', picture: false, ephemeral: true })); }
+    await rooms.setLocked(i.guild, here, sub === 'lock');
+    return i.reply(v2panel({ color: 'steel', title: sub === 'lock' ? 'Room locked' : 'Room unlocked', detail: sub === 'lock' ? 'Only you and managers can join now' : 'Anyone can join again', picture: false, ephemeral: true }));
   }
   if (sub === 'close') {
     if (!isManager(i.member) && rooms.info(here).ownerId !== i.user.id) return i.reply(small('Only the host or a manager can close this room', 'Ask them, or leave and it closes when empty.'));
@@ -214,7 +222,10 @@ async function roomComponent(i) {
   const r = rooms.info(id);
   if (!r) return i.reply(small('That room is gone', 'Open a new one with /room create.'));
   if (action === 'move') {
-    if (!i.member.voice?.channelId) return i.reply(small('Join any voice channel first', 'Then tap Move me in again, or use Open room.'));
+    if (r.locked && !mayRun(i, id)) return i.reply(small('This room is locked', 'Only the host and managers can join. Ask the host to unlock it.'));
+    const vcNow = await i.guild.channels.fetch(id).catch(() => null);
+    if (r.limit && vcNow && vcNow.members.size >= r.limit && !isManager(i.member)) return i.reply(small('This room is full', `The host set a limit of ${r.limit}. Try again in a bit.`));
+    if (!i.member.voice?.channelId) return i.reply(small('Join any voice channel first', 'Then tap Join room again, or use Open room.'));
     await i.member.voice.setChannel(id).catch(() => null);
     return i.reply(v2panel({ color: 'green', eyebrow: 'Rooms', title: 'You are in', detail: `${r.code} · ${r.name}`, picture: false, ephemeral: true, body: ['Enjoy the room. Type `/play` in its chat for music.'] }));
   }
@@ -225,6 +236,11 @@ async function roomComponent(i) {
   if (action === 'statusmodal') {
     await rooms.setStatus(id, i.fields.getTextInputValue('text')).catch(() => {});
     return i.reply(v2panel({ color: 'steel', title: 'Status updated', detail: i.fields.getTextInputValue('text') || 'Status cleared', picture: false, ephemeral: true }));
+  }
+  if (action === 'lock') {
+    if (!mayRun(i, id)) return i.reply(small('Only the host or a manager can do that', 'Ask them to lock or unlock the room.'));
+    await i.deferUpdate();
+    return rooms.setLocked(i.guild, id, !r.locked);
   }
   if (action === 'close') {
     if (!isManager(i.member) && r.ownerId !== i.user.id) return i.reply(small('Only the host or a manager can close this room', 'Ask them, or leave and it closes when empty.'));
