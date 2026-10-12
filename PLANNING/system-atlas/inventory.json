@@ -1,7 +1,7 @@
 {
-  "revision": "2e8e267f3d2d2d512f995c01c58e58598747b480",
-  "files": 713,
-  "imports": 435,
+  "revision": "97f7609cd7926a9000d731230bf61529e2b971b3",
+  "files": 719,
+  "imports": 436,
   "api_paths": 230,
   "tables": 277,
   "records": [
@@ -63,7 +63,7 @@
     {
       "path": ".github/workflows/update.yml",
       "layer": ".github",
-      "lines": 110,
+      "lines": 113,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -3173,7 +3173,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 118,
+      "lines": 119,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4563,7 +4563,7 @@
     {
       "path": "data/clubs/80869.json",
       "layer": "data",
-      "lines": 1837,
+      "lines": 1884,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -7092,6 +7092,51 @@
       "functions": []
     },
     {
+      "path": "data/matches/93090826200454.json",
+      "layer": "data",
+      "lines": 649,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/93210626360040.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/93244410890384.json",
+      "layer": "data",
+      "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/93296523710098.json",
+      "layer": "data",
+      "lines": 838,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/93502190850339.json",
+      "layer": "data",
+      "lines": 505,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/meta.json",
       "layer": "data",
       "lines": 5,
@@ -9116,7 +9161,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 186,
+      "lines": 214,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9131,12 +9176,25 @@
         "/api/admin/flags",
         "/api/admin/flags/reset",
         "/api/admin/medals",
+        "/api/admin/member/",
+        "/api/admin/mute",
         "/api/admin/overview",
+        "/api/admin/reports",
+        "/api/admin/requests/decide",
+        "/api/admin/submissions",
+        "/api/admin/warn",
         "/api/avatarcard",
         "/api/awards",
+        "/api/awards/category",
+        "/api/awards/category/remove",
+        "/api/awards/close",
+        "/api/awards/settings",
         "/api/awards/vote",
         "/api/badges",
         "/api/badges/remove",
+        "/api/bot/commands",
+        "/api/bot/commands/sync",
+        "/api/bot/settings",
         "/api/builds",
         "/api/builds/delete",
         "/api/builds/fork",
@@ -9153,15 +9211,23 @@
         "/api/cards/requests/review",
         "/api/cards/templates",
         "/api/cards/templates/update",
+        "/api/chats/reports/",
         "/api/contacts",
         "/api/docs",
         "/api/docs/ack",
+        "/api/events/cancel",
         "/api/feed/comment",
+        "/api/feed/delete",
         "/api/feed/pin",
         "/api/feed/post",
         "/api/feed/public",
         "/api/feed/react",
         "/api/feed/setpublic",
+        "/api/feed/unreport",
+        "/api/feedback/hide",
+        "/api/game/admin",
+        "/api/game/dismiss",
+        "/api/game/publish",
         "/api/hof/remove",
         "/api/intel",
         "/api/intel/act",
@@ -9194,7 +9260,9 @@
         "/api/rush/",
         "/api/scout",
         "/api/squads",
+        "/api/squads/delete",
         "/api/squads/prefs",
+        "/api/squads/save",
         "/api/suggestions",
         "/api/suggestions/vote",
         "/api/trials",
@@ -9213,6 +9281,7 @@
       "functions": [
         "compareHtml",
         "fitInto",
+        "pr",
         "read"
       ]
     },
@@ -9532,6 +9601,24 @@
       ],
       "endpoints": [],
       "tables": [],
+      "functions": []
+    },
+    {
+      "path": "tests/redirects.test.mjs",
+      "layer": "tests",
+      "lines": 36,
+      "imports": [
+        "./lib.mjs",
+        "../next/lib/redirects.mjs",
+        "../next/lib/redirects.mjs",
+        "node:fs",
+        "node:os",
+        "node:path"
+      ],
+      "endpoints": [],
+      "tables": [
+        "the"
+      ],
       "functions": []
     },
     {
@@ -14085,6 +14172,11 @@
     {
       "source": "tests/rankings.test.mjs",
       "target": "scripts/rankings.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/redirects.test.mjs",
+      "target": "tests/lib.mjs",
       "kind": "imports"
     },
     {
