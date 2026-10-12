@@ -8,7 +8,8 @@ import { err, ok, fmt, nowPlaying } from './ui.js';
 const env = process.env;
 const lavalink = { host: env.LAVALINK_HOST || 'lavalink:2333', password: env.LAVALINK_PASSWORD };
 const managerRoles = (env.MANAGER_ROLE_IDS || '').split(',').filter(Boolean);
-const tokens = [env.MAIN_TOKEN, ...(env.HELPER_TOKENS || '').split(',').map((s) => s.trim()).filter(Boolean)];
+const MAX_ROOMS = 5; // main app + 4 helpers
+const tokens = [env.MAIN_TOKEN, ...(env.HELPER_TOKENS || '').split(',').map((s) => s.trim()).filter(Boolean)].slice(0, MAX_ROOMS);
 if (!tokens[0]) throw new Error('MAIN_TOKEN is required');
 
 const helpers = tokens.map((t, i) => new Helper(i === 0 ? 'Norex DJ' : `DJ ${i}`, t, lavalink));
