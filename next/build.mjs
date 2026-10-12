@@ -16,6 +16,6 @@ fs.writeFileSync(path.join(out, 'manifest.webmanifest'), JSON.stringify({ id: 'n
 // the builder's offline seed: the newest game-rules dataset (builds.js asks the Worker's GET /api/game first, which has any version a manager published since)
 fs.writeFileSync(path.join(out, 'game.json'), JSON.stringify((await import('./lib/data.mjs')).game));
 let n = 0; const P = (f, h) => { W(f, h); n++; };
-const mods = ['club', 'matches', 'stats', 'tactics', 'hub', 'lookbook', 'canvas'];
+const mods = ['club', 'matches', 'rush', 'stats', 'tactics', 'hub', 'lookbook', 'canvas'];
 for (const m of mods) { const file = path.join(here, 'pages', m + '.mjs'); if (!fs.existsSync(file)) continue; const mod = await import('./pages/' + m + '.mjs'); await mod.default?.(P) ; }
 console.log(`built ${n} pages · ${players.length} players · ${matches.length} matches`);
