@@ -4,12 +4,12 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import { Shoukaku, Connectors } from 'shoukaku';
 
 export class Helper {
-  constructor(name, token, lavalink) {
+  constructor(name, token, lavalink, { messages = false } = {}) {
     this.name = name; this.token = token; this.rooms = new Map(); // guildId -> Room
-    this.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
+    this.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, ...(messages ? [GatewayIntentBits.GuildMessages] : [])] });
     this.shoukaku = new Shoukaku(new Connectors.DiscordJS(this.client),
       [{ name: 'main', url: lavalink.host, auth: lavalink.password }],
-      { moveOnDisconnect: false, resume: true, resumeTimeout: 30, reconnectTries: 10 });
+      { moveOnDisconnect: false, resume: true, resumeTimeout: 30, reconnectTries: 1000, reconnectInterval: 5 });
     this.shoukaku.on('error', (n, e) => console.error(`[${name}] lavalink`, e.message));
     this.client.on('error', (e) => console.error(`[${name}]`, e.message));
   }

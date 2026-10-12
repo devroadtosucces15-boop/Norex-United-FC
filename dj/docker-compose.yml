@@ -8,13 +8,13 @@ services:
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET:-}
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml
-      - lavalink-plugins:/opt/Lavalink/plugins
+      - ./lavalink/plugins:/opt/Lavalink/plugins
   bot:
     build: .
     restart: unless-stopped
     env_file: .env
     environment:
       - LAVALINK_HOST=lavalink:2333
+    volumes:
+      - ./data:/app/data
     depends_on: [lavalink]
-volumes:
-  lavalink-plugins:

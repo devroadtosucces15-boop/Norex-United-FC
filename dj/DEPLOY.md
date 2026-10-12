@@ -25,3 +25,8 @@
 - Spotify links need `SPOTIFY_CLIENT_ID/SECRET` (free, developer.spotify.com) in `.env`; without them SoundCloud/YouTube/search still work.
 - YouTube playback breaks every few months (plugin update fixes it); SoundCloud is tried first.
 - Not yet built: Components V2 panels, drawn Now Playing card, site playlists API, `/hype`, `/lyrics`, `/myplaylist`.
+
+## Maintenance (automatic)
+`maintain.sh` runs daily at 04:00 on the VM (cron). It updates the YouTube plugin when a newer release exists, checks that YouTube
+loads, rolls back if the update broke it, and writes `data/report.json`. The bot DMs `ALERT_USER_ID` when the status changes.
+Spotify keys: `./set-secret.sh SPOTIFY_CLIENT_ID` and `./set-secret.sh SPOTIFY_CLIENT_SECRET` (hidden prompt, writes `.env`).
