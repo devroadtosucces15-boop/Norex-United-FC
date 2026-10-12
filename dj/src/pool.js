@@ -3,13 +3,20 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import { Shoukaku, Connectors } from 'shoukaku';
 
+const nodes = (l) => [
+  { name: 'main', url: l.host, auth: l.password },
+  ...(process.env.HOME_LAVALINK_HOST ? [{ name: 'home', url: process.env.HOME_LAVALINK_HOST, auth: process.env.HOME_LAVALINK_PASSWORD }] : [])
+];
+
 export class Helper {
   constructor(name, token, lavalink, { messages = false } = {}) {
     this.name = name; this.token = token; this.rooms = new Map(); // guildId -> Room
     this.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, ...(messages ? [GatewayIntentBits.GuildMessages] : [])] });
     this.shoukaku = new Shoukaku(new Connectors.DiscordJS(this.client),
-      [{ name: 'main', url: lavalink.host, auth: lavalink.password }],
-      { moveOnDisconnect: false, resume: true, resumeTimeout: 30, reconnectTries: 1000, reconnectInterval: 5 });
+      nodes(lavalink),
+      { moveOnDisconnect: true, resume: true, resumeTimeout: 30, reconnectTries: 1000, reconnectInterval: 5,
+        // The home PC node ("home") is preferred whenever it is connected; the VM node ("main") is the fallback.
+        nodeResolver: (all) => { const h = all.get('home'); return h?.state === 1 ? h : [...all.values()].filter((n) => n.state === 1).sort((a, b) => a.penalties - b.penalties)[0]; } });
     this.shoukaku.on('error', (n, e) => console.error(`[${name}] lavalink`, e.message));
     this.client.on('error', (e) => console.error(`[${name}]`, e.message));
   }
