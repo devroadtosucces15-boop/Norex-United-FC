@@ -48,7 +48,7 @@
     const snooze = +(ls.get('norex.install') || 0); if (ls.get('norex.install') === 'done' || Date.now() < snooze || views < 2) return;
     if (!deferred && !(ios && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent))) return;
     const b = d.createElement('div'); b.id = 'nx-inst'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Install the NOREX app');
-    b.innerHTML = `<img src="crest.png" alt="" width="40" height="40"><div><b>📲 Get the NOREX app</b><span>${deferred ? 'One tap, opens full screen, no app store.' : 'Tap <b>Share</b> <span aria-hidden="true">⎋</span> then <b>Add to Home Screen</b>.'}</span></div>${deferred ? '<button type="button" class="btn gold" data-i>Install</button>' : ''}<button type="button" class="x" aria-label="Not now">✕</button>`;
+    b.innerHTML = `<img src="crest-sm.png" alt="" width="40" height="40"><div><b>📲 Get the NOREX app</b><span>${deferred ? 'One tap, opens full screen, no app store.' : 'Tap <b>Share</b> <span aria-hidden="true">⎋</span> then <b>Add to Home Screen</b>.'}</span></div>${deferred ? '<button type="button" class="btn gold" data-i>Install</button>' : ''}<button type="button" class="x" aria-label="Not now">✕</button>`;
     d.body.appendChild(b);
     b.querySelector('[data-i]')?.addEventListener('click', async () => { deferred.prompt(); const r = await deferred.userChoice.catch(() => null); deferred = null; b.remove(); if (r?.outcome === 'accepted') ls.set('norex.install', 'done'); });
     b.querySelector('.x').addEventListener('click', () => { ls.set('norex.install', Date.now() + 14 * 864e5); b.classList.add('out'); setTimeout(() => b.remove(), 300); });

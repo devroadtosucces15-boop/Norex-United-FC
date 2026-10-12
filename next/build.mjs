@@ -18,7 +18,7 @@ fs.writeFileSync(path.join(out, 'game.json'), JSON.stringify((await import('./li
 // Phase E post-pass on every page: one h1 per page (the page's first heading becomes level 1 for assistive tech, no visual change), a small crest for the 22–86 px logo spots instead of the 180 KB original
 const finalize = (h) => {
   if (!/<h1[ >]/.test(h)) h = h.replace(/(<main id="main">[\s\S]*?)<(h[23])(?![^>]*aria-level)/, '$1<$2 aria-level="1"');
-  return h.replace(/<img([^>]*?) src="crest\.png"/g, '<img$1 src="crest-sm.png"');
+  return h.replace(/<img([^>]*?) src="crest\.png"/g, '<img$1 src="crest-sm.png"').replace('<link rel="icon" href="crest.png">', '<link rel="icon" href="crest-sm.png">');
 };
 let n = 0; const P = (f, h) => { W(f, finalize(h)); n++; };
 const mods = ['club', 'matches', 'rush', 'stats', 'tactics', 'hub', 'lookbook', 'canvas'];

@@ -57,7 +57,7 @@
   // and the images on screen are decoded, then the cover fades and the page settles into place). Calm = short fade, Off = none.
   const E = 'cubic-bezier(.2,.8,.2,1)', EIO = 'cubic-bezier(.65,0,.35,1)';
   const mmode = () => (window.NorexMotion ? NorexMotion.mode : (RM || still ? 'calm' : 'full'));
-  const crestHTML = '<img class="fxc" src="crest.png" alt="" style="position:absolute;left:50%;top:50%;width:min(120px,26vw);translate:-50% -50%;filter:drop-shadow(0 0 26px rgba(239,207,122,.75))">';
+  const crestHTML = '<img class="fxc" src="crest-sm.png" alt="" style="position:absolute;left:50%;top:50%;width:min(120px,26vw);translate:-50% -50%;filter:drop-shadow(0 0 26px rgba(239,207,122,.75))">';
   let tov = null, busy = false;
   const ov = () => tov || (tov = (() => { const e = d.createElement('div'); e.id = 'fxov'; e.setAttribute('aria-hidden', 'true'); d.body.appendChild(e); return e; })());
   const mk = (css, html = '', parent = ov()) => { const e = d.createElement('div'); Object.assign(e.style, { position: 'absolute', willChange: 'transform,opacity' }, css); e.innerHTML = html; parent.appendChild(e); return e; };

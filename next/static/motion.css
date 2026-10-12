@@ -320,6 +320,11 @@ main{min-height:calc(100dvh - 240px)}
 #xiPitch:empty{min-height:600px}@media(max-width:820px){#xiPitch:empty{min-height:550px}}
 .wx .spot:focus-visible,[tabindex="0"][role="region"]:focus-visible{outline:2px solid #efcf7a;outline-offset:-3px;border-radius:14px}
 /* AA contrast for white text on the rating / result colours, and 24px+ hit areas on the carousel dots */
-html em.hi,html .rt.hi,.wx .s-motm em.hi{background:#157a3f}html em.mid,html .rt.mid,.wx .s-motm em.mid{background:#8a6a1c}
-.wx .s-res{background:linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.42)),var(--rc)}
+html em.hi,html .rt.hi,.wx .s-motm em.hi{background:#0f6a36}html em.mid,html .rt.mid,.wx .s-motm em.mid{background:#7a5b12}
+.wx .s-res{background:linear-gradient(rgba(0,0,0,.62),rgba(0,0,0,.62)),var(--rc)}
 .sdot{position:relative}.sdot::after{content:"";position:absolute;inset:-9px -4px}
+
+/* Phase E (browser audit): comfortable tap area for small round/letter controls without changing how they look */
+.wx .sdot,.dot,button.cmpbtn,.fx-orb .ob{position:relative}
+.wx .sdot::after,.dot::after{content:"";position:absolute;inset:-8px}
+@media(pointer:coarse){a.fo,a.gdb,.hubk{min-height:32px;display:inline-flex;align-items:center}}

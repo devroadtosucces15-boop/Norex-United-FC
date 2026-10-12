@@ -3,7 +3,7 @@
 .fx-busy #fxov{pointer-events:auto}
 html[data-tin]:before,html[data-tin]:after{content:"";position:fixed;inset:0;z-index:9989;pointer-events:none}
 html[data-tin]:before{background:#0b0f16}
-html[data-tin]:after{z-index:9990;background:url(crest.png) center/min(120px,26vw) no-repeat;filter:drop-shadow(0 0 26px rgba(239,207,122,.75))}
+html[data-tin]:after{z-index:9990;background:url(crest-sm.png) center/min(120px,26vw) no-repeat;filter:drop-shadow(0 0 26px rgba(239,207,122,.75))}
 html[data-tin=ribbon]:before{background:linear-gradient(100deg,#7e1d17 0%,#c8352c 55%,#d9473d 80%,#efcf7a 92%,#fff3c9 100%)}
 html[data-tin=flood]:before{background:radial-gradient(120% 80% at 50% 0%,#18233a 0%,#070a10 60%)}
 html[data-tin=sweep]:before{background:repeating-linear-gradient(90deg,#c8352c 0 12.5%,#d4a74e 12.5% 25%)}

@@ -167,4 +167,6 @@
   // ================= shared-element morph: card -> profile =================
   d.addEventListener('click', (e) => { const a = e.target.closest('a.pc-card'); if (a) { $$('[style*="view-transition-name"]').forEach((x) => (x.style.viewTransitionName = '')); a.style.viewTransitionName = 'pcard'; } }, true);
   addEventListener('pageshow', (e) => { if (e.persisted) $$('[style*="view-transition-name"]').forEach((x) => (x.style.viewTransitionName = '')); });
+  // E1: a keyboard user tabbing into a clipped scroll strip (form pills, calendar dots, rating chips) must see what has focus
+  d.addEventListener('focusin', (e) => { const t = e.target; if (!t || !t.matches || !t.matches(':focus-visible') || !t.getBoundingClientRect) return; const r = t.getBoundingClientRect(); if (r.width && (r.right > innerWidth || r.left < 0)) t.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
 })();
