@@ -25,7 +25,10 @@ export class Helper {
     this.watch = setInterval(() => {
       for (const [id, n] of this.shoukaku.nodes) {
         if (this.last.get(id) !== n.state) { this.last.set(id, n.state); console.log(`[${name}] node ${id} ${['connecting', 'connected', 'disconnecting', 'disconnected'][n.state]}`); }
+        // Down for 3 ticks in a row (60 s), including a handshake that never finishes: reset it and connect again.
+        this.down ??= new Map(); const d = n.state === 1 ? 0 : (this.down.get(id) || 0) + 1; this.down.set(id, d);
         if (n.state === 3) { try { n.connect(); } catch {} }
+        else if (d >= 3) { this.down.set(id, 0); try { n.disconnect(1000, 'watchdog'); setTimeout(() => { try { n.connect(); } catch {} }, 2000); } catch {} }
       }
     }, 20_000);
   }
