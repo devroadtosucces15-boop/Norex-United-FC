@@ -1,3 +1,4 @@
+import { keyOf } from './playlists.js';
 // Suggestions based on what this session has played: YouTube's "mix" for a recent song, then more from the same artist.
 const norm = (s = '') => s.toLowerCase().replace(/\(.*?\)|\[.*?\]|official|video|audio|lyrics|hd|ft\..*|feat\..*/g, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 export const titleKey = (info) => norm(info.title);
@@ -8,11 +9,11 @@ export async function suggest(room, count = 5) {
   const seed = pool[Math.floor(Math.random() * pool.length)];
   if (!seed || !node) return [];
   const seen = new Set([...room.history, ...(room.current ? [room.current.info] : []), ...room.queue.map((t) => t.info)].map(titleKey));
-  const out = [];
+  const out = []; const bad = room.dislikedKeys?.() || new Set();
   const take = (tracks) => {
     for (const t of tracks) {
       const k = titleKey(t.info);
-      if (!k || seen.has(k) || t.info.isStream || t.info.length > 12 * 60_000 || t.info.length < 60_000) continue;
+      if (!k || bad.has(keyOf(t.info)) || seen.has(k) || t.info.isStream || t.info.length > 12 * 60_000 || t.info.length < 60_000) continue;
       seen.add(k); out.push(t); if (out.length >= count) return true;
     }
     return false;

@@ -4,6 +4,8 @@ import { compose } from './effects.js';
 import { suggest } from './autoplay.js';
 import { store } from './store.js';
 import { findEquivalent } from './match.js';
+import { materialize } from './resolve.js';
+import { dislikedKeys } from './playlists.js';
 
 export class Room {
   constructor({ helper, binding, onChange, onDestroy, notify }) {
@@ -13,6 +15,11 @@ export class Room {
     this.queue = []; this.current = null; this.history = []; this.votes = new Set(); this.player = null; this.dead = false;
   }
   changed() { this.onChange?.(this); }
+  memberIds() {
+    const ch = this.helper.client.guilds.cache.get(this.guildId)?.channels.cache.get(this.channelId);
+    return ch ? [...ch.members.filter((m) => !m.user.bot).keys()] : [];
+  }
+  dislikedKeys() { return dislikedKeys(this.memberIds()); }
   async join() {
     this.player = await this.helper.shoukaku.joinVoiceChannel({ guildId: this.guildId, channelId: this.channelId, shardId: 0, deaf: true });
     await this.player.setGlobalVolume(this.settings.volume);
@@ -39,12 +46,13 @@ export class Room {
     }
     if (!this.queue.length && this.settings.autoplay) await this.fill();
     this.current = this.queue.shift() || null;
-    // Spotify-sourced queue entries (playlists/albums) are matched to YouTube/SoundCloud only now, one at a time.
-    while (this.current?.info.sourceName === 'spotify') {
+    // Stored playlist songs and Spotify entries are matched to a real recording only now, one at a time.
+    while (this.current && (this.current.deferred || this.current.info.sourceName === 'spotify')) {
       const want = this.current;
-      const m = await findEquivalent(this.helper.shoukaku.getIdealNode(), want.info);
+      const node = this.helper.shoukaku.getIdealNode();
+      const m = want.deferred ? await materialize(node, want.deferred) : await findEquivalent(node, want.info);
       if (m) { m.info = { ...m.info, artworkUrl: m.info.artworkUrl || want.info.artworkUrl }; m.auto = want.auto; this.current = m; break; }
-      this.notify?.(this, `No exact match found for **${want.info.title}** (${want.info.author}), skipped.`);
+      this.notify?.(this, `No exact match found for **${want.info.title}**${want.info.author ? ` (${want.info.author})` : ''}, skipped.`);
       this.current = this.queue.shift() || null;
     }
     if (!this.current) { clearTimeout(this.idleTimer); this.idleTimer = setTimeout(() => this.destroy(), 120_000); this.changed(); return; }

@@ -37,6 +37,7 @@ export async function resolve(node, query, source = 'auto') {
   for (const id of order) {
     let r;
     try { r = shape(await node.rest.resolve(id)); } catch (e) { lastError = e.message; continue; }
+    if (r?.error) { await new Promise((res) => setTimeout(res, 700)); try { r = shape(await node.rest.resolve(id)); } catch (e) { lastError = e.message; continue; } } // one retry: Spotify and YouTube sometimes blip
     if (!r) continue;
     if (r.error) { lastError = r.error; if (id.startsWith('spsearch:')) spotifyDownUntil = Date.now() + 600_000; continue; }
     // A single Spotify song: find the exact same recording elsewhere now, so the user hears right away if there is none.
@@ -58,4 +59,13 @@ export async function resolve(node, query, source = 'auto') {
   }
   if (lastError && order.length === 1) throw new Error(lastError);
   return null;
+}
+
+// A song stored in a playlist (or queued from a Spotify list): turn it into something playable, matching the exact recording.
+export async function materialize(node, item) {
+  if (item.uri && item.source !== 'spotify' && item.sourceName !== 'spotify') {
+    const r = await resolve(node, item.uri).catch(() => null);
+    if (r?.tracks?.[0]) return r.tracks[0];
+  }
+  return findEquivalent(node, { title: item.title, author: item.author, length: item.length });
 }

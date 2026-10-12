@@ -37,7 +37,7 @@ export function panelPayload(b) {
       btn('pause', room.player?.paused ? '▶ Play' : '⏸ Pause', ButtonStyle.Primary), btn('skip', '⏭ Skip'), btn('stop', '⏹ Stop', ButtonStyle.Danger),
       btn('shuffle', '🔀 Shuffle'), btn('loop', LOOP[s.loop].slice(0, 2) + ' Loop')),
     new ActionRowBuilder().addComponents(
-      btn('vdown', '🔉 −10'), btn('vup', '🔊 +10'), btn('auto', `🔮 Autoplay ${s.autoplay ? 'on' : 'off'}`, s.autoplay ? ButtonStyle.Success : ButtonStyle.Secondary), btn('fxreset', '↺ Reset effects')),
+      btn('vdown', '🔉 −10'), btn('vup', '🔊 +10'), btn('auto', `🔮 Autoplay ${s.autoplay ? 'on' : 'off'}`, s.autoplay ? ButtonStyle.Success : ButtonStyle.Secondary), btn('like', '❤ Like'), btn('dislike', '👎')),
     new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('dj:fx').setPlaceholder('🎚 Effects — pick any to turn on').setMinValues(0).setMaxValues(EFFECT_NAMES.length)
       .addOptions(EFFECT_NAMES.map((n) => ({ label: EFFECTS[n].label, value: n, emoji: EFFECTS[n].emoji, description: `${EFFECTS[n].blurb} · level ${effectState(s, n).level}`, default: Boolean(s.effects?.[n]?.on) }))))
   ];

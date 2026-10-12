@@ -13,6 +13,23 @@ export const DEFS = [
     .addSubcommand((c) => c.setName('unlock').setDescription('Let anyone join this room again'))
     .addSubcommand((c) => c.setName('limit').setDescription('Set how many people can be in the room').addIntegerOption((o) => o.setName('people').setDescription('0 = no limit').setRequired(true).setMinValue(0).setMaxValue(99)))
     .addSubcommand((c) => c.setName('close').setDescription('Close your room now')),
+  (() => {
+    const name = (o, d = 'Playlist name') => o.setName('name').setDescription(d).setRequired(true).setAutocomplete(true).setMaxLength(40);
+    const user = (o) => o.setName('user').setDescription("Another member's playlist (leave empty for yours)");
+    return new SlashCommandBuilder().setName('playlist').setDescription('Your playlists: build, import, edit, export and play them')
+      .addSubcommand((c) => c.setName('create').setDescription('Make a new playlist').addStringOption((o) => o.setName('name').setDescription('Playlist name').setRequired(true).setMaxLength(40)))
+      .addSubcommand((c) => c.setName('list').setDescription('Show playlists').addUserOption(user))
+      .addSubcommand((c) => c.setName('view').setDescription('See what is in a playlist').addStringOption((o) => name(o)).addUserOption(user).addIntegerOption((o) => o.setName('page').setDescription('Page').setMinValue(1)))
+      .addSubcommand((c) => c.setName('add').setDescription('Add a song or link (or the song playing now)').addStringOption((o) => name(o)).addStringOption((o) => o.setName('song').setDescription('Song name or link (empty = the song playing now)')))
+      .addSubcommand((c) => c.setName('bulk').setDescription('Paste many songs or links at once').addStringOption((o) => name(o)))
+      .addSubcommand((c) => c.setName('import').setDescription('Bring in a YouTube, SoundCloud or Spotify playlist link').addStringOption((o) => o.setName('link').setDescription('Playlist link').setRequired(true)).addStringOption((o) => o.setName('name').setDescription('Name for it (default: its own name)').setMaxLength(40)))
+      .addSubcommand((c) => c.setName('remove').setDescription('Remove a song by its number').addStringOption((o) => name(o)).addIntegerOption((o) => o.setName('position').setDescription('Number from /playlist view').setRequired(true).setMinValue(1)))
+      .addSubcommand((c) => c.setName('export').setDescription('Get a playlist as a text file').addStringOption((o) => name(o)).addUserOption(user))
+      .addSubcommand((c) => c.setName('play').setDescription('Play a playlist (yours or another member\'s)').addStringOption((o) => name(o)).addUserOption(user).addBooleanOption((o) => o.setName('shuffle').setDescription('Shuffle it')))
+      .addSubcommand((c) => c.setName('rename').setDescription('Rename a playlist').addStringOption((o) => name(o)).addStringOption((o) => o.setName('new_name').setDescription('New name').setRequired(true).setMaxLength(40)))
+      .addSubcommand((c) => c.setName('delete').setDescription('Delete a playlist').addStringOption((o) => name(o)))
+      .addSubcommand((c) => c.setName('visibility').setDescription('Make a playlist public or private').addStringOption((o) => name(o)).addBooleanOption((o) => o.setName('public').setDescription('Public (others can play it) or private').setRequired(true)));
+  })(),
   new SlashCommandBuilder().setName('setup').setDescription('Managers: make this text channel the player for a voice channel')
     .addChannelOption((o) => o.setName('voice').setDescription('Voice channel the music plays in').setRequired(true).addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)),
   new SlashCommandBuilder().setName('unsetup').setDescription('Managers: remove the player from this text channel'),
