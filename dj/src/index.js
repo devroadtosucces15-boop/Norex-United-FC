@@ -2,7 +2,7 @@ import { Helper, Pool } from './pool.js';
 import { Room } from './room.js';
 import { resolve, platformOf, normalizeLink } from './resolve.js';
 import { DEFS } from './commands.js';
-import { REST, Routes, PermissionFlagsBits } from 'discord.js';
+import { REST, Routes, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { err, ok, fmt, effectsLine } from './ui.js';
 import { EFFECTS, EFFECT_NAMES, effectState } from './effects.js';
 import { store } from './store.js';
@@ -34,6 +34,9 @@ const canControl = (room, m) => isManager(m) || m.voice?.channelId === room.chan
 const NOPERM = 'Join the music voice channel first (or ask a manager).';
 
 const onChange = (room) => panel.refresh(room.binding);
+const notify = (room, text) => main.client.channels.fetch(room.binding.textId)
+  .then((c) => c.send({ embeds: [new EmbedBuilder().setColor(0x6b7785).setDescription(text)] }))
+  .then((m) => setTimeout(() => m.delete().catch(() => {}), 20_000)).catch(() => {});
 function onDestroy(room) {
   const b = room.binding; b.room = null;
   if (b.temp) { panel.remove(b).then(() => store.drop(b)); } else panel.refresh(b, 200);
@@ -62,7 +65,7 @@ async function ensureRoom(i) {
   if (b.room) return { room: b.room, binding: b };
   const h = pool.freeHelper(i.guildId);
   if (!h) return { error: 'All DJ rooms are busy right now.' };
-  const room = new Room({ helper: h, binding: b, onChange, onDestroy });
+  const room = new Room({ helper: h, binding: b, onChange, onDestroy, notify });
   b.room = room; h.rooms.set(i.guildId, room);
   try { await room.join(); } catch (e) { b.room = null; h.rooms.delete(i.guildId); return { error: `Could not join the voice channel: ${e.message}` }; }
   return { room, binding: b };
@@ -79,6 +82,10 @@ main.client.on('interactionCreate', async (i) => {
       if (r.error) return i.editReply(err(r.error));
       const q = i.options.getString('song');
       const found = await resolve(r.room.helper.shoukaku.getIdealNode(), q, i.options.getString('source') || 'auto').catch((e) => ({ failed: e.message }));
+      if (found?.noMatch) {
+        if (!r.room.current) await r.room.destroy();
+        return i.editReply(err(`No exact match found for **${found.title}** on YouTube or SoundCloud, so I did not play anything. Try the YouTube or SoundCloud link instead.`));
+      }
       if (!found || found.failed) {
         if (!r.room.current) await r.room.destroy();
         const link = normalizeLink(q);
@@ -87,7 +94,7 @@ main.client.on('interactionCreate', async (i) => {
       }
       await r.room.add(found.tracks);
       const where = platformOf(normalizeLink(q) || '') ;
-      const msg = found.fallback ? `YouTube blocked that link, so I found it on SoundCloud: **${found.title}**` : found.playlist ? `Queued **${found.tracks.length}** tracks from **${found.title}**` : `Queued **${found.title}**`;
+      const msg = found.fallback ? `YouTube blocked that link, so I played the exact same song from SoundCloud: **${found.title}**` : found.viaSpotify ? `Queued **${found.title}** (matched from Spotify on ${found.matchedOn === 'soundcloud' ? 'SoundCloud' : 'YouTube'})` : found.playlist ? `Queued **${found.tracks.length}** tracks from **${found.title}**` : `Queued **${found.title}**`;
       return i.editReply(ok(`${msg} · ${r.room.helper.name}${where !== 'link' ? ` · ${where}` : ''}`));
     }
 

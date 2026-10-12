@@ -3,12 +3,13 @@
 import { compose } from './effects.js';
 import { suggest } from './autoplay.js';
 import { store } from './store.js';
+import { findEquivalent } from './match.js';
 
 export class Room {
-  constructor({ helper, binding, onChange, onDestroy }) {
+  constructor({ helper, binding, onChange, onDestroy, notify }) {
     this.helper = helper; this.binding = binding; this.settings = binding.settings;
     this.guildId = binding.guildId; this.channelId = binding.voiceId;
-    this.onChange = onChange; this.onDestroy = onDestroy;
+    this.onChange = onChange; this.onDestroy = onDestroy; this.notify = notify;
     this.queue = []; this.current = null; this.history = []; this.votes = new Set(); this.player = null; this.dead = false;
   }
   changed() { this.onChange?.(this); }
@@ -38,6 +39,14 @@ export class Room {
     }
     if (!this.queue.length && this.settings.autoplay) await this.fill();
     this.current = this.queue.shift() || null;
+    // Spotify-sourced queue entries (playlists/albums) are matched to YouTube/SoundCloud only now, one at a time.
+    while (this.current?.info.sourceName === 'spotify') {
+      const want = this.current;
+      const m = await findEquivalent(this.helper.shoukaku.getIdealNode(), want.info);
+      if (m) { m.info = { ...m.info, artworkUrl: m.info.artworkUrl || want.info.artworkUrl }; m.auto = want.auto; this.current = m; break; }
+      this.notify?.(this, `No exact match found for **${want.info.title}** (${want.info.author}), skipped.`);
+      this.current = this.queue.shift() || null;
+    }
     if (!this.current) { clearTimeout(this.idleTimer); this.idleTimer = setTimeout(() => this.destroy(), 120_000); this.changed(); return; }
     clearTimeout(this.idleTimer);
     this.history.push(this.current.info); if (this.history.length > 40) this.history.shift();
@@ -50,9 +59,9 @@ export class Room {
     const t = this.current;
     if (!t || t.retried) return;
     try {
-      const r = await this.helper.shoukaku.getIdealNode().rest.resolve(`scsearch:${t.info.author} ${t.info.title}`);
-      const alt = r?.loadType === 'search' ? r.data[0] : null;
+      const alt = await findEquivalent(this.helper.shoukaku.getIdealNode(), t.info, ['scsearch']);
       if (alt) { alt.retried = true; alt.auto = t.auto; this.queue.unshift(alt); }
+      else this.notify?.(this, `Could not play **${t.info.title}** and found no exact match elsewhere, skipped.`);
     } catch (e) { console.error('recover', e.message); }
   }
   // Autoplay: keep a few suggested songs queued, based on what this session has played.
