@@ -1,9 +1,9 @@
 {
-  "revision": "4ca479e8712fab6e643d0ce08d3e7faef90b315d",
-  "files": 707,
-  "imports": 429,
-  "api_paths": 224,
-  "tables": 274,
+  "revision": "5478a985452ada01ff408f3171ce5bcbb69d758b",
+  "files": 711,
+  "imports": 431,
+  "api_paths": 229,
+  "tables": 275,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -218,7 +218,7 @@
     {
       "path": "bot/badges.js",
       "layer": "bot",
-      "lines": 298,
+      "lines": 415,
       "imports": [
         "./roles.js",
         "./notify.js"
@@ -227,17 +227,20 @@
         "/api/achievements",
         "/api/achievements/board",
         "/api/achievements/seen",
+        "/api/admin/medals",
         "/api/badges",
         "/api/badges/remove"
       ],
       "tables": [
         "5",
+        "SET",
         "achievements",
         "availability",
         "badges",
         "before",
         "claims",
         "members",
+        "meta",
         "one",
         "profiles",
         "rush_matches",
@@ -252,23 +255,31 @@
         "achievementsView",
         "all",
         "allFacts",
+        "applyMedalConfig",
         "badgesOf",
         "badgesRoute",
+        "blankCfg",
         "clean",
-        "evaluate",
         "fail",
         "giveBadge",
         "goldenBoots",
         "json",
         "leagueFacts",
         "len",
+        "loadMedals",
         "map",
+        "medalConfig",
+        "medalRow",
+        "medalsAdmin",
+        "mk",
         "one",
         "opt",
         "pointsOf",
         "run",
+        "saveMedalConfig",
         "streak",
         "syncAchievements",
+        "view",
         "weekOf",
         "weekStreak"
       ]
@@ -399,13 +410,18 @@
     {
       "path": "bot/burners.js",
       "layer": "bot",
-      "lines": 327,
+      "lines": 377,
       "imports": [
         "./roles.js",
         "./clublookup.js",
         "./burnerstats.js"
       ],
-      "endpoints": [],
+      "endpoints": [
+        "/api/burners",
+        "/api/burners/remove",
+        "/api/burners/search",
+        "/api/burners/track"
+      ],
       "tables": [
         "Actions",
         "GitHub",
@@ -415,6 +431,7 @@
         "burner_clubs",
         "ea_relay",
         "site",
+        "the",
         "then"
       ],
       "functions": [
@@ -422,16 +439,19 @@
         "all",
         "burnerCommand",
         "burnerPick",
+        "burnersAdminRoute",
         "burnersKey",
         "burnersRelay",
         "burnersRoute",
         "crestOf",
         "dispatchUpdate",
+        "fail",
         "get",
         "json",
         "line",
         "linkedBody",
         "linkedClubs",
+        "mark",
         "n",
         "noMatch",
         "one",
@@ -1376,7 +1396,7 @@
     {
       "path": "bot/locker.js",
       "layer": "bot",
-      "lines": 121,
+      "lines": 122,
       "imports": [
         "./roles.js",
         "./awards.js",
@@ -1501,7 +1521,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1090,
+      "lines": 1092,
       "imports": [
         "./live.js",
         "./game.js",
@@ -2748,7 +2768,7 @@
     {
       "path": "bot/roles.js",
       "layer": "bot",
-      "lines": 178,
+      "lines": 179,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -3162,7 +3182,7 @@
     {
       "path": "data/burners/1355341.json",
       "layer": "data",
-      "lines": 366,
+      "lines": 355,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -7045,6 +7065,33 @@
       "functions": []
     },
     {
+      "path": "data/matches/92672996480379.json",
+      "layer": "data",
+      "lines": 320,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/92908121400194.json",
+      "layer": "data",
+      "lines": 320,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/92962057740308.json",
+      "layer": "data",
+      "lines": 283,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/meta.json",
       "layer": "data",
       "lines": 5,
@@ -8024,7 +8071,7 @@
     {
       "path": "tests/badges.test.mjs",
       "layer": "tests",
-      "lines": 115,
+      "lines": 145,
       "imports": [
         "node:fs",
         "./mock.mjs",
@@ -8036,14 +8083,17 @@
         "/api/achievements/board",
         "/api/achievements/seen",
         "/api/admin/claims",
+        "/api/admin/medals",
         "/api/badges",
         "/api/badges/remove",
         "/api/claim",
         "/api/profile"
       ],
       "tables": [
+        "achievements",
         "badges",
         "claim",
+        "members",
         "notifications"
       ],
       "functions": [
@@ -8133,6 +8183,28 @@
         "someone"
       ],
       "functions": []
+    },
+    {
+      "path": "tests/burners-api.test.mjs",
+      "layer": "tests",
+      "lines": 31,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs"
+      ],
+      "endpoints": [
+        "/api/burners",
+        "/api/burners/remove",
+        "/api/burners/search",
+        "/api/burners/track",
+        "/api/burners/tracked"
+      ],
+      "tables": [
+        "burner_clubs"
+      ],
+      "functions": [
+        "setFlags"
+      ]
     },
     {
       "path": "tests/burners.test.mjs",
@@ -9009,7 +9081,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 150,
+      "lines": 164,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9023,6 +9095,7 @@
         "/api/achievements/seen",
         "/api/admin/flags",
         "/api/admin/flags/reset",
+        "/api/admin/medals",
         "/api/admin/overview",
         "/api/avatarcard",
         "/api/awards",
@@ -9032,6 +9105,8 @@
         "/api/builds",
         "/api/builds/delete",
         "/api/builds/fork",
+        "/api/burners/remove",
+        "/api/burners/track",
         "/api/cards/kit-number",
         "/api/cards/owner/requests",
         "/api/cards/owner/revoke",
@@ -9049,7 +9124,11 @@
         "/api/feed/post",
         "/api/feed/react",
         "/api/hof/remove",
+        "/api/intel",
+        "/api/intel/act",
+        "/api/intel/remind",
         "/api/issues",
+        "/api/live",
         "/api/locker",
         "/api/me",
         "/api/member",
@@ -9080,6 +9159,7 @@
         "/api/trials"
       ],
       "tables": [
+        "Staff",
         "scrolls",
         "search",
         "the",
@@ -13259,6 +13339,16 @@
     },
     {
       "source": "tests/builds.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/burners-api.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/burners-api.test.mjs",
       "target": "tests/lib.mjs",
       "kind": "imports"
     },
