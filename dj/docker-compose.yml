@@ -1,0 +1,20 @@
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    restart: unless-stopped
+    environment:
+      - LAVALINK_PASSWORD=${LAVALINK_PASSWORD}
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID:-}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET:-}
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml
+      - lavalink-plugins:/opt/Lavalink/plugins
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - LAVALINK_HOST=lavalink:2333
+    depends_on: [lavalink]
+volumes:
+  lavalink-plugins:
