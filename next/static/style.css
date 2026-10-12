@@ -976,3 +976,18 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{box-shadow:0 0 0
 .nv .drop a:focus-visible{background:rgba(255,255,255,.06)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 html{touch-action:manipulation}
+/* Results filter feedback: count line, picked calendar day, empty state */
+.rfs{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:0 0 14px;padding:10px 14px;border-radius:12px;background:rgba(200,53,44,.1);border:1px solid rgba(200,53,44,.35);font-size:14px}.rfs[hidden],.rfe[hidden]{display:none}.rfs .chip{min-height:36px}
+.rfe{display:grid;justify-items:center;gap:6px;padding:34px 16px;text-align:center;border:1px dashed var(--line2);border-radius:16px;margin-bottom:14px}.rfe>span{font-size:34px}.rfe b{font:600 20px Oswald;letter-spacing:.03em}.rfe p{margin:0}
+.wx .ccol i.pick{outline:2px solid #fff;outline-offset:2px;transform:scale(1.2)}.wx .ccol i[data-day]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* #28 first-frame paint: no lazily promoted layers for the card shadow/glow. will-change only while a card is being moved; the sheen and glare
+   (soft-light blends) are not painted at all until hovered/tilted, so the card and its drop-shadow rasterise in one pass instead of a flat box first. */
+.pc-card,.tilt{will-change:auto}.pc-card.live,.tilt.live,.pc-card:hover,.tilt:hover{will-change:transform}
+.pc-card:before{opacity:0;transition:opacity .2s,background-position .9s var(--ease)}.pc-card:hover:before,.pc-card.live:before{opacity:1}
+.pc-card .glare{visibility:hidden}.pc-card.live .glare,.pc-card:hover .glare{visibility:visible}
+/* #34 club canvas (Carbon & Crimson, brightened a touch): near-black with the red tint, plus a very faint mismatched diagonal line pattern between the canvas and everything else. Hub keeps its own look. */
+body:not(.hub-page):before{background:radial-gradient(900px 560px at 80% -10%,rgba(200,53,44,.34),transparent 62%),radial-gradient(760px 520px at 8% 105%,rgba(200,53,44,.2),transparent 62%),radial-gradient(600px 420px at 3% 30%,rgba(200,53,44,.07),transparent 60%),linear-gradient(180deg,#17121a,#0f0d13)}
+body:not(.hub-page):after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(45deg,rgba(255,255,255,.032) 0 1px,transparent 1px 9px),repeating-linear-gradient(-38deg,rgba(255,255,255,.022) 0 2px,transparent 2px 15px),repeating-linear-gradient(72deg,rgba(0,0,0,.18) 0 1px,transparent 1px 23px)}
+.rfsum{margin:0 0 16px;padding:14px;border-radius:16px;background:linear-gradient(180deg,var(--p2),var(--p1));border:1px solid var(--line)}.rfsum[hidden]{display:none}
+.rsbar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.06);margin-bottom:12px}.rsbar i{display:block;transition:width .4s var(--ease)}.rsbar .w{background:#2fb067}.rsbar .d{background:#c19a33}.rsbar .l{background:#cd4a3f}
+.rsg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}.rst{display:grid;gap:2px;min-width:0}.rst b{font:700 24px Oswald;overflow:hidden;text-overflow:ellipsis}.rst small{color:var(--mute);font-size:12px;overflow-wrap:anywhere}

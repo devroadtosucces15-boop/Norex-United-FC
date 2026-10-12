@@ -56,7 +56,37 @@ addEventListener('DOMContentLoaded', () => {
     }
   }
   // ---------- results / opponents / builds ----------
-  if ($('#rf')) tabs('#rf', 'f', (f) => $$('#rl .rrow').forEach((r) => { r.hidden = !!f && r.dataset.res !== f; }));
+  // Results filters: W/D/L chips + a tapped calendar day work on the rows, the ledger and the sessions together; count line, empty state, scroll to the list
+  if ($('#rf')) {
+    let res = '', day = ''; const rl = $('#rl'), fs = $('#rfs'), fe = $('#rfe'), total = $$('#rl .rrow').length, NAMES = { W: 'wins', D: 'draws', L: 'losses' };
+    const dlab = (k) => new Date(k * 86400000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const run = (scroll) => {
+      const ok = (e) => (!res || e.dataset.res === res) && (!day || e.dataset.day === day);
+      let n = 0; $$('#rl .rrow').forEach((r) => { const k = ok(r); r.hidden = !k; if (k) n++; });
+      $$('#rled .tr').forEach((r) => { r.hidden = !ok(r); });
+      $$('#rses .sess').forEach((s) => { const as = $$('.sd a', s); as.forEach((a) => { a.hidden = !ok(a); }); s.hidden = !as.some((a) => !a.hidden); });
+      $$('.ccol i[data-day]').forEach((c) => c.classList.toggle('pick', !!day && c.dataset.day === day));
+      $$('#rf .chip').forEach((b) => b.classList.toggle('on', b.dataset.f === res));
+      const vis = $$('#rl .rrow').filter((r) => !r.hidden), sm = $('#rfsumTop');
+      const on = res || day; fs.hidden = !on; sm.hidden = !on || !vis.length;
+      if (on && vis.length) {
+        const g = vis.map((r) => ({ f: +r.dataset.gf, a: +r.dataset.ga, o: r.dataset.opp, r: r.dataset.res })), c = { W: 0, D: 0, L: 0 }; g.forEach((x) => c[x.r]++);
+        const gf = g.reduce((a, x) => a + x.f, 0), ga = g.reduce((a, x) => a + x.a, 0), cs = g.filter((x) => !x.a).length, big = g.slice().sort((a, b) => (b.f - b.a) - (a.f - a.a))[0], pc = (v) => (100 * v / g.length).toFixed(1);
+        const t = (v, l, e) => `<div class="rst"><span aria-hidden="true">${e}</span><b>${v}</b><small>${l}</small></div>`;
+        sm.innerHTML = `<div class="rsbar" role="img" aria-label="${c.W} wins, ${c.D} draws, ${c.L} losses"><i class="w" style="width:${pc(c.W)}%"></i><i class="d" style="width:${pc(c.D)}%"></i><i class="l" style="width:${pc(c.L)}%"></i></div>
+<div class="rsg">${t(`${c.W}-${c.D}-${c.L}`, 'record', '📋')}${t(gf, 'scored', '⚽')}${t(ga, 'conceded', '🥅')}${t((gf - ga > 0 ? '+' : '') + (gf - ga), 'goal difference', '⚖️')}${t((gf / g.length).toFixed(1), 'goals a game', '📈')}${t(cs, 'clean sheets', '🧤')}${t(`${big.f}–${big.a}`, 'best margin · ' + big.o, '💥')}</div>`;
+      }
+      fs.innerHTML = on ? `Showing <b>${n}</b> of ${total} games${res ? ` · ${NAMES[res]}` : ''}${day ? ` · ${dlab(+day)}` : ''} <button type="button" class="chip" id="rfx">Clear</button>` : '';
+      fe.hidden = n > 0; rl.hidden = n === 0 || !$('#rv .chip.on[data-v=rows]');
+      if (scroll && on) { const top = (n ? fs : fe).getBoundingClientRect().top; if (top < 70 || top > 380) scrollTo({ top: scrollY + top - 130, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth' }); }
+    };
+    $$('#rf .chip').forEach((b) => b.addEventListener('click', () => { res = b.dataset.f; run(true); }));
+    d.addEventListener('click', (e) => { if (e.target.closest('#rfx,#rfclear')) { res = day = ''; run(false); } });
+    $$('.ccol i[data-day]').forEach((c) => { c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', 'Show games on this day'); });
+    const pickDay = (e) => { const c = e.target.closest('.ccol i[data-day]'); if (!c || (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ')) return; e.preventDefault(); e.stopImmediatePropagation(); day = day === c.dataset.day ? '' : c.dataset.day; run(true); };
+    d.addEventListener('click', pickDay, true); d.addEventListener('keydown', pickDay, true);
+    $('#rv')?.addEventListener('click', () => setTimeout(() => run(false), 0));
+  }
   if ($('#ot')) tabs('#ot', 't', (t) => { $('#po').hidden = t !== 'o'; $('#pb').hidden = t !== 'b'; });
   // Builds tabs (#bt) are driven by builds.js (deep links #a= / #b= / #mine / #arch pick the pane)
   // ---------- match night: real RSVPs and availability (signed-in members; answers are saved to the live club) ----------
