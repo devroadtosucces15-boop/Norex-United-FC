@@ -66,17 +66,20 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build site
+      # The new design is the main site (site/); the old site is kept at /classic/ for a release and feeds the new build its api/*.json.
+      # Old addresses get redirect stubs. If the new build ever fails, the old site is published at the root instead, so the site never goes down.
+      - name: Build site (new design at the root, old at /classic/)
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
-        run: node scripts/build.mjs
+        run: |
+          NOREX_OUT=classic-build node scripts/build.mjs
+          if node next/build.mjs --out site --public --classic classic-build; then
+            cp -r classic-build site/classic
+          else
+            echo "::warning::new design build failed - publishing the old site at the root"
+            rm -rf site && cp -r classic-build site
+          fi
         env:
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} # reads approved "hide me" requests (P5.6)
-
-      # New-design preview at /next/ (same live data). Failure here never blocks the official site.
-      - name: Build new-design preview (/next/)
-        if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
-        continue-on-error: true
-        run: node next/build.mjs --out site/next --preview
 
       - uses: actions/configure-pages@v5
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
