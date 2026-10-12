@@ -1,5 +1,5 @@
 {
-  "revision": "522899fe2c023214b76c0aed2abd05fcd9f41ee8",
+  "revision": "7796531e8879daa822cc2f5cae43b5c6244bea64",
   "files": 725,
   "imports": 437,
   "api_paths": 230,
@@ -9227,7 +9227,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 264,
+      "lines": 279,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9366,6 +9366,7 @@
       "functions": [
         "compareHtml",
         "fitInto",
+        "orbit",
         "pr",
         "read"
       ]
