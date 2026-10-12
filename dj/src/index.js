@@ -9,6 +9,7 @@ import { store } from './store.js';
 import * as panel from './panel.js';
 import { startReportWatch } from './watch.js';
 import * as rooms from './bubbles.js';
+import * as icons from './icons.js';
 import * as plcmd from './playlistcmd.js';
 import * as plist from './playlists.js';
 import { panel as v2panel, small, btn } from './v2.js';
@@ -31,6 +32,7 @@ rooms.init(main.client);
 
 await Promise.all(helpers.map((h) => h.login()));
 await Promise.all(helpers.map((h) => (h.client.isReady() ? 1 : h.ready())));
+await icons.ensure(main.client.rest, env.MAIN_APP_ID);
 await new REST().setToken(env.MAIN_TOKEN).put(Routes.applicationGuildCommands(env.MAIN_APP_ID, env.GUILD_ID), { body: DEFS });
 for (const b of store.bindings.values()) panel.refresh(b, 1500);
 startReportWatch(main.client);

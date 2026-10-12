@@ -5,12 +5,18 @@ import {
   ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, ThumbnailBuilder,
   ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, AttachmentBuilder
 } from 'discord.js';
+import { ic } from './icons.js';
 
 export const COLOR = { red: 0xc8352c, gold: 0xefcf7a, green: 0x4be08a, loss: 0xff7d72, steel: 0x6c7890 };
 export const CREST = new URL('../assets/crest.png', import.meta.url).pathname;
 const td = (t) => new TextDisplayBuilder().setContent(t);
 
-export const btn = (id, label, style = ButtonStyle.Secondary) => new ButtonBuilder().setCustomId(id).setLabel(label).setStyle(style);
+export const btn = (id, label, style = ButtonStyle.Secondary, icon) => {
+  const b = new ButtonBuilder().setCustomId(id).setStyle(style);
+  if (label) b.setLabel(label);
+  const e = icon && ic(icon); if (e) b.setEmoji(e);
+  return b;
+};
 export const linkBtn = (url, label) => new ButtonBuilder().setURL(url).setLabel(label).setStyle(ButtonStyle.Link);
 
 /**

@@ -90,7 +90,7 @@ function controlsPayload(id) {
     detail: `${r.code} · host ${r.hostName}`,
     body: [[`${r.locked ? '🔒 **Locked** · only the host and managers can join' : '🔓 **Open** · anyone can join'}`, `👥 ${inside} in the room · ${r.limit ? `limit ${r.limit}` : 'no limit'}${r.status ? ` · ${r.status}` : ''}`]],
     footer: 'Lock, limit and close are for the host and managers · anyone can set the status',
-    buttons: [btn(`room:lock:${id}`, r.locked ? '🔓 Unlock' : '🔒 Lock'), btn(`room:limit:${id}:-1`, '➖ Limit'), btn(`room:limit:${id}:1`, '➕ Limit'), btn(`room:status:${id}`, '📝 Status'), btn(`room:close:${id}`, '✖ Close', ButtonStyle.Danger)]
+    buttons: [btn(`room:lock:${id}`, r.locked ? 'Unlock' : 'Lock', ButtonStyle.Secondary, r.locked ? 'unlock' : 'lock'), btn(`room:limit:${id}:-1`, 'Limit', ButtonStyle.Secondary, 'minus'), btn(`room:limit:${id}:1`, 'Limit', ButtonStyle.Secondary, 'plus'), btn(`room:status:${id}`, 'Status', ButtonStyle.Secondary, 'pencil'), btn(`room:close:${id}`, 'Close', ButtonStyle.Danger, 'close')]
   });
 }
 export async function ctlSync(id, repost = false) {
@@ -147,7 +147,7 @@ export function dialog(vc, r) {
       ['**Want music?** In the room chat type `/play` and a song name or link. Anyone in the room can use `/effects`, `/autoplay` and `/volume`.']
     ],
     footer: 'Host tools: /room lock · /room limit · /room status',
-    buttons: [btn(`room:move:${vc.id}`, '🎧 Join room'), btn(`room:status:${vc.id}`, '📝 Status'), btn(`room:lock:${vc.id}`, r.locked ? '🔓 Unlock' : '🔒 Lock'), btn(`room:close:${vc.id}`, '✖ Close', ButtonStyle.Danger), linkBtn(url(vc.guildId, vc.id), 'Open room')]
+    buttons: [btn(`room:move:${vc.id}`, 'Join room', ButtonStyle.Secondary, 'users'), btn(`room:status:${vc.id}`, 'Status', ButtonStyle.Secondary, 'pencil'), btn(`room:lock:${vc.id}`, r.locked ? 'Unlock' : 'Lock', ButtonStyle.Secondary, r.locked ? 'unlock' : 'lock'), btn(`room:close:${vc.id}`, 'Close', ButtonStyle.Danger, 'close'), linkBtn(url(vc.guildId, vc.id), 'Open room')]
   });
 }
 export const closedNote = (r) => panel({ color: 'steel', eyebrow: 'Rooms', title: 'Room closed', detail: `${r.code} · ${r.name}`, picture: false, body: ['Open a new one any time with `/room create`.'] });
