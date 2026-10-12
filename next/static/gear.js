@@ -14,7 +14,7 @@
     const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'That did not work (' + r.status + ').'); return j;
   };
   const ago = (t) => { const s = (Date.now() - t) / 1000; return s < 3600 ? Math.max(1, Math.round(s / 60)) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago'; };
-  const ROOMS = [['staff-desk.html', '🗂️', 'Desk'], ['staff-tools.html', '🛠️', 'Tools'], ['staff-schedule.html', '🗓️', 'Schedule'], ['staff-dugout.html', '🧢', 'Dugout'], ['staff-boardroom.html', '👑', 'Boardroom'], ['staff-artwork.html', '🎨', 'Artwork'], ['staff-insights.html', '🧭', 'Insights']];
+  const ROOMS = [['staff-desk.html', '🗂️', 'Desk'], ['staff-tools.html', '🛠️', 'Tools'], ['staff-content.html', '📄', 'Content'], ['staff-schedule.html', '🗓️', 'Schedule'], ['staff-dugout.html', '🧢', 'Dugout'], ['staff-boardroom.html', '👑', 'Boardroom'], ['staff-artwork.html', '🎨', 'Artwork'], ['staff-insights.html', '🧭', 'Insights']];
   // which Staff room is closest to the page you are on (shown first)
   const NEAR = { 'fixtures.html': 'staff-schedule.html', 'schedule.html': 'staff-schedule.html', 'squad.html': 'staff-artwork.html', 'players.html': 'staff-artwork.html', 'halloffame.html': 'staff-boardroom.html', 'opponents.html': 'staff-insights.html', 'tactics.html': 'staff-dugout.html', 'join.html': 'staff-desk.html' };
 
