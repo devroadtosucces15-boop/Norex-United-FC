@@ -13,7 +13,6 @@ export const ROOT_MAP = {
   'docs.html': 'news.html',
   'feed.html': 'news.html',
   'messages.html': 'hub-clubhouse.html',
-  'burners.html': 'opponents.html',
   'hub/index.html': 'hub.html',
 };
 // members.html#fragment → page (the bot's Discord embeds link to these)

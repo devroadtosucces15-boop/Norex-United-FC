@@ -46,6 +46,10 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
+      - name: Latest videos for the Watch previews (hourly)
+        continue-on-error: true
+        run: node scripts/media.mjs
+
       - name: Commit new data
         id: commit
         run: |

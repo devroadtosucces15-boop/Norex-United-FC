@@ -433,3 +433,18 @@ html[data-motion=off] .wx .si{transform:none!important}
 @keyframes gdgrow{from{transform:scaleY(.04);opacity:.4}}
 .wx .stage3{height:270px}
 .wx .tierwhy,.tierwhy{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}.tierwhy span{font:600 11px Inter;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06);color:#aab4c9}.tierwhy b{color:#efcf7a;margin-left:4px}
+/* opponent crests in the form row, season reel and spotlight dots; the W/D/L colour stays as the ring */
+.wx .fo{position:relative;width:40px;height:40px;background:#0f1522!important;border:3px solid var(--rc,#efcf7a);box-shadow:0 0 14px var(--rg,rgba(239,207,122,.4))!important}
+.wx .fo.W{--rc:#22b35e;--rg:rgba(34,179,94,.55)}.wx .fo.L{--rc:#c8352c;--rg:rgba(200,53,44,.55)}.wx .fo.D{--rc:#c9993a;--rg:rgba(201,153,58,.5)}
+.wx .fo img{width:24px;height:24px;object-fit:contain}
+.wx .fo b{position:absolute;right:-6px;bottom:-6px;min-width:17px;height:17px;border-radius:9px;display:grid;place-items:center;font:700 10px Oswald;color:#fff;background:var(--rc);padding:0 3px}
+.wx .tl .pt{width:38px;height:38px;display:grid;place-items:center;background:#0f1522;border:3px solid #efcf7a;box-shadow:0 0 14px rgba(239,207,122,.5)}
+.wx .tl .dot.W .pt{background:#0f1522;border-color:#2ecb78;box-shadow:0 0 14px rgba(46,203,120,.55)}.wx .tl .dot.L .pt{background:#0f1522;border-color:#e0493f;box-shadow:0 0 14px rgba(224,73,63,.55)}.wx .tl .dot.D .pt{border-color:#d4a23c}
+.wx .tl .pt .ecrest{width:24px;height:24px}
+.wx .tl .dot:hover .pt,.wx .tl .dot.on .pt{transform:scale(1.25)}
+.wx .tl .dot:before{top:18px}
+.wx .sdot{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:#0f1522;border:2px solid var(--rc,#efcf7a);opacity:.6}
+.wx .sdot.W{--rc:#22b35e;background:#0f1522}.wx .sdot.D{--rc:#d4a23c;background:#0f1522}.wx .sdot.L{--rc:#d23a2f;background:#0f1522}
+.wx .sdot .ecrest{width:16px;height:16px}
+.wx .sdot.on{width:26px;border-radius:50%;opacity:1;transform:scale(1.25);box-shadow:0 0 12px var(--rc)}
+.wx .sdots{gap:9px}

@@ -9,7 +9,7 @@ import { t, done } from './lib.mjs';
 const out = fs.mkdtempSync(path.join(os.tmpdir(), 'nx-'));
 execFileSync(process.execPath, ['next/build.mjs', '--out', out, '--preview'], { cwd: ROOT, stdio: 'pipe' });
 const html = fs.readdirSync(out).filter((f) => f.endsWith('.html'));
-const read = (f) => fs.readFileSync(path.join(out, f), 'utf8');
+const read = (f, repo) => fs.readFileSync(repo ? path.join(ROOT, '.github/workflows', f) : path.join(out, f), 'utf8');
 const need = ['index', 'watch', 'squad', 'halloffame', 'join', 'results', 'fixtures', 'opponents', 'stats', 'leaders', 'players', 'tactics', 'playstyle', 'studio', 'builds', 'updates', 'hub', 'staff-dugout'];
 
 t('preview: every main page is built', need.every((n) => html.includes(n + '.html')));
@@ -173,7 +173,7 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('join: managers to talk to come from /api/contacts', jj.includes('/api/contacts') && jh.includes('data-join-contacts'));
   t('news: page, Club menu entry, public feed from /api/feed/public and honest empty/off states', nh.includes('data-news-feed') && read('index.html').includes('news.html') && nj.includes('/api/feed/public') && nj.includes('Nothing shared publicly yet') && nj.includes('for members for now'));
   t('news: docs stay squad-only – guests get links, members their pinned docs from /api/docs', nj.includes("'/api/docs'") && nj.includes('pinned') && nh.includes('hub-handbook.html') && nh.includes('Requirements to join'));
-  t('opponents: every rival has a report page, linked from the table', oppFiles.length >= 1 && oh.includes('href="opp-') && oh.includes('🔍 Report'));
+  t('opponents: every rival has a report page, linked from the table', oppFiles.length >= 1 && oh.includes('href="opp-') && oh.includes('Scouting report on'));
   t('opponent report: record, facts, players faced and every meeting, all from match data', ['Scouting report', 'What we know', 'Players we have faced', 'Every meeting', 'data-insight="h2h.'].every((k) => op.includes(k)) && op.includes('href="match-')); }
 // ---- D2 follow-up gear (#18) + D5 compare v2 ----
 { const gj = read('gear.js'), cj = read('compare.js'), ph = read('players.html'), nh2 = read('news.html'), cfgF = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8')).features;
@@ -226,5 +226,15 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('canvas (#34): club canvas with faint diagonal lines on every page except the hub', sc.includes('body:not(.hub-page):after') && sc.includes('repeating-linear-gradient(45deg') && sc.includes('body:not(.hub-page):before'));
   t('preview as (#53): owner can view the site as a member, display only, with a way back', sj.includes("norex.viewas") && sj.includes('viewAs') && hj.includes('data-va="member"') && hj.includes('Back to owner'));
   t('report (#40): layout diagnostics saved with every 🐞 report', rj.includes('function layoutDiag') && ['visualViewport', 'offsetTop', 'scrollY', 'tabbar', 'fixed'].every((k) => rj.includes(k)) && rj.includes('diag: layoutDiag()')); }
+// ---- pages bulk: #41 crest dots, #42 scorers, #43 opponents + burners page, #38 guest squad, #32 watch previews, #37 crests ----
+{ const rs = read('results.html'), op = read('opponents.html'), bn = read('burners.html'), jn = read('join.html'), wt = read('watch.html'), wp = read('watchprev.js'), nav = read('stats.html'), sc = read('style.css'), pm = fs.readFileSync(path.join(ROOT, 'scripts/media.mjs'), 'utf8');
+  t('results (#41): season reel and spotlight dots carry the opponent crest, W/D/L stays as the ring', /class="dot [WDL]"[^>]*><span class="pt"><(img|span) class="ecrest/.test(rs) && read('widgets.css').includes('.wx .sdot .ecrest') && read('widgets.js').includes('crests/256x256/l${m.c}.png'));
+  t('results (#42): rows show who scored and assisted per side, never invented minutes', rs.includes('class="evs"') && rs.includes('class="eg"') && !/class="ev[sa]?"[^>]*>[^<]*\d+['′]/.test(rs));
+  t('opponents (#43): compact table, W-D-L horizontal, columns drop on phones, no burner slicer', op.includes('class="otb"') && op.includes('class="owl"') && op.includes('.otb .hm{display:none}') && !op.includes('id="ot"') && !op.includes('id="pb"') && !op.includes('Burner clubs ·'));
+  t('burners (#43): own page under Stats, per-club cards, combined total, never in League totals, ready for the include picker', nav.includes('href="burners.html"') && bn.includes('id="bn-all"') && bn.includes('data-burner=') && bn.includes('id="bn-include"') && bn.includes('id="bn-data"') && bn.includes('never count') && read('opponents.html').includes('href="burners.html"'));
+  t('join (#38): Meet the squad opens a guest-safe card section on the page itself', jn.includes('data-open-squad') && jn.includes('id="squad"') && jn.includes('data-squad-open') && jn.includes('data-close-squad') && !/id="squad"[\s\S]{0,40}data-for="member/.test(jn));
+  t('watch (#32): previews are lazy (IntersectionObserver), muted, inline, looping, capped, and a tap opens the full player', wt.includes('data-wt-prev') && wt.includes('src="watchprev.js"') && ['IntersectionObserver', 'mute=1', 'playsinline=1', 'loop=1', 'seekTo', 'muted=${', 'wtp-modal', 'MAX = 3'].every((k) => wp.includes(k)));
+  t('watch (#32): ids come from a build-time fetch (CORS-blocked in browsers), failures keep the old list', pm.includes('feeds/videos.xml') && pm.includes('gql.twitch.tv') && pm.includes('Twitch failed') && read('update.yml', true).includes('scripts/media.mjs'));
+  t('crests (#37): glow is red with a trace of gold and no hard disc edge, big crests use the sharp artwork', sc.includes('rgba(200,53,44,.34)') && sc.includes('rgba(239,207,122,.07)') && !sc.includes('rgba(255,138,60,.5)') && read('index.html').includes('crest-lg.png') && jn.includes('crest-lg.png') && read('hub.html').includes('src="crest.png"')); }
 fs.rmSync(out, { recursive: true, force: true });
 done();

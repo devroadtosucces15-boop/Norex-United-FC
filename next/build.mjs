@@ -20,14 +20,14 @@ fs.writeFileSync(path.join(out, 'game.json'), JSON.stringify((await import('./li
 // Phase E post-pass on every page: one h1 per page (the page's first heading becomes level 1 for assistive tech, no visual change), a small crest for the 22–86 px logo spots instead of the 180 KB original
 const finalize = (h) => {
   if (!/<h1[ >]/.test(h)) h = h.replace(/(<main id="main">[\s\S]*?)<(h[23])(?![^>]*aria-level)/, '$1<$2 aria-level="1"');
-  // three sizes: the 41 KB small crest for logo-sized spots (header logo, width <= 96 or unsized), the sharp 892 px crest for the big hero crests, the regular one in between
+  // three sizes: the 41 KB small crest for logo-sized spots (header logo, width <= 48 or unsized), the sharp 892 px crest for the big hero crests, the regular one up to 118 px
   h = h.replace('<a class="lg" href="index.html"><img src="crest.png"', '<a class="lg" href="index.html"><img src="crest-sm.png"')
     .replace(/(<div class="crestwrap[^>]*>(?:<span class="halo"><\/span>)?<img) src="crest\.png"/g, '$1 src="crest-lg.png"')
-    .replace(/<img([^>]*?) src="crest\.png"([^>]*?)>/g, (m, a, b) => { const w = +((/\bwidth="(\d+)"/.exec(a + b) || [])[1] || 0); return w > 96 ? m : `<img${a} src="crest-sm.png"${b}>`; });
+    .replace(/<img([^>]*?) src="crest\.png"([^>]*?)>/g, (m, a, b) => { const t = a + b, w = +((/\bwidth="(\d+)"/.exec(t) || /\bwidth:\s*(\d+)px/.exec(t) || [])[1] || 0); return w > 48 ? (w > 118 ? m.replace('crest.png', 'crest-lg.png') : m) : `<img${a} src="crest-sm.png"${b}>`; });
   return h.replace('<link rel="icon" href="crest.png">', '<link rel="icon" href="crest-sm.png">');
 };
 let n = 0; const built = []; const P = (f, h) => { W(f, finalize(h)); built.push(f); n++; };
-const mods = ['club', 'matches', 'rush', 'stats', 'tactics', 'hub', 'swap', 'lookbook', 'canvas'];
+const mods = ['club', 'matches', 'rush', 'stats', 'burners', 'tactics', 'hub', 'swap', 'lookbook', 'canvas'];
 for (const m of mods) { const file = path.join(here, 'pages', m + '.mjs'); if (!fs.existsSync(file)) continue; const mod = await import('./pages/' + m + '.mjs'); await mod.default?.(P) ; }
 if (PUBLIC) { const { emitSwap } = await import('./lib/swap.mjs'); const api = emitSwap({ out, root: path.join(here, '..'), classic: arg('--classic'), pages: built }); console.log(`public: ${api.length} api files, sw.js, offline/404, robots, sitemap`);
   // old addresses (Discord embeds, bookmarks, installed apps) → new pages, or the same page under classic/

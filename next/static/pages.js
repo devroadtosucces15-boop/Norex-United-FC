@@ -87,7 +87,6 @@ addEventListener('DOMContentLoaded', () => {
     d.addEventListener('click', pickDay, true); d.addEventListener('keydown', pickDay, true);
     $('#rv')?.addEventListener('click', () => setTimeout(() => run(false), 0));
   }
-  if ($('#ot')) tabs('#ot', 't', (t) => { $('#po').hidden = t !== 'o'; $('#pb').hidden = t !== 'b'; });
   // Builds tabs (#bt) are driven by builds.js (deep links #a= / #b= / #mine / #arch pick the pane)
   // ---------- match night: real RSVPs and availability (signed-in members; answers are saved to the live club) ----------
   if ($('#rsvppanel') && window.NOREX_API && window.NorexAuth && NorexAuth.token) {

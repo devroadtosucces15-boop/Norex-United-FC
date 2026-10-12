@@ -25,7 +25,7 @@ export const swSource = () => `// Service worker: Web Push receiver + offline ca
 const V = 'nx-v2';
 const PAGES = V + '-pages';
 const MEDIA = V + '-media';
-const PRECACHE = ['offline.html', 'index.html', 'style.css', 'app.js', 'crest-sm.png'];
+const PRECACHE = ['offline.html', 'index.html', 'style.css', 'app.js', 'crest-sm.png', 'crest.png'];
 const MAX = { [PAGES]: 60, [MEDIA]: 120 };
 
 self.addEventListener('install', (e) => {
@@ -103,10 +103,10 @@ const FONTS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link 
 const lone = (title, head, body, base = '') => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${base ? `<base href="${esc(base)}">` : ''}<meta name="robots" content="noindex"><meta name="theme-color" content="${INK}"><title>${esc(title)} · ${esc(cfg.siteTitle)}</title>${FONTS}
 <style>html,body{margin:0;min-height:100%;background:${INK};color:#fff;font-family:Inter,system-ui,sans-serif}body{display:grid;place-items:center;text-align:center;padding:24px;min-height:100vh;background:radial-gradient(900px 500px at 50% -10%,rgba(200,53,44,.28),transparent 60%),${INK}}img{height:96px;width:auto}h1{font-family:Oswald,Impact,sans-serif;letter-spacing:.05em;margin:.5em 0 .2em;font-size:clamp(34px,8vw,56px)}h1 b{color:#c8352c}p{color:#aab3c2;max-width:420px;margin:0 auto 20px;line-height:1.5}.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}a.b,button{font:700 13px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:#fff;background:#c8352c;border:0;border-radius:999px;padding:12px 22px;cursor:pointer}a.b.g{background:transparent;border:1px solid rgba(255,255,255,.28)}:focus-visible{outline:2px solid #efcf7a;outline-offset:3px}</style>${head}</head><body>${body}</body></html>`;
 
-export const offlineHtml = () => lone('Offline', '', `<main><img src="crest-sm.png" alt=""><h1>YOU'RE <b>OFFLINE</b></h1><p>No signal right now. Pages you've already opened still work – the rest comes back as soon as you're connected.</p><div class="row"><button type="button" onclick="location.reload()">Try again</button> <a class="b g" href="index.html">Club home</a></div></main>`);
+export const offlineHtml = () => lone('Offline', '', `<main><img src="crest.png" alt=""><h1>YOU'RE <b>OFFLINE</b></h1><p>No signal right now. Pages you've already opened still work – the rest comes back as soon as you're connected.</p><div class="row"><button type="button" onclick="location.reload()">Try again</button> <a class="b g" href="index.html">Club home</a></div></main>`);
 
 // GitHub Pages serves 404.html for any missing path at any depth, so every link and asset is absolute through <base>.
-export const notFoundHtml = () => lone('Page not found', '', `<main><img src="crest-sm.png" alt=""><h1>OFFSIDE – <b>404</b></h1><p>That page isn't in the squad. It may have moved when the site was redesigned.</p><div class="row"><a class="b" href="index.html">Club home</a> <a class="b g" href="results.html">Results</a> <a class="b g" href="hub.html">The Hub</a></div></main>`, SITE);
+export const notFoundHtml = () => lone('Page not found', '', `<main><img src="crest.png" alt=""><h1>OFFSIDE – <b>404</b></h1><p>That page isn't in the squad. It may have moved when the site was redesigned.</p><div class="row"><a class="b" href="index.html">Club home</a> <a class="b g" href="results.html">Results</a> <a class="b g" href="hub.html">The Hub</a></div></main>`, SITE);
 
 export const robotsTxt = () => `User-agent: *\nAllow: /\nDisallow: /hub\nDisallow: /staff\n${SITE ? `\nSitemap: ${SITE}sitemap.xml\n` : ''}`;
 

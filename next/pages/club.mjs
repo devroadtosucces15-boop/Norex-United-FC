@@ -1,4 +1,4 @@
-import { cfg, clubStats as C, players, matches, recent, records, leaders, shapes, updates, fmtDate } from '../lib/data.mjs';
+import { cfg, media, clubStats as C, players, matches, recent, records, leaders, shapes, updates, fmtDate } from '../lib/data.mjs';
 import * as W from '../lib/widgets.mjs';
 import { oppCrest, shell, esc, slug, card, hero, chip, row, sbt, pillRes, sample, lineLabel } from '../lib/ui.mjs';
 
@@ -51,7 +51,7 @@ export function home() {
   <div class="panel reveal" style="--i:1"><h3>Game updates</h3>${updates.slice(0, 3).map((u) => `<a href="updates.html" style="display:block;padding:8px 0;border-top:1px solid var(--line)"><b style="font-size:14px">${esc(u.title.replace(/^EA SPORTS FC™ 27 \| /, ''))}</b><div class="muted tiny">${new Date(u.published).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div></a>`).join('')}</div></div></section>
 
  <section class="sec"><div class="panel reveal" style="display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;background:linear-gradient(120deg,#1b1210,#140f0f 60%,#1a1608);border-color:rgba(200,53,44,.4)">
-  <img src="crest.png" alt="" style="width:86px"><div><h3 style="font-size:28px;margin-bottom:4px">${esc(cfg.recruitment?.headline ?? 'Trials are by application only')}</h3><p class="muted">${esc((cfg.recruitment?.requirements ?? []).join(' · '))}</p></div><a class="btn gold" href="join.html">Apply for a trial</a></div></section>
+  <img src="crest.png" alt="" width="86" style="width:86px"><div><h3 style="font-size:28px;margin-bottom:4px">${esc(cfg.recruitment?.headline ?? 'Trials are by application only')}</h3><p class="muted">${esc((cfg.recruitment?.requirements ?? []).join(' · '))}</p></div><a class="btn gold" href="join.html">Apply for a trial</a></div></section>
 </div>`;
   return shell({ group: 'club', page: 'index.html', title: 'Home', body });
 }
@@ -122,7 +122,7 @@ export function join() {
   const R = cfg.recruitment ?? {}, pos = R.positions ?? [], apply = cfg.discord?.applyLink ?? '', open = R.open !== false;
   const P15 = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
   const steps = [['1', 'Apply', 'Join the Discord and press Apply to Join, or send the short form below.'], ['2', 'Trial', 'Play with us on a match night.'], ['3', 'Decision', 'Managers review your trial.'], ['4', 'Your card', 'Join the Hub, submit your AI Studio artwork and get your own locker.']];
-  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Join the club</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Earn your <em>crest</em></h1><p class="lead reveal" style="--i:2">${esc(R.headline ?? 'Trials are by application only')}. We play League and Rush on ${esc(cfg.platform === 'common-gen5' ? 'PS5, Xbox Series and PC' : 'new gen')}.</p><div class="chips reveal" style="--i:3"><a class="btn gold" href="${esc(apply || '#')}" target="_blank" rel="noopener">Apply on Discord</a><a class="btn ghost" href="#jform">Send the short form</a><a class="btn ghost" href="squad.html">Meet the squad</a></div>
+  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Join the club</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Earn your <em>crest</em></h1><p class="lead reveal" style="--i:2">${esc(R.headline ?? 'Trials are by application only')}. We play League and Rush on ${esc(cfg.platform === 'common-gen5' ? 'PS5, Xbox Series and PC' : 'new gen')}.</p><div class="chips reveal" style="--i:3"><a class="btn gold" href="${esc(apply || '#')}" target="_blank" rel="noopener">Apply on Discord</a><a class="btn ghost" href="#jform">Send the short form</a><a class="btn ghost" href="squad.html#squad" data-open-squad aria-expanded="false" aria-controls="squad">Meet the squad</a></div>
   <p class="muted small reveal" style="--i:4;margin-top:12px">${open ? '🟢 Trials are open right now.' : '🔴 Trials are closed for now – you can still apply and we will keep your name.'}</p></div>
   <div class="stage"><div class="crestwrap tilt" data-tilt="7"><span class="halo"></span><img src="crest.png" alt=""></div></div></section>
   <section class="sec jn-status" data-join-status hidden></section>
@@ -139,7 +139,9 @@ export function join() {
     <label>Anything we should know? <small class="muted">(optional)</small><textarea name="note" maxlength="500" rows="3"></textarea></label>
     <p class="jn-msg" role="status" aria-live="polite"></p>
     <div class="chips"><button class="btn gold" type="submit">Send application</button></div></form></section>
-  <section class="sec" data-join-contacts hidden><header><div><span class="ribbon">Who to talk to</span></div><p>The managers who read applications. Message one on Discord if you have a question first.</p></header><div class="grid g4 jn-ct" data-stagger></div></section></div>`;
+  <section class="sec" data-join-contacts hidden><header><div><span class="ribbon">Who to talk to</span></div><p>The managers who read applications. Message one on Discord if you have a question first.</p></header><div class="grid g4 jn-ct" data-stagger></div></section>
+  <section class="sec" id="squad" data-squad-open hidden><header><div><span class="ribbon">Meet the squad</span></div><p>${players.length} players on the roster right now. Cards only, straight from EA's public club data.</p></header><div class="cards jn-squad">${players.map((p) => `<div class="cardwrap">${card(p)}<div class="meta">${esc(p.arch || lineLabel(p))} · ${p.gp} games</div></div>`).join('')}</div><div class="chips" style="margin-top:18px"><a class="btn gold" href="#jform" data-open-form>Send the short form</a><button class="btn ghost" type="button" data-close-squad>Hide the squad</button></div></section>
+  <script>(function(){var b=document.querySelector('[data-open-squad]'),s=document.getElementById('squad');if(!b||!s)return;function open(go){s.hidden=false;b.setAttribute('aria-expanded','true');if(window.NorexArt)try{NorexArt.apply(s)}catch(e){}if(window.NorexMotion)try{NorexMotion.tilt()}catch(e){}if(go)s.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'})}function close(){s.hidden=true;b.setAttribute('aria-expanded','false');b.scrollIntoView({block:'center'})}b.addEventListener('click',function(e){e.preventDefault();s.hidden?open(true):close()});s.querySelector('[data-close-squad]').addEventListener('click',close);if(location.hash==='#squad')open(false)})();</script></div>`;
   return shell({ group: 'club', page: 'join.html', title: 'Join', body, data: { apply }, extraHead: '<script src="join.js" defer></script>' });
 }
 
@@ -158,10 +160,15 @@ export function news() {
 // ---------- WATCH (live player + channels) ----------
 export function watch() {
   const S = cfg.streams ?? {}, ch = [['twitch', 'Twitch', '🟣', '#9146ff', 'Live match nights, Rush sessions and trials'], ['youtube', 'YouTube', '🔴', '#ff0033', 'Highlights, goals of the week and full streams']].filter(([k]) => S[k]);
-  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Watch NOREX</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Live &amp; <em>replays</em></h1><p class="lead reveal" style="--i:2">When we stream a match night the player opens here on its own. Clips play for a few seconds, then wait for you.</p></div></section>
+  const tile = (p, kind, v) => { const yt = p === 'yt', thumb = yt ? `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg` : v.thumb, lab = yt ? (kind === 'short' ? '🔴 Short' : '🔴 YouTube') : (kind === 'clip' ? '🟣 Clip' : '🟣 Recording');
+    return `<button type="button" class="wtp ${kind === 'short' ? 'v' : ''}" data-p="${p}" data-kind="${kind}" data-id="${esc(v.id)}" data-secs="${v.secs ?? 0}" data-title="${esc(v.title)}" aria-label="Play: ${esc(v.title)}">${thumb ? `<img src="${esc(thumb)}" alt="" loading="lazy" decoding="async">` : ''}<span class="wtp-k">${lab}</span><span class="wtp-go" aria-hidden="true">▶</span><span class="wtp-t">${esc(v.title)}</span></button>`; };
+  const shorts = (media.youtube ?? []).filter((v) => v.short).map((v) => tile('yt', 'short', v));
+  const long = [...(media.twitch ?? []).filter((v) => v.kind === 'clip').map((v) => tile('tw', 'clip', v)), ...(media.youtube ?? []).filter((v) => !v.short).map((v) => tile('yt', 'video', v)), ...(media.twitch ?? []).filter((v) => v.kind === 'video').map((v) => tile('tw', 'vod', v))];
+  const prev = shorts.length + long.length ? `<section class="sec" data-wt-prev><header><div><span class="ribbon">Latest from the channels</span></div><p>Short previews play by themselves while they are on screen. Tap one to watch it properly.</p></header>${long.length ? `<div class="wtp-grid">${long.join('')}</div>` : ''}${shorts.length ? `<h3 style="margin:26px 0 10px">Shorts</h3><div class="wtp-row">${shorts.join('')}</div>` : ''}</section>` : '';
+  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Watch NOREX</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Live &amp; <em>replays</em></h1><p class="lead reveal" style="--i:2">When we stream a match night the player opens here on its own. Until then, short looping previews of our latest videos play below.</p></div></section>
   <section class="sec"><div data-watch-live><div class="panel wt-off"><b>📺 Checking if we are live…</b></div></div></section>
-  <section class="sec"><header><div><span class="ribbon">Our channels</span></div></header><div class="wt-ch" data-stagger>${ch.map(([k, l, e, c, d]) => `<a href="${esc(S[k])}" target="_blank" rel="noopener" style="--c:${c}"><span class="em">${e}</span><span><b>${l}</b><small class="muted">${esc(d)}</small></span></a>`).join('') || '<p class="muted">No channels set yet.</p>'}</div></section></div>`;
-  return shell({ group: 'club', page: 'watch.html', title: 'Watch', body });
+  ${prev}<section class="sec"><header><div><span class="ribbon">Our channels</span></div></header><div class="wt-ch" data-stagger>${ch.map(([k, l, e, c, d]) => `<a href="${esc(S[k])}" target="_blank" rel="noopener" style="--c:${c}"><span class="em">${e}</span><span><b>${l}</b><small class="muted">${esc(d)}</small></span></a>`).join('') || '<p class="muted">No channels set yet.</p>'}</div></section></div>`;
+  return shell({ group: 'club', page: 'watch.html', title: 'Watch', body, extraHead: '<link rel="stylesheet" href="watchprev.css"><script src="watchprev.js" defer></script>' });
 }
 
 // ---------- SCOUTING (members only) ----------

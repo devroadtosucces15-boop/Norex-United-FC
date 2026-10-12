@@ -57,8 +57,8 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb th{font:600
 .hero{position:relative;padding:54px 0 30px;display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center;min-height:560px}
 .hero h1{font-size:clamp(46px,8vw,104px);line-height:.92;margin:10px 0 16px;text-shadow:0 8px 40px rgba(200,53,44,.55)}.hero h1 em{font-style:normal;color:var(--red2)}
 .hero p.lead{font-size:18px;color:#c3cde0;max-width:520px}.stage{perspective:1400px;position:relative;min-height:420px;display:grid;place-items:center}
-.crestwrap{position:relative;width:min(380px,70vw);aspect-ratio:1;display:grid;place-items:center;transform-style:preserve-3d}.crestwrap img{width:78%;position:relative;z-index:2;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6))}
-.crestwrap .halo{position:absolute;inset:-26%;background:radial-gradient(closest-side,rgba(255,138,60,.5),rgba(255,120,60,.34) 22%,rgba(220,70,50,.18) 48%,rgba(200,53,44,.07) 72%,transparent);filter:blur(8px);animation:pulse 3.4s ease-in-out infinite}
+.crestwrap{position:relative;width:min(380px,70vw);aspect-ratio:1;display:grid;place-items:center;transform-style:preserve-3d}.crestwrap img{width:78%;position:relative;z-index:2;image-rendering:auto;filter:drop-shadow(0 26px 34px rgba(0,0,0,.55)) drop-shadow(0 0 16px rgba(200,53,44,.5)) drop-shadow(0 0 42px rgba(200,53,44,.3)) drop-shadow(0 0 3px rgba(239,207,122,.22))}
+.crestwrap .halo{position:absolute;inset:-42%;background:radial-gradient(closest-side at 50% 46%,rgba(239,207,122,.07),transparent 38%),radial-gradient(closest-side,rgba(200,53,44,.34),rgba(200,53,44,.28) 10%,rgba(200,53,44,.2) 24%,rgba(200,53,44,.12) 40%,rgba(200,53,44,.06) 55%,rgba(200,53,44,.025) 72%,rgba(200,53,44,.006) 88%,transparent);filter:blur(22px);animation:pulse 3.4s ease-in-out infinite}
 @keyframes pulse{50%{transform:scale(1.12);opacity:.75}}
 .ticker{display:flex;gap:10px;margin:22px 0}.ticker i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:700 14px Oswald;font-style:normal}.ticker .W{background:#12331f;color:#4be08a}.ticker .L{background:#3a1613;color:#ff7d72}.ticker .D{background:#332b12;color:var(--g2)}
 /* ---------- PLAYER CARD FAMILY ---------- */
@@ -309,8 +309,8 @@ html.mx .cmp.rv-g:not(.in) .cbar i{transform:scaleX(0)}.cmp.rv-g .cbar i{transit
 .gate{max-width:760px;margin:0 auto;text-align:center;padding:40px clamp(18px,4vw,44px) 30px;border-radius:26px;position:relative;overflow:hidden;
  background:radial-gradient(520px 260px at 50% 0,rgba(239,207,122,.18),transparent 70%),linear-gradient(180deg,#171e2a,#0e131b);border:1px solid rgba(239,207,122,.28);box-shadow:0 30px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
 .gate-crest{position:relative;width:120px;height:120px;margin:0 auto 6px;display:grid;place-items:center}
-.gate-crest::before{content:"";position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(239,207,122,.35),transparent 65%);animation:gateGlow 3.2s ease-in-out infinite}
-.gate-crest img{position:relative;width:104px;height:104px;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(0,0,0,.6))}
+.gate-crest::before{content:"";position:absolute;inset:-34px;border-radius:50%;background:radial-gradient(closest-side,rgba(200,53,44,.34),rgba(200,53,44,.2) 30%,rgba(200,53,44,.08) 58%,rgba(200,53,44,.02) 82%,transparent);filter:blur(10px);animation:gateGlow 3.2s ease-in-out infinite}
+.gate-crest img{position:relative;width:104px;height:104px;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(0,0,0,.55)) drop-shadow(0 0 12px rgba(200,53,44,.45)) drop-shadow(0 0 2px rgba(239,207,122,.2))}
 .gate-key{position:absolute;right:-6px;bottom:4px;font-size:30px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6));animation:gateKey 2.8s var(--e-io) infinite}
 @keyframes gateGlow{50%{opacity:.55;transform:scale(1.08)}}
 @keyframes gateKey{0%,70%,100%{transform:rotate(0)}80%{transform:rotate(-24deg)}90%{transform:rotate(8deg)}}

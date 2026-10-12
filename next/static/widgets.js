@@ -61,7 +61,7 @@
     $$('.leg button', el).forEach((b) => { const hv = (on) => $$('.rs', el).forEach((p) => (p.style.opacity = on && p.dataset.k !== b.dataset.k ? .12 : 1)); b.onmouseenter = () => hv(1); b.onmouseleave = () => hv(0); b.onclick = () => hv(1); });
   }
   function form(el) {
-    const F = J(el); if (!F) return; $('.formrow', el).innerHTML = F.map((m, i) => `<a class="fo ${m.res}" href="match-${m.id}.html" style="animation-delay:${i * .08}s" title="${m.opp} ${m.gf}-${m.ga}">${m.res}</a>`).join('');
+    const F = J(el); if (!F) return; $('.formrow', el).innerHTML = F.map((m, i) => `<a class="fo ${m.res}" href="match-${m.id}.html" style="animation-delay:${i * .08}s" title="${m.opp} ${m.gf}-${m.ga}">${m.c ? `<img src="https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l${m.c}.png" alt="" width="22" height="22" loading="lazy">` : m.res}<b>${m.res}</b></a>`).join('');
     const g = F.map((m) => m.gf - m.ga), mx = Math.max(1, ...g.map(Math.abs)), w = 600, h = 120, xs = (i) => 20 + i * (w - 40) / Math.max(1, g.length - 1), ys = (v) => h / 2 - (v / mx) * 48;
     let p = `M${xs(0)} ${ys(g[0])}`; for (let i = 1; i < g.length; i++) { const x0 = xs(i - 1), x1 = xs(i), m = (x0 + x1) / 2; p += ` C${m} ${ys(g[i - 1])} ${m} ${ys(g[i])} ${x1} ${ys(g[i])}`; }
     const id = 'wg' + Math.random().toString(36).slice(2, 6);
