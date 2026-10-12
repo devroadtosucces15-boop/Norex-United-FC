@@ -159,5 +159,21 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('watch: script on every page, reads /api/live, clip blurs after 10 s with a prompt', pages.every((f) => read(f).includes('watch.js')) && wj.includes('/api/live') && wj.includes('CLIP_MS = 10000') && wj.includes('Tap to keep watching'));
   t('watch: feed/doc video links become posters that load only on tap', wj.includes('.md-video') && wj.includes('i.ytimg.com') && wj.includes("wt-play').addEventListener('click'"));
   t('watch: Twitch parent is the page host, no autoplay with sound', wj.includes('parent=${encodeURIComponent(location.hostname)}') && wj.includes('muted=true')); }
+// ---- Phase D6/D7: Rush results page + result graphic ----
+{ const rh = read('rush.html'), rj = read('rush.js');
+  t('rush: page built with the list, scorers and opponents slots, linked from the Matches menu', ['id="rs-list"', 'id="rs-pl"', 'id="rs-op"', 'rush.js'].every((k) => rh.includes(k)) && read('results.html').includes('rush.html'));
+  t('rush: reads only the public confirmed-games API and escapes every name', rj.includes("/api/rush'") && !rj.includes('/api/rush/') && rj.includes('esc(m.opp') && rj.includes('esc(r.n)'));
+  t('rush: per-game result graphic is a PNG download, nothing is posted', rj.includes("'image/png'") && rj.includes('data-poster') && !/method:\s*'POST'/.test(rj)); }
+// ---- Phase D2–D4: news, join flow, opponent reports ----
+{ const jh = read('join.html'), jj = read('join.js'), nh = read('news.html'), nj = read('news.js'), oh = read('opponents.html');
+  const oppFiles = fs.readdirSync(out).filter((f) => /^opp-.+\.html$/.test(f)), op = read(oppFiles[0]);
+  t('join: real Discord apply link, requirements, positions and the open/closed line are on the page', jh.includes('https://discord.gg/') && jh.includes('What we look for') && jh.includes('Positions we want') && /Trials are (open|closed)/.test(jh));
+  t('join: short form posts to /api/trials/apply with a honeypot, validates positions/discord/clips and stays hidden until the API answers', jj.includes('/api/trials/apply') && jh.includes('name="website"') && jh.includes('data-join-form hidden') && jj.includes('Pick up to three positions') && jj.includes('must start with https://'));
+  t('join: signed-in status reads /api/me (approved, pending, declined, unlinked) and guests get a sign-in card', jj.includes("get('/api/me')") && ['approved', 'pending', 'declined'].every((k) => jj.includes(`'${k}'`)) && jj.includes('data-login'));
+  t('join: managers to talk to come from /api/contacts', jj.includes('/api/contacts') && jh.includes('data-join-contacts'));
+  t('news: page, Club menu entry, public feed from /api/feed/public and honest empty/off states', nh.includes('data-news-feed') && read('index.html').includes('news.html') && nj.includes('/api/feed/public') && nj.includes('Nothing shared publicly yet') && nj.includes('for members for now'));
+  t('news: docs stay squad-only – guests get links, members their pinned docs from /api/docs', nj.includes("'/api/docs'") && nj.includes('pinned') && nh.includes('hub-handbook.html') && nh.includes('Requirements to join'));
+  t('opponents: every rival has a report page, linked from the table', oppFiles.length >= 1 && oh.includes('href="opp-') && oh.includes('🔍 Report'));
+  t('opponent report: record, facts, players faced and every meeting, all from match data', ['Scouting report', 'What we know', 'Players we have faced', 'Every meeting', 'data-insight="h2h.'].every((k) => op.includes(k)) && op.includes('href="match-')); }
 fs.rmSync(out, { recursive: true, force: true });
 done();
