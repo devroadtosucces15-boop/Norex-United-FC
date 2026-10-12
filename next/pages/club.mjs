@@ -119,13 +119,40 @@ export function hall() {
 
 // ---------- JOIN ----------
 export function join() {
-  const pos = cfg.recruitment?.positions ?? [];
-  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Join the club</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Earn your <em>crest</em></h1><p class="lead reveal" style="--i:2">${esc(cfg.recruitment?.headline ?? 'Trials are by application only')}. We play League and Rush on ${esc(cfg.platform === 'common-gen5' ? 'PS5, Xbox Series and PC' : 'new gen')}.</p><div class="chips reveal" style="--i:3"><a class="btn gold" href="${esc(cfg.discord?.applyLink ?? '#')}">Apply on Discord</a><a class="btn ghost" href="squad.html">Meet the squad</a></div></div>
+  const R = cfg.recruitment ?? {}, pos = R.positions ?? [], apply = cfg.discord?.applyLink ?? '', open = R.open !== false;
+  const P15 = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
+  const steps = [['1', 'Apply', 'Join the Discord and press Apply to Join, or send the short form below.'], ['2', 'Trial', 'Play with us on a match night.'], ['3', 'Decision', 'Managers review your trial.'], ['4', 'Your card', 'Join the Hub, submit your AI Studio artwork and get your own locker.']];
+  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Join the club</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Earn your <em>crest</em></h1><p class="lead reveal" style="--i:2">${esc(R.headline ?? 'Trials are by application only')}. We play League and Rush on ${esc(cfg.platform === 'common-gen5' ? 'PS5, Xbox Series and PC' : 'new gen')}.</p><div class="chips reveal" style="--i:3"><a class="btn gold" href="${esc(apply || '#')}" target="_blank" rel="noopener">Apply on Discord</a><a class="btn ghost" href="#jform">Send the short form</a><a class="btn ghost" href="squad.html">Meet the squad</a></div>
+  <p class="muted small reveal" style="--i:4;margin-top:12px">${open ? '🟢 Trials are open right now.' : '🔴 Trials are closed for now – you can still apply and we will keep your name.'}</p></div>
   <div class="stage"><div class="crestwrap tilt" data-tilt="7"><span class="halo"></span><img src="crest.png" alt=""></div></div></section>
-  <div class="grid g2" style="margin-top:20px"><div class="panel reveal"><h3>What we look for</h3>${(cfg.recruitment?.requirements ?? []).map((r) => `<div style="display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)"><span style="color:var(--g2)">✔</span><span>${esc(r)}</span></div>`).join('')}</div>
-  <div class="panel reveal" style="--i:1"><h3>Positions we want</h3><div class="chips">${pos.map((p) => `<span class="chip gold">${esc(p)}</span>`).join('')}</div><p class="muted small" style="margin-top:12px">Every position in our 3-5-2 has a role in the club tactic, so we recruit for the role, not just the label.</p></div></div>
-  <section class="sec"><header><div><span class="ribbon">How it works</span></div></header><div class="grid g4" data-stagger>${[['1', 'Apply', 'Join the Discord and press Apply to Join.'], ['2', 'Trial', 'Play with us on a match night.'], ['3', 'Decision', 'Managers review your trial.'], ['4', 'Your card', 'Join the Hub, submit your AI Studio artwork and get your own locker.']].map(([n, t, d]) => `<div class="panel"><div class="num gold-t" style="font-size:44px">${n}</div><h3>${t}</h3><p class="muted small">${d}</p></div>`).join('')}</div></section></div>`;
-  return shell({ group: 'club', page: 'join.html', title: 'Join', body });
+  <section class="sec jn-status" data-join-status hidden></section>
+  <div class="grid g2" style="margin-top:20px"><div class="panel reveal"><h3>What we look for</h3>${(R.requirements ?? []).map((r) => `<div style="display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)"><span style="color:var(--g2)">✔</span><span>${esc(r)}</span></div>`).join('')}</div>
+  <div class="panel reveal" style="--i:1"><h3>Positions we want</h3><div class="chips">${pos.map((x) => `<span class="chip gold">${esc(x)}</span>`).join('')}</div><p class="muted small" style="margin-top:12px">Every position in our 3-5-2 has a role in the club tactic, so we recruit for the role, not just the label.</p></div></div>
+  <section class="sec"><header><div><span class="ribbon">How it works</span></div></header><div class="grid g4" data-stagger>${steps.map(([n, t, d]) => `<div class="panel"><div class="num gold-t" style="font-size:44px">${n}</div><h3>${t}</h3><p class="muted small">${d}</p></div>`).join('')}</div></section>
+  <section class="sec" id="jform" data-join-form hidden><header><div><span class="ribbon">Short application</span></div><p>No account needed. A manager reads it and contacts you on Discord. Applying here does not replace the Discord step, it just puts you on the list sooner.</p></header>
+   <form class="panel jn-form" novalidate><input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="jn-hp">
+    <label>EA ID / gamertag<input name="ea" maxlength="40" autocomplete="off" required placeholder="Your in-game name"></label>
+    <label>Platform<select name="platform" required><option value="">Choose…</option><option>PS5</option><option>Xbox</option><option>PC</option></select></label>
+    <fieldset><legend>Positions <small class="muted">(up to 3)</small></legend><div class="chips jn-pos">${P15.map((x) => `<button type="button" class="chip" data-pos="${x}" aria-pressed="false">${x}</button>`).join('')}</div></fieldset>
+    <label>Your Discord username<input name="discord" maxlength="40" autocomplete="off" required placeholder="e.g. mike_fc"></label>
+    <label>Clips link <small class="muted">(optional, must start with https://)</small><input name="clips" maxlength="300" inputmode="url" autocomplete="off" placeholder="https://"></label>
+    <label>Anything we should know? <small class="muted">(optional)</small><textarea name="note" maxlength="500" rows="3"></textarea></label>
+    <p class="jn-msg" role="status" aria-live="polite"></p>
+    <div class="chips"><button class="btn gold" type="submit">Send application</button></div></form></section>
+  <section class="sec" data-join-contacts hidden><header><div><span class="ribbon">Who to talk to</span></div><p>The managers who read applications. Message one on Discord if you have a question first.</p></header><div class="grid g4 jn-ct" data-stagger></div></section></div>`;
+  return shell({ group: 'club', page: 'join.html', title: 'Join', body, data: { apply }, extraHead: '<script src="join.js" defer></script>' });
+}
+
+// ---------- NEWS (club feed + docs, readable without an account) ----------
+export function news() {
+  const ups = updates.slice(0, 4).map((u) => `<a class="nw-up" href="updates.html"><b>${esc(u.title.replace(/^EA SPORTS FC™ 27 \| /, ''))}</b><span class="muted tiny">${new Date(u.published).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>${u.summary ? `<span class="muted small">${esc(String(u.summary).slice(0, 140))}</span>` : ''}</a>`).join('');
+  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Club news</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Feed &amp; <em>docs</em></h1><p class="lead reveal" style="--i:2">Posts the squad has chosen to share with everyone, the game updates that matter to us, and where the club's rules live.</p></div></section>
+  <section class="sec"><header><div><span class="ribbon">From the club feed</span></div><p>Only posts a member marked public appear here. Sign in to see the whole feed, react and comment.</p></header><div data-news-feed><div class="panel muted">Loading the feed…</div></div></section>
+  <section class="sec"><header><div><span class="ribbon">Club docs</span></div><p>Rules, requirements and how we play stay inside the squad. Everything meant for outsiders is on these pages.</p></header>
+   <div class="grid g3" data-stagger><a class="panel nw-doc" href="join.html"><span class="em" aria-hidden="true">📋</span><b>Requirements to join</b><span class="muted small">What we look for, the positions we want and how to apply.</span></a><a class="panel nw-doc" href="updates.html"><span class="em" aria-hidden="true">📰</span><b>Game updates</b><span class="muted small">EA patch notes read for what changes our play.</span></a><a class="panel nw-doc" href="hub-handbook.html"><span class="em" aria-hidden="true">📜</span><b>Squad handbook</b><span class="muted small">Club rules, play style and announcements. Members only.</span></a></div>
+   <div data-news-docs hidden></div></section>
+  <section class="sec"><header><div><span class="ribbon">Latest game updates</span></div></header><div class="nw-ups">${ups || '<p class="muted">No updates saved yet.</p>'}</div></section></div>`;
+  return shell({ group: 'club', page: 'news.html', title: 'News', body, extraHead: '<script src="docs-md.js" defer></script><script src="news.js" defer></script>' });
 }
 
 // ---------- WATCH (live player + channels) ----------
@@ -150,6 +177,6 @@ export function scouting() {
 }
 
 export default function (P) {
-  P('index.html', home()); P('squad.html', squad()); P('halloffame.html', hall()); P('join.html', join()); P('watch.html', watch()); P('scouting.html', scouting());
+  P('index.html', home()); P('squad.html', squad()); P('halloffame.html', hall()); P('join.html', join()); P('news.html', news()); P('watch.html', watch()); P('scouting.html', scouting());
   for (const p of players) P(`player-${slug(p.k)}.html`, player(p));
 }
