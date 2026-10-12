@@ -1,5 +1,5 @@
 // NOREX look: crest-red stripe embeds, steel for errors. The panel is the main surface.
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, ThumbnailBuilder, MessageFlags, AttachmentBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, ThumbnailBuilder, MessageFlags, AttachmentBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder } from 'discord.js';
 import { COLOR, CREST } from './v2.js';
 import { EFFECTS, EFFECT_NAMES, effectState, activeEffects } from './effects.js';
 
@@ -27,7 +27,7 @@ const bar = (pos, len, n = 16) => {
 };
 const btn = (id, label, style = ButtonStyle.Secondary) => new ButtonBuilder().setCustomId(`dj:${id}`).setLabel(label).setStyle(style);
 
-export function panelPayload(b) {
+export function panelPayload(b, card = null) {
   const room = b.room; const s = b.settings; const cur = room?.current; const t = cur?.info;
   const attach = [new AttachmentBuilder(CREST, { name: 'crest.png' })];
   const flags = MessageFlags.IsComponentsV2;
@@ -59,7 +59,8 @@ export function panelPayload(b) {
       td(`-# ${t.author || 'Unknown artist'}${from} · ${src}`))
     .setThumbnailAccessory(art));
   c.addSeparatorComponents(sep());
-  c.addTextDisplayComponents(td(t.isStream ? '`LIVE` 🔴 live stream' : bar(room.player?.position || 0, t.length)));
+  if (card) c.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://nowplaying.png').setDescription(`Now playing: ${t.title}`)));
+  else c.addTextDisplayComponents(td(t.isStream ? '`LIVE` 🔴 live stream' : bar(room.player?.position || 0, t.length)));
   c.addSeparatorComponents(sep());
   const listeners = room.memberIds?.().length ?? 0;
   c.addTextDisplayComponents(td([
@@ -78,5 +79,6 @@ export function panelPayload(b) {
     .addOptions(EFFECT_NAMES.map((n) => ({ label: EFFECTS[n].label, value: n, emoji: EFFECTS[n].emoji, description: `${EFFECTS[n].blurb} · level ${effectState(s, n).level}`, default: Boolean(s.effects?.[n]?.on) })))));
   c.addSeparatorComponents(sep(false));
   c.addTextDisplayComponents(td(`-# ${room.helper.name} · playing in <#${room.channelId}> · 🔮 = suggested for the room · levels with /effects level`));
+  if (card) attach.push(new AttachmentBuilder(card, { name: 'nowplaying.png' }));
   return { components: [c], files: attach, flags };
 }
