@@ -15,7 +15,7 @@ const MANAGERS = (process.env.MANAGER_ROLE_IDS || '').split(',').filter(Boolean)
 const EMPTY_GRACE_MS = 45_000, NEVER_USED_MS = 3 * 60_000, GREET_TTL_MS = 120_000;
 
 const db = { counter: 0, rooms: {} }; // rooms[vcId] = { guildId, ownerId, code, name }
-const timers = new Map(), greeted = new Map();
+const timers = new Map(), greeted = new Map(), ctlTimers = new Map(), bumpTimers = new Map();
 let client;
 
 export function load() { try { Object.assign(db, JSON.parse(fs.readFileSync(FILE, 'utf8'))); } catch { /* first run */ } }
@@ -46,6 +46,7 @@ export async function create(guild, member, rawName) {
   save();
   store.bind({ guildId: guild.id, textId: vc.id, voiceId: vc.id }); // /play in the room's own chat plays into that voice channel
   arm(vc.id, NEVER_USED_MS); // nobody came in: tidy it up
+  await ctlSync(vc.id, true);
   return vc;
 }
 export const openCount = (guildId) => Object.values(db.rooms).filter((r) => r.guildId === guildId).length;
@@ -59,13 +60,13 @@ export async function setLocked(guild, id, on) {
   for (const rid of MANAGERS) await ch.permissionOverwrites.edit(rid, on ? { Connect: true, ViewChannel: true } : { Connect: null }).catch(() => {});
   const host = await guild.members.fetch(r.ownerId).catch(() => null);
   if (host) await ch.permissionOverwrites.edit(host, on ? { Connect: true } : { Connect: null }).catch(() => {});
-  r.locked = on; save(); await refreshAnnouncement(id);
+  r.locked = on; save(); await refreshAnnouncement(id); ctlRefresh(id, 200);
   return true;
 }
 export async function setLimit(guild, id, n) {
   const r = db.rooms[id]; const ch = await guild.channels.fetch(id).catch(() => null);
   if (!r || !ch) return false;
-  r.limit = Math.max(0, Math.min(99, n | 0)); await ch.setUserLimit(r.limit); save(); await refreshAnnouncement(id);
+  r.limit = Math.max(0, Math.min(99, n | 0)); await ch.setUserLimit(r.limit); save(); await refreshAnnouncement(id); ctlRefresh(id, 200);
   return true;
 }
 export async function refreshAnnouncement(id) {
@@ -77,6 +78,45 @@ export async function refreshAnnouncement(id) {
 
 export async function setStatus(id, text) {
   await client.rest.put(`${Routes.channel(id)}/voice-status`, { body: { status: String(text || '').slice(0, 500) } });
+  if (db.rooms[id]) { db.rooms[id].status = String(text || '').slice(0, 100); save(); ctlRefresh(id); }
+}
+
+// ---- Room controls: a compact panel in the room's own chat that always sits at the bottom, like the player panel.
+function controlsPayload(id) {
+  const r = db.rooms[id]; const ch = client.channels.cache.get(id);
+  const inside = ch ? ch.members.filter((m) => !m.user.bot).size : 0;
+  return panel({
+    color: r.locked ? 'steel' : 'red', eyebrow: 'Room controls', title: r.name, picture: false,
+    detail: `${r.code} · host ${r.hostName}`,
+    body: [[`${r.locked ? '🔒 **Locked** · only the host and managers can join' : '🔓 **Open** · anyone can join'}`, `👥 ${inside} in the room · ${r.limit ? `limit ${r.limit}` : 'no limit'}${r.status ? ` · ${r.status}` : ''}`]],
+    footer: 'Lock, limit and close are for the host and managers · anyone can set the status',
+    buttons: [btn(`room:lock:${id}`, r.locked ? '🔓 Unlock' : '🔒 Lock'), btn(`room:limit:${id}:-1`, '➖ Limit'), btn(`room:limit:${id}:1`, '➕ Limit'), btn(`room:status:${id}`, '📝 Status'), btn(`room:close:${id}`, '✖ Close', ButtonStyle.Danger)]
+  });
+}
+export async function ctlSync(id, repost = false) {
+  const r = db.rooms[id]; if (!r) return;
+  const ch = await client.channels.fetch(id).catch(() => null); if (!ch) return;
+  const payload = controlsPayload(id);
+  if (r.ctl && !repost) { const ok = await ch.messages.edit(r.ctl, payload).then(() => true, () => false); if (ok) return; }
+  if (r.ctl) await ch.messages.delete(r.ctl).catch(() => {});
+  const m = await ch.send(payload).catch((e) => { console.error('controls send', e.message); return null; });
+  r.ctl = m?.id || null; save();
+}
+export function ctlRefresh(id, delay = 800) { clearTimeout(ctlTimers.get(id)); ctlTimers.set(id, setTimeout(() => ctlSync(id).catch(() => {}), delay)); }
+// New message in the room chat: put the player panel and the controls back at the bottom, in that order.
+export function bumpAll(id) {
+  clearTimeout(bumpTimers.get(id));
+  bumpTimers.set(id, setTimeout(async () => {
+    const r = db.rooms[id]; const ch = await client.channels.fetch(id).catch(() => null); if (!r || !ch) return;
+    if (r.ctl && ch.lastMessageId === r.ctl) return;
+    const b = store.byText(id);
+    if (b?.panelId) await pnl.bumpNow(b).catch(() => {});
+    await ctlSync(id, true);
+  }, 4000));
+}
+// After the player panel is first posted below the controls, move the controls back under it.
+export function ctlEnsureLast(id) {
+  setTimeout(async () => { const r = db.rooms[id]; const ch = await client.channels.fetch(id).catch(() => null); if (r && ch && r.ctl && ch.lastMessageId !== r.ctl) ctlSync(id, true).catch(() => {}); }, 2500);
 }
 
 function arm(id, ms) {
@@ -86,7 +126,7 @@ function arm(id, ms) {
 const disarm = (id) => { clearTimeout(timers.get(id)); timers.delete(id); };
 
 export async function remove(id, why = 'closed') {
-  disarm(id);
+  disarm(id); clearTimeout(ctlTimers.get(id)); clearTimeout(bumpTimers.get(id));
   const ch = await client.channels.fetch(id).catch(() => null);
   if (ch && why === 'empty' && humans(ch) > 0) return; // someone came back
   const b = store.byText(id);
@@ -129,7 +169,8 @@ export function init(c) { client = c; }
 export async function onVoice(oldS, newS) {
   const left = oldS.channelId && oldS.channelId !== newS.channelId ? oldS.channel : null;
   const joined = newS.channelId && newS.channelId !== oldS.channelId ? newS.channel : null;
-  if (left && isBubble(left.id) && humans(left) === 0) arm(left.id, EMPTY_GRACE_MS);
+  if (left && isBubble(left.id)) { ctlRefresh(left.id); if (humans(left) === 0) arm(left.id, EMPTY_GRACE_MS); }
+  if (joined && isBubble(joined.id)) ctlRefresh(joined.id);
   if (joined && isBubble(joined.id) && !newS.member.user.bot) {
     disarm(joined.id);
     const seen = greeted.get(joined.id) || new Set();
@@ -146,7 +187,7 @@ export async function reconcile() {
   for (const id of Object.keys(db.rooms)) {
     const ch = await client.channels.fetch(id).catch(() => null);
     if (!ch) { const b = store.byText(id); if (b) store.drop(b); delete db.rooms[id]; continue; }
-    if (humans(ch) === 0) arm(id, 20_000);
+    if (humans(ch) === 0) arm(id, 20_000); else ctlSync(id, !db.rooms[id].ctl).catch(() => {});
   }
   save();
 }
