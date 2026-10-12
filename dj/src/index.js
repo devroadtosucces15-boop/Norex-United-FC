@@ -182,12 +182,16 @@ const fresh = (m) => ({ components: m.components, files: m.files, flags: Message
 async function roomCommand(i) {
   const sub = i.options.getSubcommand();
   if (sub === 'create') {
-    await i.deferReply({ flags: MessageFlags.Ephemeral });
     const mine = Object.entries(rooms.all()).find(([, r]) => r.ownerId === i.user.id && r.guildId === i.guildId);
-    if (mine) { const vc = await i.guild.channels.fetch(mine[0]).catch(() => null); if (vc) return i.editReply(fresh(rooms.dialog(vc, mine[1].code, mine[1].name))); }
+    if (mine) { const have = await i.guild.channels.fetch(mine[0]).catch(() => null); if (have) return i.reply(small('You already have a room', `Join ${mine[1].code} here: ${rooms.url(i.guildId, mine[0])}`)); }
+    await i.deferReply();
     try {
       const vc = await rooms.create(i.guild, i.member, i.options.getString('name'));
-      return i.editReply(fresh(rooms.dialog(vc, rooms.info(vc.id).code, rooms.info(vc.id).name)));
+      const r = rooms.info(vc.id);
+      await i.editReply(fresh(rooms.dialog(vc, r.code, r.name, i.member.displayName)));
+      const msg = await i.fetchReply();
+      rooms.remember(vc.id, msg.channelId, msg.id);
+      return;
     } catch (e) {
       console.error('room create', e.message);
       return i.editReply(fresh(small('Could not open a room', 'Ask a manager to give Norex DJ Manage Channels, then try again.')));
@@ -212,7 +216,7 @@ async function roomComponent(i) {
   if (action === 'move') {
     if (!i.member.voice?.channelId) return i.reply(small('Join any voice channel first', 'Then tap Move me in again, or use Open room.'));
     await i.member.voice.setChannel(id).catch(() => null);
-    return i.update(fresh(v2panel({ color: 'green', eyebrow: 'Rooms', title: 'You are in', detail: `${r.code} · ${r.name}`, picture: false, ephemeral: true, body: ['Enjoy the room. Type `/play` in its chat for music.'] })));
+    return i.reply(v2panel({ color: 'green', eyebrow: 'Rooms', title: 'You are in', detail: `${r.code} · ${r.name}`, picture: false, ephemeral: true, body: ['Enjoy the room. Type `/play` in its chat for music.'] }));
   }
   if (action === 'status') {
     return i.showModal(new ModalBuilder().setCustomId(`room:statusmodal:${id}`).setTitle('Room status')
@@ -224,7 +228,7 @@ async function roomComponent(i) {
   }
   if (action === 'close') {
     if (!isManager(i.member) && r.ownerId !== i.user.id) return i.reply(small('Only the host or a manager can close this room', 'Ask them, or leave and it closes when empty.'));
-    await i.update(fresh(v2panel({ color: 'steel', title: 'Room closed', detail: `${r.code} · ${r.name}`, picture: false, ephemeral: true })));
+    await i.deferUpdate();
     return rooms.remove(id, 'closed');
   }
 }

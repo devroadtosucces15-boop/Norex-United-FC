@@ -64,22 +64,26 @@ export async function remove(id, why = 'closed') {
   if (ch && why === 'empty' && humans(ch) > 0) return; // someone came back
   const b = store.byText(id);
   if (b) { if (b.room) await b.room.destroy().catch(() => {}); await pnl.remove(b).catch(() => {}); store.drop(b); }
+  const r = db.rooms[id];
+  if (r?.msg) { const c = await client.channels.fetch(r.msg.channelId).catch(() => null); const m = await c?.messages.fetch(r.msg.messageId).catch(() => null); const n = closedNote(r); await m?.edit({ components: n.components, files: [], attachments: [], flags: n.flags & ~0 }).catch(() => {}); }
   delete db.rooms[id]; greeted.delete(id); save();
   if (ch) await ch.delete(`NOREX room ${why}`).catch((e) => console.error('room delete', e.message));
 }
 
-// The dialog the creator sees: move in, or just open it.
-export function dialog(vc, code, name) {
+// The announcement everyone in the channel sees: anyone can tap Join room.
+export function dialog(vc, code, name, host) {
   return panel({
-    color: 'red', eyebrow: 'Rooms', title: 'Your room is ready', detail: `${code} · ${name}`, ephemeral: true,
+    color: 'red', eyebrow: 'Rooms', title: `${host} opened a room`, detail: `${code} · ${name}`,
     body: [
-      ['Move in now? Anyone in the server can see the room and join it.', 'It has its own chat (open the room, then its chat icon) and closes by itself when everyone has left.'],
+      ['Anyone can see the room and join it. It has its own chat and closes by itself when everyone has left.'],
       ['**Want music?** In the room chat type `/play` and a song name or link. Anyone in the room can use `/effects`, `/autoplay` and `/volume`.']
     ],
-    footer: 'Tip: set what you are up to with /room status',
-    buttons: [btn(`room:move:${vc.id}`, '🎧 Move me in'), btn(`room:status:${vc.id}`, '📝 Set status'), btn(`room:close:${vc.id}`, '✖ Close room', ButtonStyle.Danger), linkBtn(url(vc.guildId, vc.id), 'Open room')]
+    footer: 'Tip: set what the room is about with /room status',
+    buttons: [btn(`room:move:${vc.id}`, '🎧 Join room'), btn(`room:status:${vc.id}`, '📝 Set status'), btn(`room:close:${vc.id}`, '✖ Close room', ButtonStyle.Danger), linkBtn(url(vc.guildId, vc.id), 'Open room')]
   });
 }
+export const closedNote = (r) => panel({ color: 'steel', eyebrow: 'Rooms', title: 'Room closed', detail: `${r.code} · ${r.name}`, picture: false, body: ['Open a new one any time with `/room create`.'] });
+export function remember(id, channelId, messageId) { if (db.rooms[id]) { db.rooms[id].msg = { channelId, messageId }; save(); } }
 
 function greeting(member, vc, r) {
   return panel({
