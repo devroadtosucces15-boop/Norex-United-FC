@@ -42,7 +42,7 @@ const isManager = (m) => m.permissions.has('ManageGuild') || m.roles.cache.some(
 const canControl = (room, m) => isManager(m) || m.voice?.channelId === room.channelId;
 const NOPERM = 'Join the music voice channel first (or ask a manager).';
 
-const onChange = (room) => panel.refresh(room.binding);
+const onChange = (room) => { panel.refresh(room.binding); if (rooms.isBubble(room.binding.textId)) rooms.ctlEnsureLast(room.binding.textId); };
 const notify = (room, text) => main.client.channels.fetch(room.binding.textId)
   .then((c) => c.send({ embeds: [new EmbedBuilder().setColor(0x6b7785).setDescription(text)] }))
   .then((m) => setTimeout(() => m.delete().catch(() => {}), 20_000)).catch(() => {});
@@ -54,6 +54,7 @@ function onDestroy(room) {
 // Sticky panel: any new message in a player channel schedules a re-post of the panel at the bottom.
 main.client.on('messageCreate', (m) => {
   if (m.author.id === main.client.user.id || !m.guildId) return;
+  if (rooms.isBubble(m.channelId)) return rooms.bumpAll(m.channelId); // room chats keep the player and the controls together at the bottom
   for (const b of store.forText(m.channelId)) if (b.panelId) panel.bump(b);
 });
 
@@ -224,7 +225,7 @@ async function roomCommand(i) {
   }
 }
 async function roomComponent(i) {
-  const [, action, id] = i.customId.split(':');
+  const [, action, id, arg] = i.customId.split(':');
   const r = rooms.info(id);
   if (!r) return i.reply(small('That room is gone', 'Open a new one with /room create.'));
   if (action === 'move') {
@@ -242,6 +243,11 @@ async function roomComponent(i) {
   if (action === 'statusmodal') {
     await rooms.setStatus(id, i.fields.getTextInputValue('text')).catch(() => {});
     return i.reply(v2panel({ color: 'steel', title: 'Status updated', detail: i.fields.getTextInputValue('text') || 'Status cleared', picture: false, ephemeral: true }));
+  }
+  if (action === 'limit') {
+    if (!mayRun(i, id)) return i.reply(small('Only the host or a manager can do that', 'Ask them to change the limit.'));
+    await i.deferUpdate();
+    return rooms.setLimit(i.guild, id, Math.max(0, Math.min(99, (r.limit || 0) + Number(arg || 0))));
   }
   if (action === 'lock') {
     if (!mayRun(i, id)) return i.reply(small('Only the host or a manager can do that', 'Ask them to lock or unlock the room.'));

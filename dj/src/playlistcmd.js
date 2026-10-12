@@ -121,7 +121,7 @@ export async function run(i, ctx) {
     await i.deferReply();
     const room = await ctx.ensureRoom(i);
     if (room.error) return i.editReply(fresh(note(room.error, 'Join a voice channel, or ask a manager to run /setup here.')));
-    await room.room.add(rows.map((x) => ({ info: { title: x.title, author: x.author, length: x.length, uri: x.uri, sourceName: 'stored' }, encoded: null, deferred: x })));
+    await room.room.add(rows.map((x) => ({ info: { title: x.title, author: x.author, length: x.length, uri: x.uri, sourceName: 'stored' }, encoded: null, deferred: x, from: `${r.owner.displayName}'s ${r.p.name}` })));
     return i.editReply(fresh(panel({
       color: 'red', eyebrow: 'Playlists', title: `Playing ${r.p.name}`, detail: `${r.owner.displayName}'s playlist · ${rows.length} songs${i.options.getBoolean('shuffle') ? ' · shuffled' : ''}`, picture: false,
       body: [`Queued in ${room.room.helper.name}. Each song is matched to the best source when its turn comes.`]

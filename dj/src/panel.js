@@ -17,6 +17,7 @@ async function doRefresh(b) {
   if (b.panelId) {
     const ok = await ch.messages.edit(b.panelId, payload).then(() => true, () => false);
     if (ok) return;
+    await ch.messages.delete(b.panelId).catch(() => {}); // an old-style panel cannot be edited into the new layout
     b.panelId = null;
   }
   const m = await ch.send(payload).catch((e) => { console.error('panel send', e.message); });
@@ -25,10 +26,11 @@ async function doRefresh(b) {
 export function bump(b) {
   clearTimeout(b._bt); b._bt = setTimeout(() => doBump(b), 4000);
 }
-async function doBump(b) {
+export const bumpNow = (b) => doBump(b, true);
+async function doBump(b, force = false) {
   const ch = await chan(b);
   if (!ch?.isTextBased()) return;
-  if (b.panelId && ch.lastMessageId === b.panelId) return doRefresh(b);
+  if (!force && b.panelId && ch.lastMessageId === b.panelId) return doRefresh(b);
   if (b.panelId) await ch.messages.delete(b.panelId).catch(() => {});
   b.panelId = null;
   await doRefresh(b);

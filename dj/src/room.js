@@ -31,6 +31,7 @@ export class Room {
     });
     this.player.on('exception', () => { this.recovering = this.recover().finally(() => { this.recovering = null; }); });
     this.player.on('closed', () => this.destroy());
+    this.ticker = setInterval(() => { if (this.current && !this.player?.paused) this.changed(); }, 15_000); // keeps the progress bar moving
   }
   async add(tracks) {
     const i = this.queue.findIndex((t) => t.auto);
@@ -51,7 +52,7 @@ export class Room {
       const want = this.current;
       const node = this.helper.shoukaku.getIdealNode();
       const m = want.deferred ? await materialize(node, want.deferred) : await findEquivalent(node, want.info);
-      if (m) { m.info = { ...m.info, artworkUrl: m.info.artworkUrl || want.info.artworkUrl }; m.auto = want.auto; this.current = m; break; }
+      if (m) { m.info = { ...m.info, artworkUrl: m.info.artworkUrl || want.info.artworkUrl }; m.auto = want.auto; m.from = want.from; this.current = m; break; }
       this.notify?.(this, `No exact match found for **${want.info.title}**${want.info.author ? ` (${want.info.author})` : ''}, skipped.`);
       this.current = this.queue.shift() || null;
     }
@@ -105,7 +106,7 @@ export class Room {
   stop() { this.queue = []; this.settings.loop = 'off'; return this.destroy(); }
   async destroy() {
     if (this.dead) return;
-    this.dead = true; clearTimeout(this.idleTimer);
+    this.dead = true; clearTimeout(this.idleTimer); clearInterval(this.ticker);
     this.helper.rooms.delete(this.guildId);
     try { await this.helper.shoukaku.leaveVoiceChannel(this.guildId); } catch {}
     this.onDestroy?.(this);
