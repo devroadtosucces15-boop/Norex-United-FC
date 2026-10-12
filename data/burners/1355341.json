@@ -3,7 +3,7 @@
  "name": "TeloSico",
  "crest": "99161115",
  "trackedAt": "2026-10-09T01:34:16.493Z",
- "fetchedAt": "2026-10-12T00:30:23.584Z",
+ "fetchedAt": "2026-10-12T00:40:23.428Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "TeloSico",
@@ -219,24 +219,13 @@
    "ratingAve": "8.1",
    "prevGoals": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "x_MrMike_x",
-   "proPos": "25",
-   "gamesPlayed": "50",
-   "goals": "39",
-   "assists": "25",
-   "manOfTheMatch": "8",
-   "ratingAve": "7.6",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
   }
  ],
  "roster": {
   "x_MrMike_x": {
    "first": "2026-10-09T01:34:16.493Z",
    "last": "2026-10-12T00:30:23.584Z",
-   "active": true,
+   "active": false,
    "gp": 2,
    "pos": "midfielder",
    "ovr": 80
@@ -244,7 +233,7 @@
   "Ringerr": {
    "first": "2026-10-09T01:34:16.493Z",
    "last": "2026-10-12T00:30:23.584Z",
-   "active": true,
+   "active": false,
    "gp": 0,
    "pos": null,
    "ovr": null
@@ -252,7 +241,7 @@
   "Daniel_Munoz_": {
    "first": "2026-10-09T01:34:16.493Z",
    "last": "2026-10-12T00:30:23.584Z",
-   "active": true,
+   "active": false,
    "gp": 0,
    "pos": null,
    "ovr": null
