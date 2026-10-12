@@ -3,6 +3,7 @@ import { hex } from './media.js';
 import { notify, notifyManagers, safely } from './notify.js';
 
 export const CARD_MODEL = '@cf/black-forest-labs/flux-2-klein-9b';
+export const DESCRIBE_MODEL = '@cf/llava-hf/llava-1.5-7b-hf';
 export const MAX_ATTEMPTS = 3;
 const RETRY_AFTER = 2 * 60e3; // a failed try waits this long before the next one
 const DAY = 86400e3;
@@ -351,10 +352,47 @@ export async function cardResult(request, me, env, id) {
   return new Response(obj.body, { headers: h });
 }
 
-export const cardPrompt = (poseFragment) =>
+// Shared by every prompt: the picture must stay recognisably the same person/character, whoever they are.
+const LIKENESS = 'Likeness is the top priority. Keep the same gender presentation, age, face shape, skin tone and hairstyle as the reference. '
+  + 'Keep every distinctive feature exactly as shown: facial hair, glasses, headwear or helmet, scars, freckles, piercings, and any unusual, exaggerated or non-human features. '
+  + 'Do not beautify, idealise, slim down, de-age or make them more conventionally attractive. Stylise the rendering, never the person. '
+  + 'The reference can be a real photo, a game avatar or an illustrated character of any gender, age, skin tone or build. ';
+
+// Association football (soccer) kit. Spelled out because "football jersey" alone gets American football gear.
+const KIT = 'wearing a plain soccer jersey in black, red and white: slim fit, natural shoulders, round or V-neck collar, short sleeves with narrow cuffs, '
+  + 'like an association football (soccer) shirt, not an American football jersey, no shoulder pads, no boxy oversized cut, no mesh, no sleeve stripes';
+
+export const portraitPrompt = (notes = '') =>
+  'Image 0 is the person. '
+  + LIKENESS
+  + (notes ? `Reference notes, which are authoritative: ${notes} ` : '')
+  + 'Create a consistent clean semi-cartoon soccer player bust portrait, head and chest only, straight-on camera, neutral relaxed pose, centered with generous margins, '
+  + `${KIT}, no text, no numbers, no logos, no badges, no frame, no scenery. `
+  + 'Solid contrasting light background suitable for automated cutout. Match a repeatable professional game-card illustration style.';
+
+export const cardPrompt = (poseFragment, notes = '') =>
   'Image 0 is the card background: keep its colours, framing and empty centre exactly. '
-  + `Image 1 is the player: keep their real face, hair and skin tone. Place the player from image 1 in the centre of image 0, ${poseFragment}. `
-  + 'Esports football club player card, clean studio lighting, sharp, no text, no logos, no watermark.';
+  + `Image 1 is the player: ${LIKENESS}`
+  + (notes ? `Reference notes, which are authoritative: ${notes} ` : '')
+  + `Place the player from image 1 in the centre of image 0, ${poseFragment}. `
+  + 'Esports soccer club player card, clean studio lighting, sharp, no text, no logos, no watermark.';
+
+// Best effort: a vision model writes down what the photo actually shows, so the artwork model is told rather than left to guess.
+// Any failure just means the prompt goes out without notes.
+async function describe(env, photo) {
+  if (!env.AI) return '';
+  try {
+    const out = await env.AI.run(DESCRIBE_MODEL, {
+      image: [...photo.bytes],
+      max_tokens: 160,
+      prompt: 'Describe this person or character for an artist who must redraw them faithfully. In under 60 words, plain text, state: apparent gender (man, woman, boy, girl, or non-binary), approximate age, skin tone, hair colour and style, facial hair, glasses or headwear, expression, and any distinctive or unusual feature. Say if it is a real photo, a game avatar or a drawing. Do not judge or flatter.',
+    });
+    return clean(out?.description ?? out?.response, 400);
+  } catch (e) {
+    console.log('photo description skipped', e.message);
+    return '';
+  }
+}
 
 // FLUX.2 rejects references of 512×512 or more; shrink with the Images binding when it is bound.
 async function reference(env, bytes, type) {
@@ -366,7 +404,8 @@ async function reference(env, bytes, type) {
 async function render(env, bg, pose, photo, portrait = false) {
   if (!env.AI) throw new Error('The AI binding is not connected.');
   const form = new FormData();
-  form.append('prompt', portrait ? 'Image 0 is the person. Preserve their facial identity, hairstyle, skin tone and expression. Create a consistent clean semi-cartoon football player bust portrait, head and chest only, straight-on camera, neutral relaxed pose, centered with generous margins, wearing a generic black red and white football jersey, no text, no numbers, no logos, no badges, no frame, no scenery. Solid contrasting light background suitable for automated cutout. Match a repeatable professional game-card illustration style.' : cardPrompt(pose.prompt));
+  const notes = await describe(env, photo);
+  form.append('prompt', portrait ? portraitPrompt(notes) : cardPrompt(pose.prompt, notes));
   form.append('width', String(CARD_SIZE));
   form.append('height', String(CARD_SIZE));
   if (!portrait) form.append('input_image_0', await reference(env, bg.bytes, bg.type), 'background.png');
