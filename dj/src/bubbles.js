@@ -10,6 +10,8 @@ import * as pnl from './panel.js';
 
 const FILE = path.join(process.env.DATA_DIR || '/app/data', 'bubbles.json');
 const CATEGORY = 'NOREX ROOMS';
+const MAX_ROOMS = 5;
+const MANAGERS = (process.env.MANAGER_ROLE_IDS || '').split(',').filter(Boolean);
 const EMPTY_GRACE_MS = 45_000, NEVER_USED_MS = 3 * 60_000, GREET_TTL_MS = 120_000;
 
 const db = { counter: 0, rooms: {} }; // rooms[vcId] = { guildId, ownerId, code, name }
@@ -30,22 +32,47 @@ async function ensureCategory(guild) {
 }
 
 export async function create(guild, member, rawName) {
+  if (Object.values(db.rooms).filter((r) => r.guildId === guild.id).length >= MAX_ROOMS) throw new Error('FULL');
   const cat = await ensureCategory(guild);
   const code = `NRX-${String(++db.counter).padStart(3, '0')}`;
   const base = (rawName || `${member.displayName}'s room`).replace(/[^\p{L}\p{N} '’._-]/gu, '').trim().slice(0, 60) || 'room';
-  const open = [P.ViewChannel, P.Connect, P.Speak, P.Stream, P.UseVAD, P.SendMessages, P.ReadMessageHistory, P.EmbedLinks, P.AttachFiles, P.AddReactions, P.UseApplicationCommands, P.UseExternalEmojis];
-  if (P.SetVoiceChannelStatus) open.push(P.SetVoiceChannelStatus); // anyone in the room may set its status
+  // No explicit view/join permissions: the room follows the NOREX ROOMS category, so you control who sees rooms in one place.
   const vc = await guild.channels.create({
     name: `🎧 ${base} · ${code}`, type: ChannelType.GuildVoice, parent: cat.id,
-    bitrate: guild.maximumBitrate, rtcRegion: null,
-    permissionOverwrites: [{ id: guild.roles.everyone.id, allow: open }],
-    reason: `NOREX room ${code} for ${member.user.tag}`
+    bitrate: guild.maximumBitrate, rtcRegion: null, reason: `NOREX room ${code} for ${member.user.tag}`
   });
-  db.rooms[vc.id] = { guildId: guild.id, ownerId: member.id, code, name: base, createdAt: Date.now() };
+  if (P.SetVoiceChannelStatus) await vc.permissionOverwrites.edit(guild.roles.everyone, { SetVoiceChannelStatus: true }).catch(() => {});
+  db.rooms[vc.id] = { guildId: guild.id, ownerId: member.id, hostName: member.displayName, code, name: base, locked: false, limit: 0, createdAt: Date.now() };
   save();
   store.bind({ guildId: guild.id, textId: vc.id, voiceId: vc.id }); // /play in the room's own chat plays into that voice channel
   arm(vc.id, NEVER_USED_MS); // nobody came in: tidy it up
   return vc;
+}
+export const openCount = (guildId) => Object.values(db.rooms).filter((r) => r.guildId === guildId).length;
+export const maxRooms = MAX_ROOMS;
+
+// Locked: only the host, managers and the founder can connect. Unlocked: back to whatever the category says.
+export async function setLocked(guild, id, on) {
+  const r = db.rooms[id]; const ch = await guild.channels.fetch(id).catch(() => null);
+  if (!r || !ch) return false;
+  await ch.permissionOverwrites.edit(guild.roles.everyone, { Connect: on ? false : null });
+  for (const rid of MANAGERS) await ch.permissionOverwrites.edit(rid, on ? { Connect: true, ViewChannel: true } : { Connect: null }).catch(() => {});
+  const host = await guild.members.fetch(r.ownerId).catch(() => null);
+  if (host) await ch.permissionOverwrites.edit(host, on ? { Connect: true } : { Connect: null }).catch(() => {});
+  r.locked = on; save(); await refreshAnnouncement(id);
+  return true;
+}
+export async function setLimit(guild, id, n) {
+  const r = db.rooms[id]; const ch = await guild.channels.fetch(id).catch(() => null);
+  if (!r || !ch) return false;
+  r.limit = Math.max(0, Math.min(99, n | 0)); await ch.setUserLimit(r.limit); save(); await refreshAnnouncement(id);
+  return true;
+}
+export async function refreshAnnouncement(id) {
+  const r = db.rooms[id]; if (!r?.msg) return;
+  const c = await client.channels.fetch(r.msg.channelId).catch(() => null); const m = await c?.messages.fetch(r.msg.messageId).catch(() => null);
+  const n = dialog({ id, guildId: r.guildId }, r);
+  await m?.edit({ components: n.components, files: n.files, flags: n.flags }).catch(() => {});
 }
 
 export async function setStatus(id, text) {
@@ -70,16 +97,17 @@ export async function remove(id, why = 'closed') {
   if (ch) await ch.delete(`NOREX room ${why}`).catch((e) => console.error('room delete', e.message));
 }
 
-// The announcement everyone in the channel sees: anyone can tap Join room.
-export function dialog(vc, code, name, host) {
+// The announcement everyone in the channel sees: anyone can tap Join room (unless the host locked it).
+export function dialog(vc, r) {
+  const state = r.locked ? '🔒 **Locked** · only the host and managers can join' : '🔓 **Open** · anyone can join';
   return panel({
-    color: 'red', eyebrow: 'Rooms', title: `${host} opened a room`, detail: `${code} · ${name}`,
+    color: r.locked ? 'steel' : 'red', eyebrow: 'Rooms', title: `${r.hostName} opened a room`, detail: `${r.code} · ${r.name}`,
     body: [
-      ['Anyone can see the room and join it. It has its own chat and closes by itself when everyone has left.'],
+      [state + (r.limit ? ` · limit ${r.limit}` : ''), 'It has its own chat and closes by itself when everyone has left.'],
       ['**Want music?** In the room chat type `/play` and a song name or link. Anyone in the room can use `/effects`, `/autoplay` and `/volume`.']
     ],
-    footer: 'Tip: set what the room is about with /room status',
-    buttons: [btn(`room:move:${vc.id}`, '🎧 Join room'), btn(`room:status:${vc.id}`, '📝 Set status'), btn(`room:close:${vc.id}`, '✖ Close room', ButtonStyle.Danger), linkBtn(url(vc.guildId, vc.id), 'Open room')]
+    footer: 'Host tools: /room lock · /room limit · /room status',
+    buttons: [btn(`room:move:${vc.id}`, '🎧 Join room'), btn(`room:status:${vc.id}`, '📝 Status'), btn(`room:lock:${vc.id}`, r.locked ? '🔓 Unlock' : '🔒 Lock'), btn(`room:close:${vc.id}`, '✖ Close', ButtonStyle.Danger), linkBtn(url(vc.guildId, vc.id), 'Open room')]
   });
 }
 export const closedNote = (r) => panel({ color: 'steel', eyebrow: 'Rooms', title: 'Room closed', detail: `${r.code} · ${r.name}`, picture: false, body: ['Open a new one any time with `/room create`.'] });

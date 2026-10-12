@@ -9,6 +9,9 @@ export const DEFS = [
   new SlashCommandBuilder().setName('room').setDescription('Pop-up rooms: your own voice channel and chat that tidies itself away')
     .addSubcommand((c) => c.setName('create').setDescription('Open a new room').addStringOption((o) => o.setName('name').setDescription('Room name (optional)').setMaxLength(60)))
     .addSubcommand((c) => c.setName('status').setDescription('Set what this room is about').addStringOption((o) => o.setName('text').setDescription('Status text (leave empty to clear)').setMaxLength(100)))
+    .addSubcommand((c) => c.setName('lock').setDescription('Only you and managers can join this room'))
+    .addSubcommand((c) => c.setName('unlock').setDescription('Let anyone join this room again'))
+    .addSubcommand((c) => c.setName('limit').setDescription('Set how many people can be in the room').addIntegerOption((o) => o.setName('people').setDescription('0 = no limit').setRequired(true).setMinValue(0).setMaxValue(99)))
     .addSubcommand((c) => c.setName('close').setDescription('Close your room now')),
   new SlashCommandBuilder().setName('setup').setDescription('Managers: make this text channel the player for a voice channel')
     .addChannelOption((o) => o.setName('voice').setDescription('Voice channel the music plays in').setRequired(true).addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)),
