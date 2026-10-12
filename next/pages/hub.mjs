@@ -5,7 +5,9 @@ import { formations } from './stats.mjs';
 import { playstyleBlock } from './tactics.mjs';
 
 const ROOMS = [['hub.html', '🎽', 'My Locker', 'Your card, artwork, stats, trophies and alerts'], ['hub-matchnight.html', '🗓️', 'Match Night', 'RSVP, availability, MOTM votes, ratings, Rush log'], ['hub-squad.html', '🤝', 'Squad Room', 'Team up, awards, predictions, Rush squads and scouting'], ['hub-clubhouse.html', '💬', 'Clubhouse', 'Club feed, ideas board, chat room and who is on Discord'], ['hub-handbook.html', '📜', 'Handbook', 'Club rules, docs and how the site works']];
-const hubShell = (page, title, body, extra = {}) => shell({ group: 'hub', page, title, body, bodyClass: 'hub-page', ...extra });
+const ROOMCLS = { 'hub.html': 'locker', 'hub-matchnight.html': 'night', 'hub-squad.html': 'squadr', 'hub-clubhouse.html': 'clubh', 'hub-handbook.html': 'handb' };
+const HUBX = '<link rel="stylesheet" href="hubx.css"><script src="hubx.js" defer></script>';
+const hubShell = (page, title, body, extra = {}) => shell({ group: 'hub', page, title, body, ...extra, bodyClass: `hub-page room-${ROOMCLS[page] || 'staff'}`, extraHead: HUBX + (extra.extraHead || '') });
 
 
 // ---------- guest gate: what is behind the door, one clear way in (shared by the landing and every room) ----------
@@ -21,7 +23,7 @@ const gate = (here = 'hub.html') => `<div data-for="guest" class="wrap gatewrap"
 
 // ---------- MY LOCKER (landing, the end of the cinematic entrance) ----------
 export function locker() {
-  const body = `${gate('hub.html')}
+  const body = `<div class="wrap"><div class="lockplate" aria-hidden="true"><span class="lp-rv"></span><span class="lp-in"><i>🎽</i><b>My Locker</b><small>your card · your numbers · your medals</small></span><span class="lp-rv"></span></div></div>${gate('hub.html')}
   <div data-for="member owner" hidden>
    <div id="cardslot"></div>
    <div id="noclaim" hidden class="wrap"><div class="panel" style="max-width:620px;margin:40px auto;text-align:center"><h3>Link your player to get your card</h3><p class="muted" style="margin:8px 0 14px">You are signed in, but your Discord is not linked to a club player yet. Link it in the live Hub, then come back and your locker opens with your own card.</p><a class="btn gold" href="../members.html">Open the live Hub</a></div></div>
@@ -47,26 +49,29 @@ export function locker() {
 
 // ---------- MATCH NIGHT ----------
 export function matchNight() {
-  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Match night</h2></div></header>
-  </section></div>${gate('hub-matchnight.html')}<div class="wrap"><section class="sec">
-  <div data-for="member owner" hidden><div class="grid g2"><div class="panel reveal" id="rsvppanel"><h3>RSVP</h3><p class="muted small">${sample()} No match night is scheduled. When one is, you answer here and managers see who is in.</p><div class="chips" id="rsvp" style="margin-top:12px"><button class="chip" data-v="y">✅ I'm in</button><button class="chip" data-v="m">❔ Maybe</button><button class="chip" data-v="n">❌ Can't</button></div><p class="muted small" id="rs" style="margin-top:8px"></p></div>
-  <div class="panel reveal" id="availpanel" style="--i:1;display:none"><h3>Availability this week</h3><p class="muted small">Tell the managers which days you can play.</p><div id="availbox" style="margin-top:10px"></div></div>
-  <div class="panel reveal" style="--i:1" id="motmpanel"><h3>MOTM vote</h3><p class="muted small">${sample()} Voting opens after the final whistle. The winner's card gets the gold treatment on the Hall of Fame.</p></div>
-  <div class="panel reveal" style="--i:2" id="rushpanel"><h3>Rush log</h3><p class="muted small">Rush is not in EA's data. Log your Rush result here and a manager confirms it.</p><a class="btn ghost" href="#" onclick="return false">Log a Rush game</a></div>
-  <div class="panel reveal" style="--i:3" id="ratepanel"><h3>Ratings</h3><p class="muted small">Rate your teammates after the game. Averages feed the leaderboards.</p></div></div>
-  <section class="sec sq-sec" id="mn-plays" style="margin-top:22px"><header><div><span class="ribbon">📋 Tonight’s plays</span></div><p>What the managers want the squad to know for the next match night. Study each one, then tick it off.</p></header><div id="mnplays" class="sq-mount"></div></section></div></section></div>`;
-  return hubShell('hub-matchnight.html', 'Match Night', body, { extraHead: '<script src="tonight.js" defer></script>' });
+  // Rebuilt for #50: one hero, a week strip, a swipeable vote, a rating deck. matchnight.js draws every panel from the member routes.
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Match night</h2></div><p>Answer once, tap your days, vote and rate in a few swipes.</p></header></section></div>${gate('hub-matchnight.html')}
+  <div class="wrap mn" data-for="member owner" hidden>
+   <div class="panel mn-hero reveal" id="mnhero"></div>
+   <nav class="chips mn-jump" aria-label="Match night sections"><a class="chip" href="#mn-week">📅 My week</a><a class="chip" href="#mn-motm">⭐ Man of the match</a><a class="chip" href="#mn-rate">✨ Ratings</a><a class="chip" href="#mn-plays">📋 Plays</a><a class="chip" href="#mn-rush">⚡ Rush log</a></nav>
+   <section class="sec mn-sec" id="mn-week"><header><div><span class="ribbon">📅 My week</span></div><p>Which days can you play? The managers plan the squad from this.</p></header><div id="mnweek"></div></section>
+   <section class="sec mn-sec" id="mn-motm"><header><div><span class="ribbon">⭐ Man of the match</span></div><p>One match at a time. Swipe the players and tap your pick.</p></header><div id="mnmotm"></div></section>
+   <section class="sec mn-sec" id="mn-rate"><header><div><span class="ribbon">✨ Rate your teammates</span></div><p>One player at a time. Averages feed the leaderboards.</p></header><div id="mnrate"></div></section>
+   <section class="sec sq-sec" id="mn-plays" style="margin-top:22px"><header><div><span class="ribbon">📋 Tonight’s plays</span></div><p>What the managers want the squad to know for the next match night. Study each one, then tick it off.</p></header><div id="mnplays" class="sq-mount"></div></section>
+   <section class="sec mn-sec" id="mn-rush"><div id="mnrush"></div></section>
+  </div>`;
+  return hubShell('hub-matchnight.html', 'Match Night', body, { extraHead: '<script src="tonight.js" defer></script><script src="matchnight.js" defer></script>' });
 }
 export function squadRoom() {
   // Read from the live member API by squad.js (Team up, awards, predictions, Rush squads, scouting). Each panel loads on its own.
   const SECS = [['sq-team', '🎯', 'Team up', 'Who to play with tonight, ranked from who is around, play times, positions and your results together.', 'sqteam'],
-    ['sq-awards', '🏆', 'Awards', 'This week’s vote and last week’s winners. The ballot closes Sunday at midnight (UTC).', 'sqawards'],
+    ['sq-awards', '👏', 'Squad kudos', 'Shout-outs from the squad, every week. Give your kudos, see who earned them last week. The ballot closes Sunday at midnight (UTC). Legends live in the Hall of Fame; this is the weekly thank-you.', 'sqawards'],
     ['sq-predict', '🔮', 'Predictions', 'Call our score before kick-off. Exact score 3 points, right result and goal difference 2, right result 1.', 'sqpredict'],
     ['sq-squads', '🤝', 'Rush squads', 'Four humans and an AI keeper. Managers publish the squads; your teammate picks help them choose.', 'sqsquads'],
     ['sq-scout', '🔭', 'Scouting', 'Players you recommended to the managers and where each one is now.', 'sqscout']];
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Squad room</h2></div><p>Who to play with, the weekly vote, score predictions, Rush squads and your scouting tips. All live from the club server.</p></header>
   <div data-for="member owner" hidden><nav class="chips sq-jump" aria-label="Squad room sections">${SECS.map(([id, i, t]) => `<a class="chip" href="#${id}">${i} ${t}</a>`).join('')}</nav>
-  ${SECS.map(([id, i, t, d, mount], n) => `<section class="sec sq-sec" id="${id}"><header><div><span class="ribbon">${i} ${t}</span></div><p>${d}</p></header><div id="${mount}" class="sq-mount"></div></section>`).join('')}</div></section></div>${gate('hub-squad.html')}`;
+  ${SECS.map(([id, i, t, d, mount], n) => `<section class="sec sq-sec${id === 'sq-awards' ? ' kudos' : ''}" id="${id}"><header><div><span class="ribbon">${i} ${t}</span></div><p>${d}</p></header><div id="${mount}" class="sq-mount"></div></section>`).join('')}</div></section></div>${gate('hub-squad.html')}`;
   return hubShell('hub-squad.html', 'Squad Room', body, { extraHead: '<script src="recs.js" defer></script><script src="squad.js" defer></script>' });
 }
 export function clubhouse() {
@@ -81,17 +86,26 @@ export function clubhouse() {
   </section></div>${gate('hub-clubhouse.html')}`;
   return hubShell('hub-clubhouse.html', 'Clubhouse', body, { extraHead: '<script src="docs-md.js" defer></script><script src="clubhouse.js" defer></script><script src="clubchat.js" defer></script>' });
 }
+// The rules as an animated clipboard (#52). Server-rendered with the club's six rules; handbook.js swaps in the live rules from /api/docs
+// and runs the tick-off ritual (pen, check, next rule) plus the acknowledge.
+const clipboard = (rules) => `<section class="hb-sec" id="hb-rules"><div class="clip" id="hbclip" data-static="1" aria-label="The club rules">
+ <span class="clip-metal" aria-hidden="true"><i></i></span>
+ <div class="clip-sheet"><header class="clip-h"><b>NOREX UNITED FC</b><span>Club rules</span><small class="clip-prog" id="clipprog" aria-live="polite"></small></header>
+  <ol class="clip-l" id="cliplist">${rules.map(([n, t, d]) => `<li class="clip-r" data-rid="s${n}"><span class="clip-n" aria-hidden="true">${n}</span><div><b>${t}</b><p>${d}</p></div><button type="button" class="clip-ck" data-ck="s${n}" aria-label="I have read rule ${n}: ${t}"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 21l8 8 16-19" pathLength="1"/></svg></button></li>`).join('')}</ol>
+  <footer class="clip-f" id="clipfoot"><p class="muted small">Tick each rule as you read it. Managers can see who has acknowledged the current rules.</p></footer></div>
+</div></section>`;
 export function handbook() {
   const RULES = [['1', 'Channel acknowledgement', 'Mandatory channel acknowledgement and compliance. If it is in the channel, you have read it.'], ['2', 'Never quit', 'No quitting games intentionally. Finish what we started.'], ['3', 'One playstyle', 'Follow the club playstyle and organise roles before kick-off.'], ['4', 'Team first', 'Zero tolerance for selfish play.'], ['5', 'Every voice', 'Open space for opinions and ideas.'], ['6', 'Evaluate and enjoy', 'Use the evaluation surveys regularly, and have fun.']];
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Handbook</h2></div></header>
-  <div data-for="member owner" hidden><div class="panel reveal" style="margin-bottom:18px"><h3 style="font-size:28px" class="gold-t">The six club rules</h3><div class="grid g3" data-stagger style="margin-top:14px">${RULES.map(([n, t, d]) => `<div class="panel flat"><div class="num gold-t" style="font-size:40px">${n}</div><h3 style="font-size:17px">${t}</h3><p class="muted small">${d}</p></div>`).join('')}</div></div>
-  <nav class="chips hb-jump" aria-label="Handbook sections"><a class="chip" href="#hb-docs">📜 Club docs</a><a class="chip" href="#hb-ps">🧠 Play style</a><a class="chip" href="#hb-up">📰 Game updates</a><a class="chip" href="#hb-site">🧭 How the site works</a></nav>
+  <div data-for="member owner" hidden>${clipboard(RULES)}
+  <nav class="chips hb-jump" aria-label="Handbook sections"><a class="chip" href="#hb-rules">📋 Club rules</a><a class="chip" href="#hb-docs">📜 Club docs</a><a class="chip" href="#hb-voice">💡 Suggestions &amp; feedback</a><a class="chip" href="#hb-ps">🧠 Play style</a><a class="chip" href="#hb-up">📰 Game updates</a><a class="chip" href="#hb-site">🧭 How the site works</a></nav>
+  <section class="sec hb-sec" id="hb-voice"><header><div><span class="ribbon">💡 Suggestions &amp; feedback</span></div><p>Ideas to improve the club, and honest feedback. These live with the documents because they keep the club in order.</p></header><div class="grid g3" data-stagger><a class="panel room" href="hub-clubhouse.html#ch-ideas"><div style="font-size:30px">💡</div><h3 style="margin:6px 0 2px">Suggestion box</h3><p class="muted small">Post an idea, vote up the ones you like. Managers answer each one.</p></a><a class="panel room" href="hub-clubhouse.html#ch-ideas"><div style="font-size:30px">🕶️</div><h3 style="margin:6px 0 2px">Anonymous feedback</h3><p class="muted small">Something you would rather not say with your name on it? Use the ideas board and tick anonymous.</p></a><a class="panel room" href="join.html"><div style="font-size:30px">🙋</div><h3 style="margin:6px 0 2px">Report a problem</h3><p class="muted small">Use the 🐞 button on any page. It sends the page you are on to the managers.</p></a></div></section>
   <section class="sec hb-sec" id="hb-docs"><header><div><span class="ribbon">Club docs</span></div><p>Announcements, requirements, rules, FAQ and glossary, written by the managers. Squad only.</p></header><div id="hbdocs"></div></section>
   <section class="sec hb-sec" id="hb-ps"><header><div><span class="ribbon">Play style</span></div><p>How we play League and Rush, part by part. Set-piece routines live here too.</p></header><details class="hb-acc ps-acc" id="hb-ourshape" open><summary><span class="hb-ic">📐</span><span><b>Our 3-5-2, role by role</b><small class="muted">The club's League document with the real numbers of each line</small></span></summary><div class="hb-body">${playstyleBlock()}</div></details><h3 class="hb-sub">The managers' notes</h3><div id="hbps"></div></section>
   <section class="sec hb-sec" id="hb-up"><header><div><span class="ribbon">Game updates</span></div><p>The latest EA patch notes that touch Clubs.</p></header><div class="grid g3" data-stagger>${updates.slice(0, 3).map((u) => `<a class="panel hb-up" href="${esc(u.url)}" target="_blank" rel="noopener"><div class="muted tiny">${new Date(u.published).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}${u.clubs === true || u.clubs === 'True' ? ' · <span class="pill s">CLUBS</span>' : ''}</div><h3 class="fit">${esc(u.title.replace(/^EA SPORTS FC™ 27 \| /, ''))}</h3><p class="muted small">${esc(String(u.summary || '').slice(0, 160))}${String(u.summary || '').length > 160 ? '…' : ''}</p></a>`).join('')}</div><a class="btn ghost" href="updates.html" style="margin-top:14px">📰 All ${updates.length} updates</a></section>
   <section class="sec hb-sec" id="hb-site"><header><div><span class="ribbon">How the site works</span></div></header><div class="grid g3" data-stagger><div class="panel"><h3>🌍 Public</h3><p class="muted small">Club, Matches, Stats and Tactics are open to everyone and update from EA about every ten minutes.</p></div><div class="panel"><h3>🔑 The Hub</h3><p class="muted small">The gold key opens the Hub for club members: your locker, Match Night, the Squad Room, the Clubhouse and this Handbook.</p></div><div class="panel"><h3>🛡️ Staff</h3><p class="muted small">Managers and the owner also see the Dugout and Boardroom, where match nights, docs and approvals are run.</p></div></div></section></div>
   </section></div>${gate('hub-handbook.html')}`;
-  return hubShell('hub-handbook.html', 'Handbook', body, { extraHead: '<script src="docs-md.js" defer></script><script src="handbook.js" defer></script>' });
+  return hubShell('hub-handbook.html', 'Handbook', body, { extraHead: '<script src="docs-md.js" defer></script><script src="clipboard.js" defer></script><script src="handbook.js" defer></script>' });
 }
 
 // ---------- STAFF ----------

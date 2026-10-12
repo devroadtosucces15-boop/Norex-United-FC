@@ -48,3 +48,14 @@ html.hdr-lock{overflow:hidden}
 .hdr-va button{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:#fff;color:#7a1710;font:700 13px Inter;cursor:pointer}
 @media(max-width:820px){:root{--hb:58px}.hdr-menu{right:12px}}
 @media(prefers-reduced-motion:reduce){.hdr-menu{animation:none}}
+
+/* Logo badge (hub #2): the Hub's gold crest tile is the site mark on every page, with a slow light sweep and a gentle float */
+.bar .lg img{box-sizing:border-box;width:44px;height:44px;padding:5px;border-radius:13px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5));
+ background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%) 130% 0/260% 100% no-repeat,radial-gradient(circle at 30% 20%,#fff1c2 0,#efcf7a 38%,#b98a22 100%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.65),inset 0 -3px 6px rgba(80,50,0,.35),0 0 0 1px rgba(255,236,170,.55),0 6px 16px -4px rgba(239,207,122,.5);animation:lgSweep 5.5s ease-in-out infinite,lgFloat 6s ease-in-out infinite}
+.bar .lg:hover img{animation-duration:1.6s,6s}
+@keyframes lgSweep{0%,55%{background-position:130% 0,0 0}100%{background-position:-60% 0,0 0}}
+@keyframes lgFloat{50%{transform:translateY(-2px) rotate(-2deg)}}
+@media (max-width:520px){.bar .lg img{width:38px;height:38px;padding:4px;border-radius:11px}}
+@media (prefers-reduced-motion:reduce){.bar .lg img{animation:none}}
+html[data-motion="off"] .bar .lg img,html[data-motion="calm"] .bar .lg img{animation:none}

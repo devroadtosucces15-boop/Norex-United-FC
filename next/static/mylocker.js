@@ -180,7 +180,7 @@ ${BG.canRemove && b.givers.some((g) => g.rid) ? `<details class="bd-x"><summary>
     M?.skeleton(mdEl, 6);
     Promise.all([ach(), A.call('/api/badges')]).then(([a, b]) => { AC = a; BG = b; put(mdEl, medalsHtml(), () => {
       const fresh = (AC?.list || []).filter((x) => x.fresh);
-      if (fresh.length) { M?.toast(fresh.length === 1 ? `New achievement: ${fresh[0].name}` : `${fresh.length} new achievements unlocked`, { kind: 'ok', icon: fresh[0].icon }); setTimeout(() => post('/api/achievements/seen', {}).catch(() => {}), 1500); }
+      if (fresh.length) { window.NorexHubX?.celebrate(fresh); M?.toast(fresh.length === 1 ? `New achievement: ${fresh[0].name}` : `${fresh.length} new achievements unlocked`, { kind: 'ok', icon: fresh[0].icon }); setTimeout(() => post('/api/achievements/seen', {}).catch(() => {}), 1500); }
     }); }).catch((e) => fail(mdEl, 'your medals', e));
   };
   mdEl.addEventListener('click', async (e) => {
