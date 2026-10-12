@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-12T05:11:16.507Z",
+ "fetchedAt": "2026-10-12T05:21:06.069Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -150,6 +150,42 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0",
+   "favoritePosition": "midfielder"
+  },
+  {
+   "name": "JayyZun-",
+   "gamesPlayed": "67",
+   "winRate": "47",
+   "goals": "27",
+   "assists": "21",
+   "cleanSheetsDef": "2",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "48",
+   "passesMade": "899",
+   "passSuccessRate": "80",
+   "ratingAve": "7.2",
+   "tacklesMade": "52",
+   "tackleSuccessRate": "42",
+   "proName": "J. Quinonez",
+   "proPos": "14",
+   "proStyle": "0",
+   "proHeight": "168",
+   "proNationality": "83",
+   "proOverall": "84",
+   "proOverallStr": "84",
+   "manOfTheMatch": "9",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "1",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "1",
+   "prevGoals9": "1",
+   "prevGoals10": "1",
    "favoritePosition": "midfielder"
   },
   {
@@ -1126,7 +1162,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 12,
+  "midfielder": 13,
   "goalkeeper": 0,
   "forward": 4,
   "defender": 9
@@ -1153,6 +1189,17 @@
    "ratingAve": "6.7",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "JayyZun-",
+   "proPos": "25",
+   "gamesPlayed": "318",
+   "goals": "144",
+   "assists": "138",
+   "manOfTheMatch": "27",
+   "ratingAve": "7.3",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "Alen7ozil",
