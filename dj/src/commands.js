@@ -3,9 +3,9 @@ import { EFFECT_NAMES, EFFECTS } from './effects.js';
 
 const fxChoice = (o) => o.setName('name').setDescription('Effect').setRequired(true).addChoices(...EFFECT_NAMES.map((n) => ({ name: `${EFFECTS[n].emoji} ${EFFECTS[n].label}`, value: n })));
 export const DEFS = [
-  new SlashCommandBuilder().setName('play').setDescription('Play a song or link (Spotify → YouTube → SoundCloud)')
+  new SlashCommandBuilder().setName('play').setDescription('Play a song or link (YouTube → Spotify → SoundCloud)')
     .addStringOption((o) => o.setName('song').setDescription('Song name or link').setRequired(true))
-    .addStringOption((o) => o.setName('source').setDescription('Force a platform (default: Spotify, then YouTube, then SoundCloud)').addChoices({ name: 'Spotify', value: 'spotify' }, { name: 'YouTube', value: 'youtube' }, { name: 'SoundCloud', value: 'soundcloud' })),
+    .addStringOption((o) => o.setName('source').setDescription('Force a platform (default: YouTube, then Spotify, then SoundCloud)').addChoices({ name: 'YouTube', value: 'youtube' }, { name: 'Spotify', value: 'spotify' }, { name: 'SoundCloud', value: 'soundcloud' })),
   new SlashCommandBuilder().setName('setup').setDescription('Managers: make this text channel the player for a voice channel')
     .addChannelOption((o) => o.setName('voice').setDescription('Voice channel the music plays in').setRequired(true).addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)),
   new SlashCommandBuilder().setName('unsetup').setDescription('Managers: remove the player from this text channel'),

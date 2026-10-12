@@ -1,5 +1,7 @@
-// Search order for plain text: Spotify (if configured) → YouTube → SoundCloud. Links go straight to Lavalink.
-// Spotify results are mirrored to audio by LavaSrc (see lavalink/application.yml providers).
+// Search order for plain text: YouTube Music → YouTube → Spotify (if configured) → SoundCloud.
+// Links from YouTube/SoundCloud go straight to Lavalink. Spotify (and other metadata-only) links are matched to the exact same
+// recording on YouTube, then SoundCloud (see match.js), and never played if there is no match.
+import { findEquivalent } from './match.js';
 // Links from any platform are recognised (song, video, album, playlist, artist) and sent straight to Lavalink.
 // Bare links without https:// and spotify:track:ID style URIs are fixed up first.
 const HOSTS = /^(?:www\.|m\.|music\.|open\.|on\.|api\.)?(?:youtube\.com|youtu\.be|spotify\.com|spotify\.link|soundcloud\.com|snd\.sc|bandcamp\.com|twitch\.tv|vimeo\.com)(?:\/|$)|\.bandcamp\.com(?:\/|$)/i;
@@ -30,21 +32,28 @@ export async function resolve(node, query, source = 'auto') {
   const link = normalizeLink(query);
   if (link) order = [link];
   else if (source !== 'auto') order = [`${SOURCES[source]}:${query}`];
-  else order = [...(spotifyOn() ? [`spsearch:${query}`] : []), `ytmsearch:${query}`, `ytsearch:${query}`, `scsearch:${query}`];
+  else order = [`ytmsearch:${query}`, `ytsearch:${query}`, ...(spotifyOn() ? [`spsearch:${query}`] : []), `scsearch:${query}`];
   let lastError = null;
   for (const id of order) {
     let r;
     try { r = shape(await node.rest.resolve(id)); } catch (e) { lastError = e.message; continue; }
     if (!r) continue;
     if (r.error) { lastError = r.error; if (id.startsWith('spsearch:')) spotifyDownUntil = Date.now() + 600_000; continue; }
+    // A single Spotify song: find the exact same recording elsewhere now, so the user hears right away if there is none.
+    if (!r.playlist && r.tracks.length === 1 && r.tracks[0].info.sourceName === 'spotify') {
+      const m = await findEquivalent(node, r.tracks[0].info);
+      if (!m) return { noMatch: true, title: r.title };
+      m.info = { ...m.info, artworkUrl: m.info.artworkUrl || r.tracks[0].info.artworkUrl };
+      return { tracks: [m], title: r.title, viaSpotify: true, matchedOn: m.info.sourceName };
+    }
     return r;
   }
   // A YouTube link that YouTube refuses to serve: read its title from oEmbed and play the SoundCloud version instead.
   if (link && /youtu/i.test(link)) {
     try {
       const o = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(link)}`, { signal: AbortSignal.timeout(8000) }).then((r) => r.json());
-      const r = shape(await node.rest.resolve(`scsearch:${o.author_name} ${o.title}`));
-      if (r && !r.error) return { ...r, fallback: true };
+      const m = await findEquivalent(node, { title: o.title, author: o.author_name }, ['scsearch']);
+      if (m) return { tracks: [m], title: m.info.title, fallback: true };
     } catch { /* fall through */ }
   }
   if (lastError && order.length === 1) throw new Error(lastError);
