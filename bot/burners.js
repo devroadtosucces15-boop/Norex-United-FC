@@ -239,6 +239,56 @@ const removeMenu = (rows) => ({ type: 1, components: [{
   options: rows.map((r) => ({ label: r.name.slice(0, 100), value: r.club_id, description: `club ${r.club_id}`, emoji: { name: '🗑️' } })),
 }] });
 
+// ---------- staff site API (C5) – the same tracker as /burner, for the /next/ Insights room ----------
+//   GET  /api/burners                   managers: tracked clubs with record + form (from the collected data)
+//   GET  /api/burners/search?q=         managers: club lookup (site data first); no q → clubs our players are also in, then recent opponents
+//   POST /api/burners/track  {id,name,crest?}   start tracking (kicks a site update)
+//   POST /api/burners/remove {id}                stop tracking (history stays on file)
+// Burners are the B team: nothing here touches League totals, awards or the Hall of Fame.
+export async function burnersAdminRoute(p, method, body, me, env, loadSite, log, url) {
+  if (!p.startsWith('/api/burners')) return null;
+  const fail = (m, s = 400) => json({ error: m }, s);
+  if (!flagOn(env, me, 'burners')) return fail('Not available yet.', 404);
+  if (!can(me, 'burners.manage')) return fail('Managers only.', 403);
+  if (!env.DB) return fail('The member database is not connected.', 503);
+  const user = { id: String(me.u ?? me.id ?? ''), name: String(me.n ?? 'Manager').slice(0, 40) };
+  if (p === '/api/burners' && method === 'GET') {
+    const rows = await all(env, 'SELECT club_id, name, crest, added_by_name, added_at FROM burner_clubs WHERE active = 1 ORDER BY added_at');
+    const stats = new Map(((await Promise.resolve().then(() => loadSite('burners')).catch(() => null))?.clubs ?? []).map((c) => [String(c.id), c]));
+    return json({ max: MAX_BURNERS, clubs: rows.map((r) => { const s = stats.get(r.club_id); return { id: r.club_id, name: r.name, crest: r.crest, by: r.added_by_name, at: r.added_at, stats: s ? { gp: s.gp ?? (s.w + s.d + s.l), w: s.w, d: s.d, l: s.l, gf: s.gf, ga: s.ga, form: (s.form ?? []).slice(0, 5) } : null }; }) });
+  }
+  if (p === '/api/burners/search' && method === 'GET') {
+    const q = String(url?.searchParams?.get('q') ?? '').trim().slice(0, 40);
+    const have = new Set((await all(env, 'SELECT club_id FROM burner_clubs WHERE active = 1')).map((r) => r.club_id));
+    const mark = (c) => ({ id: c.id, name: c.name, crest: c.crest ?? null, note: c.note ?? record(c), tracked: have.has(c.id) });
+    if (!q) {
+      const linked = (await linkedClubs(loadSite)).map((c) => mark({ ...c, note: `also played by ${c.players.slice(0, 3).join(', ')}${c.players.length > 3 ? ` +${c.players.length - 3}` : ''}` }));
+      const recent = (await recentOpponents(env.HOME_CLUB_ID || HOME_CLUB, loadSite).catch(() => [])).map((c) => mark({ ...c, note: `we ${({ W: 'won', D: 'drew', L: 'lost' })[c.res] ?? 'played'} ${c.gf}–${c.ga}` }));
+      return json({ linked: linked.slice(0, 25), recent: recent.slice(0, 25) });
+    }
+    if (q.length < 2) return fail('Type at least 2 letters or paste a club ID.');
+    try { return json({ results: (await searchClubs(q, loadSite)).map(mark) }); } catch (e) { return fail(`Could not reach EA: ${e.message}`, 502); }
+  }
+  if (p === '/api/burners/track' && method === 'POST') {
+    const id = String(body?.id ?? '');
+    if (!/^\d{1,12}$/.test(id)) return fail('That is not a club ID.');
+    const name = String(body?.name ?? '').trim() || `Club ${id}`;
+    const r = await trackClub(env, { id, name, crest: body?.crest ? String(body.crest) : null }, user, null);
+    if (r.error) return fail(r.error, 409);
+    if (!r.already) { await dispatchUpdate(env); await log?.(env, me, 'burner-track', `${name} (${id})`); }
+    return json({ ok: true, already: !!r.already });
+  }
+  if (p === '/api/burners/remove' && method === 'POST') {
+    const id = String(body?.id ?? '');
+    const row = await one(env, 'SELECT name FROM burner_clubs WHERE club_id = ? AND active = 1', id);
+    if (!row) return fail('That club is not being tracked.', 404);
+    await env.DB.prepare('UPDATE burner_clubs SET active = 0, removed_at = ? WHERE club_id = ?').bind(Date.now(), id).run();
+    await log?.(env, me, 'burner-remove', `${row.name} (${id})`);
+    return json({ ok: true });
+  }
+  return fail('Not found', 404);
+}
+
 // ---------- slash command ----------
 export function burnerCommand(i, env, ctx, user, site, loadSite) {
   if (!can(user, 'burners.manage') || !flagOn(env, user, 'burners')) return reply('🔒 Managers only (and the burner tracker is not switched on for you yet).');

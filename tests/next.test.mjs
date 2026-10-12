@@ -144,6 +144,11 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('boardroom: page loads the script, carries the committed levels and keeps the offline stub', bh.includes('src="boardroom.js"') && bh.includes('id="brLive"') && bh.includes('data-committed="{') && bh.includes('id="brLocal"'));
   t('boardroom: flag edits use the live routes and body names and ask first', bj.includes("'/api/admin/flags', { name, level }") && bj.includes("'/api/admin/flags/reset'") && /confirm\(`Change/.test(bj));
   t('boardroom: announcements preview then confirm; Discord posts preview then confirm; HoF removal confirms', bj.includes("preview: true") && (bj.match(/confirm\(/g) || []).length >= 6 && bj.includes("'/api/hof/remove'"));
+  const ij = read('intel.js'), ih = read('staff-insights.html');
+  t('insights: page loads the script, keeps the offline stub and is linked from Staff', ih.includes('src="intel.js"') && ih.includes('id="ixLive"') && ih.includes('id="ixLocal"') && read('staff.html').includes('staff-insights.html'));
+  t('insights: Club Intelligence uses the live routes; to-dos can be undone and reminders ask first', ij.includes("'/api/intel'") && ij.includes("'/api/intel/act'") && ij.includes("'/api/intel/remind'") && /confirm\('Remind/.test(ij));
+  t('insights: three cards on phones (one at a time) and all three on wide screens', ij.includes('data-card') && css.includes('.ix-card{display:none}') && css.includes('.ix-cards{display:grid;grid-template-columns:repeat(3'));
+  t('insights: burners track/stop ask first, use the staff routes and say burners are never official', ij.includes("'/api/burners/track'") && ij.includes("'/api/burners/remove'") && (ij.match(/confirm\(/g) || []).length >= 3 && /never official/.test(ij) && !/data\/matches|league totals count/i.test(ij));
 }
 fs.rmSync(out, { recursive: true, force: true });
 done();

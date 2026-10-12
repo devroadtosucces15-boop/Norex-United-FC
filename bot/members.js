@@ -47,7 +47,7 @@ import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { botCommandsRoute } from './botcommands.js';
 import { crawlRoute } from './crawl.js';
-import { burnersRoute, burnersRelay } from './burners.js';
+import { burnersRoute, burnersRelay, burnersAdminRoute } from './burners.js';
 import { issueSave } from './issues.js';
 import { clubLookup } from './clublookup.js';
 import { awardPoints, pointsRoute } from './points.js';
@@ -737,6 +737,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (ply) return ply;
   const itl = await intelRoute(p, method, body, me, env, loadSite, log); // BE10 Club Intelligence: report + act/remind on a recommendation
   if (itl) return itl;
+  const bnr = await burnersAdminRoute(p, method, body, me, env, loadSite, log, url); // C5 burner tracker (staff)
+  if (bnr) return bnr;
   const awd = await awardsRoute(p, method, body, me, env, loadSite, log, url); // P4.1 weekly awards
   if (awd) return awd;
   const sqd = await squadsRoute(p, method, body, me, env, log); // P3.5 Rush squad builder
