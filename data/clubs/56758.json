@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-12T04:11:00.610Z",
+ "fetchedAt": "2026-10-12T04:31:21.798Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -439,6 +439,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "MrOnDatAhhh",
+   "gamesPlayed": "2",
+   "winRate": "50",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "12",
+   "passSuccessRate": "60",
+   "ratingAve": "5.4",
+   "tacklesMade": "3",
+   "tackleSuccessRate": "42",
+   "proName": "sum light",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "177",
+   "proNationality": "14",
+   "proOverall": "80",
+   "proOverallStr": "80",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "Treego2424",
@@ -1056,7 +1092,7 @@
  "positionCount": {
   "midfielder": 10,
   "goalkeeper": 0,
-  "forward": 4,
+  "forward": 5,
   "defender": 9
  },
  "career": [
@@ -1140,12 +1176,12 @@
   {
    "name": "CaptainFluffyCat",
    "proPos": "25",
-   "gamesPlayed": "167",
-   "goals": "136",
-   "assists": "62",
-   "manOfTheMatch": "37",
+   "gamesPlayed": "168",
+   "goals": "138",
+   "assists": "63",
+   "manOfTheMatch": "38",
    "ratingAve": "7.4",
-   "prevGoals": "1",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
@@ -1180,6 +1216,17 @@
    "ratingAve": "7.6",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "MrOnDatAhhh",
+   "proPos": "25",
+   "gamesPlayed": "230",
+   "goals": "332",
+   "assists": "114",
+   "manOfTheMatch": "65",
+   "ratingAve": "8.1",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "WFS-GAMING1",
@@ -1294,9 +1341,9 @@
   {
    "name": "Santi-torres80",
    "proPos": "25",
-   "gamesPlayed": "10",
+   "gamesPlayed": "11",
    "goals": "1",
-   "assists": "3",
+   "assists": "4",
    "manOfTheMatch": "0",
    "ratingAve": "6.9",
    "prevGoals": "0",
@@ -1305,7 +1352,7 @@
   {
    "name": "MAYOROFCALI_510",
    "proPos": "25",
-   "gamesPlayed": "383",
+   "gamesPlayed": "384",
    "goals": "125",
    "assists": "110",
    "manOfTheMatch": "7",
