@@ -49,7 +49,7 @@ ${pool.length > 10 ? `<button type="button" class="btn ghost" data-tall>${T.all 
   const loadTeam = async (land = true) => {
     const el = mounts.team; if (land) M?.skeleton(el, 5);
     try {
-      const sqP = T.mode === 'league' && T.squad === undefined ? fetch('../api/squad.json').then((r) => (r.ok ? r.json() : null)).catch(() => null) : Promise.resolve(T.squad);
+      const sqP = T.mode === 'league' && T.squad === undefined ? fetch((window.NOREX_ROOT ?? '../') + 'api/squad.json').then((r) => (r.ok ? r.json() : null)).catch(() => null) : Promise.resolve(T.squad);
       const [r, sq] = await Promise.all([A.call(`/api/recs?mode=${T.mode}`), sqP]);
       if (T.mode === 'league') T.squad = sq;
       const R = window.NXRecs, together = T.mode === 'rush' ? r.together : R ? R.pairs(T.squad, r.me.player) : {};

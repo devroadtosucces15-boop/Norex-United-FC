@@ -62,7 +62,7 @@ ${list.length ? `<div class="al-box">${body}</div>` : `<div class="panel sq-empt
 <ul class="al-prefs">${N.types.map((t) => `<li><span class="al-ic" aria-hidden="true">${esc(t.icon)}</span><b class="al-pl">${esc(t.label)}</b><div class="seg al-seg" role="radiogroup" aria-label="${esc(t.label)}">${MODES.map(([v, i, l, s]) => `<button type="button" role="radio" aria-checked="${t.mode === v}" class="${t.mode === v ? 'on' : ''}" data-pk="${esc(t.k)}" data-pv="${v}" title="${s}"${v === 'off' && !t.mute ? ' disabled title="This one can’t be switched off"' : ''}><span aria-hidden="true">${i}</span> ${l}</button>`).join('')}</div></li>`).join('')}</ul>
 <div class="sq-acts"><button type="button" class="btn ghost" data-test>🔔 Send me a test alert</button><span class="muted small">Saved as you tap. Same settings as the live Hub.</span></div>${N.push?.key ? '<div class="al-push" id="alpush" aria-live="polite"></div>' : ''}`;
   // ---------- 📲 Web Push on this device (the live site's sw.js at the site root receives them) ----------
-  const SW = new URL('../sw.js', location.href).href;
+  const SW = new URL(window.NOREX_SW || '../sw.js', location.href).href;
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) && !(navigator.standalone || matchMedia('(display-mode: standalone)').matches);
   const pushState = async () => { if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return ios ? 'ios' : 'none';
     if (Notification.permission === 'denied') return 'blocked';
