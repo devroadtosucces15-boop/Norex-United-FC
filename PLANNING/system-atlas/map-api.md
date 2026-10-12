@@ -78,24 +78,24 @@ flowchart LR
   n71["API /api/game/publish"]
   n72["API /api/hof"]
   n73["API /api/hof/remove"]
-  n74["API /api/hub/wave"]
-  n75["API /api/intel"]
-  n76["API /api/intel/act"]
-  n77["API /api/intel/remind"]
-  n78["API /api/issues"]
-  n79["API /api/locker"]
-  n80["API /api/me"]
-  n81["API /api/mybuild"]
-  n82["API /api/notify"]
-  n83["API /api/notify/ack"]
-  n84["API /api/notify/announce"]
-  n85["API /api/notify/count"]
-  n86["API /api/notify/prefs"]
-  n87["API /api/notify/read"]
-  n88["API /api/notify/test"]
-  n89["API /api/plays"]
-  n90["API /api/plays/discord"]
-  n91["API /api/playstyle"]
+  n74["API /api/hub"]
+  n75["API /api/hub/wave"]
+  n76["API /api/intel"]
+  n77["API /api/intel/act"]
+  n78["API /api/intel/remind"]
+  n79["API /api/issues"]
+  n80["API /api/locker"]
+  n81["API /api/me"]
+  n82["API /api/mybuild"]
+  n83["API /api/notify"]
+  n84["API /api/notify/ack"]
+  n85["API /api/notify/announce"]
+  n86["API /api/notify/count"]
+  n87["API /api/notify/prefs"]
+  n88["API /api/notify/read"]
+  n89["API /api/notify/test"]
+  n90["API /api/plays"]
+  n91["API /api/plays/discord"]
   n92["API /api/profile"]
   n93["API /api/rush"]
   n94["API /api/scout"]
@@ -208,7 +208,7 @@ flowchart LR
   n101 --> n19
   n101 --> n20
   n102 --> n68
-  n102 --> n84
+  n102 --> n85
   n102 --> n95
   n103 --> n22
   n103 --> n23
@@ -232,7 +232,6 @@ flowchart LR
   n106 --> n43
   n106 --> n44
   n106 --> n45
-  n106 --> n91
   n106 --> n95
   n107 --> n46
   n107 --> n47
@@ -261,11 +260,12 @@ flowchart LR
   n111 --> n72
   n111 --> n73
   n112 --> n74
-  n113 --> n75
+  n112 --> n75
   n113 --> n76
   n113 --> n77
+  n113 --> n78
   n114 --> n52
-  n115 --> n79
+  n115 --> n80
   n116 --> n58
   n116 --> n64
   n117 --> n2
@@ -283,23 +283,23 @@ flowchart LR
   n117 --> n38
   n117 --> n39
   n117 --> n72
-  n117 --> n78
-  n117 --> n80
+  n117 --> n79
+  n117 --> n81
   n117 --> n92
   n117 --> n93
   n117 --> n97
   n117 --> n99
   n118 --> n9
-  n118 --> n82
   n118 --> n83
   n118 --> n84
   n118 --> n85
   n118 --> n86
   n118 --> n87
   n118 --> n88
-  n119 --> n89
+  n118 --> n89
   n119 --> n90
-  n120 --> n81
+  n119 --> n91
+  n120 --> n82
   n121 --> n21
   n122 --> n94
   n122 --> n96
@@ -311,7 +311,7 @@ flowchart LR
   n124 --> n16
   n124 --> n17
   n124 --> n18
-  n124 --> n82
+  n124 --> n83
   n125 --> n0
   n125 --> n1
   n125 --> n2
@@ -338,7 +338,7 @@ flowchart LR
   n129 --> n36
   n130 --> n5
   n131 --> n2
-  n131 --> n80
+  n131 --> n81
   n132 --> n39
   n132 --> n40
   n132 --> n41
@@ -346,10 +346,9 @@ flowchart LR
   n132 --> n43
   n132 --> n44
   n132 --> n45
-  n132 --> n82
   n132 --> n83
-  n132 --> n85
-  n132 --> n91
+  n132 --> n84
+  n132 --> n86
   n132 --> n95
   n133 --> n36
   n134 --> n46
@@ -357,7 +356,7 @@ flowchart LR
   n134 --> n50
   n134 --> n51
   n134 --> n53
-  n134 --> n89
+  n134 --> n90
   n134 --> n98
   n135 --> n7
   n135 --> n46
@@ -365,7 +364,7 @@ flowchart LR
   n135 --> n48
   n135 --> n50
   n135 --> n53
-  n135 --> n82
+  n135 --> n83
   n135 --> n92
   n136 --> n54
   n136 --> n55
@@ -384,8 +383,8 @@ flowchart LR
   n137 --> n7
   n137 --> n21
   n137 --> n72
-  n137 --> n80
-  n137 --> n84
+  n137 --> n81
+  n137 --> n85
   n137 --> n93
   n138 --> n7
   n138 --> n69
@@ -394,12 +393,13 @@ flowchart LR
   n139 --> n72
   n139 --> n73
   n140 --> n74
-  n140 --> n82
-  n141 --> n74
-  n142 --> n75
+  n140 --> n75
+  n140 --> n83
+  n141 --> n75
   n142 --> n76
   n142 --> n77
-  n143 --> n78
+  n142 --> n78
+  n143 --> n79
   n144 --> n46
   n144 --> n50
   n144 --> n52
@@ -407,9 +407,9 @@ flowchart LR
   n145 --> n18
   n145 --> n51
   n145 --> n53
-  n145 --> n79
-  n145 --> n87
-  n145 --> n89
+  n145 --> n80
+  n145 --> n88
+  n145 --> n90
   n145 --> n99
   n146 --> n54
   n146 --> n56
@@ -421,7 +421,7 @@ flowchart LR
   n147 --> n7
   n147 --> n10
   n147 --> n37
-  n147 --> n80
+  n147 --> n81
   n147 --> n92
   n147 --> n99
   n148 --> n6
@@ -490,7 +490,7 @@ flowchart LR
   n149 --> n70
   n149 --> n71
   n149 --> n73
-  n149 --> n75
+  n149 --> n74
   n149 --> n76
   n149 --> n77
   n149 --> n78
@@ -499,7 +499,7 @@ flowchart LR
   n149 --> n81
   n149 --> n82
   n149 --> n83
-  n149 --> n86
+  n149 --> n84
   n149 --> n87
   n149 --> n88
   n149 --> n89
@@ -515,27 +515,27 @@ flowchart LR
   n150 --> n2
   n150 --> n9
   n150 --> n37
-  n150 --> n82
   n150 --> n83
   n150 --> n84
   n150 --> n85
   n150 --> n86
   n150 --> n87
   n150 --> n88
+  n150 --> n89
   n150 --> n93
   n150 --> n94
   n150 --> n96
   n150 --> n97
   n150 --> n98
-  n151 --> n89
-  n152 --> n89
+  n151 --> n90
   n152 --> n90
+  n152 --> n91
   n153 --> n7
   n153 --> n22
   n153 --> n23
-  n153 --> n81
+  n153 --> n82
   n154 --> n7
-  n154 --> n80
+  n154 --> n81
   n154 --> n92
   n155 --> n7
   n155 --> n93
@@ -544,9 +544,9 @@ flowchart LR
   n156 --> n57
   n156 --> n60
   n156 --> n65
-  n157 --> n82
+  n157 --> n83
   n157 --> n92
-  n158 --> n89
+  n158 --> n90
   n159 --> n13
   n159 --> n18
   n159 --> n22
@@ -560,15 +560,15 @@ flowchart LR
   n160 --> n98
   n161 --> n67
   n161 --> n68
-  n161 --> n82
+  n161 --> n83
   n162 --> n22
   n162 --> n71
-  n162 --> n82
+  n162 --> n83
   n163 --> n37
   n163 --> n46
   n163 --> n50
   n163 --> n53
-  n163 --> n82
+  n163 --> n83
   n164 --> n2
   n164 --> n3
   n164 --> n4
@@ -581,8 +581,8 @@ flowchart LR
   n164 --> n56
   n164 --> n66
   n164 --> n67
-  n164 --> n79
   n164 --> n80
+  n164 --> n81
   n164 --> n92
   n164 --> n93
   n164 --> n99
@@ -602,11 +602,11 @@ flowchart LR
   n168 --> n4
   n168 --> n5
   n168 --> n72
-  n168 --> n84
+  n168 --> n85
   n169 --> n22
   n169 --> n23
   n169 --> n24
-  n169 --> n81
+  n169 --> n82
   n170 --> n25
   n170 --> n26
   n170 --> n27
@@ -625,12 +625,11 @@ flowchart LR
   n171 --> n43
   n171 --> n44
   n171 --> n45
-  n171 --> n91
   n171 --> n95
   n172 --> n46
   n172 --> n50
   n172 --> n51
-  n172 --> n89
+  n172 --> n90
   n172 --> n96
   n172 --> n98
   n173 --> n46
@@ -660,34 +659,35 @@ flowchart LR
   n176 --> n71
   n177 --> n72
   n177 --> n73
-  n178 --> n80
-  n179 --> n79
+  n178 --> n74
+  n178 --> n81
   n179 --> n80
-  n180 --> n74
-  n181 --> n75
+  n179 --> n81
+  n180 --> n75
   n181 --> n76
   n181 --> n77
+  n181 --> n78
   n182 --> n53
-  n182 --> n79
+  n182 --> n80
   n182 --> n99
   n183 --> n36
   n184 --> n0
   n184 --> n93
   n185 --> n9
-  n185 --> n82
   n185 --> n83
   n185 --> n84
   n185 --> n85
   n185 --> n86
   n185 --> n87
   n185 --> n88
-  n186 --> n81
+  n185 --> n89
+  n186 --> n82
   n187 --> n92
-  n188 --> n78
+  n188 --> n79
   n189 --> n21
   n190 --> n49
-  n191 --> n89
   n191 --> n90
+  n191 --> n91
   n192 --> n38
   n192 --> n94
   n192 --> n96

@@ -1,7 +1,7 @@
 {
-  "revision": "4dbf6f81914b1657784c7314e5ddab605554f4ae",
-  "files": 720,
-  "imports": 436,
+  "revision": "033fc6b503830929bb9b367c66764e81eb9b9297",
+  "files": 725,
+  "imports": 437,
   "api_paths": 230,
   "tables": 277,
   "records": [
@@ -63,7 +63,7 @@
     {
       "path": ".github/workflows/update.yml",
       "layer": ".github",
-      "lines": 113,
+      "lines": 117,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -7146,6 +7146,42 @@
       "functions": []
     },
     {
+      "path": "data/matches/95650485150129.json",
+      "layer": "data",
+      "lines": 283,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/95768072780305.json",
+      "layer": "data",
+      "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/media-state.json",
+      "layer": "data",
+      "lines": 4,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/media.json",
+      "layer": "data",
+      "lines": 58,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/meta.json",
       "layer": "data",
       "lines": 5,
@@ -7848,6 +7884,27 @@
         "saveCrawlSlice",
         "sleep",
         "writeJson"
+      ]
+    },
+    {
+      "path": "scripts/media.mjs",
+      "layer": "scripts",
+      "lines": 58,
+      "imports": [
+        "node:fs",
+        "node:path",
+        "node:url",
+        "./lib.mjs"
+      ],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "clean",
+        "get",
+        "main",
+        "parseFeed",
+        "twitch",
+        "youtube"
       ]
     },
     {
@@ -9170,7 +9227,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 219,
+      "lines": 241,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -9246,6 +9303,7 @@
         "/api/game/dismiss",
         "/api/game/publish",
         "/api/hof/remove",
+        "/api/hub",
         "/api/intel",
         "/api/intel/act",
         "/api/intel/remind",
@@ -9264,6 +9322,7 @@
         "/api/plays/discord",
         "/api/playstyle",
         "/api/predict",
+        "/api/presence",
         "/api/probuilds/comment",
         "/api/probuilds/comment/delete",
         "/api/probuilds/feature",
@@ -9290,6 +9349,7 @@
       ],
       "tables": [
         "Staff",
+        "a",
         "flow",
         "match",
         "scrolls",
@@ -11787,7 +11847,7 @@
     {
       "path": "web/report.js",
       "layer": "web",
-      "lines": 298,
+      "lines": 313,
       "imports": [],
       "endpoints": [
         "/api/issues"
@@ -11808,6 +11868,8 @@
         "esc",
         "flush",
         "init",
+        "label",
+        "layoutDiag",
         "loadHigh",
         "loadState",
         "mount",
@@ -11819,6 +11881,8 @@
         "paintFab",
         "paintShape",
         "parseUA",
+        "r1",
+        "rect",
         "round",
         "safeArea",
         "save",
@@ -13306,6 +13370,11 @@
     {
       "source": "scripts/fetch.mjs",
       "target": "bot/burnerstats.js",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/media.mjs",
+      "target": "scripts/lib.mjs",
       "kind": "imports"
     },
     {

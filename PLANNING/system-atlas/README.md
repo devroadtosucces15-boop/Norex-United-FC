@@ -2,9 +2,9 @@
 
 > Automatically regenerated from the repository. This is a **static evidence map**, not a complete runtime trace.
 
-Source revision: `4dbf6f81914b1657784c7314e5ddab605554f4ae`
+Source revision: `033fc6b503830929bb9b367c66764e81eb9b9297`
 
-Indexed **720 files**, **436 resolved module imports**, **230 API path literals**, **277 SQL table references**.
+Indexed **725 files**, **437 resolved module imports**, **230 API path literals**, **277 SQL table references**.
 
 ## Navigate
 
