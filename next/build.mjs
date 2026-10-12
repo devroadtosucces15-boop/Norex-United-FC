@@ -15,7 +15,12 @@ for (const f of ['docs-md.js', 'recs.js', 'cardcomposer.js', 'report.js', 'repor
 fs.writeFileSync(path.join(out, 'manifest.webmanifest'), JSON.stringify({ id: 'norex-next', name: 'NOREX UNITED FC', short_name: 'NOREX', description: 'Results, squad, stats and the members Hub of NOREX UNITED FC.', start_url: 'index.html', scope: './', display: 'standalone', orientation: 'portrait', background_color: '#080b11', theme_color: '#080b11', icons: [{ src: 'crest.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: 'crest.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }], shortcuts: [{ name: 'Results', url: 'results.html' }, { name: 'Match Night', url: 'hub-matchnight.html' }, { name: 'Stats', url: 'stats.html' }] }));
 // the builder's offline seed: the newest game-rules dataset (builds.js asks the Worker's GET /api/game first, which has any version a manager published since)
 fs.writeFileSync(path.join(out, 'game.json'), JSON.stringify((await import('./lib/data.mjs')).game));
-let n = 0; const P = (f, h) => { W(f, h); n++; };
+// Phase E post-pass on every page: one h1 per page (the page's first heading becomes level 1 for assistive tech, no visual change), a small crest for the 22–86 px logo spots instead of the 180 KB original
+const finalize = (h) => {
+  if (!/<h1[ >]/.test(h)) h = h.replace(/(<main id="main">[\s\S]*?)<(h[23])(?![^>]*aria-level)/, '$1<$2 aria-level="1"');
+  return h.replace(/<img([^>]*?) src="crest\.png"/g, '<img$1 src="crest-sm.png"');
+};
+let n = 0; const P = (f, h) => { W(f, finalize(h)); n++; };
 const mods = ['club', 'matches', 'rush', 'stats', 'tactics', 'hub', 'lookbook', 'canvas'];
 for (const m of mods) { const file = path.join(here, 'pages', m + '.mjs'); if (!fs.existsSync(file)) continue; const mod = await import('./pages/' + m + '.mjs'); await mod.default?.(P) ; }
 console.log(`built ${n} pages · ${players.length} players · ${matches.length} matches`);

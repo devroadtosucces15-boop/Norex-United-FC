@@ -1,6 +1,6 @@
 /* NOREX UNITED · design system v2 (local redesign). Tokens first, then components, then motion. */
 :root{--ink:#080b11;--p0:#0d1119;--p1:#111722;--p2:#171f2d;--p3:#1f2a3c;--line:rgba(255,255,255,.075);--line2:rgba(255,255,255,.14);
- --red:#c8352c;--red2:#e0493f;--redg:rgba(200,53,44,.35);--text:#eef2f9;--soft:#9ba7bd;--mute:#6c7890;
+ --red:#c8352c;--red2:#e0493f;--redg:rgba(200,53,44,.35);--text:#eef2f9;--soft:#9ba7bd;--mute:#8591a8;
  --g1:#fff1c2;--g2:#efcf7a;--g3:#c9993a;--g4:#8a6a1c;--gold:linear-gradient(135deg,var(--g1),var(--g2) 40%,var(--g3) 75%,var(--g4));
  --ease:cubic-bezier(.2,.9,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);--r:18px;--gut:clamp(16px,4vw,40px)}
 *{box-sizing:border-box;margin:0}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
@@ -967,3 +967,12 @@ button.ch-up{cursor:pointer;font:inherit;transition:transform var(--m-fast) var(
 details.ms-fold{padding:0}details.ms-fold>summary{cursor:pointer;list-style:none;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin:0}details.ms-fold>summary::-webkit-details-marker{display:none}
 details.ms-fold>summary:after{content:"＋";font:700 16px Inter;color:#efcf7a;transition:transform .25s}details.ms-fold[open]>summary:after{content:"－"}
 details.ms-fold>:not(summary){margin-left:16px;margin-right:16px}details.ms-fold>:last-child{margin-bottom:16px}
+
+/* Phase E1 – accessibility: skip link that shows on focus, visible keyboard focus everywhere, reduced-motion safety net */
+.skip{position:absolute;left:-999px;top:8px;z-index:9999;background:var(--g2);color:#1a1405;font:600 14px Inter;padding:10px 16px;border-radius:10px}
+.skip:focus{left:12px;outline:2px solid #fff;outline-offset:2px}
+a:focus-visible,button:focus-visible,[role=button]:focus-visible,[role=tab]:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--g2);outline-offset:3px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{box-shadow:0 0 0 3px rgba(239,207,122,.25)}
+.nv .drop a:focus-visible{background:rgba(255,255,255,.06)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+html{touch-action:manipulation}
