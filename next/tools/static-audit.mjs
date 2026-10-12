@@ -38,7 +38,7 @@ export function audit(dir, { skip = /^(canvas|lookbook)\.html$/ } = {}) {
     const ids = [...body.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]); if (new Set(ids).size < ids.length) add('duplicate ids', f);
     const scripts = [...h.matchAll(/<script src="([^"]+)"([^>]*)>/g)];
     const size = (n) => (fs.existsSync(path.join(dir, n)) ? fs.statSync(path.join(dir, n)).size : 0);
-    rows.push({ f, html: Buffer.byteLength(h), htmlGz: zlib.gzipSync(h).length, scripts: scripts.length, jsBytes: scripts.reduce((n, m) => n + size(m[1]), 0), inline: [...h.matchAll(/<script>([\s\S]*?)<\/script>/g)].reduce((n, m) => n + m[1].length, 0), cssBytes: [...h.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].reduce((n, m) => n + size(m[1]), 0), crestBig: /<img[^>]* src="crest\.png"/.test(h) });
+    rows.push({ f, html: Buffer.byteLength(h), htmlGz: zlib.gzipSync(h).length, scripts: scripts.length, jsBytes: scripts.reduce((n, m) => n + size(m[1]), 0), inline: [...h.matchAll(/<script>([\s\S]*?)<\/script>/g)].reduce((n, m) => n + m[1].length, 0), cssBytes: [...h.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].reduce((n, m) => n + size(m[1]), 0), crestBig: [...h.matchAll(/<img([^>]*) src="crest\.png"([^>]*)>/g)].some((m) => { const a = m[1] + m[2], w = +((/\bwidth="(\d+)"/.exec(a) || /width:(\d+)px/.exec(a) || [])[1] || 0); return !w || w <= 96; }), /* the 180 KB original is for mid-size spots only; logos use crest-sm, hero crests crest-lg */ });
   }
   const sum = (k) => rows.reduce((n, r) => n + r[k], 0); const kb = (n) => Math.round(n / 1024);
   const worst = (k, n = 5) => [...rows].sort((a, b) => b[k] - a[k]).slice(0, n).map((r) => `${r.f} ${kb(r[k])}k`);

@@ -30,7 +30,7 @@ h1,h2,h3,h4,.osw{font-family:Oswald,"Arial Narrow",Impact,sans-serif;text-transf
 .sheen:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);transform:translateX(-130%);animation:sheen 5s ease-in-out infinite;pointer-events:none}
 @keyframes sheen{55%,100%{transform:translateX(130%)}}
 .sub{background:rgba(13,17,25,.9);border-bottom:1px solid var(--line);position:sticky;top:68px;z-index:40}.sub .wrap{display:flex;gap:6px;padding-top:9px;padding-bottom:9px;overflow-x:auto;scrollbar-width:none}
-.sub a{white-space:nowrap;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:500;color:var(--soft);transition:.2s}.sub a:hover{color:#fff;background:var(--p2)}.sub a.on{background:var(--red);color:#fff;box-shadow:0 0 18px var(--redg)}
+.sub a{flex-shrink:0;white-space:nowrap;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:500;color:var(--soft);transition:.2s}.sub a:hover{color:#fff;background:var(--p2)}.sub a.on{background:var(--red);color:#fff;box-shadow:0 0 18px var(--redg)}
 .tabbar{display:none}
 .devbar{position:fixed;left:10px;bottom:10px;z-index:90;background:rgba(13,17,25,.92);border:1px solid var(--line2);border-radius:12px;padding:6px 10px;font-size:11px;display:flex;gap:8px;align-items:center;color:var(--soft)}
 .devbar select{background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:7px;font:500 11px Inter;padding:3px 5px;max-width:150px}
@@ -58,7 +58,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb th{font:600
 .hero h1{font-size:clamp(46px,8vw,104px);line-height:.92;margin:10px 0 16px;text-shadow:0 8px 40px rgba(200,53,44,.55)}.hero h1 em{font-style:normal;color:var(--red2)}
 .hero p.lead{font-size:18px;color:#c3cde0;max-width:520px}.stage{perspective:1400px;position:relative;min-height:420px;display:grid;place-items:center}
 .crestwrap{position:relative;width:min(380px,70vw);aspect-ratio:1;display:grid;place-items:center;transform-style:preserve-3d}.crestwrap img{width:78%;position:relative;z-index:2;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6))}
-.crestwrap .halo{position:absolute;inset:-12%;border-radius:50%;background:radial-gradient(circle,rgba(255,138,60,.55),rgba(200,53,44,.28) 45%,transparent 68%);animation:pulse 3.4s ease-in-out infinite}
+.crestwrap .halo{position:absolute;inset:-26%;background:radial-gradient(closest-side,rgba(255,138,60,.5),rgba(255,120,60,.34) 22%,rgba(220,70,50,.18) 48%,rgba(200,53,44,.07) 72%,transparent);filter:blur(8px);animation:pulse 3.4s ease-in-out infinite}
 @keyframes pulse{50%{transform:scale(1.12);opacity:.75}}
 .ticker{display:flex;gap:10px;margin:22px 0}.ticker i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:700 14px Oswald;font-style:normal}.ticker .W{background:#12331f;color:#4be08a}.ticker .L{background:#3a1613;color:#ff7d72}.ticker .D{background:#332b12;color:var(--g2)}
 /* ---------- PLAYER CARD FAMILY ---------- */

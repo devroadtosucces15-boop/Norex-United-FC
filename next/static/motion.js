@@ -129,8 +129,12 @@
   // Mouse hover and touch-hold take over instantly (fast, no easing lag); the glare + sheen follow the same angle.
   const isCard = (el) => el.classList.contains('pc-card') || el.classList.contains('pc-hero');
   const ambient = new Set(); let ambRaf = 0, tio = null;
+  // cards in a swipe rail lean by where they sit (that is the rail effect); cards in a static grid share ONE angle per row, otherwise neighbours turn
+  // different ways, converge under the 3D perspective and intersect ("tilt = broken tiles")
+  const inRail = (el) => { if (el._rail === undefined) { el._rail = false; for (let a = el.parentElement; a && a !== d.body; a = a.parentElement) { if (/auto|scroll/.test(getComputedStyle(a).overflowX) && a.scrollWidth > a.clientWidth + 4) { el._rail = true; break; } } } return el._rail; };
+  addEventListener('resize', () => ambient.forEach((el) => { el._rail = undefined; }));
   const lean = (el) => { const r = el.getBoundingClientRect(), vw = innerWidth, vh = innerHeight; if (r.width < 8) return;
-    const nx = Math.max(-1.4, Math.min(1.4, (r.left + r.width / 2 - vw / 2) / (vw / 2))), ny = Math.max(-1.4, Math.min(1.4, (r.top + r.height / 2 - vh / 2) / (vh / 2)));
+    const nx = inRail(el) ? Math.max(-1.4, Math.min(1.4, (r.left + r.width / 2 - vw / 2) / (vw / 2))) : 0, ny = Math.max(-1.4, Math.min(1.4, (r.top + r.height / 2 - vh / 2) / (vh / 2)));
     const sc = Math.min(1, r.width / 150);   // tiny cards lean less
     const ry = (-6 + nx * -11) * sc, rx = (3.5 + ny * 7) * sc;
     el.style.transform = `perspective(700px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(0)`;
@@ -141,7 +145,7 @@
     el.style.setProperty('--mx', (50 + nx * 60 + ny * 25).toFixed(1) + '%'); el.style.setProperty('--my', (40 + ny * 70).toFixed(1) + '%'); };
   const watchGlass = (root = d) => { if (!('IntersectionObserver' in window)) return; glio ||= new IntersectionObserver((es) => { es.forEach((e) => { if (e.isIntersecting) { glass.add(e.target); e.target.classList.add('amb'); } else glass.delete(e.target); }); ambAsk(); }, { rootMargin: '60px' });
     $$('.panel,.sbt,.kc,.tile', root).forEach((el) => { if (!el.dataset.g) { el.dataset.g = 1; glio.observe(el); } }); };
-  const ambTick = () => { ambRaf = 0; if (mode !== 'full' || d.documentElement.classList.contains('gyro-on')) return; ambient.forEach((el) => { if (!el.classList.contains('live') && el.isConnected) lean(el); }); glass.forEach((el) => { if (el.isConnected) shine(el); }); };
+  const ambTick = () => { ambRaf = 0; if (mode !== 'full') return; if (d.documentElement.classList.contains('gyro-on')) { ambient.forEach((el) => { if (!el.classList.contains('live') && (el.style.transform || el.style.getPropertyValue('--go'))) { el.style.transform = ''; el.style.removeProperty('--go'); } }); return; } /* phone tilt takes over: drop the inline lean so the shared --gx/--gy tilt applies */ ambient.forEach((el) => { if (!el.classList.contains('live') && el.isConnected) lean(el); }); glass.forEach((el) => { if (el.isConnected) shine(el); }); };
   const ambAsk = () => { if (!ambRaf) ambRaf = requestAnimationFrame(ambTick); };
   const ambClear = () => ambient.forEach((el) => { if (!el.classList.contains('live')) { el.style.transform = ''; el.style.setProperty('--go', 0); } });
   addEventListener('scroll', ambAsk, { passive: true, capture: true }); addEventListener('resize', ambAsk);
