@@ -1,0 +1,9 @@
+{
+  "name": "norex-dj",
+  "private": true,
+  "type": "module",
+  "description": "Norex DJ – always-on Discord music bot (discord.js + Lavalink), multi-room via helper apps",
+  "engines": { "node": ">=22" },
+  "scripts": { "start": "node src/index.js", "register": "node src/register.js" },
+  "dependencies": { "discord.js": "^14.16.0", "shoukaku": "^4.1.0" }
+}

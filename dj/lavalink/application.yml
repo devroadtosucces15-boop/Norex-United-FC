@@ -1,0 +1,27 @@
+server:
+  port: 2333
+  address: 0.0.0.0
+lavalink:
+  plugins:
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.13.3"
+      snapshot: false
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.3.0"
+      snapshot: false
+  server:
+    password: "${LAVALINK_PASSWORD}"
+    sources:
+      youtube: false        # handled by the youtube-source plugin below (fallback; against YouTube ToS, may break)
+      soundcloud: true
+      http: true
+plugins:
+  youtube:
+    enabled: true
+    allowSearch: true
+    clients: [MUSIC, ANDROID_VR, WEB, TVHTML5EMBEDDED]
+  lavasrc:
+    providers: ["scsearch:%QUERY%", "ytsearch:%QUERY%"]   # Spotify names are mirrored: SoundCloud first, then YouTube
+    sources: { spotify: true, youtube: false }
+    spotify:
+      clientId: "${SPOTIFY_CLIENT_ID}"
+      clientSecret: "${SPOTIFY_CLIENT_SECRET}"
+      countryCode: "US"
