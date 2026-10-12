@@ -19,6 +19,15 @@ export class Helper {
         nodeResolver: (all) => { const h = all.get('home'); return h?.state === 1 ? h : [...all.values()].filter((n) => n.state === 1).sort((a, b) => a.penalties - b.penalties)[0]; } });
     this.shoukaku.on('error', (n, e) => console.error(`[${name}] lavalink`, e.message));
     this.client.on('error', (e) => console.error(`[${name}]`, e.message));
+    // Safety net: Shoukaku gives up after its tries or can get stuck mid-handshake (e.g. the home PC restarts).
+    // Every 20 s any node that is fully disconnected is reconnected, and the first change is logged once.
+    this.last = new Map();
+    this.watch = setInterval(() => {
+      for (const [id, n] of this.shoukaku.nodes) {
+        if (this.last.get(id) !== n.state) { this.last.set(id, n.state); console.log(`[${name}] node ${id} ${['connecting', 'connected', 'disconnecting', 'disconnected'][n.state]}`); }
+        if (n.state === 3) { try { n.connect(); } catch {} }
+      }
+    }, 20_000);
   }
   login() { return this.client.login(this.token); }
   ready() { return new Promise((r) => this.client.once('ready', r)); }
