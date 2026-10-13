@@ -13,6 +13,7 @@ import { notify, notifyMembers, safely } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { postEmbed } from './docs.js';
 import { getBotSettings } from './settings.js';
+import { message, header, text, sep, facts, footer, buttons } from './ui.js';
 
 const DAY = 86400e3, WEEK = 7 * DAY;
 export const STAT_AWARDS = {
@@ -160,12 +161,14 @@ async function announce(env, loadSite) {
       const byAward = new Map();
       for (const w of winners) (byAward.get(w.award) ?? byAward.set(w.award, { ...w, names: [] }).get(w.award)).names.push(`[${w.n}](${site}players/${encodeURIComponent(w.k)}.html)`);
       const potm = winnersOut(await all(env, "SELECT * FROM award_winners WHERE period = ? AND award = 'potm' AND player != ''", `M${wk.month}`), cats);
-      await postEmbed(env, channel, '', { embeds: [{
-        title: `🏆 Weekly awards · week ${wk.week.split('-W')[1]}`, url: `${site}members.html#awards`, color: parseInt(settings.color, 16) || RED,
-        description: [...byAward.values()].map((a) => `${a.icon} **${a.name}** — ${a.names.join(', ')}${a.stat ? '' : ` (${a.value} vote${a.value === 1 ? '' : 's'})`}`).join('\n').slice(0, 3900),
-        ...(potm.length && wk.month < weekOf(Date.now()).month ? { fields: [{ name: `👑 Player of the Month · ${wk.month}`, value: potm.map((p) => p.n).join(', ') }] } : {}),
-        footer: { text: 'NOREX UNITED · vote for this week in the Squad Hub' },
-      }] });
+      await postEmbed(env, channel, '', message({ accent: 'gold', blocks: [
+        header({ eyebrow: 'NOREX UNITED · Weekly awards', title: `🏆 Week ${wk.week.split('-W')[1]} winners`, sub: 'Voted by the squad' }),
+        text([...byAward.values()].map((a) => `${a.icon} **${a.name}** — ${a.names.join(', ')}${a.stat ? '' : ` (${a.value} vote${a.value === 1 ? '' : 's'})`}`).join('\n')),
+        potm.length && wk.month < weekOf(Date.now()).month ? sep() : null,
+        potm.length && wk.month < weekOf(Date.now()).month ? facts([[`👑 Player of the Month · ${wk.month}`, potm.map((p) => p.n).join(', ')]]) : null,
+        footer('Vote for this week in the Squad Hub'),
+        buttons([{ label: 'Awards', url: `${site}members.html#awards` }]),
+      ] }));
     }
   }
 }
