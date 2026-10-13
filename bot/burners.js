@@ -16,6 +16,7 @@
 import { can, flagOn } from './roles.js';
 import { eaGet } from './clublookup.js';
 import { MAX_BURNERS, TYPE_LABEL } from './burnerstats.js';
+import { message, header, text, footer, buttons } from './ui.js';
 
 const HOME_CLUB = '80869'; // NOREX UNITED FC – overridable with the HOME_CLUB_ID var
 
@@ -24,6 +25,14 @@ const reply = (content, extra = {}) => json({ type: 4, data: { content, flags: 6
 const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results);
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const RED = 0xc8352c;
+// Everything the deferred burner replies edit in is a design-system panel (the layout is declared when the reply is deferred,
+// and an edit carries only the components). Private, staff-only → steel.
+const IS_V2 = 1 << 15;
+const DEFER = () => json({ type: 5, data: { flags: IS_V2 | 64 } });
+const panel = (blocks) => message({ ephemeral: true, accent: 'steel', blocks });
+const plain = (content) => panel([text(content)]);
+const edit = (m) => ({ components: m.components, allowed_mentions: { parse: [] } });
+const BEAR = (eyebrow, title, lines, foot, menu) => panel([header({ eyebrow: `Staff · ${eyebrow}`, title, size: 3 }), text(lines), footer(foot), menu]);
 
 export async function burnersKey(secret) {
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${secret}:norex-burners`));
@@ -143,9 +152,9 @@ export async function burnersRelay(request, env) {
   const row = await one(env, 'SELECT * FROM ea_relay WHERE ref = ?', String(ref ?? ''));
   if (!row) return json({ error: 'Unknown or expired request' }, 404);
   await env.DB.prepare('DELETE FROM ea_relay WHERE ref = ?').bind(row.ref).run();
-  const body = hits == null ? { content: '⚠️ EA did not answer – try again in a minute.' } : await pickerBody(env, shapeHits(hits, row.q), row.q);
+  const body = hits == null ? plain('⚠️ EA did not answer – try again in a minute.') : await pickerBody(env, shapeHits(hits, row.q), row.q);
   const res = await fetch(`https://discord.com/api/v10/webhooks/${row.app_id}/${row.token}/messages/@original`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ allowed_mentions: { parse: [] }, ...body }),
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit(body)),
   });
   return json({ ok: res.ok });
 }
@@ -182,38 +191,30 @@ const noMatch = (q) => `🔍 EA has no club matching **${q}** yet. Names only ma
 // Search results → an embed + a pick menu (clubs already tracked are ticked).
 async function pickerBody(env, results, q) {
   const have = new Set((await all(env, 'SELECT club_id FROM burner_clubs WHERE active = 1')).map((r) => r.club_id));
-  if (!results.length) return { content: noMatch(q) };
-  return {
-    embeds: [{
-      title: `🔍 ${results.length} club${results.length === 1 ? '' : 's'} matching “${q}”`, color: RED,
-      description: results.map((c) => `${have.has(c.id) ? '✅' : '🔥'} **${c.name}** · \`${c.id}\` · ${record(c)}`).join('\n'),
-      footer: { text: 'Pick the right one below – ✅ = already tracked' },
-    }],
-    components: [{ type: 1, components: [{
+  if (!results.length) return plain(noMatch(q));
+  return BEAR('Burner clubs', `🔍 ${results.length} club${results.length === 1 ? '' : 's'} matching “${q}”`,
+    results.map((c) => `${have.has(c.id) ? '✅' : '🔥'} **${c.name}** · \`${c.id}\` · ${record(c)}`).join('\n'),
+    'Pick the right one below – ✅ = already tracked',
+    { type: 1, components: [{
       type: 3, custom_id: 'norex:bn:pick', placeholder: '🔥 Pick the club to track', min_values: 1, max_values: 1,
       options: results.map((c) => ({ label: c.name.slice(0, 100), value: c.id, description: `${c.id} · ${record(c)}`.slice(0, 100), emoji: { name: have.has(c.id) ? '✅' : '🔥' } })),
-    }] }],
-  };
+    }] });
 }
 
 // Recent opponents → an embed + the same pick menu (norex:bn:pick), already-tracked clubs ticked.
 async function recentBody(env, opps) {
-  if (!opps.length) return { content: '🔍 EA returned no recent NOREX games right now – try again in a minute, or look a club up with `/burner search <name>`.' };
+  if (!opps.length) return plain('🔍 EA returned no recent NOREX games right now – try again in a minute, or look a club up with `/burner search <name>`.');
   const have = new Set((await all(env, 'SELECT club_id FROM burner_clubs WHERE active = 1')).map((r) => r.club_id));
   const ago = (ts) => { const h = Math.max(0, Math.round((Date.now() / 1000 - ts) / 3600)); return h < 1 ? 'just now' : h < 48 ? `${h}h ago` : `${Math.round(h / 24)}d ago`; };
   const WORD = { W: 'won', D: 'drew', L: 'lost' };
   const line = (c) => `${WORD[c.res]} ${c.gf}–${c.ga} · ${TYPE_LABEL[c.type] ?? 'League'} · ${ago(c.ts)}`;
-  return {
-    embeds: [{
-      title: `🕘 ${opps.length} club${opps.length === 1 ? '' : 's'} NOREX played lately`, color: RED,
-      description: opps.map((c) => `${have.has(c.id) ? '✅' : '🔥'} **${c.name}** · \`${c.id}\` · we ${line(c)}`).join('\n').slice(0, 4000),
-      footer: { text: 'Pick the burner below – ✅ = already tracked' },
-    }],
-    components: [{ type: 1, components: [{
+  return BEAR('Burner clubs', `🕘 ${opps.length} club${opps.length === 1 ? '' : 's'} NOREX played lately`,
+    opps.map((c) => `${have.has(c.id) ? '✅' : '🔥'} **${c.name}** · \`${c.id}\` · we ${line(c)}`).join('\n').slice(0, 3500),
+    'Pick the burner below – ✅ = already tracked',
+    { type: 1, components: [{
       type: 3, custom_id: 'norex:bn:pick', placeholder: '🔥 Pick the burner to track', min_values: 1, max_values: 1,
       options: opps.map((c) => ({ label: c.name.slice(0, 100), value: c.id, description: `${c.id} · we ${line(c)}`.slice(0, 100), emoji: { name: have.has(c.id) ? '✅' : '🔥' } })),
-    }] }],
-  };
+    }] });
 }
 
 // Clubs our players are also in → an embed + the same pick menu (norex:bn:pick), already-tracked clubs ticked.
@@ -221,17 +222,13 @@ async function linkedBody(env, clubs) {
   const have = new Set((await all(env, 'SELECT club_id FROM burner_clubs WHERE active = 1')).map((r) => r.club_id));
   const who = (c) => `${c.players.slice(0, 3).join(', ')}${c.players.length > 3 ? ` +${c.players.length - 3}` : ''}`;
   const list = clubs.slice(0, 25);
-  return {
-    embeds: [{
-      title: `🔗 ${list.length} club${list.length === 1 ? '' : 's'} our players are also in`, color: RED,
-      description: list.map((c) => `${have.has(c.id) ? '✅' : '🔥'} **${c.name}** · \`${c.id}\` · ${who(c)}`).join('\n').slice(0, 4000),
-      footer: { text: 'Pick the burner below – ✅ = already tracked · /burner search with no name lists clubs we have faced' },
-    }],
-    components: [{ type: 1, components: [{
+  return BEAR('Burner clubs', `🔗 ${list.length} club${list.length === 1 ? '' : 's'} our players are also in`,
+    list.map((c) => `${have.has(c.id) ? '✅' : '🔥'} **${c.name}** · \`${c.id}\` · ${who(c)}`).join('\n').slice(0, 3500),
+    'Pick the burner below – ✅ = already tracked · /burner search with no name lists clubs we have faced',
+    { type: 1, components: [{
       type: 3, custom_id: 'norex:bn:pick', placeholder: '🔥 Pick the burner to track', min_values: 1, max_values: 1,
       options: list.map((c) => ({ label: c.name.slice(0, 100), value: c.id, description: `${c.id} · ${who(c)}`.slice(0, 100), emoji: { name: have.has(c.id) ? '✅' : '🔥' } })),
-    }] }],
-  };
+    }] });
 }
 
 const removeMenu = (rows) => ({ type: 1, components: [{
@@ -251,13 +248,13 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
     return (async () => {
       const rows = await all(env, 'SELECT club_id, name FROM burner_clubs WHERE active = 1 ORDER BY added_at');
       if (!rows.length) return reply('🔥 No burner clubs tracked yet. Use `/burner search` with the club’s name when someone makes a new one.');
-      if (sub.name === 'remove') return reply('Which club should I stop tracking? (Its history stays on file.)', { components: [removeMenu(rows)] });
+      if (sub.name === 'remove') return json({ type: 4, data: panel([text('Which club should I stop tracking? (Its history stays on file.)'), removeMenu(rows)]) });
       const stats = new Map((await loadSite('burners').catch(() => ({ clubs: [] }))).clubs.map((c) => [c.id, c]));
       const lines = rows.map((r) => {
         const s = stats.get(r.club_id);
         return `🔥 **${r.name}** · \`${r.club_id}\` · ${s ? `${s.w}W ${s.d}D ${s.l}L · ${s.gf}–${s.ga}${s.form?.length ? ` · ${s.form.slice(0, 5).join('')}` : ''}` : '⏳ first collection pending'}`;
       });
-      return reply('', { embeds: [{ title: `🔥 Burner clubs (${rows.length}/${MAX_BURNERS})`, color: RED, description: lines.join('\n'), url: `${site}burners.html`, footer: { text: 'Full stats on the Burner clubs page · /burner remove to stop tracking' } }] });
+      return json({ type: 4, data: panel([header({ eyebrow: 'Staff · Burner clubs', title: `🔥 Burner clubs (${rows.length}/${MAX_BURNERS})`, size: 3 }), text(lines.join('\n')), footer('Full stats on the Burner clubs page · /burner remove to stop tracking'), buttons([{ label: 'Burner clubs page', url: `${site}burners.html` }])]) });
     })();
   }
   // `recent`, or `search` with no name: dropdown of the clubs NOREX just played.
@@ -266,12 +263,12 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
       const body = await (async () => {
         if (sub.name === 'recent') { const linked = await linkedClubs(loadSite); if (linked.length) return linkedBody(env, linked); }
         return recentBody(env, await recentOpponents(env.HOME_CLUB_ID || HOME_CLUB, loadSite));
-      })().catch((e) => ({ content: `⚠️ Could not load the club list: ${e.message}` }));
+      })().catch((e) => plain(`⚠️ Could not load the club list: ${e.message}`));
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ allowed_mentions: { parse: [] }, ...body }),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit(body)),
       }).catch((e) => console.log('burner reply failed', e.message));
     })());
-    return json({ type: 5, data: { flags: 64 } });
+    return DEFER();
   }
   if (!['search', 'track'].includes(sub?.name) || q.length < 2) return reply('⚠️ Give me a club name (or club ID) to look up.');
 
@@ -282,26 +279,26 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
       const results = await searchClubs(q, loadSite);
       if (!results.length && !/^\d{1,12}$/.test(q) && await relayAsk(env, q, i)) {
         await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: `🔎 Asking EA for **${q}** through GitHub – this takes about a minute, the answer replaces this message.` }),
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit(plain(`🔎 Asking EA for **${q}** through GitHub – this takes about a minute, the answer replaces this message.`))),
         }).catch(() => {});
         return;
       }
       const exact = results.filter((c) => c.id === q || c.name.toLowerCase() === q.toLowerCase());
       if (sub.name === 'track' && exact.length === 1) {
         const r = await trackClub(env, exact[0], me, i.channel_id);
-        body = r.error ? { content: `⚠️ ${r.error}` } : { content: trackedMsg(exact[0], site, r.already) };
+        body = plain(r.error ? `⚠️ ${r.error}` : trackedMsg(exact[0], site, r.already));
         if (r.ok) await dispatchUpdate(env);
       } else {
         body = await pickerBody(env, results, q);
       }
     } catch (e) {
-      body = { content: `⚠️ Could not reach EA: ${e.message}` };
+      body = plain(`⚠️ Could not reach EA: ${e.message}`);
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ allowed_mentions: { parse: [] }, ...body }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit(body)),
     }).catch((e) => console.log('burner reply failed', e.message));
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return DEFER();
 }
 
 // ---------- the pick menus (custom_id norex:bn:pick | norex:bn:rm) ----------
@@ -309,7 +306,7 @@ export async function burnerPick(i, env, ctx, user, loadSite) {
   if (!can(user, 'burners.manage') || !flagOn(env, user, 'burners')) return reply('🔒 Managers only.');
   const id = String(i.data?.values?.[0] ?? '');
   if (!/^\d{1,12}$/.test(id)) return reply('⚠️ Unknown club.');
-  const update = (content) => json({ type: 7, data: { content, embeds: [], components: [], allowed_mentions: { parse: [] } } });
+  const update = (content) => json({ type: 7, data: edit(plain(content)) });
   const site = (env.SITE_URL || '').replace(/\/?$/, '/');
   if (i.data.custom_id === 'norex:bn:rm') {
     const row = await one(env, 'SELECT name FROM burner_clubs WHERE club_id = ? AND active = 1', id);

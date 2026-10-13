@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, loadBurners, loadCrawlCursor, saveCrawlSlice, num, sleep, eventCounts } from './lib.mjs';
 import { matchComponents } from '../bot/matchcard.js';
-import { MAX_BURNERS, burnerStats, mergeMatches, reportEmbed, slimBurnerMatch, updateRoster } from '../bot/burnerstats.js';
+import { MAX_BURNERS, burnerStats, mergeMatches, reportMessage, slimBurnerMatch, updateRoster } from '../bot/burnerstats.js';
 import { message, header, facts, footer, resultAccent } from '../bot/ui.js';
 
 const API = 'https://proclubs.ea.com/api/fc/';
@@ -419,7 +419,7 @@ async function postBurnerReports() {
     if (posted >= 4) break; // a catch-up never floods the channel; the rest follow next run
     const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, {
       method: 'POST', headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ embeds: [reportEmbed(record, match, stats, site)], allowed_mentions: { parse: [] } }),
+      body: JSON.stringify(reportMessage(record, match, stats, site)),
     }).catch((e) => ({ ok: false, status: e.message }));
     if (!r.ok) { console.warn(`Burner report failed (${r.status}) – the bot needs View Channel + Send Messages + Embed Links there.`); break; }
     record.reported = [...new Set([...record.reported, match.id])].slice(-200);
