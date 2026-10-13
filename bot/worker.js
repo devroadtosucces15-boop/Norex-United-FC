@@ -40,7 +40,7 @@ import { generateCards } from './cardstudio.js';
 import { message, notice, header, cards, facts, text, sep, side, thumb, label, footer, buttons, cardUrl, resultAccent, RESULT_ICON } from './ui.js';
 import { playerFaces } from './faces.js';
 import { zoneChoices } from './host.js';
-import { FUN_COMMANDS, FUN_BUTTON, funCommand, funButton } from './fun.js';
+import { FUN_COMMANDS, FUN_BUTTON, funCommand, funButton, birthdayCheck } from './fun.js';
 import { SERVER_COMMANDS, SERVER_BUTTON, serverCommand, serverButton, memberWatch, sendDueReminders, tagChoices } from './servertools.js';
 
 
@@ -63,6 +63,7 @@ export default {
       const loadSite = (file) => load(site, file, ctx);
       ctx.waitUntil(refreshStatInsights(env, loadSite).then(() => statInsightWeekly(env, postEmbed)).catch((e) => console.log('stat insights cron failed', e.message))); // BE9
     }
+    if (flagOn(env, { role: 'owner' }, 'fun')) ctx.waitUntil(birthdayCheck(env, postEmbed).catch((e) => console.log('birthday check failed', e.message))); // 🎂 one post a day
     if (flagOn(env, { role: 'owner' }, 'serverTools')) ctx.waitUntil(memberWatch(env).catch((e) => console.log('member watch failed', e.message))); // leave/join alerts + welcome posts
     if (flagOn(env, { role: 'owner' }, 'cardStudio')) ctx.waitUntil(generateCards(env).catch((e) => console.log('card generation failed', e.message))); // Card Studio – approved requests → AI cards (retries included)
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;

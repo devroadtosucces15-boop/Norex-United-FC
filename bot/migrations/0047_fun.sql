@@ -20,3 +20,26 @@ CREATE TABLE IF NOT EXISTS fun_wheels (
   by_id TEXT NOT NULL,
   at INTEGER NOT NULL
 );
+-- /trivia: a posted question (shuffled answer order), who answered, running score.
+CREATE TABLE IF NOT EXISTS fun_trivia_q (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  q_idx INTEGER NOT NULL,
+  order_json TEXT NOT NULL,
+  by_id TEXT NOT NULL,
+  at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS fun_trivia_answers (
+  q_id INTEGER NOT NULL,
+  user_id TEXT NOT NULL,
+  pick INTEGER NOT NULL,
+  ok INTEGER NOT NULL,
+  at INTEGER NOT NULL,
+  PRIMARY KEY (q_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS fun_trivia_scores (
+  user_id TEXT PRIMARY KEY,
+  name TEXT,
+  points INTEGER NOT NULL DEFAULT 0,
+  correct INTEGER NOT NULL DEFAULT 0,
+  played INTEGER NOT NULL DEFAULT 0
+);

@@ -138,6 +138,7 @@ export const COMMANDS = [
       { type: STRING, name: 'question', description: 'What the wheel decides, e.g. Who plays GK tonight', max_length: 100 },
     ],
   },
+  { name: 'trivia', description: 'A football trivia question – points for right answers', options: [{ type: SUB, name: 'play', description: 'Ask a question' }, { type: SUB, name: 'board', description: 'The trivia table' }] },
   // Server tools – the Miona / Carl-bot replacements (bot/servertools.js)
   {
     name: 'setup', description: 'Managers: leave/join alerts, welcome posts and the ping-role panel',

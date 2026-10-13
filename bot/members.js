@@ -55,7 +55,7 @@ import { awardPoints, pointsRoute } from './points.js';
 import { myAvatarCard } from './avatarcard.js';
 import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
 import { healthRoute } from './health.js';
-import { jailCount } from './fun.js';
+import { jailCount, triviaPoints } from './fun.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -637,7 +637,7 @@ async function route(p, method, body, me, env, loadSite, url) {
     const uid = String(url.searchParams.get('u') || me.u).slice(0, 24);
     const card = await memberCard(env, me, uid);
     if (!card) return fail('Member not found', 404);
-    return json(flagOn(env, me, 'fun') ? { ...card, fun: { jail: await jailCount(env, uid) } } : card); // fun stats for the profile (bot/fun.js)
+    return json(flagOn(env, me, 'fun') ? { ...card, fun: { jail: await jailCount(env, uid), trivia: await triviaPoints(env, uid), birthday: card.profile?.birthday ?? '' } } : card); // fun stats for the profile (bot/fun.js)
   }
 
   if (p === '/api/avatarcard' && method === 'GET') { // P11.5 – web half of the AI club card made by /avatarcard in Discord

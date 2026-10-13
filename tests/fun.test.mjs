@@ -3,7 +3,8 @@ import { env, call, login, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
 import { plainText, isV2 } from '../bot/ui.js';
-import { parseOptions, rng, CHARGES } from '../bot/fun.js';
+import { parseOptions, rng, CHARGES, TRIVIA, birthdaysOn, birthdayCheck, birthdayPanel } from '../bot/fun.js';
+import { birthday } from '../bot/profiles.js';
 
 const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
 env.DISCORD_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', kp.publicKey)).toString('hex');
@@ -94,6 +95,60 @@ await tt('a wheel that no longer exists', async () => /wheel is gone/.test(plain
 const tok = await login('600', []);
 const mem = (await call(tok, '/api/member?u=600')).d;
 t('profile: fun.jail counts the sentences', mem?.fun?.jail === 2);
+
+// ---------- profile fields + birthdays ----------
+const bd = (v) => { try { return birthday(v); } catch (e) { return e.message; } };
+t('birthday: month-day only, padded; 7/14 and 07-14 both work', bd('7/14') === '07-14' && bd('12-01') === '12-01' && bd('') === '');
+t('birthday: impossible dates and years are refused', /doesn’t exist/.test(bd('02-30')) && /doesn’t exist/.test(bd('13-01')) && /month and day/.test(bd('1990-07-14')));
+t('birthday: 29 Feb is a real birthday', bd('2-29') === '02-29');
+const sv = await call(tok, '/api/profile', { birthday: '07-14', kick: 'https://kick.com/Bash_TV/videos' });
+t('profile saves kick channel and birthday', sv.s === 200 && sv.d.profile.kick === 'Bash_TV' && sv.d.profile.birthday === '07-14');
+t('profile: a bad Kick name is refused', (await call(tok, '/api/profile', { kick: 'x' })).s === 400);
+t('birthdays: today’s key; 29 Feb moves to 1 March in a non-leap year only', birthdaysOn(Date.UTC(2026, 6, 14, 9)).join() === '07-14' && birthdaysOn(Date.UTC(2026, 2, 1, 9)).join() === '03-01,02-29' && birthdaysOn(Date.UTC(2028, 2, 1, 9)).join() === '03-01');
+const posts = [];
+const post = async (e, channel, role, msg) => { posts.push({ channel, msg }); return { ok: true }; };
+env.DISCORD_BOT_TOKEN = 'bot';
+sqlite.prepare("INSERT INTO meta (key, value) VALUES ('announce_channel', '4242') ON CONFLICT (key) DO UPDATE SET value = excluded.value").run();
+const day = Date.UTC(2026, 6, 14, 9);
+t('birthday cron: nothing before 08:00 UTC', (await birthdayCheck(env, post, Date.UTC(2026, 6, 14, 7))).posted === false && posts.length === 0);
+const b1 = await birthdayCheck(env, post, day);
+t('birthday cron: one gold panel to the announce channel, mention without a ping', b1.posted && b1.count === 1 && posts[0].channel === '4242' && /Happy birthday/.test(plainText(posts[0].msg)) && /<@600>/.test(plainText(posts[0].msg)) && posts[0].msg.allowed_mentions.parse.length === 0);
+t('birthday cron: only once a day', (await birthdayCheck(env, post, day + 36e5)).posted === false && posts.length === 1);
+t('birthday cron: next day with no birthdays posts nothing', (await birthdayCheck(env, post, day + 864e5)).posted === false && posts.length === 1);
+t('birthday panel: several in one post', /2 birthdays today/.test(plainText(birthdayPanel([{ user_id: '1' }, { user_id: '2' }]))));
+
+
+// ---------- /trivia ----------
+setFlags({ fun: 'members' });
+t('trivia bank: every question has one right answer, three different wrong ones and a line for afterwards', TRIVIA.length >= 20 && TRIVIA.every((q) => q[0].endsWith('?') && q[2].length === 3 && new Set([q[1], ...q[2]]).size === 4 && q[3]));
+const triv = (who, sub) => send({ type: 2, ...who, data: { name: 'trivia', options: sub ? [{ type: 1, name: sub }] : [] } });
+chosen = 0;
+const tq = await triv(MEMBER);
+const tqRow = sqlite.prepare('SELECT * FROM fun_trivia_q ORDER BY id DESC LIMIT 1').get();
+const tOrder = JSON.parse(tqRow.order_json), rightK = tOrder.indexOf(0), wrongK = (rightK + 1) % 4;
+t('trivia: a public question with four lettered buttons (not revealing the answer)', tq.d.type === 4 && /Which country won the 2022/.test(plainText(tq.d.data)) && buttonIds(tq.d.data).length === 4 && !/✅/.test(plainText(tq.d.data)) && tOrder.length === 4);
+const ans = (who, k, id = tqRow.id) => press(who, `norex:fun:tq:${id}:${k}`);
+await tt('trivia: a right answer scores 10 points, privately, with the explanation', async () => {
+  const r = await ans(as('300', 'Quick'), rightK);
+  return (r.d.data.flags & 64) === 64 && /Right! \+10/.test(plainText(r.d.data)) && /3–3/.test(plainText(r.d.data));
+});
+await tt('trivia: a wrong answer names the right one and scores nothing', async () => {
+  const r = await ans(as('301', 'Unlucky'), wrongK);
+  return /Not this time/.test(plainText(r.d.data)) && plainText(r.d.data).includes('Argentina') && sqlite.prepare("SELECT points, played FROM fun_trivia_scores WHERE user_id = '301'").get().points === 0;
+});
+await tt('trivia: one go each', async () => /already answered/.test(plainText((await ans(as('300', 'Quick'), wrongK)).d.data)) && sqlite.prepare("SELECT points FROM fun_trivia_scores WHERE user_id = '300'").get().points === 10);
+await tt('trivia: a question closes after 15 minutes', async () => {
+  sqlite.prepare('UPDATE fun_trivia_q SET at = ? WHERE id = ?').run(Date.now() - 16 * 60e3, tqRow.id);
+  return /Time’s up/.test(plainText((await ans(as('302', 'Late'), rightK)).d.data));
+});
+await tt('trivia board: ranked by points', async () => {
+  const r = await triv(MEMBER, 'board');
+  const txt = plainText(r.d.data);
+  return /Trivia table/.test(txt) && txt.indexOf('Quick') >= 0 && txt.includes('1/1 right');
+});
+const fb = (await call(tok, '/api/member?u=600')).d?.fun;
+t('profile fun block carries jail count, trivia points and birthday', fb?.jail === 2 && fb?.trivia === 0 && fb?.birthday === '07-14');
+
 setFlags({ fun: 'owner' });
 t('profile: no fun block while the flag is owner-only for a member', (await call(tok, '/api/member?u=600')).d?.fun === undefined);
 done();
