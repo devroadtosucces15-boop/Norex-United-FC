@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-13T01:11:27.255Z",
+ "fetchedAt": "2026-10-13T01:21:32.785Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -115,6 +115,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "shon_day",
+   "gamesPlayed": "43",
+   "winRate": "67",
+   "goals": "18",
+   "assists": "15",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "60",
+   "passesMade": "491",
+   "passSuccessRate": "79",
+   "ratingAve": "7.6",
+   "tacklesMade": "53",
+   "tackleSuccessRate": "29",
+   "proName": "shon",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "175",
+   "proNationality": "95",
+   "proOverall": "80",
+   "proOverallStr": "80",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "1",
+   "prevGoals1": "1",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "1",
+   "prevGoals5": "0",
+   "prevGoals6": "1",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "Alen7ozil",
@@ -1056,7 +1092,7 @@
  "positionCount": {
   "midfielder": 11,
   "goalkeeper": 0,
-  "forward": 4,
+  "forward": 5,
   "defender": 8
  },
  "career": [
@@ -1070,6 +1106,17 @@
    "ratingAve": "6.7",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "shon_day",
+   "proPos": "25",
+   "gamesPlayed": "157",
+   "goals": "92",
+   "assists": "88",
+   "manOfTheMatch": "15",
+   "ratingAve": "7.7",
+   "prevGoals": "1",
+   "favoritePosition": "forward"
   },
   {
    "name": "Alen7ozil",
