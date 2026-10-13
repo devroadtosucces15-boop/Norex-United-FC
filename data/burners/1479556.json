@@ -3,7 +3,7 @@
  "name": "vagi noli",
  "crest": "99160128",
  "trackedAt": "2026-10-10T00:08:15.917Z",
- "fetchedAt": "2026-10-13T14:25:03.230Z",
+ "fetchedAt": "2026-10-13T15:17:22.805Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "vagi noli",
@@ -269,42 +269,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "JEZB_11",
-   "gamesPlayed": "2",
-   "winRate": "100",
-   "goals": "2",
-   "assists": "7",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "100",
-   "passesMade": "27",
-   "passSuccessRate": "79",
-   "ratingAve": "8.2",
-   "tacklesMade": "3",
-   "tackleSuccessRate": "42",
-   "proName": "J. Jezb",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "162",
-   "proNationality": "56",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "2",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "rezy33pizza",
    "gamesPlayed": "2",
    "winRate": "100",
@@ -470,17 +434,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "JEZB_11",
-   "proPos": "14",
-   "gamesPlayed": "255",
-   "goals": "117",
-   "assists": "183",
-   "manOfTheMatch": "33",
-   "ratingAve": "7.8",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "rezy33pizza",
    "proPos": "5",
    "gamesPlayed": "21",
@@ -517,7 +470,7 @@
  "roster": {
   "oKaede-": {
    "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-13T14:25:03.230Z",
+   "last": "2026-10-13T15:17:22.805Z",
    "active": true,
    "gp": 4,
    "pos": "forward",
@@ -525,7 +478,7 @@
   },
   "derbrecki": {
    "first": "2026-10-12T23:11:30.990Z",
-   "last": "2026-10-13T14:25:03.230Z",
+   "last": "2026-10-13T15:17:22.805Z",
    "active": true,
    "gp": 4,
    "pos": "forward",
@@ -533,7 +486,7 @@
   },
   "IM_Trash_Broski": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-13T14:25:03.230Z",
+   "last": "2026-10-13T15:17:22.805Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -541,7 +494,7 @@
   },
   "J_cruz505": {
    "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-13T14:25:03.230Z",
+   "last": "2026-10-13T15:17:22.805Z",
    "active": true,
    "gp": 4,
    "pos": "midfielder",
@@ -549,23 +502,15 @@
   },
   "x_MrMike_x": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-13T14:25:03.230Z",
+   "last": "2026-10-13T15:17:22.805Z",
    "active": true,
    "gp": 7,
    "pos": "midfielder",
    "ovr": 76
   },
-  "JEZB_11": {
-   "first": "2026-10-12T23:11:30.990Z",
-   "last": "2026-10-13T14:25:03.230Z",
-   "active": true,
-   "gp": 2,
-   "pos": "midfielder",
-   "ovr": 83
-  },
   "rezy33pizza": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-13T14:25:03.230Z",
+   "last": "2026-10-13T15:17:22.805Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -573,7 +518,7 @@
   },
   "itzAldinha27": {
    "first": "2026-10-12T23:11:30.990Z",
-   "last": "2026-10-13T14:25:03.230Z",
+   "last": "2026-10-13T15:17:22.805Z",
    "active": true,
    "gp": 4,
    "pos": "defender",
@@ -581,11 +526,19 @@
   },
   "Rinconkelvin95": {
    "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-13T14:25:03.230Z",
+   "last": "2026-10-13T15:17:22.805Z",
    "active": true,
    "gp": 4,
    "pos": "goalkeeper",
    "ovr": 85
+  },
+  "JEZB_11": {
+   "first": "2026-10-12T23:11:30.990Z",
+   "last": "2026-10-13T14:25:03.230Z",
+   "active": false,
+   "gp": 2,
+   "pos": "midfielder",
+   "ovr": 83
   },
   "DesiipherJay": {
    "first": "2026-10-10T00:08:15.917Z",
