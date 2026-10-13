@@ -3,7 +3,7 @@
  "name": "SANGRE X SANGRE",
  "crest": "99160616",
  "trackedAt": "2026-10-13T21:35:55.184Z",
- "fetchedAt": "2026-10-13T22:21:07.168Z",
+ "fetchedAt": "2026-10-13T22:31:14.740Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "SANGRE X SANGRE",
@@ -195,56 +195,9 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "IM_Trash_Broski",
-   "gamesPlayed": "0",
-   "favoritePosition": "",
-   "winRate": "0",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "0",
-   "passSuccessRate": "0",
-   "ratingAve": "0.0",
-   "tacklesMade": "0",
-   "tackleSuccessRate": "0",
-   "proName": "",
-   "proPos": "",
-   "proStyle": "",
-   "proHeight": "",
-   "proNationality": "",
-   "proOverall": "0",
-   "proOverallStr": "",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0"
   }
  ],
  "career": [
-  {
-   "name": "IM_Trash_Broski",
-   "proPos": "25",
-   "gamesPlayed": "104",
-   "goals": "78",
-   "assists": "60",
-   "manOfTheMatch": "19",
-   "ratingAve": "8.1",
-   "prevGoals": "3",
-   "favoritePosition": "forward"
-  },
   {
    "name": "Jasminnee_07",
    "proPos": "14",
@@ -282,7 +235,7 @@
  "roster": {
   "Jasminnee_07": {
    "first": "2026-10-13T21:35:55.184Z",
-   "last": "2026-10-13T22:21:07.168Z",
+   "last": "2026-10-13T22:31:14.740Z",
    "active": true,
    "gp": 2,
    "pos": "midfielder",
@@ -290,7 +243,7 @@
   },
   "x_MrMike_x": {
    "first": "2026-10-13T21:35:55.184Z",
-   "last": "2026-10-13T22:21:07.168Z",
+   "last": "2026-10-13T22:31:14.740Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -298,7 +251,7 @@
   },
   "JEZB_11": {
    "first": "2026-10-13T21:35:55.184Z",
-   "last": "2026-10-13T22:21:07.168Z",
+   "last": "2026-10-13T22:31:14.740Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -307,7 +260,7 @@
   "IM_Trash_Broski": {
    "first": "2026-10-13T22:11:02.424Z",
    "last": "2026-10-13T22:21:07.168Z",
-   "active": true,
+   "active": false,
    "gp": 0,
    "pos": null,
    "ovr": null
