@@ -108,11 +108,11 @@ t('birthdays: today’s key; 29 Feb moves to 1 March in a non-leap year only', b
 const posts = [];
 const post = async (e, channel, role, msg) => { posts.push({ channel, msg }); return { ok: true }; };
 env.DISCORD_BOT_TOKEN = 'bot';
-sqlite.prepare("INSERT INTO meta (key, value) VALUES ('announce_channel', '4242') ON CONFLICT (key) DO UPDATE SET value = excluded.value").run();
+sqlite.prepare("INSERT INTO meta (key, value) VALUES ('announce_channel', '42420') ON CONFLICT (key) DO UPDATE SET value = excluded.value").run();
 const day = Date.UTC(2026, 6, 14, 9);
 t('birthday cron: nothing before 08:00 UTC', (await birthdayCheck(env, post, Date.UTC(2026, 6, 14, 7))).posted === false && posts.length === 0);
 const b1 = await birthdayCheck(env, post, day);
-t('birthday cron: one gold panel to the announce channel, mention without a ping', b1.posted && b1.count === 1 && posts[0].channel === '4242' && /Happy birthday/.test(plainText(posts[0].msg)) && /<@600>/.test(plainText(posts[0].msg)) && posts[0].msg.allowed_mentions.parse.length === 0);
+t('birthday cron: one gold panel to the announce channel, mention without a ping', b1.posted && b1.count === 1 && posts[0].channel === '42420' && /Happy birthday/.test(plainText(posts[0].msg)) && /<@600>/.test(plainText(posts[0].msg)) && posts[0].msg.allowed_mentions.parse.length === 0);
 t('birthday cron: only once a day', (await birthdayCheck(env, post, day + 36e5)).posted === false && posts.length === 1);
 t('birthday cron: next day with no birthdays posts nothing', (await birthdayCheck(env, post, day + 864e5)).posted === false && posts.length === 1);
 t('birthday panel: several in one post', /2 birthdays today/.test(plainText(birthdayPanel([{ user_id: '1' }, { user_id: '2' }]))));

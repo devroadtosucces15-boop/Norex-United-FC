@@ -56,6 +56,7 @@ import { myAvatarCard } from './avatarcard.js';
 import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
 import { healthRoute } from './health.js';
 import { jailCount, triviaPoints } from './fun.js';
+import { discoveriesRoute } from './discoveries.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -736,6 +737,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (kno) return kno;
   const evt = await eventsRoute(p, method, body, me, env, log, loadSite, url); // P3.1 events · P3.2 RSVPs · P3.7 match night
   if (evt) return evt;
+  const dsc = await discoveriesRoute(p, method, body, me, env); // member tips a manager approved
+  if (dsc) return dsc;
   const lkr = await lockerRoute(p, method, me, env, loadSite); // BE2 Locker Room: next event + vote + unread + achievements, one call
   if (lkr) return lkr;
   const crd = await cardsRoute(p, method, body, me, env, log); // Card Studio: templates, premium unlocks

@@ -40,6 +40,7 @@ import { generateCards } from './cardstudio.js';
 import { message, notice, header, cards, facts, text, sep, side, thumb, label, footer, buttons, cardUrl, resultAccent, RESULT_ICON } from './ui.js';
 import { playerFaces } from './faces.js';
 import { zoneChoices } from './host.js';
+import { DISCOVERY_COMMANDS, DISCOVERY_BUTTON, discoveryCommand, discoveryButton } from './discoveries.js';
 import { FUN_COMMANDS, FUN_BUTTON, funCommand, funButton, birthdayCheck } from './fun.js';
 import { SERVER_COMMANDS, SERVER_BUTTON, serverCommand, serverButton, memberWatch, sendDueReminders, tagChoices } from './servertools.js';
 
@@ -134,6 +135,8 @@ export default {
       if (!env.DB) return json({ type: 4, data: notice('The member database isn’t connected') });
       return json(await panelInteraction(i, env, await memberOf(i, who, env), site, (f) => load(site, f, ctx)));
     }
+    if (i.type === 2 && DISCOVERY_COMMANDS.has(i.data.name)) return json(await discoveryCommand(i, env, ctx, who)); // /share /discoveries
+    if (i.type === 3 && DISCOVERY_BUTTON.test(i.data?.custom_id ?? '')) return json(await discoveryButton(i, env, who)); // approve / reject / useful
     if (i.type === 2 && FUN_COMMANDS.has(i.data.name)) return json(await funCommand(i, env, ctx, who)); // /jail /wheel
     if (i.type === 3 && FUN_BUTTON.test(i.data?.custom_id ?? '')) return json(await funButton(i, env, who)); // bail, rap sheet, spin again
     if (i.type === 2 && SERVER_COMMANDS.has(i.data.name)) return json(await serverCommand(i, env, ctx, who)); // /setup /purge /tag /tags /remind /reminders

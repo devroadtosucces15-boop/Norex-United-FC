@@ -138,6 +138,15 @@ export const COMMANDS = [
       { type: STRING, name: 'question', description: 'What the wheel decides, e.g. Who plays GK tonight', max_length: 100 },
     ],
   },
+  {
+    name: 'share', description: 'Share something worth knowing with the club – a manager approves it first',
+    options: [
+      { type: STRING, name: 'title', description: 'A short headline', required: true, min_length: 4, max_length: 100 },
+      { type: STRING, name: 'tip', description: 'What should we know?', required: true, min_length: 10, max_length: 600 },
+      { type: STRING, name: 'link', description: 'A link to back it up (optional)', max_length: 300 },
+    ],
+  },
+  { name: 'discoveries', description: 'Managers: shared tips waiting for approval', default_member_permissions: String(1 << 28), contexts: [0] },
   { name: 'trivia', description: 'A football trivia question – points for right answers', options: [{ type: SUB, name: 'play', description: 'Ask a question' }, { type: SUB, name: 'board', description: 'The trivia table' }] },
   // Server tools – the Miona / Carl-bot replacements (bot/servertools.js)
   {
