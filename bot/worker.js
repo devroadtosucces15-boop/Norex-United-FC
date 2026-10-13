@@ -317,7 +317,7 @@ async function insightCommand(i, env, ctx, site, who) {
       const out = await discordH2hEmbed(env, (f) => load(site, f, ctx), opponent, who).catch((e) => ({ error: `⚠️ ${e.message}` }));
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(out.error ? { content: out.error } : { embeds: [out.embed] }),
+        body: JSON.stringify(out.error ? { content: out.error } : out.embed),
       }).catch((e) => console.log('insight h2h reply failed', e.message));
     })());
     return json({ type: 5 });
@@ -325,7 +325,7 @@ async function insightCommand(i, env, ctx, site, who) {
   const stat = flatOptions(i.data.options).find((o) => o.name === 'stat')?.value ?? 'club';
   const out = await discordInsightEmbed(env, stat, who.role).catch((e) => ({ error: `⚠️ ${e.message}` }));
   if (out.error) return json({ type: 4, data: { content: out.error, flags: 64 } });
-  return json({ type: 4, data: { embeds: [out.embed] } });
+  return json({ type: 4, data: out.embed });
 }
 
 // ---------- /ask (public, flag-gated): P11.11 AI club chatbot – site JSON stats as context for the text model ----------

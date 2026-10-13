@@ -2,6 +2,7 @@
 // see the play), hide (managers). Flag `tactics`.
 import { call, env, login, W, sqlite } from './mock.mjs';
 import { t, done } from './lib.mjs';
+import { plainText } from '../bot/ui.js';
 
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
 setFlags({ tactics: 'members' });
@@ -59,11 +60,11 @@ t('member cannot send a recording to Discord', (await share(member, vid, { chann
 t('bad channel refused', (await share(manager, vid, { channel: 'abc' })).d.error === 'Pick a channel.');
 const sent = await share(manager, vid, { channel: '70001', role: '123' });
 const post = dc.at(-1);
-t('manager sends the video as a real attachment with an Open in Studio button', sent.s === 200 && sent.d.attached === true && post.form && post.file.size === bytes.length && post.json.components[0].components[0].style === 5 && post.json.content === '<@&123>');
+t('manager sends the video as a real attachment with an Open in Studio button', sent.s === 200 && sent.d.attached === true && post.form && post.file.size === bytes.length && JSON.stringify(post.json.components).includes('Open in Studio') && post.json.components[0].content.includes('<@&123>') && JSON.stringify(post.json.components).includes('attachment://'));
 t('attachment filename keeps the play title + extension', post.file.name === 'Overlap-run.webm');
 sqlite.prepare('UPDATE play_media SET size = 30000000 WHERE id = ?').run(voice.media.id);
 const big = await share(manager, voice.media.id, { channel: '70001' });
-t('over 25 MB → link card instead of an attachment', big.s === 200 && big.d.attached === false && !dc.at(-1).form && dc.at(-1).embeds[0].description.includes('Too big'));
+t('over 25 MB → link card instead of an attachment', big.s === 200 && big.d.attached === false && !dc.at(-1).form && plainText(dc.at(-1)).includes('Too big'));
 sqlite.prepare('UPDATE play_media SET size = 3 WHERE id = ?').run(voice.media.id);
 globalThis.fetch = realFetch;
 

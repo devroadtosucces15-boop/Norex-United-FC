@@ -7,6 +7,7 @@ import {
   handleStatInsightJob, statInsightWeekly, compareKey, statCompareRoute, statH2hRoute,
 } from '../bot/statinsights.js';
 import { can } from '../bot/roles.js';
+import { plainText } from '../bot/ui.js';
 
 const loadSite = async (f) => siteJson(f);
 const homePlayer = siteJson('players').find((p) => p.home);
@@ -160,7 +161,7 @@ const fakePostEmbed = async (e2, channel, role, message) => { posted = { channel
 await DB.exec("INSERT INTO meta (key, value) VALUES ('announce_channel', '555') ON CONFLICT (key) DO UPDATE SET value = excluded.value");
 const monday10am = new Date('2026-10-05T10:00:00Z').getTime(); // a Monday
 await statInsightWeekly(env, fakePostEmbed, monday10am);
-t('weekly post fires on Monday 10:00 UTC with a channel set', posted?.channel === '555' && posted.message.embeds[0].title.includes('Insight of the week'));
+t('weekly post fires on Monday 10:00 UTC with a channel set', posted?.channel === '555' && /insight of the week/i.test(plainText(posted.message)));
 posted = null;
 await statInsightWeekly(env, fakePostEmbed, monday10am);
 t('the weekly post only fires once per week', posted === null);
@@ -176,14 +177,14 @@ await DB.prepare('INSERT INTO stat_insights (key, hash, headline, body, watch, s
 await DB.prepare('INSERT INTO stat_insights (key, hash, headline, body, watch, sources, tier, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
   .bind('leaders.goals', 'h', 'Goals race', 'Close at the top.', 'Watch the striker.', '{}', 'member', Date.now()).run();
 const ok = await discordInsightEmbed(env, 'club', 'guest');
-t('/insight club → embed in club red with the stored headline', ok.embed?.title === '✨ Unbeaten at home' && ok.embed.color === 0xc8352c);
+t('/insight club → embed in club red with the stored headline', plainText(ok.embed).includes('✨ Unbeaten at home') && ok.embed.components[0].accent_color === 0xc8352c);
 t('/insight member-tier row → gated for a guest', /members only/.test((await discordInsightEmbed(env, 'goals', 'guest')).error ?? ''));
-t('/insight member-tier row → shown to a member', (await discordInsightEmbed(env, 'goals', 'member')).embed?.title === '✨ Goals race');
+t('/insight member-tier row → shown to a member', plainText((await discordInsightEmbed(env, 'goals', 'member')).embed).includes('✨ Goals race'));
 t('/insight with no stored row → friendly error', /No insight/.test((await discordInsightEmbed(env, 'match', 'owner')).error ?? ''));
 t('/insight unknown stat → error', !!(await discordInsightEmbed(env, 'nope', 'owner')).error);
 await DB.prepare('INSERT INTO stat_insights (key, hash, headline, body, watch, sources, tier, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
   .bind('matches.last5', 'h', 'Five-game run', 'Body.', 'Watch.', '{}', 'public', Date.now()).run();
-t('/insight last5 reads the matches.last5 row for a guest (public tier)', (await discordInsightEmbed(env, 'last5', 'guest')).embed?.title === '✨ Five-game run');
+t('/insight last5 reads the matches.last5 row for a guest (public tier)', plainText((await discordInsightEmbed(env, 'last5', 'guest')).embed).includes('✨ Five-game run'));
 
 // ---------- BE9 compare (on demand, member+, pair key sorted, cached by fingerprint) ----------
 const homes = siteJson('players').filter((p) => p.home);
@@ -390,9 +391,9 @@ t('every h2h.json id is a digit string (safe for the data-h2h attribute + route)
   let calls = 0;
   setAiReply(() => { calls++; return JSON.stringify({ headline: 'Perfect against them', body: `Played ${opp.p} and never lost.`, watch: 'Keep the record spotless.' }); });
   const first = await discordH2hEmbed(env, loadSite, opp.o, { role: 'owner' });
-  t('discord h2h: member+ with no stored row → writer runs, embed has record field', first.embed?.title === '✨ Perfect against them' && first.embed.fields[0].name === `vs ${opp.n}` && calls === 1);
+  t('discord h2h: member+ with no stored row → writer runs, embed has record field', plainText(first.embed).includes('✨ Perfect against them') && plainText(first.embed).includes(`vs ${opp.n}`) && calls === 1);
   const again = await discordH2hEmbed(env, loadSite, opp.o, { role: 'guest' });
-  t('discord h2h: stored row is reused with no writer call, and guests can read it', again.embed?.title === first.embed.title && calls === 1);
+  t('discord h2h: stored row is reused with no writer call, and guests can read it', plainText(again.embed) === plainText(first.embed) && calls === 1);
   setAiReply(null);
 }
 

@@ -86,8 +86,8 @@ t('member cannot share', (await call(member, `/api/plays/${id}/discord`, { chann
 
 const shared = await call(manager, `/api/plays/${id}/discord`, { channel: '70001' });
 const post = dcPosts.at(-1);
-t('manager shares the play as a card', shared.s === 200 && shared.d.discord?.channel === '70001' && post.embeds[0].title.includes('Corner routine'));
-const btns = post.components[0].components;
+t('manager shares the play as a card', shared.s === 200 && shared.d.discord?.channel === '70001' && plainText(post).includes('Corner routine') && JSON.stringify(post.components).includes('norex:play:'));
+const btns = post.components.find((c) => c.type === 17).components.find((c) => c.type === 1).components;
 t('card carries a Learned it button + an Open in Studio link', btns[0].custom_id === `norex:play:${id}:learned` && btns[0].style === 3 && btns[1].style === 5 && btns[1].url.includes(`tactics.html#play${id}`));
 t('bad channel id refused', (await call(manager, `/api/plays/${id}/discord`, { channel: 'abc' })).d.error === 'Pick a channel.');
 
