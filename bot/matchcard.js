@@ -6,6 +6,8 @@
 // Pure functions + one handler – scripts/fetch.mjs imports matchComponents() for the auto-posted results.
 // Only bot-sent messages can carry these (Discord ignores interactive components on plain webhooks).
 
+import { message, header, text, sep, footer, buttons, resultAccent, reply } from './ui.js';
+
 export const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_WORD = { W: '✅ Win', D: '➖ Draw', L: '❌ Defeat' };
 const dot = (r) => (r >= 8 ? '🟢' : r >= 7 ? '🟡' : r >= 6 ? '🟠' : '🔴');
@@ -55,16 +57,18 @@ export function personalEmbed(m, line, p, club, site, { mine = false } = {}) {
     const best = Math.max(...tr);
     fields.push({ name: `📈 Last ${tr.length} ratings (oldest → newest)`, value: `${tr.map(dot).join('')}\n${tr.map(r1).join(' · ')}\nBest **${r1(best)}**${s ? ` · season avg **${r1(s.r)}**` : ''}` });
   }
-  return {
-    author: mine ? { name: '✅ Your verified player' } : undefined,
-    title: `${line.n} · ${club.name} ${m.gf}–${m.ga} ${m.opp}`.slice(0, 256),
-    url: `${site}players/${encodeURIComponent(line.k)}.html`,
-    color: RES_COLOR[m.res],
-    thumbnail: m.oppCrest ? { url: m.oppCrest } : undefined,
-    description: `${RES_WORD[m.res] ?? ''}${line.pos ? ` · ${line.pos[0].toUpperCase()}${line.pos.slice(1)}` : ''} · <t:${m.ts}:R> · [match page](${m.url})`,
-    fields,
-    footer: { text: '🟢 8+  🟡 7+  🟠 6+  🔴 under 6 · only you can see this', icon_url: club.crest },
-  };
+  return message({ ephemeral: true, accent: resultAccent(m.res), blocks: [
+    header({
+      eyebrow: mine ? `${club.name} · ✅ Your verified player` : `${club.name} · Player match`,
+      title: `${line.n} · ${m.gf}–${m.ga} ${m.opp}`.slice(0, 250),
+      sub: `${RES_WORD[m.res] ?? ''}${line.pos ? ` · ${line.pos[0].toUpperCase()}${line.pos.slice(1)}` : ''} · <t:${m.ts}:R>`,
+      thumb: m.oppCrest,
+    }),
+    text(fields.map((f) => `**${f.name}**\n${f.value}`).join('\n\n')),
+    sep(),
+    footer('🟢 8+  🟡 7+  🟠 6+  🔴 under 6 · only you can see this'),
+    buttons([{ label: 'Match page', url: m.url }, { label: 'Player page', url: `${site}players/${encodeURIComponent(line.k)}.html` }]),
+  ] });
 }
 
 const eph = (data) => ({ type: 4, data: { flags: 64, allowed_mentions: { parse: [] }, ...data } });
@@ -91,5 +95,5 @@ export async function matchInteraction(i, site, deps) {
   const players = await deps.load('players');
   const p = players.find((x) => x.k === key);
   if (!line) return eph({ content: `📋 **${p?.n ?? 'That player'}** didn't play in this match.${p?.tr?.length ? ` Last rating: ${dot(p.tr.at(-1))} **${r1(p.tr.at(-1))}**.` : ''}` });
-  return eph({ embeds: [personalEmbed(m, line, p, club, site, { mine })] });
+  return reply(personalEmbed(m, line, p, club, site, { mine }));
 }
