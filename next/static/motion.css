@@ -141,9 +141,10 @@ html.gyro-on .mh-t img,html.gyro-on .s-crest,html.gyro-on .lg img,html.gyro-on [
 .lg img{width:auto!important;height:40px;max-height:40px}
 
 /* ===== bottom tab bar (FEEDBACK-1 #17): the site's own colourful icons, a clear active state, and a Hub key that floats ===== */
-.tabbar a .tbi{display:block;margin:0 auto 2px;font-size:23px;line-height:1.1;filter:saturate(.85) drop-shadow(0 3px 5px rgba(0,0,0,.5));opacity:.78;transition:transform .35s var(--e-spring,cubic-bezier(.34,1.56,.64,1)),opacity .2s,filter .2s}
-.tabbar a.on .tbi{opacity:1;filter:saturate(1.15) drop-shadow(0 0 10px rgba(239,207,122,.55));transform:translateY(-3px) scale(1.18)}
-.tabbar a.on{color:#fff}.tabbar a.on::after{content:"";display:block;width:16px;height:3px;border-radius:3px;margin:3px auto 0;background:linear-gradient(90deg,#c8352c,#efcf7a)}
+.tabbar a .tbi{display:block;margin:0 auto 2px;font-size:23px;line-height:1.1;filter:saturate(.85) drop-shadow(0 3px 5px rgba(0,0,0,.5));opacity:.74;transition:opacity .25s ease,filter .25s ease}
+.tabbar a.on .tbi{opacity:1;filter:saturate(1.05) drop-shadow(0 3px 5px rgba(0,0,0,.5))}
+.tabbar a.on{color:#fff}.tabbar a.on::after{content:"";display:block;width:18px;height:3px;border-radius:3px;margin:3px auto 0;background:var(--tc,#8d97ab);animation:tbBar .28s ease-out}
+@keyframes tbBar{from{opacity:0;width:6px}}
 .tabbar a:not(.on)::after{content:"";display:block;height:3px;margin-top:3px}
 .tabbar .key{position:relative;animation:keyfloat 3.2s ease-in-out infinite;color:#2d1f06}.tabbar .key svg{position:relative;z-index:1;filter:drop-shadow(0 1px 0 rgba(255,255,255,.5))}
 .tabbar .key .kring{position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(239,207,122,.55);animation:keyring 2.6s ease-out infinite;pointer-events:none}.tabbar .key .k2{animation-delay:1.3s}
@@ -373,3 +374,11 @@ html em.hi,html .rt.hi,.wx .s-motm em.hi{background:#0f6a36}html em.mid,html .rt
 .br-views button span{grid-row:1/3;font-size:24px}.br-views button b{font:700 15px Oswald}.br-views button small{color:#8e9ab2;font:500 12px Inter}.br-views button.on,.br-views button:hover{border-color:var(--g2)}
 .nx-hit{outline:2px solid var(--g2);outline-offset:6px;border-radius:8px;transition:outline-color 2.4s}.nx-hit.fade{outline-color:transparent}
 [id],h1,h2,h3,.ribbon,.eyebrow{scroll-margin-top:84px}
+
+/* ===== safe mode + reset (safe.js): when scripts keep failing the page drops every effect and shows everything ===== */
+html.nx-safe *,html.nx-safe *::before,html.nx-safe *::after{animation:none!important;transition:none!important}
+html.nx-safe .reveal,html.nx-safe .rv-c,html.nx-safe .rv-g>*{opacity:1!important;transform:none!important;filter:none!important}
+html.nx-safe #fxov,html.nx-safe[data-tin]::before,html.nx-safe[data-tin]::after{display:none!important}
+#nx-safe-bar{position:fixed;left:12px;right:12px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:9995;display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;border-radius:14px;background:rgba(17,23,34,.97);border:1px solid var(--line2);color:#eef2f9;font:500 13.5px Inter;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+#nx-safe-bar span{flex:1 1 0;min-width:0}#nx-safe-bar button{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.08);color:#fff;font:700 13px Inter;cursor:pointer}#nx-safe-bar .x{min-width:44px;padding:0}
+@media(min-width:861px){#nx-safe-bar{left:auto;right:18px;bottom:18px;max-width:440px}}

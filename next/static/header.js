@@ -48,7 +48,7 @@
 
   // ---------- account chip + dropdown ----------
   const viewAs = () => { try { return localStorage.getItem('norex.viewas') || ''; } catch { return ''; } };
-  const setViewAs = (v) => { try { v ? localStorage.setItem('norex.viewas', v) : localStorage.removeItem('norex.viewas'); } catch {} location.reload(); };
+  const setViewAs = (v) => { try { if (v) { localStorage.setItem('norex.viewas', v); localStorage.setItem('norex.viewas.t', String(Date.now())); } else { localStorage.removeItem('norex.viewas'); localStorage.removeItem('norex.viewas.t'); } } catch {} location.reload(); };
   const realOwner = () => !!(A && A.session && A.realAs === 'owner');
   const since = (t) => { const m = Math.max(1, Math.round((Date.now() - t) / 60e3)); return m < 60 ? `${m} min ago` : '1 h ago'; };
   const person = (u, sub) => `<li><span class="pav">${u.a ? `<img src="${esc(u.a)}" alt="" width="28" height="28" loading="lazy">` : esc((u.n || '?')[0].toUpperCase())}</span><span class="pn">${esc(u.n || 'Member')}</span><small>${esc(sub)}</small></li>`;

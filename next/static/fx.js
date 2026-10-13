@@ -108,15 +108,25 @@
     },
   };
   const SECTION = (u) => (/^(index|squad|halloffame|join|scouting|player-)/.test(u) || !u ? 'club' : /^(fixtures|results|opponents|match-)/.test(u) ? 'matches' : /^(stats|leaders|players)/.test(u) ? 'stats' : /^(tactics|playstyle|studio|builds|updates)/.test(u) ? 'tactics' : /^(hub|staff)/.test(u) ? 'hub' : 'club');
-  const KIND = { club: 'ribbon', matches: 'flood', stats: 'sweep', tactics: 'pitch', hub: 'locker' };
+  // Only the Hub keeps the big cinematic transition. The four club sections use one calm, short tint of their own accent (no stripes, no pop).
+  const TINT = { club: '224,87,77', matches: '70,194,138', stats: '98,168,255', tactics: '176,140,255' };
+  for (const [sec, rgb] of Object.entries(TINT)) FX['c' + sec] = {
+    build(full) { const base = mk({ inset: 0, background: '#0b0f16', opacity: full ? 1 : 0 }, '');
+      const line = mk({ left: 0, right: 0, top: 0, height: '3px', background: `rgb(${rgb})`, transformOrigin: '0 50%', transform: full ? 'none' : 'scaleX(0)', opacity: .9 }, '', base);
+      const c = mk({ inset: 0, opacity: full ? .9 : 0 }, '<img class="fxc" src="crest-sm.png" alt="" style="position:absolute;left:50%;top:50%;width:min(64px,16vw);translate:-50% -50%;opacity:.9">', base); return { base, line, c }; },
+    cover: ({ base, line, c }) => Promise.all([run(base, [{ opacity: 0 }, { opacity: 1 }], { duration: 150 }), run(line, [{ transform: 'scaleX(0)' }, { transform: 'none' }], { duration: 220 }), run(c, [{ opacity: 0 }, { opacity: .9 }], { duration: 180, delay: 60 })]),
+    reveal: ({ base, c }) => Promise.all([run(c, [{ opacity: .9 }, { opacity: 0 }], { duration: 160 }), run(base, [{ opacity: 1 }, { opacity: 0 }], { duration: 260, delay: 40 })]),
+  };
+  const KIND = { club: 'cclub', matches: 'cmatches', stats: 'cstats', tactics: 'ctactics', hub: 'locker' };
   const here = () => SECTION(location.pathname.split('/').pop());
-  function pick(a) { if (mmode() !== 'full') return 'fade'; const dest = SECTION((a.getAttribute('href') || '').split('#')[0].split('?')[0]); return dest === here() ? 'ribbon' : KIND[dest]; }
+  function pick(a) { if (mmode() !== 'full') return 'fade'; const dest = SECTION((a.getAttribute('href') || '').split('#')[0].split('?')[0]); return KIND[dest] || 'fade'; }
   const cinematic = () => ['full', 'short'].includes(ls.get('norex.entrance', 'skip'));
   const internal = (a) => { if (!a || a.target || a.hasAttribute('download') || (a.dataset.hub !== undefined && cinematic())) return false; const h = a.getAttribute('href'); if (!h || h[0] === '#' || /^(mailto:|tel:|javascript:)/.test(h)) return false; try { const u = new URL(a.href, location.href); return u.origin === location.origin && u.pathname !== location.pathname && /\.html$|\/$/.test(u.pathname); } catch { return false; } };
   async function go(a) {
     if (busy) return; busy = true; const kind = pick(a), href = a.href;
     ss.set('norex.t', JSON.stringify({ kind, t: Date.now() })); H.classList.add('fx-busy');
     const guard = setTimeout(() => location.assign(href), 1400);
+    setTimeout(() => { busy = false; H.classList.remove('fx-busy'); if (tov) tov.innerHTML = ''; }, 4500);   // a navigation that never happens (offline, blocked) must not leave the page dead
     try { const fx = FX[kind], parts = fx.build(false); await frames(2); await fx.cover(parts); } catch {}
     clearTimeout(guard); location.assign(href);
   }

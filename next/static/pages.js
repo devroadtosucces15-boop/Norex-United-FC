@@ -262,9 +262,9 @@ addEventListener('DOMContentLoaded', () => {
     let inst; const draw = () => { if (inst) inst.destroy(); inst = NorexPitch.mount($('#board'), { mode, orient: mode === 'rush' ? 'v' : 'auto', slots, assign: assignFor(), three: false }); wire(); };
     function wire() { const box = $('#board .pitchbox'); if (!box) return; const o = box.dataset.orient;
       $$('.pc-marker', box).forEach((el, i) => { el.style.touchAction = 'none'; let drag = false;
-        el.onpointerdown = (e) => { drag = true; el.setPointerCapture(e.pointerId); el.classList.add('sel'); };
+        el.onpointerdown = (e) => { drag = true; try { el.setPointerCapture(e.pointerId); } catch {} el.classList.add('sel'); };
         el.onpointermove = (e) => { if (!drag) return; const r = box.getBoundingClientRect(), x = Math.max(2, Math.min(98, ((e.clientX - r.left) / r.width) * 100)), y = Math.max(2, Math.min(98, ((e.clientY - r.top) / r.height) * 100)); el.style.left = x + '%'; el.style.top = y + '%'; const p = NorexPitch.fromAt(mode, o, x, y); slots[i].depth = p.depth; slots[i].lat = p.lat; };
-        el.onpointerup = el.onpointercancel = () => { drag = false; el.classList.remove('sel'); }; }); }
+        el.onpointerup = el.onpointercancel = el.onlostpointercapture = () => { drag = false; el.classList.remove('sel'); }; }); }
     const kfRender = () => { $('#kfs').innerHTML = `<span class="kf">${kfs.map((_, i) => `<button class="${i === cur ? 'on' : ''}" data-i="${i}">${i + 1}</button>`).join('')}</span>`; $$('#kfs button').forEach((b) => b.onclick = () => { cur = +b.dataset.i; slots = kfs[cur].map((s) => ({ ...s })); draw(); kfRender(); }); };
     $('#kfAdd').onclick = () => { kfs.push(slots.map((s) => ({ ...s }))); cur = kfs.length - 1; kfRender(); };
     $('#kfReset').onclick = () => { slots = base(); kfs = []; cur = 0; kfRender(); draw(); };

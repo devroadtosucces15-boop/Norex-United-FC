@@ -64,10 +64,10 @@
     const clamp = (x) => Math.max(RX[0], Math.min(RX[1], x)), apply = () => { v.rx = clamp(v.rx); cam.style.setProperty('--rx', v.rx + 'deg'); cam.style.setProperty('--rz', v.rz + 'deg'); cam.style.setProperty('--nrx', -v.rx + 'deg'); cam.style.setProperty('--nrz', -v.rz + 'deg'); };
     apply();
     let d = null, raf = 0; const paint = () => { raf = 0; apply(); };
-    cam.addEventListener('pointerdown', (e) => { if (e.target.closest('.pc-marker')) return; d = { x: e.clientX, y: e.clientY, rx: v.rx, rz: v.rz, touch: e.pointerType === 'touch' }; cam.classList.add('orbiting'); cam.setPointerCapture(e.pointerId); });
+    cam.addEventListener('pointerdown', (e) => { if (e.target.closest('.pc-marker')) return; d = { x: e.clientX, y: e.clientY, rx: v.rx, rz: v.rz, touch: e.pointerType === 'touch' }; cam.classList.add('orbiting'); try { cam.setPointerCapture(e.pointerId); } catch {} });
     cam.addEventListener('pointermove', (e) => { if (!d) return; v.rz = d.rz + (e.clientX - d.x) * .45; if (!d.touch) v.rx = d.rx - (e.clientY - d.y) * .3; if (!raf) raf = requestAnimationFrame(paint); });
     const end = () => { d = null; cam.classList.remove('orbiting'); };
-    cam.addEventListener('pointerup', end); cam.addEventListener('pointercancel', end); cam.addEventListener('dblclick', () => { v.rz = 0; v.rx = orient === 'v' ? 34 : 46; apply(); });
+    cam.addEventListener('pointerup', end); cam.addEventListener('pointercancel', end); cam.addEventListener('lostpointercapture', end); cam.addEventListener('dblclick', () => { v.rz = 0; v.rx = orient === 'v' ? 34 : 46; apply(); });
     root.querySelector('.orbbar').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; const o = b.dataset.o; if (o === 'rz-') v.rz -= 45; else if (o === 'rz+') v.rz += 45; else if (o === 'rx+') v.rx -= 12; else if (o === 'rx-') v.rx += 12; else { v.rz = Math.round(v.rz / 360) * 360; v.rx = orient === 'v' ? 34 : 46; } apply(); });
   }
   // opts: mode, orient ('h' | 'v' | 'auto'), slots, assign {index -> player}, three (3D camera), onPick(slotIndex, el)
@@ -85,7 +85,7 @@
         : `<span class="dir" style="left:50%;top:-22px;transform:translateX(-50%);white-space:nowrap">▴ attacking</span><span class="dir" style="left:50%;bottom:-22px;transform:translateX(-50%);white-space:nowrap">own goal</span>`;
       root.innerHTML = `<div class="camera"><div class="pitchbox${three ? ' tilt3d' : ''}" style="width:${mw}px;aspect-ratio:${r}" data-orient="${orient}">${svg(mode, orient)}${mk}${three ? '' : dir}</div></div>${three ? '<div class="orbbar" role="group" aria-label="Camera"><button type="button" data-o="rz-" aria-label="Turn left">⟲</button><button type="button" data-o="rx+" aria-label="Tilt down to look from above">▼</button><button type="button" data-o="rx-" aria-label="Tilt up to look along the pitch">▲</button><button type="button" data-o="rz+" aria-label="Turn right">⟳</button><button type="button" data-o="reset" class="wide">Reset view</button></div><div class="muted tiny orbnote">Drag the pitch to turn it · own goal ◂ attacking ▸ opposition goal</div>' : ''}`;
       root.dataset.orient = orient; root.style.paddingBottom = three ? '6px' : '34px';
-      if (three) orbit(root, state, orient);
+      if (three) { try { orbit(root, state, orient); } catch (err) { root.querySelector('.orbbar')?.remove(); root.querySelector('.pitchbox')?.classList.remove('tilt3d'); } }   // no camera is better than a broken one: the flat pitch stays usable
       if (window.NorexArt) window.NorexArt.apply(root);
       root.querySelectorAll('.pc-marker').forEach((el, i) => el.addEventListener('click', () => { if (state.onPick) state.onPick(i, el); }));
     }

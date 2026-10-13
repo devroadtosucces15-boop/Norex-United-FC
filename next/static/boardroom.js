@@ -72,7 +72,7 @@ ${groups.map(([t, it]) => `<h4 class="dk-h">${esc(t)}</h4><div class="br-tools">
     dlg.innerHTML = `<div class="br-sheet"><h4>Show me <b>${esc(nice(k))}</b> as…</h4><p class="muted small">Opens ${esc(pg.replace('.html', ''))}${find ? ` at “${esc(find)}”` : ''} and shows it the way that person sees the site. Display only: the server still treats you as the owner. A red bar on every page takes you back.</p>
 <div class="br-views">${VIEWS.map(([v, ic, n, sub]) => `<button type="button" data-v="${v}"${v === cur ? ' class="on"' : ''}><span aria-hidden="true">${ic}</span><b>${n}</b><small>${sub}</small></button>`).join('')}</div><button type="button" class="chip" data-x>Cancel</button></div>`;
     const close = () => { dlg.remove(); d.removeEventListener('keydown', esc_); }; const esc_ = (e) => { if (e.key === 'Escape') close(); };
-    dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target.closest('[data-x]')) return close(); const b = e.target.closest('[data-v]'); if (!b) return; try { b.dataset.v ? localStorage.setItem('norex.viewas', b.dataset.v) : localStorage.removeItem('norex.viewas'); } catch {} location.href = go(pg, find); });
+    dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target.closest('[data-x]')) return close(); const b = e.target.closest('[data-v]'); if (!b) return; try { if (b.dataset.v) { localStorage.setItem('norex.viewas', b.dataset.v); localStorage.setItem('norex.viewas.t', String(Date.now())); } else { localStorage.removeItem('norex.viewas'); localStorage.removeItem('norex.viewas.t'); } } catch {} location.href = go(pg, find); });
     d.addEventListener('keydown', esc_); d.body.appendChild(dlg); dlg.querySelector('[data-v]').focus();
   }
 
