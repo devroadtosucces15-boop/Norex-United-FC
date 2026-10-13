@@ -58,6 +58,7 @@ import { healthRoute } from './health.js';
 import { jailCount, triviaPoints } from './fun.js';
 import { discoveriesRoute } from './discoveries.js';
 import { watchlistRoute } from './watchlist.js';
+import { memberLiveRoute } from './memberlive.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -738,6 +739,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (kno) return kno;
   const evt = await eventsRoute(p, method, body, me, env, log, loadSite, url); // P3.1 events · P3.2 RSVPs · P3.7 match night
   if (evt) return evt;
+  const mlr = await memberLiveRoute(p, method, me, env); // members' own streams (the club's is /api/live)
+  if (mlr) return mlr;
   const wlr = await watchlistRoute(p, method, body, me, env, url); // watch list: videos by topic, useful
   if (wlr) return wlr;
   const dsc = await discoveriesRoute(p, method, body, me, env); // member tips a manager approved
