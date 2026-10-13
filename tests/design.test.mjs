@@ -5,7 +5,7 @@ import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
 import { message, notice, header, buttons, cards, cardUrl, plainText, images, isV2, toLegacy, IS_V2, EPHEMERAL, ACCENT, resultAccent } from '../bot/ui.js';
 import { postEmbed } from '../bot/docs.js';
-import { scoreCard, fieldCard, fieldSlots, playerCard, tableCard, clubCard, resultsCard, ratingGraph, cardJobs, topRows, esc } from '../scripts/cards.mjs';
+import { boxScoreCard, compareCard, scoreCard, fieldCard, fieldSlots, playerCard, tableCard, clubCard, resultsCard, ratingGraph, cardJobs, topRows, esc } from '../scripts/cards.mjs';
 import { shapeReply } from '../bot/botcommands.js';
 import { findChrome, launchChrome } from '../scripts/lib/chrome.mjs';
 
@@ -41,6 +41,16 @@ t('rating graph needs 2+ matches', ratingGraph([7]) === '' && ratingGraph([6, 8]
 t('leaderboard: top 10, sorted, home club players only', ((rows) => rows.length <= 10 && rows.every(([x], k) => x.home && (k === 0 || rows[k - 1][1] >= rows[k][1])))(topRows(players, 'goals')));
 t('leaderboard card lists the leader', ((rows) => !rows.length || tableCard(players, 'goals', club).includes(esc(rows[0][0].n)))(topRows(players, 'goals')));
 t('club card + results card render', clubCard(club).includes(esc(club.name)) && resultsCard(club).includes(`${club.matches[0].gf}–${club.matches[0].ga}`));
+// ---- box score + compare cards
+const bx = boxScoreCard({ ...m, ps: [{ n: 'Star', r: 9.1, g: 2, a: 1, pm: 9, pa: 10, tm: 2, ta: 3, sh: 4, pos: 'forward', mom: 1 }, { n: '<b>x</b>', r: 6.2, pos: 'defender' }] }, club);
+t('box score: scores, players escaped, MOTM row gold, pass % worked out', bx.includes(`${m.gf}–${m.ga}`) && bx.includes('&lt;b&gt;x&lt;/b&gt;') && bx.includes('class="r top"') && bx.includes('90%'));
+t('box score: team totals row', /class="tot"/.test(bx) && bx.includes('<span>Team</span>'));
+const pa = { k: 'a1', n: 'Ann', pos: 'ST', ovr: 80, s: { gp: 10, g: 5, a: 2, r: 7.5, m: 1 } }, pb = { k: 'b1', n: 'Bea', pos: 'CM', ovr: 78, s: { gp: 12, g: 1, a: 6, r: 7.1, m: 0 } };
+const cmp = compareCard(pa, pb);
+t('compare: both names, winner digits gold, stats with no data left out', cmp.includes('Ann') && cmp.includes('Bea') && /class="gold">5</.test(cmp) && !cmp.includes('Pass %'));
+t('compare: pairs are keyed with the smaller player key first', cardJobs(club, [{ ...pb, home: true }, { ...pa, home: true }]).some((j) => j.key.join() === 'compare,a1,b1'));
+t('box score: one drawn card per match that has player lines', cardJobs(club, players).filter((j) => j.key[2] === 'box').length === club.matches.slice(0, 10).filter((x) => x.ps?.length).length);
+
 const jobs = cardJobs(club, players);
 t('card jobs: score + field per recent match, a card per player, 6 leaderboards, club, results', jobs.some((j) => j.key.join() === `match,${m.id},score`) && jobs.filter((j) => j.key[0] === 'top').length === 6 && jobs.some((j) => j.key[0] === 'club') && jobs.some((j) => j.key[0] === 'results'));
 const again = cardJobs(club, players), bumped = cardJobs({ ...club, w: club.w + 1 }, players);

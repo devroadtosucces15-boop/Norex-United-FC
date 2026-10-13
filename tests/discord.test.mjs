@@ -67,6 +67,10 @@ await tt('My match without a claim → how to link it', async () => (await mine(
 DB.prepare("INSERT INTO claims (user_id, player, player_name, status, at, name) VALUES ('111', ?, ?, 'approved', 1, 'Boss')").bind(m.ps[1].k, m.ps[1].n).run();
 await tt('My match with an approved claim → own card, marked verified', async () => { const t2 = plainText((await mine(as('111'))).d.data); return t2.includes(m.ps[1].n) && /verified player/i.test(t2); });
 await tt('picking my own player also shows "your verified player"', async () => /verified player/i.test(plainText((await pick(as('111'), m.ps[1].k)).d.data)));
+await tt('Box score button with no drawn card yet → a small private note, nothing breaks', async () => {
+  const r = await send({ type: 3, ...as('111'), data: { component_type: 2, custom_id: `norex:box:${m.id}` } });
+  return r.d.type === 4 && (r.d.data.flags & 64) === 64 && /No box score/.test(plainText(r.d.data));
+});
 await tt('player not in that match → friendly note', async () => (await pick(as('111'), 'nobody')).d.data.content.includes("didn't play"));
 await tt('unknown / old match → link to the match page', async () => (await pick(as('111'), line.k, '1')).d.data.content.includes('matches/1.html'));
 await tt('/last: owner gets the menu, members do not (flag owner)', async () => {
