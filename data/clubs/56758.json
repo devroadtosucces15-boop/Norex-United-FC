@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-13T02:21:30.723Z",
+ "fetchedAt": "2026-10-13T02:29:50.179Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,6 +80,42 @@
   "leagueAppearances": "237"
  },
  "members": [
+  {
+   "name": "ocularAbyss",
+   "gamesPlayed": "17",
+   "winRate": "47",
+   "goals": "7",
+   "assists": "14",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "43",
+   "passesMade": "254",
+   "passSuccessRate": "74",
+   "ratingAve": "7.2",
+   "tacklesMade": "7",
+   "tackleSuccessRate": "36",
+   "proName": "Riri",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "174",
+   "proNationality": "57",
+   "proOverall": "77",
+   "proOverallStr": "77",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "1",
+   "prevGoals5": "0",
+   "prevGoals6": "1",
+   "prevGoals7": "1",
+   "prevGoals8": "1",
+   "prevGoals9": "1",
+   "prevGoals10": "1",
+   "favoritePosition": "forward"
+  },
   {
    "name": "SwA_x_iJoHn",
    "gamesPlayed": "5",
@@ -547,6 +583,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "Brendonmelloo25",
+   "gamesPlayed": "3",
+   "winRate": "33",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "49",
+   "passSuccessRate": "90",
+   "ratingAve": "7.4",
+   "tacklesMade": "6",
+   "tackleSuccessRate": "60",
+   "proName": "M. Brendon",
+   "proPos": "14",
+   "proStyle": "0",
+   "proHeight": "162",
+   "proNationality": "54",
+   "proOverall": "83",
+   "proOverallStr": "83",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "PATRICKSTARR11",
@@ -1126,12 +1198,23 @@
   }
  ],
  "positionCount": {
-  "midfielder": 11,
+  "midfielder": 12,
   "goalkeeper": 0,
-  "forward": 5,
+  "forward": 6,
   "defender": 8
  },
  "career": [
+  {
+   "name": "ocularAbyss",
+   "proPos": "5",
+   "gamesPlayed": "85",
+   "goals": "33",
+   "assists": "41",
+   "manOfTheMatch": "3",
+   "ratingAve": "7.3",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
+  },
   {
    "name": "SwA_x_iJoHn",
    "proPos": "14",
@@ -1146,12 +1229,12 @@
   {
    "name": "shon_day",
    "proPos": "25",
-   "gamesPlayed": "158",
+   "gamesPlayed": "159",
    "goals": "93",
-   "assists": "88",
+   "assists": "89",
    "manOfTheMatch": "15",
    "ratingAve": "7.7",
-   "prevGoals": "1",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
@@ -1309,6 +1392,17 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "Brendonmelloo25",
+   "proPos": "5",
+   "gamesPlayed": "120",
+   "goals": "10",
+   "assists": "28",
+   "manOfTheMatch": "19",
+   "ratingAve": "7.7",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "PATRICKSTARR11",
    "proPos": "25",
    "gamesPlayed": "182",
@@ -1333,12 +1427,12 @@
   {
    "name": "Ox_Baki",
    "proPos": "14",
-   "gamesPlayed": "119",
-   "goals": "77",
+   "gamesPlayed": "120",
+   "goals": "78",
    "assists": "56",
    "manOfTheMatch": "23",
    "ratingAve": "7.4",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "midfielder"
   },
   {
