@@ -19,7 +19,7 @@ import { hotwDue } from './hotw.js';
 import { scoreDue } from './predict.js';
 import { eventButton, playButton, memberCommand, memberOf, MEMBER_COMMANDS } from './botcmds.js';
 import { panelInteraction, PANEL_ID } from './panel.js';
-import { insightsCron, insightsNow, reportEmbeds } from './insights.js';
+import { insightsCron, insightsNow, reportMessages } from './insights.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
 import { can, discordRole, flagOn, loadFlagOverrides, withFlagOverrides } from './roles.js';
@@ -354,15 +354,21 @@ function insightsCommand(i, env, ctx, site, who) {
   if (!can(who, 'insights.view') || !flagOn(env, who, 'insights')) return json({ type: 4, data: { content: '🔒 Managers only (and Club Intelligence is not switched on for you yet).', flags: 64 } });
   if (!env.DB) return json({ type: 4, data: { content: '⚠️ The member database is not connected.', flags: 64 } });
   ctx.waitUntil((async () => {
-    let body;
+    let body, more = [];
     try {
-      body = { embeds: reportEmbeds(await insightsNow(env, (f) => load(site, f, ctx)), site) };
+      const [first, ...rest] = reportMessages(await insightsNow(env, (f) => load(site, f, ctx)), site);
+      body = first; more = rest;
     } catch (e) {
       body = { content: `⚠️ Could not build the report: ${e.message === 'no-access' ? "the bot can't see the server – check it is still in the server with **View Channels**." : e.message}` };
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, allowed_mentions: { parse: [] } }),
     }).catch((e) => console.log('insights reply failed', e.message));
+    for (const m of more) { // the detail panel arrives as a second private message
+      await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...m, flags: m.flags | 64 }),
+      }).catch((e) => console.log('insights detail failed', e.message));
+    }
   })());
   return json({ type: 5, data: { flags: 64 } });
 }

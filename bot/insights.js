@@ -17,6 +17,7 @@
 
 import { can, flagOn } from './roles.js';
 import { notifyManagers, safely } from './notify.js';
+import { message, header, text, sep, footer, buttons } from './ui.js';
 
 const API = 'https://discord.com/api/v10';
 const DAY = 86400e3;
@@ -285,9 +286,9 @@ const cut = (s, n = 1024) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
 const fld = (name, value, inline = false) => ({ name, value: cut(value || '–'), inline });
 const FORM = { W: '🟩', D: '🟨', L: '🟥' };
 
-export function reportEmbeds(r, site) {
+export function reportMessages(r, site) {
   const p = r.prev, s = r.server, si = r.site, a = r.admin, t = r.team;
-  const footer = { text: `${r.guild ?? 'NOREX UNITED'} · Club Intelligence${p ? ` · ▲▼ vs ${new Date(p.at).toISOString().slice(0, 10)}` : ''}` };
+  const footerText = `${r.guild ?? 'NOREX UNITED'} · Club Intelligence${p ? ` · ▲▼ vs ${new Date(p.at).toISOString().slice(0, 10)}` : ''}`;
   const line = (icon, label, k) => `${grade(r.scores[k])} ${icon} **${label}** \`${bar(r.scores[k])}\` **${r.scores[k]}**${delta(r.scores[k], p?.scores?.[k])}`;
   const pad = (v, n) => String(v).padStart(n);
   const hist = ['Month   Joins Site Done  Resp Rush Trial', ...r.history.map((h) => `${h.m} ${pad(h.joins ?? '–', 5)} ${pad(h.site, 4)} ${pad(h.decided, 4)} ${pad(h.resp == null ? '–' : h.resp + 'h', 5)} ${pad(h.rush, 4)} ${pad(h.trials, 5)}`)].join('\n');
@@ -296,7 +297,6 @@ export function reportEmbeds(r, site) {
       title: `🧠 Club Intelligence – ${grade(r.overall)} ${r.overall}/100${delta(r.overall, p?.overall)}`, color: RED, url: site ? `${site}members.html#manager` : undefined,
       description: [line('💬', 'Discord server', 'server'), line('🌐', 'Site & members', 'site'), line('🛡️', 'Management', 'admin'), line('⚽', 'Team', 'team')].join('\n'),
       fields: [fld('🎯 What to do next', r.recs.slice(0, 8).map((x) => `${SEV[x.sev]} ${AREA[x.area]} ${x.text}`).join('\n') || '✅ Nothing urgent – the club is in good shape.')],
-      footer, timestamp: new Date(r.at).toISOString(),
     },
     {
       title: '💬 Discord server', color: RED,
@@ -332,12 +332,32 @@ export function reportEmbeds(r, site) {
       ],
     },
   ];
-  // Discord allows 6000 characters over all embeds – drop fields from the end until it fits.
-  while (JSON.stringify(embeds).length > 5800) {
-    const last = embeds.at(-1);
-    if (last.fields?.length > 1) last.fields.pop(); else embeds.pop();
-  }
-  return embeds;
+  // A panel message holds 4000 characters of text in all, so the report is two messages: the scores and advice first,
+  // then the four detail sections (the long history table is the first thing to go if they don't fit).
+  const body = (e) => (e.fields ?? []).map((f) => `**${f.name}**\n${f.value}`).join('\n\n');
+  const [overview, ...sections] = embeds;
+  const first = message({ accent: 'steel', blocks: [
+    header({ eyebrow: 'Staff · Club Intelligence', title: overview.title.replace(/^🧠 /, '🧠 '), sub: p ? `Compared with ${new Date(p.at).toISOString().slice(0, 10)}` : 'First report' }),
+    text(overview.description),
+    sep(),
+    text(body(overview).slice(0, 3000)),
+    footer(footerText),
+    buttons([site && { label: 'Manager portal', url: `${site}members.html#manager` }]),
+  ] });
+  const trim = (ss) => {
+    const parts = ss.map((e) => `**${e.title}**\n${body(e)}`);
+    while (parts.join('\n\n').length > 3800) {
+      const k = parts.findIndex((x) => x.includes('```'));
+      if (k >= 0) parts[k] = parts[k].replace(/\n\n\*\*📜[\s\S]*$/, ''); else parts.push(parts.pop().slice(0, -200));
+    }
+    return parts;
+  };
+  const details = message({ accent: 'steel', blocks: [
+    header({ eyebrow: 'Staff · Club Intelligence', title: 'The detail', size: 3 }),
+    ...trim(sections).flatMap((x, i) => [i ? sep() : null, text(x)]),
+    footer(footerText),
+  ] });
+  return [first, details];
 }
 
 // ---------- running it ----------
@@ -391,8 +411,11 @@ async function dmOwners(env, report) {
   for (const id of [...owners].slice(0, 3)) {
     const ch = await post('/users/@me/channels', { recipient_id: id }).then((r) => r.json()).catch(() => null);
     if (!ch?.id) continue;
-    await post(`/channels/${ch.id}/messages`, { content: '📬 **Your weekly Club Intelligence report** – run **/insights** in the server any time for a fresh one.', embeds: reportEmbeds(report, site), allowed_mentions: { parse: [] } })
-      .catch((e) => console.log('insights DM failed', e.message));
+    const [first, ...rest] = reportMessages(report, site);
+    const intro = { type: 10, content: '📬 **Your weekly Club Intelligence report** – run **/insights** in the server any time for a fresh one.' };
+    for (const m of [{ ...first, components: [intro, ...first.components] }, ...rest]) {
+      await post(`/channels/${ch.id}/messages`, m).catch((e) => console.log('insights DM failed', e.message));
+    }
   }
 }
 
