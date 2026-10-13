@@ -24,7 +24,7 @@ import { notify, notifyMembers, safely } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
-import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy } from './ui.js';
+import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy, cards } from './ui.js';
 import { facesOf } from './faces.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
@@ -394,21 +394,18 @@ export async function sessionReport(env, id, loadSite) {
 function reportEmbed(env, rep, origin) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), e = rep.event, t = rep.team;
   const icon = { W: '🟩', D: '🟨', L: '🟥' };
-  return {
-    embeds: [{
-      title: `📋 Session report · ${label(e)} · Grade ${t.grade ?? '–'}`.slice(0, 250), url: `${site}members.html#schedule`, color: RED, timestamp: new Date(e.start).toISOString(),
-      ...(e.reportPoster && origin ? { image: { url: `${origin}/media/${e.reportPoster}` } } : {}), // BE11 – client-rendered poster, if uploaded
-      description: [
-        t.games ? `**${t.w}W ${t.d}D ${t.l}L** · ${t.gf}–${t.ga}` : 'No results logged for this night yet.',
-        rep.results.map((r) => `${icon[r.res]} ${r.mode === 'rush' ? '⚡ ' : ''}**${r.gf}–${r.ga}** vs ${r.opp}`).join('\n'),
-        rep.mvp ? `⭐ Player of the night: **${rep.mvp.n}** (${rep.mvp.avg} avg${rep.mvp.g ? ` · ${rep.mvp.g} G` : ''}${rep.mvp.a ? ` · ${rep.mvp.a} A` : ''})` : '',
-        rep.players.filter((p) => p.grade).slice(0, 10).map((p) => `\`${p.grade.padEnd(2)}\` ${p.n} · ${p.avg}${p.trial ? ` · 🧪 tried ${p.trial.pos}${p.trial.diff != null ? ` (${p.trial.diff >= 0 ? '+' : ''}${p.trial.diff} vs usual)` : ''}` : ''}`).join('\n'),
-        `👥 ${rep.attendance.came} checked in · ${rep.attendance.saidYes} said yes`,
-      ].filter(Boolean).join('\n\n').slice(0, 3900),
-      footer: { text: 'NOREX UNITED · match night' },
-    }],
-    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Full report', url: `${site}members.html#schedule` }] }],
-  };
+  const mvp = rep.mvp ? `⭐ Player of the night: **${rep.mvp.n}** (${rep.mvp.avg} avg${rep.mvp.g ? ` · ${rep.mvp.g} G` : ''}${rep.mvp.a ? ` · ${rep.mvp.a} A` : ''})` : '';
+  const graded = rep.players.filter((p) => p.grade).slice(0, 10).map((p) => `\`${p.grade.padEnd(2)}\` ${p.n} · ${p.avg}${p.trial ? ` · 🧪 tried ${p.trial.pos}${p.trial.diff != null ? ` (${p.trial.diff >= 0 ? '+' : ''}${p.trial.diff} vs usual)` : ''}` : ''}`).join('\n');
+  return message({ accent: t.games ? (t.w > t.l ? 'win' : t.w < t.l ? 'loss' : 'gold') : 'red', blocks: [
+    header({ eyebrow: 'NOREX UNITED · Match night', title: `📋 Session report · Grade ${t.grade ?? '–'}`, sub: `${label(e)} · <t:${Math.floor(e.start / 1000)}:f>` }),
+    e.reportPoster && origin ? cards(`${origin}/media/${e.reportPoster}`) : null, // BE11 – client-rendered poster, if uploaded
+    text(t.games ? `**${t.w}W ${t.d}D ${t.l}L** · ${t.gf}–${t.ga}` : 'No results logged for this night yet.'),
+    rep.results.length ? text(rep.results.map((r) => `${icon[r.res]} ${r.mode === 'rush' ? '⚡ ' : ''}**${r.gf}–${r.ga}** vs ${r.opp}`).join('\n')) : null,
+    mvp ? sep() : null, text(mvp), text(graded),
+    sep(),
+    footer(`👥 ${rep.attendance.came} checked in · ${rep.attendance.saidYes} said yes`),
+    buttons([{ label: 'Full report', url: `${site}members.html#schedule` }]),
+  ] });
 }
 
 async function nightRoute(p, method, body, me, env, log, loadSite, url) {
@@ -501,11 +498,12 @@ function readLineup(body) {
 function lineupEmbed(env, e, lineup, names) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), order = (FORMATIONS[e.formation] ?? []).map((x) => x[0]);
   const rows = Object.entries(lineup).sort((a, b) => order.indexOf(a[1]) - order.indexOf(b[1]));
-  return { embeds: [{
-    title: `🧩 Lineup · ${label(e)}${e.formation ? ` · ${e.formation}` : ''}`.slice(0, 250), url: `${site}members.html#schedule-${e.id}`, color: RED,
-    description: `🗓️ <t:${Math.floor(e.start / 1000)}:F> · <t:${Math.floor(e.start / 1000)}:R>\n\n${rows.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(4)}\` ${names.get(uid) ?? 'Member'}`).join('\n')}`.slice(0, 3900),
-    footer: { text: 'NOREX UNITED · Play Style per position: playstyle.html' },
-  }] };
+  return message({ blocks: [
+    header({ eyebrow: 'NOREX UNITED · Match night', title: `🧩 Lineup${e.formation ? ` · ${e.formation}` : ''}`, sub: `${label(e)} · <t:${Math.floor(e.start / 1000)}:F> · <t:${Math.floor(e.start / 1000)}:R>` }),
+    text(rows.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(4)}\` ${names.get(uid) ?? 'Member'}`).join('\n')),
+    footer('Play Style per position: playstyle.html'),
+    buttons([{ label: 'Schedule', url: `${site}members.html#schedule-${e.id}` }]),
+  ] });
 }
 async function lineupRoute(p, method, body, me, env, log) {
   if (p === '/api/events/templates') {

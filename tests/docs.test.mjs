@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { call, env, login, ROOT, sqlite, W } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
 import '../web/docs-md.js';
+import { plainText, images } from '../bot/ui.js';
 
 const M = globalThis.NXMd;
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
@@ -118,17 +119,17 @@ t('preview of a removed/missing doc 404s', (await call(mgr, '/api/docs/discord',
 
 const dc = await call(mgr, '/api/docs/discord', { id: annId, channel: '70002', role: '80001' });
 const p0 = posts.at(-1);
-t('post to Discord: embed, role ping only that role, link back', dc.s === 200 && p0.channel === '70002' && p0.content === '<@&80001>' && p0.allowed_mentions.roles[0] === '80001' && p0.embeds[0].title.includes('Season kick-off') && p0.embeds[0].url.endsWith(`docs.html#d-${annId}`));
+t('post to Discord: embed, role ping only that role, link back', dc.s === 200 && p0.channel === '70002' && p0.components[0].content === '<@&80001>' && p0.allowed_mentions.roles[0] === '80001' && plainText(p0).includes('Season kick-off') && JSON.stringify(p0.components).includes(`docs.html#d-${annId}`));
 t('posted item remembers it (managers see it) + last channel', dc.d.items.find((x) => x.id === annId).discord?.channel === '70002' && (await call(mgr, '/api/docs/discord')).d.last === '70002');
 t('members don’t see the Discord marker', !(await call(member, '/api/docs')).d.items.find((x) => x.id === annId).discord);
 await call(mgr, '/api/docs/discord', { id: annId, channel: '70001', role: '9' });
-t('@everyone ping uses parse everyone', posts.at(-1).content === '@everyone' && posts.at(-1).allowed_mentions.parse[0] === 'everyone');
+t('@everyone ping uses parse everyone', posts.at(-1).components[0].content === '@everyone' && posts.at(-1).allowed_mentions.parse[0] === 'everyone');
 refuse = 50013;
 const no = await call(mgr, '/api/docs/discord', { id: annId, channel: '70001' });
 t('missing permission → helpful error', no.s === 400 && /Send Messages/.test(no.d.error));
 refuse = null;
 const withDc = await call(mgr, '/api/docs', { area: 'announce', title: 'Trials Sunday', body: 'Bring a mic.\nhttps://i.imgur.com/p.png', discord: { channel: '70001' } });
-t('publish + post to Discord in one go (image becomes the embed picture)', withDc.d.discord?.ok && posts.at(-1).embeds[0].image?.url === 'https://i.imgur.com/p.png' && !posts.at(-1).embeds[0].description.includes('imgur') && !posts.at(-1).content);
+t('publish + post to Discord in one go (image becomes the embed picture)', withDc.d.discord?.ok && images(posts.at(-1)).includes('https://i.imgur.com/p.png') && !plainText(posts.at(-1)).includes('imgur') && posts.at(-1).components[0].type === 17);
 t('bad channel id refused', (await call(mgr, '/api/docs/discord', { id: annId, channel: 'abc' })).s === 400);
 
 const rm = await call(mgr, '/api/docs/remove', { id: withDc.d.id });
