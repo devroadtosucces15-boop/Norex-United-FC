@@ -3,7 +3,7 @@
  "name": "vagi noli",
  "crest": "99160128",
  "trackedAt": "2026-10-10T00:08:15.917Z",
- "fetchedAt": "2026-10-13T20:13:52.100Z",
+ "fetchedAt": "2026-10-13T20:24:52.086Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "vagi noli",
@@ -88,42 +88,6 @@
   "points": "16"
  },
  "members": [
-  {
-   "name": "derbrecki",
-   "gamesPlayed": "4",
-   "winRate": "100",
-   "goals": "1",
-   "assists": "5",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "100",
-   "passesMade": "88",
-   "passSuccessRate": "80",
-   "ratingAve": "8.1",
-   "tacklesMade": "4",
-   "tackleSuccessRate": "22",
-   "proName": "S. Parkin",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "174",
-   "proNationality": "95",
-   "proOverall": "76",
-   "proOverallStr": "76",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
-  },
   {
    "name": "IM_Trash_Broski",
    "gamesPlayed": "2",
@@ -343,17 +307,6 @@
  ],
  "career": [
   {
-   "name": "derbrecki",
-   "proPos": "14",
-   "gamesPlayed": "74",
-   "goals": "3",
-   "assists": "11",
-   "manOfTheMatch": "4",
-   "ratingAve": "7.6",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "IM_Trash_Broski",
    "proPos": "5",
    "gamesPlayed": "100",
@@ -421,17 +374,9 @@
   }
  ],
  "roster": {
-  "derbrecki": {
-   "first": "2026-10-12T23:11:30.990Z",
-   "last": "2026-10-13T20:13:52.100Z",
-   "active": true,
-   "gp": 4,
-   "pos": "forward",
-   "ovr": 76
-  },
   "IM_Trash_Broski": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-13T20:13:52.100Z",
+   "last": "2026-10-13T20:24:52.086Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -439,7 +384,7 @@
   },
   "J_cruz505": {
    "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-13T20:13:52.100Z",
+   "last": "2026-10-13T20:24:52.086Z",
    "active": true,
    "gp": 4,
    "pos": "midfielder",
@@ -447,7 +392,7 @@
   },
   "x_MrMike_x": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-13T20:13:52.100Z",
+   "last": "2026-10-13T20:24:52.086Z",
    "active": true,
    "gp": 7,
    "pos": "midfielder",
@@ -455,7 +400,7 @@
   },
   "rezy33pizza": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-13T20:13:52.100Z",
+   "last": "2026-10-13T20:24:52.086Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -463,7 +408,7 @@
   },
   "itzAldinha27": {
    "first": "2026-10-12T23:11:30.990Z",
-   "last": "2026-10-13T20:13:52.100Z",
+   "last": "2026-10-13T20:24:52.086Z",
    "active": true,
    "gp": 4,
    "pos": "defender",
@@ -471,11 +416,19 @@
   },
   "Rinconkelvin95": {
    "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-13T20:13:52.100Z",
+   "last": "2026-10-13T20:24:52.086Z",
    "active": true,
    "gp": 4,
    "pos": "goalkeeper",
    "ovr": 85
+  },
+  "derbrecki": {
+   "first": "2026-10-12T23:11:30.990Z",
+   "last": "2026-10-13T20:13:52.100Z",
+   "active": false,
+   "gp": 4,
+   "pos": "forward",
+   "ovr": 76
   },
   "oKaede-": {
    "first": "2026-10-12T23:21:33.359Z",
