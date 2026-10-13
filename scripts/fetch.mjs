@@ -18,6 +18,7 @@ import path from 'node:path';
 import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, loadBurners, loadCrawlCursor, saveCrawlSlice, num, sleep, eventCounts } from './lib.mjs';
 import { matchComponents } from '../bot/matchcard.js';
 import { MAX_BURNERS, burnerStats, mergeMatches, reportEmbed, slimBurnerMatch, updateRoster } from '../bot/burnerstats.js';
+import { message, header, facts, footer, resultAccent } from '../bot/ui.js';
 
 const API = 'https://proclubs.ea.com/api/fc/';
 const HEADERS = {
@@ -260,7 +261,19 @@ async function postToDiscord() {
       const oppCrest = opp.details?.customKit?.crestAssetId;
       const url = site ? `${site}matches/${m.matchId}.html` : undefined;
       const components = matchComponents(m.matchId, ourIds.map(([k, p]) => ({ k, n: p.playername, r: num(p.rating), g: num(p.goals), a: num(p.assists) })), url);
-      return { components, embed: {
+      const clubName = us.details?.name ?? 'NOREX';
+      const panel = (ping, mentions) => message({ accent: resultAccent(res), ping, mentions, blocks: [
+        header({
+          eyebrow: `${clubName} · Match centre · ${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}`,
+          title: `${settings.emoji ? `${settings.emoji} ` : ''}${clubName} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
+          sub: `<t:${m.timestamp}:f> · ${{ W: 'Win', D: 'Draw', L: 'Defeat' }[res]}`,
+          thumb: res === 'L' && oppCrest ? `${crestCdn}${oppCrest}.png` : site ? `${site}assets/crest.png` : undefined,
+        }),
+        facts([['⚽ Goals', list('goals').replace(/\n/g, ', ')], ['🎯 Assists', list('assists').replace(/\n/g, ', ')], ['⭐ Man of the match', motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : ''], ['📈 Top rated', best ? `${best.playername} (${num(best.rating).toFixed(1)})` : '']]),
+        footer('Pick your name below to see your own match'),
+        ...components,
+      ] });
+      return { components, panel, embed: {
         title: `${settings.emoji ? `${settings.emoji} ` : ''}${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
         url,
         color: { W: 0x22c55e, D: 0xeab308, L: 0xef4444 }[res],
@@ -286,10 +299,10 @@ async function postToDiscord() {
     // P7.5: a configured result channel overrides the webhook's own channel (still needs the bot token to redirect).
     const channel = settings.resultChannel || await fetch(hook).then((r) => (r.ok ? r.json() : null)).then((w) => w?.channel_id).catch(() => null);
     while (channel && rest.length) {
-      const { embed, components } = rest[0];
+      const { panel } = rest[0];
       const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, {
         method: 'POST', headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: pingContent, embeds: [embed], components, allowed_mentions: allowedMentions }),
+        body: JSON.stringify(panel(pingContent, allowedMentions)),
       }).catch((e) => ({ ok: false, status: e.message }));
       if (!r.ok) { console.warn(`Bot post failed (${r.status}) – the bot needs View Channel + Send Messages + Embed Links there. Using the webhook.`); break; }
       rest = rest.slice(1);
