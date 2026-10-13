@@ -122,6 +122,22 @@ export const COMMANDS = [
   },
   { name: 'motm', description: 'Current Man of the Match vote standing for the latest match' },
   { name: 'history', description: 'Our record against a past opponent', options: [{ type: STRING, name: 'opponent', description: "Opponent club name (or part of it)", required: true }] },
+  // Fun for members (bot/fun.js)
+  {
+    name: 'jail', description: 'Lock a mate up for a daft offence (just for fun)',
+    options: [
+      { type: USER, name: 'member', description: 'Who is going down', required: true },
+      { type: STRING, name: 'reason', description: 'The charge (leave empty for a random one)', max_length: 140 },
+      { type: INTEGER, name: 'minutes', description: 'Sentence in minutes (default 30)', min_value: 1, max_value: 120 },
+    ],
+  },
+  {
+    name: 'wheel', description: 'Spin a wheel to pick one option',
+    options: [
+      { type: STRING, name: 'options', description: 'Separate with commas, e.g. Jez, Kruger, Davey', required: true, max_length: 400 },
+      { type: STRING, name: 'question', description: 'What the wheel decides, e.g. Who plays GK tonight', max_length: 100 },
+    ],
+  },
   // Server tools – the Miona / Carl-bot replacements (bot/servertools.js)
   {
     name: 'setup', description: 'Managers: leave/join alerts, welcome posts and the ping-role panel',
