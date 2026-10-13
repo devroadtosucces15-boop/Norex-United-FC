@@ -45,7 +45,7 @@ const sample = {
   setup: null, purge: null, tag: null, tags: null, remind: null, reminders: null, // server tools – need the member DB + Discord: tests/servertools.test.mjs
   host: null, // managers, member DB + Discord – tests/host.test.mjs
   panel: null, // managers, member DB – tests/panel.test.mjs
-  jail: null, wheel: null, trivia: null, share: null, discoveries: null, // tests/discoveries.test.mjs
+  jail: null, wheel: null, trivia: null, share: null, discoveries: null, watch: null, watchlist: null, // tests/discoveries.test.mjs
   // fun for members, member DB – tests/fun.test.mjs
 };
 for (const name of Object.keys(sample)) {

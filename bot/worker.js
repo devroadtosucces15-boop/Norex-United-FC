@@ -40,6 +40,7 @@ import { generateCards } from './cardstudio.js';
 import { message, notice, header, cards, facts, text, sep, side, thumb, label, footer, buttons, cardUrl, resultAccent, RESULT_ICON } from './ui.js';
 import { playerFaces } from './faces.js';
 import { zoneChoices } from './host.js';
+import { WATCH_COMMANDS, WATCH_BUTTON, watchCommand, watchButton, watchlistCron } from './watchlist.js';
 import { DISCOVERY_COMMANDS, DISCOVERY_BUTTON, discoveryCommand, discoveryButton } from './discoveries.js';
 import { FUN_COMMANDS, FUN_BUTTON, funCommand, funButton, birthdayCheck } from './fun.js';
 import { SERVER_COMMANDS, SERVER_BUTTON, serverCommand, serverButton, memberWatch, sendDueReminders, tagChoices } from './servertools.js';
@@ -64,6 +65,7 @@ export default {
       const loadSite = (file) => load(site, file, ctx);
       ctx.waitUntil(refreshStatInsights(env, loadSite).then(() => statInsightWeekly(env, postEmbed)).catch((e) => console.log('stat insights cron failed', e.message))); // BE9
     }
+    if (flagOn(env, { role: 'owner' }, 'watchlist')) ctx.waitUntil(watchlistCron(env).catch((e) => console.log('watch list cron failed', e.message))); // creators' new videos, about hourly
     if (flagOn(env, { role: 'owner' }, 'fun')) ctx.waitUntil(birthdayCheck(env, postEmbed).catch((e) => console.log('birthday check failed', e.message))); // 🎂 one post a day
     if (flagOn(env, { role: 'owner' }, 'serverTools')) ctx.waitUntil(memberWatch(env).catch((e) => console.log('member watch failed', e.message))); // leave/join alerts + welcome posts
     if (flagOn(env, { role: 'owner' }, 'cardStudio')) ctx.waitUntil(generateCards(env).catch((e) => console.log('card generation failed', e.message))); // Card Studio – approved requests → AI cards (retries included)
@@ -135,6 +137,8 @@ export default {
       if (!env.DB) return json({ type: 4, data: notice('The member database isn’t connected') });
       return json(await panelInteraction(i, env, await memberOf(i, who, env), site, (f) => load(site, f, ctx)));
     }
+    if (i.type === 2 && WATCH_COMMANDS.has(i.data.name)) return json(await watchCommand(i, env, ctx, who)); // /watch /watchlist
+    if (i.type === 3 && WATCH_BUTTON.test(i.data?.custom_id ?? '')) return json(await watchButton(i, env, who)); // 👍 Useful
     if (i.type === 2 && DISCOVERY_COMMANDS.has(i.data.name)) return json(await discoveryCommand(i, env, ctx, who)); // /share /discoveries
     if (i.type === 3 && DISCOVERY_BUTTON.test(i.data?.custom_id ?? '')) return json(await discoveryButton(i, env, who)); // approve / reject / useful
     if (i.type === 2 && FUN_COMMANDS.has(i.data.name)) return json(await funCommand(i, env, ctx, who)); // /jail /wheel

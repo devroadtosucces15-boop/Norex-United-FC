@@ -147,6 +147,21 @@ export const COMMANDS = [
     ],
   },
   { name: 'discoveries', description: 'Managers: shared tips waiting for approval', default_member_permissions: String(1 << 28), contexts: [0] },
+  {
+    name: 'watch', description: 'The latest Pro Clubs videos the squad follows',
+    options: [{ type: STRING, name: 'topic', description: 'Only one topic', choices: ['builds', 'tactics', 'tips', 'meta', 'news'].map((v) => ({ name: v, value: v })) }],
+  },
+  {
+    name: 'watchlist', description: 'Managers: the YouTube creators the watch list follows', default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: SUB, name: 'add', description: 'Follow a creator', options: [
+        { type: STRING, name: 'channel', description: 'Their channel ID (starts with UC…) or channel link', required: true, max_length: 120 },
+        { type: STRING, name: 'name', description: 'How to show their name', max_length: 60 },
+      ] },
+      { type: SUB, name: 'remove', description: 'Stop following a creator', options: [{ type: STRING, name: 'channel', description: 'Channel ID or the name shown in /watchlist list', required: true, max_length: 120 }] },
+      { type: SUB, name: 'list', description: 'Who we follow' },
+    ],
+  },
   { name: 'trivia', description: 'A football trivia question – points for right answers', options: [{ type: SUB, name: 'play', description: 'Ask a question' }, { type: SUB, name: 'board', description: 'The trivia table' }] },
   // Server tools – the Miona / Carl-bot replacements (bot/servertools.js)
   {
