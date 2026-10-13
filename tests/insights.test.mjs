@@ -95,7 +95,7 @@ await tt('owner → deferred private reply, then the report is patched in', asyn
   const r = await send(slash('111'));
   await settle();
   const [first, detail] = replies.slice(-2);
-  return r.d.type === 5 && r.d.data.flags === 64 && /Club Intelligence/.test(plainText(first)) && /The detail/.test(plainText(detail)) && (detail.flags & 64) === 64;
+  return r.d.type === 5 && (r.d.data.flags & 64) === 64 && isV2(r.d.data) && /Club Intelligence/.test(plainText(first)) && /The detail/.test(plainText(detail)) && (detail.flags & 64) === 64;
 });
 const report = meta('insights');
 t('report saved in meta + one trend point', report?.overall >= 0 && report.overall <= 100 && meta('insights_hist')?.length === 1);
@@ -110,7 +110,7 @@ t('recs: silent channel, unused roles, verification, rules, missing access', /#o
 t('recs: good news for fast decisions', report.recs.at(-1).sev === 4 && /within 3 h/.test(report.recs.at(-1).text));
 t('history: 6 months, joins per month', report.history.length === 6 && report.history.at(-1).joins >= 1);
 const pair = replies.slice(-2);
-t('both report messages fit the 4000-character panel limit', pair.length === 2 && pair.every((m) => isV2(m) && plainText(m).length <= 4000));
+t('both report messages fit the 4000-character panel limit', pair.length === 2 && pair.every((m) => plainText(m).length <= 4000));
 
 await tt('second run within 10 minutes reuses the report (no Discord reads)', async () => {
   const n = calls.length;

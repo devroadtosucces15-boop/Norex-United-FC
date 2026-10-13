@@ -308,6 +308,11 @@ function avatarCardCommand(i, env, ctx, who, origin) {
   return json({ type: 5, data: { flags: 64 } });
 }
 
+// A deferred reply that will be edited into a design-system panel has to say so up front (the layout flag can't be
+// changed by the edit), and the edit itself carries only the components.
+const DEFER_PANEL = (priv) => ({ type: 5, data: { flags: (1 << 15) | (priv ? 64 : 0) } });
+const panelEdit = (m) => ({ components: m.components, allowed_mentions: m.allowed_mentions ?? { parse: [] } });
+
 // ---------- /insight (public, flag `statInsights`): BE9's stored stat insight as an embed – read-only, no writer call ----------
 async function insightCommand(i, env, ctx, site, who) {
   if (!flagOn(env, who, 'statInsights')) return json({ type: 4, data: { content: '🔒 Club insights are not switched on for you yet.', flags: 64 } });
@@ -317,10 +322,10 @@ async function insightCommand(i, env, ctx, site, who) {
       const out = await discordH2hEmbed(env, (f) => load(site, f, ctx), opponent, who).catch((e) => ({ error: `⚠️ ${e.message}` }));
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(out.error ? { content: out.error } : out.embed),
+        body: JSON.stringify(panelEdit(out.error ? notice(out.error) : out.embed)),
       }).catch((e) => console.log('insight h2h reply failed', e.message));
     })());
-    return json({ type: 5 });
+    return json(DEFER_PANEL(false));
   }
   const stat = flatOptions(i.data.options).find((o) => o.name === 'stat')?.value ?? 'club';
   const out = await discordInsightEmbed(env, stat, who.role).catch((e) => ({ error: `⚠️ ${e.message}` }));
@@ -359,10 +364,10 @@ function insightsCommand(i, env, ctx, site, who) {
       const [first, ...rest] = reportMessages(await insightsNow(env, (f) => load(site, f, ctx)), site);
       body = first; more = rest;
     } catch (e) {
-      body = { content: `⚠️ Could not build the report: ${e.message === 'no-access' ? "the bot can't see the server – check it is still in the server with **View Channels**." : e.message}` };
+      body = notice('Could not build the report', e.message === 'no-access' ? "The bot can't see the server – check it is still in the server with **View Channels**." : e.message);
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, allowed_mentions: { parse: [] } }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(body)),
     }).catch((e) => console.log('insights reply failed', e.message));
     for (const m of more) { // the detail panel arrives as a second private message
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}`, {
@@ -370,7 +375,7 @@ function insightsCommand(i, env, ctx, site, who) {
       }).catch((e) => console.log('insights detail failed', e.message));
     }
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return json(DEFER_PANEL(true));
 }
 
 const json = (obj) => new Response(JSON.stringify(obj), { headers: { 'Content-Type': 'application/json' } });
