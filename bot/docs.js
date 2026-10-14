@@ -12,6 +12,7 @@
 //   GET/POST /api/playstyle        Play Style per mode + section (flag `playStyle`, members read, managers edit)
 //   GET/POST /api/suggestions (+ /vote /decide /remove)   suggestion box (flag `suggestions`)
 // Text is "markdown-lite" (headings, bold, italics, lists, links, image + video lines) rendered by web/docs-md.js.
+import { IS_V2 } from './ui.js';
 import { can, flagOn } from './roles.js';
 import { notify, notifyManagers, notifyMembers, safely } from './notify.js';
 
@@ -152,11 +153,16 @@ export async function postEmbed(env, channel, role, message) {
   if (!/^\d{5,25}$/.test(channel)) return { ok: false, error: 'Pick a channel.' };
   if (role && !/^\d{1,25}$/.test(role)) return { ok: false, error: 'Pick a role to ping, or none.' };
   const everyone = role && role === env.DISCORD_GUILD_ID;
-  const msg = {
-    ...message,
-    content: role ? `${everyone ? '@everyone' : `<@&${role}>`}${message.content ? ` ${message.content}` : ''}` : message.content,
-    allowed_mentions: role ? (everyone ? { parse: ['everyone'] } : { roles: [role] }) : { parse: [] },
-  };
+  const tag = role ? (everyone ? '@everyone' : `<@&${role}>`) : '';
+  const allowed = role ? (everyone ? { parse: ['everyone'] } : { roles: [role] }) : { parse: [] };
+  let msg;
+  if (message.flags & IS_V2) { // design-system message (bot/ui.js): the ping goes in the line above the panel, there's no `content`
+    const comps = [...message.components];
+    if (tag) comps[0]?.type === 10 ? (comps[0] = { ...comps[0], content: `${tag} ${comps[0].content}` }) : comps.unshift({ type: 10, content: tag });
+    msg = { ...message, components: comps, allowed_mentions: { ...allowed, users: message.allowed_mentions?.users ?? [] } };
+  } else {
+    msg = { ...message, content: tag ? `${tag}${message.content ? ` ${message.content}` : ''}` : message.content, allowed_mentions: allowed };
+  }
   let r;
   try { r = await discord(env, `/channels/${channel}/messages`, { method: 'POST', body: JSON.stringify(msg) }); } catch (e) { return { ok: false, error: e.message }; }
   const res = await r.json().catch(() => ({}));

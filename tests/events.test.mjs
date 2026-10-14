@@ -1,4 +1,5 @@
 // Match operations: P3.1 scheduling, P3.2 availability per event, P3.7 check-in, quick lineup and session report.
+import { plainText } from '../bot/ui.js';
 import fs from 'node:fs';
 import { call, env, login, r2objects, ROOT, siteJson, sqlite, W } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
@@ -62,7 +63,7 @@ t('manager schedules a weekly series (3 dates, same wall time in London)', made.
   && new Date(evs[0].start).toISOString() === iso(zonedToUtc(tomorrow, '20:00', 'Europe/London')));
 t('notes cleaned, needs kept, end = start + duration', evs[0].notes === 'Lobby  b host /b : Coach' && evs[0].needs.GK === 1 && evs[0].needs.players === 5 && evs[0].end - evs[0].start === 120 * 60e3);
 t('members notified', made.d.notified >= 3 && (await call(member, '/api/notify')).d.items.some((n) => n.type === 'event' && /^New: League night/.test(n.title)));
-t('posted to Discord with a live timestamp + @everyone', made.d.discord?.ok && posts.at(-1).channel === '70001' && posts.at(-1).content === '@everyone' && /<t:\d+:F>/.test(posts.at(-1).embeds[0].description));
+t('posted to Discord with a live timestamp + @everyone', made.d.discord?.ok && posts.at(-1).channel === '70001' && posts.at(-1).components[0].content === '@everyone' && posts.at(-1).allowed_mentions.parse.includes('everyone') && /<t:\d+:F>/.test(plainText(posts.at(-1))));
 
 // ----- P3.2 answers -----
 const [e1, e2, e3] = evs.map((e) => e.id);

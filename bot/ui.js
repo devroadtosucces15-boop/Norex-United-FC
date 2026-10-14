@@ -98,6 +98,15 @@ export function plainText(msg) {
   return out.join('\n');
 }
 export const isV2 = (msg) => !!(msg?.flags & IS_V2);
+// The same message as a plain embed – only for editing posts made before the design system, which Discord may not let
+// us switch over (the V2 flag can only be set when a message is created). Keeps their text and buttons working.
+export function toLegacy(msg) {
+  const panel = (msg?.components ?? []).find((c) => c.type === 17);
+  const rows = [];
+  const walk = (c) => { if (!c || typeof c !== 'object') return; if (Array.isArray(c)) return c.forEach(walk); if (c.type === 1) rows.push(c); else walk(c.components); };
+  walk(panel?.components);
+  return { content: '', embeds: [{ color: panel?.accent_color, description: plainText({ components: [panel] }).replace(/^-# /gm, '').replace(/^#{1,3} /gm, '**').slice(0, 4000) }], components: rows.slice(0, 5) };
+}
 // Every picture URL in a message (gallery items + right-hand thumbnails).
 export function images(msg) {
   const out = [];

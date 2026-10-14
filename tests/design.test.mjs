@@ -3,7 +3,8 @@
 import { env, SITE, siteJson } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
-import { message, notice, header, buttons, cards, cardUrl, plainText, images, isV2, IS_V2, EPHEMERAL, ACCENT, resultAccent } from '../bot/ui.js';
+import { message, notice, header, buttons, cards, cardUrl, plainText, images, isV2, toLegacy, IS_V2, EPHEMERAL, ACCENT, resultAccent } from '../bot/ui.js';
+import { postEmbed } from '../bot/docs.js';
 import { scoreCard, fieldCard, fieldSlots, playerCard, tableCard, clubCard, resultsCard, ratingGraph, cardJobs, topRows, esc } from '../scripts/cards.mjs';
 import { shapeReply } from '../bot/botcommands.js';
 import { findChrome, launchChrome } from '../scripts/lib/chrome.mjs';
@@ -88,5 +89,13 @@ const posted = [];
 globalThis.fetch = async (url, init) => { posted.push(JSON.parse(init.body)); return Response.json({ id: '1' }); };
 const shaped = await shapeReply({ DISCORD_BOT_TOKEN: 'x' }, 'club', Response.json({ type: 4, data: message({ blocks: [header({ title: 'X' })] }) }), { club: { postTo: '123456' } });
 t('post-to-channel copy keeps the V2 flag, drops nothing else', posted[0]?.flags === IS_V2 && posted[0].components[0].type === 17 && /Posted in/.test(plainText((await shaped.json()).data)));
+const legacy = toLegacy(message({ accent: 'gold', blocks: [header({ title: 'Old post' }), buttons([{ label: 'Go', id: 'g' }])] }));
+t('legacy fallback (editing a pre-design-system post): one embed, same text, buttons kept', legacy.embeds[0].color === ACCENT.gold && /\*\*Old post/.test(legacy.embeds[0].description) && legacy.components[0].components[0].custom_id === 'g' && legacy.content === '');
+
+// ---------- postEmbed: the role ping goes on the line above the panel ----------
+posted.length = 0;
+globalThis.fetch = async (url, init) => { posted.push(JSON.parse(init.body)); return Response.json({ id: '9' }); };
+const sent = await postEmbed({ ...env, DISCORD_BOT_TOKEN: 'x' }, '123456', '777', message({ blocks: [header({ title: 'Match night' })] }));
+t('postEmbed + a V2 message: ping line above the panel, only that role allowed', sent.ok && posted[0].components[0].content === '<@&777>' && posted[0].components[1].type === 17 && posted[0].allowed_mentions.roles[0] === '777' && !posted[0].content);
 globalThis.fetch = realFetch;
 done();
