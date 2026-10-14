@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-14T23:30:49.949Z",
+ "fetchedAt": "2026-10-14T23:40:25.185Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -115,42 +115,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "SK_D-I-E-S-E-L",
-   "gamesPlayed": "2",
-   "winRate": "50",
-   "goals": "0",
-   "assists": "1",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "16",
-   "passSuccessRate": "80",
-   "ratingAve": "6.4",
-   "tacklesMade": "1",
-   "tackleSuccessRate": "25",
-   "proName": "Fresita",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "166",
-   "proNationality": "163",
-   "proOverall": "85",
-   "proOverallStr": "85",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "REFROD30",
@@ -838,7 +802,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 8,
+  "midfielder": 7,
   "goalkeeper": 0,
   "forward": 6,
   "defender": 6
@@ -856,22 +820,11 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "SK_D-I-E-S-E-L",
-   "proPos": "14",
-   "gamesPlayed": "119",
-   "goals": "69",
-   "assists": "44",
-   "manOfTheMatch": "10",
-   "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "REFROD30",
    "proPos": "14",
-   "gamesPlayed": "190",
+   "gamesPlayed": "191",
    "goals": "197",
-   "assists": "125",
+   "assists": "126",
    "manOfTheMatch": "41",
    "ratingAve": "8.1",
    "prevGoals": "0",
