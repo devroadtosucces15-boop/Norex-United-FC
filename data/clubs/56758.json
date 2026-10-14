@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-14T08:01:03.097Z",
+ "fetchedAt": "2026-10-14T08:10:37.056Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -477,6 +477,42 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "wygsy",
+   "gamesPlayed": "11",
+   "winRate": "72",
+   "goals": "4",
+   "assists": "1",
+   "cleanSheetsDef": "4",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "57",
+   "passesMade": "137",
+   "passSuccessRate": "82",
+   "ratingAve": "7.7",
+   "tacklesMade": "8",
+   "tackleSuccessRate": "50",
+   "proName": "h. him",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "190",
+   "proNationality": "54",
+   "proOverall": "82",
+   "proOverallStr": "82",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "2",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "Austin110486",
    "gamesPlayed": "62",
    "winRate": "61",
@@ -697,7 +733,7 @@
   "midfielder": 5,
   "goalkeeper": 0,
   "forward": 4,
-  "defender": 7
+  "defender": 8
  },
  "career": [
   {
@@ -830,6 +866,17 @@
    "manOfTheMatch": "54",
    "ratingAve": "8.2",
    "prevGoals": "1",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "wygsy",
+   "proPos": "25",
+   "gamesPlayed": "251",
+   "goals": "156",
+   "assists": "129",
+   "manOfTheMatch": "38",
+   "ratingAve": "7.9",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
