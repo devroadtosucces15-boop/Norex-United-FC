@@ -11,8 +11,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-export const TEMPLATE_VERSION = 2; // bump to redraw every card after a template change
+export const TEMPLATE_VERSION = 3; // bump to redraw every card after a template change
 const W = 1200;
+const COMPARE_PAIRS = 12; // busiest players whose every pairing gets a /compare picture (12 → 66 cards)
 
 // ---------- shared look ----------
 const font = (f) => fs.readFileSync(path.join(ROOT, 'scripts/cards/fonts', f)).toString('base64');
@@ -146,6 +147,64 @@ ${graph ? `<div class="g-h">Match rating · last ${Math.min(10, (p.tr ?? []).len
 </div><div class="brand">norex united</div>`);
 }
 
+// ---------- box score (the "Box score" button on a match message) ----------
+// Our side only: the match data carries every player's line for us but nothing for the other team beyond the score.
+const pc = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '–');
+export function boxScoreCard(m, club) {
+  const ps = [...(m.ps ?? [])].sort((a, b) => (+b.r || 0) - (+a.r || 0)).slice(0, 11);
+  const sum = (f) => (m.ps ?? []).reduce((t, p) => t + (+p[f] || 0), 0);
+  const rows = ps.map((p) => {
+    const b = band(+p.r, p.mom);
+    return `<div class="r${p.mom ? ' top' : ''}"><span class="n">${esc(p.n)}${p.pos ? ` <i>${esc(String(p.pos).slice(0, 3).toUpperCase())}</i>` : ''}</span>
+<span class="v big" style="color:${BAND[b]}">${r1(p.r)}</span><span class="v">${p.g ?? 0}</span><span class="v">${p.a ?? 0}</span><span class="v">${pc(p.pm, p.pa)}</span><span class="v">${p.tm ?? 0}/${p.ta ?? 0}</span><span class="v">${p.sh ?? 0}</span></div>`;
+  }).join('');
+  return page(`
+.wrap{padding:44px 60px 70px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px}
+.head h1{font:700 64px/1 Oswald;text-transform:uppercase;letter-spacing:.02em}
+.head .res{text-align:right}
+.h{display:grid;grid-template-columns:minmax(0,1fr) 110px 70px 70px 120px 160px 120px;font:700 19px Inter;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);padding:0 0 12px;border-bottom:1px solid var(--line)}
+.r{display:grid;grid-template-columns:minmax(0,1fr) 110px 70px 70px 120px 160px 120px;align-items:center;column-gap:10px;padding:13px 14px;margin-top:8px;border-radius:12px;background:linear-gradient(90deg,rgba(255,255,255,.04),transparent)}
+.r.top{background:linear-gradient(90deg,rgba(239,207,122,.14),transparent 75%)}
+.n{font:600 30px Inter;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.n i{font:600 19px Oswald;font-style:normal;letter-spacing:.08em;color:var(--g2);background:var(--p3);border-radius:6px;padding:1px 8px;margin-left:8px;vertical-align:3px}
+.v{text-align:right;font:600 30px Oswald;font-variant-numeric:tabular-nums;color:#cfd8e8}.v.big{font-size:38px}
+.h span:nth-child(n+2){text-align:right}
+.tot{margin-top:18px;padding:16px 14px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) 110px 70px 70px 120px 160px 120px;column-gap:10px;font:700 24px Oswald;color:var(--soft);text-transform:uppercase;letter-spacing:.06em}
+.tot span:nth-child(n+2){text-align:right;color:var(--text)}`,
+  `<div class="wrap">
+<div class="eyebrow">${esc(club.name)} · Box score</div>
+<div class="head"><h1>${esc(club.name.replace(/\s+FC$/i, ''))} ${m.gf}–${m.ga} ${esc(m.opp)}</h1><div class="res"><span class="pill ${m.res}">${RESULT[m.res] ?? ''}</span></div></div>
+<div class="h"><span>Player</span><span>RTG</span><span>G</span><span>A</span><span>Pass</span><span>Tackles</span><span>Shots</span></div>
+${rows}
+<div class="tot"><span>Team</span><span>${r1((m.ps ?? []).length ? sum('r') / m.ps.length : 0)}</span><span>${sum('g')}</span><span>${sum('a')}</span><span>${pc(sum('pm'), sum('pa'))}</span><span>${sum('tm')}/${sum('ta')}</span><span>${sum('sh')}</span></div>
+</div><div class="brand">norex united</div>`);
+}
+
+// ---------- compare (bar chart for /compare) ----------
+export const COMPARE_ROWS = (a, b) => [['OVR', a.ovr, b.ovr], ['Games', a.s?.gp, b.s?.gp], ['Goals', a.s?.g, b.s?.g], ['Assists', a.s?.a, b.s?.a], ['Rating', a.s?.r, b.s?.r, 1], ['MOTM', a.s?.m, b.s?.m], ['Pass %', a.s?.p, b.s?.p], ['Tackle %', a.s?.t, b.s?.t], ['Win %', a.s?.w, b.s?.w]];
+export function compareCard(a, b) {
+  const rows = COMPARE_ROWS(a, b).filter(([, x, y]) => (+x || 0) + (+y || 0) > 0).map(([k, x, y, dec = 0]) => {
+    const hi = Math.max(+x || 0, +y || 0) || 1, xa = +x || 0, ya = +y || 0;
+    const side = (v, win, left) => `<div class="bar ${left ? 'l' : 'r'}"><i class="${win ? 'w' : ''}" style="width:${Math.max(3, Math.round((v / hi) * 100))}%"></i></div>`;
+    return `<div class="row"><b class="${xa > ya ? 'gold' : ''}">${xa.toFixed(dec)}</b>${side(xa, xa > ya, true)}<span>${esc(k)}</span>${side(ya, ya > xa, false)}<b class="${ya > xa ? 'gold' : ''}">${ya.toFixed(dec)}</b></div>`;
+  }).join('');
+  return page(`
+.wrap{padding:44px 60px 70px}
+.top{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:26px}
+.top div:last-child{text-align:right}
+.top h1{font:700 60px/1 Oswald;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top small{display:block;margin-top:6px;font:700 20px Inter;letter-spacing:.24em;color:var(--soft);text-transform:uppercase}
+.row{display:grid;grid-template-columns:110px 1fr 190px 1fr 110px;align-items:center;column-gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row b{font:700 44px Oswald;font-variant-numeric:tabular-nums}.row b:first-child{text-align:right}
+.row span{text-align:center;font:700 20px Inter;letter-spacing:.2em;text-transform:uppercase;color:var(--soft)}
+.bar{height:20px;border-radius:10px;background:rgba(255,255,255,.07);display:flex}.bar.l{justify-content:flex-end}
+.bar i{display:block;height:100%;border-radius:10px;background:#3a4a66}.bar i.w{background:linear-gradient(90deg,var(--red),#ff8a3c)}`,
+  `<div class="wrap"><div class="eyebrow">Compare</div>
+<div class="top"><div><h1>${esc(a.n)}</h1><small>${esc(a.pos ?? '')}</small></div><div><h1>${esc(b.n)}</h1><small>${esc(b.pos ?? '')}</small></div></div>
+${rows || '<div class="row"><span style="grid-column:1/-1">No stats to compare yet</span></div>'}
+</div><div class="brand">norex united</div>`);
+}
+
 // ---------- leaderboard table ----------
 export const TOP_STATS = {
   goals: ['Top scorers', (p) => p.s.g], assists: ['Most assists', (p) => p.s.a], ga: ['Goals + assists', (p) => p.s.g + p.s.a],
@@ -226,9 +285,16 @@ export function cardJobs(club, players, { matches = 10 } = {}) {
   for (const m of (club.matches ?? []).slice(0, matches)) {
     jobs.push({ key: ['match', m.id, 'score'], file: `score-${m.id}-${hash([m, club.name, club.crest])}.png`, html: () => scoreCard(m, club) });
     if (m.ps?.length) jobs.push({ key: ['match', m.id, 'field'], file: `field-${m.id}-${hash(m.ps)}.png`, html: () => fieldCard(m) });
+    if (m.ps?.length) jobs.push({ key: ['match', m.id, 'box'], file: `box-${m.id}-${hash([m.ps, m.gf, m.ga, m.opp])}.png`, html: () => boxScoreCard(m, club) });
   }
   for (const p of players.filter((x) => x.home && x.s?.gp)) {
     jobs.push({ key: ['player', p.k], file: `player-${p.k}-${hash([p.n, p.pos, p.ovr, p.s, p.sc, (p.tr ?? []).slice(-10)])}.png`, html: () => playerCard(p) });
+  }
+  // /compare: every pair among the busiest home players (the bot can't draw on the fly, so the likely pairs are made ahead)
+  const regulars = players.filter((x) => x.home && x.s?.gp).sort((a, b) => b.s.gp - a.s.gp).slice(0, COMPARE_PAIRS);
+  for (let i = 0; i < regulars.length; i++) for (let j = i + 1; j < regulars.length; j++) {
+    const [a, b] = [regulars[i], regulars[j]].sort((x, y) => (x.k < y.k ? -1 : 1));
+    jobs.push({ key: ['compare', a.k, b.k], file: `cmp-${a.k}-${b.k}-${hash([a.n, a.pos, a.ovr, a.s, b.n, b.pos, b.ovr, b.s])}.png`, html: () => compareCard(a, b) });
   }
   for (const stat of Object.keys(TOP_STATS)) {
     const rows = topRows(players, stat).map(([p, v]) => [p.n, p.pos, p.s, v]);

@@ -106,6 +106,17 @@ export default {
       if (msg) return json({ type: 4, data: { content: msg, flags: 64 } });
     }
     const respond = async () => {
+    if (i.type === 3 && /^norex:box:/.test(i.data?.custom_id ?? '')) { // "Box score" under /last and the result posts: the drawn table, privately
+      const id = String(i.data.custom_id).split(':')[2];
+      const [club, deck] = await Promise.all([load(site, 'club', ctx), load(site, 'cards', ctx).catch(() => null)]);
+      const m = club.matches.find((x) => String(x.id) === id), card = cardUrl(deck, 'match', id, 'box');
+      if (!m || !card) return json({ type: 4, data: notice('No box score for that match', 'It is drawn a few minutes after the final whistle, and only recent matches keep one.') });
+      return json({ type: 4, data: message({ ephemeral: true, accent: resultAccent(m.res), blocks: [
+        header({ eyebrow: `${club.name} · Box score`, title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: `<t:${m.ts}:f>` }),
+        cards({ url: card, alt: 'Every player: rating, goals, assists, passes, tackles and shots' }),
+        buttons([{ label: 'Match report', url: m.url }]),
+      ] }) });
+    }
     if (i.type === 3 && /^norex:mme?:/.test(i.data?.custom_id ?? '')) { // P7.2 "Show my match" menu + "My match" button
       try {
         return json(await matchInteraction(i, site, {
@@ -480,7 +491,7 @@ async function command(data, site, ctx, { matchControls = false, env = {}, origi
           : m.ps?.length ? text((m.ps ?? []).slice().sort((a, b) => b.r - a.r).map((p) => `\`${r1(p.r)}\` ${p.n}`).join('\n')) : null,
         footer(`Gold = man of the match · green 7+ · orange 6–6.9 · red under 6 · ${updated}`),
         matchControls && m.ps?.length ? matchComponents(m.id, m.ps, m.url).slice(0, 1) : null,
-        buttons([matchControls && m.ps?.length && { label: 'My match', id: `norex:mme:${m.id}`.slice(0, 100), emoji: '🙋' }, { label: 'Match report', url: m.url }]),
+        buttons([matchControls && m.ps?.length && { label: 'My match', id: `norex:mme:${m.id}`.slice(0, 100), emoji: '🙋' }, cardUrl(deck, 'match', m.id, 'box') && { label: 'Box score', id: `norex:box:${m.id}`.slice(0, 100), emoji: '📊' }, { label: 'Match report', url: m.url }]),
       ] });
     }
     case 'results': {
@@ -506,14 +517,15 @@ async function command(data, site, ctx, { matchControls = false, env = {}, origi
       const a = findPlayer(players, opt.player1), b = findPlayer(players, opt.player2);
       if (!a || !b) return notice('Couldn’t find both players', 'Pick both names from the list as you type.');
       const rows = [['OVR', a.ovr, b.ovr], ['Games', a.s?.gp, b.s?.gp], ['Goals', a.s?.g, b.s?.g], ['Assists', a.s?.a, b.s?.a], ['Rating', a.s?.r, b.s?.r, 1], ['MOTM', a.s?.m, b.s?.m], ['Pass %', a.s?.p, b.s?.p], ['Tackle %', a.s?.t, b.s?.t], ['Win %', a.s?.w, b.s?.w]];
+      const cmpCard = cardUrl(deck, 'compare', ...[a.k, b.k].sort());
       const w = Math.max(10, a.n.length, b.n.length) + 2;
       const fmt = (v, dec = 0) => (+v || 0).toFixed(dec);
       const table = ['STAT'.padEnd(10) + a.n.slice(0, w - 2).padStart(w) + b.n.slice(0, w - 2).padStart(w),
         ...rows.map(([k, x, y, dec]) => `${k.padEnd(10)}${(fmt(x, dec) + (+x > +y ? ' ◀' : '  ')).padStart(w)}${(fmt(y, dec) + (+y > +x ? ' ◀' : '  ')).padStart(w)}`)].join('\n');
       return message({ blocks: [
         header({ eyebrow: brand('Compare'), title: `${a.n} vs ${b.n}`, sub: `${a.pos} vs ${b.pos} · club stats this season` }),
-        cards(cardUrl(deck, 'player', a.k), cardUrl(deck, 'player', b.k)),
-        text(`\`\`\`\n${table}\n\`\`\``),
+        cmpCard ? cards({ url: cmpCard, alt: `${a.n} and ${b.n} compared stat by stat` }) : cards(cardUrl(deck, 'player', a.k), cardUrl(deck, 'player', b.k)),
+        cmpCard ? null : text(`\`\`\`\n${table}\n\`\`\``),
         footer('◀ marks the better number · the site has the radar chart'),
         buttons([{ label: 'Compare on the site', url: `${site}compare.html?a=${encodeURIComponent(a.k)}&b=${encodeURIComponent(b.k)}` }]),
       ] });
