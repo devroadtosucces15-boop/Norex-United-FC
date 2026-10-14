@@ -13,6 +13,7 @@
 // PLANNING/ROADMAP.md. The model id/input shape follows Cloudflare's documented Workers AI Whisper contract
 // (`{ audio: number[] }` → `{ text }`), same as every other `@cf/...` call in this codebase.
 import { safely } from './notify.js';
+import { message, header, text, cards } from './ui.js';
 
 const API = 'https://discord.com/api/v10';
 const WHISPER_MODEL = '@cf/openai/whisper';
@@ -74,9 +75,9 @@ async function generateArt(env) {
   }
 }
 
-async function postCard(env, channel, embed, art) {
+async function postCard(env, channel, msg, art) {
   const form = new FormData();
-  form.set('payload_json', JSON.stringify({ embeds: [embed], allowed_mentions: { parse: [] } }));
+  form.set('payload_json', JSON.stringify(msg));
   if (art) form.set('files[0]', new Blob([art], { type: 'image/png' }), 'quote.png');
   const r = await fetch(`${API}/channels/${channel}/messages`, { method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` }, body: form });
   if (!r.ok) console.log('voice recap post failed', r.status, await r.text());
@@ -106,12 +107,11 @@ export async function checkVoiceRecap(env, loadSite) {
 
   const [quote, art] = await Promise.all([bestLine(env, transcript), generateArt(env)]);
   const club = await loadSite('club').catch(() => null);
-  const embed = {
-    title: '🎤 Quote of the match', color: RED,
-    description: `*"${quote}"*\n— ${newest.author?.username ?? 'a member'}`,
-    image: art ? { url: 'attachment://quote.png' } : undefined,
-    footer: club ? { text: club.name, icon_url: club.crest } : undefined,
-  };
-  await safely(postCard(env, channel, embed, art));
+  const msg = message({ accent: 'gold', blocks: [
+    header({ eyebrow: `${club?.name ?? 'NOREX UNITED'} · Voice chat`, title: '🎤 Quote of the match', thumb: club?.crest }),
+    text(`*"${quote}"*\n— ${newest.author?.username ?? 'a member'}`),
+    art ? cards('attachment://quote.png') : null,
+  ] });
+  await safely(postCard(env, channel, msg, art));
   return { posted: true };
 }

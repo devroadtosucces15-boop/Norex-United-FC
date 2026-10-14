@@ -19,7 +19,7 @@ import { hotwDue } from './hotw.js';
 import { scoreDue } from './predict.js';
 import { eventButton, playButton, memberCommand, memberOf, MEMBER_COMMANDS } from './botcmds.js';
 import { panelInteraction, PANEL_ID } from './panel.js';
-import { insightsCron, insightsNow, reportEmbeds } from './insights.js';
+import { insightsCron, insightsNow, reportMessages } from './insights.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
 import { can, discordRole, flagOn, loadFlagOverrides, withFlagOverrides } from './roles.js';
@@ -106,6 +106,17 @@ export default {
       if (msg) return json({ type: 4, data: { content: msg, flags: 64 } });
     }
     const respond = async () => {
+    if (i.type === 3 && /^norex:box:/.test(i.data?.custom_id ?? '')) { // "Box score" under /last and the result posts: the drawn table, privately
+      const id = String(i.data.custom_id).split(':')[2];
+      const [club, deck] = await Promise.all([load(site, 'club', ctx), load(site, 'cards', ctx).catch(() => null)]);
+      const m = club.matches.find((x) => String(x.id) === id), card = cardUrl(deck, 'match', id, 'box');
+      if (!m || !card) return json({ type: 4, data: notice('No box score for that match', 'It is drawn a few minutes after the final whistle, and only recent matches keep one.') });
+      return json({ type: 4, data: message({ ephemeral: true, accent: resultAccent(m.res), blocks: [
+        header({ eyebrow: `${club.name} · Box score`, title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: `<t:${m.ts}:f>` }),
+        cards({ url: card, alt: 'Every player: rating, goals, assists, passes, tackles and shots' }),
+        buttons([{ label: 'Match report', url: m.url }]),
+      ] }) });
+    }
     if (i.type === 3 && /^norex:mme?:/.test(i.data?.custom_id ?? '')) { // P7.2 "Show my match" menu + "My match" button
       try {
         return json(await matchInteraction(i, site, {
@@ -308,6 +319,11 @@ function avatarCardCommand(i, env, ctx, who, origin) {
   return json({ type: 5, data: { flags: 64 } });
 }
 
+// A deferred reply that will be edited into a design-system panel has to say so up front (the layout flag can't be
+// changed by the edit), and the edit itself carries only the components.
+const DEFER_PANEL = (priv) => ({ type: 5, data: { flags: (1 << 15) | (priv ? 64 : 0) } });
+const panelEdit = (m) => ({ components: m.components, allowed_mentions: m.allowed_mentions ?? { parse: [] } });
+
 // ---------- /insight (public, flag `statInsights`): BE9's stored stat insight as an embed – read-only, no writer call ----------
 async function insightCommand(i, env, ctx, site, who) {
   if (!flagOn(env, who, 'statInsights')) return json({ type: 4, data: { content: '🔒 Club insights are not switched on for you yet.', flags: 64 } });
@@ -317,15 +333,15 @@ async function insightCommand(i, env, ctx, site, who) {
       const out = await discordH2hEmbed(env, (f) => load(site, f, ctx), opponent, who).catch((e) => ({ error: `⚠️ ${e.message}` }));
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(out.error ? { content: out.error } : { embeds: [out.embed] }),
+        body: JSON.stringify(panelEdit(out.error ? notice(out.error) : out.embed)),
       }).catch((e) => console.log('insight h2h reply failed', e.message));
     })());
-    return json({ type: 5 });
+    return json(DEFER_PANEL(false));
   }
   const stat = flatOptions(i.data.options).find((o) => o.name === 'stat')?.value ?? 'club';
   const out = await discordInsightEmbed(env, stat, who.role).catch((e) => ({ error: `⚠️ ${e.message}` }));
   if (out.error) return json({ type: 4, data: { content: out.error, flags: 64 } });
-  return json({ type: 4, data: { embeds: [out.embed] } });
+  return json({ type: 4, data: out.embed });
 }
 
 // ---------- /ask (public, flag-gated): P11.11 AI club chatbot – site JSON stats as context for the text model ----------
@@ -354,17 +370,23 @@ function insightsCommand(i, env, ctx, site, who) {
   if (!can(who, 'insights.view') || !flagOn(env, who, 'insights')) return json({ type: 4, data: { content: '🔒 Managers only (and Club Intelligence is not switched on for you yet).', flags: 64 } });
   if (!env.DB) return json({ type: 4, data: { content: '⚠️ The member database is not connected.', flags: 64 } });
   ctx.waitUntil((async () => {
-    let body;
+    let body, more = [];
     try {
-      body = { embeds: reportEmbeds(await insightsNow(env, (f) => load(site, f, ctx)), site) };
+      const [first, ...rest] = reportMessages(await insightsNow(env, (f) => load(site, f, ctx)), site);
+      body = first; more = rest;
     } catch (e) {
-      body = { content: `⚠️ Could not build the report: ${e.message === 'no-access' ? "the bot can't see the server – check it is still in the server with **View Channels**." : e.message}` };
+      body = notice('Could not build the report', e.message === 'no-access' ? "The bot can't see the server – check it is still in the server with **View Channels**." : e.message);
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, allowed_mentions: { parse: [] } }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(body)),
     }).catch((e) => console.log('insights reply failed', e.message));
+    for (const m of more) { // the detail panel arrives as a second private message
+      await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...m, flags: m.flags | 64 }),
+      }).catch((e) => console.log('insights detail failed', e.message));
+    }
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return json(DEFER_PANEL(true));
 }
 
 const json = (obj) => new Response(JSON.stringify(obj), { headers: { 'Content-Type': 'application/json' } });
@@ -469,7 +491,7 @@ async function command(data, site, ctx, { matchControls = false, env = {}, origi
           : m.ps?.length ? text((m.ps ?? []).slice().sort((a, b) => b.r - a.r).map((p) => `\`${r1(p.r)}\` ${p.n}`).join('\n')) : null,
         footer(`Gold = man of the match · green 7+ · orange 6–6.9 · red under 6 · ${updated}`),
         matchControls && m.ps?.length ? matchComponents(m.id, m.ps, m.url).slice(0, 1) : null,
-        buttons([matchControls && m.ps?.length && { label: 'My match', id: `norex:mme:${m.id}`.slice(0, 100), emoji: '🙋' }, { label: 'Match report', url: m.url }]),
+        buttons([matchControls && m.ps?.length && { label: 'My match', id: `norex:mme:${m.id}`.slice(0, 100), emoji: '🙋' }, cardUrl(deck, 'match', m.id, 'box') && { label: 'Box score', id: `norex:box:${m.id}`.slice(0, 100), emoji: '📊' }, { label: 'Match report', url: m.url }]),
       ] });
     }
     case 'results': {
@@ -495,14 +517,15 @@ async function command(data, site, ctx, { matchControls = false, env = {}, origi
       const a = findPlayer(players, opt.player1), b = findPlayer(players, opt.player2);
       if (!a || !b) return notice('Couldn’t find both players', 'Pick both names from the list as you type.');
       const rows = [['OVR', a.ovr, b.ovr], ['Games', a.s?.gp, b.s?.gp], ['Goals', a.s?.g, b.s?.g], ['Assists', a.s?.a, b.s?.a], ['Rating', a.s?.r, b.s?.r, 1], ['MOTM', a.s?.m, b.s?.m], ['Pass %', a.s?.p, b.s?.p], ['Tackle %', a.s?.t, b.s?.t], ['Win %', a.s?.w, b.s?.w]];
+      const cmpCard = cardUrl(deck, 'compare', ...[a.k, b.k].sort());
       const w = Math.max(10, a.n.length, b.n.length) + 2;
       const fmt = (v, dec = 0) => (+v || 0).toFixed(dec);
       const table = ['STAT'.padEnd(10) + a.n.slice(0, w - 2).padStart(w) + b.n.slice(0, w - 2).padStart(w),
         ...rows.map(([k, x, y, dec]) => `${k.padEnd(10)}${(fmt(x, dec) + (+x > +y ? ' ◀' : '  ')).padStart(w)}${(fmt(y, dec) + (+y > +x ? ' ◀' : '  ')).padStart(w)}`)].join('\n');
       return message({ blocks: [
         header({ eyebrow: brand('Compare'), title: `${a.n} vs ${b.n}`, sub: `${a.pos} vs ${b.pos} · club stats this season` }),
-        cards(cardUrl(deck, 'player', a.k), cardUrl(deck, 'player', b.k)),
-        text(`\`\`\`\n${table}\n\`\`\``),
+        cmpCard ? cards({ url: cmpCard, alt: `${a.n} and ${b.n} compared stat by stat` }) : cards(cardUrl(deck, 'player', a.k), cardUrl(deck, 'player', b.k)),
+        cmpCard ? null : text(`\`\`\`\n${table}\n\`\`\``),
         footer('◀ marks the better number · the site has the radar chart'),
         buttons([{ label: 'Compare on the site', url: `${site}compare.html?a=${encodeURIComponent(a.k)}&b=${encodeURIComponent(b.k)}` }]),
       ] });

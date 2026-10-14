@@ -3,6 +3,7 @@
 import { call, env, login, siteJson, sqlite, W } from './mock.mjs';
 import { closeDue, closeWeek, weekOf } from '../bot/awards.js';
 import { t, tt, done } from './lib.mjs';
+import { plainText } from '../bot/ui.js';
 
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
 const load = (f) => Promise.resolve(siteJson(f));
@@ -82,7 +83,7 @@ t('manager closes this week: winners out, ballot locked', closed.s === 200 && cl
 t('voting after close → 409', (await call(member, '/api/awards/vote', { category: striker.id, player: pA.k })).s === 409);
 t('Player of the Month for a finished month (vote wins count 1, stat ½)', sqlite.prepare("SELECT player FROM award_winners WHERE period = 'M2026-08' AND award = 'potm'").all().map((r) => r.player).join() === pA.k);
 t('winner (claimed) is told + everyone gets the reveal note', (await call(member2, '/api/notify')).d.items.some((n) => n.type === 'award' && /You won/.test(n.title)) && (await call(member, '/api/notify')).d.items.some((n) => n.type === 'award' && /awards are in/.test(n.title)));
-t('results posted to the awards channel', posts.some((p) => p.channel === '70001' && /Weekly awards/.test(p.embeds[0].title) && p.embeds[0].description.includes(pC.n)));
+t('results posted to the awards channel', posts.some((p) => p.channel === '70001' && /weekly awards/i.test(plainText(p)) && plainText(p).includes(pC.n)));
 t('second close refused', (await call(mgr, '/api/awards/close', {})).s === 409);
 t('cron close is idempotent', (await closeDue(env, load)).closed === 0);
 

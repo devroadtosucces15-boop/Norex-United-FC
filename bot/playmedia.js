@@ -8,6 +8,7 @@
 // Files are stored in the MEDIA bucket under `play/<id>/m/` – never in the feed's storage guard, so they can't be evicted.
 import { can, flagOn } from './roles.js';
 import { postEmbed } from './docs.js';
+import { message, header, text, buttons } from './ui.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -110,10 +111,9 @@ async function shareMedia(env, me, id, mid, body, log) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
   const link = `${site}tactics.html#play${id}`;
   const label = row.kind === 'video' ? '🎬 Video' : '🎙 Voice-over';
-  const embed = { title: `${label} · ${row.title}`.slice(0, 250), url: link, color: 0xc8352c, footer: { text: 'NOREX UNITED · Tactics Studio' } };
-  const open = { type: 1, components: [{ type: 2, style: 5, label: '▶ Open in Studio', url: link }] };
+  const panelOf = (note, { file, ping } = {}) => message({ ping, blocks: [header({ eyebrow: 'NOREX UNITED · Tactics Studio', title: `${label} · ${row.title}`.slice(0, 250), size: 3 }), note ? text(note) : null, file ? { type: 13, file: { url: `attachment://${file}` } } : null, buttons([{ label: 'Open in Studio', url: link }])] });
   if (row.size > DISCORD_ATTACH_MAX) {
-    const res = await postEmbed(env, channel, role, { embeds: [{ ...embed, description: `Too big to attach (${mb(row.size)}) – watch it in the Studio.` }], components: [open] });
+    const res = await postEmbed(env, channel, role, panelOf(`Too big to attach (${mb(row.size)}) – watch it in the Studio.`));
     if (!res.ok) return fail(res.error);
     await log(env, me, 'play-media-discord', `#${id} · ${row.kind} link`);
     return json({ ok: true, attached: false });
@@ -126,11 +126,11 @@ async function shareMedia(env, me, id, mid, body, log) {
   const everyone = role && role === env.DISCORD_GUILD_ID;
   const ext = row.key.split('.').pop();
   const fd = new FormData();
+  const fname = `${row.title.replace(/[^\w-]+/g, '-').slice(0, 40) || 'play'}.${ext}`;
   fd.set('payload_json', JSON.stringify({
-    content: role ? (everyone ? '@everyone' : `<@&${role}>`) : undefined,
-    embeds: [embed], components: [open],
+    ...panelOf(null, { file: fname, ping: role ? (everyone ? '@everyone' : `<@&${role}>`) : undefined }),
     allowed_mentions: role ? (everyone ? { parse: ['everyone'] } : { roles: [role] }) : { parse: [] },
-    attachments: [{ id: 0, filename: `${row.title.replace(/[^\w-]+/g, '-').slice(0, 40) || 'play'}.${ext}` }],
+    attachments: [{ id: 0, filename: fname }],
   }));
   fd.set('files[0]', new Blob([await new Response(obj.body).arrayBuffer()], { type: row.type }), `${row.title.replace(/[^\w-]+/g, '-').slice(0, 40) || 'play'}.${ext}`);
   let r;

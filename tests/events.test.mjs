@@ -1,5 +1,5 @@
 // Match operations: P3.1 scheduling, P3.2 availability per event, P3.7 check-in, quick lineup and session report.
-import { plainText } from '../bot/ui.js';
+import { plainText, images } from '../bot/ui.js';
 import fs from 'node:fs';
 import { call, env, login, r2objects, ROOT, siteJson, sqlite, W } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
@@ -156,7 +156,7 @@ t('report: position trial compared with the season average', me0.trial?.pos === 
 t('report: attendance – no-shows and walk-ins', rep.d.attendance.came === 1 && rep.d.attendance.noShow.some((x) => x.id === '501') && rep.d.attendance.walkIns.some((x) => x.id === '500'));
 t('member cannot share the report', (await call(member, '/api/events/report/post', { id: evId })).s === 403);
 const shared = await call(mgr, '/api/events/report/post', { id: evId, channel: '70001' });
-t('manager shares: Discord post + attendees notified + marked', shared.s === 200 && shared.d.discord?.ok && /Session report/.test(posts.at(-1).embeds[0].title) && shared.d.notified === 2 && (await call(member2, '/api/notify')).d.items.some((n) => /^Session report/.test(n.title)));
+t('manager shares: Discord post + attendees notified + marked', shared.s === 200 && shared.d.discord?.ok && /Session report/.test(plainText(posts.at(-1))) && shared.d.notified === 2 && (await call(member2, '/api/notify')).d.items.some((n) => /^Session report/.test(n.title)));
 
 // ----- BE11 report poster (R2) -----
 const PNG = (n = 200) => { const b = new Uint8Array(n); b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]); return b; };
@@ -172,7 +172,7 @@ const posted = await posterUp(mgr, PNG());
 t('report poster: manager uploads, stored in R2, key saved on the event', posted.s === 200 && !!posted.d.key && r2objects.has(posted.d.key) && posted.d.url.endsWith(`/media/${posted.d.key}`));
 const repAfter = await call(mgr, `/api/events/report?id=${evId}`);
 t('report poster: the key round-trips through the report + the share embed carries it as the image', repAfter.d.event.reportPoster === posted.d.key
-  && (await call(mgr, '/api/events/report/post', { id: evId, channel: '70001' })).d.discord?.ok && posts.at(-1).embeds[0].image?.url?.endsWith(`/media/${posted.d.key}`));
+  && (await call(mgr, '/api/events/report/post', { id: evId, channel: '70001' })).d.discord?.ok && images(posts.at(-1)).some((u) => u.endsWith(`/media/${posted.d.key}`)));
 
 // ----- BE4 nudge a short position -----
 await call(member2, '/api/profile', { positions: ['GK'] });
