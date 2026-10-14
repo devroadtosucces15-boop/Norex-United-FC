@@ -36,12 +36,17 @@ import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordIn
 import { handleHubWaveJob } from './hub.js';
 import { burnerCommand, burnerPick } from './burners.js';
 import { generateCards } from './cardstudio.js';
+import { SERVER_COMMANDS, SERVER_BUTTON, serverCommand, serverButton, memberWatch, sendDueReminders, tagChoices } from './servertools.js';
 
 const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 
 export default {
   async scheduled(event, env, ctx) {
+    if (event?.cron === '* * * * *') { // the 1-minute timer only sends /remind reminders – everything else stays on the 10-minute one
+      ctx.waitUntil(sendDueReminders(env).catch((e) => console.log('reminders failed', e.message)));
+      return;
+    }
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
     ctx.waitUntil(checkUptime(env).catch((e) => console.log('uptime monitor failed', e.message))); // P11.2 24/7 monitor
     ctx.waitUntil(checkProfanity(env).then(() => cleanBonus(env)).catch((e) => console.log('profanity check failed', e.message))); // P11.4
@@ -55,6 +60,7 @@ export default {
       const loadSite = (file) => load(site, file, ctx);
       ctx.waitUntil(refreshStatInsights(env, loadSite).then(() => statInsightWeekly(env, postEmbed)).catch((e) => console.log('stat insights cron failed', e.message))); // BE9
     }
+    if (flagOn(env, { role: 'owner' }, 'serverTools')) ctx.waitUntil(memberWatch(env).catch((e) => console.log('member watch failed', e.message))); // leave/join alerts + welcome posts
     if (flagOn(env, { role: 'owner' }, 'cardStudio')) ctx.waitUntil(generateCards(env).catch((e) => console.log('card generation failed', e.message))); // Card Studio – approved requests → AI cards (retries included)
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
@@ -87,6 +93,7 @@ export default {
     if (i.type === 1) return json({ type: 1 }); // PING
     env = withFlagOverrides(env, await loadFlagOverrides(env)); // the Boardroom's live flag switches apply to Discord too (they used to reach website requests only)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
+    if (i.type === 4 && /^tags?$/.test(i.data?.name) && env.DB) return json({ type: 8, data: { choices: await tagChoices(env, flatOptions(i.data.options).find((o) => o.focused)?.value).catch(() => []) } });
     if (i.type === 4) return json({ type: 8, data: { choices: await autocomplete(i, site, ctx) } });
     const who = discordUser(env, i);
     const cmdName = i.type === 2 ? i.data?.name : null;
@@ -107,6 +114,8 @@ export default {
         return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
       }
     }
+    if (i.type === 2 && SERVER_COMMANDS.has(i.data.name)) return json(await serverCommand(i, env, ctx, who)); // /setup /purge /tag /tags /remind /reminders
+    if (i.type === 3 && SERVER_BUTTON.test(i.data?.custom_id ?? '')) return json(await serverButton(i, env, who)); // ping-role panel, reminder cancel
     if (i.type === 2 && i.data.name === 'syncroles') return syncRolesCommand(i, env, ctx, site, who);
     if (i.type === 2 && i.data.name === 'exportcontent') return exportContentCommand(i, env, ctx, who);
     if (i.type === 2 && i.data.name === 'aispike') return aiSpikeCommand(i, env, ctx, who);

@@ -1,6 +1,6 @@
 // The bot's slash command definitions – one list shared by bot/register.mjs (deploy-time registration, a plain Node script)
 // and the Worker (the Boardroom's "Sync to Discord" button, bot/botcommands.js). Keep them here, not in either of those.
-const SUB = 1, STRING = 3, INTEGER = 4, BOOLEAN = 5, USER = 6, CHANNEL = 7, ATTACHMENT = 11;
+const SUB = 1, STRING = 3, INTEGER = 4, BOOLEAN = 5, USER = 6, CHANNEL = 7, ROLE = 8, ATTACHMENT = 11;
 const player = (name, description) => ({ type: STRING, name, description, required: true, autocomplete: true });
 export const COMMANDS = [
   { name: 'club', description: 'Club record, division and form' },
@@ -122,6 +122,56 @@ export const COMMANDS = [
   },
   { name: 'motm', description: 'Current Man of the Match vote standing for the latest match' },
   { name: 'history', description: 'Our record against a past opponent', options: [{ type: STRING, name: 'opponent', description: "Opponent club name (or part of it)", required: true }] },
+  // Server tools – the Miona / Carl-bot replacements (bot/servertools.js)
+  {
+    name: 'setup', description: 'Managers: leave/join alerts, welcome posts and the ping-role panel',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: SUB, name: 'leavelog', description: 'Post leave and join alerts in a channel', options: [{ type: CHANNEL, name: 'channel', description: 'Managers-only channel for the alerts', required: true, channel_types: [0, 5] }] },
+      { type: SUB, name: 'welcome', description: 'Welcome new members in a channel', options: [
+        { type: CHANNEL, name: 'channel', description: 'Where to welcome them', required: true, channel_types: [0, 5] },
+        { type: STRING, name: 'message', description: 'First line – {user} pings them, {name} is their name. Default: "Welcome to the crew, {user}! 👋"', max_length: 300 },
+      ] },
+      { type: SUB, name: 'pingroles', description: 'Post the 🔔 ping-role buttons (creates the roles if needed)', options: [{ type: CHANNEL, name: 'channel', description: 'Where to post the panel', required: true, channel_types: [0, 5] }] },
+      { type: SUB, name: 'off', description: 'Switch leave/join alerts or welcome posts off', options: [{ type: STRING, name: 'feature', description: 'Which one', required: true, choices: [{ name: 'Leave/join alerts', value: 'leavelog' }, { name: 'Welcome posts', value: 'welcome' }] }] },
+    ],
+  },
+  {
+    name: 'purge', description: 'Managers: delete recent messages in this channel',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: INTEGER, name: 'count', description: 'How many (1–100)', required: true, min_value: 1, max_value: 100 },
+      { type: USER, name: 'member', description: 'Only messages from this member' },
+    ],
+  },
+  {
+    name: 'tag', description: 'Post a saved answer (rules, trial info…)', contexts: [0],
+    options: [
+      { type: STRING, name: 'name', description: 'Which tag', required: true, autocomplete: true, max_length: 32 },
+      { type: USER, name: 'member', description: 'Ping someone with it' },
+    ],
+  },
+  {
+    name: 'tags', description: 'List saved answers – managers add and delete them here', contexts: [0],
+    options: [
+      { type: SUB, name: 'list', description: 'Every saved tag' },
+      { type: SUB, name: 'set', description: 'Managers: add or replace a tag', options: [
+        { type: STRING, name: 'name', description: 'Short name, e.g. rules or trial-info', required: true, max_length: 32 },
+        { type: STRING, name: 'text', description: 'What it says – type \\n for a new line', required: true, max_length: 4000 },
+      ] },
+      { type: SUB, name: 'delete', description: 'Managers: delete a tag', options: [{ type: STRING, name: 'name', description: 'Which tag', required: true, autocomplete: true, max_length: 32 }] },
+    ],
+  },
+  {
+    name: 'remind', description: 'Set a reminder – e.g. in: 2h, text: join league', contexts: [0],
+    options: [
+      { type: STRING, name: 'in', description: 'When – 10m, 2h, 1h30m, 1d', required: true, max_length: 40 },
+      { type: STRING, name: 'text', description: 'What to remind about', required: true, max_length: 1000 },
+      { type: CHANNEL, name: 'channel', description: 'Managers: post it in another channel', channel_types: [0, 5] },
+      { type: ROLE, name: 'role', description: 'Managers: ping a role with it' },
+    ],
+  },
+  { name: 'reminders', description: 'Your waiting reminders – cancel any of them', contexts: [0] },
 ];
 
 // ---------- per-command settings → what Discord is told ----------
