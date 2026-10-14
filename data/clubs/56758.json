@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-14T22:41:00.877Z",
+ "fetchedAt": "2026-10-14T22:50:09.618Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -513,42 +513,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "Danial_Dano",
-   "gamesPlayed": "36",
-   "winRate": "72",
-   "goals": "24",
-   "assists": "14",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "57",
-   "passesMade": "361",
-   "passSuccessRate": "84",
-   "ratingAve": "7.9",
-   "tacklesMade": "44",
-   "tackleSuccessRate": "36",
-   "proName": "Dano",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "172",
-   "proNationality": "162",
-   "proOverall": "76",
-   "proOverallStr": "76",
-   "manOfTheMatch": "6",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "2",
-   "prevGoals8": "1",
-   "prevGoals9": "1",
-   "prevGoals10": "1",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Mika-6996",
    "gamesPlayed": "3",
    "winRate": "66",
@@ -874,7 +838,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 9,
+  "midfielder": 8,
   "goalkeeper": 0,
   "forward": 6,
   "defender": 6
@@ -1015,22 +979,11 @@
   {
    "name": "Delandon19",
    "proPos": "14",
-   "gamesPlayed": "90",
+   "gamesPlayed": "91",
    "goals": "25",
    "assists": "39",
    "manOfTheMatch": "10",
    "ratingAve": "6.8",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Danial_Dano",
-   "proPos": "14",
-   "gamesPlayed": "217",
-   "goals": "300",
-   "assists": "114",
-   "manOfTheMatch": "55",
-   "ratingAve": "8.2",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
