@@ -1,5 +1,5 @@
 {
-  "revision": "d6352a5f278fab53499651114da29facea300c00",
+  "revision": "1a9fbe620380a792965a909caf1cbc7f3a95980f",
   "files": 789,
   "imports": 559,
   "api_paths": 237,
@@ -4671,7 +4671,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1132,
+      "lines": 1085,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -13069,7 +13069,7 @@
     {
       "path": "web/report.js",
       "layer": "web",
-      "lines": 313,
+      "lines": 348,
       "imports": [],
       "endpoints": [
         "/api/issues"
@@ -13089,6 +13089,7 @@
         "enqueue",
         "esc",
         "flush",
+        "holdScroll",
         "init",
         "label",
         "layoutDiag",
@@ -13100,17 +13101,22 @@
         "openSheet",
         "ownEl",
         "pageKey",
+        "paint",
         "paintFab",
         "paintShape",
         "parseUA",
+        "pin",
         "r1",
         "rect",
         "round",
+        "run",
         "safeArea",
         "save",
         "setTool",
         "shape",
         "sizeCanvas",
+        "startDictation",
+        "stopDictation",
         "toggle",
         "up",
         "ver"
