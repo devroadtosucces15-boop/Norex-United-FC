@@ -3,7 +3,7 @@
  "name": "SANGRE X SANGRE",
  "crest": "99160616",
  "trackedAt": "2026-10-13T21:35:55.184Z",
- "fetchedAt": "2026-10-14T14:30:39.133Z",
+ "fetchedAt": "2026-10-14T14:40:33.823Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "SANGRE X SANGRE",
@@ -159,42 +159,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "JEZB_11",
-   "gamesPlayed": "2",
-   "winRate": "50",
-   "goals": "5",
-   "assists": "1",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "62",
-   "passesMade": "39",
-   "passSuccessRate": "79",
-   "ratingAve": "8.8",
-   "tacklesMade": "2",
-   "tackleSuccessRate": "13",
-   "proName": "J. Jezb",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "177",
-   "proNationality": "56",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "2",
-   "prevGoals1": "2",
-   "prevGoals2": "3",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   }
  ],
  "career": [
@@ -219,23 +183,12 @@
    "ratingAve": "7.5",
    "prevGoals": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "JEZB_11",
-   "proPos": "25",
-   "gamesPlayed": "263",
-   "goals": "129",
-   "assists": "190",
-   "manOfTheMatch": "37",
-   "ratingAve": "7.8",
-   "prevGoals": "2",
-   "favoritePosition": "forward"
   }
  ],
  "roster": {
   "Jasminnee_07": {
    "first": "2026-10-13T21:35:55.184Z",
-   "last": "2026-10-14T14:30:39.133Z",
+   "last": "2026-10-14T14:40:33.823Z",
    "active": true,
    "gp": 2,
    "pos": "midfielder",
@@ -243,7 +196,7 @@
   },
   "x_MrMike_x": {
    "first": "2026-10-13T21:35:55.184Z",
-   "last": "2026-10-14T14:30:39.133Z",
+   "last": "2026-10-14T14:40:33.823Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -252,7 +205,7 @@
   "JEZB_11": {
    "first": "2026-10-13T21:35:55.184Z",
    "last": "2026-10-14T14:30:39.133Z",
-   "active": true,
+   "active": false,
    "gp": 2,
    "pos": "forward",
    "ovr": 82
