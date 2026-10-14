@@ -25,6 +25,7 @@ import { can, flagOn } from './roles.js';
 import { notify, safely } from './notify.js';
 import { discordTargets, postEmbed } from './docs.js';
 import { broadcastRoom } from './clubroom.js';
+import { message, header, text, footer, buttons } from './ui.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -293,18 +294,12 @@ const CAT_ICON = { 'set-piece': '⚽', formation: '🧩', drill: '🏃' };
 function playEmbed(env, r, doc) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
   const bits = [`${doc.pieces.length} piece${doc.pieces.length === 1 ? '' : 's'}`, doc.steps.length ? `${doc.steps.length} keyframe${doc.steps.length === 1 ? '' : 's'}` : null, doc.quiz.length ? `${doc.quiz.length}-question quiz` : null].filter(Boolean);
-  return {
-    embeds: [{
-      title: `${CAT_ICON[r.category] ?? '📋'} ${r.title}`.slice(0, 250),
-      description: bits.join(' · ') || 'A new play in the Tactics Studio.',
-      url: `${site}tactics.html#play${r.id}`, color: 0xc8352c, timestamp: new Date(r.updated_at).toISOString(),
-      footer: { text: 'NOREX UNITED · Tactics Studio' },
-    }],
-    components: [{ type: 1, components: [
-      { type: 2, style: 3, label: '✅ Learned it', emoji: { name: '✅' }, custom_id: `norex:play:${r.id}:learned` },
-      { type: 2, style: 5, label: '▶ Open in Studio', url: `${site}tactics.html#play${r.id}` },
-    ] }],
-  };
+  return message({ blocks: [
+    header({ eyebrow: 'NOREX UNITED · Tactics Studio', title: `${CAT_ICON[r.category] ?? '📋'} ${r.title}`.slice(0, 250), size: 3 }),
+    text(bits.join(' · ') || 'A new play in the Tactics Studio.'),
+    footer(`Updated <t:${Math.floor(r.updated_at / 1000)}:R>`),
+    buttons([{ label: 'Learned it', id: `norex:play:${r.id}:learned`, style: 'ok', emoji: '✅' }, { label: 'Open in Studio', url: `${site}tactics.html#play${r.id}` }]),
+  ] });
 }
 // Posts a published play as a rich embed with answer buttons. Never throws – returns { ok } or { ok: false, error }.
 async function postPlay(env, me, id, target, log) {

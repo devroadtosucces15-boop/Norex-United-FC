@@ -85,6 +85,14 @@ jobs:
         env:
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} # reads approved "hide me" requests (P5.6)
 
+      # Discord cards (bot design system): the score cards, field views, player cards and tables the bot attaches to stat and
+      # match messages, drawn from the fresh data with the runner's Chrome. A failure never blocks the site – the bot then
+      # answers with the same layout minus the picture.
+      - name: Draw Discord cards
+        if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
+        continue-on-error: true
+        run: node scripts/cards.mjs
+
       - uses: actions/configure-pages@v5
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
 

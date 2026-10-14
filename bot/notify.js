@@ -16,6 +16,7 @@
 import { can, flagOn } from './roles.js';
 import { broadcastRoom } from './clubroom.js';
 import { encryptPayload, safeEndpoint, sendPush } from './webpush.js';
+import { message, header, text, footer, buttons } from './ui.js';
 
 const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
@@ -172,14 +173,12 @@ export async function deliverDMs(env, limit = 25) {
     channels[n.user_id] = ch;
     const url = siteUrl(env, n.link);
     const r = await discord(env, `/channels/${ch}/messages`, {
-      embeds: [{
-        title: `${n.icon ?? '🔔'} ${n.reminders ? 'Reminder: ' : ''}${n.title}`.slice(0, 250),
-        description: [n.body, n.ack ? '**Please open the site and tap “Got it” to acknowledge.**' : ''].filter(Boolean).join('\n\n').slice(0, 3900) || undefined,
-        url, color: RED, timestamp: new Date(n.at).toISOString(),
-        footer: { text: 'NOREX UNITED · change DM settings: Squad Hub → 🔔 Alerts' },
-      }],
-      components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Open on the site', url }] }],
-      allowed_mentions: { parse: [] },
+      ...message({ blocks: [
+        header({ eyebrow: 'NOREX UNITED · Alert', title: `${n.icon ?? '🔔'} ${n.reminders ? 'Reminder: ' : ''}${n.title}`.slice(0, 250), size: 3 }),
+        text([n.body, n.ack ? '**Please open the site and tap “Got it” to acknowledge.**' : ''].filter(Boolean).join('\n\n')),
+        footer(`Sent <t:${Math.floor(n.at / 1000)}:R> · change DM settings: Squad Hub → 🔔 Alerts`),
+        buttons([{ label: 'Open on the site', url }]),
+      ] }),
     });
     if (r.status === 429) break;
     if (r.ok) { await mark(n.id, 'sent'); sent++; continue; }

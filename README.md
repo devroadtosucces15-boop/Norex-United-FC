@@ -14,6 +14,7 @@ The club website and Discord bot for NOREX UNITED FC, an EA SPORTS FC Pro Clubs 
 ```
 scripts/fetch.mjs   EA Pro Clubs data → data/*.json (the permanent archive)
 scripts/build.mjs   data/ → static HTML in site/
+scripts/cards.mjs   site data → Discord cards (score cards, field views, tables) the bot attaches
 bot/                Cloudflare Worker: Discord commands, member login and API
 ```
 
