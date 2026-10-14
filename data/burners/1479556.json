@@ -3,7 +3,7 @@
  "name": "vagi noli",
  "crest": "99160128",
  "trackedAt": "2026-10-10T00:08:15.917Z",
- "fetchedAt": "2026-10-14T02:20:37.961Z",
+ "fetchedAt": "2026-10-14T02:30:33.528Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "vagi noli",
@@ -197,42 +197,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "itzAldinha27",
-   "gamesPlayed": "4",
-   "winRate": "100",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "46",
-   "passSuccessRate": "82",
-   "ratingAve": "8.2",
-   "tacklesMade": "9",
-   "tackleSuccessRate": "69",
-   "proName": "Aldinha",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "182",
-   "proNationality": "83",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "Rinconkelvin95",
    "gamesPlayed": "4",
    "winRate": "100",
@@ -304,17 +268,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "itzAldinha27",
-   "proPos": "14",
-   "gamesPlayed": "176",
-   "goals": "42",
-   "assists": "50",
-   "manOfTheMatch": "21",
-   "ratingAve": "7.9",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Rinconkelvin95",
    "proPos": "0",
    "gamesPlayed": "35",
@@ -329,7 +282,7 @@
  "roster": {
   "J_cruz505": {
    "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-14T02:20:37.961Z",
+   "last": "2026-10-14T02:30:33.528Z",
    "active": true,
    "gp": 4,
    "pos": "midfielder",
@@ -337,7 +290,7 @@
   },
   "x_MrMike_x": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-14T02:20:37.961Z",
+   "last": "2026-10-14T02:30:33.528Z",
    "active": true,
    "gp": 7,
    "pos": "midfielder",
@@ -345,27 +298,27 @@
   },
   "rezy33pizza": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-14T02:20:37.961Z",
+   "last": "2026-10-14T02:30:33.528Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
    "ovr": 72
   },
-  "itzAldinha27": {
-   "first": "2026-10-12T23:11:30.990Z",
-   "last": "2026-10-14T02:20:37.961Z",
-   "active": true,
-   "gp": 4,
-   "pos": "defender",
-   "ovr": 80
-  },
   "Rinconkelvin95": {
    "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-14T02:20:37.961Z",
+   "last": "2026-10-14T02:30:33.528Z",
    "active": true,
    "gp": 4,
    "pos": "goalkeeper",
    "ovr": 85
+  },
+  "itzAldinha27": {
+   "first": "2026-10-12T23:11:30.990Z",
+   "last": "2026-10-14T02:20:37.961Z",
+   "active": false,
+   "gp": 4,
+   "pos": "defender",
+   "ovr": 80
   },
   "IM_Trash_Broski": {
    "first": "2026-10-10T00:08:15.917Z",
