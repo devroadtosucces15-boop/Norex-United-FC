@@ -36,10 +36,9 @@ import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordIn
 import { handleHubWaveJob } from './hub.js';
 import { burnerCommand, burnerPick } from './burners.js';
 import { generateCards } from './cardstudio.js';
+import { message, notice, header, cards, facts, text, sep, label, footer, buttons, cardUrl, resultAccent, RESULT_ICON } from './ui.js';
 import { SERVER_COMMANDS, SERVER_BUTTON, serverCommand, serverButton, memberWatch, sendDueReminders, tagChoices } from './servertools.js';
 
-const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
-const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 
 export default {
   async scheduled(event, env, ctx) {
@@ -135,9 +134,8 @@ export default {
       try {
         const loadSite = (f) => load(site, f, ctx);
         const club = await loadSite('club');
-        const footer = { text: `${club.name} · updates every 15 min`, icon_url: club.crest };
         return json(await memberCommand(i, env, who, site, {
-          load: loadSite, playerEmbed: (p) => playerEmbed(p, club, site, footer),
+          load: loadSite, playerMessage: async (p, o) => playerMessage(p, club, site, await loadSite('cards').catch(() => null), o),
           top: async (stat) => ({ type: 4, data: await command({ name: 'top', options: [{ name: 'stat', value: stat }] }, site, ctx) }),
         }));
       } catch (e) {
@@ -147,12 +145,8 @@ export default {
     if (i.type === 2 && i.data.name === 'insights') return insightsCommand(i, env, ctx, site, who);
     if (i.type === 2) {
       try {
-        const data = await command(i.data, site, ctx);
-        // P7.2: /last gets the same "Show my match" controls as the auto-posted result.
-        if (i.data.name === 'last' && data.embeds && flagOn(env, who, 'discordMatch')) {
-          const m = (await load(site, 'club', ctx)).matches[0];
-          if (m?.ps?.length) data.components = matchComponents(m.id, m.ps, m.url);
-        }
+        // P7.2: /last carries the same "Show my match" controls as the auto-posted result, inside its panel.
+        const data = await command(i.data, site, ctx, { matchControls: flagOn(env, who, 'discordMatch') });
         return json({ type: 4, data });
       } catch (e) {
         return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
@@ -425,57 +419,80 @@ function findPlayer(players, v) {
 }
 
 // ---------- commands ----------
-async function command(data, site, ctx) {
+// Every reply follows the design system (bot/ui.js): one panel, a header, a drawn card from scripts/cards.mjs for every stat
+// or match, a footer line and buttons last. A card that isn't drawn yet (new match, card step failed) falls back to text.
+const r1 = (v) => (+v || 0).toFixed(1);
+const goalsLine = (m) => (m.scorers ?? []).map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join(', ');
+async function command(data, site, ctx, { matchControls = false } = {}) {
   const opt = Object.fromEntries(flatOptions(data.options).map((o) => [o.name, o.value]));
   const club = await load(site, 'club', ctx);
-  const footer = { text: `${club.name} · updates every 15 min`, icon_url: club.crest };
+  const deck = await load(site, 'cards', ctx).catch(() => null); // drawn cards manifest
+  const updated = 'Updates every 10 min';
+  const brand = (s) => `${club.name} · ${s}`;
 
   switch (data.name) {
     case 'club': {
       const gd = club.gf - club.ga;
-      return { embeds: [{
-        title: club.name, url: club.url, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: `**Division ${club.division ?? '–'}** · Skill rating **${club.skill ?? '–'}**${club.streak > 1 ? ` · 🔥 ${club.streak} win streak` : ''}`,
-        fields: [
-          { name: 'Record', value: `${club.w}W ${club.d}D ${club.l}L (${club.gp} played)`, inline: true },
-          { name: 'Goals', value: `${club.gf} scored · ${club.ga} conceded (${gd >= 0 ? '+' : ''}${gd})`, inline: true },
-          { name: 'Form (newest last)', value: [...club.form].reverse().map((r) => RES_EMOJI[r]).join('') || '–' },
-        ],
-        footer,
-      }] };
+      const card = cardUrl(deck, 'club');
+      return message({ blocks: [
+        header({ eyebrow: brand('Club'), title: club.name, sub: `Division ${club.division ?? '–'} · Skill rating ${club.skill ?? '–'}${club.streak > 1 ? ` · 🔥 ${club.streak} win streak` : ''}`, thumb: card ? null : club.crest }),
+        cards(card && { url: card, alt: `${club.w} wins, ${club.d} draws, ${club.l} losses` }),
+        !card && facts([['Record', `${club.w}W ${club.d}D ${club.l}L (${club.gp} played)`], ['Goals', `${club.gf} scored · ${club.ga} conceded (${gd >= 0 ? '+' : ''}${gd})`], ['Form', [...club.form].reverse().map((r) => RESULT_ICON[r]).join('') || '–']]),
+        footer(`${updated} · newest result on the right`),
+        buttons([{ label: 'Club site', url: club.url }, club.apply && { label: 'Trials', url: club.apply }]),
+      ] });
     }
     case 'last': {
       const m = club.matches[0];
-      if (!m) return { content: 'No matches archived yet.' };
-      return { embeds: [matchEmbed(m, club, footer)] };
+      if (!m) return notice('No matches yet', 'The first result shows up here a few minutes after it’s played.');
+      const score = cardUrl(deck, 'match', m.id, 'score'), field = cardUrl(deck, 'match', m.id, 'field');
+      const avg = m.ps?.length ? m.ps.reduce((t, p) => t + (+p.r || 0), 0) / m.ps.length : null;
+      return message({ accent: resultAccent(m.res), blocks: [
+        header({ eyebrow: brand('Match centre · League'), title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: `<t:${m.ts}:f> · ${{ W: 'Win', D: 'Draw', L: 'Defeat' }[m.res]}`, thumb: score ? null : m.oppCrest || club.crest }),
+        cards(score && { url: score, alt: `${club.name} ${m.gf}–${m.ga} ${m.opp}` }),
+        facts([['⚽ Goals', goalsLine(m) || 'none'], ['⭐ Man of the match', m.motm], ['📊 Team rating', avg != null ? r1(avg) : null]]),
+        sep(),
+        field ? [label('Field view · ratings'), cards({ url: field, alt: 'Our players on the pitch with their match ratings' })]
+          : m.ps?.length ? text((m.ps ?? []).slice().sort((a, b) => b.r - a.r).map((p) => `\`${r1(p.r)}\` ${p.n}`).join('\n')) : null,
+        footer(`Gold = man of the match · green 7+ · orange 6–6.9 · red under 6 · ${updated}`),
+        matchControls && m.ps?.length ? matchComponents(m.id, m.ps, m.url).slice(0, 1) : null,
+        buttons([matchControls && m.ps?.length && { label: 'My match', id: `norex:mme:${m.id}`.slice(0, 100), emoji: '🙋' }, { label: 'Match report', url: m.url }]),
+      ] });
     }
     case 'results': {
       const n = Math.min(10, opt.count ?? 5);
-      return { embeds: [{
-        title: `Last ${n} results`, url: `${club.url}matches/index.html`, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: club.matches.slice(0, n).map((m) => `${RES_EMOJI[m.res]} **${m.gf}–${m.ga}** vs [${m.opp}](${m.url})${m.scorers.length ? ` · ⚽ ${m.scorers.map((s) => s.n + (s.g > 1 ? ` ×${s.g}` : '')).join(', ')}` : ''}`).join('\n') || 'No matches yet.',
-        footer,
-      }] };
+      const card = cardUrl(deck, 'results');
+      const list = club.matches.slice(0, n);
+      return message({ blocks: [
+        header({ eyebrow: brand('Results'), title: `Last ${list.length} results`, sub: list.length ? `${list.filter((m) => m.res === 'W').length}W ${list.filter((m) => m.res === 'D').length}D ${list.filter((m) => m.res === 'L').length}L` : 'No matches yet' }),
+        cards(card && { url: card, alt: 'Recent results' }),
+        (!card || n > 8) && list.length ? text(list.slice(card ? 8 : 0).map((m) => `${RESULT_ICON[m.res]} **${m.gf}–${m.ga}** vs [${m.opp}](${m.url})${m.scorers.length ? ` · ${goalsLine(m)}` : ''}`).join('\n')) : null,
+        footer(updated),
+        buttons([{ label: 'All results', url: `${club.url}results.html` }]),
+      ] });
     }
     case 'player': {
       const players = await load(site, 'players', ctx);
       const p = findPlayer(players, opt.gamertag);
-      if (!p) return { content: `No player called **${opt.gamertag}** found.`, flags: 64 };
-      return { embeds: [playerEmbed(p, club, site, footer)] };
+      if (!p) return notice(`No player called ${opt.gamertag}`, 'Start typing and pick a name from the list.');
+      return playerMessage(p, club, site, deck);
     }
     case 'compare': {
       const players = await load(site, 'players', ctx);
       const a = findPlayer(players, opt.player1), b = findPlayer(players, opt.player2);
-      if (!a || !b) return { content: 'Could not find both players.', flags: 64 };
-      const row = (label, x, y, dec = 0) => {
-        const fx = (+x || 0).toFixed(dec), fy = (+y || 0).toFixed(dec);
-        return `\`${label.padEnd(10)}\` ${+x > +y ? `**${fx}**` : fx}  —  ${+y > +x ? `**${fy}**` : fy}`;
-      };
-      return { embeds: [{
-        title: `${a.n} vs ${b.n}`, url: `${site}compare.html?a=${encodeURIComponent(a.k)}&b=${encodeURIComponent(b.k)}`, color: parseInt(club.color.slice(1), 16),
-        description: [row('OVR', a.ovr, b.ovr), row('Games', a.s?.gp, b.s?.gp), row('Goals', a.s?.g, b.s?.g), row('Assists', a.s?.a, b.s?.a), row('Rating', a.s?.r, b.s?.r, 1), row('MOTM', a.s?.m, b.s?.m), row('Pass %', a.s?.p, b.s?.p), row('Tackle %', a.s?.t, b.s?.t), row('Win %', a.s?.w, b.s?.w)].join('\n'),
-        footer: { ...footer, text: 'Club stats (main club) · open the link for the radar chart' },
-      }] };
+      if (!a || !b) return notice('Couldn’t find both players', 'Pick both names from the list as you type.');
+      const rows = [['OVR', a.ovr, b.ovr], ['Games', a.s?.gp, b.s?.gp], ['Goals', a.s?.g, b.s?.g], ['Assists', a.s?.a, b.s?.a], ['Rating', a.s?.r, b.s?.r, 1], ['MOTM', a.s?.m, b.s?.m], ['Pass %', a.s?.p, b.s?.p], ['Tackle %', a.s?.t, b.s?.t], ['Win %', a.s?.w, b.s?.w]];
+      const w = Math.max(10, a.n.length, b.n.length) + 2;
+      const fmt = (v, dec = 0) => (+v || 0).toFixed(dec);
+      const table = ['STAT'.padEnd(10) + a.n.slice(0, w - 2).padStart(w) + b.n.slice(0, w - 2).padStart(w),
+        ...rows.map(([k, x, y, dec]) => `${k.padEnd(10)}${(fmt(x, dec) + (+x > +y ? ' ◀' : '  ')).padStart(w)}${(fmt(y, dec) + (+y > +x ? ' ◀' : '  ')).padStart(w)}`)].join('\n');
+      return message({ blocks: [
+        header({ eyebrow: brand('Compare'), title: `${a.n} vs ${b.n}`, sub: `${a.pos} vs ${b.pos} · club stats this season` }),
+        cards(cardUrl(deck, 'player', a.k), cardUrl(deck, 'player', b.k)),
+        text(`\`\`\`\n${table}\n\`\`\``),
+        footer('◀ marks the better number · the site has the radar chart'),
+        buttons([{ label: 'Compare on the site', url: `${site}compare.html?a=${encodeURIComponent(a.k)}&b=${encodeURIComponent(b.k)}` }]),
+      ] });
     }
     case 'top': {
       const players = (await load(site, 'players', ctx)).filter((p) => p.home && p.s && p.src === 'club');
@@ -483,68 +500,42 @@ async function command(data, site, ctx) {
       const F = { goals: ['Top scorers', (p) => p.s.g], assists: ['Most assists', (p) => p.s.a], rating: ['Best average rating (3+ games)', (p) => (p.s.gp >= 3 ? p.s.r : 0), 1], motm: ['Most MOTM awards', (p) => p.s.m], games: ['Most appearances', (p) => p.s.gp], ga: ['Goals + assists', (p) => p.s.g + p.s.a] };
       const [title, f, dec = 0] = F[stat] ?? F.goals;
       const list = players.map((p) => [p, f(p)]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      const card = cardUrl(deck, 'top', stat);
       const medal = ['🥇', '🥈', '🥉'];
-      return { embeds: [{
-        title: `${club.name} – ${title}`, url: `${club.url}stats.html`, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: list.map(([p, v], i) => `${medal[i] ?? `\`${i + 1}.\``} [${p.n}](${site}players/${encodeURIComponent(p.k)}.html) — **${v.toFixed(dec)}**`).join('\n') || 'No data yet.',
-        footer,
-      }] };
+      return message({ blocks: [
+        header({ eyebrow: brand('Leaderboard'), title, sub: list[0] ? `${list[0][0].n} leads with ${list[0][1].toFixed(dec)}` : 'No games logged yet' }),
+        cards(card && { url: card, alt: title }),
+        !card ? text(list.map(([p, v], i) => `${medal[i] ?? `\`${i + 1}.\``} [${p.n}](${site}players/${encodeURIComponent(p.k)}.html) — **${v.toFixed(dec)}**`).join('\n') || 'No data yet.') : null,
+        footer(updated),
+        buttons([{ label: 'All leaderboards', url: `${club.url}stats.html` }]),
+      ] });
     }
     case 'site':
-      return { embeds: [{
-        title: `${club.name} – links`, url: club.url, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: [`🌐 **Website:** ${club.url}`, club.apply && `👑 **Trials / apply:** ${club.apply}`].filter(Boolean).join('\n'),
-        footer,
-      }] };
+      return message({ blocks: [
+        header({ eyebrow: brand('Links'), title: 'The club site', sub: 'Results, stats, the squad, the Squad Hub and trials', thumb: club.crest }),
+        buttons([{ label: 'Website', url: club.url }, { label: 'Squad Hub', url: `${club.url}members.html` }, club.apply && { label: 'Trials', url: club.apply }]),
+      ] });
     default:
-      return { content: 'Unknown command.', flags: 64 };
+      return notice('Unknown command');
   }
 }
 
-function matchEmbed(m, club, footer) {
-  return {
-    title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, url: m.url, color: RES_COLOR[m.res], thumbnail: { url: m.res === 'L' ? m.oppCrest : club.crest },
-    description: `${m.res === 'W' ? '✅ **Victory**' : m.res === 'L' ? '❌ **Defeat**' : '➖ **Draw**'}`,
-    fields: [
-      m.scorers.length && { name: '⚽ Scorers', value: m.scorers.map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join('\n'), inline: true },
-      m.motm && { name: '⭐ Man of the match', value: m.motm, inline: true },
-    ].filter(Boolean),
-    timestamp: new Date(m.ts * 1000).toISOString(),
-    footer,
-  };
-}
-
-function playerEmbed(p, club, site, footer) {
+// /player and /me share this: header with the club crest, the drawn player card, then career + recent form as text.
+function playerMessage(p, club, site, deck, { eyebrow = 'Player card' } = {}) {
   const s = p.s, c = p.car;
-  const r1 = (v) => (+v || 0).toFixed(1);
+  const card = cardUrl(deck, 'player', p.k);
+  const recent = (p.tr ?? []).slice(-5);
   const dot = (r) => (r >= 8 ? '🟢' : r >= 7 ? '🟡' : r >= 6 ? '🟠' : '🔴');
-  const recent = (p.tr ?? []).slice(-5).reverse();
-  const stats = (x) => `${x.gp} games · **${x.g}** goals · **${x.a}** assists\n⭐ Avg rating **${r1(x.r)}** · MOTM **${x.m}**`;
-  const fields = [];
-  if (s && s.gp) {
-    fields.push({
-      name: p.src === 'archive' ? `📋 ${p.sc ?? 'Club'} (from archived matches)` : `📋 ${p.sc ?? 'Club'} this season`,
-      value: `${stats(s)}\nPass **${s.p}%** · Tackle **${s.t}%** · Win **${s.w}%**`,
-    });
-  } else if (p.sc) {
-    fields.push({ name: `📋 ${p.sc}`, value: 'No games for this club yet this season.' });
-  }
-  if (c && c.gp) fields.push({ name: '🌍 Career (every club)', value: stats(c) });
-  if (recent.length) {
-    const avg = recent.reduce((t, v) => t + v, 0) / recent.length;
-    fields.push({
-      name: `📈 Last ${recent.length} match ratings (newest first)`,
-      value: `${recent.map((r) => `${dot(r)} **${r1(r)}**`).join('  ')}\nAverage **${r1(avg)}** · Best **${r1(Math.max(...recent))}**`,
-    });
-  }
-  return {
-    title: `${p.n}${p.ovr ? ` · ${p.ovr} OVR` : ''}`, url: `${site}players/${encodeURIComponent(p.k)}.html`,
-    color: parseInt(club.color.slice(1), 16), thumbnail: p.crest ? { url: p.crest } : undefined,
-    description: `**${p.pos}** · ${p.c.join(', ')}`,
-    fields,
-    footer: { ...footer, text: '🟢 8+  🟡 7+  🟠 6+  🔴 under 6 · full profile on the site' },
-  };
+  return message({ blocks: [
+    header({ eyebrow: `${club.name} · ${eyebrow}`, title: `${p.n}${p.ovr ? ` · ${p.ovr} OVR` : ''}`, sub: `${p.pos} · ${p.c.join(', ')}`, thumb: p.crest }),
+    cards(card && { url: card, alt: `${p.n}: season stats and match ratings` }),
+    !card && s?.gp ? facts([[p.src === 'archive' ? `${p.sc ?? 'Club'} (archived matches)` : `${p.sc ?? 'Club'} this season`, `${s.gp} games · ${s.g} goals · ${s.a} assists · rating ${r1(s.r)} · MOTM ${s.m}`]]) : null,
+    facts([['🌍 Career', c?.gp ? `${c.gp} games · ${c.g} goals · ${c.a} assists · rating ${r1(c.r)}` : null], ['📈 Last 5', recent.length ? `${recent.map((r) => `${dot(r)} ${r1(r)}`).join('  ')}  → newest` : null]]),
+    footer('Updates every 10 min · career covers every club'),
+    buttons([{ label: 'Full profile', url: `${site}players/${encodeURIComponent(p.k)}.html` }]),
+  ] });
 }
+
 export { ChatRoom } from './chatroom.js'; // P6.3b live chat rooms (Durable Object)
 export { ClubRoom } from './clubroom.js'; // BE0 live rooms (Locker/Dugout/Studio broadcast)
 export { HubRoom } from './hubroom.js'; // BE8 Hub live presence/waves (Durable Object)

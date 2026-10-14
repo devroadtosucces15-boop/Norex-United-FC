@@ -1,6 +1,7 @@
 // Wave 8: P3.3 Discord RSVP buttons + reminders, P7.4 more bot commands, P3.4 lineup builder, P2.4 platform account linking.
 import { call, env, login, mockDiscord, siteJson, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
+import { plainText, isV2 } from '../bot/ui.js';
 import { eventReminders, FORMATIONS } from '../bot/events.js';
 import { t, tt, done } from './lib.mjs';
 
@@ -114,11 +115,11 @@ const logged = sqlite.prepare("SELECT m.status, m.by_id, p.player, p.goals FROM 
 t('P7.4 /rush log → pending result with me as the player', /manager confirms/.test(rl.data.content) && logged.status === 'pending' && logged.player === pk.k && logged.goals === 2 && logged.by_id === '500');
 t('P7.4 /rush log uses the Hub checks (goals > score refused)', /more than our/.test((await slash('rush', [{ type: 1, name: 'log', options: [{ name: 'opponent', value: 'X FC' }, { name: 'for', value: 1 }, { name: 'against', value: 0 }, { name: 'goals', value: 3 }] }])).data.content));
 const me = await slash('me');
-t('P7.4 /me: my player card, only for me', me.data.flags === 64 && me.data.embeds[0].title.includes(pk.n));
+t('P7.4 /me: my player card (design-system panel), only for me', (me.data.flags & 64) === 64 && isV2(me.data) && plainText(me.data).includes(pk.n) && /MY PLAYER CARD/.test(plainText(me.data)));
 t('P7.4 /me without a claim → how to claim', /claim yours/.test((await slash('me', undefined, '501')).data.content));
 sqlite.prepare("UPDATE rush_matches SET status = 'confirmed' WHERE opponent = 'Rush FC'").run();
 t('P7.4 /leaderboard mode:rush from confirmed logs', /Rush – Top scorers/.test((await slash('leaderboard', [{ name: 'mode', value: 'rush' }, { name: 'stat', value: 'goals' }])).data.embeds[0].title));
-t('P7.4 /leaderboard mode:league = the EA leaderboard', !!(await slash('leaderboard', [{ name: 'mode', value: 'league' }, { name: 'stat', value: 'goals' }])).data.embeds?.[0]?.title);
+t('P7.4 /leaderboard mode:league = the EA leaderboard', /## Top scorers/.test(plainText((await slash('leaderboard', [{ name: 'mode', value: 'league' }, { name: 'stat', value: 'goals' }])).data)));
 
 // ================= P7.5 =================
 setFlags({ awards: 'members' });

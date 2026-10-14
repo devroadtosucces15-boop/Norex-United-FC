@@ -79,7 +79,7 @@ export async function playButton(i, env, who) {
 }
 
 // ---------- P7.4 commands ----------
-// helpers from worker.js: load(file) → site JSON, playerEmbed(p) → the /player card, top(stat) → the /top reply
+// helpers from worker.js: load(file) → site JSON, playerMessage(p) → the /player card (design system), top(stat) → the /top reply
 export async function memberCommand(i, env, who, site, h) {
   const name = i.data.name, opts = Object.fromEntries(flatOptions(i.data.options).map((o) => [o.name, o.value]));
   if (!env.DB) return say('⚠️ The member database is not connected.');
@@ -136,8 +136,8 @@ export async function memberCommand(i, env, who, site, h) {
     if (!claim) return say(`🪪 You haven’t got a verified player yet – claim yours in the Squad Hub: ${site}members.html`);
     const p = (await h.load('players')).find((x) => x.k === claim.player);
     if (!p) return say('🙈 Your player is hidden from the site or not in the latest data yet.');
-    const card = h.playerEmbed(p);
-    return { type: 4, data: { embeds: [{ ...card, footer: { text: 'Only you can see this · full dashboard: Squad Hub → 📊 My stats' } }], flags: 64 } };
+    const msg = await h.playerMessage(p, { eyebrow: 'My player card' });
+    return { type: 4, data: { ...msg, flags: msg.flags | 64 } }; // only you see it
   }
   if (name === 'leaderboard') {
     const stat = opts.stat ?? 'goals';

@@ -1,4 +1,5 @@
 // P7.2 "Show my match" (select menu + My match button on results) and P2.5 Verified role sync (+ /syncroles).
+import { plainText } from '../bot/ui.js';
 import { call, DB, env, login, siteJson } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { matchComponents } from '../bot/matchcard.js';
@@ -70,7 +71,9 @@ await tt('player not in that match → friendly note', async () => (await pick(a
 await tt('unknown / old match → link to the match page', async () => (await pick(as('111'), line.k, '1')).d.data.content.includes('matches/1.html'));
 await tt('/last: owner gets the menu, members do not (flag owner)', async () => {
   const o = (await send({ type: 2, ...as('111'), data: { name: 'last' } })).d.data, p = (await send({ type: 2, ...as('500'), data: { name: 'last' } })).d.data;
-  return o.components?.[0]?.components[0].custom_id === `norex:mm:${club.matches[0].id}` && !p.components && !!p.embeds;
+  const ids = (d) => JSON.stringify(d.components ?? []).match(/"custom_id":"[^"]+"/g) ?? [];
+  // the menu now sits inside the design-system panel (bot/ui.js); members get the same panel without it
+  return ids(o).includes(`"custom_id":"norex:mm:${club.matches[0].id}"`) && !ids(p).some((x) => x.includes('norex:mm')) && /##/.test(plainText(p));
 });
 setFlags({ discordMatch: 'members' });
 await tt('flag members: plain member can use the menu', async () => !!(await pick(as('500'), line.k)).d.data.embeds);
