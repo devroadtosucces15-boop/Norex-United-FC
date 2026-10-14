@@ -70,11 +70,25 @@ Until then the web side can build against the shapes below with sample data.
 
 ## Bot-side work in flight
 
-- **PR #17** – server tools: leave/join alerts, welcome posts, `/purge`, `/tag`, `/remind`, ping-role buttons.
+- **PR #17** (merged) – server tools: leave/join alerts, welcome posts, `/purge`, `/tag`, `/remind`, ping-role buttons.
 - **PR #18** (stacked on #17) – bot design system: every Discord message in the site's look, plus drawn PNG cards
   (`scripts/cards.mjs` → `site/cards/*.png` + `site/api/cards.json`) made after each site build.
 - **PR #20** (stacked on #18) – the member commands and match-night posts on the design system.
 - **PR #22** (stacked on #20) – `/host` (schedule a session or friendly in one command), `/panel` (manager approvals in
   Discord), faces everywhere, `GET /api/manager/queue`.
+
+All of the above (#17–#27) is on `main`: #17 merged directly, the rest landed together through #29 (see the next section for why).
+
+## Stacked PRs: merge from the top down
+
+When PR B is stacked on PR A (B's base is A's branch), merging B only adds it to A's branch. If A has already
+been merged, B shows as "merged" on GitHub but never reaches `main`. This happened to #18–#27 and they had to be
+recovered with #29.
+
+- Open a stacked PR with its base set to the branch below it, and say so in the description ("stacked on #N").
+- Before merging anything in a stack, retarget the PR to `main` (change its base in GitHub) or merge the **top** of the
+  stack into the one below it first, then merge the bottom into `main` last.
+- After merging, check that the work is really on `main`: `git branch -r --contains <tip>` should list `origin/main`.
+- Delete a stack's branches only once that check passes.
 
 Next on the bot side: the rest of the commands on the design system, then features 1–4 above, then music.
