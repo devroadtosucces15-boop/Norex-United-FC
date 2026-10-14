@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-14T03:30:33.079Z",
+ "fetchedAt": "2026-10-14T03:40:32.275Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -222,42 +222,6 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "CGM Splash",
-   "gamesPlayed": "38",
-   "winRate": "65",
-   "goals": "5",
-   "assists": "12",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "22",
-   "passesMade": "400",
-   "passSuccessRate": "78",
-   "ratingAve": "7.4",
-   "tacklesMade": "47",
-   "tackleSuccessRate": "51",
-   "proName": "J. Olvera",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "178",
-   "proNationality": "83",
-   "proOverall": "79",
-   "proOverallStr": "79",
-   "manOfTheMatch": "3",
-   "redCards": "1",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "1",
    "favoritePosition": "midfielder"
   },
   {
@@ -982,7 +946,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 11,
+  "midfielder": 10,
   "goalkeeper": 0,
   "forward": 4,
   "defender": 7
@@ -1029,17 +993,6 @@
    "assists": "21",
    "manOfTheMatch": "0",
    "ratingAve": "7.3",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "CGM Splash",
-   "proPos": "14",
-   "gamesPlayed": "224",
-   "goals": "79",
-   "assists": "96",
-   "manOfTheMatch": "24",
-   "ratingAve": "7.6",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
