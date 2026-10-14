@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-14T04:50:33.547Z",
+ "fetchedAt": "2026-10-14T04:57:28.447Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -225,42 +225,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "GOAT_CR7_96",
-   "gamesPlayed": "25",
-   "winRate": "72",
-   "goals": "20",
-   "assists": "21",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "58",
-   "passesMade": "245",
-   "passSuccessRate": "67",
-   "ratingAve": "7.8",
-   "tacklesMade": "12",
-   "tackleSuccessRate": "50",
-   "proName": "Mohsen Ageel",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "166",
-   "proNationality": "162",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "1",
-   "prevGoals10": "1",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "CaptainFluffyCat",
    "gamesPlayed": "48",
    "winRate": "50",
@@ -403,42 +367,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "ShaunTk3",
-   "gamesPlayed": "3",
-   "winRate": "100",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "7",
-   "passSuccessRate": "87",
-   "ratingAve": "4.0",
-   "tacklesMade": "1",
-   "tackleSuccessRate": "100",
-   "proName": "N. LOOK",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "182",
-   "proNationality": "140",
-   "proOverall": "79",
-   "proOverallStr": "79",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "Scosmort",
@@ -694,9 +622,9 @@
   }
  ],
  "positionCount": {
-  "midfielder": 7,
+  "midfielder": 6,
   "goalkeeper": 0,
-  "forward": 3,
+  "forward": 2,
   "defender": 6
  },
  "career": [
@@ -743,17 +671,6 @@
    "ratingAve": "7.1",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "GOAT_CR7_96",
-   "proPos": "25",
-   "gamesPlayed": "120",
-   "goals": "131",
-   "assists": "112",
-   "manOfTheMatch": "16",
-   "ratingAve": "8.0",
-   "prevGoals": "1",
-   "favoritePosition": "forward"
   },
   {
    "name": "CaptainFluffyCat",
@@ -809,17 +726,6 @@
    "ratingAve": "7.2",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "ShaunTk3",
-   "proPos": "14",
-   "gamesPlayed": "3",
-   "goals": "0",
-   "assists": "0",
-   "manOfTheMatch": "0",
-   "ratingAve": "4.0",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "Scosmort",
