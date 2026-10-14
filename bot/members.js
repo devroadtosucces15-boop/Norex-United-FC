@@ -10,6 +10,7 @@
 // Data saved by the first (KV-only) version is copied into D1 once, on the first request after the switch.
 // Who may do what: bot/roles.js (can(user, action)).
 
+import { panelCounts } from './panel.js';
 import { getLive } from './live.js';
 import { gameChanges, gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
@@ -54,6 +55,10 @@ import { awardPoints, pointsRoute } from './points.js';
 import { myAvatarCard } from './avatarcard.js';
 import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
 import { healthRoute } from './health.js';
+import { jailCount, triviaPoints } from './fun.js';
+import { discoveriesRoute } from './discoveries.js';
+import { watchlistRoute } from './watchlist.js';
+import { memberLiveRoute } from './memberlive.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -551,6 +556,9 @@ export async function currentRole(env, me, request) {
 }
 
 // ---------- API ----------
+// Any /api route, called as `me` from inside the Worker – the Discord manager panel (bot/panel.js) decides claims, cards,
+// Rush results, requests and ideas through the exact same code (checks, logs, notifications) as the Squad Hub.
+export const apiAs = (p, method, body, me, env, loadSite) => route(p, method, body ?? {}, me, env, loadSite, new URL(`https://bot.invalid${p}`));
 async function route(p, method, body, me, env, loadSite, url) {
   if (!can(me, 'hub.use')) return fail('Members only.', 403);
   if (p === '/api/me' && method === 'GET') {
@@ -565,6 +573,10 @@ async function route(p, method, body, me, env, loadSite, url) {
     return json({ user, claim, profile: profileOut(profile) ?? null });
   }
 
+  if (p === '/api/manager/queue' && method === 'GET') { // what's waiting for a decision – the same counts as Discord's /panel (for the owner's floating button badge)
+    if (!can(me, 'portal.view')) return fail('Managers only.', 403);
+    return json({ ...(await panelCounts(env, me)), at: Date.now() });
+  }
   if (p === '/api/insights/ask' && method === 'POST') { // BE9 – follow-up question, answered only from the stored fact pack
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
     return json(await statAskRoute(env, me, body));
@@ -625,8 +637,10 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (p === '/api/member' && method === 'GET') { // P2.1 – hover cards + member profile pages
     if (!flagOn(env, me, 'profiles')) return fail('Not available yet.', 404);
     if (!can(me, 'profiles.view')) return fail('Members only.', 403);
-    const card = await memberCard(env, me, String(url.searchParams.get('u') || me.u).slice(0, 24));
-    return card ? json(card) : fail('Member not found', 404);
+    const uid = String(url.searchParams.get('u') || me.u).slice(0, 24);
+    const card = await memberCard(env, me, uid);
+    if (!card) return fail('Member not found', 404);
+    return json(flagOn(env, me, 'fun') ? { ...card, fun: { jail: await jailCount(env, uid), trivia: await triviaPoints(env, uid), birthday: card.profile?.birthday ?? '' } } : card); // fun stats for the profile (bot/fun.js)
   }
 
   if (p === '/api/avatarcard' && method === 'GET') { // P11.5 – web half of the AI club card made by /avatarcard in Discord
@@ -725,6 +739,12 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (kno) return kno;
   const evt = await eventsRoute(p, method, body, me, env, log, loadSite, url); // P3.1 events · P3.2 RSVPs · P3.7 match night
   if (evt) return evt;
+  const mlr = await memberLiveRoute(p, method, me, env); // members' own streams (the club's is /api/live)
+  if (mlr) return mlr;
+  const wlr = await watchlistRoute(p, method, body, me, env, url); // watch list: videos by topic, useful
+  if (wlr) return wlr;
+  const dsc = await discoveriesRoute(p, method, body, me, env); // member tips a manager approved
+  if (dsc) return dsc;
   const lkr = await lockerRoute(p, method, me, env, loadSite); // BE2 Locker Room: next event + vote + unread + achievements, one call
   if (lkr) return lkr;
   const crd = await cardsRoute(p, method, body, me, env, log); // Card Studio: templates, premium unlocks

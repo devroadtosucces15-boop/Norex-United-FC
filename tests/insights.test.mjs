@@ -1,8 +1,9 @@
 // Club Intelligence: /insights (server + club analysis), the weekly cron report DMed to the owner, and the pure analysis.
 import { env, siteJson, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
-import { analyse, insightsCron, insightsNow, reportEmbeds } from '../bot/insights.js';
+import { analyse, insightsCron, insightsNow, reportMessages } from '../bot/insights.js';
 import { t, tt, done } from './lib.mjs';
+import { plainText, isV2 } from '../bot/ui.js';
 
 const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
 env.DISCORD_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', kp.publicKey)).toString('hex');
@@ -93,8 +94,8 @@ await tt('manager while flag is owner-only → locked', async () => /Managers on
 await tt('owner → deferred private reply, then the report is patched in', async () => {
   const r = await send(slash('111'));
   await settle();
-  const e = replies.at(-1)?.embeds ?? [];
-  return r.d.type === 5 && r.d.data.flags === 64 && /Club Intelligence/.test(e[0]?.title) && e.length === 5;
+  const [first, detail] = replies.slice(-2);
+  return r.d.type === 5 && (r.d.data.flags & 64) === 64 && isV2(r.d.data) && /Club Intelligence/.test(plainText(first)) && /The detail/.test(plainText(detail)) && (detail.flags & 64) === 64;
 });
 const report = meta('insights');
 t('report saved in meta + one trend point', report?.overall >= 0 && report.overall <= 100 && meta('insights_hist')?.length === 1);
@@ -108,13 +109,13 @@ t('recs: urgent first (10-day wait)', report.recs[0].sev === 1 && /waited \*\*10
 t('recs: silent channel, unused roles, verification, rules, missing access', /#old-news/.test(recText) && /roles nobody has/.test(recText) && /Verification level/.test(recText) && /Rules channel/.test(recText) && /#staff-room/.test(recText));
 t('recs: good news for fast decisions', report.recs.at(-1).sev === 4 && /within 3 h/.test(report.recs.at(-1).text));
 t('history: 6 months, joins per month', report.history.length === 6 && report.history.at(-1).joins >= 1);
-const e = replies.at(-1).embeds;
-t('embeds fit Discord limits', JSON.stringify(e).length <= 6000 && e.every((x) => (x.fields ?? []).every((f) => f.value.length <= 1024 && f.name.length <= 256)));
+const pair = replies.slice(-2);
+t('both report messages fit the 4000-character panel limit', pair.length === 2 && pair.every((m) => plainText(m).length <= 4000));
 
 await tt('second run within 10 minutes reuses the report (no Discord reads)', async () => {
   const n = calls.length;
   await send(slash('111')); await settle();
-  return calls.slice(n).every((c) => c.startsWith('PATCH /webhooks'));
+  return calls.slice(n).every((c) => /^(PATCH|POST) \/webhooks/.test(c));
 });
 
 await tt('Server Members Intent off → report still built, with a setup tip first', async () => {
@@ -139,7 +140,7 @@ await tt('cron: Monday → start, read channels, DM the owner', async () => {
   const t0 = monday(10);
   const steps = [];
   for (let i = 0; i < 5 && steps.at(-1) !== 'sent'; i++) steps.push(await insightsCron(env, load, t0 + i * 6e5));
-  return steps[0] === 'started' && steps.includes('reading') && steps.at(-1) === 'sent' && dms.length === 1 && /weekly Club Intelligence/.test(dms[0].content) && dms[0].embeds.length === 5;
+  return steps[0] === 'started' && steps.includes('reading') && steps.at(-1) === 'sent' && dms.length === 2 && /weekly Club Intelligence/.test(plainText(dms[0])) && dms.every(isV2);
 });
 await tt('cron: only once a week', async () => (await insightsCron(env, load, monday(11))) === null && meta('insights_job') === null);
 
@@ -149,6 +150,6 @@ const db = { users: [], claims: [], requests: [], trials: [], rush: [], avail: [
 const r2 = analyse({ job, db, club, players, now: NOW, prev: { at: NOW - 7 * DAY, key: { overall: 10, members: 25 }, scores: { server: 10 } } });
 t('analyse: works without the member list or any club activity', r2.scores.server >= 0 && r2.admin.resp === null && r2.site.adoption === 0);
 t('analyse: events in use but none upcoming → schedule tip; DMs blocked tip', r2.recs.some((x) => /No match night/.test(x.text)) && r2.recs.some((x) => /block DMs/.test(x.text)));
-t('analyse: trend vs last week in the embeds', /▲/.test(reportEmbeds(r2, 'https://x/')[0].title) && /vs /.test(reportEmbeds(r2)[0].footer.text));
+t('analyse: trend vs last week in the embeds', /▲/.test(plainText(reportMessages(r2, 'https://x/')[0])) && /vs /.test(plainText(reportMessages(r2)[0])));
 
 done();

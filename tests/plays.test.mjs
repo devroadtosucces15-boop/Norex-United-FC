@@ -1,5 +1,6 @@
 // Tactics Studio + Playbook (redesign BE1): plays as a versioned document (pieces/steps/drawings/quiz) in
 // R2, assignment + learned state, quiz scored server-side.
+import { plainText } from '../bot/ui.js';
 import { call, env, login } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, done } from './lib.mjs';
@@ -85,8 +86,8 @@ t('member cannot share', (await call(member, `/api/plays/${id}/discord`, { chann
 
 const shared = await call(manager, `/api/plays/${id}/discord`, { channel: '70001' });
 const post = dcPosts.at(-1);
-t('manager shares the play as a card', shared.s === 200 && shared.d.discord?.channel === '70001' && post.embeds[0].title.includes('Corner routine'));
-const btns = post.components[0].components;
+t('manager shares the play as a card', shared.s === 200 && shared.d.discord?.channel === '70001' && plainText(post).includes('Corner routine') && JSON.stringify(post.components).includes('norex:play:'));
+const btns = post.components.find((c) => c.type === 17).components.find((c) => c.type === 1).components;
 t('card carries a Learned it button + an Open in Studio link', btns[0].custom_id === `norex:play:${id}:learned` && btns[0].style === 3 && btns[1].style === 5 && btns[1].url.includes(`tactics.html#play${id}`));
 t('bad channel id refused', (await call(manager, `/api/plays/${id}/discord`, { channel: 'abc' })).d.error === 'Pick a channel.');
 
@@ -102,10 +103,10 @@ async function press(custom_id, id2 = '903') {
   return res.json();
 }
 const pressed = await press(`norex:play:${id}:learned`);
-t('pressing the button marks it learned, ephemerally', pressed.type === 4 && pressed.data.flags === 64 && /Marked as learned/.test(pressed.data.content));
+t('pressing the button marks it learned, ephemerally', pressed.type === 4 && (pressed.data.flags & 64) === 64 && /Marked as learned/.test(plainText(pressed.data)));
 t('…and it sticks (visible in the manager\'s assigned list)', (await call(manager, `/api/plays/${id}`)).d.assigned.some((a) => a.user_id === '903' && a.learned === 1));
 setFlags({ tactics: 'off' });
-t('button refuses when the flag is off', /not switched on/.test((await press(`norex:play:${id}:learned`)).data.content));
+t('button refuses when the flag is off', /not switched on/.test(plainText((await press(`norex:play:${id}:learned`)).data)));
 setFlags({ tactics: 'members' });
 globalThis.fetch = realFetch;
 

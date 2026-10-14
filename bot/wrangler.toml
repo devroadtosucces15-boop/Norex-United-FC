@@ -7,6 +7,7 @@ crons = ["*/10 * * * *", "* * * * *"] # every 10 min: site update + checks; ever
 
 [vars]
 SITE_URL = "https://devroadtosucces15-boop.github.io/Norex-United-FC/"
+PUBLIC_URL = "https://norex-bot.norexunited.workers.dev" # this Worker – Card Studio cards are served from /media/ here (bot/faces.js)
 GITHUB_REPO = "devroadtosucces15-boop/Norex-United-FC"
 DISCORD_APP_ID = "1553967740543569970"
 DISCORD_PUBLIC_KEY = "25181955eefb8efef9009dc5688490b496b2f889cd9fda5bd8ecd4ac8ec680b6"

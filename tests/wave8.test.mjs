@@ -1,6 +1,9 @@
 // Wave 8: P3.3 Discord RSVP buttons + reminders, P7.4 more bot commands, P3.4 lineup builder, P2.4 platform account linking.
 import { call, env, login, mockDiscord, siteJson, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
+import { plainText, isV2 } from '../bot/ui.js';
+const txt = (m) => plainText(m); // every bot message is a design-system panel now – its text, flattened
+const btnsOf = (m) => { const out = []; const walk = (c) => { if (!c || typeof c !== 'object') return; if (Array.isArray(c)) return c.forEach(walk); if (c.type === 2) out.push(c); walk(c.components); walk(c.accessory); }; walk(m?.components); return out; };
 import { eventReminders, FORMATIONS } from '../bot/events.js';
 import { t, tt, done } from './lib.mjs';
 
@@ -45,22 +48,22 @@ const day = (d) => new Date(Date.now() + d * 86400e3).toISOString().slice(0, 10)
 // ================= P3.3 =================
 const made = await call(mgr, '/api/events', { type: 'league', date: day(3), time: '20:00', tz: 'UTC', duration: 120, needs: { GK: 1, players: 6 }, remind: 'mention', discord: { channel: '70001' } });
 const evId = made.d.id, post = posts.at(-1);
-const btns = post.components[0].components;
+const btns = btnsOf(post);
 t('P3.3 event post carries ✅ ❔ ❌ buttons + a Squad Hub link', btns.filter((b) => b.custom_id).map((b) => b.custom_id).join() === `norex:ev:${evId}:yes,norex:ev:${evId}:maybe,norex:ev:${evId}:no` && btns.some((b) => b.style === 5));
-t('P3.3 post shows answers + what is still needed', post.embeds[0].fields[0].name === 'Answers' && /6 more players/.test(post.embeds[0].fields[1]?.value ?? '') && /1 GK/.test(post.embeds[0].fields[1].value));
+t('P3.3 post shows answers + what is still needed', isV2(post) && /\*\*Answers\*\*/.test(txt(post)) && /Still needed\*\* 6 more players · 1 GK/.test(txt(post)));
 t('reminder setting stored', made.d.events.find((e) => e.id === evId).remind === 'mention');
 const clicked = await button(`norex:ev:${evId}:yes`, '502');
-t('P3.3 button answers privately (ephemeral) with the event', clicked.type === 4 && clicked.data.flags === 64 && /You’re in/.test(clicked.data.content));
+t('P3.3 button answers privately (ephemeral) with the event', clicked.type === 4 && (clicked.data.flags & 64) === 64 && /You’re in/.test(txt(clicked.data)));
 t('P3.3 the answer lands in the same table as the Hub (Discord nickname)', sqlite.prepare('SELECT status, name FROM event_rsvps WHERE event_id = ? AND user_id = ?').get(evId, '502')?.name === 'Nick 502');
-t('P3.3 the Discord post is refreshed with the new counts', edits.some((x) => x.msg === 'm1' && /✅ 1/.test(x.embeds[0].fields[0].value)));
+t('P3.3 the Discord post is refreshed with the new counts', edits.some((x) => x.msg === 'm1' && /✅ 1/.test(txt(x))));
 await call(member, '/api/events/rsvp', { ids: [evId], status: 'maybe' });
-t('P3.3 a Hub answer refreshes the Discord post too', /❔ 1/.test(edits.at(-1).embeds[0].fields[0].value));
-t('P3.3 unknown answer refused', /Unknown answer/.test((await button(`norex:ev:${evId}:perhaps`)).data.content));
-t('P3.3 closed event → friendly message', /over or was cancelled/.test((await button('norex:ev:999999:yes')).data.content));
+t('P3.3 a Hub answer refreshes the Discord post too', /❔ 1/.test(txt(edits.at(-1))));
+t('P3.3 unknown answer refused', /Unknown answer/.test(txt((await button(`norex:ev:${evId}:perhaps`)).data)));
+t('P3.3 closed event → friendly message', /over or was cancelled/.test(txt((await button('norex:ev:999999:yes')).data)));
 setFlags({ events: 'owner' });
-t('P3.3 buttons respect the events flag', /not switched on/.test((await button(`norex:ev:${evId}:yes`)).data.content));
+t('P3.3 buttons respect the events flag', /not switched on/.test(txt((await button(`norex:ev:${evId}:yes`)).data)));
 setFlags({ events: 'public', discordRsvp: 'owner' });
-t('P3.3 … and the discordRsvp flag (owner-only → members get pointed to the Hub)', /Squad Hub/.test((await button(`norex:ev:${evId}:yes`)).data.content));
+t('P3.3 … and the discordRsvp flag (owner-only → members get pointed to the Hub)', /Squad Hub/.test(txt((await button(`norex:ev:${evId}:yes`)).data)));
 setFlags({ discordRsvp: 'off' });
 t('P3.3 flag off → no buttons on new posts, no reminders', (await call(mgr, '/api/events', { type: 'training', date: day(5), time: '19:00', tz: 'UTC', discord: { channel: '70001' } })).s === 200 && !posts.at(-1).components[0].components.some((b) => b.custom_id) && (await eventReminders(env)).sent === 0);
 setFlags({ discordRsvp: 'members' });
@@ -72,9 +75,9 @@ const e2 = (await call(mgr, '/api/events', { type: 'league', date: soon2.toISOSt
 await call(member, '/api/events/rsvp', { ids: [e24], status: 'yes' });
 const before = posts.length;
 const r1 = await eventReminders(env);
-const reminder = posts.slice(before).find((p) => /Tomorrow/.test(p.content ?? ''));
+const reminder = posts.slice(before).find((p) => /Tomorrow/.test(txt(p)));
 t('P3.3 cron sends both reminders once', r1.sent === 2 && (await eventReminders(env)).sent === 0);
-t('P3.3 T-24h reminder in the channel @mentions only members who haven’t answered', reminder && reminder.allowed_mentions.users.includes('501') && !reminder.allowed_mentions.users.includes('500') && /<@501>/.test(reminder.content) && reminder.components[0].components.length === 4);
+t('P3.3 T-24h reminder in the channel @mentions only members who haven’t answered', reminder && reminder.allowed_mentions.users.includes('501') && !reminder.allowed_mentions.users.includes('500') && /<@501>/.test(reminder.components[0].content) && btnsOf(reminder).length === 4);
 t('P3.3 T-2h nudge by bell / DM for dm mode', (await call(member2, '/api/notify')).d.items.some((n) => n.type === 'event' && /Starting soon/.test(n.title) && n.link === `members.html#schedule-${e2}`));
 t('P3.3 reminder times stored', sqlite.prepare('SELECT remind24_at, remind2_at FROM events WHERE id = ?').get(e2).remind2_at > 0 && sqlite.prepare('SELECT remind24_at FROM events WHERE id = ?').get(e24).remind24_at > 0);
 await call(mgr, '/api/events', { id: e24, type: 'rush', date: day(2), time: '20:00', tz: 'UTC' });
@@ -88,13 +91,13 @@ t('P3.4 one player per slot', (await call(mgr, '/api/events/lineup', { id: evId,
 t('P3.4 members cannot build lineups', (await call(member, '/api/events/lineup', { id: evId, formation: '4-3-3', lineup: { 500: 'ST' } })).s === 403);
 const draft = await call(mgr, '/api/events/lineup', { id: evId, formation: '4-3-3', lineup: { 500: 'LCM', 501: 'GK' } });
 t('P3.4 save a draft (not published, nobody told)', draft.s === 200 && draft.d.events.find((e) => e.id === evId).formation === '4-3-3' && !draft.d.events.find((e) => e.id === evId).lineupAt && !draft.d.notified);
-t('P3.4 /lineup says not published yet', /No lineup published/.test((await slash('lineup')).data.content ?? ''));
+t('P3.4 /lineup says not published yet', /No lineup published/.test(txt((await slash('lineup')).data)));
 const pub = await call(mgr, '/api/events/lineup', { id: evId, formation: '4-3-3', lineup: { 500: 'LCM', 501: 'GK' }, publish: true });
 t('P3.4 publish → each starter told their position', pub.d.notified === 2 && (await call(member, '/api/notify')).d.items.some((n) => /You’re starting at CM/.test(n.title)));
-t('P3.4 publish → lineup posted in the event’s Discord channel', /Lineup/.test(posts.at(-1).embeds[0].title) && /`CM  ` Player One/.test(posts.at(-1).embeds[0].description) && posts.at(-1).channel === '70001');
+t('P3.4 publish → lineup posted in the event’s Discord channel', /Lineup/.test(plainText(posts.at(-1))) && /`CM  ` Player One/.test(plainText(posts.at(-1))) && posts.at(-1).channel === '70001');
 t('P3.4 lineup players who never answered still come with their name', pub.d.events.find((e) => e.id === evId).lineupPeople['501']?.n === 'Player Two');
 t('P3.4 profile shows “starting at”', (await call(member2, '/api/member?u=500')).d.starting?.pos === 'CM');
-t('P3.4 /lineup shows the published lineup', /GK/.test((await slash('lineup')).data.embeds?.[0]?.description ?? ''));
+t('P3.4 /lineup shows the published lineup', /GK/.test(txt((await slash('lineup')).data)));
 const tpl = await call(mgr, '/api/events/templates', { name: 'Friday A', formation: '4-3-3', slots: { GK: '501', LCM: '500', XX: '1' } });
 t('P3.4 save a template (bad slots dropped)', tpl.s === 200 && tpl.d.templates.length === 1 && tpl.d.templates[0].slots.GK === '501' && !('XX' in tpl.d.templates[0].slots));
 t('P3.4 same name overwrites', (await call(mgr, '/api/events/templates', { name: 'friday a', formation: '4-4-2', slots: {} })).d.templates.length === 1);
@@ -103,29 +106,30 @@ t('P3.4 quick list (no formation) still works', (await call(mgr, '/api/events/li
 
 // ================= P7.4 =================
 const sched = await slash('schedule');
-t('P7.4 /schedule: next event with answer buttons + the ones after', sched.type === 4 && sched.data.embeds.length >= 1 && sched.data.components[0].components.some((b) => /^norex:ev:\d+:yes$/.test(b.custom_id ?? '')));
+t('P7.4 /schedule: next event with answer buttons + the ones after', sched.type === 4 && isV2(sched.data) && btnsOf(sched.data).some((b) => /^norex:ev:\d+:yes$/.test(b.custom_id ?? '')));
 const av = await slash('availability');
-t('P7.4 /availability: in / maybe / out lists', av.data.embeds[0].fields.some((f) => /^✅ In/.test(f.name)) && av.data.embeds[0].fields.some((f) => /^❔ Maybe/.test(f.name)));
-t('P7.4 /rush log needs a verified player', /Claim your player/.test((await slash('rush', [{ type: 1, name: 'log', options: [{ name: 'opponent', value: 'Rush FC' }, { name: 'for', value: 3 }, { name: 'against', value: 1 }] }])).data.content));
+const faceRows = JSON.stringify(av.data).match(/"type":9/g)?.length ?? 0;
+t('P7.4 /availability: who’s in as rows with faces, then maybe / out lists', /❔ Maybe \(/.test(txt(av.data)) && /❌ Out \(/.test(txt(av.data)) && (faceRows > 0 || !/✅ [1-9]/.test(txt(av.data))));
+t('P7.4 /rush log needs a verified player', /Claim your player/.test(txt((await slash('rush', [{ type: 1, name: 'log', options: [{ name: 'opponent', value: 'Rush FC' }, { name: 'for', value: 3 }, { name: 'against', value: 1 }] }])).data)));
 const pk = siteJson('players').find((p) => p.home);
 sqlite.prepare("INSERT OR REPLACE INTO claims (user_id, player, player_name, status, at, name) VALUES ('500', ?, ?, 'approved', ?, 'Player One')").run(pk.k, pk.n, Date.now());
 const rl = await slash('rush', [{ type: 1, name: 'log', options: [{ name: 'opponent', value: 'Rush FC' }, { name: 'for', value: 3 }, { name: 'against', value: 1 }, { name: 'goals', value: 2 }] }]);
 const logged = sqlite.prepare("SELECT m.status, m.by_id, p.player, p.goals FROM rush_matches m JOIN rush_players p ON p.match_id = m.id WHERE m.opponent = 'Rush FC' ORDER BY m.id DESC").get();
-t('P7.4 /rush log → pending result with me as the player', /manager confirms/.test(rl.data.content) && logged.status === 'pending' && logged.player === pk.k && logged.goals === 2 && logged.by_id === '500');
-t('P7.4 /rush log uses the Hub checks (goals > score refused)', /more than our/.test((await slash('rush', [{ type: 1, name: 'log', options: [{ name: 'opponent', value: 'X FC' }, { name: 'for', value: 1 }, { name: 'against', value: 0 }, { name: 'goals', value: 3 }] }])).data.content));
+t('P7.4 /rush log → pending result with me as the player', /manager confirms/.test(txt(rl.data)) && logged.status === 'pending' && logged.player === pk.k && logged.goals === 2 && logged.by_id === '500');
+t('P7.4 /rush log uses the Hub checks (goals > score refused)', /more than our/.test(txt((await slash('rush', [{ type: 1, name: 'log', options: [{ name: 'opponent', value: 'X FC' }, { name: 'for', value: 1 }, { name: 'against', value: 0 }, { name: 'goals', value: 3 }] }])).data)));
 const me = await slash('me');
-t('P7.4 /me: my player card, only for me', me.data.flags === 64 && me.data.embeds[0].title.includes(pk.n));
-t('P7.4 /me without a claim → how to claim', /claim yours/.test((await slash('me', undefined, '501')).data.content));
+t('P7.4 /me: my player card (design-system panel), only for me', (me.data.flags & 64) === 64 && isV2(me.data) && plainText(me.data).includes(pk.n) && /MY PLAYER CARD/.test(plainText(me.data)));
+t('P7.4 /me without a claim → how to claim', /claim yours/.test(txt((await slash('me', undefined, '501')).data)));
 sqlite.prepare("UPDATE rush_matches SET status = 'confirmed' WHERE opponent = 'Rush FC'").run();
-t('P7.4 /leaderboard mode:rush from confirmed logs', /Rush – Top scorers/.test((await slash('leaderboard', [{ name: 'mode', value: 'rush' }, { name: 'stat', value: 'goals' }])).data.embeds[0].title));
-t('P7.4 /leaderboard mode:league = the EA leaderboard', !!(await slash('leaderboard', [{ name: 'mode', value: 'league' }, { name: 'stat', value: 'goals' }])).data.embeds?.[0]?.title);
+t('P7.4 /leaderboard mode:rush from confirmed logs', /RUSH LEADERBOARD[\s\S]*Top scorers/.test(txt((await slash('leaderboard', [{ name: 'mode', value: 'rush' }, { name: 'stat', value: 'goals' }])).data)));
+t('P7.4 /leaderboard mode:league = the EA leaderboard', /## Top scorers/.test(plainText((await slash('leaderboard', [{ name: 'mode', value: 'league' }, { name: 'stat', value: 'goals' }])).data)));
 
 // ================= P7.5 =================
 setFlags({ awards: 'members' });
 const aw = await slash('awards');
-t('P7.5 /awards: this week\'s ballot + last winners', /Weekly awards/.test(aw.data.embeds[0].title) && /Vote now/.test(aw.data.embeds[0].fields[0].name) && /Decided automatically/.test(aw.data.embeds[0].fields[1].name));
+t('P7.5 /awards: this week\'s ballot + last winners', /Weekly awards/.test(txt(aw.data)) && /VOTE NOW/.test(txt(aw.data)) && /DECIDED AUTOMATICALLY/.test(txt(aw.data)));
 setFlags({ awards: 'off' });
-t('P7.5 /awards off → friendly message', /not switched on/.test((await slash('awards')).data.content));
+t('P7.5 /awards off → friendly message', /not switched on/.test(txt((await slash('awards')).data)));
 setFlags({ awards: 'members' });
 
 // ================= P2.4 =================
@@ -138,7 +142,7 @@ const cl = await call(p8, '/api/claim', { player: psnKey });
 t('P2.4 claim with a matching verified PSN is approved straight away', cl.d.auto === 'verified PSN' && cl.d.claim.status === 'approved' && /Auto/.test(cl.d.claim.decidedBy));
 t('P2.4 the member is told', (await call(p8, '/api/notify')).d.items.some((n) => n.type === 'claim' && /matched your verified PSN/.test(n.title)));
 const prof = await slash('profile', [{ name: 'member', value: '800' }]);
-t('P7.4 /profile shows the verified player + ✓ platforms', /Plays as/.test(prof.data.embeds[0].description) && /PSN: \*\*.+\*\* ✓/.test(prof.data.embeds[0].fields.find((f) => /Platforms/.test(f.name)).value));
+t('P7.4 /profile shows the verified player + ✓ platforms', /Plays as/.test(txt(prof.data)) && /PSN: \*\*.+\*\* ✓/.test(txt(prof.data)));
 Object.assign(mockDiscord, { connections: [{ type: 'playstation', name: 'SomeoneElse', verified: true }] });
 const p9 = await login('900', [], 'Other');
 t('P2.4 no match → normal pending claim for a manager', (await call(p9, '/api/claim', { player: siteJson('players').filter((p) => p.home)[2].k })).d.claim.status === 'pending');

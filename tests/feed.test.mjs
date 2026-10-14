@@ -134,6 +134,6 @@ globalThis.fetch = async (url, init = {}) => {
 };
 t('share: members can’t', (await call(m1, '/api/feed/share', { id: pub1.id, channel: '70001' })).s === 403);
 const shared = (await call(mgr, '/api/feed/share', { id: pub1.id, channel: '70001' })).d.post;
-t('share: manager posts it to Discord and the post remembers it', shares.length === 1 && shares[0].channel === '70001' && shares[0].embeds[0].url.includes(`feed.html#p${pub1.id}`) && !!shared.shared);
+t('share: manager posts it to Discord and the post remembers it', shares.length === 1 && shares[0].channel === '70001' && JSON.stringify(shares[0].components).includes(`feed.html#p${pub1.id}`) && !!shared.shared);
 
 done();

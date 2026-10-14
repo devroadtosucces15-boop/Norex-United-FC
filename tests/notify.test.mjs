@@ -2,6 +2,7 @@
 import { call, env, login, siteJson, W } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import { deliverDMs, notifyCron, overridesKey } from '../bot/notify.js';
+import { plainText, images } from '../bot/ui.js';
 
 const owner = await login('111', [], 'Founder 👑');
 const mgr = await login('600', ['mgr'], 'Coach');
@@ -60,7 +61,7 @@ t('dmReady false without the bot token', (await list(member)).dmReady === false)
 env.DISCORD_BOT_TOKEN = 'bot-token';
 r = await call(member, '/api/notify/test', {});
 t('test notification → DM sent', r.s === 200 && r.d.test.sent === 1 && dms.at(-1).to === '500');
-t('DM embed: title, site link button, no pings', dms.at(-1).embeds[0].title.includes('Test notification') && dms.at(-1).components[0].components[0].url.endsWith('members.html#alerts') && dms.at(-1).allowed_mentions.parse.length === 0);
+t('DM embed: title, site link button, no pings', plainText(dms.at(-1)).includes('Test notification') && JSON.stringify(dms.at(-1).components).includes('members.html#alerts') && dms.at(-1).allowed_mentions.parse.length === 0);
 r = await call(member2, '/api/notify/test', {});
 t('closed DMs → failed + dmBlocked hint', r.d.test.failed === 1 && r.d.dmBlocked === true);
 await call(member, '/api/notify/test', {}); await call(member, '/api/notify/test', {});
@@ -107,7 +108,7 @@ const { sqlite } = await import('./mock.mjs');
 sqlite.prepare("UPDATE notifications SET dm_at = ?, at = ? WHERE type = 'announce'").run(Date.now() - 2 * 864e5, Date.now() - 2 * 864e5);
 dms.length = 0;
 r = await notifyCron(env);
-const remindedTo = new Set(dms.filter((x) => x.embeds[0].title.includes('Reminder')).map((x) => x.to));
+const remindedTo = new Set(dms.filter((x) => plainText(x).includes('Reminder')).map((x) => x.to));
 t('cron re-DMs unacknowledged rules', r.reminded >= 1 && remindedTo.has('600') && remindedTo.has('111'));
 t('no reminder for someone who acknowledged', !remindedTo.has('500'));
 for (let i = 0; i < 4; i++) { sqlite.prepare("UPDATE notifications SET dm_at = ? WHERE type = 'announce'").run(Date.now() - 2 * 864e5); await notifyCron(env); }
@@ -143,7 +144,7 @@ await call(stagePlayer, '/api/notify/prefs', { prefs: { trialstage: 'dm' } });
 await call(mgr, '/api/trials/update', { id: stageCard.id, status: 'played' });
 t('BE4 opt-in: player hears the stage change', (await stageItems(stagePlayer)).some((n) => n.title === 'Trial update: Stage_Lad has played a trial session'));
 await deliverDMs(env);
-t('BE4 opt-in dm: the player gets a Discord DM', dms.some((x) => x.to === '502' && x.embeds[0].title.includes('Trial update: Stage_Lad')));
+t('BE4 opt-in dm: the player gets a Discord DM', dms.some((x) => x.to === '502' && plainText(x).includes('Trial update: Stage_Lad')));
 await call(stagePlayer, '/api/notify/prefs', { prefs: { trialstage: 'off' } });
 const beforeOff = (await stageItems(stagePlayer)).length;
 await call(mgr, '/api/trials/update', { id: stageCard.id, status: 'trialling' });

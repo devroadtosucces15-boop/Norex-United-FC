@@ -12,8 +12,10 @@
 //   GET/POST /api/playstyle        Play Style per mode + section (flag `playStyle`, members read, managers edit)
 //   GET/POST /api/suggestions (+ /vote /decide /remove)   suggestion box (flag `suggestions`)
 // Text is "markdown-lite" (headings, bold, italics, lists, links, image + video lines) rendered by web/docs-md.js.
+import { IS_V2 } from './ui.js';
 import { can, flagOn } from './roles.js';
 import { notify, notifyManagers, notifyMembers, safely } from './notify.js';
+import { message, header, text, cards, footer, buttons } from './ui.js';
 
 const DAY = 86400e3;
 const AREAS = { announce: 'Announcement', requirements: 'Requirement', rules: 'Rule', faq: 'FAQ', glossary: 'Glossary term' };
@@ -152,11 +154,16 @@ export async function postEmbed(env, channel, role, message) {
   if (!/^\d{5,25}$/.test(channel)) return { ok: false, error: 'Pick a channel.' };
   if (role && !/^\d{1,25}$/.test(role)) return { ok: false, error: 'Pick a role to ping, or none.' };
   const everyone = role && role === env.DISCORD_GUILD_ID;
-  const msg = {
-    ...message,
-    content: role ? `${everyone ? '@everyone' : `<@&${role}>`}${message.content ? ` ${message.content}` : ''}` : message.content,
-    allowed_mentions: role ? (everyone ? { parse: ['everyone'] } : { roles: [role] }) : { parse: [] },
-  };
+  const tag = role ? (everyone ? '@everyone' : `<@&${role}>`) : '';
+  const allowed = role ? (everyone ? { parse: ['everyone'] } : { roles: [role] }) : { parse: [] };
+  let msg;
+  if (message.flags & IS_V2) { // design-system message (bot/ui.js): the ping goes in the line above the panel, there's no `content`
+    const comps = [...message.components];
+    if (tag) comps[0]?.type === 10 ? (comps[0] = { ...comps[0], content: `${tag} ${comps[0].content}` }) : comps.unshift({ type: 10, content: tag });
+    msg = { ...message, components: comps, allowed_mentions: { ...allowed, users: message.allowed_mentions?.users ?? [] } };
+  } else {
+    msg = { ...message, content: tag ? `${tag}${message.content ? ` ${message.content}` : ''}` : message.content, allowed_mentions: allowed };
+  }
   let r;
   try { r = await discord(env, `/channels/${channel}/messages`, { method: 'POST', body: JSON.stringify(msg) }); } catch (e) { return { ok: false, error: e.message }; }
   const res = await r.json().catch(() => ({}));
@@ -180,13 +187,26 @@ function docEmbed(env, me, d) {
     components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Open on the site', url: `${site}docs.html#d-${d.id}` }] }],
   };
 }
+// The design-system panel for the same item: this is what actually gets posted.
+function docMessage(env, me, d) {
+  const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
+  const img = d.body.split('\n').map((l) => l.trim()).find((l) => IMG_LINE.test(l));
+  const icon = { announce: '📣', rules: '📜', requirements: '✅', faq: '❓', glossary: '📖', playstyle: '🧠' }[d.area] ?? '📣';
+  return message({ blocks: [
+    header({ eyebrow: 'NOREX UNITED · Club announcements', title: `${icon} ${d.title}`.slice(0, 250), sub: `Posted by ${me.n}` }),
+    text(plain(d.body, true)),
+    img ? cards(img) : null,
+    footer(`Updated <t:${Math.floor((d.edited_at ?? d.at) / 1000)}:R>`),
+    buttons([{ label: 'Open on the site', url: `${site}docs.html#d-${d.id}` }]),
+  ] });
+}
 // Posts one docs item as a rich embed. Never throws – returns { ok } or { ok: false, error } for the UI.
 async function postDoc(env, me, id, target, log) {
   if (!can(me, 'announce.discord')) return { ok: false, error: 'Managers only.' };
   const channel = String(target.channel ?? ''), role = String(target.role ?? '');
   const d = await one(env, 'SELECT * FROM docs WHERE id = ? AND removed_at IS NULL', id);
   if (!d) return { ok: false, error: 'That item no longer exists.' };
-  const res = await postEmbed(env, channel, role, docEmbed(env, me, d));
+  const res = await postEmbed(env, channel, role, docMessage(env, me, d));
   if (!res.ok) return res;
   await run(env, 'UPDATE docs SET discord_channel = ?, discord_msg = ?, discord_at = ? WHERE id = ?', channel, res.id ?? null, Date.now(), d.id);
   await log(env, me, 'doc-discord', `${d.title}${role ? ` · ping ${role === env.DISCORD_GUILD_ID ? '@everyone' : 'role'}` : ''}`);
@@ -249,7 +269,7 @@ async function docsRoute(p, method, body, me, env, log, url) {
       if (!d) return fail('That item no longer exists.', 404);
       const role = String(body.role ?? '');
       const everyone = role && role === env.DISCORD_GUILD_ID;
-      return json({ preview: { ...docEmbed(env, me, d), ping: role ? (everyone ? '@everyone' : 'a role') : null } });
+      return json({ preview: { ...docEmbed(env, me, d), message: docMessage(env, me, d), ping: role ? (everyone ? '@everyone' : 'a role') : null } });
     }
     const res = await postDoc(env, me, Number(body.id) || 0, body, log);
     return res.ok ? json({ discord: res, ...(await docsList(env, me)) }) : fail(res.error, 400);

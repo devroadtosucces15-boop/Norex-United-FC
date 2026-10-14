@@ -122,6 +122,47 @@ export const COMMANDS = [
   },
   { name: 'motm', description: 'Current Man of the Match vote standing for the latest match' },
   { name: 'history', description: 'Our record against a past opponent', options: [{ type: STRING, name: 'opponent', description: "Opponent club name (or part of it)", required: true }] },
+  // Fun for members (bot/fun.js)
+  {
+    name: 'jail', description: 'Lock a mate up for a daft offence (just for fun)',
+    options: [
+      { type: USER, name: 'member', description: 'Who is going down', required: true },
+      { type: STRING, name: 'reason', description: 'The charge (leave empty for a random one)', max_length: 140 },
+      { type: INTEGER, name: 'minutes', description: 'Sentence in minutes (default 30)', min_value: 1, max_value: 120 },
+    ],
+  },
+  {
+    name: 'wheel', description: 'Spin a wheel to pick one option',
+    options: [
+      { type: STRING, name: 'options', description: 'Separate with commas, e.g. Jez, Kruger, Davey', required: true, max_length: 400 },
+      { type: STRING, name: 'question', description: 'What the wheel decides, e.g. Who plays GK tonight', max_length: 100 },
+    ],
+  },
+  {
+    name: 'share', description: 'Share something worth knowing with the club – a manager approves it first',
+    options: [
+      { type: STRING, name: 'title', description: 'A short headline', required: true, min_length: 4, max_length: 100 },
+      { type: STRING, name: 'tip', description: 'What should we know?', required: true, min_length: 10, max_length: 600 },
+      { type: STRING, name: 'link', description: 'A link to back it up (optional)', max_length: 300 },
+    ],
+  },
+  { name: 'discoveries', description: 'Managers: shared tips waiting for approval', default_member_permissions: String(1 << 28), contexts: [0] },
+  {
+    name: 'watch', description: 'The latest Pro Clubs videos the squad follows',
+    options: [{ type: STRING, name: 'topic', description: 'Only one topic', choices: ['builds', 'tactics', 'tips', 'meta', 'news'].map((v) => ({ name: v, value: v })) }],
+  },
+  {
+    name: 'watchlist', description: 'Managers: the YouTube creators the watch list follows', default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: SUB, name: 'add', description: 'Follow a creator', options: [
+        { type: STRING, name: 'channel', description: 'Their channel ID (starts with UC…) or channel link', required: true, max_length: 120 },
+        { type: STRING, name: 'name', description: 'How to show their name', max_length: 60 },
+      ] },
+      { type: SUB, name: 'remove', description: 'Stop following a creator', options: [{ type: STRING, name: 'channel', description: 'Channel ID or the name shown in /watchlist list', required: true, max_length: 120 }] },
+      { type: SUB, name: 'list', description: 'Who we follow' },
+    ],
+  },
+  { name: 'trivia', description: 'A football trivia question – points for right answers', options: [{ type: SUB, name: 'play', description: 'Ask a question' }, { type: SUB, name: 'board', description: 'The trivia table' }] },
   // Server tools – the Miona / Carl-bot replacements (bot/servertools.js)
   {
     name: 'setup', description: 'Managers: leave/join alerts, welcome posts and the ping-role panel',
@@ -172,6 +213,27 @@ export const COMMANDS = [
     ],
   },
   { name: 'reminders', description: 'Your waiting reminders – cancel any of them', contexts: [0] },
+  // /panel – the manager panel: everything waiting for a decision, approve / reject in place (bot/panel.js)
+  { name: 'panel', description: 'Managers: everything waiting for a decision – approve or reject right here', default_member_permissions: String(1 << 28), contexts: [0] },
+  // /host – schedule + post a session or friendly in one go (bot/host.js); times show in everyone's own zone
+  {
+    name: 'host', description: 'Managers: schedule a League or Rush session or friendly – posted with sign-up buttons',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: STRING, name: 'mode', description: 'League or Rush', required: true, choices: [{ value: 'league', name: '🏆 League' }, { value: 'rush', name: '⚡ Rush' }] },
+      { type: STRING, name: 'kind', description: 'A session for us, or a friendly against another club', required: true, choices: [{ value: 'session', name: 'Session' }, { value: 'friendly', name: 'Friendly' }] },
+      { type: STRING, name: 'when', description: 'tonight 9pm · tomorrow 20:30 · fri 8:30pm · oct 14 9pm · in 2h', required: true, max_length: 40 },
+      { type: STRING, name: 'timezone', description: 'Your time zone (default: the one in your Squad Hub profile)', autocomplete: true, max_length: 64 },
+      { type: INTEGER, name: 'players', description: 'Players needed (default 11 League, 5 Rush)', min_value: 1, max_value: 30 },
+      { type: INTEGER, name: 'length', description: 'How long, in minutes (default 120 League, 90 Rush)', min_value: 15, max_value: 600 },
+      { type: STRING, name: 'opponent', description: 'Friendly: the club we play', max_length: 60 },
+      { type: STRING, name: 'notes', description: 'Lobby info, kit, anything else', max_length: 500 },
+      { type: BOOLEAN, name: 'weekly', description: 'Repeat every week for 4 weeks' },
+      { type: CHANNEL, name: 'channel', description: 'Where to post it (default: here)', channel_types: [0, 5] },
+      { type: ROLE, name: 'ping', description: 'Role to ping (default: the Match night / Rush LFG ping role)' },
+      { type: BOOLEAN, name: 'silent', description: 'Post without pinging anyone' },
+    ],
+  },
 ];
 
 // ---------- per-command settings → what Discord is told ----------
