@@ -12,7 +12,7 @@
 //   /awards        this week's ballot + last week's winners                                            (flag `awards`)
 // Replies that are about "me" are ephemeral (flags 64) – only the person who asked sees them.
 import { can, flagOn } from './roles.js';
-import { answerEvents, EVENT_TYPES, eventMessage } from './events.js';
+import { answerEvents, EVENT_TYPES, eventPost } from './events.js';
 import { currentRole, log, submitRush, voteView, votesByMatch } from './members.js';
 import { state as awardsState } from './awards.js';
 import { CATEGORIES } from './points.js';
@@ -21,11 +21,13 @@ import { knowledgeRoute } from './docs.js';
 import { notifyRouteAll } from './notify.js';
 import { trialsState } from './trials.js';
 import { markLearned } from './plays.js';
-import { message, panel, reply, notice, header, text, sep, facts, label as heading, footer, buttons } from './ui.js';
+import { message, panel, reply, notice, header, text, sep, facts, side, thumb, label as heading, footer, buttons } from './ui.js';
+import { faceOf, playerFaces } from './faces.js';
+import { hostCommand } from './host.js';
 
 // P11.16: quick one-line wrappers around features that already exist – reuse the same route
 // functions the Squad Hub calls, rather than duplicating their validation/limits here.
-export const MEMBER_COMMANDS = new Set(['schedule', 'availability', 'lineup', 'rush', 'me', 'leaderboard', 'profile', 'awards', 'points', 'nextevent', 'feedback', 'suggest', 'announce', 'trial', 'motm', 'history']);
+export const MEMBER_COMMANDS = new Set(['schedule', 'availability', 'lineup', 'rush', 'me', 'leaderboard', 'profile', 'awards', 'points', 'nextevent', 'feedback', 'suggest', 'announce', 'trial', 'motm', 'history', 'host']);
 const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results);
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const parse = (s, fb) => { try { return JSON.parse(s) ?? fb; } catch { return fb; } };
@@ -40,7 +42,7 @@ const flag = (c) => (/^[A-Z]{2}$/.test(c ?? '') ? String.fromCodePoint(...[...c]
 // The Discord user behind an interaction as a member ("me" in the member API): id, display name, avatar URL,
 // role – elevated to 'claimed' when they have an approved player claim, same as a web session (P11.16: some
 // wrapped routes, e.g. feedback.send, gate on 'claimed' and Discord's own roles never reach that tier).
-async function memberOf(i, who, env) {
+export async function memberOf(i, who, env) {
   const u = i.member?.user ?? i.user ?? {};
   const avatar = i.member?.avatar && env.DISCORD_GUILD_ID ? `https://cdn.discordapp.com/guilds/${env.DISCORD_GUILD_ID}/users/${u.id}/avatars/${i.member.avatar}.png?size=128`
     : u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=128` : null;
@@ -87,15 +89,19 @@ export async function memberCommand(i, env, who, site, h) {
   const name = i.data.name, opts = Object.fromEntries(flatOptions(i.data.options).map((o) => [o.name, o.value]));
   if (!env.DB) return say('⚠️ The member database is not connected.');
   const me = await memberOf(i, who, env);
-  const events = ['schedule', 'availability', 'lineup'].includes(name);
+  const events = ['schedule', 'availability', 'lineup', 'host'].includes(name);
   if (events && !flagOn(env, who, 'events')) return say('🔒 The schedule is not switched on yet.');
 
+  if (name === 'host') {
+    if (!can(who, 'events.manage')) return say('🔒 Only managers can host sessions – ask one, or suggest a time in the chat.');
+    return hostCommand(i, env, me, opts, { log, loadSite: h.load });
+  }
   if (name === 'schedule') {
     const list = await nextEvents(env, 6);
     if (!list.length) return say('🗓️ Nothing scheduled yet – managers add match nights in the Squad Hub.', { flags: 0 });
     const counts = await all(env, `SELECT event_id, status, COUNT(*) AS n FROM event_rsvps WHERE event_id IN (${list.map(() => '?').join(',')}) GROUP BY event_id, status`, ...list.map((e) => e.id));
     const c = (id, st) => counts.find((x) => x.event_id === id && x.status === st)?.n ?? 0;
-    const first = eventMessage(env, list[0], await rsvpsOf(env, list[0].id), 'Next up · ');
+    const first = await eventPost(env, list[0], await rsvpsOf(env, list[0].id), 'Next up · ');
     const rest = list.slice(1).map((e) => `${EVENT_TYPES[e.type][0]} **${label(e)}** · ${ts(e.start)} (${ts(e.start, 'R')}) · ✅ ${c(e.id, 'yes')} ❔ ${c(e.id, 'maybe')}`);
     // the next event's full panel, then a second panel listing what comes after it
     if (rest.length) first.components.push(panel({ blocks: [heading('After that'), text(rest.join('\n')), buttons([{ label: 'Full schedule', url: `${site}members.html#schedule` }])] }));
@@ -106,7 +112,7 @@ export async function memberCommand(i, env, who, site, h) {
     const e = (name === 'lineup' ? await one(env, "SELECT * FROM events WHERE status = 'scheduled' AND lineup_at IS NOT NULL AND start + duration * 60000 > ? ORDER BY start LIMIT 1", Date.now()) : null) ?? (await nextEvents(env, 1))[0];
     if (!e) return say('🗓️ Nothing scheduled yet.', { flags: 0 });
     const rsvps = await rsvpsOf(env, e.id);
-    if (name === 'availability') return reply(eventMessage(env, e, rsvps, '', { who: true }));
+    if (name === 'availability') return reply(await eventPost(env, e, rsvps, '', { who: true }));
     const lineup = parse(e.lineup, {});
     const ids = Object.keys(lineup);
     if (!ids.length || !e.lineup_at) return say(`🧩 No lineup published yet for **${label(e)}** (${ts(e.start, 'R')}).`, { flags: 0 });
@@ -169,7 +175,7 @@ export async function memberCommand(i, env, who, site, h) {
     const plats = PLAT.map(([k, l]) => { const v = verified[k]?.name ?? ids[k]; return v ? `${l}: **${v}**${verified[k] ? ' ✓' : ''}` : ''; }).filter(Boolean);
     const pos = (s) => parse(s, []).join(' / ');
     return reply(message({ blocks: [
-      header({ eyebrow: brand('Member profile'), title: `${u.name}${prof?.country ? ` ${flag(prof.country)}` : ''}`, sub: claim ? `Plays as ${claim.player_name} ✅` : 'No verified player yet', thumb: u.avatar || null }),
+      header({ eyebrow: brand('Member profile'), title: `${u.name}${prof?.country ? ` ${flag(prof.country)}` : ''}`, sub: claim ? `Plays as ${claim.player_name} ✅` : 'No verified player yet', thumb: await faceOf(env, id) }),
       prof?.bio ? text(`> ${String(prof.bio).slice(0, 300).replace(/\n/g, '\n> ')}`) : null,
       facts([['🏆 League', pos(prof?.positions)], ['⚡ Rush', pos(prof?.rush_positions)], ['🎮 Platforms', plats.length ? plats.join(' · ') : null]]),
       footer(Object.keys(verified).length ? '✓ = platform verified through Discord' : 'Full profile on the site'),
@@ -188,7 +194,11 @@ export async function memberCommand(i, env, who, site, h) {
       heading('Vote now'), text(ballot),
       heading('Decided automatically'), text(auto || '–'),
       sep(),
-      heading(`Last week’s winners${st.last ? ` · ${st.last.week}` : ''}`), text(last),
+      heading(`Last week’s winners${st.last ? ` · ${st.last.week}` : ''}`),
+      ...(await (async () => { // each winner on a row with their face, when the player has been claimed
+        const ws = st.last?.winners ?? [], faces = await playerFaces(env, ws.map((w) => w.k));
+        return ws.length && faces.size ? ws.slice(0, 6).map((w) => (faces.get(String(w.k)) ? side(`${w.icon} **${w.name}**\n${w.n}`, thumb(faces.get(String(w.k)))) : text(`${w.icon} **${w.name}** — ${w.n || '–'}`))) : [text(last)];
+      })()),
       buttons([{ label: 'Vote in the Squad Hub', url: `${site}members.html#awards` }]),
     ] }));
   }
@@ -202,7 +212,7 @@ export async function memberCommand(i, env, who, site, h) {
     const ICON = { match: '🎮', attendance: '🗓️', community: '💬', behaviour: '🤝' };
     const LABEL = { match: 'Match performance', attendance: 'Attendance', community: 'Community', behaviour: 'Behaviour' };
     return reply(message({ ephemeral: true, accent: 'gold', blocks: [
-      header({ eyebrow: brand('My points'), title: `⭐ ${u?.points ?? 0} points`, sub: `#${rank} on the club leaderboard`, thumb: me.a }),
+      header({ eyebrow: brand('My points'), title: `⭐ ${u?.points ?? 0} points`, sub: `#${rank} on the club leaderboard`, thumb: await faceOf(env, me.u) }),
       facts(CATEGORIES.map((c) => [`${ICON[c]} ${LABEL[c]}`, `${by[c] ?? 0}`])),
       footer('Only you can see this'),
       buttons([{ label: 'Full breakdown', url: `${site}members.html#points` }]),
@@ -212,7 +222,7 @@ export async function memberCommand(i, env, who, site, h) {
     if (!flagOn(env, who, 'events')) return say('🔒 The schedule is not switched on yet.');
     const [e] = await nextEvents(env, 1);
     if (!e) return say('🗓️ Nothing scheduled yet.', { flags: 0 });
-    return reply(eventMessage(env, e, await rsvpsOf(env, e.id), 'Next up · '));
+    return reply(await eventPost(env, e, await rsvpsOf(env, e.id), 'Next up · '));
   }
   if (name === 'feedback') {
     if (!flagOn(env, who, 'feedback')) return say('🔒 Feedback is not switched on yet.');
@@ -259,7 +269,12 @@ export async function memberCommand(i, env, who, site, h) {
     const board = ranked.length ? ranked.map(([k, n], i) => `${['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`} **${nameOf(k)}** — ${n} vote${n === 1 ? '' : 's'}`).join('\n') : 'No votes yet.';
     return reply(message({ accent: 'gold', blocks: [
       header({ eyebrow: brand('Man of the match vote'), title: `🌟 MOTM · vs ${m.opp}`, sub: `${m.gf}–${m.ga} · ${ranked.reduce((t, [, n]) => t + n, 0)} votes so far`, thumb: m.oppCrest || null }),
-      text(board),
+      ...(await (async () => { // the top 3 on rows with their faces, the rest as a list
+        const faces = await playerFaces(env, ranked.slice(0, 3).map(([k]) => k));
+        if (!ranked.length || !faces.size) return [text(board)];
+        const rows = ranked.slice(0, 3).map(([k, n], i) => side(`${['🥇', '🥈', '🥉'][i]} **${nameOf(k)}**\n${n} vote${n === 1 ? '' : 's'}`, thumb(faces.get(String(k)))));
+        return [...rows, ranked.length > 3 ? text(ranked.slice(3).map(([k, n], i) => `${i + 4}. **${nameOf(k)}** — ${n}`).join('\n')) : null];
+      })()),
       buttons([{ label: 'Vote in the Squad Hub', url: `${site}members.html#vote` }, { label: 'Match report', url: m.url }]),
     ] }));
   }

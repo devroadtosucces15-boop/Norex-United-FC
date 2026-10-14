@@ -32,7 +32,9 @@ export function header({ eyebrow = BRAND, title, sub, thumb, size = 2 }) {
   return thumb ? { type: 9, components: [t], accessory: { type: 11, media: { url: thumb } } } : t;
 }
 // A section with a button (or picture) on the right of the text.
-export const side = (content, accessory) => ({ type: 9, components: [text(content)], accessory });
+export const side = (content, accessory) => (accessory ? { type: 9, components: [text(content)], accessory } : text(content)); // no picture → plain row
+// A small picture for the right-hand side of a row (a face, a crest).
+export const thumb = (url) => (url ? { type: 11, media: { url } } : null);
 // Drawn cards (or any pictures). Null when there's nothing to show, so callers can fall back to text.
 export function cards(...imgs) {
   const items = imgs.flat().filter(Boolean).map((i) => (typeof i === 'string' ? { media: { url: i } } : { media: { url: i.url }, description: i.alt ? clip(i.alt, 1000) : undefined }));

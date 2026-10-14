@@ -43,6 +43,8 @@ const sample = {
   burner: null, // managers only, deferred EA search + pick menus – tests/burners.test.mjs
   nextevent: null, feedback: null, suggest: null, announce: null, trial: null, motm: null, history: null, // P11.16 – need the member DB: tests/quickcommands.test.mjs
   setup: null, purge: null, tag: null, tags: null, remind: null, reminders: null, // server tools – need the member DB + Discord: tests/servertools.test.mjs
+  host: null, // managers, member DB + Discord – tests/host.test.mjs
+  panel: null, // managers, member DB – tests/panel.test.mjs
 };
 for (const name of Object.keys(sample)) {
   if (!registered.includes(name) || !sample[name]) continue;

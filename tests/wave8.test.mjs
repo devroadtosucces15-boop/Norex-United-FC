@@ -108,7 +108,8 @@ t('P3.4 quick list (no formation) still works', (await call(mgr, '/api/events/li
 const sched = await slash('schedule');
 t('P7.4 /schedule: next event with answer buttons + the ones after', sched.type === 4 && isV2(sched.data) && btnsOf(sched.data).some((b) => /^norex:ev:\d+:yes$/.test(b.custom_id ?? '')));
 const av = await slash('availability');
-t('P7.4 /availability: in / maybe / out lists', /✅ In \(/.test(txt(av.data)) && /❔ Maybe \(/.test(txt(av.data)));
+const faceRows = JSON.stringify(av.data).match(/"type":9/g)?.length ?? 0;
+t('P7.4 /availability: who’s in as rows with faces, then maybe / out lists', /❔ Maybe \(/.test(txt(av.data)) && /❌ Out \(/.test(txt(av.data)) && (faceRows > 0 || !/✅ [1-9]/.test(txt(av.data))));
 t('P7.4 /rush log needs a verified player', /Claim your player/.test(txt((await slash('rush', [{ type: 1, name: 'log', options: [{ name: 'opponent', value: 'Rush FC' }, { name: 'for', value: 3 }, { name: 'against', value: 1 }] }])).data)));
 const pk = siteJson('players').find((p) => p.home);
 sqlite.prepare("INSERT OR REPLACE INTO claims (user_id, player, player_name, status, at, name) VALUES ('500', ?, ?, 'approved', ?, 'Player One')").run(pk.k, pk.n, Date.now());
