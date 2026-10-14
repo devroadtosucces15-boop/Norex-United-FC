@@ -1,9 +1,9 @@
 {
-  "revision": "efa661ea46dba3f478544bc2bb5d28ef10ac4cd1",
-  "files": 729,
-  "imports": 437,
+  "revision": "c1f4e31e639f7059aba5955c7f1c03f3404e6c63",
+  "files": 767,
+  "imports": 443,
   "api_paths": 230,
-  "tables": 277,
+  "tables": 286,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -650,14 +650,17 @@
     {
       "path": "bot/commanddefs.js",
       "layer": "bot",
-      "lines": 143,
+      "lines": 193,
       "imports": [],
       "endpoints": [],
       "tables": [
+        "alerts",
+        "league",
         "members",
         "other",
         "people",
-        "the"
+        "the",
+        "this"
       ],
       "functions": [
         "buildRegistration",
@@ -2285,6 +2288,20 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0046_server_tools.sql",
+      "layer": "bot",
+      "lines": 27,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "alerts",
+        "guild_members",
+        "reminders",
+        "tags"
+      ],
+      "functions": []
+    },
+    {
       "path": "bot/monitor.js",
       "layer": "bot",
       "lines": 73,
@@ -2769,7 +2786,7 @@
     {
       "path": "bot/roles.js",
       "layer": "bot",
-      "lines": 179,
+      "lines": 183,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -2795,6 +2812,64 @@
         "sessionRole",
         "viewAsRole",
         "withFlagOverrides"
+      ]
+    },
+    {
+      "path": "bot/servertools.js",
+      "layer": "bot",
+      "lines": 385,
+      "imports": [
+        "./roles.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "1",
+        "SET",
+        "alerts",
+        "claims",
+        "guild_members",
+        "meta",
+        "posts",
+        "reminders",
+        "tags",
+        "worker"
+      ],
+      "functions": [
+        "avatarUrl",
+        "batch",
+        "discord",
+        "ensurePingRoles",
+        "eph",
+        "gamertag",
+        "getToolSettings",
+        "later",
+        "listMembers",
+        "memberName",
+        "memberWatch",
+        "opts",
+        "parseDuration",
+        "pingPanel",
+        "post",
+        "postMemberChanges",
+        "purge",
+        "remindCommand",
+        "remindersList",
+        "roleList",
+        "row",
+        "saveToolSettings",
+        "sendDueReminders",
+        "serverButton",
+        "serverCommand",
+        "setupCommand",
+        "since",
+        "snowTime",
+        "tagChoices",
+        "tagCommand",
+        "tagName",
+        "tagsCommand",
+        "unix",
+        "upsert",
+        "welcomeMessage"
       ]
     },
     {
@@ -3100,7 +3175,7 @@
     {
       "path": "bot/worker.js",
       "layer": "bot",
-      "lines": 542,
+      "lines": 551,
       "imports": [
         "./botcommands.js",
         "./members.js",
@@ -3129,12 +3204,14 @@
         "./hub.js",
         "./burners.js",
         "./cardstudio.js",
+        "./servertools.js",
         "./chatroom.js",
         "./clubroom.js",
         "./hubroom.js"
       ],
       "endpoints": [],
       "tables": [
+        "alerts",
         "archived",
         "claims",
         "every",
@@ -3174,7 +3251,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 119,
+      "lines": 120,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -3201,7 +3278,16 @@
     {
       "path": "data/burners/1479556.json",
       "layer": "data",
-      "lines": 1328,
+      "lines": 1093,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/burners/1601100.json",
+      "layer": "data",
+      "lines": 356,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -3210,7 +3296,7 @@
     {
       "path": "data/burners/index.json",
       "layer": "data",
-      "lines": 8,
+      "lines": 9,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4157,7 +4243,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1461,
+      "lines": 1179,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4564,7 +4650,7 @@
     {
       "path": "data/clubs/80869.json",
       "layer": "data",
-      "lines": 1884,
+      "lines": 1931,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4775,6 +4861,87 @@
       "tables": [
         "the"
       ],
+      "functions": []
+    },
+    {
+      "path": "data/matches/100028084370324.json",
+      "layer": "data",
+      "lines": 653,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/100118117410268.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/100190078310117.json",
+      "layer": "data",
+      "lines": 579,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/100776726040384.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/101060290130472.json",
+      "layer": "data",
+      "lines": 394,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/101110605240218.json",
+      "layer": "data",
+      "lines": 394,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/101180672700120.json",
+      "layer": "data",
+      "lines": 355,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/101280028480173.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/101430575540166.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
       "functions": []
     },
     {
@@ -7183,6 +7350,51 @@
       "functions": []
     },
     {
+      "path": "data/matches/96216872520431.json",
+      "layer": "data",
+      "lines": 764,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96216919860265.json",
+      "layer": "data",
+      "lines": 505,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96282622750317.json",
+      "layer": "data",
+      "lines": 762,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96300956940219.json",
+      "layer": "data",
+      "lines": 834,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96302710250394.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/96370109420226.json",
       "layer": "data",
       "lines": 466,
@@ -7192,9 +7404,180 @@
       "functions": []
     },
     {
+      "path": "data/matches/96394363310251.json",
+      "layer": "data",
+      "lines": 653,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96428313790252.json",
+      "layer": "data",
+      "lines": 838,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/96436111480326.json",
       "layer": "data",
       "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96460299490378.json",
+      "layer": "data",
+      "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96460562160394.json",
+      "layer": "data",
+      "lines": 912,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96494367780251.json",
+      "layer": "data",
+      "lines": 875,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96510185800059.json",
+      "layer": "data",
+      "lines": 836,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96562259750200.json",
+      "layer": "data",
+      "lines": 653,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96572358880222.json",
+      "layer": "data",
+      "lines": 801,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96584068290025.json",
+      "layer": "data",
+      "lines": 764,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96596089330361.json",
+      "layer": "data",
+      "lines": 653,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/96688039140306.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/99512992600184.json",
+      "layer": "data",
+      "lines": 579,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/99676736840009.json",
+      "layer": "data",
+      "lines": 505,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/99728580230412.json",
+      "layer": "data",
+      "lines": 579,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/99760412190437.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/99786808700418.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/99808619790130.json",
+      "layer": "data",
+      "lines": 764,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/99828335260175.json",
+      "layer": "data",
+      "lines": 725,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/99924342120304.json",
+      "layer": "data",
+      "lines": 838,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -7293,6 +7676,18 @@
         "several",
         "the",
         "you"
+      ],
+      "functions": []
+    },
+    {
+      "path": "data/updates/fc-27-launch-feedback-update.json",
+      "layer": "data",
+      "lines": 101,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "players",
+        "the"
       ],
       "functions": []
     },
@@ -8253,7 +8648,7 @@
     {
       "path": "tests/bot.test.mjs",
       "layer": "tests",
-      "lines": 56,
+      "lines": 57,
       "imports": [
         "node:fs",
         "./mock.mjs",
@@ -9782,6 +10177,42 @@
       ],
       "functions": [
         "publicList"
+      ]
+    },
+    {
+      "path": "tests/servertools.test.mjs",
+      "layer": "tests",
+      "lines": 194,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "./lib.mjs",
+        "../bot/servertools.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "alert",
+        "alerts",
+        "are",
+        "claims",
+        "guild_members",
+        "league",
+        "reminders",
+        "still",
+        "tags",
+        "the"
+      ],
+      "functions": [
+        "as",
+        "flush",
+        "idAt",
+        "lastPatch",
+        "mem",
+        "opt",
+        "posts",
+        "send",
+        "slash",
+        "sub"
       ]
     },
     {
@@ -13112,6 +13543,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/servertools.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/settings.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13304,6 +13740,11 @@
     {
       "source": "bot/worker.js",
       "target": "bot/cardstudio.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/servertools.js",
       "kind": "imports"
     },
     {
@@ -14319,6 +14760,26 @@
     {
       "source": "tests/rush.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/servertools.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/servertools.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/servertools.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/servertools.test.mjs",
+      "target": "bot/servertools.js",
       "kind": "imports"
     },
     {
