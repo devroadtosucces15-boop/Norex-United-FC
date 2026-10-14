@@ -1,9 +1,9 @@
 {
-  "revision": "c1f4e31e639f7059aba5955c7f1c03f3404e6c63",
-  "files": 767,
-  "imports": 443,
-  "api_paths": 230,
-  "tables": 286,
+  "revision": "d6352a5f278fab53499651114da29facea300c00",
+  "files": 789,
+  "imports": 559,
+  "api_paths": 237,
+  "tables": 308,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -63,13 +63,14 @@
     {
       "path": ".github/workflows/update.yml",
       "layer": ".github",
-      "lines": 117,
+      "lines": 125,
       "imports": [],
       "endpoints": [],
       "tables": [
         "EA",
         "failed",
         "site",
+        "the",
         "when"
       ],
       "functions": [
@@ -157,13 +158,14 @@
     {
       "path": "bot/awards.js",
       "layer": "bot",
-      "lines": 257,
+      "lines": 260,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./clubroom.js",
         "./docs.js",
-        "./settings.js"
+        "./settings.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/awards",
@@ -287,7 +289,7 @@
     {
       "path": "bot/botcmds.js",
       "layer": "bot",
-      "lines": 277,
+      "lines": 299,
       "imports": [
         "./roles.js",
         "./events.js",
@@ -298,7 +300,10 @@
         "./docs.js",
         "./notify.js",
         "./trials.js",
-        "./plays.js"
+        "./plays.js",
+        "./ui.js",
+        "./faces.js",
+        "./host.js"
       ],
       "endpoints": [
         "/api/feedback/send",
@@ -322,8 +327,9 @@
       "functions": [
         "SLOT_ORDER",
         "all",
-        "by",
+        "brand",
         "c",
+        "done",
         "eventButton",
         "flag",
         "flatOptions",
@@ -345,11 +351,12 @@
     {
       "path": "bot/botcommands.js",
       "layer": "bot",
-      "lines": 111,
+      "lines": 113,
       "imports": [
         "./roles.js",
         "./commanddefs.js",
-        "./docs.js"
+        "./docs.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/bot/commands",
@@ -410,11 +417,12 @@
     {
       "path": "bot/burners.js",
       "layer": "bot",
-      "lines": 377,
+      "lines": 374,
       "imports": [
         "./roles.js",
         "./clublookup.js",
-        "./burnerstats.js"
+        "./burnerstats.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/burners",
@@ -435,6 +443,8 @@
         "then"
       ],
       "functions": [
+        "BEAR",
+        "DEFER",
         "ago",
         "all",
         "burnerCommand",
@@ -445,6 +455,7 @@
         "burnersRoute",
         "crestOf",
         "dispatchUpdate",
+        "edit",
         "fail",
         "get",
         "json",
@@ -455,7 +466,9 @@
         "n",
         "noMatch",
         "one",
+        "panel",
         "pickerBody",
+        "plain",
         "recentBody",
         "recentOpponents",
         "record",
@@ -474,8 +487,10 @@
     {
       "path": "bot/burnerstats.js",
       "layer": "bot",
-      "lines": 147,
-      "imports": [],
+      "lines": 144,
+      "imports": [
+        "./ui.js"
+      ],
       "endpoints": [],
       "tables": [
         "NOREX",
@@ -491,7 +506,7 @@
         "num",
         "r1",
         "rec",
-        "reportEmbed",
+        "reportMessage",
         "sharedWithNorex",
         "slimBurnerMatch",
         "updateRoster"
@@ -650,7 +665,7 @@
     {
       "path": "bot/commanddefs.js",
       "layer": "bot",
-      "lines": 193,
+      "lines": 255,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -713,12 +728,55 @@
       ]
     },
     {
-      "path": "bot/docs.js",
+      "path": "bot/discoveries.js",
       "layer": "bot",
-      "lines": 369,
+      "lines": 162,
       "imports": [
         "./roles.js",
-        "./notify.js"
+        "./ui.js",
+        "./notify.js",
+        "./docs.js"
+      ],
+      "endpoints": [
+        "/api/discoveries",
+        "/api/discoveries/useful"
+      ],
+      "tables": [
+        "discoveries",
+        "discovery_useful",
+        "meta"
+      ],
+      "functions": [
+        "all",
+        "clean",
+        "cleanLink",
+        "decide",
+        "discoveriesRoute",
+        "discoveryButton",
+        "discoveryCommand",
+        "discoveryPanel",
+        "fail",
+        "json",
+        "one",
+        "queuePanel",
+        "queueRows",
+        "say",
+        "share",
+        "site",
+        "toggleUseful",
+        "upd",
+        "usefulCount"
+      ]
+    },
+    {
+      "path": "bot/docs.js",
+      "layer": "bot",
+      "lines": 389,
+      "imports": [
+        "./ui.js",
+        "./roles.js",
+        "./notify.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/docs",
@@ -758,6 +816,7 @@
         "discord",
         "discordTargets",
         "docEmbed",
+        "docMessage",
         "docOut",
         "docsList",
         "docsRoute",
@@ -799,13 +858,15 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 641,
+      "lines": 660,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./clubroom.js",
         "./profiles.js",
         "./docs.js",
+        "./ui.js",
+        "./faces.js",
         "./points.js",
         "./settings.js",
         "./lineuprec.js",
@@ -858,6 +919,7 @@
         "clean",
         "cleanText",
         "eventMessage",
+        "eventPost",
         "eventReminders",
         "eventsRoute",
         "fail",
@@ -869,6 +931,7 @@
         "lineupRoom",
         "lineupRoute",
         "lineupSocket",
+        "list",
         "listFor",
         "liveWindow",
         "load",
@@ -882,9 +945,11 @@
         "opt",
         "parse",
         "parts",
+        "patch",
         "pinnedPlays",
         "playerGrade",
         "playsRoute",
+        "posOf",
         "publicEvents",
         "pushLineup",
         "readEvent",
@@ -931,15 +996,41 @@
       ]
     },
     {
+      "path": "bot/faces.js",
+      "layer": "bot",
+      "lines": 44,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "a",
+        "card_requests",
+        "check",
+        "claims",
+        "guild_members",
+        "the",
+        "users"
+      ],
+      "functions": [
+        "defaultAvatar",
+        "faceOf",
+        "facesOf",
+        "marks",
+        "mediaBase",
+        "playerFaces",
+        "q"
+      ]
+    },
+    {
       "path": "bot/feed.js",
       "layer": "bot",
-      "lines": 285,
+      "lines": 284,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./docs.js",
         "./social.js",
-        "./media.js"
+        "./media.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/feed",
@@ -1025,6 +1116,63 @@
         "sentToday",
         "state",
         "unclean"
+      ]
+    },
+    {
+      "path": "bot/fun.js",
+      "layer": "bot",
+      "lines": 289,
+      "imports": [
+        "./roles.js",
+        "./ui.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "Real",
+        "SET",
+        "everyone",
+        "fun_jail",
+        "fun_trivia_answers",
+        "fun_trivia_q",
+        "fun_trivia_scores",
+        "fun_wheels",
+        "meta",
+        "profiles",
+        "the",
+        "three",
+        "two",
+        "users"
+      ],
+      "functions": [
+        "bail",
+        "birthdayCheck",
+        "birthdayPanel",
+        "birthdaysOn",
+        "clean",
+        "funButton",
+        "funCommand",
+        "jail",
+        "jailCount",
+        "jailPanel",
+        "key",
+        "monthStart",
+        "opts",
+        "ordinal",
+        "parseOptions",
+        "rapSheet",
+        "rows",
+        "say",
+        "shuffled",
+        "spin",
+        "trivia",
+        "triviaAnswer",
+        "triviaPanel",
+        "triviaPoints",
+        "ts",
+        "upd",
+        "userName",
+        "wheel",
+        "wheelPanel"
       ]
     },
     {
@@ -1132,14 +1280,43 @@
       ]
     },
     {
+      "path": "bot/host.js",
+      "layer": "bot",
+      "lines": 124,
+      "imports": [
+        "./events.js",
+        "./servertools.js",
+        "./ui.js"
+      ],
+      "endpoints": [
+        "/api/events"
+      ],
+      "tables": [
+        "botcmds",
+        "profiles",
+        "the"
+      ],
+      "functions": [
+        "addDays",
+        "hostBody",
+        "hostCommand",
+        "local",
+        "pad",
+        "parseWhen",
+        "say",
+        "zoneChoices"
+      ]
+    },
+    {
       "path": "bot/hotw.js",
       "layer": "bot",
-      "lines": 138,
+      "lines": 137,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./awards.js",
-        "./docs.js"
+        "./docs.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/hotw",
@@ -1226,9 +1403,10 @@
     {
       "path": "bot/hype.js",
       "layer": "bot",
-      "lines": 88,
+      "lines": 87,
       "imports": [
-        "./notify.js"
+        "./notify.js",
+        "./ui.js"
       ],
       "endpoints": [],
       "tables": [
@@ -1259,10 +1437,11 @@
     {
       "path": "bot/insights.js",
       "layer": "bot",
-      "lines": 439,
+      "lines": 462,
       "imports": [
         "./roles.js",
-        "./notify.js"
+        "./notify.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/intel",
@@ -1276,6 +1455,7 @@
         "claims",
         "events",
         "from",
+        "is",
         "last_message_id",
         "later",
         "link",
@@ -1293,6 +1473,7 @@
         "age",
         "analyse",
         "bar",
+        "body",
         "clamp",
         "cut",
         "dbFacts",
@@ -1318,12 +1499,13 @@
         "post",
         "readChannels",
         "rec",
-        "reportEmbeds",
+        "reportMessages",
         "rows",
         "score",
         "setMeta",
         "snowTs",
         "startJob",
+        "trim",
         "weekKey",
         "withActed"
       ]
@@ -1446,8 +1628,10 @@
     {
       "path": "bot/matchcard.js",
       "layer": "bot",
-      "lines": 96,
-      "imports": [],
+      "lines": 100,
+      "imports": [
+        "./ui.js"
+      ],
       "endpoints": [],
       "tables": [],
       "functions": [
@@ -1523,10 +1707,44 @@
       ]
     },
     {
+      "path": "bot/memberlive.js",
+      "layer": "bot",
+      "lines": 83,
+      "imports": [
+        "./roles.js",
+        "./live.js",
+        "./ui.js",
+        "./docs.js"
+      ],
+      "endpoints": [
+        "/api/live/members"
+      ],
+      "tables": [
+        "SET",
+        "member_live",
+        "meta",
+        "profiles",
+        "their",
+        "users"
+      ],
+      "functions": [
+        "all",
+        "fail",
+        "json",
+        "liveOf",
+        "livePanel",
+        "memberLiveCron",
+        "memberLiveRoute",
+        "one",
+        "page"
+      ]
+    },
+    {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1092,
+      "lines": 1112,
       "imports": [
+        "./panel.js",
         "./live.js",
         "./game.js",
         "./trials.js",
@@ -1571,6 +1789,10 @@
         "./avatarcard.js",
         "./roles.js",
         "./health.js",
+        "./fun.js",
+        "./discoveries.js",
+        "./watchlist.js",
+        "./memberlive.js",
         "));\n      return cors(env, d.error ? fail(d.error, d.status) : json(d));\n    }\n    const me = await unseal(env, (request.headers.get("
       ],
       "endpoints": [
@@ -1621,6 +1843,7 @@
         "/api/issues",
         "/api/live",
         "/api/locker/ws",
+        "/api/manager/queue",
         "/api/me",
         "/api/member",
         "/api/overrides",
@@ -1653,6 +1876,7 @@
         "doc_acks",
         "feedback",
         "flag_overrides",
+        "inside",
         "meta",
         "posts",
         "predictions",
@@ -1672,6 +1896,7 @@
         "addAvail",
         "addVote",
         "all",
+        "apiAs",
         "autoApprove",
         "availByDate",
         "b64url",
@@ -2302,6 +2527,68 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0047_fun.sql",
+      "layer": "bot",
+      "lines": 46,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "fun_jail",
+        "fun_trivia_answers",
+        "fun_trivia_q",
+        "fun_trivia_scores",
+        "fun_wheels"
+      ],
+      "functions": []
+    },
+    {
+      "path": "bot/migrations/0048_profile_fun.sql",
+      "layer": "bot",
+      "lines": 4,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "profiles"
+      ],
+      "functions": []
+    },
+    {
+      "path": "bot/migrations/0049_discoveries.sql",
+      "layer": "bot",
+      "lines": 21,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "discoveries",
+        "discovery_useful"
+      ],
+      "functions": []
+    },
+    {
+      "path": "bot/migrations/0050_watchlist.sql",
+      "layer": "bot",
+      "lines": 29,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "watch_creators",
+        "watch_useful",
+        "watch_videos"
+      ],
+      "functions": []
+    },
+    {
+      "path": "bot/migrations/0051_member_live.sql",
+      "layer": "bot",
+      "lines": 11,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "member_live"
+      ],
+      "functions": []
+    },
+    {
       "path": "bot/monitor.js",
       "layer": "bot",
       "lines": 73,
@@ -2320,11 +2607,12 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 420,
+      "lines": 419,
       "imports": [
         "./roles.js",
         "./clubroom.js",
-        "./webpush.js"
+        "./webpush.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/admin/requests",
@@ -2397,12 +2685,55 @@
       ]
     },
     {
+      "path": "bot/panel.js",
+      "layer": "bot",
+      "lines": 132,
+      "imports": [
+        "./roles.js",
+        "./members.js",
+        "./faces.js",
+        "./ui.js"
+      ],
+      "endpoints": [
+        "/api/admin/claims",
+        "/api/admin/reports",
+        "/api/admin/requests/decide",
+        "/api/cards/requests/decide",
+        "/api/rush/decide",
+        "/api/suggestions/decide"
+      ],
+      "tables": [
+        "card_requests",
+        "claims",
+        "requests",
+        "rush_matches",
+        "suggestions",
+        "the",
+        "this",
+        "users"
+      ],
+      "functions": [
+        "ago",
+        "all",
+        "clip",
+        "decide",
+        "home",
+        "panelCounts",
+        "panelInteraction",
+        "pic",
+        "queue",
+        "update",
+        "visible"
+      ]
+    },
+    {
       "path": "bot/playmedia.js",
       "layer": "bot",
       "lines": 145,
       "imports": [
         "./roles.js",
-        "./docs.js"
+        "./docs.js",
+        "./ui.js"
       ],
       "endpoints": [],
       "tables": [
@@ -2417,6 +2748,7 @@
         "json",
         "mb",
         "one",
+        "panelOf",
         "playMediaRoute",
         "playMediaUpload",
         "run",
@@ -2427,12 +2759,13 @@
     {
       "path": "bot/plays.js",
       "layer": "bot",
-      "lines": 363,
+      "lines": 358,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./docs.js",
-        "./clubroom.js"
+        "./clubroom.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/plays",
@@ -2651,7 +2984,7 @@
     {
       "path": "bot/profiles.js",
       "layer": "bot",
-      "lines": 172,
+      "lines": 191,
       "imports": [
         "./roles.js",
         "./probuilds.js",
@@ -2671,12 +3004,14 @@
       ],
       "functions": [
         "all",
+        "birthday",
         "clean",
         "country",
         "fail",
         "gameIds",
         "has",
         "json",
+        "kick",
         "memberCard",
         "one",
         "parse",
@@ -2786,7 +3121,7 @@
     {
       "path": "bot/roles.js",
       "layer": "bot",
-      "lines": 183,
+      "lines": 188,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -2817,9 +3152,11 @@
     {
       "path": "bot/servertools.js",
       "layer": "bot",
-      "lines": 385,
+      "lines": 393,
       "imports": [
-        "./roles.js"
+        "./roles.js",
+        "./ui.js",
+        "./faces.js"
       ],
       "endpoints": [],
       "tables": [
@@ -2839,7 +3176,7 @@
         "batch",
         "discord",
         "ensurePingRoles",
-        "eph",
+        "failed",
         "gamertag",
         "getToolSettings",
         "later",
@@ -2857,6 +3194,7 @@
         "roleList",
         "row",
         "saveToolSettings",
+        "say",
         "sendDueReminders",
         "serverButton",
         "serverCommand",
@@ -2946,11 +3284,12 @@
     {
       "path": "bot/squads.js",
       "layer": "bot",
-      "lines": 126,
+      "lines": 128,
       "imports": [
         "./roles.js",
         "./notify.js",
-        "./docs.js"
+        "./docs.js",
+        "./ui.js"
       ],
       "endpoints": [
         "/api/squads",
@@ -2994,7 +3333,8 @@
       "lines": 436,
       "imports": [
         "./roles.js",
-        "./aispike.js"
+        "./aispike.js",
+        "./ui.js"
       ],
       "endpoints": [],
       "tables": [
@@ -3029,6 +3369,7 @@
         "h2hEmbed",
         "h2hFacts",
         "handleStatInsightJob",
+        "insightPanel",
         "last5Facts",
         "leadersFacts",
         "matchFacts",
@@ -3116,6 +3457,39 @@
       ]
     },
     {
+      "path": "bot/ui.js",
+      "layer": "bot",
+      "lines": 125,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "button",
+        "buttons",
+        "cardUrl",
+        "cards",
+        "clip",
+        "facts",
+        "footer",
+        "header",
+        "images",
+        "isV2",
+        "label",
+        "message",
+        "notice",
+        "panel",
+        "plainText",
+        "reply",
+        "resultAccent",
+        "sep",
+        "side",
+        "text",
+        "thumb",
+        "toLegacy",
+        "walk"
+      ]
+    },
+    {
       "path": "bot/vapid-gen.mjs",
       "layer": "bot",
       "lines": 17,
@@ -3133,7 +3507,8 @@
       "layer": "bot",
       "lines": 118,
       "imports": [
-        "./notify.js"
+        "./notify.js",
+        "./ui.js"
       ],
       "endpoints": [],
       "tables": [
@@ -3150,6 +3525,48 @@
         "postCard",
         "transcribe",
         "voiceChannel"
+      ]
+    },
+    {
+      "path": "bot/watchlist.js",
+      "layer": "bot",
+      "lines": 196,
+      "imports": [
+        "./roles.js",
+        "./ui.js",
+        "./docs.js"
+      ],
+      "endpoints": [
+        "/api/watchlist"
+      ],
+      "tables": [
+        "SET",
+        "keyword",
+        "meta",
+        "watch_creators",
+        "watch_useful",
+        "watch_videos"
+      ],
+      "functions": [
+        "all",
+        "clean",
+        "decode",
+        "fail",
+        "json",
+        "listPanel",
+        "one",
+        "parseFeed",
+        "say",
+        "tagsOf",
+        "topicOf",
+        "upd",
+        "usefulCount",
+        "videoPanel",
+        "watchButton",
+        "watchCommand",
+        "watchUrl",
+        "watchlistCron",
+        "watchlistRoute"
       ]
     },
     {
@@ -3175,17 +3592,19 @@
     {
       "path": "bot/worker.js",
       "layer": "bot",
-      "lines": 551,
+      "lines": 591,
       "imports": [
         "./botcommands.js",
         "./members.js",
         "./live.js",
+        "./memberlive.js",
         "./notify.js",
         "./events.js",
         "./awards.js",
         "./hotw.js",
         "./predict.js",
         "./botcmds.js",
+        "./panel.js",
         "./insights.js",
         "./matchcard.js",
         "./discordroles.js",
@@ -3204,6 +3623,12 @@
         "./hub.js",
         "./burners.js",
         "./cardstudio.js",
+        "./ui.js",
+        "./faces.js",
+        "./host.js",
+        "./watchlist.js",
+        "./discoveries.js",
+        "./fun.js",
         "./servertools.js",
         "./chatroom.js",
         "./clubroom.js",
@@ -3211,19 +3636,22 @@
       ],
       "endpoints": [],
       "tables": [
+        "a",
         "alerts",
-        "archived",
         "claims",
         "every",
+        "scripts",
         "strikes",
         "that",
         "the"
       ],
       "functions": [
+        "DEFER_PANEL",
         "aiSpikeCommand",
         "askCommand",
         "autocomplete",
         "avatarCardCommand",
+        "brand",
         "command",
         "crestProxy",
         "discordUser",
@@ -3231,19 +3659,19 @@
         "exportContentCommand",
         "findPlayer",
         "flatOptions",
+        "fmt",
+        "goalsLine",
         "hexToBytes",
         "insightCommand",
         "insightsCommand",
         "json",
         "load",
         "loadSite",
-        "matchEmbed",
-        "playerEmbed",
+        "panelEdit",
+        "playerMessage",
         "profanitySetupCommand",
         "r1",
         "respond",
-        "row",
-        "stats",
         "syncRolesCommand",
         "verify"
       ]
@@ -3251,7 +3679,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 120,
+      "lines": 124,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4243,7 +4671,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1179,
+      "lines": 1132,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -7595,7 +8023,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 58,
+      "lines": 36,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8130,6 +8558,55 @@
       ]
     },
     {
+      "path": "scripts/cards.mjs",
+      "layer": "scripts",
+      "lines": 363,
+      "imports": [
+        "node:fs",
+        "node:path",
+        "node:crypto",
+        "node:url",
+        "./lib/chrome.mjs"
+      ],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "COMPARE_ROWS",
+        "SHIELD",
+        "X",
+        "band",
+        "boxScoreCard",
+        "cardJobs",
+        "clubCard",
+        "compareCard",
+        "crest",
+        "esc",
+        "fieldCard",
+        "fieldSlots",
+        "font",
+        "fontFaces",
+        "get",
+        "hash",
+        "inlineCrests",
+        "local",
+        "main",
+        "page",
+        "pc",
+        "playerCard",
+        "r1",
+        "ratingGraph",
+        "read",
+        "resultsCard",
+        "scoreCard",
+        "setIn",
+        "side",
+        "sum",
+        "tableCard",
+        "topRows",
+        "when"
+      ]
+    },
+    {
       "path": "scripts/charts.mjs",
       "layer": "scripts",
       "lines": 111,
@@ -8208,13 +8685,14 @@
     {
       "path": "scripts/fetch.mjs",
       "layer": "scripts",
-      "lines": 469,
+      "lines": 482,
       "imports": [
         "node:fs",
         "node:path",
         "./lib.mjs",
         "../bot/matchcard.js",
-        "../bot/burnerstats.js"
+        "../bot/burnerstats.js",
+        "../bot/ui.js"
       ],
       "endpoints": [],
       "tables": [
@@ -8235,6 +8713,7 @@
         "fetchWorld",
         "list",
         "main",
+        "panel",
         "postBurnerReports",
         "postToDiscord",
         "slimMatch",
@@ -8283,6 +8762,28 @@
         "num",
         "score",
         "top"
+      ]
+    },
+    {
+      "path": "scripts/lib/chrome.mjs",
+      "layer": "scripts",
+      "lines": 81,
+      "imports": [
+        "node:child_process",
+        "node:fs",
+        "node:os",
+        "node:path"
+      ],
+      "endpoints": [],
+      "tables": [
+        "PNGs"
+      ],
+      "functions": [
+        "close",
+        "findChrome",
+        "launchChrome",
+        "send",
+        "shot"
       ]
     },
     {
@@ -8581,11 +9082,12 @@
     {
       "path": "tests/awards.test.mjs",
       "layer": "tests",
-      "lines": 98,
+      "lines": 99,
       "imports": [
         "./mock.mjs",
         "../bot/awards.js",
-        "./lib.mjs"
+        "./lib.mjs",
+        "../bot/ui.js"
       ],
       "endpoints": [
         "/api/awards",
@@ -8648,19 +9150,20 @@
     {
       "path": "tests/bot.test.mjs",
       "layer": "tests",
-      "lines": 57,
+      "lines": 63,
       "imports": [
         "node:fs",
         "./mock.mjs",
         "../bot/worker.js",
+        "../bot/ui.js",
         "./lib.mjs"
       ],
       "endpoints": [],
       "tables": [],
       "functions": [
         "cmd",
-        "embed",
-        "send"
+        "send",
+        "title"
       ]
     },
     {
@@ -8752,13 +9255,14 @@
     {
       "path": "tests/burners.test.mjs",
       "layer": "tests",
-      "lines": 201,
+      "lines": 206,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
         "./lib.mjs",
         "../bot/burnerstats.js",
-        "../bot/burners.js"
+        "../bot/burners.js",
+        "../bot/ui.js"
       ],
       "endpoints": [
         "/api/burners/relay",
@@ -8774,14 +9278,17 @@
       "functions": [
         "W",
         "as",
+        "body",
         "ea",
         "g",
         "pick",
         "player",
+        "sel",
         "send",
         "settle",
         "slash",
-        "tracked"
+        "tracked",
+        "w"
       ]
     },
     {
@@ -8900,10 +9407,33 @@
       ]
     },
     {
+      "path": "tests/design.test.mjs",
+      "layer": "tests",
+      "lines": 112,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "./lib.mjs",
+        "../bot/ui.js",
+        "../bot/docs.js",
+        "../scripts/cards.mjs",
+        "../bot/botcommands.js",
+        "../scripts/lib/chrome.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "replaces"
+      ],
+      "functions": [
+        "slash"
+      ]
+    },
+    {
       "path": "tests/discord.test.mjs",
       "layer": "tests",
-      "lines": 121,
+      "lines": 128,
       "imports": [
+        "../bot/ui.js",
         "./mock.mjs",
         "../bot/worker.js",
         "../bot/matchcard.js",
@@ -8920,6 +9450,7 @@
       ],
       "functions": [
         "as",
+        "ids",
         "mine",
         "pick",
         "send",
@@ -8927,13 +9458,46 @@
       ]
     },
     {
+      "path": "tests/discoveries.test.mjs",
+      "layer": "tests",
+      "lines": 97,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "./lib.mjs",
+        "../bot/ui.js",
+        "../bot/discoveries.js"
+      ],
+      "endpoints": [
+        "/api/discoveries",
+        "/api/discoveries/useful"
+      ],
+      "tables": [
+        "SET",
+        "discoveries",
+        "meta",
+        "the"
+      ],
+      "functions": [
+        "as",
+        "ids",
+        "press",
+        "queue",
+        "send",
+        "setFlags",
+        "share",
+        "w"
+      ]
+    },
+    {
       "path": "tests/docs.test.mjs",
       "layer": "tests",
-      "lines": 177,
+      "lines": 178,
       "imports": [
         "node:fs",
         "./mock.mjs",
-        "./lib.mjs"
+        "./lib.mjs",
+        "../bot/ui.js"
       ],
       "endpoints": [
         "/api/docs",
@@ -9034,8 +9598,9 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 197,
+      "lines": 198,
       "imports": [
+        "../bot/ui.js",
         "node:fs",
         "./mock.mjs",
         "./lib.mjs",
@@ -9171,6 +9736,44 @@
       ]
     },
     {
+      "path": "tests/fun.test.mjs",
+      "layer": "tests",
+      "lines": 155,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "./lib.mjs",
+        "../bot/ui.js",
+        "../bot/fun.js",
+        "../bot/profiles.js"
+      ],
+      "endpoints": [
+        "/api/profile"
+      ],
+      "tables": [
+        "SET",
+        "fun_trivia_q",
+        "fun_trivia_scores",
+        "fun_wheels",
+        "meta",
+        "the"
+      ],
+      "functions": [
+        "ans",
+        "as",
+        "bd",
+        "buttonIds",
+        "jailCmd",
+        "post",
+        "press",
+        "send",
+        "setFlags",
+        "triv",
+        "w",
+        "wheelCmd"
+      ]
+    },
+    {
       "path": "tests/game.test.mjs",
       "layer": "tests",
       "lines": 54,
@@ -9221,6 +9824,40 @@
       ]
     },
     {
+      "path": "tests/host.test.mjs",
+      "layer": "tests",
+      "lines": 101,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "./lib.mjs",
+        "../bot/host.js",
+        "../bot/faces.js",
+        "../bot/events.js",
+        "../bot/ui.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "SET",
+        "card_requests",
+        "claims",
+        "events",
+        "guild_members",
+        "meta",
+        "next",
+        "profiles",
+        "the",
+        "users"
+      ],
+      "functions": [
+        "as",
+        "btn",
+        "is",
+        "send",
+        "w"
+      ]
+    },
+    {
       "path": "tests/hub.test.mjs",
       "layer": "tests",
       "lines": 81,
@@ -9265,29 +9902,31 @@
     {
       "path": "tests/hype.test.mjs",
       "layer": "tests",
-      "lines": 53,
+      "lines": 54,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
-        "../bot/hype.js"
+        "../bot/hype.js",
+        "../bot/ui.js"
       ],
       "endpoints": [],
       "tables": [],
       "functions": [
         "club",
-        "lastEmbed",
+        "lastMsg",
         "loadSite"
       ]
     },
     {
       "path": "tests/insights.test.mjs",
       "layer": "tests",
-      "lines": 155,
+      "lines": 156,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
         "../bot/insights.js",
-        "./lib.mjs"
+        "./lib.mjs",
+        "../bot/ui.js"
       ],
       "endpoints": [],
       "tables": [
@@ -9521,9 +10160,37 @@
       ]
     },
     {
+      "path": "tests/memberlive.test.mjs",
+      "layer": "tests",
+      "lines": 78,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs",
+        "../bot/ui.js",
+        "../bot/memberlive.js"
+      ],
+      "endpoints": [
+        "/api/live/members",
+        "/api/profile"
+      ],
+      "tables": [
+        "SET",
+        "member_live",
+        "meta",
+        "profiles",
+        "the",
+        "users"
+      ],
+      "functions": [
+        "cur",
+        "fake",
+        "setFlags"
+      ]
+    },
+    {
       "path": "tests/members.test.mjs",
       "layer": "tests",
-      "lines": 115,
+      "lines": 119,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
@@ -9806,11 +10473,12 @@
     {
       "path": "tests/notify.test.mjs",
       "layer": "tests",
-      "lines": 221,
+      "lines": 222,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
         "../bot/notify.js",
+        "../bot/ui.js",
         "./mock.mjs",
         "../scripts/lib.mjs",
         "./mock.mjs",
@@ -9870,6 +10538,37 @@
       "functions": []
     },
     {
+      "path": "tests/panel.test.mjs",
+      "layer": "tests",
+      "lines": 80,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "./lib.mjs",
+        "../bot/ui.js",
+        "./mock.mjs"
+      ],
+      "endpoints": [
+        "/api/manager/queue"
+      ],
+      "tables": [
+        "card_requests",
+        "claims",
+        "notifications",
+        "requests",
+        "rush_matches",
+        "suggestions",
+        "users"
+      ],
+      "functions": [
+        "as",
+        "ids",
+        "press",
+        "send",
+        "txt"
+      ]
+    },
+    {
       "path": "tests/phonefix.test.mjs",
       "layer": "tests",
       "lines": 21,
@@ -9889,10 +10588,11 @@
     {
       "path": "tests/playmedia.test.mjs",
       "layer": "tests",
-      "lines": 75,
+      "lines": 76,
       "imports": [
         "./mock.mjs",
-        "./lib.mjs"
+        "./lib.mjs",
+        "../bot/ui.js"
       ],
       "endpoints": [
         "/api/plays"
@@ -9910,8 +10610,9 @@
     {
       "path": "tests/plays.test.mjs",
       "layer": "tests",
-      "lines": 121,
+      "lines": 122,
       "imports": [
+        "../bot/ui.js",
         "./mock.mjs",
         "../bot/worker.js",
         "./lib.mjs"
@@ -9933,6 +10634,7 @@
       "layer": "tests",
       "lines": 54,
       "imports": [
+        "../bot/ui.js",
         "./mock.mjs",
         "../bot/worker.js",
         "./lib.mjs",
@@ -10083,11 +10785,12 @@
     {
       "path": "tests/quickcommands.test.mjs",
       "layer": "tests",
-      "lines": 103,
+      "lines": 106,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
-        "./lib.mjs"
+        "./lib.mjs",
+        "../bot/ui.js"
       ],
       "endpoints": [],
       "tables": [
@@ -10182,11 +10885,12 @@
     {
       "path": "tests/servertools.test.mjs",
       "layer": "tests",
-      "lines": 194,
+      "lines": 197,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
         "./lib.mjs",
+        "../bot/ui.js",
         "../bot/servertools.js"
       ],
       "endpoints": [],
@@ -10206,13 +10910,15 @@
         "as",
         "flush",
         "idAt",
+        "ids",
         "lastPatch",
         "mem",
         "opt",
         "posts",
         "send",
         "slash",
-        "sub"
+        "sub",
+        "txt"
       ]
     },
     {
@@ -10307,12 +11013,13 @@
     {
       "path": "tests/statinsights.test.mjs",
       "layer": "tests",
-      "lines": 412,
+      "lines": 413,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
         "../bot/statinsights.js",
         "../bot/roles.js",
+        "../bot/ui.js",
         "../bot/statinsights.js",
         "node:fs",
         "../bot/statinsights.js"
@@ -10469,21 +11176,57 @@
     {
       "path": "tests/voicerecap.test.mjs",
       "layer": "tests",
-      "lines": 90,
+      "lines": 91,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
-        "../bot/voicerecap.js"
+        "../bot/voicerecap.js",
+        "../bot/ui.js"
       ],
       "endpoints": [],
       "tables": [
         "thirty"
       ],
       "functions": [
-        "lastEmbed",
+        "lastMsg",
         "loadSite",
         "mockDiscord",
         "msg"
+      ]
+    },
+    {
+      "path": "tests/watchlist.test.mjs",
+      "layer": "tests",
+      "lines": 111,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "./lib.mjs",
+        "../bot/ui.js",
+        "../bot/watchlist.js"
+      ],
+      "endpoints": [
+        "/api/watchlist",
+        "/api/watchlist/new00000002/useful",
+        "/api/watchlist/nope0000001/useful"
+      ],
+      "tables": [
+        "SET",
+        "last",
+        "meta",
+        "watch_creators",
+        "watch_videos"
+      ],
+      "functions": [
+        "as",
+        "cmd",
+        "feed",
+        "ids",
+        "iso",
+        "press",
+        "send",
+        "setFlags",
+        "w"
       ]
     },
     {
@@ -10563,10 +11306,11 @@
     {
       "path": "tests/wave8.test.mjs",
       "layer": "tests",
-      "lines": 159,
+      "lines": 163,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
+        "../bot/ui.js",
         "../bot/events.js",
         "./lib.mjs"
       ],
@@ -10590,11 +11334,14 @@
         "rush_players"
       ],
       "functions": [
+        "btnsOf",
         "button",
         "day",
         "send",
         "setFlags",
         "slash",
+        "txt",
+        "walk",
         "who"
       ]
     },
@@ -12833,6 +13580,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/awards.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/badges.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -12893,6 +13645,21 @@
       "kind": "imports"
     },
     {
+      "source": "bot/botcmds.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/botcmds.js",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/botcmds.js",
+      "target": "bot/host.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/botcommands.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -12905,6 +13672,11 @@
     {
       "source": "bot/botcommands.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/botcommands.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -12933,6 +13705,16 @@
       "kind": "imports"
     },
     {
+      "source": "bot/burners.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/burnerstats.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/cardstudio.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -12958,6 +13740,31 @@
       "kind": "imports"
     },
     {
+      "source": "bot/discoveries.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/discoveries.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/discoveries.js",
+      "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/discoveries.js",
+      "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/docs.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/docs.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -12965,6 +13772,11 @@
     {
       "source": "bot/docs.js",
       "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/docs.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -12990,6 +13802,16 @@
     {
       "source": "bot/events.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/events.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/events.js",
+      "target": "bot/faces.js",
       "kind": "imports"
     },
     {
@@ -13043,6 +13865,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/feed.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/feedback.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13050,6 +13877,16 @@
     {
       "source": "bot/feedback.js",
       "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/fun.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/fun.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -13078,6 +13915,21 @@
       "kind": "imports"
     },
     {
+      "source": "bot/host.js",
+      "target": "bot/events.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/host.js",
+      "target": "bot/servertools.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/host.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/hotw.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13095,6 +13947,11 @@
     {
       "source": "bot/hotw.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/hotw.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -13128,6 +13985,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/hype.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/insights.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13135,6 +13997,11 @@
     {
       "source": "bot/insights.js",
       "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/insights.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -13173,6 +14040,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/matchcard.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/media.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13180,6 +14052,31 @@
     {
       "source": "bot/media.js",
       "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/live.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/members.js",
+      "target": "bot/panel.js",
       "kind": "imports"
     },
     {
@@ -13403,6 +14300,26 @@
       "kind": "imports"
     },
     {
+      "source": "bot/members.js",
+      "target": "bot/fun.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/members.js",
+      "target": "bot/discoveries.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/members.js",
+      "target": "bot/watchlist.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/members.js",
+      "target": "bot/memberlive.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/notify.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13418,6 +14335,31 @@
       "kind": "imports"
     },
     {
+      "source": "bot/notify.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/panel.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/panel.js",
+      "target": "bot/members.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/panel.js",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/panel.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/playmedia.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13425,6 +14367,11 @@
     {
       "source": "bot/playmedia.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/playmedia.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -13445,6 +14392,11 @@
     {
       "source": "bot/plays.js",
       "target": "bot/clubroom.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/plays.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -13548,6 +14500,16 @@
       "kind": "imports"
     },
     {
+      "source": "bot/servertools.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/servertools.js",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/settings.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13583,6 +14545,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/squads.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/statinsights.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -13590,6 +14557,11 @@
     {
       "source": "bot/statinsights.js",
       "target": "bot/aispike.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/statinsights.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -13608,6 +14580,26 @@
       "kind": "imports"
     },
     {
+      "source": "bot/voicerecap.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/watchlist.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/watchlist.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/watchlist.js",
+      "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/worker.js",
       "target": "bot/botcommands.js",
       "kind": "imports"
@@ -13620,6 +14612,11 @@
     {
       "source": "bot/worker.js",
       "target": "bot/live.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/memberlive.js",
       "kind": "imports"
     },
     {
@@ -13650,6 +14647,11 @@
     {
       "source": "bot/worker.js",
       "target": "bot/botcmds.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/panel.js",
       "kind": "imports"
     },
     {
@@ -13744,6 +14746,36 @@
     },
     {
       "source": "bot/worker.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/host.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/watchlist.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/discoveries.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/fun.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
       "target": "bot/servertools.js",
       "kind": "imports"
     },
@@ -13833,6 +14865,11 @@
       "kind": "imports"
     },
     {
+      "source": "scripts/cards.mjs",
+      "target": "scripts/lib/chrome.mjs",
+      "kind": "imports"
+    },
+    {
       "source": "scripts/ea-relay.mjs",
       "target": "bot/clublookup.js",
       "kind": "imports"
@@ -13855,6 +14892,11 @@
     {
       "source": "scripts/fetch.mjs",
       "target": "bot/burnerstats.js",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/fetch.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -13968,6 +15010,11 @@
       "kind": "imports"
     },
     {
+      "source": "tests/awards.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/badges.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -13990,6 +15037,11 @@
     {
       "source": "tests/bot.test.mjs",
       "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/bot.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14083,6 +15135,11 @@
       "kind": "imports"
     },
     {
+      "source": "tests/burners.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/cardstudio.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -14158,6 +15215,51 @@
       "kind": "imports"
     },
     {
+      "source": "tests/design.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/design.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/design.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/design.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/design.test.mjs",
+      "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/design.test.mjs",
+      "target": "scripts/cards.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/design.test.mjs",
+      "target": "bot/botcommands.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/design.test.mjs",
+      "target": "scripts/lib/chrome.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/discord.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/discord.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -14183,6 +15285,31 @@
       "kind": "imports"
     },
     {
+      "source": "tests/discoveries.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/discoveries.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/discoveries.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/discoveries.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/discoveries.test.mjs",
+      "target": "bot/discoveries.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/docs.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -14190,6 +15317,11 @@
     {
       "source": "tests/docs.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/docs.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14230,6 +15362,11 @@
     {
       "source": "tests/events-ui.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14293,6 +15430,36 @@
       "kind": "imports"
     },
     {
+      "source": "tests/fun.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/fun.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/fun.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/fun.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/fun.test.mjs",
+      "target": "bot/fun.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/fun.test.mjs",
+      "target": "bot/profiles.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/game.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -14310,6 +15477,41 @@
     {
       "source": "tests/honours.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/host.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/host.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/host.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/host.test.mjs",
+      "target": "bot/host.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/host.test.mjs",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/host.test.mjs",
+      "target": "bot/events.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/host.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14353,6 +15555,11 @@
       "kind": "imports"
     },
     {
+      "source": "tests/hype.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/insights.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -14370,6 +15577,11 @@
     {
       "source": "tests/insights.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/insights.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14478,6 +15690,26 @@
       "kind": "imports"
     },
     {
+      "source": "tests/memberlive.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/memberlive.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/memberlive.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/memberlive.test.mjs",
+      "target": "bot/memberlive.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/members.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -14569,6 +15801,11 @@
     },
     {
       "source": "tests/notify.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/notify.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
     },
@@ -14593,6 +15830,31 @@
       "kind": "imports"
     },
     {
+      "source": "tests/panel.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/panel.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/panel.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/panel.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/panel.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
       "source": "tests/phonefix.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -14610,6 +15872,16 @@
     {
       "source": "tests/playmedia.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/playmedia.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/plays.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14625,6 +15897,11 @@
     {
       "source": "tests/plays.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/points.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14738,6 +16015,11 @@
       "kind": "imports"
     },
     {
+      "source": "tests/quickcommands.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/rankings.test.mjs",
       "target": "tests/lib.mjs",
       "kind": "imports"
@@ -14775,6 +16057,11 @@
     {
       "source": "tests/servertools.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/servertools.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14855,6 +16142,11 @@
     {
       "source": "tests/statinsights.test.mjs",
       "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/statinsights.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -14948,6 +16240,36 @@
       "kind": "imports"
     },
     {
+      "source": "tests/voicerecap.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/watchlist.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/watchlist.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/watchlist.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/watchlist.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/watchlist.test.mjs",
+      "target": "bot/watchlist.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/wave10.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -15000,6 +16322,11 @@
     {
       "source": "tests/wave8.test.mjs",
       "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/wave8.test.mjs",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
