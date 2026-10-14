@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-14T06:10:41.762Z",
+ "fetchedAt": "2026-10-14T06:20:51.335Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -187,6 +187,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "JessiRGZ",
+   "gamesPlayed": "21",
+   "winRate": "85",
+   "goals": "39",
+   "assists": "29",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "61",
+   "passesMade": "209",
+   "passSuccessRate": "75",
+   "ratingAve": "8.9",
+   "tacklesMade": "15",
+   "tackleSuccessRate": "48",
+   "proName": "J. Regalado",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "172",
+   "proNationality": "95",
+   "proOverall": "77",
+   "proOverallStr": "77",
+   "manOfTheMatch": "11",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "5",
+   "prevGoals3": "0",
+   "prevGoals4": "2",
+   "prevGoals5": "1",
+   "prevGoals6": "2",
+   "prevGoals7": "1",
+   "prevGoals8": "2",
+   "prevGoals9": "2",
+   "prevGoals10": "3",
+   "favoritePosition": "forward"
   },
   {
    "name": "Ferni_x10",
@@ -624,7 +660,7 @@
  "positionCount": {
   "midfielder": 5,
   "goalkeeper": 0,
-  "forward": 3,
+  "forward": 4,
   "defender": 6
  },
  "career": [
@@ -660,6 +696,17 @@
    "ratingAve": "7.1",
    "prevGoals": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "JessiRGZ",
+   "proPos": "25",
+   "gamesPlayed": "63",
+   "goals": "107",
+   "assists": "75",
+   "manOfTheMatch": "29",
+   "ratingAve": "8.6",
+   "prevGoals": "3",
+   "favoritePosition": "forward"
   },
   {
    "name": "Ferni_x10",
