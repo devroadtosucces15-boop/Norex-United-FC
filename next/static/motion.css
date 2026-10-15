@@ -149,7 +149,8 @@ html.kb-open .tabbar,html.kb-open #nx-inst{transform:translate3d(0,160%,0)}
 #nx-inst.out{animation:mxToastOut .3s both}
 /* gyroscope tilt (opt-in): cards, crests, trophies and hero art follow the phone */
 html.gyro-on .pc-card:not(.live),html.gyro-on .pc-hero,html.gyro-on .tilt:not(.live){transform:perspective(900px) rotateX(calc(var(--gy,0) * 1deg)) rotateY(calc(var(--gx,0) * 1deg));--mx:calc(50% + var(--gx,0) * 4%);--my:calc(50% + var(--gy,0) * -4%);--go:.7}
-html.gyro-on .mh-t img,html.gyro-on .s-crest,html.gyro-on .lg img,html.gyro-on [data-gyro]{transform:translate3d(calc(var(--gx,0) * .6px),calc(var(--gy,0) * -.6px),0) rotateY(calc(var(--gx,0) * 1.2deg))}
+/* B2: crests and trophies use the separate translate/rotate properties, so they still follow the phone when they float or spin on a keyframe animation */
+html.gyro-on .mh-t img,html.gyro-on .s-crest,html.gyro-on .lg img,html.gyro-on [data-gyro],html.gyro-on .wx .cab .cup,html.gyro-on .wx .md svg,html.gyro-on .rec-crest{translate:calc(var(--gx,0) * .6px) calc(var(--gy,0) * -.6px);rotate:y calc(var(--gx,0) * 1.2deg)}
 
 /* ===== page header stack (FEEDBACK-1 #7): the sub-tab row always sits right under the bar, in the browser, the installed app and under the preview ribbon ===== */
 :root{--bt:0px;--bh:69px}

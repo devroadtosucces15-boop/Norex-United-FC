@@ -65,29 +65,29 @@
   setTimeout(maybeHint, 2500);
   if (discord) addEventListener('DOMContentLoaded', () => d.querySelectorAll('[data-discord-hint]').forEach((el) => { el.hidden = false; }));
 
-  // ---------- gyroscope tilt (optional, explicit opt-in; iOS asks permission on the toggle tap) ----------
+  // ---------- gyroscope tilt: the "Phone tilt" switch in Motion & effects (on by default). iOS asks for permission on a tap ----------
+  // B2: it used to start only in Full mode, so the old "Enable tilt effects" switch did nothing in Calm or a custom mix.
   const canGyro = 'DeviceOrientationEvent' in window && matchMedia('(pointer: coarse)').matches;
-  let on = false, gx = 0, gy = 0, tx = 0, ty = 0, raf = 0, base0 = null;
-  const full = () => !window.NorexMotion || NorexMotion.mode === 'full';
+  const askable = canGyro && typeof DeviceOrientationEvent.requestPermission === 'function';
+  let on = false, granted = !askable, gx = 0, gy = 0, tx = 0, ty = 0, raf = 0, base0 = null;
+  const wanted = () => canGyro && (!window.NorexMotion || NorexMotion.on('gyro'));
   const onOri = (e) => { if (e.beta == null) return; const ang = (screen.orientation?.angle ?? window.orientation ?? 0) % 360;
     let b = e.beta, g = e.gamma; if (ang === 90) [b, g] = [-g, b]; else if (ang === 270 || ang === -90) [b, g] = [g, -b];
     if (!base0) base0 = { b, g };                       // the way the phone is held when tilt starts counts as "flat"
     tx = Math.max(-10, Math.min(10, (g - base0.g) * .45)); ty = Math.max(-10, Math.min(10, (b - base0.b) * -.45)); if (!raf) raf = requestAnimationFrame(step); };
   function step() { raf = 0; gx += (tx - gx) * .12; gy += (ty - gy) * .12;             // low-pass filter: smooth, no jitter
     H.style.setProperty('--gx', gx.toFixed(2)); H.style.setProperty('--gy', gy.toFixed(2)); if (Math.abs(tx - gx) + Math.abs(ty - gy) > .02) raf = requestAnimationFrame(step); }
-  const start = () => { if (on || !full() || d.hidden) return; on = true; base0 = null; H.classList.add('gyro-on'); addEventListener('deviceorientation', onOri); };
+  const start = () => { if (on || !wanted() || !granted || d.hidden) return; on = true; base0 = null; H.classList.add('gyro-on'); addEventListener('deviceorientation', onOri); };
   const stop = () => { if (!on) return; on = false; removeEventListener('deviceorientation', onOri); H.classList.remove('gyro-on'); H.style.removeProperty('--gx'); H.style.removeProperty('--gy'); };
-  const wanted = () => ls.get('norex.gyro') === 'on';
   async function enable() {
-    try { if (typeof DeviceOrientationEvent.requestPermission === 'function') { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') throw new Error('denied'); } ls.set('norex.gyro', 'on'); start(); return true; }
-    catch { window.NorexMotion?.toast('Tilt needs motion access. You can allow it in your browser settings.', { kind: 'err' }); return false; }
+    if (!canGyro) return false;
+    try { if (!granted) { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') throw new Error('denied'); granted = true; } start(); return true; }
+    catch { window.NorexMotion?.toast('Phone tilt needs motion access. You can allow it in your browser settings.', { kind: 'err' }); return false; }
   }
-  // Android needs no prompt: resume if the member turned it on before. iOS keeps the permission per visit, so it waits for a tap.
-  if (canGyro && wanted() && typeof DeviceOrientationEvent.requestPermission !== 'function') start();
-  d.addEventListener('visibilitychange', () => (d.hidden ? stop() : wanted() && typeof DeviceOrientationEvent.requestPermission !== 'function' && start()));
-  addEventListener('norex:motion', () => (full() ? wanted() && start() : stop()));
-  addEventListener('norex:settings', (e) => { const box = e.detail; if (!box || !canGyro) return;
-    box.innerHTML = `<button type="button" class="mx-opt" role="switch" aria-checked="${on}" style="margin-top:10px"><span class="e">📱</span><span><b>Enable tilt effects</b><small>Cards, crest and trophies move as you tilt your phone</small></span></button>`;
-    const sw = box.firstChild; sw.addEventListener('click', async () => { if (on) { ls.set('norex.gyro', null); stop(); } else await enable(); sw.setAttribute('aria-checked', on); }); });
-  window.NorexApp = { standalone, ios, discord, resetZoom, gyro: { enable, stop, get on() { return on; } } };
+  // Android needs no prompt. iOS: if access was already given on this phone the silent ask resolves; otherwise it waits for a tap in the sheet
+  if (canGyro) { if (askable) { try { DeviceOrientationEvent.requestPermission().then((r) => { if (r === 'granted') { granted = true; start(); } }, () => {}); } catch {} } else start(); }
+  d.addEventListener('visibilitychange', () => (d.hidden ? stop() : start()));
+  addEventListener('norex:motion', () => (wanted() ? start() : stop()));
+  const gyro = { enable, stop, get on() { return on; }, can: canGyro, get needsAsk() { return canGyro && !granted; } };
+  window.NorexApp = { standalone, ios, discord, resetZoom, gyro };
 })();
