@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-15T07:00:47.705Z",
+ "fetchedAt": "2026-10-15T07:10:48.302Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -1015,6 +1015,42 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0"
+  },
+  {
+   "name": "Pearl_Harbor08",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
   }
  ],
  "positionCount": {
@@ -1126,23 +1162,23 @@
   {
    "name": "JessiRGZ",
    "proPos": "25",
-   "gamesPlayed": "76",
-   "goals": "115",
+   "gamesPlayed": "77",
+   "goals": "117",
    "assists": "80",
-   "manOfTheMatch": "31",
+   "manOfTheMatch": "32",
    "ratingAve": "8.4",
-   "prevGoals": "1",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
    "name": "Ferni_x10",
    "proPos": "14",
-   "gamesPlayed": "297",
-   "goals": "207",
+   "gamesPlayed": "298",
+   "goals": "208",
    "assists": "147",
    "manOfTheMatch": "78",
    "ratingAve": "8.0",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "midfielder"
   },
   {
@@ -1159,11 +1195,11 @@
   {
    "name": "Tiki-ELPristo",
    "proPos": "14",
-   "gamesPlayed": "176",
+   "gamesPlayed": "177",
    "goals": "156",
    "assists": "53",
    "manOfTheMatch": "36",
-   "ratingAve": "7.8",
+   "ratingAve": "7.7",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
@@ -1203,18 +1239,29 @@
   {
    "name": "Danial_Dano",
    "proPos": "14",
-   "gamesPlayed": "227",
+   "gamesPlayed": "228",
    "goals": "305",
-   "assists": "120",
+   "assists": "121",
    "manOfTheMatch": "57",
    "ratingAve": "8.2",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
   {
+   "name": "Pearl_Harbor08",
+   "proPos": "14",
+   "gamesPlayed": "199",
+   "goals": "12",
+   "assists": "95",
+   "manOfTheMatch": "24",
+   "ratingAve": "7.8",
+   "prevGoals": "0",
+   "favoritePosition": "midfielder"
+  },
+  {
    "name": "KBribiesca0420",
    "proPos": "5",
-   "gamesPlayed": "226",
+   "gamesPlayed": "227",
    "goals": "65",
    "assists": "99",
    "manOfTheMatch": "19",
@@ -1258,7 +1305,7 @@
   {
    "name": "MAYOROFCALI_510",
    "proPos": "5",
-   "gamesPlayed": "440",
+   "gamesPlayed": "441",
    "goals": "133",
    "assists": "123",
    "manOfTheMatch": "8",
@@ -1269,9 +1316,9 @@
   {
    "name": "KimFromRoad",
    "proPos": "25",
-   "gamesPlayed": "373",
+   "gamesPlayed": "374",
    "goals": "132",
-   "assists": "394",
+   "assists": "396",
    "manOfTheMatch": "53",
    "ratingAve": "8.0",
    "prevGoals": "0",
@@ -1280,7 +1327,7 @@
   {
    "name": "ItachiQ60s_228",
    "proPos": "25",
-   "gamesPlayed": "263",
+   "gamesPlayed": "264",
    "goals": "265",
    "assists": "149",
    "manOfTheMatch": "57",
@@ -1291,18 +1338,18 @@
   {
    "name": "Futxpert6",
    "proPos": "5",
-   "gamesPlayed": "202",
+   "gamesPlayed": "203",
    "goals": "107",
    "assists": "135",
    "manOfTheMatch": "29",
-   "ratingAve": "7.8",
+   "ratingAve": "7.7",
    "prevGoals": "0",
    "favoritePosition": "defender"
   },
   {
    "name": "DR7M70",
    "proPos": "14",
-   "gamesPlayed": "123",
+   "gamesPlayed": "124",
    "goals": "36",
    "assists": "67",
    "manOfTheMatch": "18",
@@ -1312,8 +1359,8 @@
   }
  ],
  "leaderboard": {
-  "currentDivision": "2",
+  "currentDivision": "4",
   "bestDivision": "2",
-  "points": "181"
+  "points": "184"
  }
 }
