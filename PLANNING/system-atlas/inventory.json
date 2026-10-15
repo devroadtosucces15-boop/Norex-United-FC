@@ -1,5 +1,5 @@
 {
-  "revision": "1a9fbe620380a792965a909caf1cbc7f3a95980f",
+  "revision": "775bfa776f8721cddca62cd2df87be8867d348e9",
   "files": 789,
   "imports": 559,
   "api_paths": 237,
@@ -858,7 +858,7 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 660,
+      "lines": 707,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -947,6 +947,7 @@
         "parts",
         "patch",
         "pinnedPlays",
+        "place",
         "playerGrade",
         "playsRoute",
         "posOf",
@@ -4671,7 +4672,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1085,
+      "lines": 1132,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8023,7 +8024,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 36,
+      "lines": 58,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -11306,7 +11307,7 @@
     {
       "path": "tests/wave8.test.mjs",
       "layer": "tests",
-      "lines": 163,
+      "lines": 164,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
