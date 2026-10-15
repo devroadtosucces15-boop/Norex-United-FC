@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-15T00:00:50.288Z",
+ "fetchedAt": "2026-10-15T00:10:50.297Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,6 +80,42 @@
   "leagueAppearances": "260"
  },
  "members": [
+  {
+   "name": "Calvinho187",
+   "gamesPlayed": "7",
+   "winRate": "85",
+   "goals": "6",
+   "assists": "3",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "33",
+   "passesMade": "59",
+   "passSuccessRate": "84",
+   "ratingAve": "7.8",
+   "tacklesMade": "2",
+   "tackleSuccessRate": "6",
+   "proName": "Calvinho",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "195",
+   "proNationality": "72",
+   "proOverall": "83",
+   "proOverallStr": "83",
+   "manOfTheMatch": "2",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "1",
+   "prevGoals3": "1",
+   "prevGoals4": "0",
+   "prevGoals5": "1",
+   "prevGoals6": "1",
+   "prevGoals7": "2",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
+  },
   {
    "name": "ika_cabrera7",
    "gamesPlayed": "3",
@@ -804,10 +840,21 @@
  "positionCount": {
   "midfielder": 7,
   "goalkeeper": 0,
-  "forward": 6,
+  "forward": 7,
   "defender": 6
  },
  "career": [
+  {
+   "name": "Calvinho187",
+   "proPos": "25",
+   "gamesPlayed": "85",
+   "goals": "104",
+   "assists": "60",
+   "manOfTheMatch": "22",
+   "ratingAve": "8.0",
+   "prevGoals": "1",
+   "favoritePosition": "forward"
+  },
   {
    "name": "ika_cabrera7",
    "proPos": "25",
