@@ -8,7 +8,7 @@ const rd = (f) => fs.readFileSync(ROOT + f, 'utf8');
 const js = rd('next/static/feedbackroom.js'), hub = rd('next/pages/hub.mjs'), css = rd('next/static/style.css');
 const cfg = JSON.parse(rd('config.json'));
 
-t('flag feedbackRoom ships at owner (the live feedback flag is separate)', cfg.features.feedbackRoom === 'owner' && cfg.features.feedback === 'members');
+t('flag feedbackRoom is open to members (F1 open-up)', cfg.features.feedbackRoom === 'members' && cfg.features.feedback === 'members');
 t('Boardroom lists the flag with a page link', /'suggestions', 'feedbackRoom'/.test(rd('next/static/boardroom.js')) && /feedbackRoom: \['hub-clubhouse\.html'/.test(rd('next/static/boardroom.js')));
 t('Clubhouse page: section starts hidden, chip too, script loaded', hub.includes('id="ch-feedback" hidden') && hub.includes('data-fb-chip hidden') && hub.includes('id="chfeedback"') && hub.includes('src="feedbackroom.js"'));
 t('the only API writes are send, react, why, report, read and hide', [...js.matchAll(/post\('(\/api\/[a-z/]+)'/g)].map((m) => m[1]).sort().join() === ['/api/feedback/hide', '/api/feedback/react', '/api/feedback/read', '/api/feedback/report', '/api/feedback/send', '/api/feedback/why'].join());
