@@ -246,10 +246,10 @@ function syncRolesCommand(i, env, ctx, site, who) {
       content = `⚠️ ${e.message}`;
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
     }).catch((e) => console.log('syncroles reply failed', e.message));
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return json(DEFER_PANEL(true));
 }
 
 // ---------- /exportcontent (owner): dump guide/rule/playstyle/announcement channels to the owner's DMs ----------
@@ -266,10 +266,10 @@ function exportContentCommand(i, env, ctx, who) {
       content = `⚠️ ${e.message}`;
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
     }).catch((e) => console.log('exportcontent reply failed', e.message));
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return json(DEFER_PANEL(true));
 }
 
 // ---------- /aispike (owner): P11.1 one-off test of the Workers AI text + image models ----------
@@ -283,10 +283,10 @@ function aiSpikeCommand(i, env, ctx, who) {
       content = `⚠️ ${e.message}`;
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
     }).catch((e) => console.log('aispike reply failed', e.message));
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return json(DEFER_PANEL(true));
 }
 
 // ---------- /profanitysetup (owner): P11.4 create/update the Discord AutoMod rule + alert channel ----------
@@ -302,10 +302,10 @@ function profanitySetupCommand(i, env, ctx, who) {
       content = `⚠️ ${e.message}`;
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
     }).catch((e) => console.log('profanitysetup reply failed', e.message));
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return json(DEFER_PANEL(true));
 }
 
 // ---------- /avatarcard (members): P11.5 upload an avatar → AI background + stored photo, both served via /media ----------
@@ -329,15 +329,17 @@ function avatarCardCommand(i, env, ctx, who, origin) {
       content = `⚠️ ${e.message}`;
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
     }).catch((e) => console.log('avatarcard reply failed', e.message));
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return json(DEFER_PANEL(true));
 }
 
 // A deferred reply that will be edited into a design-system panel has to say so up front (the layout flag can't be
 // changed by the edit), and the edit itself carries only the components.
 const DEFER_PANEL = (priv) => ({ type: 5, data: { flags: (1 << 15) | (priv ? 64 : 0) } });
+// A deferred command's finished answer as a panel: steel when it's a warning, club red otherwise.
+const noteMsg = (content) => message({ accent: /^(⚠|🔒|❌)/u.test(content) ? 'steel' : 'red', blocks: [text(String(content).replace(/^(⚠️|🔒|❌)\s*/u, ''))] });
 const panelEdit = (m) => ({ components: m.components, allowed_mentions: m.allowed_mentions ?? { parse: [] } });
 
 // ---------- /insight (public, flag `statInsights`): BE9's stored stat insight as an embed – read-only, no writer call ----------
@@ -375,10 +377,10 @@ function askCommand(i, env, ctx, site, who) {
       content = `⚠️ ${e.message}`;
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
     }).catch((e) => console.log('ask reply failed', e.message));
   })());
-  return json({ type: 5, data: { flags: 64 } });
+  return json(DEFER_PANEL(true));
 }
 
 // ---------- /insights (managers): Club Intelligence report – Discord server + club data → scores and advice ----------

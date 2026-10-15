@@ -39,7 +39,7 @@ globalThis.fetch = async (url, init = {}) => {
     if (mm && method === 'PUT') { guild.members[mm[1]].push(mm[2]); return new Response(null, { status: 204 }); }
     if (mm && method === 'DELETE') { guild.members[mm[1]] = guild.members[mm[1]].filter((x) => x !== mm[2]); return new Response(null, { status: 204 }); }
   }
-  if (u.includes('/webhooks/')) { calls.push(`PATCH reply ${JSON.parse(init.body).content}`); return Response.json({}); }
+  if (u.includes('/webhooks/')) { calls.push(`PATCH reply ${plainText(JSON.parse(init.body))}`); return Response.json({}); }
   if (u.endsWith('/users/@me/channels') || /\/channels\/[\w-]+\/messages$/.test(u)) return Response.json({ id: 'x' }); // P7.1 DMs
   return realFetch(url, init);
 };
@@ -122,6 +122,6 @@ pending = []; calls.length = 0;
 await tt('/syncroles as owner → deferred, then a summary', async () => {
   const d = (await send({ type: 2, token: 'tok', ...as('111'), data: { name: 'syncroles' } })).d;
   await Promise.all(pending);
-  return d.type === 5 && d.data.flags === 64 && calls.some((c) => c.startsWith('PATCH reply 🪪 **Role sync done**'));
+  return d.type === 5 && (d.data.flags & 64) === 64 && calls.some((c) => c.startsWith('PATCH reply 🪪 **Role sync done**'));
 });
 done();
