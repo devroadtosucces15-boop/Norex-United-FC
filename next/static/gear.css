@@ -22,3 +22,5 @@
 @media(min-width:560px){.gr-row{grid-template-columns:1fr auto;align-items:center}}
 /* the issue-tool bug sits at the same corner: tuck it away while the gear sheet is open */
 body:has(.gr-sheet) .nxr-fab,body:has(.gr-sheet) .gr-fab{visibility:hidden}
+/* owner edit / navigator / report buttons covered card edges on phones: smaller, hugging the edge, see-through until touched */
+@media(max-width:640px),(max-height:500px){html .gr-fab,html .nv-fab,html .nxr-fab{width:38px;height:38px;opacity:.6;transition:opacity .2s,transform .35s}html .gr-fab,html .nxr-fab{left:4px}html .nv-fab{right:4px}.gr-fab:hover,.gr-fab:focus-visible,.gr-fab:active,.nv-fab:hover,.nv-fab:focus-visible,.nv-fab:active,.nxr-fab:hover,.nxr-fab:focus-visible,.nxr-fab:active{opacity:1}}
