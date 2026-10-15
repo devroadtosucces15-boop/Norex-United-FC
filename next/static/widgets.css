@@ -1,7 +1,9 @@
 /* NOREX widgets (rails, charts, tables, trophies). Every rule is scoped under .wx so it cannot leak into page styles. */
 .wx .rail{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:14px 8px 20px;scrollbar-width:thin;scrollbar-color:#efcf7a transparent;-webkit-overflow-scrolling:touch}
-.wx .cover{perspective:1100px;padding:30px 40vw 40px;gap:0}
-.wx .cover .ci{flex:0 0 190px;scroll-snap-align:center;display:grid;place-items:center;will-change:transform,opacity;transform-style:preserve-3d}
+/* card wheel (zn3): every card is its own flat layer with its own perspective – no shared 3D space, so neighbours never cut
+   through each other or flicker while the rail scrolls; the first and last card can still reach the middle */
+.wx .cover{padding:30px calc(50% - 95px) 40px;gap:0;scroll-padding-inline:0}
+.wx .cover .ci{flex:0 0 190px;scroll-snap-align:center;scroll-snap-stop:normal;display:grid;place-items:center;will-change:transform,opacity;transform-style:flat;backface-visibility:hidden;contain:layout}
 .wx .cover .ci .pc{--s:.9}
 .wx .film{gap:0;padding:20px 12px;background:#0c101a;border-radius:12px}
 .wx .fr{flex:0 0 150px;scroll-snap-align:start;background:linear-gradient(#202c46,#18223a);margin:0 6px;padding:26px 12px 22px;border-radius:6px;text-align:center;position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}

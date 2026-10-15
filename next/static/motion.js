@@ -133,7 +133,8 @@
   // different ways, converge under the 3D perspective and intersect ("tilt = broken tiles")
   const inRail = (el) => { if (el._rail === undefined) { el._rail = false; for (let a = el.parentElement; a && a !== d.body; a = a.parentElement) { if (/auto|scroll/.test(getComputedStyle(a).overflowX) && a.scrollWidth > a.clientWidth + 4) { el._rail = true; break; } } } return el._rail; };
   addEventListener('resize', () => ambient.forEach((el) => { el._rail = undefined; }));
-  const lean = (el) => { const r = el.getBoundingClientRect(), vw = innerWidth, vh = innerHeight; if (r.width < 8) return;
+  const lean = (el) => { if (el._wheel ??= !!el.closest('.cover,.spot')) return;   // zn3: wheels pose their own cards – a second lean on top made them wobble
+    const r = el.getBoundingClientRect(), vw = innerWidth, vh = innerHeight; if (r.width < 8) return;
     const nx = inRail(el) ? Math.max(-1.4, Math.min(1.4, (r.left + r.width / 2 - vw / 2) / (vw / 2))) : 0, ny = Math.max(-1.4, Math.min(1.4, (r.top + r.height / 2 - vh / 2) / (vh / 2)));
     const sc = Math.min(1, r.width / 150);   // tiny cards lean less
     const ry = (-6 + nx * -11) * sc, rx = (3.5 + ny * 7) * sc;

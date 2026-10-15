@@ -8,15 +8,20 @@
 
   function coverflow(c) {
     // geometry from offsetLeft/scrollLeft (no layout reads per frame), one paint per animation frame, no transform transitions:
-    // the cards track the finger exactly instead of easing behind it.
-    const items = $$('.ci', c); let raf = 0;
-    const run = () => { raf = 0; const mid = c.scrollLeft + c.clientWidth / 2;
-      items.forEach((x) => { const k = Math.max(-1, Math.min(1, (x.offsetLeft + x.offsetWidth / 2 - mid) / 320)), a = Math.abs(k);
-        x.style.transform = `translate3d(${(-k * 70).toFixed(1)}px,0,${(-a * 90).toFixed(1)}px) rotateY(${(-k * 52).toFixed(1)}deg) scale(${(1 - a * .22).toFixed(3)})`;
-        x.style.opacity = (1 - a * .45).toFixed(3); x.style.zIndex = 10 - Math.round(a * 9); }); };
+    // the cards track the finger exactly instead of easing behind it. zn3: each card carries its own perspective (flat layers,
+    // no shared preserve-3d space) and the pose is clamped, so cards never intersect, mirror or jump while the rail scrolls.
+    const items = $$('.ci', c); let raf = 0, last = '';
+    const deep = () => !window.NorexMotion || NorexMotion.mode === 'full';
+    const run = () => { raf = 0; const mid = c.scrollLeft + c.clientWidth / 2, d3 = deep(), key = mid.toFixed(1) + d3; if (key === last) return; last = key;
+      items.forEach((x) => { const k = Math.max(-1, Math.min(1, (x.offsetLeft + x.offsetWidth / 2 - mid) / 300)), a = Math.abs(k), s = Math.max(.72, 1 - a * .22);
+        x.style.transform = d3 ? `perspective(900px) translate3d(${(-k * 62).toFixed(1)}px,0,${(-a * 70).toFixed(1)}px) rotateY(${(-k * 46).toFixed(1)}deg) scale(${s.toFixed(3)})` : `translateX(${(-k * 40).toFixed(1)}px) scale(${s.toFixed(3)})`;
+        x.style.opacity = Math.max(.4, 1 - a * .5).toFixed(3); x.style.zIndex = 20 - Math.round(a * 10); }); };
     const ask = () => { if (!raf) raf = requestAnimationFrame(run); };
-    c.addEventListener('scroll', ask, { passive: true }); addEventListener('resize', ask);
-    requestAnimationFrame(() => { c.scrollLeft = (c.scrollWidth - c.clientWidth) / 2 - 120; run(); });
+    c.addEventListener('scroll', ask, { passive: true }); addEventListener('resize', ask); addEventListener('norex:motion', () => { last = ''; ask(); });
+    // open on the middle card exactly (no half-way start the snap then yanks into place)
+    const mid0 = items[Math.floor((items.length - 1) / 2)];
+    const open = () => { if (mid0) c.scrollLeft = mid0.offsetLeft + mid0.offsetWidth / 2 - c.clientWidth / 2; last = ''; run(); };
+    open(); requestAnimationFrame(open);
     // drag to scroll with a mouse
     let down = 0, sx = 0, sl = 0, moved = 0; c.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') return; down = 1; moved = 0; sx = e.clientX; sl = c.scrollLeft; c.style.scrollSnapType = 'none'; });
     addEventListener('pointermove', (e) => { if (!down) return; const dx = e.clientX - sx; if (Math.abs(dx) > 4) moved = 1; c.scrollLeft = sl - dx; });
@@ -54,7 +59,7 @@
   // Squad stack: pointer drag moves only the top card (transform written once per frame), neighbours are plain CSS transitions; a tap flips it.
   function stack(st) {
     const cards = $$('.sk', st), n = cards.length, stage = $('.stk-stage', st), num = $('.stk-n', st); let i = 0, x0 = 0, dx = 0, dragging = false, moved = false, raf = 0, t0 = 0;
-    const lay = () => { cards.forEach((c, k) => { const o = k - i; c.classList.toggle('far', o < -1 || o > 2); c.style.zIndex = 10 - Math.abs(o); if (o === 0) c.style.transform = ''; else c.style.transform = o < 0 ? 'translateX(-120%) rotate(-14deg)' : `translateY(${o * 14}px) scale(${1 - o * .06})`; c.style.opacity = o < 0 || o > 2 ? 0 : o === 0 ? 1 : 1 - o * .25; c.classList.toggle('on', k === i && c.classList.contains('on')); c.inert = k !== i; });
+    const lay = () => { cards.forEach((c, k) => { const o = k - i; c.classList.toggle('far', o < -1 || o > 2); c.style.zIndex = 10 - Math.abs(o); if (o === 0) c.style.transform = ''; else c.style.transform = o < 0 ? 'translateX(-120%) rotate(-14deg)' : `translateY(${Math.min(o, 3) * 14}px) scale(${Math.max(.82, 1 - o * .06)})`; c.style.opacity = o < 0 || o > 2 ? 0 : o === 0 ? 1 : 1 - o * .25; c.classList.toggle('on', k === i && c.classList.contains('on')); c.inert = k !== i; });
       num.textContent = `${i + 1} / ${n}`; };
     const go = (d) => { const j = Math.min(n - 1, Math.max(0, i + d)); if (j === i) return; cards[i].classList.remove('on'); i = j; lay(); };
     const paint = () => { raf = 0; cards[i].style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`; };
