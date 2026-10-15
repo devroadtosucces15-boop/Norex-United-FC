@@ -34,11 +34,19 @@
   if (!API) return;
   let shown = '', bar = null;
   const stage = () => d.querySelector('[data-watch-live]');
+  // E1: the home page's Watch strip + LIVE button (flag homeWatch – its level is written into the section at build time)
+  const homeSec = () => d.querySelector('[data-home-watch]');
+  const homeAllowed = (sec) => { const a = A(), role = a?.viewAs || a?.role || 'guest', lvl = sec?.dataset.homeWatch;
+    return lvl === 'public' || (lvl === 'members' && role !== 'guest') || (lvl === 'managers' && (role === 'manager' || role === 'owner')) || (lvl === 'owner' && role === 'owner'); };
+  const home = (on) => { const sec = homeSec(), ok = !!sec && homeAllowed(sec);
+    if (sec) sec.hidden = !(ok && on);
+    d.querySelectorAll('[data-home-live]').forEach((b) => { b.hidden = !(ok && on); }); };
   const draw = (v) => {
     const on = v?.live && (v.platform === 'twitch' ? /^\w{3,25}$/.test(v.channel || '') : /^[\w-]{11}$/.test(v.videoId || ''));
     d.body.classList.toggle('is-live', !!on);
     const st = stage(), key = on ? `${v.platform}:${v.channel || v.videoId}` : '';
-    if (!on) { bar?.remove(); bar = null; shown = ''; if (st) { st.innerHTML = '<div class="panel wt-off"><b>📺 Not live right now</b><p class="muted small">When NOREX goes live on Twitch or YouTube the player appears here by itself, and a red bar shows on every page.</p></div>'; } return; }
+    home(!!on);
+    if (!on) { bar?.remove(); bar = null; shown = ''; if (st) { st.innerHTML = st.hasAttribute('data-compact') ? '' : '<div class="panel wt-off"><b>📺 Not live right now</b><p class="muted small">When NOREX goes live on Twitch or YouTube the player appears here by itself, and a red bar shows on every page.</p></div>'; } return; }
     const where = v.platform === 'twitch' ? 'Twitch' : 'YouTube';
     if (!bar) { bar = d.createElement('div'); bar.className = 'wt-bar'; bar.setAttribute('role', 'status'); d.querySelector('.bar')?.after(bar); }
     bar.innerHTML = `<div class="wrap"><span class="wt-dot" aria-hidden="true"></span><b>LIVE</b><span class="wt-t">NOREX is live on ${where}${v.title ? ` – ${esc(v.title)}` : ''}</span><a class="btn sm" href="watch.html">▶ Watch</a></div>`;

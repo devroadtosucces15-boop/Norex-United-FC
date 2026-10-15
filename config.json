@@ -118,6 +118,9 @@
     "fun": "owner",
     "discoveries": "owner",
     "watchlist": "owner",
-    "memberLive": "owner"
+    "memberLive": "owner",
+    "homeWatch": "owner",
+    "liveAnnounce": "owner",
+    "reminders": "owner"
   }
 }

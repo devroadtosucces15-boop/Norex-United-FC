@@ -1,4 +1,4 @@
-import { cfg, media, clubStats as C, players, matches, recent, records, leaders, shapes, updates, fmtDate } from '../lib/data.mjs';
+import { cfg, features, media, clubStats as C, players, matches, recent, records, leaders, shapes, updates, fmtDate } from '../lib/data.mjs';
 import * as W from '../lib/widgets.mjs';
 import { oppCrest, shell, esc, slug, card, hero, chip, row, sbt, pillRes, sample, lineLabel } from '../lib/ui.mjs';
 
@@ -9,6 +9,7 @@ const lineOfPlayer = (p) => p.line; // card line (favourite position from EA)
 
 // ---------- HOME ----------
 export function home() {
+  const homeWatch = features.homeWatch && features.homeWatch !== 'off' ? features.homeWatch : '';
   const last = recent[0], form = recent.slice(0, 5).reverse();
   const sc = top(players, 'goals'), rt = leaders.rating[0], as = top(players, 'assists');
   const scorers = last ? last.lines.filter((l) => l.goals).map((l) => `${esc(l.n)}${l.goals > 1 ? ` ×${l.goals}` : ''}`).join(', ') : '';
@@ -20,7 +21,7 @@ export function home() {
    <h1 class="reveal" style="--i:1">One club.<br><em>One crown.</em></h1>
    <p class="lead reveal" style="--i:2">${esc(C.name)} is always looking for committed players who want to compete. Every card, every match and every number below is the club's own record.</p>
    <div class="ticker reveal" style="--i:3" aria-label="Last five results, oldest first">${form.map((m) => `<a class="fd ${m.res}" href="match-${m.id}.html" title="${esc(m.opp)} ${m.gf}-${m.ga}">${oppCrest(m.crest, m.opp, 26)}<b>${m.res}</b></a>`).join('')}<span class="muted small" style="align-self:center;margin-left:6px">last ${form.length} · ${W.runNow()[0]} ${W.runNow()[1]}</span></div>
-   <div class="chips reveal" style="--i:4"><a class="btn" href="join.html">Apply for a trial</a><a class="btn ghost" href="results.html">Results</a><a class="btn ghost" href="tactics.html">Our tactics</a></div>
+   <div class="chips reveal" style="--i:4"><a class="btn" href="join.html">Apply for a trial</a><a class="btn ghost" href="results.html">Results</a><a class="btn ghost" href="tactics.html">Our tactics</a>${homeWatch ? '<a class="btn live-btn" href="#home-watch" data-home-live hidden><span class="wt-dot" aria-hidden="true"></span> LIVE · Watch</a>' : ''}</div>
   </div>
   <div class="stage" aria-hidden="true">
    <div class="crestwrap tilt" data-tilt="8"><span class="halo"></span><img src="crest.png" alt=""></div>
@@ -29,6 +30,7 @@ export function home() {
   </div>
  </section>
 
+ ${homeWatch ? `<section class="sec" id="home-watch" data-home-watch="${homeWatch}" hidden><header><div><span class="ribbon">🔴 Live now</span></div><a class="btn ghost" href="watch.html">Open Watch</a></header><div data-watch-live data-compact></div></section>` : ''}
  <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header><div class="panel reveal">${W.digits()}</div>
   <div class="panel reveal" style="margin-top:22px"><h3>Form · last ${recent.length} games</h3>${W.formWave()}</div></section>
 
