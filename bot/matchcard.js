@@ -6,7 +6,7 @@
 // Pure functions + one handler – scripts/fetch.mjs imports matchComponents() for the auto-posted results.
 // Only bot-sent messages can carry these (Discord ignores interactive components on plain webhooks).
 
-import { message, header, text, sep, footer, buttons, resultAccent, reply } from './ui.js';
+import { message, header, text, sep, footer, buttons, resultAccent, reply, privateNote } from './ui.js';
 
 export const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
 const RES_WORD = { W: '✅ Win', D: '➖ Draw', L: '❌ Defeat' };
@@ -71,7 +71,7 @@ export function personalEmbed(m, line, p, club, site, { mine = false } = {}) {
   ] });
 }
 
-const eph = (data) => ({ type: 4, data: { flags: 64, allowed_mentions: { parse: [] }, ...data } });
+const eph = (data) => (data.content && !data.components ? privateNote(data.content) : { type: 4, data: { flags: 64, allowed_mentions: { parse: [] }, ...data } });
 
 // Component interaction handler. deps: { load(file), claimOf(userId) → player key | null, allowed(i) → bool }.
 export async function matchInteraction(i, site, deps) {

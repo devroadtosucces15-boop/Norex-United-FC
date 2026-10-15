@@ -78,6 +78,8 @@ export function notice(title, body = '', { accent = 'steel', ephemeral = true, e
   return message({ accent, ephemeral, blocks: [text(`**${title}**${body ? `\n${body}` : ''}`), ...extra] });
 }
 export const reply = (data) => ({ type: 4, data });
+// A one-line private answer (error, "not switched on", confirmation) in the steel notice style – leading emoji dropped, nothing loose outside the panel.
+export const privateNote = (content, accent = 'steel') => reply(notice(String(content).replace(/^[\p{Extended_Pictographic}\uFE0F\s]+/u, '').replace(/\*\*/g, ''), '', { accent }));
 
 // ---------- drawn cards (site/api/cards.json, made by scripts/cards.mjs) ----------
 export function cardUrl(manifest, ...key) {

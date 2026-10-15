@@ -62,8 +62,8 @@ await tt('owner picks a player → ephemeral card with rating + passes', async (
   const txt = plainText(d.data);
   return d.type === 4 && (d.data.flags & 64) === 64 && txt.includes(line.n) && /Rating/.test(txt) && /Passes/.test(txt) && !/verified player/i.test(txt);
 });
-await tt('flag owner: a plain member gets "coming soon"', async () => (await pick(as('500'), line.k)).d.data.content.includes('🔒'));
-await tt('My match without a claim → how to link it', async () => (await mine(as('111'))).d.data.content.includes('Squad Hub'));
+await tt('flag owner: a plain member gets "coming soon"', async () => plainText((await pick(as('500'), line.k)).d.data).includes('being tested'));
+await tt('My match without a claim → how to link it', async () => plainText((await mine(as('111'))).d.data).includes('Squad Hub'));
 DB.prepare("INSERT INTO claims (user_id, player, player_name, status, at, name) VALUES ('111', ?, ?, 'approved', 1, 'Boss')").bind(m.ps[1].k, m.ps[1].n).run();
 await tt('My match with an approved claim → own card, marked verified', async () => { const t2 = plainText((await mine(as('111'))).d.data); return t2.includes(m.ps[1].n) && /verified player/i.test(t2); });
 await tt('picking my own player also shows "your verified player"', async () => /verified player/i.test(plainText((await pick(as('111'), m.ps[1].k)).d.data)));
@@ -71,8 +71,8 @@ await tt('Box score button with no drawn card yet → a small private note, noth
   const r = await send({ type: 3, ...as('111'), data: { component_type: 2, custom_id: `norex:box:${m.id}` } });
   return r.d.type === 4 && (r.d.data.flags & 64) === 64 && /No box score/.test(plainText(r.d.data));
 });
-await tt('player not in that match → friendly note', async () => (await pick(as('111'), 'nobody')).d.data.content.includes("didn't play"));
-await tt('unknown / old match → link to the match page', async () => (await pick(as('111'), line.k, '1')).d.data.content.includes('matches/1.html'));
+await tt('player not in that match → friendly note', async () => plainText((await pick(as('111'), 'nobody')).d.data).includes("didn't play"));
+await tt('unknown / old match → link to the match page', async () => plainText((await pick(as('111'), line.k, '1')).d.data).includes('matches/1.html'));
 await tt('/last: owner gets the menu, members do not (flag owner)', async () => {
   const o = (await send({ type: 2, ...as('111'), data: { name: 'last' } })).d.data, p = (await send({ type: 2, ...as('500'), data: { name: 'last' } })).d.data;
   const ids = (d) => JSON.stringify(d.components ?? []).match(/"custom_id":"[^"]+"/g) ?? [];
@@ -117,7 +117,7 @@ calls.length = 0;
 await tt('flag owner: a manager decision does not touch Discord yet', async () => (await call(mgr, '/api/admin/claims', { user: '222', action: 'unlink' })).s === 200 && !calls.length);
 
 // /syncroles
-await tt('/syncroles: plain member → 🔒', async () => (await send({ type: 2, ...as('500'), data: { name: 'syncroles' } })).d.data.content.includes('🔒'));
+await tt('/syncroles: plain member → 🔒', async () => plainText((await send({ type: 2, ...as('500'), data: { name: 'syncroles' } })).d.data).includes('Managers only'));
 pending = []; calls.length = 0;
 await tt('/syncroles as owner → deferred, then a summary', async () => {
   const d = (await send({ type: 2, token: 'tok', ...as('111'), data: { name: 'syncroles' } })).d;

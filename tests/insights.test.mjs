@@ -87,9 +87,9 @@ const club = siteJson('club'), players = siteJson('players');
 // ---------- /insights command ----------
 await tt('plain member → locked, private', async () => {
   const r = await send(slash('u5'));
-  return r.d.type === 4 && r.d.data.flags === 64 && /Managers only/.test(r.d.data.content);
+  return r.d.type === 4 && (r.d.data.flags & 64) === 64 && /Managers only/.test(plainText(r.d.data));
 });
-await tt('manager while flag is owner-only → locked', async () => /Managers only/.test((await send(slash('u1', ['mgr']))).d.data.content));
+await tt('manager while flag is owner-only → locked', async () => /Managers only/.test(plainText((await send(slash('u1', ['mgr']))).d.data)));
 
 await tt('owner → deferred private reply, then the report is patched in', async () => {
   const r = await send(slash('111'));

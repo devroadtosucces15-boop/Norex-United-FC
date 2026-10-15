@@ -39,7 +39,7 @@ import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordIn
 import { handleHubWaveJob } from './hub.js';
 import { burnerCommand, burnerPick } from './burners.js';
 import { generateCards } from './cardstudio.js';
-import { message, notice, header, cards, facts, text, sep, side, thumb, label, footer, buttons, cardUrl, resultAccent, RESULT_ICON } from './ui.js';
+import { message, notice, header, cards, facts, text, sep, side, thumb, label, footer, buttons, cardUrl, privateNote, resultAccent, RESULT_ICON } from './ui.js';
 import { it } from './icons.js';
 import { playerFaces } from './faces.js';
 import { zoneChoices } from './host.js';
@@ -113,7 +113,7 @@ export default {
     const cmdSettings = cmdName ? await getCommandSettings(env) : null;
     if (cmdName) { // the owner's per-command rules (Boardroom → Bot commands)
       const msg = await commandBlocked(env, cmdName, who, i.channel_id, cmdSettings);
-      if (msg) return json({ type: 4, data: { content: msg, flags: 64 } });
+      if (msg) return json(privateNote(msg));
     }
     const respond = async () => {
     if (i.type === 3 && /^norex:box:/.test(i.data?.custom_id ?? '')) { // "Box score" under /last and the result posts: the drawn table, privately
@@ -135,7 +135,7 @@ export default {
           allowed: () => flagOn(env, who, 'discordMatch'),
         }));
       } catch (e) {
-        return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
+        return json(privateNote(`⚠️ ${e.message}`));
       }
     }
     if ((i.type === 2 && i.data.name === 'panel') || ((i.type === 3 || i.type === 5) && PANEL_ID.test(i.data?.custom_id ?? ''))) { // the manager panel
@@ -160,10 +160,10 @@ export default {
     if (i.type === 2 && i.data.name === 'burner') return burnerCommand(i, env, ctx, who, site, (f) => load(site, f, ctx)); // burner-club tracker
     if (i.type === 3 && /^norex:bn:/.test(i.data?.custom_id ?? '')) return burnerPick(i, env, ctx, who, (f) => load(site, f, ctx)); // …its pickers
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
-      try { return json(await eventButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
+      try { return json(await eventButton(i, env, who)); } catch (e) { return json(privateNote(`⚠️ ${e.message}`)); }
     }
     if (i.type === 3 && /^norex:play:\d+:learned$/.test(i.data?.custom_id ?? '')) { // BE1 ✅ Learned it on a shared play
-      try { return json(await playButton(i, env, who)); } catch (e) { return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } }); }
+      try { return json(await playButton(i, env, who)); } catch (e) { return json(privateNote(`⚠️ ${e.message}`)); }
     }
     if (i.type === 2 && MEMBER_COMMANDS.has(i.data.name)) { // P7.4 commands that read the member database
       try {
@@ -174,7 +174,7 @@ export default {
           top: async (stat) => ({ type: 4, data: await command({ name: 'top', options: [{ name: 'stat', value: stat }] }, site, ctx, { env }) }),
         }));
       } catch (e) {
-        return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
+        return json(privateNote(`⚠️ ${e.message}`));
       }
     }
     if (i.type === 2 && i.data.name === 'insights') return insightsCommand(i, env, ctx, site, who);
@@ -184,7 +184,7 @@ export default {
         const data = await command(i.data, site, ctx, { matchControls: flagOn(env, who, 'discordMatch'), env, origin: new URL(request.url).origin });
         return json({ type: 4, data });
       } catch (e) {
-        return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
+        return json(privateNote(`⚠️ ${e.message}`));
       }
     }
     return new Response('Unhandled', { status: 400 });
@@ -230,8 +230,8 @@ function discordUser(env, i) {
 // ---------- P2.5 /syncroles (managers): re-sync the ✅ Verified role for every decided claim ----------
 // Deferred reply (type 5) – the Discord calls can take longer than the 3-second limit – then the result is patched in.
 function syncRolesCommand(i, env, ctx, site, who) {
-  if (!can(who, 'roles.sync') || !flagOn(env, who, 'roleSync')) return json({ type: 4, data: { content: '🔒 Managers only (and role sync is not switched on for you yet).', flags: 64 } });
-  if (!env.DB) return json({ type: 4, data: { content: '⚠️ The member database is not connected.', flags: 64 } });
+  if (!can(who, 'roles.sync') || !flagOn(env, who, 'roleSync')) return json(privateNote('🔒 Managers only (and role sync is not switched on for you yet).'));
+  if (!env.DB) return json(privateNote('⚠️ The member database is not connected.'));
   ctx.waitUntil((async () => {
     let content;
     try {
@@ -254,7 +254,7 @@ function syncRolesCommand(i, env, ctx, site, who) {
 
 // ---------- /exportcontent (owner): dump guide/rule/playstyle/announcement channels to the owner's DMs ----------
 function exportContentCommand(i, env, ctx, who) {
-  if (!can(who, 'settings.bot')) return json({ type: 4, data: { content: '🔒 Owner only.', flags: 64 } });
+  if (!can(who, 'settings.bot')) return json(privateNote('🔒 Owner only.'));
   const opts = Object.fromEntries(flatOptions(i.data.options).map(o => [o.name,o.value]));
   const options = {...opts,channelId:opts.channel || i.channel_id};
   ctx.waitUntil((async () => {
@@ -274,7 +274,7 @@ function exportContentCommand(i, env, ctx, who) {
 
 // ---------- /aispike (owner): P11.1 one-off test of the Workers AI text + image models ----------
 function aiSpikeCommand(i, env, ctx, who) {
-  if (!can(who, 'settings.bot')) return json({ type: 4, data: { content: '🔒 Owner only.', flags: 64 } });
+  if (!can(who, 'settings.bot')) return json(privateNote('🔒 Owner only.'));
   ctx.waitUntil((async () => {
     let content;
     try {
@@ -291,7 +291,7 @@ function aiSpikeCommand(i, env, ctx, who) {
 
 // ---------- /profanitysetup (owner): P11.4 create/update the Discord AutoMod rule + alert channel ----------
 function profanitySetupCommand(i, env, ctx, who) {
-  if (!can(who, 'settings.bot')) return json({ type: 4, data: { content: '🔒 Owner only.', flags: 64 } });
+  if (!can(who, 'settings.bot')) return json(privateNote('🔒 Owner only.'));
   const channel = flatOptions(i.data.options).find((o) => o.name === 'channel')?.value;
   ctx.waitUntil((async () => {
     let content;
@@ -310,10 +310,10 @@ function profanitySetupCommand(i, env, ctx, who) {
 
 // ---------- /avatarcard (members): P11.5 upload an avatar → AI background + stored photo, both served via /media ----------
 function avatarCardCommand(i, env, ctx, who, origin) {
-  if (!flagOn(env, who, 'avatarCard')) return json({ type: 4, data: { content: '🔒 Not switched on yet.', flags: 64 } });
+  if (!flagOn(env, who, 'avatarCard')) return json(privateNote('🔒 Not switched on yet.'));
   const optId = flatOptions(i.data.options).find((o) => o.name === 'image')?.value;
   const attachment = i.data.resolved?.attachments?.[optId];
-  if (!attachment) return json({ type: 4, data: { content: '⚠️ Attach an image.', flags: 64 } });
+  if (!attachment) return json(privateNote('⚠️ Attach an image.'));
   ctx.waitUntil((async () => {
     let content;
     try {
@@ -342,7 +342,7 @@ const panelEdit = (m) => ({ components: m.components, allowed_mentions: m.allowe
 
 // ---------- /insight (public, flag `statInsights`): BE9's stored stat insight as an embed – read-only, no writer call ----------
 async function insightCommand(i, env, ctx, site, who) {
-  if (!flagOn(env, who, 'statInsights')) return json({ type: 4, data: { content: '🔒 Club insights are not switched on for you yet.', flags: 64 } });
+  if (!flagOn(env, who, 'statInsights')) return json(privateNote('🔒 Club insights are not switched on for you yet.'));
   const opponent = flatOptions(i.data.options).find((o) => o.name === 'opponent')?.value;
   if (opponent) { // head to head: may need the writer (slow) → deferred reply, then patched
     ctx.waitUntil((async () => {
@@ -356,16 +356,16 @@ async function insightCommand(i, env, ctx, site, who) {
   }
   const stat = flatOptions(i.data.options).find((o) => o.name === 'stat')?.value ?? 'club';
   const out = await discordInsightEmbed(env, stat, who.role).catch((e) => ({ error: `⚠️ ${e.message}` }));
-  if (out.error) return json({ type: 4, data: { content: out.error, flags: 64 } });
+  if (out.error) return json(privateNote(out.error));
   return json({ type: 4, data: out.embed });
 }
 
 // ---------- /ask (public, flag-gated): P11.11 AI club chatbot – site JSON stats as context for the text model ----------
 function askCommand(i, env, ctx, site, who) {
-  if (!flagOn(env, who, 'ask')) return json({ type: 4, data: { content: '🔒 The /ask chatbot is not switched on for you yet.', flags: 64 } });
-  if (!env.AI) return json({ type: 4, data: { content: '⚠️ The AI binding is not connected.', flags: 64 } });
+  if (!flagOn(env, who, 'ask')) return json(privateNote('🔒 The /ask chatbot is not switched on for you yet.'));
+  if (!env.AI) return json(privateNote('⚠️ The AI binding is not connected.'));
   const question = flatOptions(i.data.options).find((o) => o.name === 'question')?.value;
-  if (!question) return json({ type: 4, data: { content: '⚠️ Ask a question.', flags: 64 } });
+  if (!question) return json(privateNote('⚠️ Ask a question.'));
   ctx.waitUntil((async () => {
     let content;
     try {
@@ -383,8 +383,8 @@ function askCommand(i, env, ctx, site, who) {
 
 // ---------- /insights (managers): Club Intelligence report – Discord server + club data → scores and advice ----------
 function insightsCommand(i, env, ctx, site, who) {
-  if (!can(who, 'insights.view') || !flagOn(env, who, 'insights')) return json({ type: 4, data: { content: '🔒 Managers only (and Club Intelligence is not switched on for you yet).', flags: 64 } });
-  if (!env.DB) return json({ type: 4, data: { content: '⚠️ The member database is not connected.', flags: 64 } });
+  if (!can(who, 'insights.view') || !flagOn(env, who, 'insights')) return json(privateNote('🔒 Managers only (and Club Intelligence is not switched on for you yet).'));
+  if (!env.DB) return json(privateNote('⚠️ The member database is not connected.'));
   ctx.waitUntil((async () => {
     let body, more = [];
     try {

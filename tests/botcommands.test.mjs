@@ -1,5 +1,6 @@
 // Per-command bot control: enabled / min role / channel limit / private-public reply / post-to + registration shape.
 import { env, sqlite } from './mock.mjs';
+import { plainText } from '../bot/ui.js';
 import worker from '../bot/worker.js';
 import { COMMANDS, buildRegistration } from '../bot/commanddefs.js';
 import { cleanCommandSettings, commandBlocked, shapeReply } from '../bot/botcommands.js';
@@ -23,17 +24,17 @@ t('registration makes manager-min commands staff-only', buildRegistration(COMMAN
 t('registration leaves member-min commands visible', !buildRegistration(COMMANDS, { last: { min: 'member' } }).find((c) => c.name === 'last').default_member_permissions);
 
 save({ club: { enabled: false } });
-await tt('a switched-off command answers privately that it is off', async () => { const d = (await slash('club')).data; return /switched off/.test(d.content) && d.flags === 64; });
+await tt('a switched-off command answers privately that it is off', async () => { const d = (await slash('club')).data; return /switched off/.test(plainText(d)) && (d.flags & 64) === 64; });
 save({ club: { min: 'manager' } });
-await tt('min role manager blocks a plain member', async () => /managers/.test((await slash('club')).data.content ?? ''));
+await tt('min role manager blocks a plain member', async () => /managers/.test(plainText((await slash('club')).data)));
 save({ club: { channels: ['c9'] } });
-await tt('channel limit blocks the wrong channel', async () => /<#c9>|Use \/club/.test((await slash('club', '700', 'c1')).data.content ?? ''));
-await tt('owner is never blocked', async () => !/Use \/club|switched off/.test((await slash('club', '111', 'c1')).data?.content ?? ''));
+await tt('channel limit blocks the wrong channel', async () => /<#c9>|Use \/club/.test(plainText((await slash('club', '700', 'c1')).data)));
+await tt('owner is never blocked', async () => !/Use \/club|switched off/.test(plainText((await slash('club', '111', 'c1')).data)));
 t('commandBlocked: manager ignores channel limit', (await commandBlocked(env, 'club', { u: '1', role: 'manager' }, 'c1', { club: { channels: ['c9'] } })) === null);
 const priv = await shapeReply(env, 'x', new Response(JSON.stringify({ type: 4, data: { content: 'hi' } })), { x: { reply: 'private' } });
 t('shapeReply private sets flag 64', (await priv.json()).data.flags === 64);
 const pub = await shapeReply(env, 'x', new Response(JSON.stringify({ type: 4, data: { content: 'hi', flags: 64 } })), { x: { reply: 'public' } });
 t('shapeReply public clears flag 64', ((await pub.json()).data.flags ?? 0) === 0);
 save({});
-await tt('no rules → command works as before', async () => !/switched off|managers|Use \/club/.test((await slash('club')).data?.content ?? ''));
+await tt('no rules → command works as before', async () => !/switched off|managers|Use \/club/.test(plainText((await slash('club')).data)));
 done();

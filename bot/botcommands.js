@@ -9,7 +9,7 @@
 import { can, atLeast, ROLES } from './roles.js';
 import { COMMANDS, buildRegistration } from './commanddefs.js';
 import { discordTargets } from './docs.js';
-import { IS_V2 } from './ui.js';
+import { IS_V2, privateNote } from './ui.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -70,7 +70,7 @@ export async function shapeReply(env, name, res, settings) {
       method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...msg, allowed_mentions: msg.allowed_mentions ?? { parse: [] } }),
     }).catch(() => null);
-    if (r?.ok) return json({ type: 4, data: { content: `✅ Posted in <#${s.postTo}>.`, flags: 64 } });
+    if (r?.ok) return json(privateNote(`Posted in <#${s.postTo}>.`, 'win'));
   }
   if (s.reply === 'private') body.data.flags = (body.data.flags ?? 0) | 64;
   else if (s.reply === 'public') body.data.flags = (body.data.flags ?? 0) & ~64;
