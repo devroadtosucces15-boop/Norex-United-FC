@@ -5,7 +5,7 @@ import { formations } from './stats.mjs';
 import { playstyleBlock } from './tactics.mjs';
 
 const ROOMS = [['hub.html', '🎽', 'My Locker', 'Your card, artwork, stats, trophies and alerts'], ['hub-matchnight.html', '🗓️', 'Match Night', 'RSVP, availability, MOTM votes, ratings, Rush log'], ['hub-squad.html', '🤝', 'Squad Room', 'Team up, awards, predictions, Rush squads and scouting'], ['hub-clubhouse.html', '💬', 'Clubhouse', 'Club feed, ideas board, chat room and who is on Discord'], ['hub-handbook.html', '📜', 'Handbook', 'Club rules, docs and how the site works']];
-const ROOMCLS = { 'hub.html': 'locker', 'hub-matchnight.html': 'night', 'hub-squad.html': 'squadr', 'hub-clubhouse.html': 'clubh', 'hub-handbook.html': 'handb', 'hub-watchlist.html': 'clubh', 'hub-discoveries.html': 'clubh' };
+const ROOMCLS = { 'hub.html': 'locker', 'hub-matchnight.html': 'night', 'hub-squad.html': 'squadr', 'hub-clubhouse.html': 'clubh', 'hub-handbook.html': 'handb', 'hub-watchlist.html': 'clubh', 'hub-discoveries.html': 'clubh', 'hub-music.html': 'clubh' };
 const HUBX = '<link rel="stylesheet" href="hubx.css"><script src="hubx.js" defer></script>';
 const hubShell = (page, title, body, extra = {}) => shell({ group: 'hub', page, title, body, ...extra, bodyClass: `hub-page room-${ROOMCLS[page] || 'staff'}`, extraHead: HUBX + (extra.extraHead || '') });
 
@@ -44,7 +44,7 @@ export function locker() {
    <div class="wrap"><section class="sec" data-disc-widget hidden style="margin-top:20px"><header><div><span class="ribbon">Discoveries</span></div><a class="btn ghost" href="hub-discoveries.html">See them all</a></header><div class="nxd-row" data-disc-row></div></section></div>
    <div class="wrap"><section class="sec" style="margin-top:20px"><header><div><span class="ribbon">Your shape</span></div><p>How your game compares with the squad. Each axis is scaled to the best player.</p></header><div class="grid g2"><div class="panel reveal" id="myviz"></div><div class="panel reveal" style="--i:1"><h3>Your tier</h3>${W.tiers()}<h3 style="margin-top:16px">Trophy cabinet</h3>${W.cabinet()}</div></div></section></div>
    <div class="wrap"><section class="sec" style="margin-top:20px"><header><div><span class="ribbon">The Hub</span></div><p>Five rooms, one key. Staff tools sit with them for managers and the owner.</p></header>
-    <div class="grid g3" data-stagger>${ROOMS.map(([h, i, t, d]) => `<a class="panel room" href="${h}"><div style="font-size:30px">${i}</div><h3 style="margin:6px 0 2px">${t}</h3><p class="muted small">${d}</p></a>`).join('')}<a class="panel room" data-flag="watchlist" hidden href="hub-watchlist.html"><div style="font-size:30px">🎬</div><h3 style="margin:6px 0 2px">Watch list</h3><p class="muted small">Pro Clubs videos sorted by topic</p></a><a class="panel room" data-flag="discoveries" hidden href="hub-discoveries.html"><div style="font-size:30px">🔎</div><h3 style="margin:6px 0 2px">Discoveries</h3><p class="muted small">Tips teammates found, checked by the managers</p></a><a class="panel room" data-for="owner" hidden href="staff.html" style="border-color:rgba(239,207,122,.5)"><div style="font-size:30px">🛡️</div><h3 style="margin:6px 0 2px" class="gold-t">Staff</h3><p class="muted small">Dugout, Boardroom and the Artwork studio</p></a></div></section></div>
+    <div class="grid g3" data-stagger>${ROOMS.map(([h, i, t, d]) => `<a class="panel room" href="${h}"><div style="font-size:30px">${i}</div><h3 style="margin:6px 0 2px">${t}</h3><p class="muted small">${d}</p></a>`).join('')}<a class="panel room" data-flag="watchlist" hidden href="hub-watchlist.html"><div style="font-size:30px">🎬</div><h3 style="margin:6px 0 2px">Watch list</h3><p class="muted small">Pro Clubs videos sorted by topic</p></a><a class="panel room" data-flag="discoveries" hidden href="hub-discoveries.html"><div style="font-size:30px">🔎</div><h3 style="margin:6px 0 2px">Discoveries</h3><p class="muted small">Tips teammates found, checked by the managers</p></a><a class="panel room" data-flag="music" hidden href="hub-music.html"><div style="font-size:30px">🎧</div><h3 style="margin:6px 0 2px">Music</h3><p class="muted small">Norex DJ: what is playing in the voice rooms</p></a><a class="panel room" data-for="owner" hidden href="staff.html" style="border-color:rgba(239,207,122,.5)"><div style="font-size:30px">🛡️</div><h3 style="margin:6px 0 2px" class="gold-t">Staff</h3><p class="muted small">Dugout, Boardroom and the Artwork studio</p></a></div></section></div>
   </div>`;
   return hubShell('hub.html', 'My Locker', body, { extraHead: '<link rel="stylesheet" href="tactics.css"><script src="alerts.js" defer></script><script src="mylocker.js" defer></script><script src="botpages.js" defer></script><script src="tonight.js" defer></script><script src="cardstudio.js" defer></script>', data: { full: players } });
 }
@@ -56,6 +56,12 @@ export function watchlist() {
   <div class="wrap" data-for="member owner" hidden data-watchlist>${flagOff('The Watch list', 'data-wl-off')}
    <div data-wl-on hidden><div class="chips" id="wl-topics" role="group" aria-label="Filter by topic"></div><div class="nxv-grid" id="wl-grid" aria-live="polite" aria-busy="true"></div></div></div>`;
   return hubShell('hub-watchlist.html', 'Watch list', body, { extraHead: '<script src="botpages.js" defer></script>' });
+}
+export function music() {
+  const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Norex DJ</div><h2>Music</h2></div><p>What is playing in the club’s voice rooms right now. Add a song, skip, pause or turn it down from here.</p></header></section></div>${gate('hub-music.html')}
+  <div class="wrap" data-for="member owner" hidden data-music>${flagOff('Music', 'data-mu-off')}
+   <div data-mu-on hidden><div class="nxm-bar chips"><span class="muted small" data-mu-state aria-live="polite"></span><button type="button" class="chip" data-mu-sample>🧪 Preview with sample rooms</button></div><div class="nxm-rooms" id="mu-rooms" aria-live="polite" aria-busy="true"></div></div></div>`;
+  return hubShell('hub-music.html', 'Music', body, { extraHead: '<link rel="stylesheet" href="music.css"><script src="music.js" defer></script>' });
 }
 export function discoveries() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Discoveries</h2></div><p>Tricks, videos and patch details teammates found. Post yours in Discord with /share. A manager checks it, then it lands here.</p></header></section></div>${gate('hub-discoveries.html')}
@@ -180,6 +186,6 @@ export function artwork() {
 }
 
 export default function (P) {
-  P('hub.html', locker()); P('hub-matchnight.html', matchNight()); P('hub-squad.html', squadRoom()); P('hub-clubhouse.html', clubhouse()); P('hub-handbook.html', handbook()); P('hub-watchlist.html', watchlist()); P('hub-discoveries.html', discoveries());
+  P('hub.html', locker()); P('hub-matchnight.html', matchNight()); P('hub-squad.html', squadRoom()); P('hub-clubhouse.html', clubhouse()); P('hub-handbook.html', handbook()); P('hub-watchlist.html', watchlist()); P('hub-discoveries.html', discoveries()); P('hub-music.html', music());
   P('staff.html', staff()); P('staff-dugout.html', dugout()); P('staff-schedule.html', schedule()); P('staff-desk.html', desk()); P('staff-tools.html', tools()); P('staff-content.html', content()); P('staff-boardroom.html', boardroom()); P('staff-insights.html', insights()); P('staff-artwork.html', artwork());
 }

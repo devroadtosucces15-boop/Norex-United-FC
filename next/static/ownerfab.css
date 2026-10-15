@@ -1,0 +1,23 @@
+/* 👑 Owner button (ownerfab.js). Richer than anything members get: gold ring, a slow sheen, a spring on press. Bottom-right, under the Navigator. */
+.of-fab{position:fixed;z-index:9976;right:12px;bottom:calc(92px + env(safe-area-inset-bottom));width:52px;height:52px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+@media(min-width:861px){.of-fab{bottom:130px}}
+.of-ring{position:absolute;inset:0;border-radius:50%;padding:2px;background:conic-gradient(from 210deg,#fff2bd,#efcf7a,#b8852a,#efcf7a,#fff2bd);box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 0 1px rgba(239,207,122,.25),0 0 22px rgba(239,207,122,.28);overflow:hidden}
+.of-ring:after{content:"";position:absolute;top:-30%;bottom:-30%;width:40%;left:-60%;transform:skewX(-20deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:ofSheen 5s ease-in-out infinite}
+.of-face{position:relative;z-index:1;display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 35% 25%,#2a2f3c,#0d111a 70%)}
+.of-fab:hover,.of-fab:focus-visible{transform:scale(1.1) rotate(-4deg)}.of-fab:active{transform:scale(.92)}.of-fab:focus-visible{outline:2px solid #efcf7a;outline-offset:3px}
+.of-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:99px;background:#e03131;color:#fff;font:700 11px/20px Inter;text-align:center;box-shadow:0 0 0 2px #0d111a;animation:ofPop .5s cubic-bezier(.34,1.56,.64,1)}
+.of-badge[hidden]{display:none}
+@keyframes ofSheen{0%,60%{left:-60%}100%{left:130%}}@keyframes ofPop{from{transform:scale(0)}to{transform:scale(1)}}
+.of-sheet>.mx-sheet-body{border-color:rgba(239,207,122,.55);background:linear-gradient(180deg,#171c28,#0f131c);box-shadow:0 -10px 50px rgba(239,207,122,.12)}
+.of-h{display:flex;align-items:center;gap:12px}.of-h>div{flex:1}.of-h h3{margin:0;font:700 20px Oswald;letter-spacing:.06em;background:linear-gradient(90deg,#fff2bd,#efcf7a);-webkit-background-clip:text;background-clip:text;color:transparent}.of-h p{margin:0}
+.of-stamp{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid rgba(239,207,122,.5);background:radial-gradient(circle at 35% 25%,#2a2f3c,#0d111a 70%)}
+.of-x{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#fff;font-size:15px;cursor:pointer}
+.of-body{display:grid;gap:18px;margin-top:16px}.of-body h4{font:700 13px Oswald;letter-spacing:.14em;text-transform:uppercase;color:#efcf7a;margin:0 0 8px}.of-body p{margin:6px 0 0}
+.of-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.of-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:inherit;text-decoration:none;transition:transform .3s cubic-bezier(.34,1.56,.64,1),border-color .2s}
+.of-row:hover,.of-row:focus-visible{border-color:#efcf7a;transform:translateX(3px)}.of-row b{font:600 14px Inter;flex:1}.of-row em{font-style:normal;font-weight:700;color:#efcf7a}
+.of-t{display:grid;flex:1}.of-t small{font-size:12px}
+.of-gold{border-color:rgba(239,207,122,.55);background:linear-gradient(135deg,rgba(239,207,122,.12),transparent 70%)}
+.of-seg{display:flex;gap:8px;flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){.of-ring:after,.of-badge{animation:none}.of-fab,.of-row{transition:none}}
+html[data-motion="calm"] .of-ring:after,html[data-motion="off"] .of-ring:after{animation:none}
