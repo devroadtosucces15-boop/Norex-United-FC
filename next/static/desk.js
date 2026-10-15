@@ -19,7 +19,7 @@
   const TAGS = [['general', '📝 General'], ['strength', '💪 Strength'], ['issue', '⚠️ Issue'], ['trial', '🧭 Trial']];
   const S = { tab: 'claims', users: null, reqs: null, mq: '', mf: 'all', openUser: null, logs: {}, warnFor: null, muteFor: null, rq: null, claims: null, rush: null, trials: null, notes: null, canNotes: false, openTrial: null, err: {} };
   const empty = (icon, title, text) => `<div class="panel sq-empty"><span>${icon}</span><div><b>${esc(title)}</b><p class="muted small">${esc(text || '')}</p></div></div>`;
-  const av = (u) => u?.a ? `<img class="dg-av" src="${esc(u.a)}" alt="" loading="lazy">` : `<span class="dg-av dg-ini">${esc((u?.n || '?')[0].toUpperCase())}</span>`;
+  const av = (u) => u?.a ? `<img class="dg-av"${u.id ? ` data-uid="${esc(u.id)}"` : ''} src="${esc(u.a)}" alt="" loading="lazy">` : `<span class="dg-av dg-ini">${esc((u?.n || '?')[0].toUpperCase())}</span>`;
 
   const pendingClaims = () => Object.entries(S.claims || {}).filter(([, c]) => c.status === 'pending').sort((a, b) => a[1].at - b[1].at);
   const counts = () => ({ claims: pendingClaims().length, rush: S.rush?.pending?.length ?? 0, trials: (S.trials || []).filter((t) => ['recommended', 'applied'].includes(t.status)).length, notes: S.notes?.length ?? 0, requests: (S.reqs || []).filter((r) => r.status === 'pending').length });

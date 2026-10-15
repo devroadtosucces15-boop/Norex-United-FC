@@ -36,13 +36,13 @@ Until then the web side can build against the shapes below with sample data.
 
 | # | Feature | Bot side builds | Web side builds | Status |
 |---|---|---|---|---|
-| 1 | **Stream links + live alerts** | `kick` and `birthday` profile fields, live checks every 10 min, Discord "🔴 X is live" posts, `GET /api/live` | Twitch / YouTube / Kick + birthday inputs on the profile edit form; a "Live now" strip (Hub / home) | Planned |
-| 2 | **Watch list** (Pro Clubs YouTube videos sorted by topic) | creator list, upload checks, AI topic sorting, `GET /api/watchlist`, `POST /api/watchlist/:id/useful`, Discord video alerts | Watch list page with topic filters; a "Related videos" block on build, tactics and position pages | Planned |
-| 3 | **Discoveries** (member FYI posts approved by managers) | `/share` in Discord, manager approve/reject, `GET /api/discoveries`, `POST /api/discoveries/:id/useful` | Discoveries feed page (and a Hub widget) | Planned |
-| 4 | **Fun stats on profiles** | jail count, trivia points, birthdays in `GET /api/member` | badges / counters on the member profile page | Planned |
+| 1 | **Stream links + live alerts** | `kick` and `birthday` profile fields, live checks every 10 min, Discord "🔴 X is live" posts, `GET /api/live` | Twitch / YouTube / Kick + birthday inputs on the profile edit form; a "Live now" strip (Hub / home) | Web side built behind flags `memberLive` / `fun` (2026-10-15) |
+| 2 | **Watch list** (Pro Clubs YouTube videos sorted by topic) | creator list, upload checks, AI topic sorting, `GET /api/watchlist`, `POST /api/watchlist/:id/useful`, Discord video alerts | Watch list page with topic filters; a "Related videos" block on build, tactics and position pages | Web side built behind flag `watchlist` (position pages: not yet) |
+| 3 | **Discoveries** (member FYI posts approved by managers) | `/share` in Discord, manager approve/reject, `GET /api/discoveries`, `POST /api/discoveries/:id/useful` | Discoveries feed page (and a Hub widget) | Web side built behind flag `discoveries` |
+| 4 | **Fun stats on profiles** | jail count, trivia points, birthdays in `GET /api/member` | badges / counters on the member profile page | Web side built (shows when `fun` is open) |
 | 5 | **Music** (Norex DJ) | the music bot (Oracle server), room state, controls, playlist import, `GET /api/music/rooms`, a live room socket, `GET/POST /api/music/playlists` | Music page (live player: queue, search, skip, volume) and a playlist section on profiles | Later (needs the Oracle server) |
 | 6 | **Owner floating button** (Mike's request) | `GET /api/manager/queue` → what's waiting (same counts as Discord's `/panel`), for a badge | A floating button only the owner sees, with its own **owner stamp/crest**, premium look (gold, sheen, spring animations, its own colours – richer than anything members get), opening owner tools: the approvals queue with the badge, Boardroom, flags, preview-as, health, announcements, issue reporter | Bot side built (PR #22) – web side to build |
-| 7 | **Faces everywhere** | `bot/faces.js` in Discord: a shipped Card Studio card beats the Discord picture beats the default. `GET /api/faces?ids=` for the site | The same rule on the site wherever a person has a picture (sign-ups, profiles, chat, rosters, votes) | Discord done (PR #22), site API planned |
+| 7 | **Faces everywhere** | `bot/faces.js` in Discord: a shipped Card Studio card beats the Discord picture beats the default. `GET /api/faces?ids=` for the site | The same rule on the site wherever a person has a picture (sign-ups, profiles, chat, rosters, votes) | Discord done (PR #22), site built behind new flag `facesSite` (owner) |
 
 ### API shapes (draft – the bot side fills these in as each lands)
 

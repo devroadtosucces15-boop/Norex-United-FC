@@ -1,6 +1,6 @@
 import { cfg, features, media, clubStats as C, players, matches, recent, records, leaders, shapes, updates, fmtDate } from '../lib/data.mjs';
 import * as W from '../lib/widgets.mjs';
-import { oppCrest, shell, esc, slug, card, hero, chip, row, sbt, pillRes, sample, lineLabel } from '../lib/ui.mjs';
+import { oppCrest, shell, esc, slug, card, hero, chip, row, sbt, pillRes, sample, lineLabel, liveStrip } from '../lib/ui.mjs';
 
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 const top = (arr, k) => [...arr].sort((a, b) => b[k] - a[k])[0];
@@ -30,6 +30,7 @@ export function home() {
   </div>
  </section>
 
+ ${liveStrip}
  ${homeWatch ? `<section class="sec" id="home-watch" data-home-watch="${homeWatch}" hidden><header><div><span class="ribbon">🔴 Live now</span></div><a class="btn ghost" href="watch.html">Open Watch</a></header><div data-watch-live data-compact></div></section>` : ''}
  <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header><div class="panel reveal">${W.digits()}</div>
   <div class="panel reveal" style="margin-top:22px"><h3>Form · last ${recent.length} games</h3>${W.formWave()}</div></section>

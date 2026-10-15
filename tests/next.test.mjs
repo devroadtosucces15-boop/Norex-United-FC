@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { ROOT } from './mock.mjs';
+import { ROOT, call, login } from './mock.mjs';
 import { t, done } from './lib.mjs';
 
 const out = fs.mkdtempSync(path.join(os.tmpdir(), 'nx-'));
@@ -298,5 +298,44 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('B1 insights switch lives in the Motion sheet (I key still works); no separate insights button', ij.includes("M().set('insights'") && !ij.includes('Show insights</b>'));
   t('B2 phone tilt starts whenever its switch is on (no Full-only check), asks iOS on a tap, crests and trophies follow it', pj.includes("NorexMotion.on('gyro')") && !pj.includes("NorexMotion.mode === 'full'") && pj.includes('requestPermission') && !pj.includes('<b>Enable tilt effects</b>') && mc.includes('html.gyro-on .wx .cab .cup') && /rotate:y calc\(var\(--gx/.test(mc));
   t('B3 card wheel: flat per-card 3D (no shared preserve-3d), clamped pose, opens on the middle card; wheels skip the ambient lean; stack scale clamped', !/\.cover \.ci\{[^}]*preserve-3d/.test(wc) && wc.includes('transform-style:flat') && wj.includes('perspective(900px)') && wj.includes('Math.max(.72,') && wj.includes('mid0') && mj.includes("el.closest('.cover,.spot')") && wj.includes('Math.max(.82, 1 - o * .06)')); }
+
+// ---------- bot features on the site (BOT-SITE #1–#7): profile fields, Live now, Watch list, Discoveries, fun stats, faces ----------
+{
+  const bj = read('botfeat.js'), bp = read('botpages.js'), bc = read('botfeat.css'), ml = read('mylocker.js'), mb = read('member.js'), ui = read('hub.html');
+  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8')).features;
+  t('bot features: every flag starts at owner (watchlist, discoveries, memberLive, fun, facesSite)', ['watchlist', 'discoveries', 'memberLive', 'fun', 'facesSite'].every((k) => cfg[k] === 'owner'));
+  t('bot features: shell loads botfeat.css + botfeat.js on every page; the Watch list and Discoveries pages exist', html.filter((f) => read(f).includes('<header class="bar">')).every((f) => /botfeat\.css/.test(read(f)) && /src="botfeat\.js"/.test(read(f))) && ['hub-watchlist.html', 'hub-discoveries.html'].every((f) => html.includes(f)));
+  t('bot features: Hub sub-nav links and room cards for the new pages are hidden until their flag is on', /<a href="hub-watchlist\.html" class="[^"]*" data-flag="watchlist" hidden>/.test(ui) && /<a href="hub-discoveries\.html" class="[^"]*" data-flag="discoveries" hidden>/.test(ui) && /data-flag="watchlist" hidden href="hub-watchlist\.html"/.test(ui) && !/data-flag="[^"]*"/.test(read('tactics.html').replace(/<div class="sub">[\s\S]*?<\/div>/, '').match(/<a href="tactics\.html"[^>]*>/)?.[0] ?? ''));
+  t('bot features: Live now strip on Home and the Hub, related-video blocks on Tactics and Builds, all hidden by default', ['index.html', 'hub.html'].every((f) => /<section class="sec nxl" data-live-strip hidden/.test(read(f))) && /data-related="tactics" hidden/.test(read('tactics.html')) && /data-related="builds" hidden/.test(read('builds.html')) && /data-disc-widget hidden/.test(ui));
+  t('bot features: both new pages show an "isn’t open yet" notice while the flag is off and fetch nothing before the flag is on', /data-wl-off[^>]*hidden/.test(read('hub-watchlist.html')) && /data-dc-off[^>]*hidden/.test(read('hub-discoveries.html')) && bp.includes("B.flag('watchlist').then") && bp.includes("B.flag('discoveries').then") && bj.includes("flag('memberLive').then") && bj.includes("flag('watchlist').then"));
+  t('bot features: client talks to the real routes (live/members, live, faces, watchlist + useful, discoveries + useful)', ['/api/live/members', "'/api/live'", '/api/faces?ids=', '/api/watchlist?related='].every((x) => bj.includes(x)) && ['/api/watchlist?', '/useful', '/api/discoveries/useful', "'/api/discoveries'"].every((x) => bp.includes(x)));
+  t('bot features: Useful is a toggle with an optimistic update, a rollback and a double-tap guard; only https links and pictures are used', bp.includes('x.mine = !was') && bp.includes('x.mine = was') && bp.includes('btn.dataset.busy') && bj.includes("x.protocol === 'https:'") && !/innerHTML\s*=\s*[^;]*\bv\.(title|channel)\b(?![^;]*esc)/.test(bp));
+  t('bot features: touch targets (Useful 44px), 22px gaps, row scrolls with snap on phones, no negative-margin overflow', bc.includes('.nxv-use{min-height:44px}') && bc.includes('--nx-gap:22px') && bc.includes('scroll-snap-type:x mandatory') && !bc.includes('calc(var(--gut) * -1)'));
+  t('bot features: profile form has Kick (flag memberLive) and Birthday (flag fun) at 16px, with inline errors, and sends only the cleaned value', ml.includes("flagOn('memberLive') ? `<label") && ml.includes("flagOn('fun') ? `<div class=\"pf-2\"><label class=\"pf-l\">🎂 Birthday") && /\.pf-l input\.nx16[^{]*\{font-size:16px\}/.test(bc) && ml.includes('data-err="birthday"') && ml.includes('CHK[k](body[k]).v') && ml.includes("twitch: '', youtube: '', kick: '', birthday: ''"));
+  t('bot features: member page shows fun stats as pills only when the server sends the block, Kick only with its flag', mb.includes('funBlock(r.fun)') && mb.includes("includes('memberLive')") && mb.includes('class="pill'));
+  t('bot features: faces — one batched, cached request, card > picture > default, falls back when a card will not load, only with facesSite', bj.includes('slice(i, i + 100)') && bj.includes('FC.has(x)') && bj.includes("flag('facesSite')") && bj.includes("img.dataset.face = 'failed'") && ['squad.js', 'clubhouse.js', 'clubchat.js', 'matchnight.js', 'dugout.js', 'desk.js'].every((f) => read(f).includes('data-uid')));
+  // the pure helpers, run for real
+  const win = {}; new Function('window', 'document', bj)(win, {}); const U = win.NorexBotUtil;
+  const { defaultAvatar } = await import('../bot/faces.js');
+  t('bot features: default picture matches the Worker for any id', ['111', '222', '1322770005535756290', '5'].every((id) => U.defaultAvatar(id) === defaultAvatar(id)));
+  t('bot features: twitch/kick/youtube/birthday checks follow bot/profiles.js', U.twitch('https://www.twitch.tv/Norex_Boss/?x=1').v === 'Norex_Boss' && !!U.twitch('no').err && U.kick('@kick_guy').v === 'kick_guy' && !!U.kick('a b').err && U.youtube('jezclips').v === '@jezclips' && !!U.youtube('https://example.com/x').err && U.birthday('7/14').v === '07-14' && !!U.birthday('02-30').err && U.birthday('02-29').v === '02-29' && !!U.birthday('13-01').err && U.birthday('').v === '' && U.fmtBirthday('07-14') === '14 Jul');
+  t('bot features: times read well', U.onAir(1000, 1000 * 1000 + 42 * 6e4) === '42 min' && U.onAir(1000, 1000 * 1000 + 65 * 6e4) === '1 h 05' && U.ago(1000, 1000 * 1000 + 3 * 864e5) === '3 d ago' && U.safeUrl('javascript:alert(1)') === '' && U.safeUrl('http://x.com') === '');
+  // the real Worker routes with SAMPLE rows: the shapes the pages read, the toggles, flag levels
+  const { seedBotSample } = await import('./botfeat-sample.mjs'); const { tok } = await seedBotSample();
+  const live = (await call(tok['111'], '/api/live/members')).d, wl = (await call(tok['111'], '/api/watchlist?topic=tactics&limit=5')).d, rel = (await call(tok['111'], '/api/watchlist?related=CAM&limit=3')).d, dc = (await call(tok['111'], '/api/discoveries')).d;
+  t('bot routes: live/members rows have user, name, platform, https url, title and since', live.length === 3 && live.every((x) => x.user && x.name && ['twitch', 'youtube', 'kick'].includes(x.platform) && /^https:/.test(x.url) && x.title && x.since > 1e9));
+  t('bot routes: watch list rows and topic/related filters give what the page reads', wl.length === 2 && wl.every((v) => v.topic === 'tactics' && v.id && v.title && /^https:/.test(v.url) && /^https:/.test(v.thumb) && Array.isArray(v.tags) && v.published > 1e9 && typeof v.useful === 'number' && typeof v.mine === 'boolean') && rel.some((v) => v.tags.includes('CAM')));
+  const u1 = (await call(tok['111'], '/api/watchlist/sampleVid001/useful', {})).d, u2 = (await call(tok['111'], '/api/watchlist/sampleVid001/useful', {})).d;
+  t('bot routes: Useful on a video toggles on then off and returns the new count', u1.mine === true && u2.mine === false && u1.useful === u2.useful + 1);
+  t('bot routes: discoveries rows (title, body, link, by.name, at, useful, mine) and the toggle', dc.length === 3 && dc.every((x) => x.id && x.title && x.body && x.by?.name && x.at > 1e9 && typeof x.useful === 'number') && (await call(tok['111'], '/api/discoveries/useful', { id: dc[2].id })).d.mine === true);
+  const fc = (await call(tok['111'], '/api/faces?ids=222,333')).d;
+  t('bot routes: faces map gives a Card Studio card, else the Discord picture', /\/media\/card\/[0-9a-f]{32}\.png$/.test(fc['333']) && /^https:\/\/cdn\.discordapp\.com\//.test(fc['222']));
+  const fun = (await call(tok['111'], '/api/member?u=222')).d;
+  t('bot routes: member card carries the fun block (jail, trivia, birthday) and the new channel fields', fun.fun?.jail === 3 && fun.fun?.trivia === 120 && fun.fun?.birthday === '07-14' && fun.profile?.kick === 'mike_on_kick' && fun.profile?.twitch === 'norex_mike');
+  const sv = await call(tok['222'], '/api/profile', { kick: U.kick('https://kick.com/Mike_K/').v, birthday: U.birthday('3/9').v });
+  t('bot routes: the form’s cleaned values save as sent (kick, birthday 03-09)', sv.s === 200 && sv.d.profile.kick === 'Mike_K' && sv.d.profile.birthday === '03-09');
+  const closed = Object.fromEntries(await Promise.all(['/api/live/members', '/api/watchlist', '/api/discoveries'].map(async (r) => [r, (await call(tok['222'], r)).s])));
+  t('bot routes: owner-level flags — an ordinary member gets 404 on every new route, so nothing shows', Object.values(closed).every((c) => c === 404));
+}
 fs.rmSync(out, { recursive: true, force: true });
 done();

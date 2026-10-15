@@ -16,17 +16,22 @@
   const pos = (a) => (a && a.length ? a.map((x) => `<span class="chip gold">${esc(x)}</span>`).join('') : '<span class="muted small">None picked yet</span>');
   const sec = (t, b) => `<section class="panel reveal in"><h3>${t}</h3>${b}</section>`;
   const link = (u, base) => (/^https?:\/\//.test(u) ? u : base + encodeURIComponent(u));
-  A.call(`/api/member?u=${encodeURIComponent(id)}`).then((r) => {
+  const ytLink = (u) => (/^https?:\/\//.test(u) ? u : `https://youtube.com/${/^(@|channel\/)/.test(u) ? u : '@' + u}`);
+  const NB = window.NorexBotUtil, kickOn = (A.features || []).includes('memberLive');
+  // 🎉 fun stats (GET /api/member adds the `fun` block only while the owner flag is on): same pill badges as the role tag
+  const funBlock = (f) => { if (!f) return ''; const bd = NB?.fmtBirthday(f.birthday) || '';
+    return `<div style="margin-top:18px">${sec('🎉 Fun stats', `<div class="nxf"><span class="pill ${+f.jail ? 'red' : ''}">⛓️ Jailed <b>×${+f.jail || 0}</b></span><span class="pill gold">🧠 Trivia <b>${+f.trivia || 0}</b> pts</span>${bd ? `<span class="pill">🎂 Birthday <b>${esc(bd)}</b></span>` : ''}</div>`)}</div>`; };
+  Promise.resolve(A.ready).then(() => A.call(`/api/member?u=${encodeURIComponent(id)}`)).then((r) => {
     const m = r.member, p = r.profile || {}, c = r.claim, role = ROLE[m.role] || ROLE.member, have = ids.filter(([k]) => p.ids?.[k]);
     d.title = `${m.n} · NOREX UNITED`;
     put(`<div class="panel reveal in" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
-<img src="${esc(m.a || 'crest-sm.png')}" alt="" width="104" height="104" style="border-radius:50%;object-fit:cover;border:2px solid var(--line)">
+<img data-uid="${esc(m.id || '')}" src="${esc(m.a || 'crest-sm.png')}" alt="" width="104" height="104" style="border-radius:50%;object-fit:cover;border:2px solid var(--line)">
 <div style="flex:1;min-width:220px"><h2 style="font-size:clamp(30px,6vw,44px);margin:0">${esc(m.n)} ${cc(p.country)}</h2>
 <div class="chips" style="margin-top:8px"><span class="pill ${role[2]}">${role[1]} ${role[0]}</span>${m.tag ? `<span class="muted small">@${esc(m.tag)}</span>` : ''}${p.club ? `<span class="chip">❤️ ${esc(p.club)}</span>` : ''}</div>
 ${p.bio ? `<p class="muted" style="margin:12px 0 0">${esc(p.bio)}</p>` : ''}
 <div class="chips" style="margin-top:14px">${m.me ? '<a class="btn" href="hub.html">✏️ Edit my profile</a>' : `<a class="btn" href="https://discord.com/users/${encodeURIComponent(m.id)}" target="_blank" rel="noopener">💬 Open chat in Discord</a>`}${c ? `<a class="btn ghost" href="player-${encodeURIComponent(c.player)}.html">🪪 ${esc(c.playerName)}</a>` : ''}</div></div></div>
 <div class="grid g2" style="margin-top:18px">${sec('📍 Positions', `<p class="muted small" style="margin:0 0 6px">🏆 League</p><div class="chips">${pos(p.positions)}</div><p class="muted small" style="margin:14px 0 6px">⚡ Rush</p><div class="chips">${pos(p.rushPositions)}</div>`)}
 ${sec('🎮 Platform &amp; IDs', p.platform || have.length ? `<ul style="list-style:none;margin:0;padding:0;display:grid;gap:8px">${p.platform ? `<li><span class="muted">🎮 Platform</span> <b>${esc(p.platform)}</b></li>` : ''}${have.map(([k, l, e]) => `<li><span class="muted">${e} ${l}</span> <b>${esc(p.ids[k])}</b></li>`).join('')}</ul>` : '<p class="muted">No IDs added yet.</p>')}</div>
-${p.twitch || p.youtube ? `<div style="margin-top:18px">${sec('📺 Channels', `<div class="chips">${p.twitch ? `<a class="btn ghost" href="${esc(link(p.twitch, 'https://twitch.tv/'))}" target="_blank" rel="noopener nofollow">Twitch · ${esc(p.twitch)}</a>` : ''}${p.youtube ? `<a class="btn ghost" href="${esc(link(p.youtube, 'https://youtube.com/@'))}" target="_blank" rel="noopener nofollow">YouTube · ${esc(p.youtube)}</a>` : ''}</div>`)}</div>` : ''}`);
+${p.twitch || p.youtube || (kickOn && p.kick) ? `<div style="margin-top:18px">${sec('📺 Channels', `<div class="chips">${p.twitch ? `<a class="btn ghost" href="${esc(link(p.twitch, 'https://twitch.tv/'))}" target="_blank" rel="noopener nofollow">Twitch · ${esc(p.twitch)}</a>` : ''}${p.youtube ? `<a class="btn ghost" href="${esc(ytLink(p.youtube))}" target="_blank" rel="noopener nofollow">YouTube · ${esc(p.youtube)}</a>` : ''}${kickOn && p.kick ? `<a class="btn ghost" href="${esc(link(p.kick, 'https://kick.com/'))}" target="_blank" rel="noopener nofollow">Kick · ${esc(p.kick)}</a>` : ''}</div>`)}</div>` : ''}${funBlock(r.fun)}`);
   }).catch((e) => (/not found/i.test(e?.message || '') ? empty('🕵️', 'Member not found', 'This member has not signed in to the site yet.', '<a class="btn ghost" href="hub.html">Back to the Hub</a>') : empty('⚠️', 'Could not load the profile', esc(e?.message || 'Try again in a moment.'), '<button type="button" class="btn ghost" onclick="location.reload()">Try again</button>')));
 })();

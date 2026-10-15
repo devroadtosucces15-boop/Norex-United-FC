@@ -37,7 +37,7 @@
   }
   const skeleton = () => `<div class="dg-skel"><i></i><i></i><i></i></div>`;
   const empty = (icon, title, text) => `<div class="panel sq-empty"><span>${icon}</span><div><b>${esc(title)}</b><p class="muted small">${esc(text)}</p></div></div>`;
-  const av = (p) => p.a ? `<img class="dg-av" src="${esc(p.a)}" alt="" loading="lazy">` : `<span class="dg-av dg-ini">${esc((p.n || '?')[0].toUpperCase())}</span>`;
+  const av = (p) => p.a ? `<img class="dg-av"${p.id ? ` data-uid="${esc(p.id)}"` : ''} src="${esc(p.a)}" alt="" loading="lazy">` : `<span class="dg-av dg-ini">${esc((p.n || '?')[0].toUpperCase())}</span>`;
 
   // ---------- ① answers ----------
   function available(e, who) {

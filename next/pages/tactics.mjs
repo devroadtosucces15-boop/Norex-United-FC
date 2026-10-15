@@ -1,5 +1,5 @@
 import { players, updates, game, shapes, matches, usualXI, ARCH } from '../lib/data.mjs';
-import { shell, esc, sample } from '../lib/ui.mjs';
+import { shell, esc, sample, relatedBlock } from '../lib/ui.mjs';
 import { formations, roles } from './stats.mjs';
 
 const xi = usualXI();
@@ -77,7 +77,7 @@ export function tactics() {
    <div class="grid g2" style="margin-top:18px"><div class="panel reveal"><h3 style="text-align:center">🛡️ Defensive 3-1</h3><p class="muted small" style="text-align:center">Three stay back, one up top. Use it to protect a lead or against a fast front two.</p><div id="r31" data-shape="3-1"></div></div><div class="panel reveal" style="--i:1"><h3 style="text-align:center">⚔️ Offensive 2-2</h3><p class="muted small" style="text-align:center">Two hold, two go. Use it when chasing a goal or against a side that sits deep.</p><div id="r22" data-shape="2-2"></div></div></div>
    <div class="reveal" style="margin-top:22px"><div class="grid g4 rv-g">${RUSH_ROLES.map(([ic, n, t]) => `<div class="panel txr"><div class="txr-ic">${ic}</div><h3>${n}</h3><p class="muted small">${t}</p></div>`).join('')}</div></div>
    <div class="panel reveal" id="rushlog" style="margin-top:22px"><h3>⚡ Rush results the managers confirmed</h3><p class="muted small" id="rushlogTxt">Rush games are logged by members on Match Night and confirmed by a manager, because EA does not publish Rush data.</p><div id="rushlogBody"></div></div>
-   ${setPiecePanel('rush')}</div></section></div>`;
+   ${setPiecePanel('rush')}</div></section></div>${relatedBlock('tactics')}`;
   return shell({ group: 'tactics', page: 'tactics.html', title: 'Tactics table', body, extraHead: '<script src="pitch.js" defer></script><link rel="stylesheet" href="tactics.css">', data: { formations: formations.formations, formationNote: formations.note, roles, xi: xiKeys } });
 }
 
@@ -141,7 +141,7 @@ export function builds() {
   <div data-pane="p" hidden><div id="bxp" class="sq-mount"></div></div>
   <div data-pane="m" hidden><div id="bxm" class="sq-mount"></div></div>
   <div data-pane="a" hidden>${arch}</div></div>
-  <noscript><p class="muted">The builder needs JavaScript.</p></noscript></section></div>`;
+  <noscript><p class="muted">The builder needs JavaScript.</p></noscript></section></div>${relatedBlock('builds')}`;
   return shell({ group: 'tactics', page: 'builds.html', title: 'Builds', body, extraHead: '<script src="build-math.js" defer></script><script src="builds.js" defer></script>' });
 }
 
