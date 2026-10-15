@@ -15,6 +15,13 @@
   const RUSH_POS = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST'];
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const MEDAL = ['🥇', '🥈', '🥉'];
+  // P2.4: accounts Discord marked verified (profile.verified) win over the self-reported ones and get a ✓.
+  const withVerified = (p) => {
+    const v = window.NXViewer?.flagOn('platformLink') ? p?.verified ?? {} : {};
+    return { ...(p?.ids ?? {}), ...Object.fromEntries(['psn', 'xbox', 'steam'].filter((k) => v[k]?.name).map((k) => [k, v[k].name])) };
+  };
+  const isVerified = (p, k) => !!(window.NXViewer?.flagOn('platformLink') && p?.verified?.[k]?.name);
+  const tick = '<span class="pf-verified" data-tip="Verified through Discord">✓</span>';
   const IDS = [['psn', 'PSN ID', '🎮', 'e.g. Norex_Striker'], ['xbox', 'Xbox gamertag', '🟩', 'e.g. Norex Striker'], ['ea', 'EA ID', '⚽', 'Your EA account name'], ['steam', 'Steam name', '💨', 'PC players']];
   const ROLE = { owner: ['Owner', '👑', 'gold'], manager: ['Manager', '🛡️', 'red'], claimed: ['Verified player', '✅', 'win'], member: ['Member', '', ''] };
   const rolePill = (r) => { const [l, e, t] = ROLE[r] || ROLE.member; return UI.pill(l, { emoji: e, tone: t }); };
@@ -71,6 +78,25 @@
   const playerUrl = (k) => `${BASE}players/${encodeURIComponent(k)}.html`;
   const posLine = (list) => (list?.length ? list.map((p, i) => `<span class="pf-pos p${i}" data-tip="${['1st', '2nd', '3rd'][i]} choice">${esc(p)}</span>`).join('') : '<span class="muted">–</span>');
 
+  // ---------- PB.4: my League / Rush build ----------
+  const loadCard = () => (window.NXBuildCard ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/buildcard.js`, onload: ok, onerror: no }))));
+  const BMODES = [['league', '🏟️', 'League'], ['rush', '⚡', 'Rush']];
+  // P2.3 / P4.3 – tags, community badges, achievements live in assets/badges.js
+  const badgesOn = () => !!window.NXViewer?.flagOn('badges');
+  const loadJs = (file, glob) => (window[glob] ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/${file}`, onload: ok, onerror: no }))));
+  const loadBadges = () => (window.NXBadges ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/badges.js`, onload: ok, onerror: no }))));
+  const prettyArch = (id) => String(id || '').replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const hcBuilds = (bl) => (bl && (bl.league || bl.rush) ? `<div class="pf-hc-row pf-hc-builds"><small>🧬 Builds</small><span>${BMODES.filter(([k]) => bl[k]).map(([k, ic]) => `<span title="${esc(bl[k].title)}">${ic} ${esc(prettyArch(bl[k].arch))} L${esc(bl[k].level)}${bl[k].position ? ` · ${esc(bl[k].position)}` : ''}</span>`).join('<br>')}</span></div>` : '');
+  async function paintBuilds(el, bl, mine) {
+    try {
+      await loadCard();
+      const g = await NXBuildCard.ready();
+      const try_ = window.NXViewer?.flagOn('builder');
+      el.innerHTML = BMODES.map(([k, ic, l]) => (bl[k] ? NXBuildCard.mini(g, bl[k], { href: try_ ? NXBuildCard.builderUrl(bl[k]) : undefined, head: `${ic} ${l} build${bl[k].position ? ` · ${bl[k].position}` : ''}` })
+        : `<div class="pb-mini bad"><span class="pb-ovr">–</span><div class="pb-mini-main"><small>${ic} ${l} build</small><b>Not picked yet</b>${mine ? `<span class="pb-mini-sub">Open a build in the ${try_ ? `<a href="${BASE}builder.html">Pro Builder</a>` : 'Pro Builder'} or on <a href="${BASE}probuilds.html">Pro Builds</a> → ⭐ Use as my build</span>` : ''}</div></div>`)).join('');
+    } catch { el.innerHTML = '<p class="muted">Couldn’t load the game data for the builds.</p>'; }
+  }
+
   // ---------- data ----------
   const cards = new Map();
   const getCard = (id, ctx) => { if (!cards.has(id)) cards.set(id, ctx.call(`/api/member?u=${encodeURIComponent(id)}`).catch((e) => { cards.delete(id); throw e; })); return cards.get(id); };
@@ -82,11 +108,18 @@
     const { member: m, claim, profile: p } = d;
     const pl = await findPlayer(ctx, claim?.player);
     const grid = p?.playTimes && convert(p.playTimes, p.tz, myTz);
-    const ids = IDS.filter(([k]) => p?.ids?.[k]);
+    const allIds = withVerified(p);
+    const ids = IDS.filter(([k]) => allIds[k]);
+    const bd = badgesOn() && (await loadBadges().then(() => true).catch(() => false));
+    const st = d.stars && (await loadJs('ratings.js', 'NXRatings').then(() => true).catch(() => false)); // P4.2
     return `<div class="nx-hc-top">${UI.avatar(m.a, m.n, 56)}<div><b>${esc(m.n)} ${flag(p?.country)}</b><small>${m.tag ? `@${esc(m.tag)} · ` : ''}${rolePill(m.role)}</small></div></div>
+${bd ? NXBadges.tagsHtml(p?.tags, { max: 4 }) : ''}
 ${claim ? `<a class="pf-hc-player" href="${playerUrl(claim.player)}">🪪 <b>${esc(claim.playerName)}</b>${pl?.ovr ? ` <span class="pf-ovr">${pl.ovr}</span>` : ''}${pl?.pos ? ` <small>${esc(pl.pos)}</small>` : ''}</a>` : ''}
+${bd ? NXBadges.hcRow(d) : ''}
+${st ? `<div class="pf-hc-row"><small>🌟 Stars</small><span>${NXRatings.badge(d.stars)}</span></div>` : ''}
 ${p?.positions?.length || p?.rushPositions?.length ? `<div class="pf-hc-row"><small>League</small><span>${posLine(p.positions)}</span></div><div class="pf-hc-row"><small>⚡ Rush</small><span>${posLine(p.rushPositions)}</span></div>` : ''}
-${p?.platform || ids.length ? `<div class="pf-hc-ids">${p.platform ? UI.pill(p.platform, { emoji: '🎮' }) : ''}${ids.map(([k, l, e]) => `<span data-tip="${esc(l)}">${e} ${esc(p.ids[k])}</span>`).join('')}</div>` : ''}
+${p?.platform || ids.length ? `<div class="pf-hc-ids">${p.platform ? UI.pill(p.platform, { emoji: '🎮' }) : ''}${ids.map(([k, l, e]) => `<span data-tip="${esc(l)}${isVerified(p, k) ? ' · verified' : ''}">${e} ${esc(allIds[k])}${isVerified(p, k) ? tick : ''}</span>`).join('')}</div>` : ''}
+${hcBuilds(d.builds)}
 ${grid ? `<div class="pf-hc-time">${onNow(grid) ? '<span class="pf-live">🟢 Usually on now</span>' : ''}${weekGrid(grid, { mini: true })}<small>🕒 ${esc(summary(grid))} <i>(your time)</i></small></div>` : ''}
 <div class="row"><a class="btn sm" href="${profileUrl(m.id)}">👤 View profile</a>${claim ? `<a class="btn sm ghost" href="${playerUrl(claim.player)}">🪪 Player page</a>` : ''}</div>`;
   }
@@ -94,7 +127,8 @@ ${grid ? `<div class="pf-hc-time">${onNow(grid) ? '<span class="pf-live">🟢 Us
   // ================= P2.2 editor =================
   let draft = null; // survives hub redraws until saved
   function editor(el, ctx, profile) {
-    const p = draft ?? { bio: '', positions: [], rushPositions: [], platform: '', tz: '', playTimes: null, ids: {}, twitch: '', youtube: '', country: '', club: '', ...(profile || {}) };
+    const p = draft ?? { bio: '', positions: [], rushPositions: [], platform: '', tz: '', playTimes: null, ids: {}, twitch: '', youtube: '', country: '', club: '', tags: [], ...(profile || {}) };
+    p.tags = (p.tags ?? []).map((t) => ({ ...t }));
     draft = p;
     const grid = (p.playTimes ?? [0, 0, 0, 0, 0, 0, 0]).slice();
     const tz = p.tz || myTz;
@@ -105,12 +139,16 @@ ${grid ? `<div class="pf-hc-time">${onNow(grid) ? '<span class="pf-live">🟢 Us
 <label class="fld">Bio <textarea id="pf-bio" maxlength="280" rows="3" placeholder="Playstyle, what you bring to the squad, anything…">${esc(p.bio)}</textarea></label>
 <div class="pf-2"><label class="fld">Country <select id="pf-country"><option value="">–</option>${COUNTRIES.map(([c, n]) => `<option value="${c}"${p.country === c ? ' selected' : ''}>${flag(c)} ${esc(n)}</option>`).join('')}</select></label>
 <label class="fld">Favourite real club <input id="pf-club" maxlength="40" value="${esc(p.club)}" placeholder="e.g. Real Madrid"></label></div></fieldset>
+${badgesOn() ? '<fieldset><legend>🏷️ My tags <small>up to 8 · emoji + colour</small></legend><div id="pf-tags"></div></fieldset>' : ''}
 <fieldset><legend>📍 Positions <small>1st · 2nd · 3rd choice</small></legend>
 <div class="pf-ranks"><span>🏆 League</span>${[0, 1, 2].map((i) => rankSel('positions', LEAGUE_POS, i)).join('')}</div>
 <div class="pf-ranks"><span>⚡ Rush</span>${[0, 1, 2].map((i) => rankSel('rushPositions', RUSH_POS, i)).join('')}</div></fieldset>
 <fieldset><legend>🎮 Platform &amp; IDs <small>self-reported</small></legend>
 <label class="fld">Main platform <select id="pf-plat"><option value="">–</option>${['PS5', 'Xbox', 'PC'].map((x) => `<option${p.platform === x ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
-<div class="pf-2">${IDS.map(([k, l, e, ph]) => `<label class="fld">${e} ${l} <input data-id="${k}" maxlength="40" value="${esc(p.ids?.[k] || '')}" placeholder="${esc(ph)}"></label>`).join('')}</div></fieldset>
+<div class="pf-2">${IDS.map(([k, l, e, ph]) => (isVerified(p, k)
+    ? `<label class="fld">${e} ${l} ${tick}<input value="${esc(p.verified[k].name)}" readonly title="Verified through Discord – change it in Discord → Settings → Connections, then log in again"><input type="hidden" data-id="${k}" value="${esc(p.ids?.[k] || '')}"></label>`
+    : `<label class="fld">${e} ${l} <input data-id="${k}" maxlength="40" value="${esc(p.ids?.[k] || '')}" placeholder="${esc(ph)}"></label>`)).join('')}</div>
+${window.NXViewer?.flagOn('platformLink') ? `<p class="small muted">✓ PSN, Xbox and Steam accounts you’ve linked in <b>Discord → Settings → Connections</b> show here as verified after your next login. If your PSN ID or gamertag matches your EA player name, your player claim is approved straight away.</p>` : ''}</fieldset>
 <fieldset><legend>📺 My channels</legend><div class="pf-2">
 <label class="fld"><span class="pf-tw">Twitch</span> <input id="pf-twitch" maxlength="120" value="${esc(p.twitch)}" placeholder="channel name or twitch.tv link"></label>
 <label class="fld"><span class="pf-yt">YouTube</span> <input id="pf-yt" maxlength="160" value="${esc(p.youtube)}" placeholder="@handle or channel link"></label></div></fieldset>
@@ -121,6 +159,8 @@ ${grid ? `<div class="pf-hc-time">${onNow(grid) ? '<span class="pf-live">🟢 Us
 <div class="pt-edit" id="pf-grid"></div><small class="muted" id="pf-sum"></small></fieldset>
 <div class="pf-save"><button class="btn" type="button" id="pf-save">💾 Save profile</button>${profile?.updated ? `<small class="muted">Saved ${UI.time(profile.updated)}</small>` : ''}</div></div>`;
 
+    const tagEl = $('#pf-tags', el);
+    if (tagEl) loadBadges().then(() => NXBadges.tagsEditor(tagEl, p.tags, (l) => { p.tags = l; })).catch(() => { tagEl.textContent = 'Could not load the tags editor.'; });
     const gEl = $('#pf-grid', el), sum = $('#pf-sum', el);
     const drawGrid = () => {
       gEl.innerHTML = weekGrid(grid).replace(/<span class="pt-c([^"]*)"><\/span>/g, (() => { let i = 0; return (_, c) => `<span class="pt-c${c}" data-c="${i++}"></span>`; })());
@@ -204,28 +244,53 @@ ${grid ? `<div class="pf-hc-time">${onNow(grid) ? '<span class="pf-live">🟢 Us
       el.innerHTML = UI.empty({ icon: '🕵️', title: 'Member not found', text: e.message === 'Member not found' ? 'This member has not logged in to the site yet.' : e.message, action: `<a class="btn sm" href="${BASE}members.html">Back to the Squad Hub</a>` });
       return;
     }
-    const { member: m, claim, profile: p = {}, activity } = d;
+    const { member: m, claim, profile: p = {}, activity, builds } = d;
+    const bd = !!d.badges && (await loadBadges().then(() => true).catch(() => false)); // P2.3 / P4.3
+    const st = !!d.stars && (await loadJs('ratings.js', 'NXRatings').then(() => true).catch(() => false)); // P4.2
+    const scoutOn = !!claim && window.NXViewer?.flagOn('scoutReport'); // PB.5 – full report for the member + managers
+    const fullScout = m.me || ['manager', 'owner'].includes(window.NXViewer?.role);
     const pf = p || {};
     const pl = await findPlayer(ctx, claim?.player);
     const grid = pf.playTimes && convert(pf.playTimes, pf.tz, myTz);
-    const ids = IDS.filter(([k]) => pf.ids?.[k]);
+    const allIds = withVerified(pf);
+    const ids = IDS.filter(([k]) => allIds[k]);
+    const anyVerified = ids.some(([k]) => isVerified(pf, k));
     document.title = `${m.n} – ${document.title.split(' – ').pop()}`;
     const sec = (title, body) => `<section class="card pf-sec"><h3>${title}</h3>${body}</section>`;
     el.innerHTML = `<section class="pf-hero card reveal in">
 <div class="pf-av">${UI.avatar(m.a, m.n, 112)}${pf.country ? `<span class="pf-flag" data-tip="${esc(regionName(pf.country))}">${flag(pf.country)}</span>` : ''}</div>
 <div class="pf-id"><h1>${esc(m.n)}</h1><div class="pf-meta">${rolePill(m.role)}${m.tag ? `<span class="pf-tag">@${esc(m.tag)}</span>` : ''}${pf.club ? UI.pill(pf.club, { emoji: '❤️' }) : ''}${onNow(grid) ? '<span class="pf-live">🟢 Usually on now</span>' : ''}</div>
-${pf.bio ? `<p class="pf-bio">${esc(pf.bio)}</p>` : ''}<small class="muted">Member since ${new Date(m.first).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} · last seen ${UI.time(m.last)}</small>
+${d.starting ? `<a class="pf-start" href="${BASE}members.html#schedule-${d.starting.event}">🧩 ${m.me ? 'You’re' : 'Starting'} ${m.me ? 'starting ' : ''}at <b>${esc(d.starting.pos)}</b> · ${esc(d.starting.title || 'next match')} · ${esc(new Date(d.starting.start).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' }))}${d.starting.formation ? ` · ${esc(d.starting.formation)}` : ''}</a>` : ''}${bd ? NXBadges.tagsHtml(pf.tags) : ''}${pf.bio ? `<p class="pf-bio">${esc(pf.bio)}</p>` : ''}<small class="muted">Member since ${new Date(m.first).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} · last seen ${UI.time(m.last)}</small>
 <div class="pf-actions">${m.me ? `<a class="btn" href="${BASE}members.html#me">✏️ Edit my profile</a>` : `<a class="btn discord" href="https://discord.com/users/${encodeURIComponent(m.id)}" target="_blank" rel="noopener">💬 Open chat in Discord</a>`}
-${claim ? `<a class="btn ghost" href="${playerUrl(claim.player)}">🪪 View player page</a>` : ''}${activity ? '<a class="btn ghost" href="#pf-activity">📜 Activity log</a>' : ''}</div></div>
+${d.feedback ? '<button type="button" class="btn ghost" data-feedback>💌 Send feedback</button>' : ''}${claim ? `<a class="btn ghost" href="${playerUrl(claim.player)}">🪪 View player page</a>` : ''}${activity ? '<a class="btn ghost" href="#pf-activity">📜 Activity log</a>' : ''}</div></div>
 ${claim ? `<a class="pf-card" href="${playerUrl(claim.player)}"><small>Plays as</small><b>${esc(claim.playerName)}</b>${pl?.ovr ? `<span class="pf-ovr big">${pl.ovr}</span>` : ''}<small>${esc(pl?.pos || '')}${pl?.s ? ` · ${pl.s.gp} GP · ${pl.s.g}G ${pl.s.a}A · ${Number(pl.s.r).toFixed(1)}` : ''}</small></a>` : ''}</section>
+${st ? `<div class="pf-stars">${NXRatings.badge(d.stars, { big: true })}<small class="muted">Community star rating from teammates · raters stay private</small></div>` : ''}
 <div class="pf-grid2">
+${claim && window.NXViewer?.flagOn('awards') ? '<div data-pf-trophies></div>' : ''}
 ${sec('📍 Positions', `<div class="pf-modes"><div><small>🏆 League</small><div>${posLine(pf.positions)}</div></div><div><small>⚡ Rush</small><div>${posLine(pf.rushPositions)}</div></div></div>`)}
-${sec('🎮 Platform &amp; IDs', pf.platform || ids.length ? `<ul class="pf-ids">${pf.platform ? `<li><span>🎮 Platform</span><b>${esc(pf.platform)}</b></li>` : ''}${ids.map(([k, l, e]) => `<li><span>${e} ${l}</span><b>${esc(pf.ids[k])}</b><button type="button" class="pf-copy" data-copy="${esc(pf.ids[k])}" aria-label="Copy ${l}">📋</button></li>`).join('')}</ul><small class="muted">Self-reported – not verified yet.</small>` : '<p class="muted">No platform IDs added yet.</p>')}
+${sec('🎮 Platform &amp; IDs', pf.platform || ids.length ? `<ul class="pf-ids">${pf.platform ? `<li><span>🎮 Platform</span><b>${esc(pf.platform)}</b></li>` : ''}${ids.map(([k, l, e]) => `<li><span>${e} ${l}</span><b>${esc(allIds[k])}${isVerified(pf, k) ? tick : ''}</b><button type="button" class="pf-copy" data-copy="${esc(allIds[k])}" aria-label="Copy ${l}">📋</button></li>`).join('')}</ul><small class="muted">${anyVerified ? '✓ = verified through Discord · the rest are self-reported.' : 'Self-reported – not verified yet.'}</small>` : '<p class="muted">No platform IDs added yet.</p>')}
 </div>
+${scoutOn ? '<div data-pf-scout></div>' : ''}
+${bd ? sec(`🎖️ Community badges <small class="muted">from teammates</small>`, '<div data-pf-badges></div>') : ''}
+${bd ? sec(`🏆 Achievements <small class="muted">${m.me ? 'yours' : 'unlocked from stats &amp; squad life'}</small>`, '<div data-pf-ach></div>') : ''}
+${builds ? sec('🧬 Builds <small class="muted">League &amp; Rush</small>', `<div class="pb-minis" data-pf-builds>${UI.skeleton('rows', 2)}</div>`) : ''}
 ${sec('🕒 When they play', grid ? `<p class="small muted">Shown in <b>your</b> time – ${esc(tzLabel(myTz))}.${pf.tz && pf.tz !== myTz ? ` ${esc(m.n)}'s time zone: ${esc(tzLabel(pf.tz))}.` : ''}</p>${weekGrid(grid)}<p class="small">${esc(summary(grid))}</p>` : '<p class="muted">No play times added yet.</p>')}
 ${pf.twitch || pf.youtube ? sec('📺 Channels', `<div class="row">${pf.twitch ? `<a class="btn pf-twitch" href="${twitchUrl(pf.twitch)}" target="_blank" rel="noopener nofollow">Twitch · ${esc(pf.twitch)}</a>` : ''}${pf.youtube ? `<a class="btn pf-youtube" href="${ytUrl(pf.youtube)}" target="_blank" rel="noopener nofollow">YouTube · ${esc(pf.youtube)}</a>` : ''}</div>`) : ''}
 ${activity ? `<section class="card pf-sec" id="pf-activity"><h3>📜 Activity log <small class="muted">managers only</small></h3>${activity.length ? `<ul class="feed">${activity.map((a) => `<li><span class="ic">${ACT[a.type] || '•'}</span><div>${esc(a.type.replace(/-/g, ' '))}${a.detail ? ` <span class="muted">${esc(a.detail)}</span>` : ''}</div><small class="muted">${UI.time(a.at)}</small></li>`).join('')}</ul>` : UI.empty({ icon: '📜', title: 'No activity yet' })}</section>` : ''}`;
+    if (builds) paintBuilds($('[data-pf-builds]', el), builds, m.me);
+    const tr = $('[data-pf-trophies]', el); // P4.1 trophy cabinet
+    if (tr) (window.NXAwards ? Promise.resolve() : new Promise((ok, no) => document.head.appendChild(Object.assign(document.createElement('script'), { src: `${BASE}assets/awards.js`, onload: ok, onerror: no })))).then(() => NXAwards.cabinet(tr, claim.player, ctx.call)).catch(() => {});
+    const sc = $('[data-pf-scout]', el); // PB.5 scout report
+    if (sc) loadJs('scout.js', 'NXScout').then(() => NXScout.section(sc, { k: claim.player, full: fullScout, name: claim.playerName, builds: fullScout ? builds : null, mine: m.me })).catch(() => sc.remove());
+    if (bd) {
+      NXBadges.badgesSection($('[data-pf-badges]', el), { ...ctx, onChange: () => { cards.delete(m.id); UI.hoverCard.forget?.(m.id); } }, m, d);
+      NXBadges.achievements($('[data-pf-ach]', el), ctx, m.id, { mine: m.me });
+    }
     el.onclick = async (e) => {
+      if (e.target.closest('[data-feedback]')) { // P4.4
+        loadJs('feedback.js', 'NXFeedback').then(() => NXFeedback.send(ctx, m.id)).catch(() => ctx.toast('Could not open feedback – try again', true));
+        return;
+      }
       const b = e.target.closest('[data-copy]');
       if (!b) return;
       try { await navigator.clipboard.writeText(b.dataset.copy); ctx.toast('Copied'); } catch { ctx.toast('Could not copy', true); }

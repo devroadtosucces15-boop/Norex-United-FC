@@ -1,0 +1,4170 @@
+{
+ "version": "fc27-2026-09-29",
+ "game": "EA SPORTS FC 27",
+ "published": "2026-09-29",
+ "note": "Community ruleset import (see roadmap PB.1/NOREX_BUILDER_PROMPT). Community FC27 ruleset (archetypes, PlayStyles, specializations, level/AP table, attribute cost tiers), credited to ProClubsHQ / ProClubsLab (the dataset's own cost-table tag), captured via a public pitchfc.pro page dump on 2026-09-28. Not an official EA source - unverified until confirmed in-game or in EA Pitch Notes. Never edit a published file: publish a new version instead.",
+ "sources": [
+  {
+   "title": "Pitch Notes – FC 27 Launch Update",
+   "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/pitch-notes-fc27-launch-update",
+   "date": "2026-09-14"
+  },
+  {
+   "title": "Pitch Notes – The Grounds & Clubs Deep Dive",
+   "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/pitch-notes-fc27-the-grounds-deep-dive",
+   "date": "2026-08-04"
+  },
+  {
+   "title": "EA Help – Archetypes & progression",
+   "url": "https://help.ea.com/en/articles/ea-sports-fc/archetypes/",
+   "date": null
+  },
+  {
+   "title": "ProClubsHQ / ProClubsLab FC27 dataset (via pitchfc.pro)",
+   "url": "https://pitchfc.pro",
+   "date": "2026-09-28"
+  }
+ ],
+ "levelCap": {
+  "value": 40,
+  "verified": false,
+  "source": "community",
+  "note": "Matches the community-reported cap already on record (unverified). Community dataset tag: 2026-09-28."
+ },
+ "rules": [
+  {
+   "id": "all-unlocked",
+   "text": "Every archetype is unlocked from the start; progression (AXP) is per archetype.",
+   "source": "ea-notes"
+  },
+  {
+   "id": "free-resets",
+   "text": "Archetype resets no longer cost coins or a reset consumable.",
+   "source": "ea-notes"
+  },
+  {
+   "id": "masteries",
+   "text": "Levelling an archetype unlocks Masteries – small permanent attribute boosts for every archetype (e.g. Finisher level 10: +1 Finishing, +1 Composure).",
+   "source": "ea-notes"
+  },
+  {
+   "id": "amps",
+   "text": "Amps are temporary boosts for the active archetype (tiers 1–4, higher tiers add PlayStyles/PlayStyles+ and perks). At launch, Amps give no PlayStyle+.",
+   "source": "ea-notes"
+  },
+  {
+   "id": "consumable-caps",
+   "text": "AXP consumables can have their own level caps, always within the global max level.",
+   "source": "ea-notes"
+  }
+ ],
+ "archetypeGroups": [
+  {
+   "id": "GK",
+   "name": "Goalkeepers"
+  },
+  {
+   "id": "DEF",
+   "name": "Defenders"
+  },
+  {
+   "id": "MID",
+   "name": "Midfielders"
+  },
+  {
+   "id": "FWD",
+   "name": "Forwards"
+  }
+ ],
+ "archetypes": [
+  {
+   "id": "shot-stopper",
+   "name": "Shot Stopper",
+   "group": "GK",
+   "positions": [
+    "GK"
+   ],
+   "signature": [
+    "GK Reflexes",
+    "Reactions",
+    "Short Passing",
+    "Acceleration"
+   ],
+   "signaturePlaystyle": "far-reach",
+   "skillMoves": {
+    "base": 1,
+    "max": 2
+   },
+   "weakFoot": {
+    "base": 1,
+    "max": 3
+   },
+   "base": {
+    "Acceleration": {
+     "base": 75,
+     "max": 92
+    },
+    "Sprint Speed": {
+     "base": 55,
+     "max": 85
+    },
+    "Positioning": {
+     "base": 50,
+     "max": 85
+    },
+    "Finishing": {
+     "base": 40,
+     "max": 75
+    },
+    "Shot Power": {
+     "base": 50,
+     "max": 75
+    },
+    "Long Shots": {
+     "base": 40,
+     "max": 60
+    },
+    "Volleys": {
+     "base": 40,
+     "max": 60
+    },
+    "Penalties": {
+     "base": 40,
+     "max": 70
+    },
+    "Vision": {
+     "base": 65,
+     "max": 92
+    },
+    "Crossing": {
+     "base": 40,
+     "max": 82
+    },
+    "Free Kick Accuracy": {
+     "base": 40,
+     "max": 75
+    },
+    "Short Passing": {
+     "base": 65,
+     "max": 92
+    },
+    "Long Passing": {
+     "base": 65,
+     "max": 90
+    },
+    "Curve": {
+     "base": 40,
+     "max": 75
+    },
+    "Agility": {
+     "base": 50,
+     "max": 90
+    },
+    "Balance": {
+     "base": 65,
+     "max": 90
+    },
+    "Reactions": {
+     "base": 75,
+     "max": 96
+    },
+    "Ball Control": {
+     "base": 65,
+     "max": 85
+    },
+    "Dribbling": {
+     "base": 45,
+     "max": 75
+    },
+    "Composure": {
+     "base": 55,
+     "max": 90
+    },
+    "Interceptions": {
+     "base": 65,
+     "max": 90
+    },
+    "Heading Accuracy": {
+     "base": 40,
+     "max": 75
+    },
+    "Defensive Awareness": {
+     "base": 40,
+     "max": 75
+    },
+    "Standing Tackle": {
+     "base": 40,
+     "max": 75
+    },
+    "Sliding Tackle": {
+     "base": 50,
+     "max": 70
+    },
+    "Jumping": {
+     "base": 65,
+     "max": 96
+    },
+    "Stamina": {
+     "base": 65,
+     "max": 90
+    },
+    "Strength": {
+     "base": 65,
+     "max": 96
+    },
+    "Aggression": {
+     "base": 65,
+     "max": 92
+    },
+    "GK Diving": {
+     "base": 75,
+     "max": 99
+    },
+    "GK Handling": {
+     "base": 75,
+     "max": 99
+    },
+    "GK Kicking": {
+     "base": 65,
+     "max": 99
+    },
+    "GK Reflexes": {
+     "base": 75,
+     "max": 99
+    },
+    "GK Positioning": {
+     "base": 75,
+     "max": 99
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "sweeper-keeper",
+   "name": "Sweeper Keeper",
+   "group": "GK",
+   "positions": [
+    "GK"
+   ],
+   "signature": [
+    "GK Kicking",
+    "Ball Control",
+    "Vision",
+    "Long Passing"
+   ],
+   "signaturePlaystyle": "footwork",
+   "skillMoves": {
+    "base": 1,
+    "max": 3
+   },
+   "weakFoot": {
+    "base": 1,
+    "max": 4
+   },
+   "base": {
+    "Acceleration": {
+     "base": 75,
+     "max": 92
+    },
+    "Sprint Speed": {
+     "base": 65,
+     "max": 88
+    },
+    "Positioning": {
+     "base": 50,
+     "max": 85
+    },
+    "Finishing": {
+     "base": 40,
+     "max": 75
+    },
+    "Shot Power": {
+     "base": 50,
+     "max": 75
+    },
+    "Long Shots": {
+     "base": 45,
+     "max": 60
+    },
+    "Volleys": {
+     "base": 40,
+     "max": 60
+    },
+    "Penalties": {
+     "base": 55,
+     "max": 80
+    },
+    "Vision": {
+     "base": 75,
+     "max": 99
+    },
+    "Crossing": {
+     "base": 40,
+     "max": 85
+    },
+    "Free Kick Accuracy": {
+     "base": 40,
+     "max": 75
+    },
+    "Short Passing": {
+     "base": 50,
+     "max": 92
+    },
+    "Long Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Curve": {
+     "base": 40,
+     "max": 75
+    },
+    "Agility": {
+     "base": 65,
+     "max": 90
+    },
+    "Balance": {
+     "base": 70,
+     "max": 90
+    },
+    "Reactions": {
+     "base": 75,
+     "max": 96
+    },
+    "Ball Control": {
+     "base": 65,
+     "max": 90
+    },
+    "Dribbling": {
+     "base": 65,
+     "max": 85
+    },
+    "Composure": {
+     "base": 75,
+     "max": 92
+    },
+    "Interceptions": {
+     "base": 75,
+     "max": 96
+    },
+    "Heading Accuracy": {
+     "base": 65,
+     "max": 90
+    },
+    "Defensive Awareness": {
+     "base": 40,
+     "max": 75
+    },
+    "Standing Tackle": {
+     "base": 50,
+     "max": 85
+    },
+    "Sliding Tackle": {
+     "base": 65,
+     "max": 90
+    },
+    "Jumping": {
+     "base": 75,
+     "max": 99
+    },
+    "Stamina": {
+     "base": 75,
+     "max": 92
+    },
+    "Strength": {
+     "base": 70,
+     "max": 96
+    },
+    "Aggression": {
+     "base": 75,
+     "max": 96
+    },
+    "GK Diving": {
+     "base": 75,
+     "max": 99
+    },
+    "GK Handling": {
+     "base": 65,
+     "max": 99
+    },
+    "GK Kicking": {
+     "base": 75,
+     "max": 99
+    },
+    "GK Reflexes": {
+     "base": 75,
+     "max": 99
+    },
+    "GK Positioning": {
+     "base": 75,
+     "max": 99
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "progressor",
+   "name": "Progressor",
+   "group": "DEF",
+   "positions": [
+    "CB",
+    "LB",
+    "RB",
+    "CDM"
+   ],
+   "signature": [
+    "Composure",
+    "Long Passing",
+    "Defensive Awareness",
+    "Standing Tackle"
+   ],
+   "signaturePlaystyle": "long-ball-pass",
+   "skillMoves": {
+    "base": 2,
+    "max": 4
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 4
+   },
+   "base": {
+    "Acceleration": {
+     "base": 70,
+     "max": 92
+    },
+    "Sprint Speed": {
+     "base": 72,
+     "max": 92
+    },
+    "Positioning": {
+     "base": 70,
+     "max": 90
+    },
+    "Finishing": {
+     "base": 50,
+     "max": 85
+    },
+    "Shot Power": {
+     "base": 65,
+     "max": 92
+    },
+    "Long Shots": {
+     "base": 50,
+     "max": 85
+    },
+    "Volleys": {
+     "base": 50,
+     "max": 75
+    },
+    "Penalties": {
+     "base": 65,
+     "max": 92
+    },
+    "Vision": {
+     "base": 75,
+     "max": 92
+    },
+    "Crossing": {
+     "base": 50,
+     "max": 92
+    },
+    "Free Kick Accuracy": {
+     "base": 45,
+     "max": 90
+    },
+    "Short Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Long Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Curve": {
+     "base": 50,
+     "max": 85
+    },
+    "Agility": {
+     "base": 70,
+     "max": 92
+    },
+    "Balance": {
+     "base": 70,
+     "max": 92
+    },
+    "Reactions": {
+     "base": 65,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 70,
+     "max": 96
+    },
+    "Dribbling": {
+     "base": 65,
+     "max": 92
+    },
+    "Composure": {
+     "base": 75,
+     "max": 96
+    },
+    "Interceptions": {
+     "base": 75,
+     "max": 96
+    },
+    "Heading Accuracy": {
+     "base": 75,
+     "max": 96
+    },
+    "Defensive Awareness": {
+     "base": 75,
+     "max": 99
+    },
+    "Standing Tackle": {
+     "base": 75,
+     "max": 99
+    },
+    "Sliding Tackle": {
+     "base": 75,
+     "max": 96
+    },
+    "Jumping": {
+     "base": 75,
+     "max": 99
+    },
+    "Stamina": {
+     "base": 65,
+     "max": 92
+    },
+    "Strength": {
+     "base": 70,
+     "max": 96
+    },
+    "Aggression": {
+     "base": 65,
+     "max": 96
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "boss",
+   "name": "Boss",
+   "group": "DEF",
+   "positions": [
+    "CB",
+    "LB",
+    "RB",
+    "CDM"
+   ],
+   "signature": [
+    "Heading Accuracy",
+    "Jumping",
+    "Strength",
+    "Aggression"
+   ],
+   "signaturePlaystyle": "bruiser",
+   "skillMoves": {
+    "base": 2,
+    "max": 3
+   },
+   "weakFoot": {
+    "base": 2,
+    "max": 4
+   },
+   "base": {
+    "Acceleration": {
+     "base": 70,
+     "max": 90
+    },
+    "Sprint Speed": {
+     "base": 70,
+     "max": 90
+    },
+    "Positioning": {
+     "base": 75,
+     "max": 90
+    },
+    "Finishing": {
+     "base": 45,
+     "max": 82
+    },
+    "Shot Power": {
+     "base": 70,
+     "max": 96
+    },
+    "Long Shots": {
+     "base": 60,
+     "max": 85
+    },
+    "Volleys": {
+     "base": 60,
+     "max": 80
+    },
+    "Penalties": {
+     "base": 65,
+     "max": 92
+    },
+    "Vision": {
+     "base": 55,
+     "max": 90
+    },
+    "Crossing": {
+     "base": 45,
+     "max": 90
+    },
+    "Free Kick Accuracy": {
+     "base": 50,
+     "max": 90
+    },
+    "Short Passing": {
+     "base": 65,
+     "max": 92
+    },
+    "Long Passing": {
+     "base": 65,
+     "max": 90
+    },
+    "Curve": {
+     "base": 50,
+     "max": 75
+    },
+    "Agility": {
+     "base": 65,
+     "max": 90
+    },
+    "Balance": {
+     "base": 75,
+     "max": 90
+    },
+    "Reactions": {
+     "base": 60,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 65,
+     "max": 92
+    },
+    "Dribbling": {
+     "base": 60,
+     "max": 88
+    },
+    "Composure": {
+     "base": 65,
+     "max": 92
+    },
+    "Interceptions": {
+     "base": 75,
+     "max": 96
+    },
+    "Heading Accuracy": {
+     "base": 75,
+     "max": 99
+    },
+    "Defensive Awareness": {
+     "base": 75,
+     "max": 96
+    },
+    "Standing Tackle": {
+     "base": 75,
+     "max": 96
+    },
+    "Sliding Tackle": {
+     "base": 75,
+     "max": 99
+    },
+    "Jumping": {
+     "base": 75,
+     "max": 99
+    },
+    "Stamina": {
+     "base": 70,
+     "max": 92
+    },
+    "Strength": {
+     "base": 75,
+     "max": 99
+    },
+    "Aggression": {
+     "base": 75,
+     "max": 99
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "marauder",
+   "name": "Marauder",
+   "group": "DEF",
+   "positions": [
+    "LB",
+    "RB",
+    "CDM",
+    "LM",
+    "RM"
+   ],
+   "signature": [
+    "Crossing",
+    "Sliding Tackle",
+    "Sprint Speed",
+    "Stamina"
+   ],
+   "signaturePlaystyle": "quick-step",
+   "skillMoves": {
+    "base": 2,
+    "max": 5
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 75,
+     "max": 95
+    },
+    "Sprint Speed": {
+     "base": 75,
+     "max": 95
+    },
+    "Positioning": {
+     "base": 65,
+     "max": 92
+    },
+    "Finishing": {
+     "base": 55,
+     "max": 90
+    },
+    "Shot Power": {
+     "base": 65,
+     "max": 92
+    },
+    "Long Shots": {
+     "base": 60,
+     "max": 90
+    },
+    "Volleys": {
+     "base": 65,
+     "max": 96
+    },
+    "Penalties": {
+     "base": 65,
+     "max": 96
+    },
+    "Vision": {
+     "base": 60,
+     "max": 92
+    },
+    "Crossing": {
+     "base": 75,
+     "max": 99
+    },
+    "Free Kick Accuracy": {
+     "base": 60,
+     "max": 95
+    },
+    "Short Passing": {
+     "base": 65,
+     "max": 92
+    },
+    "Long Passing": {
+     "base": 65,
+     "max": 92
+    },
+    "Curve": {
+     "base": 75,
+     "max": 96
+    },
+    "Agility": {
+     "base": 70,
+     "max": 95
+    },
+    "Balance": {
+     "base": 65,
+     "max": 92
+    },
+    "Reactions": {
+     "base": 70,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 70,
+     "max": 96
+    },
+    "Dribbling": {
+     "base": 70,
+     "max": 92
+    },
+    "Composure": {
+     "base": 65,
+     "max": 92
+    },
+    "Interceptions": {
+     "base": 70,
+     "max": 96
+    },
+    "Heading Accuracy": {
+     "base": 65,
+     "max": 90
+    },
+    "Defensive Awareness": {
+     "base": 70,
+     "max": 96
+    },
+    "Standing Tackle": {
+     "base": 70,
+     "max": 96
+    },
+    "Sliding Tackle": {
+     "base": 75,
+     "max": 96
+    },
+    "Jumping": {
+     "base": 60,
+     "max": 92
+    },
+    "Stamina": {
+     "base": 75,
+     "max": 96
+    },
+    "Strength": {
+     "base": 60,
+     "max": 92
+    },
+    "Aggression": {
+     "base": 72,
+     "max": 96
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "engine",
+   "name": "Engine",
+   "group": "DEF",
+   "signature": [],
+   "base": {},
+   "source": "unverified"
+  },
+  {
+   "id": "disruptor",
+   "name": "Disruptor",
+   "group": "MID",
+   "positions": [
+    "LB",
+    "RB",
+    "CDM",
+    "CM",
+    "LM",
+    "RM",
+    "LW",
+    "RW"
+   ],
+   "signature": [
+    "Standing Tackle",
+    "Acceleration",
+    "Stamina",
+    "Aggression"
+   ],
+   "signaturePlaystyle": "jockey",
+   "skillMoves": {
+    "base": 2,
+    "max": 4
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 75,
+     "max": 92
+    },
+    "Sprint Speed": {
+     "base": 70,
+     "max": 92
+    },
+    "Positioning": {
+     "base": 70,
+     "max": 90
+    },
+    "Finishing": {
+     "base": 50,
+     "max": 90
+    },
+    "Shot Power": {
+     "base": 70,
+     "max": 92
+    },
+    "Long Shots": {
+     "base": 65,
+     "max": 85
+    },
+    "Volleys": {
+     "base": 65,
+     "max": 90
+    },
+    "Penalties": {
+     "base": 65,
+     "max": 92
+    },
+    "Vision": {
+     "base": 65,
+     "max": 90
+    },
+    "Crossing": {
+     "base": 65,
+     "max": 96
+    },
+    "Free Kick Accuracy": {
+     "base": 50,
+     "max": 95
+    },
+    "Short Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Long Passing": {
+     "base": 70,
+     "max": 92
+    },
+    "Curve": {
+     "base": 65,
+     "max": 90
+    },
+    "Agility": {
+     "base": 68,
+     "max": 92
+    },
+    "Balance": {
+     "base": 75,
+     "max": 96
+    },
+    "Reactions": {
+     "base": 70,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 65,
+     "max": 92
+    },
+    "Dribbling": {
+     "base": 65,
+     "max": 92
+    },
+    "Composure": {
+     "base": 70,
+     "max": 92
+    },
+    "Interceptions": {
+     "base": 75,
+     "max": 92
+    },
+    "Heading Accuracy": {
+     "base": 65,
+     "max": 90
+    },
+    "Defensive Awareness": {
+     "base": 70,
+     "max": 92
+    },
+    "Standing Tackle": {
+     "base": 70,
+     "max": 92
+    },
+    "Sliding Tackle": {
+     "base": 75,
+     "max": 92
+    },
+    "Jumping": {
+     "base": 65,
+     "max": 92
+    },
+    "Stamina": {
+     "base": 75,
+     "max": 99
+    },
+    "Strength": {
+     "base": 75,
+     "max": 96
+    },
+    "Aggression": {
+     "base": 70,
+     "max": 96
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "recycler",
+   "name": "Recycler",
+   "group": "MID",
+   "positions": [
+    "CB",
+    "CDM",
+    "CM",
+    "CAM"
+   ],
+   "signature": [
+    "Interceptions",
+    "Short Passing",
+    "Defensive Awareness",
+    "Strength"
+   ],
+   "signaturePlaystyle": "intercept",
+   "skillMoves": {
+    "base": 2,
+    "max": 4
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 70,
+     "max": 90
+    },
+    "Sprint Speed": {
+     "base": 70,
+     "max": 90
+    },
+    "Positioning": {
+     "base": 70,
+     "max": 90
+    },
+    "Finishing": {
+     "base": 55,
+     "max": 90
+    },
+    "Shot Power": {
+     "base": 70,
+     "max": 96
+    },
+    "Long Shots": {
+     "base": 65,
+     "max": 96
+    },
+    "Volleys": {
+     "base": 65,
+     "max": 90
+    },
+    "Penalties": {
+     "base": 65,
+     "max": 92
+    },
+    "Vision": {
+     "base": 75,
+     "max": 96
+    },
+    "Crossing": {
+     "base": 65,
+     "max": 92
+    },
+    "Free Kick Accuracy": {
+     "base": 50,
+     "max": 99
+    },
+    "Short Passing": {
+     "base": 70,
+     "max": 96
+    },
+    "Long Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Curve": {
+     "base": 65,
+     "max": 90
+    },
+    "Agility": {
+     "base": 68,
+     "max": 92
+    },
+    "Balance": {
+     "base": 75,
+     "max": 92
+    },
+    "Reactions": {
+     "base": 65,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 65,
+     "max": 96
+    },
+    "Dribbling": {
+     "base": 65,
+     "max": 92
+    },
+    "Composure": {
+     "base": 72,
+     "max": 99
+    },
+    "Interceptions": {
+     "base": 75,
+     "max": 99
+    },
+    "Heading Accuracy": {
+     "base": 60,
+     "max": 90
+    },
+    "Defensive Awareness": {
+     "base": 75,
+     "max": 99
+    },
+    "Standing Tackle": {
+     "base": 75,
+     "max": 96
+    },
+    "Sliding Tackle": {
+     "base": 75,
+     "max": 92
+    },
+    "Jumping": {
+     "base": 65,
+     "max": 90
+    },
+    "Stamina": {
+     "base": 72,
+     "max": 96
+    },
+    "Strength": {
+     "base": 72,
+     "max": 96
+    },
+    "Aggression": {
+     "base": 75,
+     "max": 96
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "maestro",
+   "name": "Maestro",
+   "group": "MID",
+   "positions": [
+    "CDM",
+    "CM",
+    "CAM",
+    "LM",
+    "RM"
+   ],
+   "signature": [
+    "Agility",
+    "Reactions",
+    "Ball Control",
+    "Long Passing"
+   ],
+   "signaturePlaystyle": "pinged-pass",
+   "skillMoves": {
+    "base": 2,
+    "max": 5
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 70,
+     "max": 90
+    },
+    "Sprint Speed": {
+     "base": 65,
+     "max": 90
+    },
+    "Positioning": {
+     "base": 80,
+     "max": 96
+    },
+    "Finishing": {
+     "base": 65,
+     "max": 96
+    },
+    "Shot Power": {
+     "base": 70,
+     "max": 96
+    },
+    "Long Shots": {
+     "base": 70,
+     "max": 96
+    },
+    "Volleys": {
+     "base": 65,
+     "max": 96
+    },
+    "Penalties": {
+     "base": 70,
+     "max": 99
+    },
+    "Vision": {
+     "base": 75,
+     "max": 99
+    },
+    "Crossing": {
+     "base": 75,
+     "max": 92
+    },
+    "Free Kick Accuracy": {
+     "base": 75,
+     "max": 99
+    },
+    "Short Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Long Passing": {
+     "base": 75,
+     "max": 99
+    },
+    "Curve": {
+     "base": 70,
+     "max": 96
+    },
+    "Agility": {
+     "base": 75,
+     "max": 99
+    },
+    "Balance": {
+     "base": 70,
+     "max": 96
+    },
+    "Reactions": {
+     "base": 65,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 75,
+     "max": 99
+    },
+    "Dribbling": {
+     "base": 65,
+     "max": 96
+    },
+    "Composure": {
+     "base": 75,
+     "max": 99
+    },
+    "Interceptions": {
+     "base": 75,
+     "max": 92
+    },
+    "Heading Accuracy": {
+     "base": 50,
+     "max": 85
+    },
+    "Defensive Awareness": {
+     "base": 65,
+     "max": 90
+    },
+    "Standing Tackle": {
+     "base": 72,
+     "max": 90
+    },
+    "Sliding Tackle": {
+     "base": 50,
+     "max": 90
+    },
+    "Jumping": {
+     "base": 60,
+     "max": 90
+    },
+    "Stamina": {
+     "base": 65,
+     "max": 92
+    },
+    "Strength": {
+     "base": 65,
+     "max": 92
+    },
+    "Aggression": {
+     "base": 65,
+     "max": 92
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "creator",
+   "name": "Creator",
+   "group": "MID",
+   "positions": [
+    "CM",
+    "CAM",
+    "LM",
+    "RM",
+    "LW",
+    "RW"
+   ],
+   "signature": [
+    "Vision",
+    "Long Shots",
+    "Dribbling",
+    "Curve"
+   ],
+   "signaturePlaystyle": "incisive-pass",
+   "skillMoves": {
+    "base": 2,
+    "max": 5
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 70,
+     "max": 92
+    },
+    "Sprint Speed": {
+     "base": 65,
+     "max": 92
+    },
+    "Positioning": {
+     "base": 80,
+     "max": 99
+    },
+    "Finishing": {
+     "base": 65,
+     "max": 96
+    },
+    "Shot Power": {
+     "base": 72,
+     "max": 96
+    },
+    "Long Shots": {
+     "base": 72,
+     "max": 99
+    },
+    "Volleys": {
+     "base": 72,
+     "max": 96
+    },
+    "Penalties": {
+     "base": 75,
+     "max": 99
+    },
+    "Vision": {
+     "base": 75,
+     "max": 99
+    },
+    "Crossing": {
+     "base": 75,
+     "max": 96
+    },
+    "Free Kick Accuracy": {
+     "base": 75,
+     "max": 99
+    },
+    "Short Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Long Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Curve": {
+     "base": 75,
+     "max": 99
+    },
+    "Agility": {
+     "base": 72,
+     "max": 99
+    },
+    "Balance": {
+     "base": 65,
+     "max": 96
+    },
+    "Reactions": {
+     "base": 75,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 75,
+     "max": 96
+    },
+    "Dribbling": {
+     "base": 75,
+     "max": 96
+    },
+    "Composure": {
+     "base": 72,
+     "max": 96
+    },
+    "Interceptions": {
+     "base": 55,
+     "max": 85
+    },
+    "Heading Accuracy": {
+     "base": 50,
+     "max": 85
+    },
+    "Defensive Awareness": {
+     "base": 50,
+     "max": 85
+    },
+    "Standing Tackle": {
+     "base": 65,
+     "max": 90
+    },
+    "Sliding Tackle": {
+     "base": 50,
+     "max": 90
+    },
+    "Jumping": {
+     "base": 60,
+     "max": 90
+    },
+    "Stamina": {
+     "base": 65,
+     "max": 92
+    },
+    "Strength": {
+     "base": 65,
+     "max": 92
+    },
+    "Aggression": {
+     "base": 55,
+     "max": 92
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "spark",
+   "name": "Spark",
+   "group": "FWD",
+   "positions": [
+    "CAM",
+    "LM",
+    "RM",
+    "LW",
+    "RW"
+   ],
+   "signature": [
+    "Agility",
+    "Dribbling",
+    "Vision",
+    "Sprint Speed"
+   ],
+   "signaturePlaystyle": "trickster",
+   "skillMoves": {
+    "base": 3,
+    "max": 5
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 75,
+     "max": 99
+    },
+    "Sprint Speed": {
+     "base": 75,
+     "max": 95
+    },
+    "Positioning": {
+     "base": 80,
+     "max": 96
+    },
+    "Finishing": {
+     "base": 65,
+     "max": 96
+    },
+    "Shot Power": {
+     "base": 65,
+     "max": 92
+    },
+    "Long Shots": {
+     "base": 65,
+     "max": 92
+    },
+    "Volleys": {
+     "base": 72,
+     "max": 96
+    },
+    "Penalties": {
+     "base": 75,
+     "max": 99
+    },
+    "Vision": {
+     "base": 75,
+     "max": 96
+    },
+    "Crossing": {
+     "base": 75,
+     "max": 99
+    },
+    "Free Kick Accuracy": {
+     "base": 65,
+     "max": 99
+    },
+    "Short Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Long Passing": {
+     "base": 65,
+     "max": 92
+    },
+    "Curve": {
+     "base": 75,
+     "max": 96
+    },
+    "Agility": {
+     "base": 75,
+     "max": 99
+    },
+    "Balance": {
+     "base": 75,
+     "max": 96
+    },
+    "Reactions": {
+     "base": 75,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 75,
+     "max": 96
+    },
+    "Dribbling": {
+     "base": 75,
+     "max": 99
+    },
+    "Composure": {
+     "base": 72,
+     "max": 96
+    },
+    "Interceptions": {
+     "base": 55,
+     "max": 85
+    },
+    "Heading Accuracy": {
+     "base": 50,
+     "max": 85
+    },
+    "Defensive Awareness": {
+     "base": 50,
+     "max": 85
+    },
+    "Standing Tackle": {
+     "base": 55,
+     "max": 80
+    },
+    "Sliding Tackle": {
+     "base": 45,
+     "max": 75
+    },
+    "Jumping": {
+     "base": 55,
+     "max": 85
+    },
+    "Stamina": {
+     "base": 65,
+     "max": 92
+    },
+    "Strength": {
+     "base": 65,
+     "max": 90
+    },
+    "Aggression": {
+     "base": 50,
+     "max": 92
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "magician",
+   "name": "Magician",
+   "group": "FWD",
+   "positions": [
+    "CAM",
+    "LM",
+    "RM",
+    "LW",
+    "RW",
+    "ST"
+   ],
+   "signature": [
+    "Ball Control",
+    "Short Passing",
+    "Curve",
+    "Acceleration"
+   ],
+   "signaturePlaystyle": "technical",
+   "skillMoves": {
+    "base": 3,
+    "max": 5
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 75,
+     "max": 95
+    },
+    "Sprint Speed": {
+     "base": 70,
+     "max": 95
+    },
+    "Positioning": {
+     "base": 80,
+     "max": 96
+    },
+    "Finishing": {
+     "base": 75,
+     "max": 99
+    },
+    "Shot Power": {
+     "base": 70,
+     "max": 92
+    },
+    "Long Shots": {
+     "base": 65,
+     "max": 96
+    },
+    "Volleys": {
+     "base": 72,
+     "max": 96
+    },
+    "Penalties": {
+     "base": 75,
+     "max": 99
+    },
+    "Vision": {
+     "base": 75,
+     "max": 96
+    },
+    "Crossing": {
+     "base": 65,
+     "max": 92
+    },
+    "Free Kick Accuracy": {
+     "base": 65,
+     "max": 99
+    },
+    "Short Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Long Passing": {
+     "base": 50,
+     "max": 92
+    },
+    "Curve": {
+     "base": 75,
+     "max": 99
+    },
+    "Agility": {
+     "base": 72,
+     "max": 99
+    },
+    "Balance": {
+     "base": 75,
+     "max": 99
+    },
+    "Reactions": {
+     "base": 75,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 75,
+     "max": 96
+    },
+    "Dribbling": {
+     "base": 75,
+     "max": 96
+    },
+    "Composure": {
+     "base": 72,
+     "max": 96
+    },
+    "Interceptions": {
+     "base": 50,
+     "max": 82
+    },
+    "Heading Accuracy": {
+     "base": 65,
+     "max": 85
+    },
+    "Defensive Awareness": {
+     "base": 45,
+     "max": 82
+    },
+    "Standing Tackle": {
+     "base": 40,
+     "max": 75
+    },
+    "Sliding Tackle": {
+     "base": 40,
+     "max": 75
+    },
+    "Jumping": {
+     "base": 60,
+     "max": 85
+    },
+    "Stamina": {
+     "base": 65,
+     "max": 92
+    },
+    "Strength": {
+     "base": 65,
+     "max": 90
+    },
+    "Aggression": {
+     "base": 55,
+     "max": 92
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "finisher",
+   "name": "Finisher",
+   "group": "FWD",
+   "positions": [
+    "CAM",
+    "LW",
+    "RW",
+    "ST"
+   ],
+   "signature": [
+    "Finishing",
+    "Reactions",
+    "Volleys",
+    "Composure"
+   ],
+   "signaturePlaystyle": "low-driven-shot",
+   "skillMoves": {
+    "base": 3,
+    "max": 5
+   },
+   "weakFoot": {
+    "base": 3,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 75,
+     "max": 95
+    },
+    "Sprint Speed": {
+     "base": 70,
+     "max": 95
+    },
+    "Positioning": {
+     "base": 80,
+     "max": 99
+    },
+    "Finishing": {
+     "base": 75,
+     "max": 99
+    },
+    "Shot Power": {
+     "base": 75,
+     "max": 99
+    },
+    "Long Shots": {
+     "base": 60,
+     "max": 96
+    },
+    "Volleys": {
+     "base": 75,
+     "max": 99
+    },
+    "Penalties": {
+     "base": 75,
+     "max": 99
+    },
+    "Vision": {
+     "base": 65,
+     "max": 92
+    },
+    "Crossing": {
+     "base": 55,
+     "max": 92
+    },
+    "Free Kick Accuracy": {
+     "base": 65,
+     "max": 99
+    },
+    "Short Passing": {
+     "base": 70,
+     "max": 92
+    },
+    "Long Passing": {
+     "base": 50,
+     "max": 92
+    },
+    "Curve": {
+     "base": 70,
+     "max": 96
+    },
+    "Agility": {
+     "base": 72,
+     "max": 99
+    },
+    "Balance": {
+     "base": 75,
+     "max": 96
+    },
+    "Reactions": {
+     "base": 75,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 75,
+     "max": 96
+    },
+    "Dribbling": {
+     "base": 70,
+     "max": 96
+    },
+    "Composure": {
+     "base": 75,
+     "max": 99
+    },
+    "Interceptions": {
+     "base": 60,
+     "max": 85
+    },
+    "Heading Accuracy": {
+     "base": 75,
+     "max": 96
+    },
+    "Defensive Awareness": {
+     "base": 55,
+     "max": 85
+    },
+    "Standing Tackle": {
+     "base": 50,
+     "max": 75
+    },
+    "Sliding Tackle": {
+     "base": 40,
+     "max": 75
+    },
+    "Jumping": {
+     "base": 65,
+     "max": 92
+    },
+    "Stamina": {
+     "base": 65,
+     "max": 92
+    },
+    "Strength": {
+     "base": 70,
+     "max": 92
+    },
+    "Aggression": {
+     "base": 65,
+     "max": 96
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  },
+  {
+   "id": "target",
+   "name": "Target",
+   "group": "FWD",
+   "positions": [
+    "CAM",
+    "LW",
+    "RW",
+    "ST"
+   ],
+   "signature": [
+    "Balance",
+    "Heading Accuracy",
+    "Jumping",
+    "Strength"
+   ],
+   "signaturePlaystyle": "precision-header",
+   "skillMoves": {
+    "base": 2,
+    "max": 5
+   },
+   "weakFoot": {
+    "base": 2,
+    "max": 5
+   },
+   "base": {
+    "Acceleration": {
+     "base": 70,
+     "max": 90
+    },
+    "Sprint Speed": {
+     "base": 65,
+     "max": 92
+    },
+    "Positioning": {
+     "base": 80,
+     "max": 96
+    },
+    "Finishing": {
+     "base": 72,
+     "max": 96
+    },
+    "Shot Power": {
+     "base": 75,
+     "max": 99
+    },
+    "Long Shots": {
+     "base": 65,
+     "max": 96
+    },
+    "Volleys": {
+     "base": 72,
+     "max": 96
+    },
+    "Penalties": {
+     "base": 75,
+     "max": 99
+    },
+    "Vision": {
+     "base": 65,
+     "max": 92
+    },
+    "Crossing": {
+     "base": 50,
+     "max": 90
+    },
+    "Free Kick Accuracy": {
+     "base": 65,
+     "max": 99
+    },
+    "Short Passing": {
+     "base": 75,
+     "max": 96
+    },
+    "Long Passing": {
+     "base": 50,
+     "max": 92
+    },
+    "Curve": {
+     "base": 55,
+     "max": 90
+    },
+    "Agility": {
+     "base": 70,
+     "max": 92
+    },
+    "Balance": {
+     "base": 75,
+     "max": 92
+    },
+    "Reactions": {
+     "base": 75,
+     "max": 99
+    },
+    "Ball Control": {
+     "base": 70,
+     "max": 92
+    },
+    "Dribbling": {
+     "base": 70,
+     "max": 92
+    },
+    "Composure": {
+     "base": 72,
+     "max": 96
+    },
+    "Interceptions": {
+     "base": 50,
+     "max": 82
+    },
+    "Heading Accuracy": {
+     "base": 75,
+     "max": 99
+    },
+    "Defensive Awareness": {
+     "base": 50,
+     "max": 82
+    },
+    "Standing Tackle": {
+     "base": 45,
+     "max": 75
+    },
+    "Sliding Tackle": {
+     "base": 40,
+     "max": 75
+    },
+    "Jumping": {
+     "base": 75,
+     "max": 96
+    },
+    "Stamina": {
+     "base": 60,
+     "max": 92
+    },
+    "Strength": {
+     "base": 75,
+     "max": 99
+    },
+    "Aggression": {
+     "base": 65,
+     "max": 92
+    },
+    "GK Diving": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Handling": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Kicking": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Reflexes": {
+     "base": 10,
+     "max": 10
+    },
+    "GK Positioning": {
+     "base": 10,
+     "max": 10
+    }
+   },
+   "source": "community"
+  }
+ ],
+ "attributeGroups": [
+  {
+   "id": "pace",
+   "name": "Pace",
+   "attributes": [
+    "Acceleration",
+    "Sprint Speed"
+   ]
+  },
+  {
+   "id": "shooting",
+   "name": "Shooting",
+   "attributes": [
+    "Positioning",
+    "Finishing",
+    "Shot Power",
+    "Long Shots",
+    "Volleys",
+    "Penalties"
+   ]
+  },
+  {
+   "id": "passing",
+   "name": "Passing",
+   "attributes": [
+    "Vision",
+    "Crossing",
+    "Free Kick Accuracy",
+    "Short Passing",
+    "Long Passing",
+    "Curve"
+   ]
+  },
+  {
+   "id": "dribbling",
+   "name": "Dribbling",
+   "attributes": [
+    "Agility",
+    "Balance",
+    "Reactions",
+    "Ball Control",
+    "Dribbling",
+    "Composure"
+   ]
+  },
+  {
+   "id": "defending",
+   "name": "Defending",
+   "attributes": [
+    "Interceptions",
+    "Heading Accuracy",
+    "Defensive Awareness",
+    "Standing Tackle",
+    "Sliding Tackle"
+   ]
+  },
+  {
+   "id": "physical",
+   "name": "Physical",
+   "attributes": [
+    "Jumping",
+    "Stamina",
+    "Strength",
+    "Aggression"
+   ]
+  },
+  {
+   "id": "goalkeeping",
+   "name": "Goalkeeping",
+   "attributes": [
+    "GK Diving",
+    "GK Handling",
+    "GK Kicking",
+    "GK Positioning",
+    "GK Reflexes"
+   ]
+  }
+ ],
+ "apPerLevel": [
+  100,
+  9,
+  9,
+  9,
+  19,
+  10,
+  10,
+  10,
+  10,
+  38,
+  13,
+  13,
+  13,
+  13,
+  25,
+  13,
+  13,
+  13,
+  13,
+  44,
+  19,
+  19,
+  19,
+  19,
+  38,
+  25,
+  25,
+  25,
+  25,
+  63,
+  25,
+  25,
+  25,
+  25,
+  38,
+  25,
+  25,
+  25,
+  25,
+  50
+ ],
+ "slots": {
+  "playstyles": 3,
+  "plus": 1,
+  "facilities": 3
+ },
+ "playstyles": [
+  {
+   "id": "finesse-shot",
+   "name": "Finesse Shot",
+   "category": "Scoring",
+   "desc": "Performs Finesse Shots faster with additional curve and improved accuracy.",
+   "requirements": {
+    "Vision": 80,
+    "Finishing": 75,
+    "Curve": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "chip-shot",
+   "name": "Chip Shot",
+   "category": "Scoring",
+   "desc": "Performs Chip Shots faster and with greater accuracy.",
+   "requirements": {
+    "Reactions": 75,
+    "Composure": 80,
+    "Ball Control": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "power-shot",
+   "name": "Power Shot",
+   "category": "Scoring",
+   "desc": "Performs Power Shots faster and with increased speed.",
+   "requirements": {
+    "Finishing": 80,
+    "Shot Power": 75,
+    "Long Shots": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "dead-ball",
+   "name": "Dead Ball",
+   "category": "Scoring",
+   "desc": "Set pieces are delivered with increased speed, curve, and accuracy. Ball trajectory preview line is longer.",
+   "requirements": {
+    "Crossing": 80,
+    "Free Kick Accuracy": 75,
+    "Shot Power": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "precision-header",
+   "name": "Precision Header",
+   "category": "Scoring",
+   "desc": "Performs headers with increased accuracy and has access to Precision Header animations.",
+   "requirements": {
+    "Jumping": 80,
+    "Aggression": 80,
+    "Heading Accuracy": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "acrobatic",
+   "name": "Acrobatic",
+   "category": "Scoring",
+   "desc": "Performs volleys with improved accuracy and has access to acrobatic volley animations.",
+   "requirements": {
+    "Agility": 80,
+    "Reactions": 80,
+    "Volleys": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "low-driven-shot",
+   "name": "Low Driven Shot",
+   "category": "Scoring",
+   "desc": "Enhances a player's ability to execute low driven shots with increased accuracy, faster ball travel, and quicker shot execution.",
+   "requirements": {
+    "Composure": 80,
+    "Finishing": 75,
+    "Shot Power": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "gamechanger",
+   "name": "Gamechanger",
+   "category": "Scoring",
+   "desc": "Enables a player to perform Trivela shots. Fancy shots are performed with higher accuracy. Performs Gamechanger animations when contextually appropriate.",
+   "requirements": {
+    "Composure": 80,
+    "Finishing": 75,
+    "Curve": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "incisive-pass",
+   "name": "Incisive Pass",
+   "category": "Passing",
+   "desc": "Through Passes are more accurate, swerve passes are delivered with more curve, and Precision Passes travel faster to the destination.",
+   "requirements": {
+    "Vision": 75,
+    "Long Passing": 80,
+    "Curve": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "pinged-pass",
+   "name": "Pinged Pass",
+   "category": "Passing",
+   "desc": "Passes travel faster along the ground without impacting the trapping difficulty of the receiver.",
+   "requirements": {
+    "Long Passing": 85,
+    "Short Passing": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "long-ball-pass",
+   "name": "Long Ball Pass",
+   "category": "Passing",
+   "desc": "Lob and Lofted Through Passes are more accurate, travel faster and are more difficult to intercept.",
+   "requirements": {
+    "Vision": 85,
+    "Long Passing": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "tiki-taka",
+   "name": "Tiki Taka",
+   "category": "Passing",
+   "desc": "Executes difficult first-time Ground Passes with high accuracy, using backheels when contextually appropriate. Short distance Ground Passes are highly accurate.",
+   "requirements": {
+    "Reactions": 80,
+    "Ball Control": 80,
+    "Short Passing": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "whipped-pass",
+   "name": "Whipped Pass",
+   "category": "Passing",
+   "desc": "All crosses are highly accurate, travel faster and with more curve.",
+   "requirements": {
+    "Crossing": 80,
+    "Long Passing": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "inventive",
+   "name": "Inventive",
+   "category": "Passing",
+   "desc": "Fancy passes, including outside-of-the-foot passes, are performed with improved accuracy. Performs Inventive animations when contextually appropriate.",
+   "requirements": {
+    "Composure": 80,
+    "Long Passing": 75,
+    "Curve": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "jockey",
+   "name": "Jockey",
+   "category": "Defending",
+   "desc": "Increased max speed of Sprint Jockey and improved transition speed from jockey to sprint.",
+   "requirements": {
+    "Agility": 75,
+    "Defensive Awareness": 80,
+    "Standing Tackle": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "block",
+   "name": "Block",
+   "category": "Defending",
+   "desc": "Increased reach when performing blocks and improved ability to make a successful block.",
+   "requirements": {
+    "Agility": 80,
+    "Strength": 75,
+    "Reactions": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "intercept",
+   "name": "Intercept",
+   "category": "Defending",
+   "desc": "Increased reach and improved chances of retaining possession of the ball when performing interceptions.",
+   "requirements": {
+    "Aggression": 80,
+    "Interceptions": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "anticipate",
+   "name": "Anticipate",
+   "category": "Defending",
+   "desc": "Improved chances of standing tackle success and grants the ability to stop the ball directly at their feet when performing a standing tackle.",
+   "requirements": {
+    "Balance": 80,
+    "Defensive Awareness": 75,
+    "Standing Tackle": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "slide-tackle",
+   "name": "Slide Tackle",
+   "category": "Defending",
+   "desc": "Grants the ability to stop the ball directly at their feet when performing a slide tackle.",
+   "requirements": {
+    "Aggression": 80,
+    "Sliding Tackle": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "aerial-fortress",
+   "name": "Aerial Fortress",
+   "category": "Defending",
+   "desc": "Performs higher jumps and has improved defensive aerial presence.",
+   "requirements": {
+    "Jumping": 75,
+    "Heading Accuracy": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "technical",
+   "name": "Technical",
+   "category": "Ball Control",
+   "desc": "Reaches a higher speed when performing Controlled Sprint and performs wide turns while dribbling with more precision.",
+   "requirements": {
+    "Balance": 80,
+    "Ball Control": 75,
+    "Dribbling": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "rapid",
+   "name": "Rapid",
+   "category": "Ball Control",
+   "desc": "Reaches a higher sprint speed while dribbling and has reduced chance of an error when sprinting or performing knock-ons.",
+   "requirements": {
+    "Acceleration": 75,
+    "Sprint Speed": 80,
+    "Dribbling": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "first-touch",
+   "name": "First Touch",
+   "category": "Ball Control",
+   "desc": "Has reduced error when trapping the ball and is able to transition to dribbling faster with greater control.",
+   "requirements": {
+    "Composure": 80,
+    "Ball Control": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "trickster",
+   "name": "Trickster",
+   "category": "Ball Control",
+   "desc": "Grants the ability to perform unique ground and flick Skill Moves.",
+   "requirements": {
+    "Acceleration": 80,
+    "Agility": 75,
+    "Dribbling": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "press-proven",
+   "name": "Press Proven",
+   "category": "Ball Control",
+   "desc": "Keeps close control of the ball while dribbling at jog speed and can shield the ball more effectively from stronger opponents.",
+   "requirements": {
+    "Strength": 75,
+    "Composure": 80,
+    "Ball Control": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "quick-step",
+   "name": "Quick Step",
+   "category": "Physical",
+   "desc": "Accelerates faster during Explosive Sprint.",
+   "requirements": {
+    "Acceleration": 75,
+    "Sprint Speed": 80,
+    "Stamina": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "relentless",
+   "name": "Relentless",
+   "category": "Physical",
+   "desc": "Increases stamina regeneration speed. Increases the duration of teammate contain and partial team press.",
+   "requirements": {
+    "Agility": 80,
+    "Stamina": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "long-throw",
+   "name": "Long Throw",
+   "category": "Physical",
+   "desc": "Performs throw-ins with increased power to cover a greater distance.",
+   "requirements": {
+    "Strength": 80,
+    "Vision": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "bruiser",
+   "name": "Bruiser",
+   "category": "Physical",
+   "desc": "Greater strength when performing physical tackles.",
+   "requirements": {
+    "Strength": 75,
+    "Aggression": 80,
+    "Defensive Awareness": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "enforcer",
+   "name": "Enforcer",
+   "category": "Physical",
+   "desc": "Greater strength when performing shield dribbles.",
+   "requirements": {
+    "Balance": 80,
+    "Strength": 75,
+    "Ball Control": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "far-throw",
+   "name": "Far Throw",
+   "category": "Goalkeeper",
+   "desc": "Unique GK throw animations and increased GK throw max distance.",
+   "requirements": {
+    "Vision": 75,
+    "Long Passing": 75,
+    "GK Kicking": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "footwork",
+   "name": "Footwork",
+   "category": "Goalkeeper",
+   "desc": "Exclusive foot save animations and increased performance against low trajectory shots.",
+   "requirements": {
+    "Agility": 80,
+    "Balance": 80,
+    "GK Reflexes": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "cross-claimer",
+   "name": "Cross Claimer",
+   "category": "Goalkeeper",
+   "desc": "Unique punching animations, increased hand strength and ball out speed from punches, prioritization of punch animations in contested ball scenarios, and increased speed for coming out for crosses.",
+   "requirements": {
+    "Jumping": 80,
+    "Strength": 80,
+    "GK Positioning": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "1v1-close-down",
+   "name": "1v1 Close Down",
+   "category": "Goalkeeper",
+   "desc": "Unique reflex/anticipation save animations, increase in rush speed and improved read of close shot trajectories.",
+   "requirements": {
+    "Acceleration": 80,
+    "Agility": 75,
+    "Aggression": 80
+   },
+   "source": "community"
+  },
+  {
+   "id": "far-reach",
+   "name": "Far Reach",
+   "category": "Goalkeeper",
+   "desc": "Unique long diving distance jump animations and increased chances of saving long distance shots.",
+   "requirements": {
+    "Agility": 80,
+    "Reactions": 80,
+    "GK Diving": 75
+   },
+   "source": "community"
+  },
+  {
+   "id": "deflector",
+   "name": "Deflector",
+   "category": "Goalkeeper",
+   "desc": "Unique animations for push deflect, dive push deflect, and regular deflects. Increases the ball out speed from deflections and improves the probability of deflecting to safer areas.",
+   "requirements": {
+    "Strength": 75,
+    "GK Diving": 80,
+    "GK Reflexes": 75
+   },
+   "source": "community"
+  }
+ ],
+ "specializations": [
+  {
+   "id": "shot-stopper+",
+   "name": "Shot Stopper+",
+   "archetype": "shot-stopper",
+   "thresholds": {
+    "Jumping": 90,
+    "GK Handling": 92,
+    "GK Positioning": 90
+   },
+   "grantsPlaystyle": "cross-claimer",
+   "perk": {
+    "name": "Quick Recovery",
+    "desc": "Successfully save a shot for a short boost to Reactions, Positioning, and Diving."
+   },
+   "desc": "Needs Jumping 90, GK Handling 92, GK Positioning 90 → grants Cross Claimer + perk: Quick Recovery",
+   "source": "community"
+  },
+  {
+   "id": "spider",
+   "name": "Spider",
+   "archetype": "shot-stopper",
+   "thresholds": {
+    "Acceleration": 90,
+    "Agility": 90,
+    "GK Reflexes": 92
+   },
+   "grantsPlaystyle": "1v1-close-down",
+   "perk": {
+    "name": "Boxer",
+    "desc": "Punch the ball for a short boost to Positioning, Diving, and Agility."
+   },
+   "desc": "Needs Acceleration 90, Agility 90, GK Reflexes 92 → grants 1v1 Close Down + perk: Boxer",
+   "source": "community"
+  },
+  {
+   "id": "octopus",
+   "name": "Octopus",
+   "archetype": "shot-stopper",
+   "thresholds": {
+    "Strength": 90,
+    "GK Diving": 92,
+    "GK Positioning": 90
+   },
+   "grantsPlaystyle": "deflector",
+   "perk": {
+    "name": "Anticipator",
+    "desc": "Instant Save when near the dribbler for a short boost to Vision, Reflexes, and Handling."
+   },
+   "desc": "Needs Strength 90, GK Diving 92, GK Positioning 90 → grants Deflector + perk: Anticipator",
+   "source": "community"
+  },
+  {
+   "id": "sweeper-keeper+",
+   "name": "Sweeper Keeper+",
+   "archetype": "sweeper-keeper",
+   "thresholds": {
+    "Vision": 90,
+    "GK Diving": 92,
+    "GK Kicking": 90
+   },
+   "grantsPlaystyle": "far-throw",
+   "perk": {
+    "name": "Box Defender",
+    "desc": "Successful Hard Slide Tackle in the defensive third for a boost to Aggression, Reflexes, and Strength."
+   },
+   "desc": "Needs Vision 90, GK Diving 92, GK Kicking 90 → grants Far Throw + perk: Box Defender",
+   "source": "community"
+  },
+  {
+   "id": "launcher",
+   "name": "Launcher",
+   "archetype": "sweeper-keeper",
+   "thresholds": {
+    "Long Passing": 90,
+    "GK Kicking": 92,
+    "GK Reflexes": 90
+   },
+   "grantsPlaystyle": "long-ball-pass",
+   "perk": {
+    "name": "Distance Assister",
+    "desc": "Precision Passes in the defensive half receive a short boost to Curve, Long Passing, and Kicking."
+   },
+   "desc": "Needs Long Passing 90, GK Kicking 92, GK Reflexes 90 → grants Long Ball Pass + perk: Distance Assister",
+   "source": "community"
+  },
+  {
+   "id": "extra",
+   "name": "Extra",
+   "archetype": "sweeper-keeper",
+   "thresholds": {
+    "GK Positioning": 92,
+    "Short Passing": 90,
+    "Composure": 90
+   },
+   "grantsPlaystyle": "press-proven",
+   "perk": {
+    "name": "El Loco",
+    "desc": "Fake shot to beat an opponent in the defensive half for a boost to Agility, Balance, and Ball Control."
+   },
+   "desc": "Needs GK Positioning 92, Short Passing 90, Composure 90 → grants Press Proven + perk: El Loco",
+   "source": "community"
+  },
+  {
+   "id": "progressor+",
+   "name": "Progressor+",
+   "archetype": "progressor",
+   "thresholds": {
+    "Long Passing": 90,
+    "Defensive Awareness": 90,
+    "Standing Tackle": 92
+   },
+   "grantsPlaystyle": "jockey",
+   "perk": {
+    "name": "Wall Bounce",
+    "desc": "Intercept the ball in the defensive half for a short boost to Balance, Curve, and Short Passing."
+   },
+   "desc": "Needs Long Passing 90, Defensive Awareness 90, Standing Tackle 92 → grants Jockey + perk: Wall Bounce",
+   "source": "community"
+  },
+  {
+   "id": "pioneer",
+   "name": "Pioneer",
+   "archetype": "progressor",
+   "thresholds": {
+    "Dribbling": 92,
+    "Long Passing": 90,
+    "Short Passing": 90
+   },
+   "grantsPlaystyle": "pinged-pass",
+   "perk": {
+    "name": "Unexpected Forward",
+    "desc": "Dribble into the attacking third for a short boost to Ball Control, Composure, and Dribbling."
+   },
+   "desc": "Needs Dribbling 92, Long Passing 90, Short Passing 90 → grants Pinged Pass + perk: Unexpected Forward",
+   "source": "community"
+  },
+  {
+   "id": "janitor",
+   "name": "Janitor",
+   "archetype": "progressor",
+   "thresholds": {
+    "Acceleration": 92,
+    "Sprint Speed": 90,
+    "Sliding Tackle": 90
+   },
+   "grantsPlaystyle": "quick-step",
+   "perk": {
+    "name": "Last Player Back",
+    "desc": "Be the last player back in the defensive half for a boost to Acceleration, Sliding Tackle, and Standing Tackle."
+   },
+   "desc": "Needs Acceleration 92, Sprint Speed 90, Sliding Tackle 90 → grants Quick Step + perk: Last Player Back",
+   "source": "community"
+  },
+  {
+   "id": "boss+",
+   "name": "Boss+",
+   "archetype": "boss",
+   "thresholds": {
+    "Strength": 90,
+    "Aggression": 90,
+    "Sliding Tackle": 92
+   },
+   "grantsPlaystyle": "slide-tackle",
+   "perk": {
+    "name": "Physical Tackle Specialist",
+    "desc": "Physical Tackle in the defensive third for a short boost to Strength, Vision, and Aggression."
+   },
+   "desc": "Needs Strength 90, Aggression 90, Sliding Tackle 92 → grants Slide Tackle + perk: Physical Tackle Specialist",
+   "source": "community"
+  },
+  {
+   "id": "enforcer",
+   "name": "Enforcer",
+   "archetype": "boss",
+   "thresholds": {
+    "Composure": 92,
+    "Vision": 90,
+    "Ball Control": 90
+   },
+   "grantsPlaystyle": "press-proven",
+   "perk": {
+    "name": "Old School",
+    "desc": "Successful Slide Tackle in the middle third for a short boost to Composure, Slide Tackle, and Aggression."
+   },
+   "desc": "Needs Composure 92, Vision 90, Ball Control 90 → grants Press Proven + perk: Old School",
+   "source": "community"
+  },
+  {
+   "id": "capitano",
+   "name": "Capitano",
+   "archetype": "boss",
+   "thresholds": {
+    "Defensive Awareness": 92,
+    "Reactions": 90,
+    "Agility": 90
+   },
+   "grantsPlaystyle": "block",
+   "perk": {
+    "name": "Sweeper",
+    "desc": "Be the last player back in the defensive half for a boost to Def Awareness, Balance, and Interceptions."
+   },
+   "desc": "Needs Defensive Awareness 92, Reactions 90, Agility 90 → grants Block + perk: Sweeper",
+   "source": "community"
+  },
+  {
+   "id": "disruptor+",
+   "name": "Disruptor+",
+   "archetype": "disruptor",
+   "thresholds": {
+    "Balance": 90,
+    "Reactions": 90,
+    "Interceptions": 92
+   },
+   "grantsPlaystyle": "intercept",
+   "perk": {
+    "name": "Wide Recovery",
+    "desc": "Team loses ball while you are in the defensive wing, get a boost to Balance, Sprint Speed, and Ball Control."
+   },
+   "desc": "Needs Balance 90, Reactions 90, Interceptions 92 → grants Intercept + perk: Wide Recovery",
+   "source": "community"
+  },
+  {
+   "id": "destroyer",
+   "name": "Destroyer",
+   "archetype": "disruptor",
+   "thresholds": {
+    "Sprint Speed": 90,
+    "Strength": 92,
+    "Sliding Tackle": 90
+   },
+   "grantsPlaystyle": "slide-tackle",
+   "perk": {
+    "name": "Give and GOOO",
+    "desc": "Do a Pass and Go in the middle third for a short boost to Dribbling, Sprint Speed, and Agility."
+   },
+   "desc": "Needs Sprint Speed 90, Strength 92, Sliding Tackle 90 → grants Slide Tackle + perk: Give and GOOO",
+   "source": "community"
+  },
+  {
+   "id": "anchor",
+   "name": "Anchor",
+   "archetype": "disruptor",
+   "thresholds": {
+    "Ball Control": 90,
+    "Dribbling": 90,
+    "Short Passing": 92
+   },
+   "grantsPlaystyle": "bruiser",
+   "perk": {
+    "name": "Workhorse",
+    "desc": "Get a boost in Strength, Aggression, and Standing Tackle when your team loses the ball in the middle third."
+   },
+   "desc": "Needs Ball Control 90, Dribbling 90, Short Passing 92 → grants Bruiser + perk: Workhorse",
+   "source": "community"
+  },
+  {
+   "id": "marauder+",
+   "name": "Marauder+",
+   "archetype": "marauder",
+   "thresholds": {
+    "Sprint Speed": 92,
+    "Aggression": 90,
+    "Sliding Tackle": 90
+   },
+   "grantsPlaystyle": "slide-tackle",
+   "perk": {
+    "name": "On the Move",
+    "desc": "Do a Pass and Go in the defensive half for a short boost to Balance, Acceleration, and Reactions."
+   },
+   "desc": "Needs Sprint Speed 92, Aggression 90, Sliding Tackle 90 → grants Slide Tackle + perk: On the Move",
+   "source": "community"
+  },
+  {
+   "id": "speedster",
+   "name": "Speedster",
+   "archetype": "marauder",
+   "thresholds": {
+    "Dribbling": 90,
+    "Sprint Speed": 92,
+    "Acceleration": 90
+   },
+   "grantsPlaystyle": "rapid",
+   "perk": {
+    "name": "Wing Burner",
+    "desc": "Knock-on past an opponent in the attacking wing for a boost to Acceleration, Agility, and Sprint Speed."
+   },
+   "desc": "Needs Dribbling 90, Sprint Speed 92, Acceleration 90 → grants Rapid + perk: Wing Burner",
+   "source": "community"
+  },
+  {
+   "id": "athlete",
+   "name": "Athlete",
+   "archetype": "marauder",
+   "thresholds": {
+    "Strength": 92,
+    "Aggression": 90,
+    "Defensive Awareness": 90
+   },
+   "grantsPlaystyle": "bruiser",
+   "perk": {
+    "name": "Wide Recovery",
+    "desc": "Team loses ball while you are in the defensive wing, get a boost to Balance, Sprint Speed, and Ball Control."
+   },
+   "desc": "Needs Strength 92, Aggression 90, Defensive Awareness 90 → grants Bruiser + perk: Wide Recovery",
+   "source": "community"
+  },
+  {
+   "id": "recycler+",
+   "name": "Recycler+",
+   "archetype": "recycler",
+   "thresholds": {
+    "Strength": 90,
+    "Long Passing": 90,
+    "Short Passing": 92
+   },
+   "grantsPlaystyle": "pinged-pass",
+   "perk": {
+    "name": "Hard and Fast",
+    "desc": "First-time Driven Passes in the defensive half receive a boost to Short Passing, Vision, and Long Passing."
+   },
+   "desc": "Needs Strength 90, Long Passing 90, Short Passing 92 → grants Pinged Pass + perk: Hard and Fast",
+   "source": "community"
+  },
+  {
+   "id": "driver",
+   "name": "Driver",
+   "archetype": "recycler",
+   "thresholds": {
+    "Sprint Speed": 90,
+    "Balance": 92,
+    "Strength": 90
+   },
+   "grantsPlaystyle": "enforcer",
+   "perk": {
+    "name": "Heart",
+    "desc": "Successful Stand Tackle in the defensive half for a boost to Aggression, Strength, and Acceleration."
+   },
+   "desc": "Needs Sprint Speed 90, Balance 92, Strength 90 → grants Enforcer + perk: Heart",
+   "source": "community"
+  },
+  {
+   "id": "thief",
+   "name": "Thief",
+   "archetype": "recycler",
+   "thresholds": {
+    "Interceptions": 90,
+    "Defensive Awareness": 90,
+    "Standing Tackle": 92
+   },
+   "grantsPlaystyle": "anticipate",
+   "perk": {
+    "name": "Quick Fix",
+    "desc": "Get a boost in Acceleration, Standing Tackle, and Strength when your team loses the ball in the middle third."
+   },
+   "desc": "Needs Interceptions 90, Defensive Awareness 90, Standing Tackle 92 → grants Anticipate + perk: Quick Fix",
+   "source": "community"
+  },
+  {
+   "id": "maestro+",
+   "name": "Maestro+",
+   "archetype": "maestro",
+   "thresholds": {
+    "Balance": 90,
+    "Vision": 92,
+    "Dribbling": 90
+   },
+   "grantsPlaystyle": "technical",
+   "perk": {
+    "name": "Give and GOOO",
+    "desc": "Do a Pass and Go in the middle third for a short boost to Dribbling, Sprint Speed, and Agility."
+   },
+   "desc": "Needs Balance 90, Vision 92, Dribbling 90 → grants Technical + perk: Give and GOOO",
+   "source": "community"
+  },
+  {
+   "id": "crasher",
+   "name": "Crasher",
+   "archetype": "maestro",
+   "thresholds": {
+    "Finishing": 90,
+    "Ball Control": 90,
+    "Composure": 92
+   },
+   "grantsPlaystyle": "first-touch",
+   "perk": {
+    "name": "Raider",
+    "desc": "Enter the opponent's box from the middle for a short boost to Finishing, Shot Power, and Reactions."
+   },
+   "desc": "Needs Finishing 90, Ball Control 90, Composure 92 → grants First Touch + perk: Raider",
+   "source": "community"
+  },
+  {
+   "id": "heartbeat",
+   "name": "Heartbeat",
+   "archetype": "maestro",
+   "thresholds": {
+    "Agility": 92,
+    "Stamina": 90,
+    "Aggression": 90
+   },
+   "grantsPlaystyle": "relentless",
+   "perk": {
+    "name": "Foot in and Run",
+    "desc": "Successful Strong Stand Tackle in the defensive half for a boost to Acceleration, Reactions, and Stamina."
+   },
+   "desc": "Needs Agility 92, Stamina 90, Aggression 90 → grants Relentless + perk: Foot in and Run",
+   "source": "community"
+  },
+  {
+   "id": "creator+",
+   "name": "Creator+",
+   "archetype": "creator",
+   "thresholds": {
+    "Vision": 92,
+    "Crossing": 90,
+    "Long Passing": 90
+   },
+   "grantsPlaystyle": "whipped-pass",
+   "perk": {
+    "name": "Assistant",
+    "desc": "Through Passes in the opponent's half give a boost to Finishing, Balance, and Ball Control to your teammate."
+   },
+   "desc": "Needs Vision 92, Crossing 90, Long Passing 90 → grants Whipped Pass + perk: Assistant",
+   "source": "community"
+  },
+  {
+   "id": "architect",
+   "name": "Architect",
+   "archetype": "creator",
+   "thresholds": {
+    "Crossing": 92,
+    "Free Kick Accuracy": 90,
+    "Shot Power": 90
+   },
+   "grantsPlaystyle": "dead-ball",
+   "perk": {
+    "name": "Air Mail",
+    "desc": "Crosses from the attacking wings receive a boost to Curve, Long Passing, and Crossing."
+   },
+   "desc": "Needs Crossing 92, Free Kick Accuracy 90, Shot Power 90 → grants Dead Ball + perk: Air Mail",
+   "source": "community"
+  },
+  {
+   "id": "sniper",
+   "name": "Sniper",
+   "archetype": "creator",
+   "thresholds": {
+    "Finishing": 90,
+    "Shot Power": 92,
+    "Long Shots": 90
+   },
+   "grantsPlaystyle": "power-shot",
+   "perk": {
+    "name": "Stunning Shooter",
+    "desc": "Skill Move past an opponent in the attacking third to boost Curve, Finishing, and Shot Power."
+   },
+   "desc": "Needs Finishing 90, Shot Power 92, Long Shots 90 → grants Power Shot + perk: Stunning Shooter",
+   "source": "community"
+  },
+  {
+   "id": "spark+",
+   "name": "Spark+",
+   "archetype": "spark",
+   "thresholds": {
+    "Agility": 92,
+    "Sprint Speed": 90,
+    "Acceleration": 90
+   },
+   "grantsPlaystyle": "quick-step",
+   "perk": {
+    "name": "Twinkle Toes",
+    "desc": "Skill Move past an opponent on the attacking wing to boost Agility, Acceleration, and Sprint Speed."
+   },
+   "desc": "Needs Agility 92, Sprint Speed 90, Acceleration 90 → grants Quick Step + perk: Twinkle Toes",
+   "source": "community"
+  },
+  {
+   "id": "joker",
+   "name": "Joker",
+   "archetype": "spark",
+   "thresholds": {
+    "Positioning": 90,
+    "Crossing": 92,
+    "Long Passing": 90
+   },
+   "grantsPlaystyle": "whipped-pass",
+   "perk": {
+    "name": "Selfless",
+    "desc": "Skill Move past an opponent in the opponent's half to boost Short Passing, Curve, and Composure."
+   },
+   "desc": "Needs Positioning 90, Crossing 92, Long Passing 90 → grants Whipped Pass + perk: Selfless",
+   "source": "community"
+  },
+  {
+   "id": "ace",
+   "name": "Ace",
+   "archetype": "spark",
+   "thresholds": {
+    "Reactions": 90,
+    "Ball Control": 90,
+    "Finishing": 92
+   },
+   "grantsPlaystyle": "chip-shot",
+   "perk": {
+    "name": "Stunning Shooter",
+    "desc": "Skill Move past an opponent in the attacking third to boost Curve, Finishing, and Shot Power."
+   },
+   "desc": "Needs Reactions 90, Ball Control 90, Finishing 92 → grants Chip Shot + perk: Stunning Shooter",
+   "source": "community"
+  },
+  {
+   "id": "magician+",
+   "name": "Magician+",
+   "archetype": "magician",
+   "thresholds": {
+    "Acceleration": 90,
+    "Composure": 90,
+    "Ball Control": 92
+   },
+   "grantsPlaystyle": "first-touch",
+   "perk": {
+    "name": "One, Two",
+    "desc": "Do a Pass and Go in the opponent's half for a short boost to Acceleration, Ball Control, and Balance."
+   },
+   "desc": "Needs Acceleration 90, Composure 90, Ball Control 92 → grants First Touch + perk: One, Two",
+   "source": "community"
+  },
+  {
+   "id": "hotshot",
+   "name": "Hotshot",
+   "archetype": "magician",
+   "thresholds": {
+    "Finishing": 90,
+    "Shot Power": 92,
+    "Long Shots": 90
+   },
+   "grantsPlaystyle": "power-shot",
+   "perk": {
+    "name": "Cut and Shoot",
+    "desc": "Shoot after entering the box from the wing for a short boost to Finishing, Curve, and Shot Power."
+   },
+   "desc": "Needs Finishing 90, Shot Power 92, Long Shots 90 → grants Power Shot + perk: Cut and Shoot",
+   "source": "community"
+  },
+  {
+   "id": "invader",
+   "name": "Invader",
+   "archetype": "magician",
+   "thresholds": {
+    "Positioning": 90,
+    "Vision": 90,
+    "Long Passing": 92
+   },
+   "grantsPlaystyle": "incisive-pass",
+   "perk": {
+    "name": "Silver Platter",
+    "desc": "Give your teammate a short boost to Composure, Finishing, and Ball Control when receiving your pass in the box."
+   },
+   "desc": "Needs Positioning 90, Vision 90, Long Passing 92 → grants Incisive Pass + perk: Silver Platter",
+   "source": "community"
+  },
+  {
+   "id": "finisher+",
+   "name": "Finisher+",
+   "archetype": "finisher",
+   "thresholds": {
+    "Ball Control": 90,
+    "Composure": 92,
+    "Reactions": 90
+   },
+   "grantsPlaystyle": "chip-shot",
+   "perk": {
+    "name": "6th Sense",
+    "desc": "Shoot with back to goal in the attacking third to gain a short boost to Finishing, Balance, and Composure."
+   },
+   "desc": "Needs Ball Control 90, Composure 92, Reactions 90 → grants Chip Shot + perk: 6th Sense",
+   "source": "community"
+  },
+  {
+   "id": "presser",
+   "name": "Presser",
+   "archetype": "finisher",
+   "thresholds": {
+    "Agility": 90,
+    "Stamina": 92,
+    "Aggression": 90
+   },
+   "grantsPlaystyle": "relentless",
+   "perk": {
+    "name": "Turnover Finisher",
+    "desc": "Win possession in the attacking third to gain a short boost to Finishing, Composure and Curve."
+   },
+   "desc": "Needs Agility 90, Stamina 92, Aggression 90 → grants Relentless + perk: Turnover Finisher",
+   "source": "community"
+  },
+  {
+   "id": "hunter",
+   "name": "Hunter",
+   "archetype": "finisher",
+   "thresholds": {
+    "Positioning": 90,
+    "Finishing": 90,
+    "Curve": 92
+   },
+   "grantsPlaystyle": "gamechanger",
+   "perk": {
+    "name": "First Time Finisher",
+    "desc": "Take a first-time shot in the box to gain a short boost to Shot Power, Balance, and Composure."
+   },
+   "desc": "Needs Positioning 90, Finishing 90, Curve 92 → grants Gamechanger + perk: First Time Finisher",
+   "source": "community"
+  },
+  {
+   "id": "target+",
+   "name": "Target+",
+   "archetype": "target",
+   "thresholds": {
+    "Agility": 90,
+    "Jumping": 92,
+    "Volleys": 90
+   },
+   "grantsPlaystyle": "acrobatic",
+   "perk": {
+    "name": "Line Breaker",
+    "desc": "Receive a line-breaking pass in the attacking third for a boost to Dribbling, Balance, and Composure."
+   },
+   "desc": "Needs Agility 90, Jumping 92, Volleys 90 → grants Acrobatic + perk: Line Breaker",
+   "source": "community"
+  },
+  {
+   "id": "roamer",
+   "name": "Roamer",
+   "archetype": "target",
+   "thresholds": {
+    "Vision": 90,
+    "Long Passing": 90,
+    "Short Passing": 92
+   },
+   "grantsPlaystyle": "incisive-pass",
+   "perk": {
+    "name": "Blind Passer",
+    "desc": "Pass with back to goal in attacking third to gain a short boost to Finishing, Balance, and Composure."
+   },
+   "desc": "Needs Vision 90, Long Passing 90, Short Passing 92 → grants Incisive Pass + perk: Blind Passer",
+   "source": "community"
+  },
+  {
+   "id": "runner",
+   "name": "Runner",
+   "archetype": "target",
+   "thresholds": {
+    "Sprint Speed": 92,
+    "Strength": 90,
+    "Positioning": 90
+   },
+   "grantsPlaystyle": "enforcer",
+   "perk": {
+    "name": "High Speed Shooter",
+    "desc": "Shoot while at full sprint for a boost to Shot Power, Strength, and Aggression."
+   },
+   "desc": "Needs Sprint Speed 92, Strength 90, Positioning 90 → grants Enforcer + perk: High Speed Shooter",
+   "source": "community"
+  }
+ ],
+ "facilities": [],
+ "costTiers": {
+  "tier0": [
+   {
+    "from": 0,
+    "to": 69,
+    "cost": 1
+   },
+   {
+    "from": 69,
+    "to": 74,
+    "cost": 2
+   },
+   {
+    "from": 74,
+    "to": 84,
+    "cost": 3
+   },
+   {
+    "from": 84,
+    "to": 89,
+    "cost": 6
+   },
+   {
+    "from": 89,
+    "to": 92,
+    "cost": 8
+   },
+   {
+    "from": 92,
+    "to": 94,
+    "cost": 10
+   },
+   {
+    "from": 94,
+    "to": 95,
+    "cost": 15
+   },
+   {
+    "from": 95,
+    "to": 96,
+    "cost": 20
+   },
+   {
+    "from": 96,
+    "to": 97,
+    "cost": 25
+   },
+   {
+    "from": 97,
+    "to": 98,
+    "cost": 30
+   },
+   {
+    "from": 98,
+    "to": 99,
+    "cost": 35
+   }
+  ],
+  "tier1": [
+   {
+    "from": 0,
+    "to": 63,
+    "cost": 1
+   },
+   {
+    "from": 63,
+    "to": 69,
+    "cost": 2
+   },
+   {
+    "from": 69,
+    "to": 74,
+    "cost": 3
+   },
+   {
+    "from": 74,
+    "to": 79,
+    "cost": 4
+   },
+   {
+    "from": 79,
+    "to": 84,
+    "cost": 5
+   },
+   {
+    "from": 84,
+    "to": 89,
+    "cost": 8
+   },
+   {
+    "from": 89,
+    "to": 92,
+    "cost": 11
+   },
+   {
+    "from": 92,
+    "to": 94,
+    "cost": 15
+   },
+   {
+    "from": 94,
+    "to": 95,
+    "cost": 20
+   },
+   {
+    "from": 95,
+    "to": 96,
+    "cost": 25
+   },
+   {
+    "from": 96,
+    "to": 97,
+    "cost": 30
+   },
+   {
+    "from": 97,
+    "to": 98,
+    "cost": 35
+   },
+   {
+    "from": 98,
+    "to": 99,
+    "cost": 40
+   }
+  ],
+  "tier2": [
+   {
+    "from": 0,
+    "to": 60,
+    "cost": 1
+   },
+   {
+    "from": 60,
+    "to": 63,
+    "cost": 2
+   },
+   {
+    "from": 63,
+    "to": 69,
+    "cost": 3
+   },
+   {
+    "from": 69,
+    "to": 74,
+    "cost": 4
+   },
+   {
+    "from": 74,
+    "to": 79,
+    "cost": 6
+   },
+   {
+    "from": 79,
+    "to": 84,
+    "cost": 7
+   },
+   {
+    "from": 84,
+    "to": 89,
+    "cost": 11
+   },
+   {
+    "from": 89,
+    "to": 92,
+    "cost": 15
+   },
+   {
+    "from": 92,
+    "to": 94,
+    "cost": 20
+   },
+   {
+    "from": 94,
+    "to": 95,
+    "cost": 25
+   },
+   {
+    "from": 95,
+    "to": 96,
+    "cost": 30
+   },
+   {
+    "from": 96,
+    "to": 97,
+    "cost": 35
+   },
+   {
+    "from": 97,
+    "to": 98,
+    "cost": 40
+   },
+   {
+    "from": 98,
+    "to": 99,
+    "cost": 45
+   }
+  ],
+  "tier3": [
+   {
+    "from": 0,
+    "to": 60,
+    "cost": 2
+   },
+   {
+    "from": 60,
+    "to": 63,
+    "cost": 3
+   },
+   {
+    "from": 63,
+    "to": 66,
+    "cost": 4
+   },
+   {
+    "from": 66,
+    "to": 69,
+    "cost": 5
+   },
+   {
+    "from": 69,
+    "to": 74,
+    "cost": 6
+   },
+   {
+    "from": 74,
+    "to": 79,
+    "cost": 8
+   },
+   {
+    "from": 79,
+    "to": 84,
+    "cost": 10
+   },
+   {
+    "from": 84,
+    "to": 89,
+    "cost": 15
+   },
+   {
+    "from": 89,
+    "to": 92,
+    "cost": 20
+   },
+   {
+    "from": 92,
+    "to": 94,
+    "cost": 25
+   },
+   {
+    "from": 94,
+    "to": 95,
+    "cost": 30
+   },
+   {
+    "from": 95,
+    "to": 96,
+    "cost": 35
+   },
+   {
+    "from": 96,
+    "to": 97,
+    "cost": 40
+   },
+   {
+    "from": 97,
+    "to": 98,
+    "cost": 45
+   },
+   {
+    "from": 98,
+    "to": 99,
+    "cost": 50
+   }
+  ]
+ },
+ "attributeCosts": {
+  "shot-stopper": {
+   "Acceleration": "tier0",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier2",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier0",
+   "Long Passing": "tier2",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier2",
+   "Reactions": "tier0",
+   "Ball Control": "tier2",
+   "Dribbling": "tier3",
+   "Composure": "tier2",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1",
+   "GK Diving": "tier2",
+   "GK Handling": "tier2",
+   "GK Kicking": "tier3",
+   "GK Reflexes": "tier3",
+   "GK Positioning": "tier0"
+  },
+  "sweeper-keeper": {
+   "Acceleration": "tier3",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier0",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier3",
+   "Long Passing": "tier0",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier2",
+   "Reactions": "tier1",
+   "Ball Control": "tier0",
+   "Dribbling": "tier3",
+   "Composure": "tier2",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1",
+   "GK Diving": "tier2",
+   "GK Handling": "tier3",
+   "GK Kicking": "tier0",
+   "GK Reflexes": "tier2",
+   "GK Positioning": "tier3"
+  },
+  "progressor": {
+   "Acceleration": "tier3",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier2",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier3",
+   "Long Passing": "tier0",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier2",
+   "Reactions": "tier1",
+   "Ball Control": "tier2",
+   "Dribbling": "tier3",
+   "Composure": "tier0",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier0",
+   "Standing Tackle": "tier0",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1"
+  },
+  "boss": {
+   "Acceleration": "tier3",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier2",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier3",
+   "Long Passing": "tier2",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier2",
+   "Reactions": "tier1",
+   "Ball Control": "tier2",
+   "Dribbling": "tier3",
+   "Composure": "tier2",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier0",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier1",
+   "Jumping": "tier0",
+   "Stamina": "tier1",
+   "Strength": "tier0",
+   "Aggression": "tier0"
+  },
+  "disruptor": {
+   "Acceleration": "tier2",
+   "Sprint Speed": "tier0",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier2",
+   "Crossing": "tier0",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier3",
+   "Long Passing": "tier2",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier2",
+   "Reactions": "tier1",
+   "Ball Control": "tier2",
+   "Dribbling": "tier3",
+   "Composure": "tier2",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier0",
+   "Jumping": "tier1",
+   "Stamina": "tier0",
+   "Strength": "tier2",
+   "Aggression": "tier2"
+  },
+  "marauder": {
+   "Acceleration": "tier0",
+   "Sprint Speed": "tier2",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier2",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier3",
+   "Long Passing": "tier2",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier0",
+   "Reactions": "tier1",
+   "Ball Control": "tier2",
+   "Dribbling": "tier0",
+   "Composure": "tier2",
+   "Interceptions": "tier0",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier1",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1"
+  },
+  "recycler": {
+   "Acceleration": "tier0",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier1",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier2",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier2",
+   "Long Passing": "tier2",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier2",
+   "Reactions": "tier1",
+   "Ball Control": "tier2",
+   "Dribbling": "tier3",
+   "Composure": "tier2",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier0",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier0",
+   "Strength": "tier2",
+   "Aggression": "tier0"
+  },
+  "maestro": {
+   "Acceleration": "tier3",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier1",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier2",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier0",
+   "Long Passing": "tier2",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier2",
+   "Reactions": "tier1",
+   "Ball Control": "tier2",
+   "Dribbling": "tier3",
+   "Composure": "tier2",
+   "Interceptions": "tier0",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier0",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier0",
+   "Aggression": "tier1"
+  },
+  "creator": {
+   "Acceleration": "tier3",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier1",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier3",
+   "Long Passing": "tier0",
+   "Curve": "tier1",
+   "Agility": "tier0",
+   "Balance": "tier2",
+   "Reactions": "tier0",
+   "Ball Control": "tier0",
+   "Dribbling": "tier3",
+   "Composure": "tier1",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1"
+  },
+  "spark": {
+   "Acceleration": "tier3",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier0",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier0",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier2",
+   "Long Passing": "tier2",
+   "Curve": "tier0",
+   "Agility": "tier3",
+   "Balance": "tier2",
+   "Reactions": "tier1",
+   "Ball Control": "tier2",
+   "Dribbling": "tier0",
+   "Composure": "tier2",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1"
+  },
+  "magician": {
+   "Acceleration": "tier3",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier0",
+   "Long Shots": "tier2",
+   "Volleys": "tier0",
+   "Penalties": "tier1",
+   "Vision": "tier1",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier3",
+   "Long Passing": "tier2",
+   "Curve": "tier1",
+   "Agility": "tier3",
+   "Balance": "tier0",
+   "Reactions": "tier1",
+   "Ball Control": "tier1",
+   "Dribbling": "tier3",
+   "Composure": "tier0",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1"
+  },
+  "finisher": {
+   "Acceleration": "tier2",
+   "Sprint Speed": "tier0",
+   "Positioning": "tier1",
+   "Finishing": "tier3",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier0",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier3",
+   "Long Passing": "tier2",
+   "Curve": "tier1",
+   "Agility": "tier0",
+   "Balance": "tier2",
+   "Reactions": "tier1",
+   "Ball Control": "tier1",
+   "Dribbling": "tier0",
+   "Composure": "tier2",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1"
+  },
+  "target": {
+   "Acceleration": "tier0",
+   "Sprint Speed": "tier3",
+   "Positioning": "tier1",
+   "Finishing": "tier2",
+   "Shot Power": "tier2",
+   "Long Shots": "tier2",
+   "Volleys": "tier1",
+   "Penalties": "tier1",
+   "Vision": "tier2",
+   "Crossing": "tier2",
+   "Free Kick Accuracy": "tier1",
+   "Short Passing": "tier0",
+   "Long Passing": "tier2",
+   "Curve": "tier0",
+   "Agility": "tier3",
+   "Balance": "tier1",
+   "Reactions": "tier1",
+   "Ball Control": "tier0",
+   "Dribbling": "tier3",
+   "Composure": "tier2",
+   "Interceptions": "tier3",
+   "Heading Accuracy": "tier2",
+   "Defensive Awareness": "tier2",
+   "Standing Tackle": "tier3",
+   "Sliding Tackle": "tier2",
+   "Jumping": "tier1",
+   "Stamina": "tier1",
+   "Strength": "tier2",
+   "Aggression": "tier1"
+  }
+ },
+ "masteries": [
+  {
+   "archetype": "finisher",
+   "level": 10,
+   "bonus": {
+    "Finishing": 1,
+    "Composure": 1
+   },
+   "source": "ea-notes"
+  }
+ ],
+ "body": {
+  "heightMods": [],
+  "weightMods": [],
+  "height": {
+   "min": 162,
+   "max": 200,
+   "def": 181
+  },
+  "weight": {
+   "min": 60,
+   "max": 100,
+   "def": 80
+  }
+ }
+}

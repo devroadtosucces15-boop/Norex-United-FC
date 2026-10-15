@@ -35,25 +35,63 @@ export const KV = {
   async list({ prefix }) { return { keys: [...store].filter(([k]) => k.startsWith(prefix)).map(([name, { m }]) => ({ name, metadata: m })) }; },
 };
 
+// R2 shim (feed photos/clips, P6.1b) – put() drains the stream, so a failing check in the Worker rejects like on R2.
+export const r2objects = new Map();
+export const R2 = {
+  async put(key, value, o = {}) {
+    const buf = value instanceof ReadableStream ? Buffer.concat(await Array.fromAsync(value)) : Buffer.from(value);
+    r2objects.set(key, { buf, type: o.httpMetadata?.contentType, uploaded: new Date() });
+  },
+  async get(key, o = {}) {
+    const x = r2objects.get(key);
+    if (!x) return null;
+    const m = /bytes=(\d*)-(\d*)/.exec(o.range?.get?.('range') ?? '');
+    const offset = m ? (m[1] ? +m[1] : x.buf.length - +m[2]) : 0;
+    const end = m && m[1] && m[2] ? +m[2] : x.buf.length - 1;
+    const part = x.buf.subarray(offset, end + 1);
+    return { key, size: x.buf.length, httpEtag: `"${key.length}"`, range: m ? { offset, length: part.length } : undefined,
+      body: new Blob([part]).stream(), writeHttpMetadata: (h) => h.set('Content-Type', x.type) };
+  },
+  async delete(keys) { for (const k of [keys].flat()) r2objects.delete(k); },
+  async list() { return { objects: [...r2objects].map(([key, x]) => ({ key, size: x.buf.length, uploaded: x.uploaded })), truncated: false }; },
+};
+
 // Fake Discord user for the login flow – tests change it (id 111 is in ADMIN_IDS = owner).
-export const mockDiscord = { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [], inGuild: true };
+export const mockDiscord = { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [], inGuild: true, connections: [] };
 export const SITE = 'http://localhost:4321/';
 globalThis.caches = { default: { match: async () => null, put: async () => {} } };
 const realFetch = globalThis.fetch;
-globalThis.fetch = async (url) => {
+// BE9 – the stat insights writer/ask call runs on the Workers AI binding (env.AI). Tests set this to
+// control the model's reply; the default is a plausible, number-safe answer.
+export let aiReply = null;
+export const setAiReply = (fn) => { aiReply = fn; };
+export const mockAI = {
+  run: async (model, input) => {
+    const req = { model, ...input };
+    const response = aiReply ? aiReply(req) : JSON.stringify({ headline: 'Steady going', body: 'A quiet week for the numbers.', watch: 'Keep an eye on the next match.' });
+    return { response };
+  },
+};
+globalThis.fetch = async (url, init = {}) => {
   url = String(url);
   if (url.startsWith(SITE)) return new Response(fs.readFileSync(ROOT + 'site/' + url.slice(SITE.length)));
   if (url.includes('/oauth2/token')) return Response.json({ access_token: 't' });
+  if (url.endsWith('/users/@me/connections')) return Response.json(mockDiscord.connections ?? []); // P2.4
   if (url.endsWith('/users/@me')) return Response.json({ id: mockDiscord.id, username: mockDiscord.username, global_name: mockDiscord.global_name, avatar: null });
   if (url.includes('/guilds/')) return mockDiscord.inGuild ? Response.json({ roles: mockDiscord.roles }) : new Response('{}', { status: 404 });
   if (url.startsWith('https://discord.com/') || url.startsWith('https://api.github.com/')) throw new Error(`unexpected network call in test: ${url}`);
   return realFetch(url);
 };
 
+// BE9 – JOBS queue stub: no real queue in tests, so refreshStatInsights() always takes its inline fallback
+// (never bound here) unless a test imports `jobs` and binds it onto env itself.
+export const jobs = [];
 export const env = {
   SITE_URL: SITE, DISCORD_APP_ID: '1', DISCORD_CLIENT_SECRET: 'shh', DISCORD_GUILD_ID: '9',
-  ADMIN_IDS: '111', ADMIN_ROLE_ID: 'mgr', OWNER_ROLE_ID: 'founder', NOREX_KV: KV, DB,
+  ADMIN_IDS: '111', ADMIN_ROLE_ID: 'mgr', OWNER_ROLE_ID: 'founder', NOREX_KV: KV, DB, MEDIA: R2,
+  AI: mockAI,
   FEATURES: JSON.stringify(config.features ?? {}),
+  HYPE_CHANNEL: JSON.stringify(config.hype ?? {}),
 };
 
 // Legacy KV documents (pre-D1) – the Worker copies them into D1 on first request.

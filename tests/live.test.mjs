@@ -1,7 +1,8 @@
 // Live stream detection (P1.3): page parsers, cron update → KV, GET /api/live behind the liveBanner flag.
-import { call, env, KV, login, W } from './mock.mjs';
+import { call, env, KV, login, W, sqlite } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import { parseTwitch, parseYouTube, streams, updateLive } from '../bot/live.js';
+import { plainText } from '../bot/ui.js';
 
 env.STREAMS = JSON.stringify({ youtube: 'https://www.youtube.com/@NorexUnitedFC', twitch: 'https://www.twitch.tv/norexunitedfc' });
 const S = streams(env);
@@ -40,6 +41,33 @@ globalThis.fetch = async (url, init) => (String(url).includes('youtube.com') ? P
 await updateLive(env);
 t('cron: a failing channel does not crash, status goes offline', (await KV.get('live', 'json')).live === false);
 globalThis.fetch = realFetch;
+// ---------- E2: Discord post when the club goes live (flag liveAnnounce) ----------
+env.DISCORD_BOT_TOKEN = 'bot'; env.DISCORD_GUILD_ID = '9'; const SITE0 = env.SITE_URL; env.SITE_URL = 'https://norex.test/';
+sqlite.prepare("INSERT INTO meta (key, value) VALUES ('announce_channel', '42420') ON CONFLICT (key) DO UPDATE SET value = excluded.value").run();
+const posts = [];
+let air = false;
+globalThis.fetch = async (url, init = {}) => {
+  const u = String(url), m = u.match(/\/channels\/(\w+)\/messages$/);
+  if (m) { posts.push({ channel: m[1], ...JSON.parse(init.body) }); return Response.json({ id: 'm1' }); }
+  if (u.startsWith('https://www.twitch.tv/')) return new Response(air ? TW_LIVE : '<html></html>');
+  if (u.startsWith('https://www.youtube.com/')) return new Response('<html></html>');
+  return realFetch(url, init);
+};
+const setFlag = (v) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), liveAnnounce: v }); };
+await KV.delete('live'); await KV.delete('live_announced');
+setFlag('off'); air = true; await updateLive(env);
+t('announce: flag off → no post', posts.length === 0);
+await KV.delete('live'); await KV.delete('live_announced');
+setFlag('owner'); air = false; await updateLive(env); air = true; await updateLive(env);
+t('announce: off → on posts once, linking to watch.html', posts.length === 1 && posts[0].channel === '42420' && JSON.stringify(posts[0].components).includes('https://norex.test/watch.html') && /is live/.test(plainText(posts[0])));
+await updateLive(env);
+t('announce: still live → not posted again', posts.length === 1);
+air = false; await updateLive(env); air = true; await updateLive(env);
+t('announce: a blip within 3 hours is not announced twice', posts.length === 1);
+await KV.put('live_announced', JSON.stringify({ at: Date.now() - 4 * 3600e3 }));
+air = false; await updateLive(env); air = true; await updateLive(env);
+t('announce: a stream 4 hours later is announced again', posts.length === 2);
+globalThis.fetch = realFetch; env.SITE_URL = SITE0; setFlag('owner');
 await KV.put('live', JSON.stringify({ live: true, platform: 'youtube', videoId: 'abcDEF12345', url: 'https://www.youtube.com/watch?v=abcDEF12345', title: 'x' }));
 
 // Route: flag 'liveBanner' decides who may see it.

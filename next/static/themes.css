@@ -1,0 +1,25 @@
+/* Section themes: each bottom-menu section keeps its own small signature (accent colour, a faint corner icon on panels, a soft light pool).
+   Nothing here moves. Big pop-in motion belongs to the Hub, awards, kudos and the Hall of Fame only. */
+html[data-g=club]{--ac:#e0574d;--ac-rgb:224,87,77}
+html[data-g=matches]{--ac:#46c28a;--ac-rgb:70,194,138}
+html[data-g=stats]{--ac:#62a8ff;--ac-rgb:98,168,255}
+html[data-g=tactics]{--ac:#b08cff;--ac-rgb:176,140,255}
+html[data-g=hub]{--ac:#efcf7a;--ac-rgb:239,207,122}
+/* soft light pool behind the page, tinted by the section */
+html[data-g=club] main#main,html[data-g=matches] main#main,html[data-g=stats] main#main,html[data-g=tactics] main#main{background:radial-gradient(560px 280px at 94% 0,rgba(var(--ac-rgb),.08),transparent 72%) no-repeat}
+/* panels: a thin accent edge on top and a faint section icon in the corner */
+html[data-g=club] .panel,html[data-g=matches] .panel,html[data-g=stats] .panel,html[data-g=tactics] .panel{
+  background-image:var(--gi) , linear-gradient(180deg,var(--p2),var(--p1));background-repeat:no-repeat;background-position:right 14px bottom 12px,0 0;background-size:54px 54px,auto;
+  box-shadow:inset 0 2px 0 rgba(var(--ac-rgb),.34),0 1px 0 rgba(255,255,255,.05) inset,0 18px 40px rgba(0,0,0,.35)}
+html[data-g] .panel.flat{background-image:none}
+/* corner icons: shield, ball, bars, tactic board (white strokes at ~11% so they read as texture, not decoration) */
+html[data-g=club]{--gi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.11' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M12 2.8 4.5 5.6v6c0 4.4 3.1 7.8 7.5 9.6 4.4-1.8 7.5-5.2 7.5-9.6v-6z'/%3E%3Cpath d='m12 8 1.2 2.6 2.8.3-2.1 1.9.6 2.8L12 14.2 9.5 15.6l.6-2.8L8 10.9l2.8-.3z'/%3E%3C/svg%3E")}
+html[data-g=matches]{--gi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.11' stroke-width='1.4' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m12 7.6 3.9 2.8-1.5 4.6h-4.8L8.1 10.4z'/%3E%3Cpath d='M12 7.6V3M15.9 10.4l4.3-1.5M14.4 15l2.6 3.7M9.6 15 7 18.7M8.1 10.4 3.8 8.9'/%3E%3C/svg%3E")}
+html[data-g=stats]{--gi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.11' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M4 20h16'/%3E%3Crect x='5.5' y='12' width='3' height='8'/%3E%3Crect x='10.5' y='6' width='3' height='14'/%3E%3Crect x='15.5' y='9.5' width='3' height='10.5'/%3E%3C/svg%3E")}
+html[data-g=tactics]{--gi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-opacity='.11' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cpath d='M3 12h18'/%3E%3Ccircle cx='12' cy='12' r='2.6'/%3E%3Cpath d='m6.5 6.5 3 3m0-3-3 3M14.5 14.5l3 3m0-3-3 3'/%3E%3C/svg%3E")}
+/* bottom menu: each tab carries its own accent; the active one just brightens and shows a short accent bar (no pop, no glow) */
+.tabbar a[data-g=club]{--tc:#e0574d}.tabbar a[data-g=matches]{--tc:#46c28a}.tabbar a[data-g=stats]{--tc:#62a8ff}.tabbar a[data-g=tactics]{--tc:#b08cff}
+@media print{html[data-g] .panel{background-image:none}}
+/* no motion where motion is off or reduced: the squad stack and the tactics camera snap instead of gliding */
+html[data-motion=off] .wx .sk,html[data-motion=off] .camera,html[data-motion=off] .camera *{transition:none!important}
+@media (prefers-reduced-motion:reduce){.wx .sk,.camera,.camera *{transition:none!important}}

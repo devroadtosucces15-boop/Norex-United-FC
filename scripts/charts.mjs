@@ -86,6 +86,25 @@ export function spark(values, { w = 90, h = 26, color = 'var(--accent)' } = {}) 
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/></svg>`;
 }
 
+// Estimated position map (P7.3 – EA gives no pitch coordinates, so this is role + involvement, not a real heat map).
+// zones: [{label, x, y, r, intensity (0..1), tip}]
+export function pitchMap(zones, { w = 260, h = 380 } = {}) {
+  if (!zones.length) return empty(w, h, 'No matches yet');
+  const x = (pct) => (pct / 100) * w, y = (pct) => (pct / 100) * h;
+  return `<svg class="chart posmap" viewBox="0 0 ${w} ${h}" role="img" aria-label="Estimated position map">
+<rect class="pm-turf" x="1" y="1" width="${w - 2}" height="${h - 2}" rx="6"/>
+<g class="pm-lines" fill="none">
+<rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="4"/>
+<line x1="6" x2="${w - 6}" y1="${r1(h / 2)}" y2="${r1(h / 2)}"/>
+<circle cx="${r1(w / 2)}" cy="${r1(h / 2)}" r="${r1(w * 0.16)}"/>
+<rect x="${r1(w * 0.24)}" y="6" width="${r1(w * 0.52)}" height="${r1(h * 0.16)}"/>
+<rect x="${r1(w * 0.24)}" y="${r1(h - 6 - h * 0.16)}" width="${r1(w * 0.52)}" height="${r1(h * 0.16)}"/>
+</g>
+${zones.map((z) => `<circle class="pm-zone" cx="${r1(x(z.x))}" cy="${r1(y(z.y))}" r="${r1(z.r)}" fill-opacity="${r1(0.15 + z.intensity * 0.65)}" data-tip="${esc(z.tip)}"/>
+<text class="pm-label" x="${r1(x(z.x))}" y="${r1(y(z.y) + 4)}" text-anchor="middle">${esc(z.label)}</text>`).join('')}
+</svg>`;
+}
+
 function empty(w, h, msg) {
   return `<svg class="chart" viewBox="0 0 ${w} ${h}"><text x="50%" y="50%" text-anchor="middle" class="axis">${esc(msg)}</text></svg>`;
 }

@@ -34,10 +34,18 @@ jobs:
         working-directory: bot
         run: npx --yes wrangler@4 d1 migrations apply norex --remote
 
-      - name: Feature flags + stream channels (config.json → Worker vars FEATURES, STREAMS)
+      - name: Feature flags + stream channels + hype/voice-recap channels (config.json → Worker vars FEATURES, STREAMS, HYPE_CHANNEL, VOICE_CHANNEL)
         if: env.CLOUDFLARE_API_TOKEN != ''
         # Inserted right under [vars] – appending would land inside the [[d1_databases]] table added above and be ignored.
-        run: node -e 'const fs = require("fs"), c = require("./config.json"), p = "bot/wrangler.toml"; let t = fs.readFileSync(p, "utf8"); for (const [k, v] of [["FEATURES", c.features || {}], ["STREAMS", c.streams || {}]]) { const f = JSON.stringify(v); t = t.replace("[vars]\n", `[vars]\n${k} = ${JSON.stringify(f)}\n`); console.log(k, f); } fs.writeFileSync(p, t);'
+        run: node -e 'const fs = require("fs"), c = require("./config.json"), p = "bot/wrangler.toml"; let t = fs.readFileSync(p, "utf8"); for (const [k, v] of [["FEATURES", c.features || {}], ["STREAMS", c.streams || {}], ["HYPE_CHANNEL", c.hype || {}], ["VOICE_CHANNEL", c.voiceRecap || {}]]) { const f = JSON.stringify(v); t = t.replace("[vars]\n", `[vars]\n${k} = ${JSON.stringify(f)}\n`); console.log(k, f); } fs.writeFileSync(p, t);'
+
+      - name: Bot icon set (the bot's own emoji, uploaded once)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        continue-on-error: true
+        run: node bot/ensure-emojis.mjs
+        env:
+          DISCORD_APP_ID: "1553967740543569970"
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
 
       - name: Deploy to Cloudflare Workers
         if: env.CLOUDFLARE_API_TOKEN != ''
@@ -50,10 +58,14 @@ jobs:
         env:
           GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           node -e '
             const s = {};
-            for (const k of ["GH_DISPATCH_TOKEN", "DISCORD_CLIENT_SECRET"]) if (process.env[k]) s[k] = process.env[k];
+            for (const k of ["GH_DISPATCH_TOKEN", "DISCORD_CLIENT_SECRET", "DISCORD_BOT_TOKEN", "VAPID_PRIVATE_KEY", "CLOUDFLARE_ANALYTICS_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync("secrets.json", JSON.stringify(s));
             console.log("Uploading:", Object.keys(s).join(", ") || "none");
           '
@@ -66,3 +78,4 @@ jobs:
         env:
           DISCORD_APP_ID: "1553967740543569970"
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}

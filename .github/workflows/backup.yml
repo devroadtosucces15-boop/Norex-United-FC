@@ -1,0 +1,45 @@
+name: Nightly backup
+
+# BE7 (roadmap): a daily D1 export, gzipped and uploaded to the same R2 bucket the bot already uses
+# (norex-media, key prefix backups/) – independent of the site/bot deploys, so it keeps running even if
+# those are broken. The bucket's existing 365-day lifecycle rule (see bot/ensure-resources.mjs) is the
+# retention backstop, same pattern already used for feed media – no extra pruning logic needed here.
+# Restore steps: bot/RESTORE.md.
+
+on:
+  schedule:
+    - cron: "11 4 * * *" # once a day, off the hour from the other crons
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check setup
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "::notice::Cloudflare secrets not added yet – see README → Discord bot. Skipping."
+
+      - uses: actions/checkout@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+
+      - uses: actions/setup-node@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        with:
+          node-version: 22
+
+      - name: Export D1 (norex)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: bot
+        run: npx --yes wrangler@4 d1 export norex --remote --output backup.sql
+
+      - name: Compress + upload to R2 (norex-media, backups/)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: bot
+        run: |
+          gzip backup.sql
+          KEY="backups/norex-$(date -u +%F).sql.gz"
+          npx --yes wrangler@4 r2 object put "norex-media/$KEY" --file=backup.sql.gz --remote
+          echo "Backed up to norex-media/$KEY"

@@ -5,6 +5,7 @@
 //   POST /api/hof/remove      managers – take one down (kept with removed_at)
 //   GET  /api/leaders?month=  members – squad boards for a month: attendance, MOTM vote wins, votes cast (flag leaders)
 import { can, flagOn } from './roles.js';
+import { predictionMonth } from './predict.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -79,7 +80,14 @@ export async function honoursRoute(p, method, body, me, env, loadSite, log, url)
     if (!can(me, 'leaders.view')) return fail('Members only.', 403);
     const month = url?.searchParams.get('month') || new Date().toISOString().slice(0, 7);
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return fail('Bad month.');
-    return json(await squadBoards(env, month, loadSite));
+    const out = await squadBoards(env, month, loadSite);
+    const [y, m] = month.split('-').map(Number);
+    if (flagOn(env, me, 'awards')) { // P4.1 – weekly award wins of the weeks that belong to this month
+      out.awards = (await all(env, `SELECT w.player AS k, MAX(w.name) AS n, COUNT(*) AS wins FROM award_winners w JOIN award_weeks k ON k.week = w.period
+        WHERE k.month = ? AND w.player != '' GROUP BY w.player ORDER BY wins DESC LIMIT 10`, month));
+    }
+    if (flagOn(env, me, 'predictions')) out.predictions = await predictionMonth(env, Date.UTC(y, m - 1, 1), Date.UTC(y, m, 1)); // P3.8
+    return json(out);
   }
   if (p === '/api/hof' || p === '/api/hof/remove') {
     if (!flagOn(env, me, 'hallOfFame')) return fail('Not available yet.', 404);

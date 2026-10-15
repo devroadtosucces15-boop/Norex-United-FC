@@ -1,0 +1,191 @@
+import { cfg, features, media, clubStats as C, players, matches, recent, records, leaders, shapes, updates, fmtDate } from '../lib/data.mjs';
+import * as W from '../lib/widgets.mjs';
+import { oppCrest, shell, esc, slug, card, hero, chip, row, sbt, pillRes, sample, lineLabel, liveStrip } from '../lib/ui.mjs';
+
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+const top = (arr, k) => [...arr].sort((a, b) => b[k] - a[k])[0];
+const L = { GK: 'Goalkeepers', DEF: 'Defenders', MID: 'Midfielders', FWD: 'Forwards' };
+const lineOfPlayer = (p) => p.line; // card line (favourite position from EA)
+
+// ---------- HOME ----------
+export function home() {
+  const homeWatch = features.homeWatch && features.homeWatch !== 'off' ? features.homeWatch : '';
+  const last = recent[0], form = recent.slice(0, 5).reverse();
+  const sc = top(players, 'goals'), rt = leaders.rating[0], as = top(players, 'assists');
+  const scorers = last ? last.lines.filter((l) => l.goals).map((l) => `${esc(l.n)}${l.goals > 1 ? ` ×${l.goals}` : ''}`).join(', ') : '';
+  const body = `
+<div class="wrap">
+ <section class="hero">
+  <div>
+   <div class="eyebrow reveal">EA SPORTS FC 27 · DIVISION ${C.div || 1} · LEAGUE &amp; RUSH</div>
+   <h1 class="reveal" style="--i:1">One club.<br><em>One crown.</em></h1>
+   <p class="lead reveal" style="--i:2">${esc(C.name)} is always looking for committed players who want to compete. Every card, every match and every number below is the club's own record.</p>
+   <div class="ticker reveal" style="--i:3" aria-label="Last five results, oldest first">${form.map((m) => `<a class="fd ${m.res}" href="match-${m.id}.html" title="${esc(m.opp)} ${m.gf}-${m.ga}">${oppCrest(m.crest, m.opp, 26)}<b>${m.res}</b></a>`).join('')}<span class="muted small" style="align-self:center;margin-left:6px">last ${form.length} · ${W.runNow()[0]} ${W.runNow()[1]}</span></div>
+   <div class="chips reveal" style="--i:4"><a class="btn" href="join.html">Apply for a trial</a><a class="btn ghost" href="results.html">Results</a><a class="btn ghost" href="tactics.html">Our tactics</a>${homeWatch ? '<a class="btn live-btn" href="#home-watch" data-home-live hidden><span class="wt-dot" aria-hidden="true"></span> LIVE · Watch</a>' : ''}</div>
+  </div>
+  <div class="stage" aria-hidden="true">
+   <div class="crestwrap tilt" data-tilt="8"><span class="halo"></span><img src="crest.png" alt=""></div>
+   <div class="cardwrap" style="position:absolute;left:-2%;bottom:2%;transform:rotate(-8deg)" data-par="-.04">${card(sc, { s: .62, link: false })}</div>
+   <div class="cardwrap" style="position:absolute;right:-2%;top:2%;transform:rotate(7deg)" data-par=".05">${card(rt, { s: .62, link: false, dark: true })}</div>
+  </div>
+ </section>
+
+ ${liveStrip}
+ ${homeWatch ? `<section class="sec" id="home-watch" data-home-watch="${homeWatch}" hidden><header><div><span class="ribbon">🔴 Live now</span></div><a class="btn ghost" href="watch.html">Open Watch</a></header><div data-watch-live data-compact></div></section>` : ''}
+ <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header><div class="panel reveal">${W.digits()}</div>
+  <div class="panel reveal" style="margin-top:22px"><h3>Form · last ${recent.length} games</h3>${W.formWave()}</div></section>
+
+ <section class="sec" data-insight-sec hidden><header><div><span class="ribbon">Insights</span></div><p>Short notes written from our own numbers, for members.</p></header><div class="grid g3 insgrid"><div data-insight="club" hidden></div><div data-insight="match.latest" hidden></div><div data-insight="matches.last5" hidden></div></div></section>
+ <section class="sec"><header><div><span class="ribbon">Match reel</span></div><p>Tap a night to jump to it. Drag the reel.</p></header>${W.reel()}</section>
+
+ <section class="sec"><header><div><span class="ribbon">Top performers</span></div><a class="btn ghost" href="leaders.html">All leaders</a></header>
+  <div class="cards c" data-stagger>
+   <div class="cardwrap">${card(sc, { s: 1 })}<div class="meta">⚽ Top scorer · ${sc.goals} goals</div></div>
+   <div class="cardwrap">${card(as, { s: 1, dark: true })}<div class="meta">🅰️ Most assists · ${as.assists}</div></div>
+   <div class="cardwrap">${card(rt, { s: 1 })}<div class="meta">⭐ Best rating · ${rt.rating.toFixed(1)} over ${rt.gp} games</div></div>
+  </div></section>
+
+ <section class="sec"><header><div><span class="ribbon">Meet the squad</span></div><a class="btn ghost" href="squad.html">All ${players.length}</a></header>${W.coverflow()}<p class="hint">Swipe or drag sideways</p></section>
+
+ <section class="sec"><header><div><span class="ribbon">Trophy cabinet</span></div><a class="btn ghost" href="halloffame.html">Hall of Fame</a></header><div class="grid cabsplit"><div class="panel reveal" style="display:grid;align-content:center">${W.cabinet()}</div>${W.poster()}</div></section>
+
+ <section class="sec"><header><div><span class="ribbon">How we play</span></div><a class="btn ghost" href="tactics.html">Tactics table</a></header>
+  <div class="grid g2"><div class="panel reveal"><h3>The shape</h3><p class="muted">In ${shapes[0]?.[1] ?? 0} of ${shapes.reduce((a, s) => a + s[1], 0)} full 11-player league games we lined up <b class="gold-t">${shapes[0]?.[0]?.replace(/^1-/, '') ?? '3-5-2'}</b>: three at the back, wingers dropping into a back five, a front four in attack.</p><div class="chips" style="margin-top:12px"><a class="chip" href="tactics.html">🏆 League · 11v11</a><a class="chip" href="tactics.html#rush">⚡ Rush · 5v5</a></div></div>
+  <div class="panel reveal" style="--i:1"><h3>Game updates</h3>${updates.slice(0, 3).map((u) => `<a href="updates.html" style="display:block;padding:8px 0;border-top:1px solid var(--line)"><b style="font-size:14px">${esc(u.title.replace(/^EA SPORTS FC™ 27 \| /, ''))}</b><div class="muted tiny">${new Date(u.published).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div></a>`).join('')}</div></div></section>
+
+ <section class="sec"><div class="panel reveal" style="display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;background:linear-gradient(120deg,#1b1210,#140f0f 60%,#1a1608);border-color:rgba(200,53,44,.4)">
+  <img src="crest.png" alt="" width="86" style="width:86px"><div><h3 style="font-size:28px;margin-bottom:4px">${esc(cfg.recruitment?.headline ?? 'Trials are by application only')}</h3><p class="muted">${esc((cfg.recruitment?.requirements ?? []).join(' · '))}</p></div><a class="btn gold" href="join.html">Apply for a trial</a></div></section>
+</div>`;
+  return shell({ group: 'club', page: 'index.html', title: 'Home', body });
+}
+
+// ---------- SQUAD ----------
+export function squad() {
+  const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><header><div><div class="eyebrow">${players.length} players</div><h2>The squad</h2></div>
+  <div class="chips" id="lines"><button class="chip on" data-l="">All</button>${Object.entries(L).map(([k, v]) => `<button class="chip" data-l="${k}">${v}</button>`).join('')}</div></header>
+  <div class="chips" id="sort" style="margin-bottom:22px"><span class="muted small">Sort</span><button class="chip on" data-s="gp">Games</button><button class="chip" data-s="ovr">Rating</button><button class="chip" data-s="goals">Goals</button><button class="chip" data-s="assists">Assists</button></div>
+  <div class="cards" id="grid" data-stagger>${players.map((p) => `<div class="cardwrap" data-line="${p.line}" data-gp="${p.gp}" data-ovr="${p.ovr ?? 0}" data-goals="${p.goals}" data-assists="${p.assists}">${card(p)}<div class="cmp"><button class="cmpbtn" data-k="${esc(p.k)}" aria-label="Compare ${esc(p.n)}" aria-pressed="false">+</button></div><div class="meta">${esc(p.arch || lineLabel(p))} · ${p.gp} games</div></div>`).join('')}</div>
+  <p class="muted small" style="margin-top:20px">Card rating and position are EA's. Players with approved AI Studio artwork show it here and everywhere else they appear; everyone else gets this fallback.</p></section>
+  <section class="sec"><header><div><span class="ribbon">Card stack</span></div><p>Every card in one stack: swipe sideways to move through the squad, tap a card to flip it and see their season.</p></header>${W.stack()}</section></div>`;
+  return shell({ group: 'club', page: 'squad.html', title: 'Squad', body, bodyClass: 'pg-squad' });
+}
+
+// ---------- PLAYER PROFILE ----------
+function spark(vals) { if (!vals.length) return ''; const w = 220, h = 46, mx = 10, mn = 5, pts = vals.map((v, i) => `${(i / Math.max(1, vals.length - 1)) * w},${h - ((v - mn) / (mx - mn)) * h}`).join(' '); return `<svg viewBox="-4 -4 ${w + 8} ${h + 8}" width="100%" height="56" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--g2)" stroke-width="2.4" stroke-linejoin="round"/>${vals.map((v, i) => `<circle cx="${(i / Math.max(1, vals.length - 1)) * w}" cy="${h - ((v - mn) / (mx - mn)) * h}" r="3" fill="#fff1c2"/>`).join('')}</svg>`; }
+export function player(p) {
+  const apps = matches.flatMap((m) => m.lines.filter((l) => l.n === p.n).map((l) => ({ ...l, m }))).sort((a, b) => b.m.t - a.m.t);
+  const form = apps.slice(0, 10).reverse().map((a) => a.rating).filter(Boolean);
+  const body = `<div class="wrap"><a class="muted small" href="squad.html" style="display:inline-block;margin:24px 0 0">← Squad</a>
+  <section class="hero prof" style="padding-top:20px;min-height:0;grid-template-columns:.9fr 1.1fr">
+   <div class="stage" style="min-height:0"><div class="tilt" data-tilt="7" style="view-transition-name:pcard;display:inline-block">${hero(p)}</div></div>
+   <div><div class="eyebrow reveal">${esc(L[p.line] ?? '')}${p.arch ? ' · ' + esc(p.arch) : ''}</div><h1 class="reveal" style="--i:1;font-size:clamp(40px,6vw,72px)">${esc(p.n)}</h1>
+    <div class="chips reveal" style="--i:2"><span class="chip gold">OVR ${p.ovr ?? '—'}</span>${p.h ? `<span class="chip">${p.h} cm</span>` : ''}<span class="chip">${p.gp} games this season</span>${p.hot ? `<span class="chip fire" title="Average of the last 3 match ratings">🔥 On fire · ${p.formAvg}</span>` : p.cold ? `<span class="chip frost" title="Average of the last 3 match ratings">🧊 Cold spell · ${p.formAvg}</span>` : p.formAvg ? `<span class="chip" title="Average of the last 3 match ratings">➖ Form ${p.formAvg}</span>` : ''}<button class="chip cmpbtn" data-k="${esc(p.k)}" style="width:auto;height:auto;border-radius:999px;padding:7px 14px;font:600 13px Inter">＋ Compare</button></div>
+    <div class="sb reveal" style="--i:3;margin-top:18px">${sbt(p.goals, 'Goals', 'gold')}${sbt(p.assists, 'Assists')}${sbt(p.rating ? p.rating.toFixed(1) : '—', 'Avg rating', 'gold')}${sbt(p.mom, 'MOTM')}</div>
+    <p class="muted small" style="margin-top:12px">${p.arch ? `Archetype <b>${esc(p.arch)}</b> is read from EA's match data (inferred). ` : ''}Position on the card is EA's favourite position.</p></div>
+  </section>
+  <div class="grid g2 insgrid" data-insight-sec hidden style="margin-top:26px"><div data-insight="player.${esc(p.id)}" hidden></div><div data-insight="note.${esc(p.id)}" hidden></div></div>
+  <div class="grid g3" style="margin-top:30px">
+   <div class="panel reveal"><h3>Season</h3><div class="bars">${[['Win rate', p.win], ['Pass accuracy', p.pass], ['Tackle success', p.tackleRate]].map(([l, v]) => `<div class="r"><span>${l}</span><div class="t"><i style="--w:${v}%"></i></div><b class="num">${v}%</b></div>`).join('')}</div><p class="muted small">Clean sheets ${p.cs} · tackles ${p.tackles} · red cards ${p.red}</p></div>
+   <div class="panel reveal" style="--i:1"><h3>Career</h3><div class="sb" style="grid-template-columns:1fr 1fr">${sbt(p.cgp, 'Games')}${sbt(p.cgoals, 'Goals', 'gold')}${sbt(p.cassists, 'Assists')}${sbt(p.cmom, 'MOTM')}</div></div>
+   <div class="panel reveal" style="--i:2"><h3>Form · last ${form.length} ratings</h3>${spark(form)}<div class="muted small">${form.map((v) => v.toFixed(1)).join(' · ') || 'No archived games'}</div></div>
+  </div>
+  <div class="grid g2" style="margin-top:22px"><div class="panel reveal"><h3>Shape of their game</h3>${W.radar([p, ...(leaders.rating[0] && leaders.rating[0].k !== p.k ? [leaders.rating[0]] : [])])}<p class="muted small" style="text-align:center">Compared with the club's best-rated player. Each axis is scaled to the best in the squad.</p></div>
+   <div class="panel reveal" style="--i:1"><h3>Rank tier</h3>${(() => { const ss = W.statScore(p); return ss ? `<p class="muted small">Earned from your stats, not the card: <b>${ss.score}/100</b> · Bronze under 40, Silver 40–59, Gold 60–79, Elite 80+.</p><div class="tierwhy">${ss.parts.map(([n, v]) => `<span>${n} <b>${v}</b></span>`).join('')}</div>` : `<p class="muted small">Play 10 league games to earn a rank tier. It comes from your rating, goals and assists, wins, passing and tackling – never the card overall.</p>`; })()}${W.tiers(W.tierOf(p))}<h3 style="margin-top:18px">Flip the card</h3>${W.flipcards([p])}</div></div>
+  ${(() => { const n = apps.length; if (!n) return ''; const sum = (k) => apps.reduce((a, b) => a + (b[k] || 0), 0), pm = sum('pm'), pa = sum('pa'), tm = sum('tm'), ta = sum('ta');
+    const best = apps.reduce((a, b) => (b.rating > a.rating ? b : a), apps[0]), per = (v) => (v / Math.max(1, p.gp)).toFixed(2);
+    const tile = (v, l, e) => `<div class="pg"><span class="e">${e}</span><b class="num">${v}</b><small>${l}</small></div>`;
+    return `<div class="grid g3" style="margin-top:22px">
+   <div class="panel reveal"><h3>📈 Per game · season</h3><div class="pgrid">${tile(per(p.goals), 'goals', '⚽')}${tile(per(p.assists), 'assists', '🅰️')}${tile(per(p.goals + p.assists), 'goal involvements', '✨')}${tile(p.gp ? Math.round(p.mom / p.gp * 100) + '%' : '–', 'MOTM rate', '🏅')}</div><p class="muted tiny">From EA's season totals (${p.gp} games).</p></div>
+   <div class="panel reveal" style="--i:1"><h3>🧾 In our match records</h3><div class="pgrid">${tile((sum('shots') / n).toFixed(1), 'shots a game', '🎯')}${tile(pa ? Math.round(pm / pa * 100) + '%' : '–', 'pass accuracy', '📐')}${tile((sum('drb') / n).toFixed(1), 'dribbles a game', '🏃')}${tile(ta ? `${tm}/${ta}` : '0', 'tackles won', '🛡️')}</div><p class="muted tiny">Across the ${n} archived league game${n === 1 ? '' : 's'} we hold in full.</p></div>
+   <a class="panel reveal bestg" style="--i:2" href="match-${best.m.id}.html"><h3>🌟 Best game on record</h3><div class="bg-r num">${best.rating.toFixed(1)}</div><div class="bg-m">${best.m.gf}–${best.m.ga} vs ${esc(best.m.opp)} ${pillRes(best.m.res)}</div><div class="muted small">${fmtDate(best.m.t, { weekday: 'short', day: 'numeric', month: 'short' })} · ${best.goals ? `⚽ ${best.goals} ` : ''}${best.assists ? `🅰️ ${best.assists} ` : ''}${best.mom ? '🏅 MOTM' : ''}</div><span class="muted tiny">Open the match →</span></a>
+  </div>`; })()}
+  <section class="sec"><header><div><span class="ribbon">Recent games</span></div></header><div class="panel flat reveal" style="padding:6px 14px"><div class="tscroll"><table class="tb mt" style="min-width:640px"><thead><tr><th>Date</th><th>Opponent</th><th>Result</th><th>Rating</th><th>G</th><th>A</th><th>Shots</th><th>Passes</th><th>Tackles</th></tr></thead><tbody>${apps.slice(0, 10).map((a) => `<tr><td>${fmtDate(a.m.t)}</td><td><a href="match-${a.m.id}.html">${esc(a.m.opp)}</a></td><td>${a.m.gf}-${a.m.ga} ${pillRes(a.m.res)}</td><td><b class="rt ${a.rating >= 8 ? 'hi' : a.rating >= 7 ? 'mid' : a.rating < 6 ? 'bad' : ''}">${a.rating ? a.rating.toFixed(1) : '—'}</b>${a.mom ? ' 🏅' : ''}</td><td>${a.goals || ''}</td><td>${a.assists || ''}</td><td>${a.shots || ''}</td><td>${a.pm}/${a.pa}</td><td>${a.tm}/${a.ta}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">No archived games yet.</td></tr>'}</tbody></table></div></div></section></div>`;
+  return shell({ group: 'club', page: 'squad.html', title: p.n, body });
+}
+
+// ---------- HALL OF FAME ----------
+export function hall() {
+  const r = records, t = (title, big, who, sub, icon, gold, p, no = 0) => `<div class="panel reveal trophy rec${gold ? ' gold' : ''}"><div class="rec-bg" aria-hidden="true">${p ? `<div class="rec-art">${hero(p)}</div>` : `<img class="rec-crest" src="crest.png" alt="">`}</div><span class="rec-no">№${no}</span><div class="rec-ic">${icon}</div><div class="eyebrow" style="color:var(--g2)">${title}</div><div class="num gold-t rec-big">${big}</div><div class="osw rec-who">${who}</div><div class="muted small">${sub}</div></div>`;
+  const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><header><div><div class="eyebrow">Honours and records</div><h2>Hall of <span class="gold-t">Fame</span></h2></div></header>
+  <div class="grid g3" data-stagger>${t('All-time scorer', r.careerScorer.cgoals, esc(r.careerScorer.n), `${r.careerScorer.cgp} career games`, '👑', true, r.careerScorer, 1)}${t('All-time assists', r.careerAssist.cassists, esc(r.careerAssist.n), `${r.careerAssist.cgp} career games`, '🅰️', false, r.careerAssist, 2)}${t('Most MOTM', r.careerMom.cmom, esc(r.careerMom.n), 'career man of the match', '🏅', false, r.careerMom, 3)}
+  ${t('Biggest win', `${r.biggestWin.gf}–${r.biggestWin.ga}`, esc(r.biggestWin.opp), fmtDate(r.biggestWin.t, { day: 'numeric', month: 'long' }), '🔥', false, null, 4)}${t('Best win run', W.bestRun(), `in the last ${matches.length} games`, `now ${W.runNow()[0]} ${W.runNow()[1]}`, '🏆', true, null, 5)}${t('Promotions', C.promotions, 'to Division 1', `now ${C.pts} points`, '⬆️', false, null, 6)}</div></section>
+  <section class="sec"><header><div><span class="ribbon">Trophy cabinet</span></div></header><div class="panel reveal">${W.cabinet()}</div></section>
+  <section class="sec"><header><div><span class="ribbon">Season awards</span></div><p>Today's leader in each category. Managers confirm the monthly winners in the Hub.</p></header><div class="panel reveal">${W.medals()}</div></section>
+  <section class="sec"><header><div><span class="ribbon">Legends</span></div><p>Players who earned their place for good. Elected by the managers.</p></header>
+   <div class="panel reveal legend" style="display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;border-color:rgba(239,207,122,.45)"><div class="pc pc-card" style="--s:.8"><span class="shell"></span><div class="art"><svg class="fb" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><path class="sil" d="M50 14c-9 0-16 8-16 18 0 8 4 14 9 17-14 3-27 12-30 27v8h74v-8c-3-15-16-24-30-27 5-3 9-9 9-17 0-10-7-18-16-18z"/><text class="num" x="50" y="97" text-anchor="middle">JC</text></svg></div><span class="ovr">★</span><span class="pos">LEGEND</span><span class="crestm"><img src="crest.png" alt=""></span><span class="name">J_CRUZ505</span><span class="stats"><div><b class="num">5</b><span>★</span></div><div><b class="num">1</b><span>WALL</span></div><div><b class="num">∞</b><span>CLUB</span></div></span><span class="club">NOREX UNITED FC</span></div>
+   <div><h3 style="font-size:30px" class="gold-t">J_CRUZ505 · "The Wall"</h3><p class="muted">The club's first legend. The Hall of Fame carries the same gold card for every inductee once their artwork is approved.</p>${sample('LEGEND FROM THE LIVE SITE')}</div></div></section>
+  <section class="sec"><header><div><span class="ribbon">Player of the month</span></div><p>The top performer right now. Once managers publish the official winner, this poster switches to them.</p></header><div style="max-width:420px">${W.poster()}</div></section>
+  <section class="sec"><header><div><span class="ribbon">Rank tiers</span></div><p>Every player earns a tier from their season stats – rating, goals and assists, wins, passing and tackling.</p></header><div class="panel reveal">${W.tiers()}</div></section></div>`;
+  return shell({ group: 'club', page: 'halloffame.html', title: 'Hall of Fame', body });
+}
+
+// ---------- JOIN ----------
+export function join() {
+  const R = cfg.recruitment ?? {}, pos = R.positions ?? [], apply = cfg.discord?.applyLink ?? '', open = R.open !== false;
+  const P15 = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
+  const steps = [['1', 'Apply', 'Join the Discord and press Apply to Join, or send the short form below.'], ['2', 'Trial', 'Play with us on a match night.'], ['3', 'Decision', 'Managers review your trial.'], ['4', 'Your card', 'Join the Hub, submit your AI Studio artwork and get your own locker.']];
+  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Join the club</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Earn your <em>crest</em></h1><p class="lead reveal" style="--i:2">${esc(R.headline ?? 'Trials are by application only')}. We play League and Rush on ${esc(cfg.platform === 'common-gen5' ? 'PS5, Xbox Series and PC' : 'new gen')}.</p><div class="chips reveal" style="--i:3"><a class="btn gold" href="${esc(apply || '#')}" target="_blank" rel="noopener">Apply on Discord</a><a class="btn ghost" href="#jform">Send the short form</a><a class="btn ghost" href="squad.html#squad" data-open-squad aria-expanded="false" aria-controls="squad">Meet the squad</a></div>
+  <p class="muted small reveal" style="--i:4;margin-top:12px">${open ? '🟢 Trials are open right now.' : '🔴 Trials are closed for now – you can still apply and we will keep your name.'}</p></div>
+  <div class="stage"><div class="crestwrap tilt" data-tilt="7"><span class="halo"></span><img src="crest.png" alt=""></div></div></section>
+  <section class="sec jn-status" data-join-status hidden></section>
+  <div class="grid g2" style="margin-top:20px"><div class="panel reveal"><h3>What we look for</h3>${(R.requirements ?? []).map((r) => `<div style="display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)"><span style="color:var(--g2)">✔</span><span>${esc(r)}</span></div>`).join('')}</div>
+  <div class="panel reveal" style="--i:1"><h3>Positions we want</h3><div class="chips">${pos.map((x) => `<span class="chip gold">${esc(x)}</span>`).join('')}</div><p class="muted small" style="margin-top:12px">Every position in our 3-5-2 has a role in the club tactic, so we recruit for the role, not just the label.</p></div></div>
+  <section class="sec"><header><div><span class="ribbon">How it works</span></div></header><div class="grid g4" data-stagger>${steps.map(([n, t, d]) => `<div class="panel"><div class="num gold-t" style="font-size:44px">${n}</div><h3>${t}</h3><p class="muted small">${d}</p></div>`).join('')}</div></section>
+  <section class="sec" id="jform" data-join-form hidden><header><div><span class="ribbon">Short application</span></div><p>No account needed. A manager reads it and contacts you on Discord. Applying here does not replace the Discord step, it just puts you on the list sooner.</p></header>
+   <form class="panel jn-form" novalidate><input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="jn-hp">
+    <label>EA ID / gamertag<input name="ea" maxlength="40" autocomplete="off" required placeholder="Your in-game name"></label>
+    <label>Platform<select name="platform" required><option value="">Choose…</option><option>PS5</option><option>Xbox</option><option>PC</option></select></label>
+    <fieldset><legend>Positions <small class="muted">(up to 3)</small></legend><div class="chips jn-pos">${P15.map((x) => `<button type="button" class="chip" data-pos="${x}" aria-pressed="false">${x}</button>`).join('')}</div></fieldset>
+    <label>Your Discord username<input name="discord" maxlength="40" autocomplete="off" required placeholder="e.g. mike_fc"></label>
+    <label>Clips link <small class="muted">(optional, must start with https://)</small><input name="clips" maxlength="300" inputmode="url" autocomplete="off" placeholder="https://"></label>
+    <label>Anything we should know? <small class="muted">(optional)</small><textarea name="note" maxlength="500" rows="3"></textarea></label>
+    <p class="jn-msg" role="status" aria-live="polite"></p>
+    <div class="chips"><button class="btn gold" type="submit">Send application</button></div></form></section>
+  <section class="sec" data-join-contacts hidden><header><div><span class="ribbon">Who to talk to</span></div><p>The managers who read applications. Message one on Discord if you have a question first.</p></header><div class="grid g4 jn-ct" data-stagger></div></section>
+  <section class="sec" id="squad" data-squad-open hidden><header><div><span class="ribbon">Meet the squad</span></div><p>${players.length} players on the roster right now. Cards only, straight from EA's public club data.</p></header><div class="cards jn-squad">${players.map((p) => `<div class="cardwrap">${card(p)}<div class="meta">${esc(p.arch || lineLabel(p))} · ${p.gp} games</div></div>`).join('')}</div><div class="chips" style="margin-top:18px"><a class="btn gold" href="#jform" data-open-form>Send the short form</a><button class="btn ghost" type="button" data-close-squad>Hide the squad</button></div></section>
+  <script>(function(){var b=document.querySelector('[data-open-squad]'),s=document.getElementById('squad');if(!b||!s)return;function open(go){s.hidden=false;b.setAttribute('aria-expanded','true');if(window.NorexArt)try{NorexArt.apply(s)}catch(e){}if(window.NorexMotion)try{NorexMotion.tilt()}catch(e){}if(go)s.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'})}function close(){s.hidden=true;b.setAttribute('aria-expanded','false');b.scrollIntoView({block:'center'})}b.addEventListener('click',function(e){e.preventDefault();s.hidden?open(true):close()});s.querySelector('[data-close-squad]').addEventListener('click',close);if(location.hash==='#squad')open(false)})();</script></div>`;
+  return shell({ group: 'club', page: 'join.html', title: 'Join', body, data: { apply }, extraHead: '<script src="join.js" defer></script>' });
+}
+
+// ---------- NEWS (club feed + docs, readable without an account) ----------
+export function news() {
+  const ups = updates.slice(0, 4).map((u) => `<a class="nw-up" href="updates.html"><b>${esc(u.title.replace(/^EA SPORTS FC™ 27 \| /, ''))}</b><span class="muted tiny">${new Date(u.published).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>${u.summary ? `<span class="muted small">${esc(String(u.summary).slice(0, 140))}</span>` : ''}</a>`).join('');
+  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Club news</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Feed &amp; <em>docs</em></h1><p class="lead reveal" style="--i:2">Posts the squad has chosen to share with everyone, the game updates that matter to us, and where the club's rules live.</p></div></section>
+  <section class="sec"><header><div><span class="ribbon">From the club feed</span></div><p>Only posts a member marked public appear here. Sign in to see the whole feed, react and comment.</p></header><div data-news-feed><div class="panel muted">Loading the feed…</div></div></section>
+  <section class="sec"><header><div><span class="ribbon">Club docs</span></div><p>Rules, requirements and how we play stay inside the squad. Everything meant for outsiders is on these pages.</p></header>
+   <div class="grid g3" data-stagger><a class="panel nw-doc" href="join.html"><span class="em" aria-hidden="true">📋</span><b>Requirements to join</b><span class="muted small">What we look for, the positions we want and how to apply.</span></a><a class="panel nw-doc" href="updates.html"><span class="em" aria-hidden="true">📰</span><b>Game updates</b><span class="muted small">EA patch notes read for what changes our play.</span></a><a class="panel nw-doc" href="hub-handbook.html"><span class="em" aria-hidden="true">📜</span><b>Squad handbook</b><span class="muted small">Club rules, play style and announcements. Members only.</span></a></div>
+   <div data-news-docs hidden></div></section>
+  <section class="sec"><header><div><span class="ribbon">Latest game updates</span></div></header><div class="nw-ups">${ups || '<p class="muted">No updates saved yet.</p>'}</div></section></div>`;
+  return shell({ group: 'club', page: 'news.html', title: 'News', body, extraHead: '<script src="docs-md.js" defer></script><script src="news.js" defer></script>' });
+}
+
+// ---------- WATCH (live player + channels) ----------
+export function watch() {
+  const S = cfg.streams ?? {}, ch = [['twitch', 'Twitch', '🟣', '#9146ff', 'Live match nights, Rush sessions and trials'], ['youtube', 'YouTube', '🔴', '#ff0033', 'Highlights, goals of the week and full streams']].filter(([k]) => S[k]);
+  const tile = (p, kind, v) => { const yt = p === 'yt', thumb = yt ? `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg` : v.thumb, lab = yt ? (kind === 'short' ? '🔴 Short' : '🔴 YouTube') : (kind === 'clip' ? '🟣 Clip' : '🟣 Recording');
+    return `<button type="button" class="wtp ${kind === 'short' ? 'v' : ''}" data-p="${p}" data-kind="${kind}" data-id="${esc(v.id)}" data-secs="${v.secs ?? 0}" data-title="${esc(v.title)}" aria-label="Play: ${esc(v.title)}">${thumb ? `<img src="${esc(thumb)}" alt="" loading="lazy" decoding="async">` : ''}<span class="wtp-k">${lab}</span><span class="wtp-go" aria-hidden="true">▶</span><span class="wtp-t">${esc(v.title)}</span></button>`; };
+  const shorts = (media.youtube ?? []).filter((v) => v.short).map((v) => tile('yt', 'short', v));
+  const long = [...(media.twitch ?? []).filter((v) => v.kind === 'clip').map((v) => tile('tw', 'clip', v)), ...(media.youtube ?? []).filter((v) => !v.short).map((v) => tile('yt', 'video', v)), ...(media.twitch ?? []).filter((v) => v.kind === 'video').map((v) => tile('tw', 'vod', v))];
+  const prev = shorts.length + long.length ? `<section class="sec" data-wt-prev><header><div><span class="ribbon">Latest from the channels</span></div><p>Short previews play by themselves while they are on screen. Tap one to watch it properly.</p></header>${long.length ? `<div class="wtp-grid">${long.join('')}</div>` : ''}${shorts.length ? `<h3 style="margin:26px 0 10px">Shorts</h3><div class="wtp-row">${shorts.join('')}</div>` : ''}</section>` : '';
+  const body = `<div class="wrap"><section class="hero" style="min-height:0;padding-bottom:10px"><div><div class="eyebrow reveal">Watch NOREX</div><h1 class="reveal" style="--i:1;font-size:clamp(44px,7vw,84px)">Live &amp; <em>replays</em></h1><p class="lead reveal" style="--i:2">When we stream a match night the player opens here on its own. Until then, short looping previews of our latest videos play below.</p></div></section>
+  <section class="sec"><div data-watch-live><div class="panel wt-off"><b>📺 Checking if we are live…</b></div></div></section>
+  ${prev}<section class="sec"><header><div><span class="ribbon">Our channels</span></div></header><div class="wt-ch" data-stagger>${ch.map(([k, l, e, c, d]) => `<a href="${esc(S[k])}" target="_blank" rel="noopener" style="--c:${c}"><span class="em">${e}</span><span><b>${l}</b><small class="muted">${esc(d)}</small></span></a>`).join('') || '<p class="muted">No channels set yet.</p>'}</div></section></div>`;
+  return shell({ group: 'club', page: 'watch.html', title: 'Watch', body, extraHead: '<link rel="stylesheet" href="watchprev.css"><script src="watchprev.js" defer></script>' });
+}
+
+// ---------- SCOUTING (members only) ----------
+export function scouting() {
+  const body = `<div class="wrap"><section class="sec" style="margin-top:34px"><header><div><div class="eyebrow">Recruitment · members only</div><h2>Scouting</h2></div></header>
+  <div data-for="guest" class="panel" style="text-align:center;padding:50px"><div style="font-size:44px">🔒</div><h3 style="font-size:28px">Members only</h3><p class="muted">Scouting is where members recommend players to the managers. Enter the Hub to unlock it.</p><a class="btn gold" data-hub href="hub.html" style="margin-top:12px">🔑 Enter the Hub</a></div>
+  <div data-for="member owner" hidden><div class="grid g2"><form class="panel" onsubmit="event.preventDefault();this.querySelector('.ok').hidden=false"><h3>Recommend a player</h3>
+   <label class="muted small">EA ID<input required style="width:100%;margin:4px 0 12px;padding:11px;border-radius:10px;background:var(--p3);border:1px solid var(--line2);color:#fff"></label>
+   <label class="muted small">Position<select style="width:100%;margin:4px 0 12px;padding:11px;border-radius:10px;background:var(--p3);border:1px solid var(--line2);color:#fff">${(cfg.recruitment?.positions ?? []).map((p) => `<option>${esc(p)}</option>`).join('')}</select></label>
+   <label class="muted small">Why do they fit?<textarea rows="3" style="width:100%;margin:4px 0 12px;padding:11px;border-radius:10px;background:var(--p3);border:1px solid var(--line2);color:#fff"></textarea></label><button class="btn">Send to the managers</button><p class="ok muted small" hidden style="margin-top:10px">${sample('PREVIEW')} Nothing is sent from this local preview.</p></form>
+  <div class="panel"><h3>My recommendations</h3><p class="muted">${sample()} Sample rows: each moves through <b>Sent → Reviewing → Trial → Decision</b> and you are notified at each stage.</p>${['Sent', 'Reviewing', 'Trial'].map((s, i) => `<div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)"><span>Sample player ${i + 1}</span><span class="pill s">${s}</span></div>`).join('')}</div></div></div></section></div>`;
+  return shell({ group: 'club', page: 'scouting.html', title: 'Scouting', body });
+}
+
+export default function (P) {
+  P('index.html', home()); P('squad.html', squad()); P('halloffame.html', hall()); P('join.html', join()); P('news.html', news()); P('watch.html', watch()); P('scouting.html', scouting());
+  for (const p of players) P(`player-${slug(p.k)}.html`, player(p));
+}

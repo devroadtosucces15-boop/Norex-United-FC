@@ -1,18 +1,27 @@
 // Turns data/ into a static website in site/. No dependencies, no framework.
 import fs from 'node:fs';
 import path from 'node:path';
-import { ROOT, DATA, readJson, loadConfig, num } from './lib.mjs';
-import { lineChart, goalBars, donut, radar, spark } from './charts.mjs';
+import { ROOT, DATA, readJson, loadConfig, loadOverrides, num } from './lib.mjs';
+import { lineChart, goalBars, donut, radar, spark, pitchMap } from './charts.mjs';
 import { buildUpdates } from './updates-page.mjs';
 import { buildBuilder } from './builder-page.mjs';
+import { buildProBuilds } from './probuilds-page.mjs';
+import { buildDocs } from './docs-page.mjs';
+import { buildFeed } from './feed-page.mjs';
+import { buildHub } from './hub-page.mjs';
+import { buildMessages } from './messages-page.mjs';
+import { buildTactics } from './tactics-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
+import { buildRankings } from './rankings.mjs';
+import { buildBurners, burnersFeed, loadBurners } from './burners-page.mjs';
 
-const OUT = path.join(ROOT, 'site');
+const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
 const config = loadConfig();
 const homeId = String(config.homeClubId);
 const brand = config.brand ?? {};
 const state = readJson(path.join(DATA, 'state.json'), { clubs: {} });
-const hidden = new Set((config.hiddenPlayers || []).map((h) => String(h).toLowerCase()));
+const overrides = await loadOverrides(config); // P5.6 – "hide me" requests approved by managers
+const hidden = new Set([...(config.hiddenPlayers || []), ...overrides.hiddenPlayers].map((h) => String(h).toLowerCase()));
 const builtAt = new Date().toISOString();
 const SITE = config.siteUrl?.replace(/\/?$/, '/') ?? '';
 const DISCORD = config.discord?.applyLink || '';
@@ -48,9 +57,37 @@ const posOf = (st) => {
   return st?.proPos !== undefined && st?.proPos !== '' && code ? TIDY[code] ?? code : st?.favoritePosition ? posAbbr(st.favoritePosition) : '';
 };
 const groupOf = (label) => (label === 'GK' ? 'GK' : ['CB', 'LB', 'RB', 'LWB', 'RWB', 'DEF'].includes(label) ? 'DEF' : ['CDM', 'CM', 'CAM', 'LM', 'RM', 'MID'].includes(label) ? 'MID' : label ? 'FWD' : '');
+// P11.12 player taglines: a short flavour-text title from real season stats – same "pure data" approach as
+// the P11.9 aura (deterministic, free, no AI model), so it works everywhere the card does. Needs 3+ games.
+function tagline(pl) {
+  const s = pl.main, gp = num(s?.gamesPlayed);
+  if (!s || gp < 3) return null;
+  const grp = pl.group, g = num(s.goals), a = num(s.assists), r = num(s.ratingAve), m = num(s.manOfTheMatch), pss = num(s.passSuccessRate), tkl = num(s.tackleSuccessRate), w = num(s.winRate);
+  const gpg = g / gp, apg = a / gp, motmRate = m / gp;
+  const T = [
+    [grp === 'GK' && r >= 7.8, '🧤 Last Line'],
+    [grp === 'GK' && motmRate >= 0.25, '🧤 Big-Game Keeper'],
+    [grp !== 'GK' && gpg >= 1, '⚽ Goal Machine'],
+    [grp !== 'GK' && apg >= 0.7, '🪄 Playmaker'],
+    [grp !== 'GK' && gpg >= 0.5, '🎯 Clinical Finisher'],
+    [motmRate >= 0.3, '🏅 Big-Game Player'],
+    [grp === 'DEF' && tkl >= 72, '🧱 The Wall'],
+    [grp !== 'GK' && tkl >= 78, '🛡️ Tackle Machine'],
+    [(grp === 'MID' || grp === 'DEF') && pss >= 88, '🎼 Metronome'],
+    [r >= 8, '⭐ Talisman'],
+    [gp >= 50, '📅 Ever-Present'],
+    [w >= 70 && gp >= 10, '🍀 Lucky Charm'],
+  ];
+  const hit = T.find(([c]) => c);
+  return hit ? hit[1] : { GK: '🧤 The Keeper', DEF: '🛡️ Steady Defender', MID: '⚙️ Engine Room', FWD: '🔥 Live Wire' }[grp] ?? '⚽ Squad Player';
+}
 const ratingClass = (r) => (r >= 9 ? 'r-elite' : r >= 8 ? 'r-great' : r >= 7 ? 'r-good' : r >= 6 ? 'r-mid' : 'r-low');
 const dateStr = (ts) => new Date(ts * 1000).toISOString().slice(0, 10);
 const niceDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const chipDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
+// One flap per digit: a 0-9 strip app.js translates into place (stadium-scoreboard reveal, board 05).
+const flapDigit = (d) => `<span class="flap" data-d="${d}"><span class="flap-strip">${'0123456789'.split('').map((x) => `<b>${x}</b>`).join('')}</span></span>`;
+const flapDigits = (n) => [...String(n)].map(flapDigit).join('');
 
 function write(rel, html) {
   const file = path.join(OUT, rel);
@@ -60,13 +97,22 @@ function write(rel, html) {
 
 // ---------- load ----------
 const clubs = new Map(readDir(path.join(DATA, 'clubs')).map((c) => [String(c.id), c]));
-const matches = readDir(path.join(DATA, 'matches')).sort((a, b) => b.timestamp - a.timestamp);
+const allMatches = readDir(path.join(DATA, 'matches')).sort((a, b) => b.timestamp - a.timestamp);
+// P1.8: club friendlies are a mode of their own – never mixed into League/playoff totals, players or boards.
+const matches = allMatches.filter((m) => m.matchType !== 'friendlyMatch');
+const friendlies = allMatches.filter((m) => m.matchType === 'friendlyMatch' && m.clubs[homeId]);
+const typeLabel = (m) => ({ playoffMatch: 'Playoff', friendlyMatch: 'Friendly' })[m.matchType] ?? 'League';
+// P1.8: dribbles + second assists (EA event codes 174/115) only exist in matches archived after the fetcher kept them.
+const hasEv = (m) => Object.values(m.players || {}).some((l) => Object.values(l).some((p) => p.dribbles !== undefined));
+const evNum = (v) => (v === undefined ? null : num(v));
+const evFirst = Math.min(...allMatches.filter(hasEv).map((m) => m.timestamp));
+const EV_SINCE = Number.isFinite(evFirst) ? new Date(evFirst * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : null;
 function matchClubName(id) {
-  for (const m of matches) if (m.clubs[id]?.name) return m.clubs[id].name;
+  for (const m of allMatches) if (m.clubs[id]?.name) return m.clubs[id].name;
   return null;
 }
 const clubName = (id) => clubs.get(String(id))?.info?.name ?? state.clubs[id]?.name ?? matchClubName(id) ?? `Club ${id}`;
-const clubKit = (id) => clubs.get(String(id))?.info?.customKit ?? matches.find((m) => m.clubs[id]?.kit)?.clubs[id].kit ?? null;
+const clubKit = (id) => clubs.get(String(id))?.info?.customKit ?? allMatches.find((m) => m.clubs[id]?.kit)?.clubs[id].kit ?? null;
 const result = (c) => (c?.wins === '1' ? 'W' : c?.losses === '1' ? 'L' : 'D');
 const oppOf = (m, id) => Object.keys(m.clubs).find((k) => k !== id);
 const homeMatches = matches.filter((m) => m.clubs[homeId]);
@@ -94,7 +140,7 @@ const players = new Map();
 const nameToKey = new Map();
 function player(key) {
   if (!players.has(key)) {
-    players.set(key, { key, id: /^\d+$/.test(key) ? key : null, names: new Set(), name: null, clubStats: {}, career: null, apps: [] });
+    players.set(key, { key, id: /^\d+$/.test(key) ? key : null, names: new Set(), name: null, clubStats: {}, career: null, apps: [], fapps: [] });
   }
   return players.get(key);
 }
@@ -106,15 +152,19 @@ for (const m of [...matches].reverse()) {
       pl.names.add(p.playername);
       pl.name = p.playername;
       nameToKey.set(p.playername.toLowerCase(), pid);
-      pl.apps.push({
-        matchId: m.matchId, ts: m.timestamp, clubId, oppId, res: result(m.clubs[clubId]),
-        gf: num(m.clubs[clubId]?.goals), ga: num(m.clubs[oppId]?.goals),
-        goals: num(p.goals), assists: num(p.assists), rating: num(p.rating), mom: num(p.mom), pos: p.pos,
-        shots: num(p.shots), passes: num(p.passesmade), passAtt: num(p.passattempts),
-        tackles: num(p.tacklesmade), tackleAtt: num(p.tackleattempts), saves: num(p.saves), red: num(p.redcards),
-      });
+      pl.apps.push(appOf(m, clubId, oppId, p));
     }
   }
+}
+function appOf(m, clubId, oppId, p) {
+  return {
+    matchId: m.matchId, ts: m.timestamp, clubId, oppId, res: result(m.clubs[clubId]),
+    gf: num(m.clubs[clubId]?.goals), ga: num(m.clubs[oppId]?.goals),
+    goals: num(p.goals), assists: num(p.assists), rating: num(p.rating), mom: num(p.mom), pos: p.pos,
+    shots: num(p.shots), passes: num(p.passesmade), passAtt: num(p.passattempts),
+    tackles: num(p.tacklesmade), tackleAtt: num(p.tackleattempts), saves: num(p.saves), red: num(p.redcards),
+    dribbles: evNum(p.dribbles), sa: evNum(p.secondassists),
+  };
 }
 for (const [clubId, c] of clubs) {
   for (const mbr of c.members || []) {
@@ -133,7 +183,16 @@ for (const [clubId, c] of clubs) {
     if (!pl.career || num(car.gamesPlayed) > num(pl.career.gamesPlayed)) pl.career = car;
   }
 }
+// Friendlies (P1.8) go into their own log for players we already know – they never create players or League stats.
+for (const m of [...friendlies].reverse()) {
+  const oppId = oppOf(m, homeId);
+  for (const [pid, p] of Object.entries(m.players?.[homeId] || {})) {
+    const key = players.has(pid) ? pid : nameToKey.get(String(p.playername).toLowerCase());
+    if (key) players.get(key).fapps.push(appOf(m, homeId, oppId, p));
+  }
+}
 for (const pl of players.values()) {
+  pl.fapps.sort((a, b) => b.ts - a.ts);
   pl.hidden = hidden.has(String(pl.id ?? '').toLowerCase()) || [...pl.names].some((n) => hidden.has(n.toLowerCase()));
   pl.apps.sort((a, b) => b.ts - a.ts);
   pl.clubIds = [...new Set([...Object.keys(pl.clubStats), ...pl.apps.map((a) => a.clubId)])];
@@ -145,6 +204,7 @@ for (const pl of players.values()) {
   pl.position = pl.main?.favoritePosition || pl.career?.favoritePosition || pl.apps[0]?.pos || '';
   pl.pos = posOf(pl.main) || posAbbr(pl.position);
   pl.group = groupOf(pl.pos);
+  pl.tag = tagline(pl);
   // Stats rebuilt from archived matches, for guests/ex-members EA no longer lists.
   const apps = pl.apps.filter((x) => x.clubId === (pl.mainClub ?? x.clubId));
   const ag = apps.length;
@@ -192,6 +252,15 @@ const clubLink = (id, base) => (clubHref(id, base) ? `<a href="${clubHref(id, ba
 
 // ---------- components ----------
 const tier = (ovr) => (ovr >= 88 ? 'icon' : ovr >= 80 ? 'gold' : ovr >= 70 ? 'silver' : ovr > 0 ? 'bronze' : 'plain');
+// P11.9 seasonal aura: card glow shifts with real recent form (last 3 league games) – no AI model, pure data.
+// `apps` is stored newest-first (see the players.json `tr` field below, which reverses it to get oldest→newest).
+const AURA_HOT = 7.6, AURA_COLD = 6.0;
+function aura(pl) {
+  const recent = (pl.apps ?? []).slice(0, 3).map((x) => x.rating).filter((r) => r > 0);
+  if (recent.length < 2) return null;
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  return avg >= AURA_HOT ? 'hot' : avg <= AURA_COLD ? 'cold' : null;
+}
 const SILHOUETTE = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="33" r="19"/><path d="M10 100c2-25 19-37 40-37s38 12 40 37z"/></svg>`;
 const STARS = '<span class="stars" aria-hidden="true">★★★★★</span>';
 
@@ -202,11 +271,14 @@ function futCard(pl, base, { big = false } = {}) {
     ['GLS', s.goals ?? '–'], ['AST', s.assists ?? '–'], ['RAT', s.ratingAve ?? '–'],
     ['PAS', s.passSuccessRate !== undefined ? s.passSuccessRate + '%' : '–'], ['TKL', s.tackleSuccessRate !== undefined ? s.tackleSuccessRate + '%' : '–'], ['GP', gp || '–'],
   ];
-  return `<a class="fut tier-${tier(pl.ovr)}${big ? ' big' : ''}" href="${pUrl(pl, base)}" data-pos="${pl.group}">
+  const au = aura(pl);
+  return `<a class="fut tier-${tier(pl.ovr)}${au ? ` aura-${au}` : ''}${big ? ' big' : ''}" href="${pUrl(pl, base)}" data-pos="${pl.group}">
 <span class="fut-shine"></span>
+${au ? `<span class="fut-aura" aria-label="${au === 'hot' ? 'On a hot streak' : 'In a cold spell'}">${au === 'hot' ? '🔥' : '🧊'}</span>` : ''}
 <span class="fut-top"><b class="fut-ovr">${pl.ovr || '–'}</b><span class="fut-pos">${esc(pl.pos || '—')}</span>${pl.mainClub ? crest(pl.mainClub, 28, base, 'fut-crest') : ''}</span>
-<span class="fut-face">${SILHOUETTE}</span>
+<span class="fut-face" data-card-player="${esc(pl.key)}">${SILHOUETTE}</span>
 <span class="fut-name">${esc(pl.name)}</span>
+${pl.tag ? `<span class="fut-tag">${esc(pl.tag)}</span>` : ''}
 <span class="fut-stats">${stats.map(([k, v]) => `<span><b>${esc(v)}</b>${k}</span>`).join('')}</span>
 </a>`;
 }
@@ -232,10 +304,21 @@ const pageHead = (title, sub, base, showCrest = true) =>
 
 // League ⇄ Rush switch (roadmap P0.4). League comes from EA data built here; Rush is logged by members and
 // drawn by app.js from the member API (`data-rush` says which view). Without the member API it's League only.
-const MODES = [['league', '🏆 League'], ['rush', '⚡ Rush']];
-const modes = (league, rush, label = '') => (MEMBER_API ? `<div class="modes" data-modes>
-<div class="mode-bar reveal"><div class="nx-tabs mode-switch" role="tablist" aria-label="League or Rush">${MODES.map(([k, l], i) => `<button type="button" role="tab" data-key="${k}" aria-selected="${!i}" tabindex="${i ? -1 : 0}">${l}</button>`).join('')}</div>${label ? `<small class="muted">${label}</small>` : ''}</div>
-<div data-mode="league">${league}</div><div data-mode="rush" data-rush="${esc(rush)}" hidden></div></div>` : league);
+// P1.8: an optional third tab, Friendly (club friendlies, built here like League) – only where `friendly` is given.
+const MODES = [['league', '🏆 League'], ['rush', '⚡ Rush'], ['friendly', '🤝 Friendly']];
+const modes = (league, rush, label = '', friendly = null) => (MEMBER_API ? `<div class="modes" data-modes>
+<div class="mode-bar reveal"><div class="nx-tabs mode-switch" role="tablist" aria-label="${friendly == null ? 'League or Rush' : 'League, Rush or Friendly'}">${MODES.filter(([k]) => k !== 'friendly' || friendly != null).map(([k, l], i) => `<button type="button" role="tab" data-key="${k}" aria-selected="${!i}" tabindex="${i ? -1 : 0}">${l}</button>`).join('')}</div>${label ? `<small class="muted">${label}</small>` : ''}</div>
+<div data-mode="league">${league}</div><div data-mode="rush" data-rush="${esc(rush)}" hidden></div>${friendly != null ? `<div data-mode="friendly" hidden>${friendly}</div>` : ''}</div>` : league);
+
+// P1.8: match calendar filter – month chips + a day picker that narrow every [data-day] item inside #scope (app.js).
+function calendar(scope, ms) {
+  if (ms.length < 2) return '';
+  const months = [...new Set(ms.map((m) => dateStr(m.timestamp).slice(0, 7)))].sort().reverse();
+  const days = ms.map((m) => dateStr(m.timestamp)).sort();
+  const mName = (ym) => new Date(ym + '-15T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  return `<div class="calbar" data-cal="${scope}"><span class="cal-ic" aria-hidden="true">📅</span><div class="chipset" role="group" aria-label="Month">${['all', ...months].map((k, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-month="${k}" aria-pressed="${!i}">${k === 'all' ? 'All' : mName(k)}</button>`).join('')}</div>
+<label class="cal-day"><span>Day</span><input type="date" min="${days[0]}" max="${days.at(-1)}" aria-label="Pick a match day"></label><small class="cal-count muted" aria-live="polite"></small></div>`;
+}
 
 function barList(rows, { fmt = (v) => v, base }) {
   const max = Math.max(...rows.map((r) => r.v), 0.0001);
@@ -246,10 +329,10 @@ function formStrip(ms, id, base) {
   return ms.slice(0, 10).reverse().map((m) => `<a href="${base}matches/${m.matchId}.html" data-tip="${esc(`${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}`)}">${resPill(result(m.clubs[id]))}</a>`).join('');
 }
 
-function fixture(m, id, base) {
+function fixture(m, id, base, anchor) {
   const o = oppOf(m, id), us = m.clubs[id], them = m.clubs[o];
   const scorers = Object.values(m.players?.[id] || {}).filter((p) => num(p.goals) > 0).map((p) => `${esc(p.playername)}${num(p.goals) > 1 ? ` ×${p.goals}` : ''}`).join(', ');
-  return `<a class="fixture ${result(us)}" href="${base}matches/${m.matchId}.html">
+  return `<a class="fixture ${result(us)}"${anchor ? ` id="${anchor}"` : ''} href="${base}matches/${m.matchId}.html" data-day="${dateStr(m.timestamp)}" data-id="${m.matchId}">
 <span class="fx-date">${niceDate(m.timestamp)}</span>${resPill(result(us))}
 <span class="fx-team">${crest(id, 28, base)}<span>${esc(clubName(id))}</span></span>
 <span class="fx-score">${esc(us.goals)}<i>–</i>${esc(them.goals)}</span>
@@ -270,8 +353,8 @@ function poster(m, base, { link = true } = {}) {
   const all = Object.values(m.players || {}).flatMap((l) => Object.values(l));
   const motm = all.find((p) => p.mom === '1') ?? [...all].sort((x, y) => num(y.rating) - num(x.rating))[0];
   const res = result(m.clubs[h]);
-  return `<div class="poster res-${res}" id="poster-${m.matchId}" data-home="${esc(clubName(h))}" data-away="${esc(clubName(a))}" data-score="${esc(m.clubs[h].goals)}-${esc(m.clubs[a].goals)}" data-date="${esc(niceDate(m.timestamp))}" data-scorers="${esc(scorers(h).join(', '))}" data-ascorers="${esc(scorers(a).join(', '))}" data-motm="${esc(motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : '')}" data-crest="${esc(posterCrest(h, base))}" data-acrest="${esc(posterCrest(a, base))}" data-res="${res}" data-type="${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}">
-<div class="po-label"><span>${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'} · ${niceDate(m.timestamp)}</span><span class="po-res">${res === 'W' ? 'Victory' : res === 'L' ? 'Defeat' : 'Draw'}</span></div>
+  return `<div class="poster res-${res}" id="poster-${m.matchId}" data-home="${esc(clubName(h))}" data-away="${esc(clubName(a))}" data-score="${esc(m.clubs[h].goals)}-${esc(m.clubs[a].goals)}" data-date="${esc(niceDate(m.timestamp))}" data-scorers="${esc(scorers(h).join(', '))}" data-ascorers="${esc(scorers(a).join(', '))}" data-motm="${esc(motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : '')}" data-crest="${esc(posterCrest(h, base))}" data-acrest="${esc(posterCrest(a, base))}" data-res="${res}" data-type="${typeLabel(m)}">
+<div class="po-label"><span>${typeLabel(m)} · ${niceDate(m.timestamp)}</span><span class="po-res">${res === 'W' ? 'Victory' : res === 'L' ? 'Defeat' : 'Draw'}</span></div>
 <div class="po-main">
 <div class="po-team">${crest(h, 110, base, 'po-crest')}<b>${clubLink(h, base)}</b><small>${scorers(h).map((s) => `⚽ ${esc(s)}`).join('<br>')}</small></div>
 <div class="po-score">${link ? `<a href="${base}matches/${m.matchId}.html">` : ''}${esc(m.clubs[h].goals)}<i>:</i>${esc(m.clubs[a].goals)}${link ? '</a>' : ''}</div>
@@ -279,6 +362,52 @@ function poster(m, base, { link = true } = {}) {
 </div>
 ${motm ? `<div class="po-motm">⭐ Man of the match <b>${pLinkByName(motm.playername, base)}</b> ${ratingPill(num(motm.rating))}</div>` : ''}
 </div>`;
+}
+
+// Match reel cover-flow (redesign board 05, part 1). Session chips replace the old separate "Last
+// session" + "recent results" pairing: each chip is a match night (from sessionsFor, restricted to nights
+// covered by the reel's own matches), tapping one jumps the reel to that night's last match. The flat
+// `.card-rail.reel` of real fixture() cards always renders (works with JS off/reduced motion – tapping a
+// chip still jumps it via a plain #anchor, no JS needed); app.js's "match reel cover-flow" block upgrades
+// it into a draggable 3D coverflow – a translateX+rotateY variant of the squad carousel's ring (board 04
+// part 2, same drag/coast/snap mechanics) – and adds the split-flap score reveal + download button to
+// whichever card is centred. No "next match" chip: there's no public next-fixture data yet (see BE11).
+function matchReel(ms, sessions, id, base) {
+  if (!ms.length) return '';
+  const recent = ms.slice(0, 10); // newest → oldest
+  const cards = [...recent].reverse(); // oldest → newest, left → right (drag forward = newer)
+  const recentIds = new Set(recent.map((m) => m.matchId));
+  const chips = chunkChips(sessions, cards, recentIds);
+  const data = cards.map((m) => {
+    const us = num(m.clubs[id].goals), them = num(m.clubs[oppOf(m, id)].goals);
+    // Rename the poster's id so it doesn't collide with the "Latest result" card above, which renders
+    // the same match's poster() when ms[0] is within the reel's own window, and swap its plain score
+    // text for split-flap digits (app.js reveals them, staggered, once this card reaches the middle).
+    const html = poster(m, base, { link: false })
+      .replace(`id="poster-${m.matchId}"`, `id="rc-poster-${m.matchId}"`)
+      .replace(`>${us}<i>:</i>${them}<`, `>${flapDigits(us)}<i>:</i>${flapDigits(them)}<`)
+      + `<button class="btn dl-poster reel-dl" type="button" data-for="rc-poster-${m.matchId}">⬇ Download result graphic</button>`;
+    return { id: m.matchId, href: `${base}matches/${m.matchId}.html`, html };
+  });
+  return `${section('Match reel', `
+<div class="reel-chips" data-reel-chips>${chips.map((c) => `<a href="#rc-${c.matchId}" class="rchip" data-idx="${c.idx}">${esc(c.day)}${c.rec ? ` · ${esc(c.rec)}` : ''}</a>`).join('')}</div>
+<div class="card-rail reel" data-reel-flat>${cards.map((m) => fixture(m, id, base, `rc-${m.matchId}`)).join('')}</div>
+<div class="reel-stage" data-reel-stage hidden tabindex="0"></div>
+<div class="reel-nav"><button type="button" class="rn-prev" aria-label="Previous match">◀</button><span class="reel-hint muted small">Drag the reel · tap a card for the full match</span><button type="button" class="rn-next" aria-label="Next match">▶</button><a class="btn ghost small" href="${base}matches/index.html">🗓 Calendar</a></div>
+<script type="application/json" data-reel-data>${JSON.stringify(data)}</script>
+`, { sub: 'tap a chip to jump to a match night' })}${ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`;
+}
+// Sessions that touch the reel's own matches, each chip pointing at its last match's card index.
+function chunkChips(sessions, cards, recentIds) {
+  return sessions
+    .filter((s) => s.ms.some((m) => recentIds.has(m.matchId)))
+    .map((s) => {
+      const last = [...s.ms].reverse().find((m) => recentIds.has(m.matchId));
+      const idx = cards.findIndex((m) => m.matchId === last.matchId);
+      return { idx, matchId: last.matchId, day: chipDate(s.start), rec: s.ms.length > 1 ? `${s.w}W ${s.l}L` : '' };
+    })
+    .filter((c) => c.idx >= 0)
+    .reverse(); // sessionsFor() returns newest-first; flip to match the reel's oldest → newest order
 }
 
 // ---------- sessions (play nights) ----------
@@ -318,35 +447,100 @@ ${s.mvp ? `<div class="se-mvp">🏅 Session MVP <b>${pLink(s.mvp.pid, base, s.mv
 const homeKit = clubs.get(homeId)?.info?.customKit ?? {};
 const RED = brand.red ?? hex(homeKit.kitColor2, '#c8352c');
 const INK = brand.ink ?? hex(homeKit.kitColor1, '#0b0f16');
-const NAV = [
-  ['home', 'index.html', 'Club'], ['squad', 'squad.html', 'Squad'], ['matches', 'matches/index.html', 'Matches'],
-  ['stats', 'stats.html', 'Stats'], ['compare', 'compare.html', 'Compare'], ['players', 'players/index.html', 'Players'],
-  ['leaders', 'leaders.html', 'Leaders'], ['clubs', 'clubs/index.html', 'Clubs'],
-  ['updates', 'updates.html', 'Updates'],
+// Grouped navigation (redesign board 01): 4 named groups replace the old flat link row, so every page –
+// including what used to live only in the footer – is one click away. `id` matches a page()'s `active`.
+// `flag` (optional) hides the link until FEATURES unlocks it for the viewer's role, same as the old NAV.
+const NAV_GROUPS = [
+  { id: 'club', icon: '🛡️', label: 'Club', links: [
+    { id: 'home', href: 'index.html', icon: '🏠', label: 'Club home', desc: 'Crest, form, next match' },
+    { id: 'squad', href: 'squad.html', icon: '👥', label: 'Squad', desc: 'Every player, cards' },
+    { id: 'fame', href: 'halloffame.html', icon: '🏛️', label: 'Hall of Fame', desc: 'Legends and records' },
+    ...(MEMBER_API ? [{ id: 'feed', href: 'feed.html', icon: '📰', label: 'Club feed', desc: 'Latest posts', flag: 'feed' }] : []),
+    ...(MEMBER_API ? [{ moved: true, id: 'docs', href: 'docs.html', icon: '📜', label: 'Club docs', desc: 'Rules and announcements', flag: 'docs' }] : []),
+    ...(MEMBER_API ? [{ moved: true, id: 'playstyle', href: 'playstyle.html', icon: '🧭', label: 'Play Style', desc: 'How we play', flag: 'playStyle' }] : []),
+    ...(MEMBER_API ? [{ moved: true, id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages', desc: 'Team chat', flag: 'messages' }] : []),
+    { id: 'updates', href: 'updates.html', icon: '📰', label: 'Game updates', desc: 'EA patch notes and what they mean for builds' },
+    { id: 'about', href: 'about.html', icon: 'ℹ️', label: 'About', desc: 'Our story' },
+  ] },
+  { id: 'matches', icon: '⚽', label: 'Matches', links: [
+    { id: 'matches', href: 'matches/index.html', icon: '🏁', label: 'Match nights & results', desc: 'Sessions, every game, League ⇄ Rush' },
+    { id: 'clubs', href: 'clubs/index.html', icon: '🏟️', label: 'Opponents', desc: 'Every club we have faced' },
+    { id: 'burners', href: 'burners.html', icon: '🔥', label: 'Burner clubs', desc: 'Throwaway clubs we track', flag: 'burners' },
+  ] },
+  { id: 'stats', icon: '📊', label: 'Stats', links: [
+    { id: 'stats', href: 'stats.html', icon: '📈', label: 'Club stats', desc: 'Totals, splits, DNA' },
+    { id: 'leaders', href: 'leaders.html', icon: '🥇', label: 'Leaders', desc: 'Top scorers, assists, MOTM, world leaderboard' },
+    { id: 'players', href: 'players/index.html', icon: '🧑‍🤝‍🧑', label: 'Players', desc: 'Every profile, searchable' },
+    { id: 'compare', href: 'compare.html', icon: '⚖️', label: 'Compare', desc: 'Any two players, radar' },
+  ] },
+  { id: 'tactics', icon: '🧠', label: 'Tactics', links: [
+    { moved: true, id: 'builder', href: 'builder.html', icon: '🧩', label: 'Builder', desc: 'Plan your pro', flag: 'builder' },
+    { moved: true, id: 'probuilds', href: 'probuilds.html', icon: '⭐', label: 'Pro Builds', desc: 'Squad builds that work', flag: 'proBuilds' },
+    ...(MEMBER_API ? [{ id: 'tactics-studio', href: 'tactics.html', icon: '🧠', label: 'Tactics Studio', desc: 'Club playbook and drills', flag: 'tactics' }] : []),
+  ] },
 ];
+const NAV_BY_ID = new Map(NAV_GROUPS.flatMap((g) => g.links.map((l) => [l.id, g.id])));
 
-function page({ title, base, active, body, description, image }) {
+// Mega menu: every group's links render together (mockup board 01) – opening any group button shows the
+// same panel, with that group's column highlighted; the page's own group stays marked with `.lk.hov`.
+function megaCol(g, base, active) {
+  return `<div class="col" data-group="${g.id}"><h4><span>${g.icon}</span>${esc(g.label)}</h4>${g.links.map((l) => `<a class="lk${l.id === active ? ' hov' : ''}" href="${base}${l.href}"${l.id === active ? ' aria-current="page"' : ''}${l.flag ? ` data-flag="${esc(l.flag)}" hidden` : ''}${l.moved ? ' data-hubmove' : ''}><div class="ic">${l.icon}</div><div><b>${esc(l.label)}</b><small>${esc(l.desc)}</small></div></a>`).join('')}</div>`;
+}
+function grpNav(base, active, activeGroup) {
+  const watch = CHANNELS.length ? `<div class="osw small feat-label">Watch NOREX</div><div class="watch">${CHANNELS.map(([k, label, svg]) => `<a class="${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div>` : '';
+  const feat = `<div class="feat"><div class="osw small feat-label">Right now</div><div class="nm"><div class="t">${RECRUIT.open ? '👑' : '🛡️'}</div><div><b class="osw">${RECRUIT.open ? 'Applications open' : 'Squad set'}</b><small class="muted">${esc(config.siteTitle)}</small></div></div>${watch}${RECRUIT.open ? `<a class="btn small feat-apply" href="${base}apply.html">👑 Apply for a trial</a>` : ''}</div>`;
+  return `<nav class="grpnav" aria-label="Main"><div class="grpbtns">${NAV_GROUPS.map((g) => `<button type="button" class="grp${g.id === activeGroup ? ' on' : ''}" data-group="${g.id}" aria-haspopup="true" aria-expanded="false"><span class="e">${g.icon}</span>${esc(g.label)}</button>`).join('')}</div>
+<div class="mega" hidden>${NAV_GROUPS.map((g) => megaCol(g, base, active)).join('')}${feat}</div>
+<button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? `<a class="hubw-key" data-flag="hub" hidden href="${base}hub/index.html">🔑<span>Enter the Hub</span></a><span class="auth-slot"></span>` : ''}</nav>`;
+}
+// Sticky sub-tabs: siblings within the current page's group, one tap away on every page in that section.
+function subTabs(base, active, activeGroup) {
+  const g = NAV_GROUPS.find((x) => x.id === activeGroup);
+  if (!g) return '';
+  return `<div class="subtabs"><div class="wrap subtabs-in"><span class="crumb"><span class="e">${g.icon}</span>${esc(g.label)}</span>${g.links.map((l) => `<a href="${base}${l.href}"${l.id === active ? ' aria-current="page"' : ''}${l.flag ? ` data-flag="${esc(l.flag)}" hidden` : ''}>${esc(l.label)}</a>`).join('')}</div></div>`;
+}
+// Mobile bottom tab bar (thumb reach) + a sheet that lists a group's pages, filled by app.js from #nav-data.
+function tabBar(base, activeGroup) {
+  const tabs = NAV_GROUPS.map((g) => `<a href="${base}${g.links[0].href}" class="tab${g.id === activeGroup ? ' on' : ''}" data-group="${g.id}"><span>${g.icon}</span>${esc(g.label)}</a>`);
+  // Hub sits dead centre as the raised gold button (flag-gated, shown once the viewer may enter); "Me" lives in the top bar on phones
+  if (MEMBER_API) tabs.splice(2, 0, `<a href="${base}hub/index.html" class="tab hub-tab" data-flag="hub" hidden aria-label="Members hub"><span><b>🔑</b></span>Hub</a>`);
+  return `<nav class="tabbar" aria-label="Sections">${tabs.join('')}<button type="button" class="tab me-tab" data-group="me"><span>👤</span>Me</button></nav>
+<div class="sheet" hidden><div class="sheet-grab"></div><div class="sheet-body"></div></div>`;
+}
+// Gold Hub bar (redesign board 10): replaces the normal club nav on /hub/ pages so members always know
+// they've walked into the separate members-only world, not just another tab of the public site.
+const hubBar = (base) => `<header class="hubw-bar"><div class="wrap hubw-bar-in">
+<a class="hubw-brand" href="index.html"><img src="${base}assets/crest.png" height="38" alt=""><span><b>NOREX HUB</b><small>MEMBERS</small></span></a>
+<div class="hubw-right"><span class="hubw-online" data-hubw-online hidden>🟢 <b>0</b> in the clubhouse</span><a class="hubw-back" href="${base}index.html">← Back to the site</a></div>
+</div></header>`;
+
+function page({ title, base, active, body, description, image, hub }) {
+  const activeGroup = NAV_BY_ID.get(active) ?? '';
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>${esc(title)}</title><meta name="description" content="${esc(description ?? `${config.siteTitle} – Pro Clubs stats, results and player cards, updated automatically.`)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description ?? `${config.siteTitle} – Pro Clubs stats, results and player cards.`)}"><meta property="og:site_name" content="${esc(config.siteTitle)}"><meta property="og:type" content="website"><meta property="og:image" content="${esc(image ?? `${SITE}assets/crest.png`)}"><meta name="twitter:card" content="summary"><meta name="theme-color" content="${INK}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${base}assets/style.css"><style>:root{--red:${RED};--ink:${INK};--accent:${RED}}</style>
-<link rel="icon" href="${base}assets/favicon.png">
-</head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}">
+<link rel="icon" href="${base}assets/favicon.png"><link rel="manifest" href="${base}manifest.webmanifest"><link rel="apple-touch-icon" href="${base}assets/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="NOREX"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>try{if(sessionStorage.getItem('nxnav'))document.documentElement.classList.add('nx-covered');if(sessionStorage.getItem('nxhub')){sessionStorage.removeItem('nxhub');document.documentElement.classList.add('nx-hubin')}}catch(e){}</script>
+</head><body data-base="${base}"${MEMBER_API ? ` data-api="${esc(MEMBER_API)}"` : ''} data-features="${esc(FEATURES)}" data-group="${activeGroup}" data-active="${esc(active ?? '')}"${hub ? ' class="hubw-body"' : ''}>
 <div class="bg" aria-hidden="true"></div>
-<header class="top"><div class="wrap bar">
+<div class="pxwipe" aria-hidden="true"><span class="pxwipe-ribbon"></span><img class="pxwipe-crest" src="${base}assets/crest.png" alt=""></div>
+<script type="application/json" id="nav-data">${JSON.stringify(NAV_GROUPS.map((g) => ({ id: g.id, icon: g.icon, label: g.label, links: g.links.map((l) => ({ id: l.id, href: l.href, icon: l.icon, label: l.label, desc: l.desc, flag: l.flag, moved: l.moved })) })))}</script>
+${hub ? hubBar(base) : `<header class="top"><div class="wrap bar">
 <a class="brand" href="${base}index.html"><img src="${base}assets/crest.png" height="44" alt=""><span><b>NOREX</b><small>UNITED</small></span></a>
-<button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><i></i><i></i><i></i></button>
-<nav>${NAV.map(([k, href, label]) => `<a href="${base}${href}"${k === active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}
-<button class="search-btn" type="button" aria-label="Search players and clubs"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><kbd>/</kbd></button>${RECRUIT.open ? `<a class="discord-btn" href="${base}apply.html">${DISCORD_SVG}<span>Apply</span></a>` : ''}${MEMBER_API ? '<span class="auth-slot"></span>' : ''}</nav></div></header>
-${CHANNELS.length && MEMBER_API ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
+${grpNav(base, active, activeGroup)}<button type="button" class="me-top" aria-label="Me: profile and login">👤</button></div></header>
+${activeGroup ? subTabs(base, active, activeGroup) : ''}`}
+${CHANNELS.length && MEMBER_API && !hub ? '<div class="live-bar" hidden></div>' : ''}<main class="wrap">${body}</main>
 <footer class="foot"><div class="wrap foot-in"><img src="${base}assets/crest.png" height="70" alt="">
-<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<div class="foot-links"><a href="${base}halloffame.html">🏛️ Hall of Fame</a>${RECRUIT.open ? `<a href="${base}apply.html">${DISCORD_SVG} Apply to join</a>` : ''}${CHANNELS.map(([k, label, svg]) => `<a class="foot-${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg} ${label}</a>`).join('')}</div><small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · <a href="${base}about.html">About</a> · Not affiliated with EA.</small></div></div></footer>
-<div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players and clubs…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
+<div><b>${esc(config.siteTitle)}</b>${brand.founded ? ` · Est. ${esc(brand.founded)}` : ''}${brand.motto ? `<br><i>${esc(brand.motto)}</i>` : ''}<small>Data from EA SPORTS FC Pro Clubs, updated automatically · last update <time class="ago" datetime="${builtAt}">${builtAt.slice(0, 16).replace('T', ' ')} UTC</time> · Not affiliated with EA.</small></div></div></footer>
+<div class="palette" hidden><div class="pal-box"><input type="search" placeholder="Search players, clubs, pages…" aria-label="Search"><ul></ul><p class="muted small">↑↓ to move · Enter to open · Esc to close</p></div></div>
 <div class="tip" hidden></div>
-<script src="${base}assets/ui.js" defer></script><script src="${base}assets/app.js" defer></script></body></html>`;
+${hub ? '' : tabBar(base, activeGroup)}
+<script src="${base}assets/ui.js" defer></script><script src="${base}assets/cardcomposer.js" defer></script><script src="${base}assets/playerportraits.js" defer></script><script src="${base}assets/app.js" defer></script><script src="${base}assets/pwa.js" defer></script></body></html>`;
 }
 
 // ---------- club page ----------
@@ -378,24 +572,76 @@ function clubBody(id, base, isHome) {
   const mvp = top((s) => (num(s.gamesPlayed) >= 3 ? num(s.ratingAve) : 0), 1)[0];
   const scorer = top((s) => num(s.goals), 1)[0];
 
+  const heroKicker = `<p class="kicker">${isHome ? `${brand.founded ? `Est. ${esc(brand.founded)} · ` : ''}Official club hub` : esc(t ?? 'Club')}${state.clubs[id]?.linkedPlayers ? ` · shares ${state.clubs[id].linkedPlayers.map((n) => pLinkByName(n, base)).join(', ')}` : ''}</p>`;
+  const heroChips = `<div class="chips">${o.currentDivision ? `<span class="chip strong">Division ${esc(o.currentDivision)}</span>` : ''}${o.skillRating ? `<span class="chip">Skill rating ${esc(o.skillRating)}</span>` : ''}${num(o.promotions) ? `<span class="chip">⬆ ${esc(o.promotions)} promotions</span>` : ''}${c?.info?.customKit?.stadName ? `<span class="chip">🏟 ${esc(c.info.customKit.stadName)}</span>` : ''}${num(o.wstreak) > 1 ? `<span class="chip hot">🔥 ${esc(o.wstreak)} win streak</span>` : ''}</div>`;
+  const heroForm = ms.length ? `<div class="form big"><span class="form-label">Form</span>${formStrip(ms, id, base)}</div>` : '';
+  const heroSpots = isHome && (mvp || scorer) ? `<div class="hero-spot">${mvp ? `<a class="spot" href="${pUrl(mvp.pl, base)}"><small>Top rated</small><b>${esc(mvp.pl.name)}</b>${ratingPill(mvp.v)}</a>` : ''}${scorer ? `<a class="spot" href="${pUrl(scorer.pl, base)}"><small>Top scorer</small><b>${esc(scorer.pl.name)}</b><span class="rp r-great">${scorer.v} ⚽</span></a>` : ''}</div>` : '';
+  // Ending section (redesign board 04, part 1): the trial/Discord/stream links that used to live in the
+  // nav's "feat" panel and the Watch section, gathered into one closing invitation at the foot of the home page.
+  const endingLinks = [
+    RECRUIT.open ? `<a class="btn big" href="${base}apply.html">👑 Apply for a trial</a>` : '',
+    DISCORD ? `<a class="btn discord big" href="${esc(DISCORD)}" target="_blank" rel="noopener">${DISCORD_SVG}<span>Join our Discord</span></a>` : '',
+    ...CHANNELS.map(([k, label, svg]) => `<a class="btn ghost big" href="${esc(STREAMS[k])}" target="_blank" rel="noopener">${svg}<span>${label}</span></a>`),
+  ].filter(Boolean).join('');
+
   return `
-<section class="hero club-hero reveal">
-<div class="hero-crest">${crest(id, isHome ? 260 : 180, base, 'big-crest')}</div>
-<div class="hero-text">
-<p class="kicker">${isHome ? `${brand.founded ? `Est. ${esc(brand.founded)} · ` : ''}Official club hub` : esc(t ?? 'Club')}${state.clubs[id]?.linkedPlayers ? ` · shares ${state.clubs[id].linkedPlayers.map((n) => pLinkByName(n, base)).join(', ')}` : ''}</p>
+${isHome ? `
+<section class="hero club-hero stadium-hero reveal" data-hero>
+<div class="sh-sky" style="--depth:2"></div>
+<div class="sh-pitch" style="--depth:5"></div>
+<div class="sh-plane sh-text" style="--depth:0">
+${heroKicker}
 <h1>${esc(clubName(id))}</h1>
-${isHome ? `${STARS}${brand.motto ? `<p class="motto">${esc(brand.motto)}</p>` : ''}` : ''}
-<div class="chips">${o.currentDivision ? `<span class="chip strong">Division ${esc(o.currentDivision)}</span>` : ''}${o.skillRating ? `<span class="chip">Skill rating ${esc(o.skillRating)}</span>` : ''}${num(o.promotions) ? `<span class="chip">⬆ ${esc(o.promotions)} promotions</span>` : ''}${c?.info?.customKit?.stadName ? `<span class="chip">🏟 ${esc(c.info.customKit.stadName)}</span>` : ''}${num(o.wstreak) > 1 ? `<span class="chip hot">🔥 ${esc(o.wstreak)} win streak</span>` : ''}</div>
-${ms.length ? `<div class="form big"><span class="form-label">Form</span>${formStrip(ms, id, base)}</div>` : ''}
-${isHome && RECRUIT.open ? `<p><a class="btn" href="${base}apply.html">👑 Apply for a trial</a></p>` : ''}
+${STARS}
+${heroChips}
+${heroForm}
+${RECRUIT.open ? `<p><a class="btn" href="${base}apply.html">👑 Apply for a trial</a></p>` : ''}
 </div>
-${isHome && (mvp || scorer) ? `<div class="hero-spot">${mvp ? `<a class="spot" href="${pUrl(mvp.pl, base)}"><small>Top rated</small><b>${esc(mvp.pl.name)}</b>${ratingPill(mvp.v)}</a>` : ''}${scorer ? `<a class="spot" href="${pUrl(scorer.pl, base)}"><small>Top scorer</small><b>${esc(scorer.pl.name)}</b><span class="rp r-great">${scorer.v} ⚽</span></a>` : ''}</div>` : ''}
+<div class="sh-plane sh-coin-wrap" style="--depth:10">
+<div class="sh-coin" tabindex="0" role="button" data-coin aria-label="Drag to spin the club crest, or press Enter to flip it and see trial info">
+<div class="sh-face sh-front">${crest(id, 260, base, 'big-crest')}</div>
+<div class="sh-face sh-back"><b>${RECRUIT.open ? '✅ Applications open' : 'Applications closed'}</b><span>Division ${esc(o.currentDivision ?? '–')} · ${members.length} in the squad</span>${RECRUIT.open ? `<a class="btn small" href="${base}apply.html">Apply for a trial</a>` : ''}</div>
+</div>
+</div>
+${heroSpots ? `<div class="sh-plane sh-spots" style="--depth:16">${heroSpots}</div>` : ''}
+${brand.motto ? `<div class="sh-plane sh-fg" style="--depth:28"><p class="ribbon-banner"><span>${esc(brand.motto)}</span></p></div>` : ''}
+<button class="sh-motion" type="button" data-motion-toggle aria-pressed="true"><span data-motion-label>Motion: on</span></button>
+</section>
+${MEMBER_API ? '<div data-hotw hidden></div><div data-feed-public hidden></div><div data-news data-flag="docs" hidden></div>' : ''}
+${section('This week', `<div class="grid3">
+${MEMBER_API ? '<div data-next-event hidden></div>' : ''}
+${card('Latest result', ms.length ? poster(ms[0], base) + `<button class="btn dl-poster" type="button" data-for="poster-${ms[0].matchId}">⬇ Download result graphic</button>` : emptyState('🗂️', 'No matches yet', 'Results land here once the first match is archived.'), 'flush')}
+${CHANNELS.length ? `<div id="watch">${card('📺 Watch NOREX', `<div class="live-embed" hidden></div><div class="watch-grid">${CHANNELS.map(([k, label, svg, sub]) => `<a class="watch-card ${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener"><span class="wc-ic">${svg}</span><span><b>${label}</b><small>${sub}</small></span><span class="wc-go">Follow →</span></a>`).join('')}</div>`)}</div>` : ''}
+</div>`, { sub: 'next up, last time out, and where to watch' })}
+${section('Season at a glance', `<div class="stats stats-8" data-ins-tile="club">${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
+    .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}</div>${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}`)}
+${ms.length ? '<div data-nx-insight="club" hidden></div><div data-nx-insight="match.latest" hidden></div><div data-nx-insight="matches.last5" hidden></div>' : '<div data-nx-insight="club" hidden></div>'}
+${tacticsTeaser(members, base)}
+${squadCarousel(members, base)}
+${matchReel(ms, sessions, id, base)}
+${leadersPodium(members, id, base)}
+${section('How we play', `<div class="grid2">${card('Team DNA', `<ul class="dna">${dna.map(([k, v, tip]) => `<li data-tip="${esc(tip)}"><span>${k}</span><div class="meter"><i style="--w:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></li>`).join('')}</ul>`)}${card('Goals per match', !recent.length ? emptyState('⚽', 'No goals to chart yet', 'Fills in after the first archived match.') : goalBars(recent.map((m) => ({ for: num(m.clubs[id].goals), against: num(m.clubs[oppOf(m, id)].goals), res: result(m.clubs[id]), tip: `${dateStr(m.timestamp)} · ${m.clubs[id].goals}–${m.clubs[oppOf(m, id)].goals} vs ${clubName(oppOf(m, id))}` }))))}</div>${MEMBER_API ? `<p><a class="btn ghost" href="${base}playstyle.html">🧭 Full Play Style →</a></p>` : ''}`, { sub: 'how NOREX plays, in the numbers' })}
+${MEMBER_API ? '<div data-flag="hallOfFame" hidden><div class="block" data-hof-teaser hidden></div></div>' : ''}
+<section class="block reveal ending-cta" id="join"><img class="ending-crest" src="${base}assets/crest.png" height="120" alt="">
+<h2 class="banner-h ending-h">${esc(brand.motto || 'One club. One crown.')}</h2>
+<p class="muted ending-sub">${esc(config.siteTitle)} is always looking for committed players who want to compete. Come find out what we're about.</p>
+<div class="ending-links">${endingLinks}</div></section>
+${MEMBER_API ? `<link rel="stylesheet" href="${base}assets/honours.css"><script src="${base}assets/honours.js" defer></script>` : ''}` : `
+<section class="hero club-hero reveal">
+<div class="hero-crest">${crest(id, 180, base, 'big-crest')}</div>
+<div class="hero-text">
+${heroKicker}
+<h1>${esc(clubName(id))}</h1>
+${heroChips}
+${heroForm}
+</div>
 </section>
 <section class="stats reveal">
 ${[['Played', gp, 'played'], ['Won', o.wins, 'won'], ['Drawn', o.ties, 'drawn'], ['Lost', o.losses, 'lost'], ['Win rate', pct(num(o.wins), gp), 'winrate', '%'], ['Goals', o.goals, 'goals'], ['Conceded', o.goalsAgainst, 'conceded'], ['Goal diff', num(o.goals) - num(o.goalsAgainst), 'played']]
     .map(([label, v, f, suffix = '']) => counter(label, v, { suffix, href: ms.length ? drillHref(id, base, f) : undefined })).join('')}
 ${ms.length ? counter('Clean sheets', ms.filter((m) => !num(m.clubs[oppOf(m, id)].goals)).length, { href: drillHref(id, base, 'cleansheets') }) : ''}
 </section>
+${homeMatches.some((m) => oppOf(m, homeId) === String(id)) ? `<div data-nx-insight="h2h.${esc(id)}" hidden></div>` : ''}
 ${ms.length ? `<p class="small muted drill-hint">👆 Tap a number to see the matches behind it.</p>` : ''}
 ${ms.length ? `<div class="grid2 reveal">${card('Latest result', poster(ms[0], base) + `<button class="btn dl-poster" type="button" data-for="poster-${ms[0].matchId}">⬇ Download result graphic</button>`, 'flush')}${sessions[0] ? card('Last session', sessionCard(sessions[0], base, id)) : ''}</div>` : ''}
 ${section('Performance', `<div class="grid-charts">
@@ -405,14 +651,13 @@ ${card('Season split', `<div class="donut-wrap">${donut([{ label: 'Won', value: 
 ${card('Team DNA', `<ul class="dna">${dna.map(([k, v, tip]) => `<li data-tip="${esc(tip)}"><span>${k}</span><div class="meter"><i style="--w:${Math.round(v)}%"></i></div><b>${Math.round(v)}</b></li>`).join('')}</ul>`)}
 ${card('Average team rating', teamRatings.length > 1 ? lineChart(teamRatings, { min: 5, max: 10, ref: 7, id: `tr${id}` }) : emptyState('📈', 'Trend needs two matches', 'The rating line appears once two matches are archived.'))}
 </div>`)}
-${members.length ? section('The squad', `<div class="card-rail">${[...members].sort((a, b) => num(b.clubStats[id]?.gamesPlayed) - num(a.clubStats[id]?.gamesPlayed)).slice(0, 14).map((p) => futCard(p, base)).join('')}</div>${isHome ? `<p><a class="btn" href="${base}squad.html">Full squad →</a></p>` : ''}`, { sub: `${members.length} players` }) : ''}
+${members.length ? section('The squad', `<div class="card-rail">${[...members].sort((a, b) => num(b.clubStats[id]?.gamesPlayed) - num(a.clubStats[id]?.gamesPlayed)).slice(0, 14).map((p) => futCard(p, base)).join('')}</div>`, { sub: `${members.length} players` }) : ''}
 ${members.length ? section('Club leaders', `<div class="grid4">
 ${card('Top scorers', barList(top((s) => num(s.goals)), { base }))}${card('Assists', barList(top((s) => num(s.assists)), { base }))}
 ${card('Avg rating', barList(top((s) => (num(s.gamesPlayed) >= 2 ? num(s.ratingAve) : 0)), { base, fmt: (v) => v.toFixed(1) }))}${card('Man of the match', barList(top((s) => num(s.manOfTheMatch)), { base }))}
 </div>`) : ''}
-${isHome && CHANNELS.length ? section('📺 Watch NOREX', `<div class="live-embed" hidden></div><div class="watch-grid">${CHANNELS.map(([k, label, svg, sub]) => `<a class="watch-card ${k}" href="${esc(STREAMS[k])}" target="_blank" rel="noopener"><span class="wc-ic">${svg}</span><span><b>${label}</b><small>${sub}</small></span><span class="wc-go">Follow →</span></a>`).join('')}</div>`, { sub: 'streams & highlights', id: 'watch' }) : ''}
-${section('Recent results', `<div class="fixtures">${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('') || emptyState('🗂️', 'No matches archived yet', 'EA only shares the last five games, so the archive starts on the first update after a club is tracked. Results land here automatically.')}</div>${isHome && ms.length > 10 ? `<p><a class="btn" href="${base}matches/index.html">All ${ms.length} matches →</a></p>` : ''}`)}
-${!isHome && members.length ? section('Squad table', squadTable(members, id, base, `squad-${id}`)) : ''}`;
+${section('Recent results', `<div class="fixtures">${ms.slice(0, 10).map((m) => fixture(m, id, base)).join('') || emptyState('🗂️', 'No matches archived yet', 'EA only shares the last five games, so the archive starts on the first update after a club is tracked. Results land here automatically.')}</div>`)}
+${members.length ? section('Squad table', squadTable(members, id, base, `squad-${id}`)) : ''}`}`;
 }
 
 function squadTable(members, id, base, tid) {
@@ -452,7 +697,7 @@ function drillBody(id, base) {
   const scorerTxt = (x) => x.scorers.map((p) => `${pLinkByName(p.playername, base)}${num(p.goals) > 1 ? ` ×${num(p.goals)}` : ''}`).join(', ') || '<span class="muted">–</span>';
   const matchTable = (tid, rows, empty) => rows.length
     ? table(tid, ['Date', 'Res', 'Opponent', 'Score', '#Margin', 'Scorers', 'MOTM', '#Team rating'], rows.map((x) =>
-      `<tr>${dateCell(x.m.timestamp)}${td(resPill(x.res))}${td(`${crest(x.o, 22, base)} ${clubLink(x.o, base)}`, false, clubName(x.o).toLowerCase())}${td(scoreLink(x), false, x.gf * 100 - x.ga)}${td((x.margin > 0 ? '+' : '') + x.margin, true, x.margin)}${td(scorerTxt(x))}${td(x.motm ? `${pLinkByName(x.motm.playername, base)}${x.motmOurs ? '' : ' <small class="muted">opp</small>'}` : '–')}${td(ratingPill(x.rating), true, x.rating.toFixed(2))}</tr>`), { filter: 'Search opponents or scorers…' })
+      `<tr data-day="${dateStr(x.m.timestamp)}" data-id="${x.m.matchId}">${dateCell(x.m.timestamp)}${td(resPill(x.res))}${td(`${crest(x.o, 22, base)} ${clubLink(x.o, base)}`, false, clubName(x.o).toLowerCase())}${td(scoreLink(x), false, x.gf * 100 - x.ga)}${td((x.margin > 0 ? '+' : '') + x.margin, true, x.margin)}${td(scorerTxt(x))}${td(x.motm ? `${pLinkByName(x.motm.playername, base)}${x.motmOurs ? '' : ' <small class="muted">opp</small>'}` : '–')}${td(ratingPill(x.rating), true, x.rating.toFixed(2))}</tr>`), { filter: 'Search opponents or scorers…' })
     : emptyState(...empty);
   const strip = (title, rows) => rows.length ? `<h3 class="drill-sub">${title}</h3><div class="fixtures drill-strip">${rows.map((x) => fixture(x.m, id, base)).join('')}</div>` : '';
   const leaders = (f, n = 10) => {
@@ -513,12 +758,31 @@ ${card('Win rate over time', cumulative.length > 1 ? lineChart(cumulative, { min
 ${card('Win rate by opponent', barList([...new Set(M.map((x) => x.o))].map((o) => { const r = M.filter((x) => x.o === o); return { name: `${clubName(o)} (${r.length})`, v: pct(r.filter((x) => x.res === 'W').length, r.length) }; }).filter((e) => e.v > 0).sort((a, b) => b.v - a.v).slice(0, 10), { base, fmt: (v) => v + '%' }))}`,
   };
   const counts = { played: M.length, won: W.length, drawn: D.length, lost: L.length, goals: tot(M, (x) => x.gf), conceded: tot(M, (x) => x.ga), cleansheets: CS.length, winrate: `${pct(W.length, M.length)}%` };
-  const league = `<div class="tabs chipset drill-tabs" data-tabs data-drill>${DRILL.map(([k, l], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="f-${k}">${l} <small>${counts[k]}</small></button>`).join('')}</div>
-${DRILL.map(([k], i) => `<div class="tab-panel drill-panel" id="f-${k}"${i ? ' hidden' : ''}>${P[k]}</div>`).join('')}`;
+  const league = `${id === homeId ? calendar(`cal-${id}`, ms) : ''}<div id="cal-${id}"><div class="tabs chipset drill-tabs" data-tabs data-drill>${DRILL.map(([k, l], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="f-${k}">${l} <small>${counts[k]}</small></button>`).join('')}</div>
+${DRILL.map(([k], i) => `<div class="tab-panel drill-panel" id="f-${k}"${i ? ' hidden' : ''}>${P[k]}</div>`).join('')}</div>`;
   const eaGp = num(clubs.get(id)?.overall?.gamesPlayed);
   return `<section class="page-head reveal drill-head">${crest(id, 84, base)}<div><p class="kicker"><a href="${clubHref(id, base) ?? '#'}">← ${esc(clubName(id))}</a></p><h1>Match drill-down</h1>
 <p class="muted">Every stat card, match by match. Built from ${M.length} archived match${M.length === 1 ? '' : 'es'}${eaGp > M.length ? ` (EA's club totals count ${eaGp} – EA only shares the last few, so older ones aren't here)` : ''}.</p></div></section>
-<div class="reveal">${id === homeId ? modes(league, 'results', 'League & playoffs from EA · Rush logged by members') : league}</div>`;
+<div class="reveal">${id === homeId ? modes(league, 'results', 'League & playoffs from EA · Rush logged by members · friendlies apart', friendlyBody(base)) : league}</div>`;
+}
+
+// P1.8: the Friendly tab of the results + matches pages – record, scorers and every friendly (with the calendar).
+function friendlyBody(base) {
+  if (!friendlies.length) return emptyState('🤝', 'No friendlies yet', 'Club friendlies are saved here from now on – they never count towards League stats, leaderboards or awards.');
+  const R = friendlies.map((m) => result(m.clubs[homeId]));
+  const gf = sum(friendlies, (m) => num(m.clubs[homeId].goals)), ga = sum(friendlies, (m) => num(m.clubs[oppOf(m, homeId)].goals));
+  const T = new Map();
+  for (const m of friendlies) for (const [pid, p] of Object.entries(m.players?.[homeId] || {})) {
+    const k = players.has(pid) ? pid : nameToKey.get(String(p.playername).toLowerCase());
+    if (k && players.get(k)?.hidden) continue;
+    const e = T.get(k ?? p.playername) ?? { pl: k ? players.get(k) : null, name: p.playername, g: 0, a: 0 };
+    e.g += num(p.goals); e.a += num(p.assists); T.set(k ?? p.playername, e);
+  }
+  const top = (f) => [...T.values()].map((e) => ({ ...e, v: f(e) })).filter((e) => e.v > 0).sort((a, b) => b.v - a.v).slice(0, 8);
+  return `<section class="stats">${counter('Friendlies', friendlies.length)}${counter('Record', 0, { text: `${R.filter((r) => r === 'W').length}-${R.filter((r) => r === 'D').length}-${R.filter((r) => r === 'L').length}` })}${counter('Goals', gf)}${counter('Conceded', ga)}</section>
+<div class="grid2">${card('⚽ Scorers', barList(top((e) => e.g), { base }))}${card('🎯 Assists', barList(top((e) => e.a), { base }))}</div>
+${calendar('cal-fr', friendlies)}<div class="fixtures" id="cal-fr">${friendlies.map((m) => fixture(m, homeId, base)).join('')}</div>
+<p class="muted small">🤝 Club friendlies from EA – kept apart from League & playoff numbers.</p>`;
 }
 
 // ---------- player page ----------
@@ -538,28 +802,71 @@ function playerBody(pl, base) {
 <p class="kicker">${pl.isHome ? `${esc(config.siteTitle)} player` : 'Player profile'}</p>
 <h1>${esc(pl.name)}</h1>
 <div class="member-badge" data-player="${esc(pl.key)}"></div>
-<div class="chips"><span class="chip strong">${esc(pl.pos || '—')}</span>${pl.ovr ? `<span class="chip">OVR ${pl.ovr}</span>` : ''}${s.proHeight ? `<span class="chip">${esc(s.proHeight)} cm</span>` : ''}${otherNames.length ? `<span class="chip">aka ${otherNames.map(esc).join(', ')}</span>` : ''}</div>
+${pl.isHome ? `<div data-nx-insight="player.${esc(pl.key)}" hidden></div><div data-nx-insight="note.${esc(pl.key)}" hidden></div>` : ''}
+<div class="chips"><span class="chip strong">${esc(pl.pos || '—')}</span>${pl.tag ? `<span class="chip">${esc(pl.tag)}</span>` : ''}${pl.ovr ? `<span class="chip">OVR ${pl.ovr}</span>` : ''}${s.proHeight ? `<span class="chip">${esc(s.proHeight)} cm</span>` : ''}${otherNames.length ? `<span class="chip">aka ${otherNames.map(esc).join(', ')}</span>` : ''}</div>
 <div class="club-chips">${pl.clubIds.map((c) => `<a class="club-chip" href="${clubHref(c, base) ?? '#'}">${crest(c, 22, base)}${esc(clubName(c))}</a>`).join('')}</div>
 ${a.length ? `<div class="form big"><span class="form-label">Form</span>${a.slice(0, 10).reverse().map((x) => `<a href="${base}matches/${x.matchId}.html" data-tip="${esc(`${x.gf}–${x.ga} vs ${clubName(x.oppId)} · ${x.rating.toFixed(1)}`)}">${resPill(x.res)}</a>`).join('')}</div>` : ''}
 <p><a class="btn" href="${base}compare.html?a=${encodeURIComponent(pl.key)}">⚖ Compare with…</a></p>
 </div></section>
-${(pl.isHome || pl.playedForHome) ? modes(league(), `player:${pl.key}`) : league()}`;
+${(pl.isHome || pl.playedForHome) ? modes(league(), `player:${pl.key}`, '', pl.fapps.length ? friendly() : null) : league()}`;
+  function friendly() {
+    const f = pl.fapps, ft = (k) => sum(f, (x) => x[k]);
+    return section('Friendlies', `<section class="stats">${counter('Apps', f.length)}${counter('Record', 0, { text: `${f.filter((x) => x.res === 'W').length}-${f.filter((x) => x.res === 'D').length}-${f.filter((x) => x.res === 'L').length}` })}${counter('Goals', ft('goals'))}${counter('Assists', ft('assists'))}${counter('Avg rating', avg(f.map((x) => x.rating)), { dec: 1 })}${counter('MOTM', ft('mom'))}</section>
+${logTable('flog', f, base)}<p class="muted small">🤝 Club friendlies – never counted in League stats.</p>`, { sub: `${f.length} archived` });
+  }
   function league() {
-    return `${car ? section('Career', `<section class="stats">${counter('Games', car.gamesPlayed)}${counter('Goals', car.goals)}${counter('Assists', car.assists)}${counter('Avg rating', car.ratingAve, { dec: 1 })}${counter('MOTM', car.manOfTheMatch)}${counter('G+A per game', num(car.gamesPlayed) ? (num(car.goals) + num(car.assists)) / num(car.gamesPlayed) : 0, { dec: 2 })}</section>`, { sub: 'every club, from EA' }) : ''}
+    return `${car ? section('Career', `<section class="stats"${pl.isHome ? ` data-ins-tile="player.${esc(pl.key)}"` : ''}>${counter('Games', car.gamesPlayed)}${counter('Goals', car.goals)}${counter('Assists', car.assists)}${counter('Avg rating', car.ratingAve, { dec: 1 })}${counter('MOTM', car.manOfTheMatch)}${counter('G+A per game', num(car.gamesPlayed) ? (num(car.goals) + num(car.assists)) / num(car.gamesPlayed) : 0, { dec: 2 })}</section>`, { sub: 'every club, from EA' }) : ''}
 <div class="grid2 reveal">
 ${pl.radar ? card('Player profile', `${radar(RADAR.map((ax, i) => ({ label: ax.label, raw: [pl.radarRaw[i]] })), [{ values: pl.radar, color: 'var(--red)', name: pl.name }])}<p class="muted small">Percentile vs ${pool.length} tracked players with 3+ games${pl.isHome ? ' (NOREX stats)' : ''}. Hover a point for the real number.</p>`) : ''}
 ${card('Match ratings', trend.length ? lineChart(trend, { min: 4, max: 10, ref: 7, id: 'pt' }) + (best ? `<p class="small">Best: ${ratingPill(best.rating)} vs ${esc(clubName(best.oppId))} (${dateStr(best.ts)})</p>` : '') : emptyState('📈', 'No match ratings yet', 'Ratings appear here once this player features in an archived match.'))}
+${a.length ? card('Position map', `${pitchMap(pitchGroups(a))}<p class="muted small">🗺️ Estimated – EA's match data has no pitch coordinates. Bubble size = share of games in that role, shade = involvement while playing it.</p>`) : ''}
 </div>
 ${Object.keys(pl.clubStats).length ? section('By club', table('byclub', ['Club', 'Pos', '#OVR', '#GP', '#Goals', '#Assists', '#Rating', '#MOTM', '#Win %', '#Pass %', '#Tackle %'], Object.entries(pl.clubStats).map(([cid, cs]) =>
     `<tr>${td(`${crest(cid, 22, base)} ${clubLink(cid, base)}`)}${td(posOf(cs) || '—')}${td(esc(cs.proOverall ?? '–'), true)}${td(cs.gamesPlayed, true)}${td(cs.goals, true)}${td(cs.assists, true)}${td(ratingPill(num(cs.ratingAve)), true, cs.ratingAve)}${td(cs.manOfTheMatch, true)}${td(cs.winRate + '%', true, cs.winRate)}${td(cs.passSuccessRate + '%', true, cs.passSuccessRate)}${td(cs.tackleSuccessRate + '%', true, cs.tackleSuccessRate)}</tr>`))) : ''}
-${a.length ? section('Match log', `<section class="stats">${counter('Apps', a.length)}${counter('Record', 0, { text: `${w}-${d}-${l}` })}${counter('Goals', tot('goals'))}${counter('Assists', tot('assists'))}${counter('Avg rating', avg(a.map((x) => x.rating)), { dec: 1 })}${counter('MOTM', tot('mom'))}${counter('Pass %', pct(tot('passes'), tot('passAtt')), { suffix: '%' })}${counter('Tackle %', pct(tot('tackles'), tot('tackleAtt')), { suffix: '%' })}</section>
-${table('log', ['Date', 'Res', 'Score', 'For', 'Against', 'Pos', '#Rating', '#G', '#A', '#Shots', '#Pass', '#Tkl', '#Saves'], a.map((x) =>
-    `<tr>${dateCell(x.ts)}${td(resPill(x.res))}${td(`<a href="${base}matches/${x.matchId}.html">${x.gf}–${x.ga}</a>`)}${td(`${crest(x.clubId, 18, base)} ${clubLink(x.clubId, base)}`)}${td(`${crest(x.oppId, 18, base)} ${clubLink(x.oppId, base)}`)}${td(posAbbr(x.pos))}${td(ratingPill(x.rating) + (x.mom ? ' ⭐' : ''), true, x.rating)}${td(x.goals, true)}${td(x.assists, true)}${td(x.shots, true)}${td(`${x.passes}/${x.passAtt}`, true, x.passes)}${td(`${x.tackles}/${x.tackleAtt}`, true, x.tackles)}${td(x.saves, true)}</tr>`))}`, { sub: `${a.length} archived` }) : ''}`;
+${a.length ? section('Match log', `<section class="stats">${counter('Apps', a.length)}${counter('Record', 0, { text: `${w}-${d}-${l}` })}${counter('Goals', tot('goals'))}${counter('Assists', tot('assists'))}${counter('Avg rating', avg(a.map((x) => x.rating)), { dec: 1 })}${counter('MOTM', tot('mom'))}${counter('Pass %', pct(tot('passes'), tot('passAtt')), { suffix: '%' })}${counter('Tackle %', pct(tot('tackles'), tot('tackleAtt')), { suffix: '%' })}${evStats(a)}</section>
+${logTable('log', a, base)}${evNote(a)}`, { sub: `${a.length} archived` }) : ''}`;
   }
+}
+// P1.8: dribbles + second assists – totals and per 90 over the apps that have them, with a "since" note.
+function evStats(a) {
+  const e = a.filter((x) => x.dribbles != null);
+  if (!e.length) return '';
+  const drb = sum(e, (x) => x.dribbles);
+  return `${counter('Dribbles', drb)}${counter('Dribbles/game', drb / e.length, { dec: 1 })}${counter('2nd assists', sum(e, (x) => x.sa))}`;
+}
+const evNote = (a) => (a.some((x) => x.dribbles != null) ? `<p class="muted small">🏃 Dribbles and 2nd assists (the pass before the assist) come from EA's match events – only in games archived since ${esc(EV_SINCE)}.</p>` : '');
+// P7.3: EA exposes no pitch coordinates, so this is a role/involvement map, not a real heat map – bubble size = share
+// of games played in that role, shade = involvement while playing it (each role's own defining stat).
+const PITCH_ZONES = { GK: { x: 50, y: 90, label: 'GK', stat: 'saves', cap: 4 }, DEF: { x: 50, y: 70, label: 'DEF', stat: 'tackles', cap: 4 }, MID: { x: 50, y: 48, label: 'MID', stat: 'passes', cap: 25 }, FWD: { x: 50, y: 22, label: 'FWD', stat: 'g+a+shots', cap: 6 } };
+function pitchGroups(a) {
+  const byGroup = {};
+  for (const x of a) {
+    const g = POS[String(x.pos).toLowerCase()];
+    if (!g) continue;
+    (byGroup[g] ??= []).push(x);
+  }
+  const total = a.length;
+  return Object.entries(byGroup).map(([g, apps]) => {
+    const z = PITCH_ZONES[g];
+    const value = g === 'FWD' ? sum(apps, (x) => x.goals * 3 + x.assists * 2 + x.shots) : sum(apps, (x) => x[z.stat]) || 0;
+    const perGame = value / apps.length;
+    const share = apps.length / total;
+    return { label: z.label, x: z.x, y: z.y, r: 12 + Math.sqrt(share) * 44, intensity: Math.min(1, perGame / z.cap), tip: `${z.label} · ${apps.length} of ${total} games (${Math.round(share * 100)}%) · ${r1(perGame)} ${z.stat}/game` };
+  });
+}
+const r1 = (n) => Math.round(n * 10) / 10;
+function logTable(id, a, base) {
+  const ev = a.some((x) => x.dribbles != null);
+  const evd = (v) => td(v == null ? '<span class="muted">–</span>' : v, true, v ?? -1);
+  return table(id, ['Date', 'Res', 'Score', 'For', 'Against', 'Pos', '#Rating', '#G', '#A', ...(ev ? ['#2nd A'] : []), '#Shots', '#Pass', '#Tkl', ...(ev ? ['#Drb'] : []), '#Saves'], a.map((x) =>
+    `<tr>${dateCell(x.ts)}${td(resPill(x.res))}${td(`<a href="${base}matches/${x.matchId}.html">${x.gf}–${x.ga}</a>`)}${td(`${crest(x.clubId, 18, base)} ${clubLink(x.clubId, base)}`)}${td(`${crest(x.oppId, 18, base)} ${clubLink(x.oppId, base)}`)}${td(posAbbr(x.pos))}${td(ratingPill(x.rating) + (x.mom ? ' ⭐' : ''), true, x.rating)}${td(x.goals, true)}${td(x.assists, true)}${ev ? evd(x.sa) : ''}${td(x.shots, true)}${td(`${x.passes}/${x.passAtt}`, true, x.passes)}${td(`${x.tackles}/${x.tackleAtt}`, true, x.tackles)}${ev ? evd(x.dribbles) : ''}${td(x.saves, true)}</tr>`));
 }
 
 // ---------- match page ----------
 function matchBody(m, base) {
+  const mi = homeMatches.slice(0, 3).findIndex((x) => x.matchId === m.matchId); // BE9 covers the newest three results (MATCH_CARDS)
+  const opp = m.clubs[homeId] ? oppOf(m, homeId) : null; // BE9 head-to-head: only the home club's own matches have a record vs this opponent (every one is in api/h2h.json, built from the same list)
+  const insightSlot = (mi < 0 ? '' : `<div data-nx-insight="${mi ? `match.${esc(m.matchId)}` : 'match.latest'}" hidden></div>`) + (opp ? `<div data-nx-insight="h2h.${esc(opp)}" hidden></div>` : '');
   const [h, aw] = Object.keys(m.clubs).sort((a, b) => (a === homeId ? -1 : b === homeId ? 1 : 0));
   const list = (cid) => Object.entries(m.players?.[cid] || {}).map(([pid, p]) => ({ pid, ...p }));
   const team = (cid) => {
@@ -569,44 +876,193 @@ function matchBody(m, base) {
       passPct: pct(sum(l, (p) => num(p.passesmade)), sum(l, (p) => num(p.passattempts))), tackles: sum(l, (p) => num(p.tacklesmade)),
       tacklePct: pct(sum(l, (p) => num(p.tacklesmade)), sum(l, (p) => num(p.tackleattempts))), saves: sum(l, (p) => num(p.saves)),
       rating: avg(l.map((p) => num(p.rating))), red: sum(l, (p) => num(p.redcards)), players: l.length,
+      dribbles: sum(l, (p) => num(p.dribbles)), sa: sum(l, (p) => num(p.secondassists)),
     };
   };
   const T = [team(h), team(aw)];
-  const rows = [['Goals', 'goals'], ['Shots', 'shots'], ['Passes', 'passes'], ['Pass accuracy', 'passPct', '%'], ['Tackles', 'tackles'], ['Tackle success', 'tacklePct', '%'], ['Saves', 'saves'], ['Avg rating', 'rating', '', 1], ['Red cards', 'red'], ['Human players', 'players']];
+  const ev = hasEv(m);
+  const rows = [['Goals', 'goals'], ['Shots', 'shots'], ['Passes', 'passes'], ['Pass accuracy', 'passPct', '%'], ...(ev ? [['Dribbles', 'dribbles'], ['2nd assists', 'sa']] : []), ['Tackles', 'tackles'], ['Tackle success', 'tacklePct', '%'], ['Saves', 'saves'], ['Avg rating', 'rating', '', 1], ['Red cards', 'red'], ['Human players', 'players']];
   const cmp = rows.map(([label, k, suf = '', dec = 0]) => {
     const x = T[0][k], y = T[1][k], tot = x + y || 1;
     return `<li><b class="${x > y ? 'lead' : ''}">${dec ? x.toFixed(dec) : x}${suf}</b><span>${label}</span><b class="${y > x ? 'lead' : ''}">${dec ? y.toFixed(dec) : y}${suf}</b><div class="duel"><i class="l" style="--w:${(x / tot) * 100}%"></i><i class="r" style="--w:${(y / tot) * 100}%"></i></div></li>`;
   }).join('');
 
-  // Pitch: home attacks right, away attacks left.
+  // Pitch: one team at a time on the whole pitch (NOREX by default, then the opponent), or both sharing it – home attacks right, away attacks left.
   const LINES = { goalkeeper: 0, defender: 1, midfielder: 2, forward: 3 };
-  const X = [[6, 17, 29, 41], [94, 83, 71, 59]];
-  const dots = [h, aw].flatMap((cid, side) => {
+  const X = [[6, 17, 29, 41], [94, 83, 71, 59]]; // each side on its own half
+  const XFULL = [9, 31, 56, 80]; // a single team spread over the whole pitch, attacking right
+  const layout = (cid, side, full) => {
     const groups = [[], [], [], []];
     for (const p of list(cid)) groups[LINES[p.pos] ?? 2].push(p);
-    return groups.flatMap((g, line) => g.map((p, i) => ({ p, side, x: X[side][line], y: ((i + 1) * 100) / (g.length + 1) })));
+    return groups.flatMap((g, line) => g.map((p, i) => ({ p, side, x: full ? XFULL[line] : X[side][line], y: ((i + 1) * 100) / (g.length + 1) })));
+  };
+  const dot = ({ p, side, x, y }) => { const pl = players.get(p.pid); return `<a class="pp side${side}" style="left:${x}%;top:${y}%" ${pl && !pl.hidden ? `href="${pUrl(pl, base)}"` : ''} data-tip="${esc(`${p.playername} · ${posAbbr(p.pos)} · ${num(p.rating).toFixed(1)}${num(p.goals) ? ` · ${p.goals}G` : ''}${num(p.assists) ? ` · ${p.assists}A` : ''}`)}"><b class="${ratingClass(num(p.rating))}">${num(p.rating).toFixed(1)}</b><span>${esc(p.playername)}</span>${p.mom === '1' ? '<em>⭐</em>' : ''}${num(p.goals) ? `<u>${'⚽'.repeat(Math.min(num(p.goals), 3))}</u>` : ''}</a>`; };
+  const pitchBox = (dots, key) => `<div class="pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots.map(dot).join('')}</div><div class="pitch-key">${key}</div>`;
+  const pitch = `<div class="tabs chipset pitch-tabs" data-tabs><button class="chip on" type="button" data-tab="pv-h">${esc(clubName(h))}</button><button class="chip" type="button" data-tab="pv-a">${esc(clubName(aw))}</button><button class="chip" type="button" data-tab="pv-b">⚔️ Both</button></div>
+<div class="tab-panel" id="pv-h">${pitchBox(layout(h, 0, true), `<span>${crest(h, 18, base)} ${esc(clubName(h))} →</span>`)}</div>
+<div class="tab-panel" id="pv-a" hidden>${pitchBox(layout(aw, 1, true), `<span>${crest(aw, 18, base)} ${esc(clubName(aw))} →</span>`)}</div>
+<div class="tab-panel" id="pv-b" hidden>${pitchBox([...layout(h, 0, false), ...layout(aw, 1, false)], `<span>${crest(h, 18, base)} ${esc(clubName(h))} →</span><span>← ${esc(clubName(aw))} ${crest(aw, 18, base)}</span>`)}</div>`;
+
+  const evd = (v) => td(v === undefined ? '<span class="muted">–</span>' : esc(v), true, v === undefined ? -1 : num(v));
+  const side = (cid) => section(`${crest(cid, 30, base)} ${clubLink(cid, base)}`, table(`m-${cid}`, ['Player', 'Pos', '#Rating', '#G', '#A', ...(ev ? ['#2nd A'] : []), '#Shots', '#Pass', ...(ev ? ['#Drb'] : []), '#Tkl', '#Saves', 'MOTM'], list(cid).sort((x, y) => num(y.rating) - num(x.rating)).map((p) =>
+    `<tr>${td(pLink(p.pid, base, p.playername))}${td(posAbbr(p.pos))}${td(ratingPill(num(p.rating)), true, num(p.rating))}${td(p.goals, true)}${td(p.assists, true)}${ev ? evd(p.secondassists) : ''}${td(p.shots, true)}${td(`${p.passesmade}/${p.passattempts}`, true, p.passesmade)}${ev ? evd(p.dribbles) : ''}${td(`${p.tacklesmade}/${p.tackleattempts}`, true, p.tacklesmade)}${td(p.saves, true)}${td(p.mom === '1' ? '⭐' : '')}</tr>`)));
+
+  return `${m.matchType === 'friendlyMatch' ? '<p class="kicker reveal">🤝 Club friendly – not counted in League stats</p>' : ''}<div class="reveal">${poster(m, base, { link: false })}<button class="btn dl-poster" type="button" data-for="poster-${m.matchId}">⬇ Download result graphic</button></div>
+${insightSlot}<div class="grid2 reveal">${card('Match stats', `<div class="cmp-head"><span>${crest(h, 26, base)}</span><span>${crest(aw, 26, base)}</span></div><ul class="compare-bars">${cmp}</ul>`)}${card('Line-ups & ratings', pitch)}</div>
+${side(h)}${side(aw)}${ev ? '<p class="muted small">🏃 Drb = dribbles completed, 2nd A = the pass before the assist (from EA\'s match events).</p>' : ''}`;
+}
+
+// ---------- tactics table (redesign board 03) ----------
+// Signature move: the real squad, in a real formation, on a pitch app.js turns into an orbitable 3D
+// scene – tower height = the stat you pick, camera presets, tap a player for their card. This function
+// only picks the XI and lays out the flat, always-works markup (same `.pitch`/`.pp` dots as the match
+// line-up); app.js reads the embedded JSON to build the 3D upgrade on top when motion/viewport allow it.
+// Starting XI = most games played per line, 4-4-2 shape (caps below) – whoever doesn't make the cut is
+// still in the card grid/table underneath, nothing is hidden, just not everyone fits on one pitch.
+function tacticsTable(squad, base) {
+  const CAP = { GK: 1, DEF: 4, MID: 4, FWD: 2 };
+  const XPOS = { GK: 8, DEF: 27, MID: 56, FWD: 83 };
+  const byGroup = {};
+  for (const p of squad) { if (!p.group) continue; (byGroup[p.group] ??= []).push(p); }
+  const picks = [];
+  for (const g of ['GK', 'DEF', 'MID', 'FWD']) {
+    const arr = (byGroup[g] || []).sort((a, b) => num(b.main?.gamesPlayed) - num(a.main?.gamesPlayed)).slice(0, CAP[g] || 0);
+    arr.forEach((p, i) => picks.push({ p, group: g, x: XPOS[g], y: ((i + 1) * 100) / (arr.length + 1) }));
+  }
+  if (picks.length < 3) return ''; // too small a roster to bother – card grid below still shows everyone
+  const statOf = (p, k) => ({ g: num(p.main?.goals), a: num(p.main?.assists), r: num(p.main?.ratingAve), m: num(p.main?.manOfTheMatch) }[k]);
+  const dots = picks.map(({ p, x, y }) =>
+    `<a class="pp side0" style="left:${x}%;top:${y}%" href="${pUrl(p, base)}" data-key="${esc(p.key)}" data-tip="${esc(`${p.name} · ${p.pos} · OVR ${p.ovr || '–'}`)}"><b class="${ratingClass(num(p.main?.ratingAve))}">${p.ovr || '–'}</b><span>${esc(p.name)}</span></a>`).join('');
+  const data = picks.map(({ p, x, y, group }) => ({ key: p.key, name: p.name, pos: p.pos, group, ovr: p.ovr || 0, x, y, g: statOf(p, 'g'), a: statOf(p, 'a'), r: statOf(p, 'r'), m: statOf(p, 'm') }));
+  const cards = picks.map(({ p }) => `<div class="tt-card" data-tt-card="${esc(p.key)}" hidden>${futCard(p, base, { big: true })}</div>`).join('');
+  return `<section class="block reveal tt" data-tactics>
+<h2 class="banner-h">The Tactics Table <small>Starting XI by games played · tap a player</small></h2>
+<div class="tt-wrap">
+<div class="tt-board">
+<div class="pitch tt-ground" data-tt-flat><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots}</div>
+<div class="tt-stage" data-tt-stage hidden></div>
+<div class="tt-hint muted small" data-tt-hint hidden>🖐 Drag to orbit · pinch or ± to zoom · tap a player</div>
+</div>
+<div class="tt-side">
+<div class="tt-controls">
+<div class="osw small feat-label">Tower height shows</div>
+<div class="chipset" data-tt-stat><button class="chip on" type="button" data-stat="g">⚽ Goals</button><button class="chip" type="button" data-stat="a">🅰️ Assists</button><button class="chip" type="button" data-stat="r">⭐ Rating</button><button class="chip" type="button" data-stat="m">🏅 MOTM</button></div>
+<div class="osw small feat-label" data-tt-camlabel hidden>Camera</div>
+<div class="chipset" data-tt-cam hidden><button class="chip on" type="button" data-cam="broadcast">📺 Broadcast</button><button class="chip" type="button" data-cam="top">🗺️ Top down</button><button class="chip" type="button" data-cam="goal">🥅 Behind goal</button></div>
+<div class="chipset" data-tt-zoom hidden><button class="chip" type="button" data-zoom="out" aria-label="Zoom out">−</button><button class="chip" type="button" data-zoom="in" aria-label="Zoom in">+</button><button class="chip" type="button" data-tt-reset>↺ Reset view</button></div>
+</div>
+<div class="tt-cardslot" data-tt-cardslot>${cards}<p class="muted small tt-hint-empty" data-tt-empty>Tap any player above to see their card.</p></div>
+</div>
+</div>
+<p class="muted small">Real squad, real formation, from EA's own numbers – no invented heat maps. Works without 3D too: reduced motion or a smaller screen keeps the board flat with the same numbers.</p>
+<script type="application/json" data-tt-data>${JSON.stringify(data)}</script>
+</section>`;
+}
+
+// Compact home-page teaser for the tactics table (board 04, part 1). Deliberately static – app.js's
+// tactics-table upgrade looks up `[data-tactics]` as a singleton, so a second orbitable copy on the home
+// page would fight the real one on squad.html. Same XI-picking logic, same `.pitch`/`.pp` dots, no 3D.
+function tacticsTeaser(squad, base) {
+  const CAP = { GK: 1, DEF: 4, MID: 4, FWD: 2 };
+  const XPOS = { GK: 8, DEF: 27, MID: 56, FWD: 83 };
+  const byGroup = {};
+  for (const p of squad) { if (!p.group) continue; (byGroup[p.group] ??= []).push(p); }
+  const picks = [];
+  for (const g of ['GK', 'DEF', 'MID', 'FWD']) {
+    const arr = (byGroup[g] || []).sort((a, b) => num(b.main?.gamesPlayed) - num(a.main?.gamesPlayed)).slice(0, CAP[g] || 0);
+    arr.forEach((p, i) => picks.push({ p, x: XPOS[g], y: ((i + 1) * 100) / (arr.length + 1) }));
+  }
+  if (picks.length < 3) return '';
+  const dots = picks.map(({ p, x, y }) =>
+    `<a class="pp side0" style="left:${x}%;top:${y}%" href="${pUrl(p, base)}" data-tip="${esc(`${p.name} · ${p.pos} · OVR ${p.ovr || '–'}`)}"><b class="${ratingClass(num(p.main?.ratingAve))}">${p.ovr || '–'}</b><span>${esc(p.name)}</span></a>`).join('');
+  return section('The Tactics Table', card('', `<div class="pitch tt-teaser-pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>${dots}</div><p><a class="btn" href="${base}squad.html">🧠 Full squad & Tactics Table →</a></p>`, 'tt-teaser'), { sub: 'starting XI by games played' });
+}
+
+// Full squad 3D card carousel (redesign board 04, part 2). Flat `.card-grid` of real futCard()s always
+// renders (works with JS off, reduced motion, small screens); app.js's "squad carousel" block upgrades it
+// into a draggable ring – the hero coin's drag-to-spin-and-settle idea (board 02), ported to a full circle
+// – with the front card enlarged and flippable to show season stats + last-10 ratings.
+function squadCarousel(squad, base) {
+  if (squad.length < 3) return '';
+  const GROUPS = ['All', 'GK', 'DEF', 'MID', 'FWD'].filter((g) => g === 'All' || squad.some((p) => p.group === g));
+  const data = squad.map((p) => {
+    const s = p.main ?? {};
+    const last10 = [...p.apps].reverse().slice(-10).map((x) => num(x.rating)).filter(Boolean);
+    return {
+      group: p.group || '',
+      front: futCard(p, base),
+      back: `<div class="carousel-back"><b>${esc(p.name)}</b>
+<div class="rsq-row">${last10.length ? last10.map((r) => `<i class="rsq ${ratingClass(r)}" data-tip="${r.toFixed(1)}"></i>`).join('') : '<span class="muted small">No ratings yet</span>'}</div>
+<p class="small muted">${last10.length ? `Last ${last10.length} ratings · ` : ''}${num(s.goals)} G · ${num(s.assists)} A · ${num(s.manOfTheMatch)} MOTM</p>
+<a class="btn small" href="${pUrl(p, base)}">Full profile →</a></div>`,
+    };
   });
-  const pitch = `<div class="pitch"><div class="pitch-lines"><i class="half"></i><i class="circle"></i><i class="box l"></i><i class="box r"></i></div>
-${dots.map(({ p, side, x, y }) => { const pl = players.get(p.pid); return `<a class="pp side${side}" style="left:${x}%;top:${y}%" ${pl && !pl.hidden ? `href="${pUrl(pl, base)}"` : ''} data-tip="${esc(`${p.playername} · ${posAbbr(p.pos)} · ${num(p.rating).toFixed(1)}${num(p.goals) ? ` · ${p.goals}G` : ''}${num(p.assists) ? ` · ${p.assists}A` : ''}`)}"><b class="${ratingClass(num(p.rating))}">${num(p.rating).toFixed(1)}</b><span>${esc(p.playername)}</span>${p.mom === '1' ? '<em>⭐</em>' : ''}${num(p.goals) ? `<u>${'⚽'.repeat(Math.min(num(p.goals), 3))}</u>` : ''}</a>`; }).join('')}</div>
-<div class="pitch-key"><span>${crest(h, 18, base)} ${esc(clubName(h))} →</span><span>← ${esc(clubName(aw))} ${crest(aw, 18, base)}</span></div>`;
+  return `<section class="block reveal" data-carousel>
+<h2 class="banner-h">Full Squad <small>drag to spin · tap a card to flip</small></h2>
+<div class="chipset carousel-filter" data-carousel-filter>${GROUPS.map((g, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-pos="${g}">${g}</button>`).join('')}</div>
+<div class="card-grid carousel-flat" data-carousel-flat>${squad.map((p) => futCard(p, base)).join('')}</div>
+<div class="carousel-stage" data-carousel-stage hidden tabindex="0"></div>
+<script type="application/json" data-carousel-data>${JSON.stringify(data)}</script>
+</section>`;
+}
 
-  const side = (cid) => section(`${crest(cid, 30, base)} ${clubLink(cid, base)}`, table(`m-${cid}`, ['Player', 'Pos', '#Rating', '#G', '#A', '#Shots', '#Pass', '#Tkl', '#Saves', 'MOTM'], list(cid).sort((x, y) => num(y.rating) - num(x.rating)).map((p) =>
-    `<tr>${td(pLink(p.pid, base, p.playername))}${td(posAbbr(p.pos))}${td(ratingPill(num(p.rating)), true, num(p.rating))}${td(p.goals, true)}${td(p.assists, true)}${td(p.shots, true)}${td(`${p.passesmade}/${p.passattempts}`, true, p.passesmade)}${td(`${p.tacklesmade}/${p.tackleattempts}`, true, p.tacklesmade)}${td(p.saves, true)}${td(p.mom === '1' ? '⭐' : '')}</tr>`)));
-
-  return `<div class="reveal">${poster(m, base, { link: false })}<button class="btn dl-poster" type="button" data-for="poster-${m.matchId}">⬇ Download result graphic</button></div>
-<div class="grid2 reveal">${card('Match stats', `<div class="cmp-head"><span>${crest(h, 26, base)}</span><span>${crest(aw, 26, base)}</span></div><ul class="compare-bars">${cmp}</ul>`)}${card('Line-ups & ratings', pitch)}</div>
-${side(h)}${side(aw)}`;
+// Leaders podium (redesign board 04, part 2). Flat ranked lists (barList, reusing the existing
+// `[data-tabs]`/`.tab-panel` chip switcher already used by the stats-centre leaderboards) always work;
+// app.js's "leaders podium" block grows a 3D-tilted top-3 podium on top when motion is allowed – the
+// hero's mouse-tracked tilt pattern (board 02), ported here as a hover tilt instead of a parallax one.
+function leadersPodium(members, id, base) {
+  const STATS = [
+    ['g', '⚽ Goals', (s) => num(s.goals)],
+    ['a', '🅰️ Assists', (s) => num(s.assists)],
+    ['r', '⭐ Rating', (s) => (num(s.gamesPlayed) >= 3 ? num(s.ratingAve) : 0), (v) => v.toFixed(1)],
+    ['m', '🏅 MOTM', (s) => num(s.manOfTheMatch)],
+  ];
+  const panels = STATS.map(([k, label, f, fmt]) => {
+    const top = members.filter((p) => p.clubStats[id]).map((pl) => ({ pl, v: f(pl.clubStats[id]) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 5);
+    return top.length ? { k, label, top, fmt: fmt ?? ((v) => v) } : null;
+  }).filter(Boolean);
+  if (!panels.length) return '';
+  const data = panels.map(({ k, top, fmt }) => ({ key: k, top3: top.slice(0, 3).map(({ pl, v }) => ({ player: pl.key, name: pl.name, href: pUrl(pl, base), v: fmt(v) })) }));
+  return `<section class="block reveal" data-podium>
+<h2 class="banner-h">Leaders Podium <small>top performers this season</small></h2>
+<div class="tabs chipset podium-tabs" data-tabs>${panels.map(({ k, label }, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="pod-${k}">${label}</button>`).join('')}</div>
+${panels.map(({ k, top }, i) => `<div class="tab-panel" id="pod-${k}"${i ? ' hidden' : ''}>${barList(top, { base, fmt: panels[i].fmt })}</div>`).join('')}
+<div class="podium-wrap" data-podium-stage hidden><div class="podium-3d"></div></div>
+<p><a class="btn ghost" href="${base}stats.html">🏆 Full leaders →</a></p>
+<script type="application/json" data-podium-data>${JSON.stringify(data)}</script>
+</section>`;
 }
 
 // ---------- write ----------
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.cpSync(path.join(ROOT, 'web'), path.join(OUT, 'assets'), { recursive: true });
+fs.copyFileSync(path.join(ROOT, 'web', 'sw.js'), path.join(OUT, 'sw.js')); // push receiver + offline cache: must sit at the site root
+// PWA: installable manifest (relative URLs, so it works under /Norex-United-FC/ and on a custom domain alike) + offline fallback page
+fs.writeFileSync(path.join(OUT, 'manifest.webmanifest'), JSON.stringify({
+  name: config.siteTitle, short_name: 'NOREX', description: `${config.siteTitle} – Pro Clubs stats, results and the members hub.`,
+  id: './', start_url: './index.html?source=pwa', scope: './', display: 'standalone', orientation: 'portrait-primary',
+  background_color: INK, theme_color: INK, categories: ['sports', 'games'],
+  icons: [
+    { src: 'assets/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: 'assets/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: 'assets/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  ],
+  shortcuts: [
+    { name: 'Results', url: './results.html', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
+    { name: 'Squad', url: './squad.html', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
+    { name: 'Members hub', url: './members.html', icons: [{ src: 'assets/icons/icon-192.png', sizes: '192x192' }] },
+  ],
+}, null, 2));
+fs.writeFileSync(path.join(OUT, 'offline.html'), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline – ${esc(config.siteTitle)}</title><meta name="theme-color" content="${INK}">
+<style>html,body{margin:0;height:100%;background:${INK};color:#fff;font-family:Inter,system-ui,sans-serif}body{display:grid;place-items:center;text-align:center;padding:24px}img{height:96px}h1{font-family:Oswald,Impact,sans-serif;letter-spacing:.04em;margin:.6em 0 .2em}p{opacity:.75;max-width:30em;margin:.4em auto}a,button{display:inline-block;margin-top:14px;background:${RED};color:#fff;border:0;border-radius:8px;padding:11px 20px;font:600 15px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}</style></head>
+<body><main><img src="assets/crest.png" alt=""><h1>YOU'RE OFFLINE</h1><p>No signal right now. Pages you've already opened still work – the rest comes back as soon as you're connected.</p><button type="button" onclick="location.reload()">Try again</button> <a href="index.html">Home</a></main></body></html>`);
 
 write('index.html', page({ title: `${config.siteTitle} – Official Pro Clubs hub`, base: '', active: 'home', body: clubBody(homeId, '', true) }));
 
 const homeSquad = visiblePlayers.filter((p) => p.isHome).sort((a, b) => num(b.main.gamesPlayed) - num(a.main.gamesPlayed));
 write('squad.html', page({ title: `Squad – ${config.siteTitle}`, base: '', active: 'squad', body: `
 ${pageHead('The Squad', `${homeSquad.length} players · card stats are NOREX totals, OVR from EA`, '')}
+${tacticsTable(homeSquad, '')}
 <div class="toolbar"><div class="chipset" data-posfilter>${['All', 'GK', 'DEF', 'MID', 'FWD'].map((p, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-pos="${p}">${p}</button>`).join('')}</div>
 <div class="chipset" data-view><button class="chip on" type="button" data-v="cards">Cards</button><button class="chip" type="button" data-v="table">Table</button></div></div>
 <div class="view view-cards"><div class="card-grid">${homeSquad.map((p) => futCard(p, '')).join('')}</div></div>
@@ -627,9 +1083,9 @@ const clubList = [...clubs.values()].sort((a, b) => (tierOrder[state.clubs[a.id]
 write('clubs/index.html', page({ title: `Clubs – ${config.siteTitle}`, base: '../', active: 'clubs', body: `
 ${pageHead('Clubs', 'Found automatically. Every opponent is tracked, and any club where one of our players also plays is <b>linked</b> and fully archived. A background crawler keeps scanning for more.', '../', false)}
 <div class="toolbar"><div class="chipset" data-tierfilter>${['all', 'home', 'linked', 'manual', 'discovered'].map((t, i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tier="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div><input class="filter" type="search" placeholder="Search clubs…" data-cardfilter=".club-card"></div>
-<div class="club-grid">${clubList.map((c) => { const o = { ...(c.overall ?? {}), ...(c.leaderboard ?? {}) }; const tr = state.clubs[c.id]?.tier ?? 'archived'; return `<a class="club-card tier-${esc(tr)}" data-tier="${esc(tr)}" href="${clubHref(c.id, '../')}">${crest(c.id, 72, '../')}<b>${esc(clubName(c.id))}</b><span class="tag">${esc(tr)}</span><small>${esc(o.wins ?? 0)}W · ${esc(o.ties ?? 0)}D · ${esc(o.losses ?? 0)}L</small><small class="muted">SR ${esc(o.skillRating ?? '–')}${o.currentDivision ? ` · Div ${esc(o.currentDivision)}` : ''}</small></a>`; }).join('')}</div>` }));
+<div class="club-grid">${clubList.map((c) => { const o = { ...(c.overall ?? {}), ...(c.leaderboard ?? {}) }; const tr = state.clubs[c.id]?.tier ?? 'archived'; return `<a class="club-card tier-${esc(tr)}" data-tier="${esc(tr)}" href="${clubHref(c.id, '../')}"><span class="fut-shine"></span>${crest(c.id, 72, '../')}<b>${esc(clubName(c.id))}</b><span class="tag">${esc(tr)}</span><small>${esc(o.wins ?? 0)}W · ${esc(o.ties ?? 0)}D · ${esc(o.losses ?? 0)}L</small><small class="muted">SR ${esc(o.skillRating ?? '–')}${o.currentDivision ? ` · Div ${esc(o.currentDivision)}` : ''}</small></a>`; }).join('')}</div>` }));
 
-for (const m of matches) {
+for (const m of allMatches) {
   const [a, b] = Object.keys(m.clubs);
   // Share preview: the opponent's crest (ours for linked-club games) + score line, scorers and MOTM.
   const [h, aw] = m.clubs[homeId] ? [homeId, oppOf(m, homeId)] : [a, b];
@@ -638,15 +1094,16 @@ for (const m of matches) {
   const goals = Object.values(m.players?.[h] || {}).filter((p) => num(p.goals)).map((p) => `${p.playername}${num(p.goals) > 1 ? ` ×${num(p.goals)}` : ''}`);
   const verdict = { W: 'Win', L: 'Defeat', D: 'Draw' }[result(m.clubs[h])];
   write(`matches/${m.matchId}.html`, page({ title: `${clubName(h)} ${m.clubs[h].goals}–${m.clubs[aw].goals} ${clubName(aw)}`, base: '../', active: 'matches', body: matchBody(m, '../'),
-    description: `${verdict} · ${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'} · ${niceDate(m.timestamp)}${goals.length ? ` · ⚽ ${goals.join(', ')}` : ''}${motm ? ` · ⭐ MOTM ${motm.playername} (${num(motm.rating).toFixed(1)})` : ''}`,
+    description: `${verdict} · ${typeLabel(m)} · ${niceDate(m.timestamp)}${goals.length ? ` · ⚽ ${goals.join(', ')}` : ''}${motm ? ` · ⭐ MOTM ${motm.playername} (${num(motm.rating).toFixed(1)})` : ''}`,
     image: ogCrest(h === homeId ? aw : h) }));
 }
 const sessions = sessionsFor(homeMatches, homeId);
 write('matches/index.html', page({ title: `Matches – ${config.siteTitle}`, base: '../', active: 'matches', body: `
 ${pageHead('Matches', 'Every match since the site started archiving (EA itself only keeps the last 5). Play nights are grouped into sessions and graded on results and goal difference.', '../')}
+${homeMatches.length ? '<div data-nx-insight="matches.last5" hidden></div>' : ''}
 ${modes(`${section('Sessions', `<div class="session-grid">${sessions.map((s) => sessionCard(s, '../', homeId)).join('') || emptyState('🗓️', 'No sessions yet', 'Every play night becomes a graded session card here.')}</div>`)}
-${section('All results', `<div class="fixtures">${homeMatches.map((m) => fixture(m, homeId, '../')).join('') || emptyState('🗂️', 'No results yet', 'Every league and playoff match is saved here from the next update on.')}</div>`)}
-${matches.some((m) => !m.clubs[homeId]) ? section('Linked club matches', `<div class="fixtures">${matches.filter((m) => !m.clubs[homeId]).map((m) => fixture(m, Object.keys(m.clubs)[0], '../')).join('')}</div>`) : ''}`, 'matches', 'League & playoffs from EA · Rush logged by members')}` }));
+${section('All results', `${calendar('cal-all', homeMatches)}<div class="fixtures" id="cal-all">${homeMatches.map((m) => fixture(m, homeId, '../')).join('') || emptyState('🗂️', 'No results yet', 'Every league and playoff match is saved here from the next update on.')}</div>`)}
+${matches.some((m) => !m.clubs[homeId]) ? section('Linked club matches', `<div class="fixtures">${matches.filter((m) => !m.clubs[homeId]).map((m) => fixture(m, Object.keys(m.clubs)[0], '../')).join('')}</div>`) : ''}`, 'matches', 'League & playoffs from EA · Rush logged by members · friendlies apart', section('Friendlies', friendlyBody('../')))}` }));
 
 // Stats centre
 const homeC = clubs.get(homeId);
@@ -666,7 +1123,7 @@ const bigWin = [...homeMatches].sort((a, b) => margin(b) - margin(a))[0];
 const bigLoss = [...homeMatches].sort((a, b) => margin(a) - margin(b))[0];
 let streak = 0, bestStreak = 0;
 for (const m of [...homeMatches].reverse()) { streak = result(m.clubs[homeId]) === 'W' ? streak + 1 : 0; bestStreak = Math.max(bestStreak, streak); }
-const record = (icon, title, value, sub, href) => `<a class="record"${href ? ` href="${href}"` : ''}><span class="rec-icon">${icon}</span><small>${title}</small><b>${value}</b><span>${sub}</span></a>`;
+const record = (icon, title, value, sub, href) => `<a class="record"${href ? ` href="${href}"` : ''}><span class="fut-shine"></span><span class="rec-icon">${icon}</span><small>${title}</small><b>${value}</b><span>${sub}</span></a>`;
 const hatTricks = allApps.filter((x) => num(x.p.goals) >= 3);
 const scoreOf = (m) => `${m.clubs[homeId].goals}–${m.clubs[oppOf(m, homeId)].goals}`;
 const recs = homeMatches.length ? [
@@ -685,7 +1142,37 @@ for (const m of homeMatches) {
   h2h.set(o, e);
 }
 // Leaderboards, hall of fame + advanced metrics (P4.5 / P4.6 / P1.2) – lives in leaders-page.mjs.
-const LH = { write, page, pageHead, section, modes, esc, emptyState, pLink, clubName, config, brand, MEMBER_API, STARS, leaderboard: homeC?.leaderboard };
+// P1.8: EA's global top 100 by skill rating (data/world.json, fetched once a day) + where NOREX stands.
+function worldHtml() {
+  const w = readJson(path.join(DATA, 'world.json'), null);
+  if (!w?.clubs?.length) return emptyState('🌍', 'World table not loaded yet', 'EA’s global top 100 is fetched once a day – it appears after the next update.');
+  const sr = num(homeC?.overall?.skillRating), cut = w.clubs.at(-1).sr, me = w.clubs.find((c) => c.id === homeId);
+  const logo = (c) => (clubs.has(c.id) ? crest(c.id, 22, '') : c.crest ? `<img class="crest" src="${CREST_CDN}${num(c.crest)}.png" width="22" height="22" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '');
+  const name = (c) => (clubHref(c.id, '') ? `<a href="${clubHref(c.id, '')}">${esc(c.name)}</a>` : esc(c.name));
+  return `<section class="stats world-stats">${me ? counter('World rank', me.rank, { text: `#${me.rank}` }) : ''}${counter(`${esc(config.siteTitle)} SR`, sr)}${counter('#1 skill rating', w.clubs[0].sr)}${counter('#100 cut-off', cut)}${me ? '' : counter('SR to the top 100', Math.max(0, cut - sr + 1))}</section>
+<p class="world-verdict">${me ? `🌍 <b>${esc(config.siteTitle)}</b> is <b>#${me.rank}</b> in the world – ${me.sr - cut} SR above the cut-off.` : `🎯 <b>${Math.max(0, cut - sr + 1)} SR</b> to break into the world top 100 (we're on ${sr}, #100 has ${cut}).`}</p>
+${table('world-top', ['#Rank', 'Club', '#SR', '#GP', 'W-D-L', '#Win %', '#Goals/gm', '#Clean sh.', '#Div'], w.clubs.map((c) =>
+    `<tr${c.id === homeId ? ' class="world-me"' : ''}>${td(c.rank, true)}${td(`${logo(c)} ${name(c)}`, false, c.name.toLowerCase())}${td(`<b>${c.sr}</b>`, true, c.sr)}${td(c.gp, true)}${td(`${c.w}-${c.d}-${c.l}`, false, c.w)}${td(pct(c.w, c.gp) + '%', true, pct(c.w, c.gp))}${td(c.gp ? (c.gf / c.gp).toFixed(2) : '–', true, c.gp ? c.gf / c.gp : 0)}${td(c.cs, true)}${td(c.div ?? '–', true, c.div ?? 99)}</tr>`), { filter: 'Search clubs…' })}
+${worldCompareHtml(w, me, sr)}
+<p class="muted small">All-time skill rating from EA, updated ${esc(new Date(w.fetchedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }))}. Every platform of this generation in one table.</p>`;
+}
+
+// P9.2: pick any club in the world top 100 and compare it with NOREX on the same numbers. The club list is
+// embedded as JSON; app.js's "world compare" block draws the bars, so there's no extra request.
+function worldCompareHtml(w, me, sr) {
+  const pickable = (c) => ({ id: c.id, name: c.name, rank: c.rank, sr: c.sr, gp: c.gp, w: c.w, d: c.d, l: c.l, gf: c.gf, ga: c.ga, cs: c.cs, div: c.div ?? null });
+  const home = me ? { ...pickable(me), name: config.siteTitle } : { id: homeId, name: config.siteTitle, rank: null, sr, gp: null, w: null, d: null, l: null, gf: null, ga: null, cs: null, div: null };
+  const defaultId = me && me.rank > 1 ? w.clubs.find((c) => c.rank === me.rank - 1)?.id : w.clubs[1]?.id ?? w.clubs[0].id;
+  const data = JSON.stringify({ home, clubs: w.clubs.map(pickable) }).replace(/</g, '\\u003c');
+  const options = w.clubs.map((c) => `<option value="${esc(c.id)}"${c.id === defaultId ? ' selected' : ''}>#${c.rank} ${esc(c.name)}</option>`).join('');
+  return `<div class="card world-cmp" data-worldcmp>
+<h3>⚔️ Compare with any world top 100 club</h3>
+<label class="world-cmp-pick small muted">Club <select data-worldcmp-pick>${options}</select></label>
+<div class="world-cmp-out" data-worldcmp-out></div>
+<script type="application/json" data-worldcmp-data>${data}</script>
+</div>`;
+}
+const LH = { write, page, pageHead, section, modes, esc, emptyState, pLink, clubName, config, brand, MEMBER_API, STARS, leaderboard: homeC?.leaderboard, world: worldHtml(), evSince: EV_SINCE };
 const lm = leagueMatches({ homeMatches, homeId, isHidden: (pid) => !!players.get(pid)?.hidden, oppOf, result });
 buildLeaders(LH, lm);
 buildHallOfFame(LH, lm, { recs });
@@ -693,16 +1180,17 @@ write('stats.html', page({ title: `Stats – ${config.siteTitle}`, base: '', act
 ${pageHead('Stats centre', "League leaderboards use EA's club totals; records and head-to-heads come from the match archive. Rush numbers come from results logged by members and confirmed by a manager.", '')}
 ${modes(`${section('Leaderboards', `<div class="tabs chipset" data-tabs>${boards.map(([k], i) => `<button class="chip${i ? '' : ' on'}" type="button" data-tab="lb${i}">${k}</button>`).join('')}</div>
 ${boards.map(([, f, fmt], i) => `<div class="tab-panel card" id="lb${i}"${i ? ' hidden' : ''}>${barList(hm.map(({ pl, s }) => ({ pl, v: f(s) })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 10), { base: '', fmt: fmt ?? ((v) => v) })}</div>`).join('')}`)}
-${recs.length ? section('Club records', `<div class="records">${recs.join('')}</div>`, { sub: 'from the archive' }) : ''}
+${recs.length ? section('Club records', `<div class="records">${recs.join('')}</div><div data-nx-insight="club.records" hidden></div>`, { sub: 'from the archive' }) : ''}
 ${section('Head to head', table('h2h', ['Opponent', '#P', '#W', '#D', '#L', '#GF', '#GA', '#GD', 'Last'], [...h2h.values()].sort((a, b) => b.p - a.p).map((e) =>
-    `<tr>${td(`${crest(e.o, 22, '')} ${clubLink(e.o, '')}`)}${td(e.p, true)}${td(e.w, true)}${td(e.d, true)}${td(e.l, true)}${td(e.gf, true)}${td(e.ga, true)}${td((e.gf - e.ga > 0 ? '+' : '') + (e.gf - e.ga), true, e.gf - e.ga)}${td(`<a href="matches/${e.last.matchId}.html">${resPill(result(e.last.clubs[homeId]))} ${scoreOf(e.last)}</a>`)}</tr>`), { filter: 'Search opponents…' }))}`, 'leaders')}
+    `<tr data-h2h="${esc(e.o)}" tabindex="0" title="Click for the head-to-head insight">${td(`${crest(e.o, 22, '')} ${clubLink(e.o, '')}`)}${td(e.p, true)}${td(e.w, true)}${td(e.d, true)}${td(e.l, true)}${td(e.gf, true)}${td(e.ga, true)}${td((e.gf - e.ga > 0 ? '+' : '') + (e.gf - e.ga), true, e.gf - e.ga)}${td(`<a href="matches/${e.last.matchId}.html">${resPill(result(e.last.clubs[homeId]))} ${scoreOf(e.last)}</a>`)}</tr>`), { filter: 'Search opponents…' }) + '<div data-nx-h2h-insight hidden></div>')}`, 'leaders')}
 ${advancedSection(LH, lm)}
 <p class="muted small">🏆 Monthly tables, Player of the Month and Best XI: <a href="leaders.html">Leaderboards</a> · 🏛️ <a href="halloffame.html">Hall of Fame</a></p>` }));
 
 write('compare.html', page({ title: `Compare – ${config.siteTitle}`, base: '', active: 'compare', body: `
 ${pageHead('Head to head', "Pick any two players, from NOREX or anyone we've faced. Radar values are percentiles against every tracked player with 3+ games.", '')}
 <div class="cmp-pick card"><label>Player A<input list="cmp-list" id="cmp-a" placeholder="Type a gamertag…" autocomplete="off"></label><span class="vs">VS</span><label>Player B<input list="cmp-list" id="cmp-b" placeholder="Type a gamertag…" autocomplete="off"></label><datalist id="cmp-list"></datalist></div>
-<div id="cmp-out" class="cmp-out"><p class="muted">Loading players…</p></div>` }));
+<div id="cmp-out" class="cmp-out"><p class="muted">Loading players…</p></div>
+<div class="nx-insight-slot" data-nx-cmp-insight hidden></div>` }));
 
 for (const pl of visiblePlayers) {
   const st = pl.main && num(pl.main.gamesPlayed) ? { gp: num(pl.main.gamesPlayed), g: num(pl.main.goals), a: num(pl.main.assists), r: num(pl.main.ratingAve) } : pl.arch && { gp: pl.arch.gp, g: pl.arch.g, a: pl.arch.a, r: pl.arch.r };
@@ -761,11 +1249,9 @@ ${RECRUIT.open ? `<p class="about-links"><a class="btn" href="apply.html">👑 A
 <li><b>Linked clubs</b> (${linked.length}): other clubs our players also play for, found automatically by scanning squads.</li>
 <li><b>Opponents</b>: every club we play gets a page with its squad and record.</li>
 <li><b>Players</b>: a card and profile for anyone who appears in any of the above.</li></ul>
-<h2>Play for another club?</h2>
-<p>If a club of yours isn't showing up yet, tell a manager its name and we'll add it. Its matches get archived from then on.</p>
-<p>${askManager}</p>
-<h2>Don't want to be listed?</h2>
-<p>Send a manager your gamertag and you'll be hidden from every page on the next update.</p>
+<h2 id="requests">Play for another club? Don't want to be listed?</h2>
+<p>If a club of yours isn't showing up yet, we can add it – its matches get archived from then on. And if you'd rather not appear on this site, we hide your gamertag from every page on the next update.</p>
+<div id="request-forms" data-flag="requests" hidden></div>
 <p>${askManager}</p>
 <p class="muted">Tracking ${clubs.size} clubs · ${visiblePlayers.length} players · ${matches.length} archived matches · ${Object.keys(state.scanned ?? {}).length} clubs scanned.</p>
 </div>` }));
@@ -774,10 +1260,28 @@ ${RECRUIT.open ? `<p class="about-links"><a class="btn" href="apply.html">👑 A
 buildUpdates({ write, page, pageHead, section, esc, emptyState, config });
 // Archetype builder sandbox (PB.2) – builder-page.mjs, client in web/builder.js.
 buildBuilder({ write, page, pageHead, esc, emptyState, config });
+// Pro Builds board (PB.3) – probuilds-page.mjs, client in web/probuilds.js + web/buildcard.js.
+buildProBuilds({ write, page, pageHead, esc, emptyState, config });
+// Club docs (P5.2) + Play Style (P5.1) – docs-page.mjs, client in web/docs.js + web/docs-md.js.
+if (MEMBER_API) buildDocs({ write, page, pageHead, esc, emptyState, config });
+// Club feed (P6.1) – feed-page.mjs, client in web/feed.js (+ web/docs-md.js for links and embeds).
+if (MEMBER_API) buildFeed({ write, page, pageHead, emptyState, config });
+if (MEMBER_API) buildHub({ write, page, pageHead, emptyState, config });
+if (MEMBER_API) buildMessages({ write, page, pageHead, emptyState, config });
+if (MEMBER_API) buildTactics({ write, page, pageHead, emptyState, config });
+// Burner-club tracker: data/burners/ (kept apart from the NOREX archive) → burners.html + the bot's compact feed.
+const burnerList = loadBurners(DATA, readJson);
+const burnerHomeNames = new Set((clubs.get(homeId)?.members ?? []).map((m) => String(m.name).toLowerCase()).filter((n) => n && !hidden.has(n)));
+const burnerNorex = { // "what if" view only: the first division's own record + players, read-only copies (never written back)
+  rec: { gp: num(homeC?.overall?.gamesPlayed), w: num(homeC?.overall?.wins), d: num(homeC?.overall?.ties), l: num(homeC?.overall?.losses), gf: num(homeC?.overall?.goals), ga: num(homeC?.overall?.goalsAgainst) },
+  players: (homeC?.members ?? []).filter((m) => m.name && !hidden.has(String(m.name).toLowerCase())).map((m) => ({ n: String(m.name), gp: num(m.gamesPlayed), g: num(m.goals), a: num(m.assists), motm: num(m.manOfTheMatch), rating: num(m.ratingAve) })),
+};
+buildBurners({ write, page, pageHead, section, emptyState, esc, table, td, counter, ratingPill, resPill, config, homeNames: burnerHomeNames, norex: burnerNorex, playerLink: (n) => pLinkByName(n, '') }, burnerList);
+write('api/burners.json', JSON.stringify(burnersFeed(burnerList)));
 
 // JSON API for search, the compare tool and the Discord bot.
 write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
-  k: pl.key, n: pl.name, home: pl.isHome || pl.playedForHome, pos: pl.pos || '—', ovr: pl.ovr,
+  k: pl.key, n: pl.name, home: pl.isHome || pl.playedForHome, pos: pl.pos || '—', ovr: pl.ovr, tag: pl.tag,
   c: pl.clubIds.map((c) => clubName(c)), cid: pl.mainClub, crest: pl.mainClub ? crestSrc(pl.mainClub, SITE) : null,
   ...(pl.main && num(pl.main.gamesPlayed)
     ? { s: { gp: num(pl.main.gamesPlayed), g: num(pl.main.goals), a: num(pl.main.assists), r: num(pl.main.ratingAve), m: num(pl.main.manOfTheMatch), p: num(pl.main.passSuccessRate), t: num(pl.main.tackleSuccessRate), w: num(pl.main.winRate) }, src: 'club' }
@@ -786,7 +1290,52 @@ write('api/players.json', JSON.stringify(visiblePlayers.map((pl) => ({
   car: pl.career ? { gp: num(pl.career.gamesPlayed), g: num(pl.career.goals), a: num(pl.career.assists), r: num(pl.career.ratingAve), m: num(pl.career.manOfTheMatch) } : null,
   rad: pl.radar, raw: pl.radarRaw, tr: [...pl.apps].reverse().slice(-15).map((x) => x.rating),
 }))));
+// Personal match log for the Squad Hub dashboard (P2.6) and achievements (P2.3 / P4.3): our players' League
+// matches for NOREX, oldest → newest, compact rows (see cols). grp = position group from EA's app position.
+// dri/sa = dribbles / second assists (P1.8), null for games archived before they were kept.
+const SQUAD_COLS = ['ts', 'res', 'g', 'a', 'r', 'motm', 'shots', 'pass', 'passAtt', 'tkl', 'tklAtt', 'saves', 'gf', 'ga', 'grp', 'dri', 'sa'];
+const GRP = { goalkeeper: 'GK', defender: 'DEF', midfielder: 'MID', forward: 'FWD', attacker: 'FWD' };
+write('api/squad.json', JSON.stringify({
+  cols: SQUAD_COLS,
+  players: Object.fromEntries(visiblePlayers.filter((pl) => pl.isHome || pl.playedForHome).map((pl) => [pl.key, pl.apps.filter((x) => x.clubId === homeId).slice(0, 300).reverse()
+    .map((x) => [x.ts, x.res, x.goals, x.assists, x.rating, x.mom ? 1 : 0, x.shots, x.passes, x.passAtt, x.tackles, x.tackleAtt, x.saves, x.gf, x.ga, GRP[x.pos] ?? '', x.dribbles, x.sa])]).filter(([, l]) => l.length)),
+}));
 write('api/clubs.json', JSON.stringify([...clubs.values()].map((c) => ({ id: c.id, n: clubName(c.id), t: state.clubs[c.id]?.tier ?? 'archived', ...(clubKit(c.id)?.crestAssetId ? { cr: crestSrc(c.id, SITE) } : {}) }))));
+// P9.2: global rankings – EA's world top 100 with Norex's rank, the cut-off and per-club rates (scripts/rankings.mjs)
+// Every club NOREX has met (any mode, friendlies included) with the latest result against each – the bot's /burner search + recent read this
+// because EA blocks the Worker's own network (see bot/burners.js).
+{
+  const seenOpp = new Map();
+  for (const m of allMatches) {
+    if (!m.clubs?.[homeId]) continue;
+    const o = oppOf(m, homeId);
+    if (!o || seenOpp.has(o)) continue;
+    seenOpp.set(o, { id: String(o), n: clubName(o), cr: clubKit(o)?.crestAssetId ? String(clubKit(o).crestAssetId) : null, ts: num(m.timestamp), type: m.matchType ?? 'leagueMatch', res: result(m.clubs[homeId]), gf: num(m.clubs[homeId].goals), ga: num(m.clubs[o].goals) });
+  }
+  write('api/opponents.json', JSON.stringify([...seenOpp.values()].slice(0, 60)));
+  // …and the clubs one of NOREX's gamertags is also on (the crawl's "linked" tier) – what /burner recent lists
+  write('api/linked.json', JSON.stringify(Object.entries(state.clubs)
+    .filter(([id, c]) => id !== String(homeId) && Array.isArray(c.linkedPlayers) && c.linkedPlayers.length)
+    .map(([id, c]) => ({ id: String(id), n: clubName(id), cr: clubKit(id)?.crestAssetId ? String(clubKit(id).crestAssetId) : null, p: c.linkedPlayers }))
+    .sort((a, b) => b.p.length - a.p.length || a.n.localeCompare(b.n)).slice(0, 60)));
+}
+write('api/rankings.json', JSON.stringify(buildRankings(readJson(path.join(DATA, 'world.json'), null), homeId, num(homeC?.overall?.skillRating) || null)));
+// P11.16 /history: League-only head-to-head record per opponent, same numbers as the Stats Centre's own
+// "Head to head" table – exposed here so the Discord command doesn't need to scrape the HTML.
+// D2: the same club records as the Club records section, as plain numbers for the insight writer (api/records.json).
+write('api/records.json', JSON.stringify(homeMatches.length ? {
+  games: homeMatches.length,
+  biggestWin: bigWin && margin(bigWin) > 0 ? { score: scoreOf(bigWin), opponent: clubName(oppOf(bigWin, homeId)) } : null,
+  heaviestDefeat: bigLoss && margin(bigLoss) < 0 ? { score: scoreOf(bigLoss), opponent: clubName(oppOf(bigLoss, homeId)) } : null,
+  longestWinStreak: Math.max(bestStreak, num(homeC?.overall?.wstreak)),
+  hatTricks: hatTricks.length,
+  hatTrickPlayers: [...new Set(hatTricks.map((x) => x.p.playername))].slice(0, 3),
+  bestMatch: Object.fromEntries([['rating', 'rating'], ['goals', 'goals'], ['assists', 'assists'], ['saves', 'saves']].map(([k, f]) => { const r = recBest((p) => num(p[f])); return [k, r && num(r.p[f]) ? { value: k === 'rating' ? +num(r.p[f]).toFixed(1) : num(r.p[f]), player: r.p.playername } : null]; })),
+} : null));
+write('api/h2h.json', JSON.stringify([...h2h.values()].map((e) => ({
+  o: e.o, n: clubName(e.o), p: e.p, w: e.w, d: e.d, l: e.l, gf: e.gf, ga: e.ga,
+  lastId: e.last.matchId, lastRes: result(e.last.clubs[homeId]), lastScore: scoreOf(e.last),
+})).sort((a, b) => b.p - a.p)));
 const ho = { ...(homeC?.overall ?? {}), ...(homeC?.leaderboard ?? {}) };
 write('api/club.json', JSON.stringify({
   name: clubName(homeId), url: SITE, crest: `${SITE}assets/crest.png`, color: RED, division: ho.currentDivision, skill: ho.skillRating,
@@ -797,7 +1346,10 @@ write('api/club.json', JSON.stringify({
     const l = Object.values(m.players?.[homeId] || {});
     return { id: m.matchId, ts: m.timestamp, opp: clubName(o), oppCrest: crestSrc(o, SITE), gf: num(m.clubs[homeId].goals), ga: num(m.clubs[o].goals), res: result(m.clubs[homeId]),
       scorers: l.filter((p) => num(p.goals)).map((p) => ({ n: p.playername, g: num(p.goals) })), motm: l.find((p) => p.mom === '1')?.playername ?? null, url: `${SITE}matches/${m.matchId}.html`,
-      ps: Object.entries(m.players?.[homeId] || {}).filter(([pid]) => !players.get(pid)?.hidden).map(([pid, p]) => ({ k: pid, n: p.playername, r: num(p.rating) })) };
+      ps: Object.entries(m.players?.[homeId] || {}).filter(([pid]) => !players.get(pid)?.hidden)
+      // ps: per-player line for the bot's "Show my match" card (P7.2) – rating, goals, assists, passes, tackles, shots, saves.
+      .map(([pid, p]) => ({ k: pid, n: p.playername, r: num(p.rating), g: num(p.goals), a: num(p.assists), pm: num(p.passesmade), pa: num(p.passattempts),
+        tm: num(p.tacklesmade), ta: num(p.tackleattempts), sh: num(p.shots), sv: num(p.saves), pos: p.pos ?? '', mom: p.mom === '1' ? 1 : 0 })) };
   }),
   radarAxes: RADAR.map((a) => a.label),
   apply: RECRUIT.open ? `${SITE}apply.html` : null,

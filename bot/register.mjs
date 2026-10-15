@@ -1,25 +1,27 @@
 // Registers the bot's slash commands with Discord. Run by .github/workflows/bot.yml
 // (needs DISCORD_APP_ID and DISCORD_BOT_TOKEN), so no PC is required.
+import { COMMANDS, buildRegistration } from './commanddefs.js';
+
 const { DISCORD_APP_ID: app, DISCORD_BOT_TOKEN: token } = process.env;
 if (!app || !token) {
   console.error('Missing DISCORD_APP_ID or DISCORD_BOT_TOKEN');
   process.exit(1);
 }
 
-const STRING = 3, INTEGER = 4;
-const player = (name, description) => ({ type: STRING, name, description, required: true, autocomplete: true });
-const commands = [
-  { name: 'club', description: 'Club record, division and form' },
-  { name: 'last', description: 'The latest result' },
-  { name: 'results', description: 'Recent results', options: [{ type: INTEGER, name: 'count', description: 'How many (max 10)', min_value: 1, max_value: 10 }] },
-  { name: 'player', description: "A player's stats card", options: [player('gamertag', 'Start typing a gamertag')] },
-  { name: 'compare', description: 'Compare two players', options: [player('player1', 'First player'), player('player2', 'Second player')] },
-  {
-    name: 'top', description: 'Club leaderboards',
-    options: [{ type: STRING, name: 'stat', description: 'Which leaderboard', choices: ['goals', 'assists', 'ga', 'rating', 'motm', 'games'].map((v) => ({ name: v === 'ga' ? 'goals + assists' : v, value: v })) }],
-  },
-  { name: 'site', description: 'Link to the club website' },
-];
+// The owner's per-command settings (Boardroom → Bot) decide what gets registered: switched-off commands are left out and
+// manager/owner-only ones are hidden from members in Discord. Read from the Worker with the same key fetch.mjs uses.
+async function loadCommandSettings() {
+  const secret = process.env.DISCORD_CLIENT_SECRET;
+  try {
+    const { createHash } = await import('node:crypto');
+    const api = JSON.parse((await import('node:fs')).readFileSync(new URL('../config.json', import.meta.url), 'utf8')).members?.api;
+    if (!secret || !api) return {};
+    const key = createHash('sha256').update(`${secret}:norex-bot-settings`).digest('hex');
+    const r = await fetch(`${api.replace(/\/$/, '')}/api/bot/settings/public`, { signal: AbortSignal.timeout(10000), headers: { 'X-Norex-Key': key } });
+    return r.ok ? ((await r.json()).commands ?? {}) : {};
+  } catch (e) { console.warn('Command settings not loaded:', e.message); return {}; }
+}
+const commands = buildRegistration(COMMANDS, await loadCommandSettings());
 
 const res = await fetch(`https://discord.com/api/v10/applications/${app}/commands`, {
   method: 'PUT',

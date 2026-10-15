@@ -2,7 +2,7 @@
 //
 // Tiers:
 //   home       – your club, fetched every run, full match history kept
-//   manual     – clubs added via config.extraClubIds or the "Add a club" issue form
+//   manual     – clubs added via config.extraClubIds or a "Track another club" request approved by a manager (P5.6)
 //   linked     – clubs one of your members also plays for (found automatically)
 //   discovered – clubs found by crawling opponents; only squad + career stats kept
 //
@@ -15,7 +15,9 @@
 // members' other clubs and to fill in stats for players you meet.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJson, writeJson, loadConfig, num, sleep } from './lib.mjs';
+import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, loadBurners, loadCrawlCursor, saveCrawlSlice, num, sleep, eventCounts } from './lib.mjs';
+import { MAX_BURNERS, burnerStats, mergeMatches, reportMessage, slimBurnerMatch, updateRoster } from '../bot/burnerstats.js';
+import { postResults } from './lib/resultpost.mjs';
 
 const API = 'https://proclubs.ea.com/api/fc/';
 const HEADERS = {
@@ -83,7 +85,7 @@ function slimMatch(m, matchType) {
     for (const [pid, p] of Object.entries(list)) {
       const { match_event_aggregate_0, match_event_aggregate_1, match_event_aggregate_2,
         match_event_aggregate_3, vproattr, vprohackreason, ...keep } = p;
-      players[clubId][pid] = keep;
+      players[clubId][pid] = { ...keep, ...eventCounts(match_event_aggregate_0) };
     }
   }
   const clubs = {};
@@ -134,7 +136,8 @@ async function fetchClub(id) {
   }
 
   if (full) {
-    for (const matchType of ['leagueMatch', 'playoffMatch']) {
+    // Club friendlies (P1.8) only for the home club – a third mode on the site, never mixed into League totals.
+    for (const matchType of id === homeId ? ['leagueMatch', 'playoffMatch', 'friendlyMatch'] : ['leagueMatch', 'playoffMatch']) {
       const matches = (await api('clubs/matches', { clubIds: id, matchType })) || [];
       for (const m of matches) {
         Object.keys(m.clubs || {}).forEach((o) => o !== id && opponents.add(o));
@@ -144,6 +147,7 @@ async function fetchClub(id) {
         const file = path.join(DATA, 'matches', `${m.matchId}.json`);
         if (fs.existsSync(file)) continue;
         writeJson(file, slimMatch(m, matchType));
+        if (matchType === 'friendlyMatch') continue; // no Discord post, no link/discovery from friendlies
         if (id === homeId) newHomeMatches.push(m);
         if (id === homeId) Object.keys(m.players?.[id] || {}).forEach((pid) => homePlayerIds.add(pid));
         // A home player appearing for another club in an archived match links that club.
@@ -188,50 +192,175 @@ async function fetchClub(id) {
   return record;
 }
 
+// P1.8 – EA's global top 100 by skill rating, once a day → data/world.json (Leaderboards page).
+async function fetchWorld() {
+  const file = path.join(DATA, 'world.json');
+  if (readJson(file, {}).fetchedAt?.slice(0, 10) === now.slice(0, 10)) return;
+  const list = await api('allTimeLeaderboard', {}).catch((e) => (console.warn(`World top 100: ${e.message}`), null));
+  if (!Array.isArray(list) || !list.length) return;
+  writeJson(file, {
+    fetchedAt: now,
+    clubs: list.slice(0, 100).map((c) => ({
+      rank: num(c.rank), id: String(c.clubId), name: c.clubName ?? c.clubInfo?.name ?? '', crest: c.clubInfo?.customKit?.crestAssetId ?? null,
+      sr: num(c.skillRating), gp: num(c.gamesPlayed), w: num(c.wins), d: num(c.ties), l: num(c.losses), gf: num(c.goals), ga: num(c.goalsAgainst),
+      cs: num(c.cleanSheets), div: num(c.currentDivision) || null, rep: num(c.reputationtier),
+    })),
+  });
+  console.log(`World top 100 saved (#100 = SR ${num(list.at(-1)?.skillRating)})`);
+}
+
+// P9.1 – resumable club-ID crawl: a small slice of EA's sequential club-ID range every run, checkpointed in
+// D1 via the Worker (this script has no D1 access) so the crawl survives across many 10-minute runs without
+// any single one needing to cover the whole range. Lightweight rows only (id, name, crest) – clubs already
+// tracked elsewhere are skipped (they already have full detail); clubs with no current-game data are simply
+// left out, one-match clubs are kept like any other.
+async function crawlSlice() {
+  const checkpoint = await loadCrawlCursor(config);
+  if (!checkpoint) return; // members API not configured – skip quietly
+  const size = config.crawl?.sliceSize ?? 15;
+  const start = checkpoint.cursor || 1;
+  const found = [];
+  for (let id = start; id < start + size; id++) {
+    const key = String(id);
+    if (key === homeId || state.clubs[key]) continue;
+    const info = await api('clubs/info', { clubIds: key }).catch(() => null);
+    const clubInfo = info?.[key];
+    if (clubInfo?.name) found.push({ id: key, name: clubInfo.name, crest: clubInfo.customKit?.crestAssetId ?? null });
+  }
+  const saved = await saveCrawlSlice(config, start + size, found);
+  if (saved) console.log(`Crawl: checked ${start}-${start + size - 1}, indexed ${found.length} (world total so far ${checkpoint.indexed + found.length})`);
+}
+
+let overrideHidden = []; // P5.6 "hide me" requests – kept out of the Discord post like on the site
+
+// New home results → Discord. In CI the post is deferred (NOREX_DEFER_RESULTS): the matches are written to .outbox/results.json and
+// scripts/post-results.mjs posts them after the site build and the Discord cards, so each result carries its score card and field view.
 async function postToDiscord() {
-  const hook = process.env.DISCORD_WEBHOOK;
-  if (!hook || !newHomeMatches.length) return;
+  if (!newHomeMatches.length) return;
+  const hidden = overrideHidden;
+  if (process.env.NOREX_DEFER_RESULTS) {
+    fs.mkdirSync('.outbox', { recursive: true });
+    fs.writeFileSync(path.join('.outbox', 'results.json'), JSON.stringify({ matches: newHomeMatches, hidden }));
+    return;
+  }
+  await postResults(newHomeMatches, { config, homeId, hidden });
+}
+// P5.6: clubs approved in the manager portal. Approved by name only → look the ID up once via EA's club search and
+// report it back. Clubs no longer requested (undone) drop back to 'discovered' – only when the list loaded.
+async function trackRequested() {
+  const o = await loadOverrides(config);
+  overrideHidden = o.hiddenPlayers;
+  if (!o.ok) return;
+  const resolved = [];
+  for (const c of o.clubs) {
+    let id = c.id;
+    if (!id) {
+      const hits = (await api('allTimeLeaderboard/search', { clubName: c.name }).catch(() => null)) || [];
+      id = hits.find((h) => String(h.clubName ?? h.clubInfo?.name ?? h.name ?? '').toLowerCase() === c.name.toLowerCase())?.clubId;
+      if (!id) { console.warn(`Requested club not found on EA: ${c.name}`); continue; }
+      resolved.push({ req: c.req, clubId: String(id) });
+    }
+    if (String(id) !== homeId) track(id, 'manual', { depth: 0 });
+    c.id = String(id);
+  }
+  if (resolved.length) await loadOverrides(config, { resolved });
+  const wanted = new Set([...(config.extraClubIds || []).map(String), ...o.clubs.map((c) => c.id).filter(Boolean)]);
+  for (const [id, c] of Object.entries(state.clubs)) if (c.tier === 'manual' && !wanted.has(id)) c.tier = 'discovered';
+}
+
+// Burner clubs (picked with the bot's /burner command, stored in D1) – a dedicated, self-contained store in
+// data/burners/<id>.json: club info, EA season numbers, squad + roster history and every match we've seen
+// (League, Playoff and Friendly), kept apart from the NOREX archive so they never touch League totals.
+// Matches that appear after a burner was first fetched get a stats report in Discord (see postBurnerReports).
+const burnerDir = path.join(DATA, 'burners');
+const burnerReports = [];
+
+async function fetchBurner(entry) {
+  const id = String(entry.id);
+  const file = path.join(burnerDir, `${id}.json`);
+  const prev = readJson(file, null);
+  const [info, overall, members, career] = await Promise.all([
+    api('clubs/info', { clubIds: id }),
+    api('clubs/overallStats', { clubIds: id }),
+    api('members/stats', { clubId: id }),
+    api('members/career/stats', { clubId: id }),
+  ]);
+  const clubInfo = info?.[id] ?? prev?.info ?? null;
+  if (!clubInfo?.name) throw new Error('club not found on EA');
+  const hits = (await api('allTimeLeaderboard/search', { clubName: clubInfo.name }).catch(() => null)) || [];
+  const hit = hits.find((h) => String(h.clubId) === id);
+  const incoming = [];
+  for (const matchType of ['leagueMatch', 'playoffMatch', 'friendlyMatch']) {
+    const list = (await api('clubs/matches', { clubIds: id, matchType }).catch(() => null)) || [];
+    for (const m of list) { const s = slimBurnerMatch(m, id, matchType); if (s) incoming.push(s); }
+  }
+  const matches = mergeMatches(prev?.matches, incoming);
+  const { roster, joined, left } = updateRoster(prev?.roster, members?.members ?? [], now);
+  if (joined.length || left.length) console.log(`  burner ${clubInfo.name}: joined ${joined.join(', ') || '–'} · left ${left.join(', ') || '–'}`);
+  // First fetch = silent (history only). After that every match not yet reported is a new report.
+  const known = new Set(prev ? prev.reported ?? [] : matches.map((m) => m.id));
+  const record = {
+    id, name: clubInfo.name, crest: clubInfo.customKit?.crestAssetId ?? null, trackedAt: prev?.trackedAt ?? now, fetchedAt: now,
+    channel: entry.channel ?? prev?.channel ?? null, info: clubInfo, overall: Array.isArray(overall) ? overall[0] ?? null : prev?.overall ?? null,
+    leaderboard: hit ? { currentDivision: hit.currentDivision, bestDivision: hit.bestDivision, points: hit.points } : prev?.leaderboard ?? null,
+    members: members?.members ?? prev?.members ?? [], career: career?.members ?? prev?.career ?? [], roster, matches, reported: [...known].slice(-200),
+  };
+  const stats = burnerStats(matches);
+  const day = 86400;
+  for (const m of [...matches].reverse()) {
+    if (known.has(m.id) || m.ts < Date.now() / 1000 - day) continue; // a missed report older than a day is not worth posting
+    burnerReports.push({ record, match: m, stats });
+  }
+  writeJson(file, record);
+  return record;
+}
+
+async function fetchBurners() {
+  const listed = await loadBurners(config);
+  const saved = readJson(path.join(burnerDir, 'index.json'), { ids: [] });
+  // Worker unreachable → keep tracking what we tracked last run instead of dropping everything.
+  const entries = listed.ok ? listed.burners : saved.ids.map((id) => ({ id }));
+  for (const id of config.burners?.ids || []) if (!entries.some((e) => String(e.id) === String(id))) entries.push({ id });
+  const ids = [];
+  for (const entry of entries.slice(0, MAX_BURNERS)) {
+    try {
+      const r = await fetchBurner(entry);
+      ids.push(String(entry.id));
+      console.log(`burner     ${r.name} (${r.matches.length} matches)`);
+    } catch (e) {
+      if (saved.ids.includes(String(entry.id))) ids.push(String(entry.id)); // keep it listed through a bad run
+      console.warn(`burner ${entry.id}: ${e.message}`);
+    }
+  }
+  if (listed.ok || ids.length) writeJson(path.join(burnerDir, 'index.json'), { ids });
+}
+
+// One embed per new burner match in the channel the manager tracked it from (config.burners.channel overrides).
+// Needs the bot token; a failed post is simply retried next run (the match stays unreported).
+async function postBurnerReports() {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token || !burnerReports.length) return;
   const site = config.siteUrl?.replace(/\/?$/, '/') ?? '';
-  const crestCdn = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
-  const embeds = newHomeMatches
-    .sort((a, b) => a.timestamp - b.timestamp)
-    .slice(-10)
-    .map((m) => {
-      const us = m.clubs[homeId];
-      const oppId = Object.keys(m.clubs).find((k) => k !== homeId);
-      const opp = m.clubs[oppId];
-      const res = us.wins === '1' ? 'W' : us.losses === '1' ? 'L' : 'D';
-      const ours = Object.values(m.players?.[homeId] || {});
-      const list = (f) => ours.filter((p) => num(p[f]) > 0).map((p) => `${p.playername}${num(p[f]) > 1 ? ` ×${p[f]}` : ''}`).join('\n');
-      const motm = Object.values(m.players || {}).flatMap((l) => Object.values(l)).find((p) => p.mom === '1');
-      const best = [...ours].sort((a, b) => num(b.rating) - num(a.rating))[0];
-      const oppCrest = opp.details?.customKit?.crestAssetId;
-      return {
-        title: `${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
-        url: site ? `${site}matches/${m.matchId}.html` : undefined,
-        color: { W: 0x22c55e, D: 0xeab308, L: 0xef4444 }[res],
-        description: res === 'W' ? '✅ **Victory**' : res === 'L' ? '❌ **Defeat**' : '➖ **Draw**',
-        thumbnail: { url: res === 'L' && oppCrest ? `${crestCdn}${oppCrest}.png` : `${site}assets/crest.png` },
-        fields: [
-          list('goals') && { name: '⚽ Goals', value: list('goals'), inline: true },
-          list('assists') && { name: '🎯 Assists', value: list('assists'), inline: true },
-          motm && { name: '⭐ Man of the match', value: `${motm.playername} (${num(motm.rating).toFixed(1)})`, inline: true },
-          best && { name: '📈 Our top rated', value: `${best.playername} (${num(best.rating).toFixed(1)})`, inline: true },
-        ].filter(Boolean),
-        timestamp: new Date(m.timestamp * 1000).toISOString(),
-        footer: { text: m.matchType === 'playoffMatch' ? 'Playoff match' : 'League match' },
-      };
-    });
-  await fetch(hook, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'NOREX UNITED', avatar_url: site ? `${site}assets/crest.png` : undefined, embeds }),
-  }).catch((e) => console.warn('Discord post failed:', e.message));
+  let posted = 0;
+  for (const { record, match, stats } of burnerReports.sort((a, b) => a.match.ts - b.match.ts)) {
+    const channel = config.burners?.channel || record.channel;
+    if (!channel) { console.warn(`Burner ${record.name}: no channel to post to – run /burner track in the channel you want the reports in.`); break; }
+    if (posted >= 4) break; // a catch-up never floods the channel; the rest follow next run
+    const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, {
+      method: 'POST', headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(reportMessage(record, match, stats, site)),
+    }).catch((e) => ({ ok: false, status: e.message }));
+    if (!r.ok) { console.warn(`Burner report failed (${r.status}) – the bot needs View Channel + Send Messages + Embed Links there.`); break; }
+    record.reported = [...new Set([...record.reported, match.id])].slice(-200);
+    writeJson(path.join(burnerDir, `${record.id}.json`), record);
+    posted++;
+  }
 }
 
 async function main() {
   track(homeId, 'home', { depth: 0 });
   for (const id of config.extraClubIds || []) track(id, 'manual', { depth: 0 });
+  await trackRequested();
 
   // Home first, so the roster is known before other clubs are checked for links.
   const home = await fetchClub(homeId);
@@ -261,7 +390,10 @@ async function main() {
     }
   }
 
+  await fetchWorld();
+  await crawlSlice();
   await postToDiscord();
+  await fetchBurners().then(postBurnerReports).catch((e) => console.warn(`Burner tracker skipped: ${e.message}`)); // never fails the run
   writeJson(stateFile, state);
   // One heartbeat per day keeps GitHub from pausing the schedule on quiet weeks.
   writeJson(path.join(DATA, 'meta.json'), { lastSuccessfulDay: now.slice(0, 10), platform });

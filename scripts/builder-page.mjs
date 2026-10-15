@@ -10,6 +10,6 @@ export function buildBuilder({ write, page, pageHead, esc, emptyState, config })
 <div data-flag="builder" hidden><div class="bd" data-builder><div data-bd-body><div class="card muted">⏳ Loading game data…</div></div></div></div>
 <div class="bd-soon">${emptyState('🧪', 'The Pro Builder is in the lab', 'We’re filling it with the FC 27 numbers from the in-game screens. It opens for everyone soon.')}</div>
 <p class="muted small">Planning tool made by ${esc(config.siteTitle)} from EA’s published rules and in-game values. Not affiliated with EA.</p>
-<link rel="stylesheet" href="assets/builder.css"><script src="assets/game.js" defer></script><script src="assets/build-math.js" defer></script><script src="assets/builder.js" defer></script>`,
+<link rel="stylesheet" href="assets/builder.css"><link rel="stylesheet" href="assets/probuilds.css"><script src="assets/game.js" defer></script><script src="assets/build-math.js" defer></script><script src="assets/builder.js" defer></script>`,
   }));
 }

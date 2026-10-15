@@ -1,0 +1,29 @@
+/* Owner issue tool (web/report.js) */
+.nxr-fab{position:fixed;z-index:9990;left:12px;bottom:calc(92px + env(safe-area-inset-bottom));width:46px;height:46px;border-radius:50%;border:1px solid var(--line2,#2a3342);background:var(--panel,#121821);color:#fff;font-size:21px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5);display:grid;place-items:center}
+@media (min-width:861px){.nxr-fab{bottom:16px}}
+.nxr-fab.on{background:#ff3b30;border-color:#ff3b30}
+.nxr-fab.unsent::after{content:'';position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#ffb300;border:2px solid var(--ink,#0b0f16)}
+.nxr-fab b{position:absolute;top:-6px;left:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red,#c8352c);color:#fff;font:700 11px/18px var(--body,sans-serif);text-align:center}
+.nxr-bar{position:fixed;z-index:9991;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top));display:flex;gap:2px;padding:5px;border-radius:14px;background:rgba(10,14,20,.94);border:1px solid var(--line2,#2a3342);box-shadow:0 10px 30px rgba(0,0,0,.55);max-width:calc(100vw - 16px);backdrop-filter:blur(10px)}
+.nxr-bar button{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:44px;padding:5px 6px;border:0;border-radius:10px;background:none;color:#fff;cursor:pointer}
+.nxr-bar button span{font-size:18px;line-height:1.1}
+.nxr-bar button small{font:600 9.5px var(--body,sans-serif);opacity:.75}
+.nxr-bar button.on{background:#ff3b30}
+.nxr-cv{position:fixed;z-index:9988;left:0;top:0;touch-action:none;cursor:crosshair}
+.nxr-pins{position:absolute;left:0;top:0;z-index:9980;pointer-events:none;overflow:visible}
+.nxr-sheet{position:fixed;z-index:9993;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;padding:12px;border-radius:16px;background:rgba(10,14,20,.97);border:1px solid #ff3b30;box-shadow:0 14px 40px rgba(0,0,0,.65);color:#fff;font:14px var(--body,sans-serif)}
+.nxr-head{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;margin-bottom:8px}
+.nxr-head b{color:#ff3b30;font:700 18px var(--head,Oswald,sans-serif)}
+.nxr-head small{width:100%;opacity:.65}
+.nxr-sev{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.nxr-sev input{position:absolute;opacity:0;pointer-events:none}
+.nxr-sev span{display:inline-block;padding:5px 10px;border-radius:999px;border:1px solid var(--line2,#2a3342);font-size:13px;cursor:pointer}
+.nxr-sev input:checked+span{background:#ff3b30;border-color:#ff3b30}
+.nxr-sheet textarea{width:100%;box-sizing:border-box;padding:9px;border-radius:10px;border:1px solid var(--line2,#2a3342);background:var(--ink,#0b0f16);color:#fff;font:16px var(--body,sans-serif);resize:vertical}
+.nxr-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+.nxr-sp{flex:1}
+.nxr-row button{padding:9px 14px;border-radius:10px;border:1px solid var(--line2,#2a3342);background:none;color:#fff;font:600 14px var(--body,sans-serif);cursor:pointer}
+.nxr-row .nxr-ok{background:#ff3b30;border-color:#ff3b30}
+.nxr-row .nxr-mic.live{background:#ff3b30;border-color:#ff3b30}
+/* the tool's own chrome never takes part in what it measures, and the page can't be zoomed while marking */
+.nxr-open{touch-action:manipulation}

@@ -1,0 +1,68 @@
+{
+ "slug": "fc-27-the-grounds-developer-launch-update",
+ "title": "EA SPORTS FC™ 27 | The Grounds Developer Launch Update",
+ "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/fc-27-the-grounds-developer-launch-update",
+ "published": "2026-10-02T17:00:00.000+01:00",
+ "summary": "Hear directly from the The Grounds development team following the launch of EA SPORTS FC™ 27, covering early feedback and what we’re working on. ",
+ "clubs": true,
+ "sections": [
+  {
+   "id": "s0",
+   "title": "Overview",
+   "cat": "clubs",
+   "subs": [],
+   "summary": "It’s been great to see players jump into The Grounds, meet other players, and spend time across the different in-world activities. So far, we’re seeing plenty of activity around small-sided football, including 1v1, 2v2, 3v3, and In-World Rush.",
+   "keys": [
+    "rush"
+   ]
+  },
+  {
+   "id": "s1",
+   "title": "What We’re Hearing From You",
+   "cat": "clubs",
+   "subs": [
+    "Winner Stays and Win Streaks",
+    "Kickabout Matchmaking and Queueing",
+    "Long-term Fatigue in Clubs 11v11",
+    "Menu Performance"
+   ],
+   "summary": "We’ve been monitoring your feedback closely, and there are a few topics that have come through particularly strongly. We’ve seen a lot of requests for a way for winners to stay on a pitch and build a streak.",
+   "keys": []
+  },
+  {
+   "id": "s2",
+   "title": "Other Quality-of-Life & Live Issues",
+   "cat": "clubs",
+   "subs": [],
+   "summary": "We’re continuing to address issues as they are identified, investigated, and ready to release. Some current examples include: 5-star skill moves not working in small-sided matches: A fix has been deployed.",
+   "keys": [
+    "skillPoints",
+    "archetype"
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "id": "fc-27-the-grounds-developer-launch-update#0-rush",
+   "kind": "rush",
+   "label": "Rush",
+   "section": "Overview",
+   "quote": "So far, we’re seeing plenty of activity around small-sided football, including 1v1, 2v2, 3v3, and In-World Rush."
+  },
+  {
+   "id": "fc-27-the-grounds-developer-launch-update#2-skillPoints",
+   "kind": "skillPoints",
+   "label": "Skill points",
+   "section": "Other Quality-of-Life & Live Issues",
+   "quote": "Incorrect Archetype Point costs for certain upgrades: We are investigating."
+  },
+  {
+   "id": "fc-27-the-grounds-developer-launch-update#2-archetype",
+   "kind": "archetype",
+   "label": "Archetypes",
+   "section": "Other Quality-of-Life & Live Issues",
+   "quote": "Incorrect Archetype Point costs for certain upgrades: We are investigating."
+  }
+ ],
+ "fetched": "2026-10-02T20:03:32.714Z"
+}

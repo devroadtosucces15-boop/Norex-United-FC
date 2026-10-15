@@ -11,7 +11,9 @@ const cap = seed.levelCap.value;
 const ev0 = M.evaluate(seed, { arch: 'finisher', level: cap, spent: {} });
 t('level cap from game data is the MAX', ev0.cap === cap && ev0.level === cap);
 t('level clamped to 1…cap', M.evaluate(seed, { arch: 'finisher', level: 999, spent: {} }).level === cap && M.evaluate(seed, { arch: 'finisher', level: 0, spent: {} }).level === 1);
-t('seed has no in-game numbers → preview flagged', ev0.status.preview);
+t('current seed has real archetype/AP/cost data → not a preview', !ev0.status.preview);
+const emptySeed = JSON.parse(fs.readFileSync(ROOT + 'data/game/fc27-launch.json', 'utf8'));
+t('a seed with empty archetypes/AP/costs still flags preview', M.evaluate(emptySeed, { arch: 'finisher', level: emptySeed.levelCap.value, spent: {} }).status.preview);
 t('AP total grows with level', M.apAt(seed, 1) < M.apAt(seed, 10) && M.apAt(seed, 10) < M.apAt(seed, cap));
 t('face stats + OVR present', ev0.face.length === 6 && ev0.ovr > 0);
 t('Finisher mastery at L10: +1 Finishing', M.evaluate(seed, { arch: 'finisher', level: 10, spent: {} }).rows.find((r) => r.name === 'Finishing').bonus === 1
@@ -42,11 +44,12 @@ t('share link without archetype → null', M.decode(g, 'l=5') === null);
 
 // (b) PlayStyles, Specializations, Facilities, Body
 const gb = { ...g, slots: { playstyles: 2, plus: 1, facilities: 1 },
-  playstyles: [{ id: 'finesse', name: 'Finesse Shot', plus: true }, { id: 'power', name: 'Power Shot', plus: true }, { id: 'trick', name: 'Trickster' }],
+  playstyles: [{ id: 'finesse', name: 'Finesse Shot', plus: true }, { id: 'power', name: 'Power Shot', plus: true }, { id: 'trick', name: 'Trickster', plus: false }, { id: 'plain', name: 'No flag in the data' }],
   specializations: [{ id: 'poacher', name: 'Poacher', archetypes: ['x'], bonus: { Finishing: 2 } }, { id: 'other', name: 'Other', archetypes: ['nope'], bonus: { Vision: 5 } }],
   facilities: [{ id: 'gym', name: 'Gym', bonus: { Strength: 3 } }, { id: 'track', name: 'Track', bonus: { 'Sprint Speed': 2 } }],
   body: { height: { min: 160, max: 200, def: 180 }, weight: { min: 60, max: 100, def: 75 }, heightMods: [{ from: 190, to: 200, mods: { Agility: -3, 'Heading Accuracy': 2 } }], weightMods: [] } };
 const c1 = M.choices(gb, { arch: 'x', ps: ['finesse', 'power', 'trick', 'bogus'], plus: ['trick', 'power'], sp: 'other', fa: ['gym', 'track'], h: 250, w: 0 });
+t('a PlayStyle with no plus flag in the data still takes a + (every PlayStyle has one in the game); plus:false opts out', M.choices(gb, { arch: 'x', ps: [], plus: ['plain'] }).plus.join() === 'plain' && M.choices(gb, { arch: 'x', ps: [], plus: ['trick'] }).plus.length === 0);
 t('choices: slot limits, unknown ids, + only where allowed', c1.plus.join() === 'power' && c1.ps.join() === 'finesse,trick' && c1.fa.join() === 'gym');
 t('choices: specialization must fit the archetype', c1.sp === null && M.choices(gb, { arch: 'x', sp: 'poacher' }).sp === 'poacher');
 t('choices: body clamped / defaulted', c1.h === 200 && c1.w === 75);
@@ -60,6 +63,23 @@ const bb = { arch: 'x', level: 5, spent: { Finishing: 1 }, ps: ['trick'], plus: 
 const back2 = M.decode(gb, M.encode(gb, bb));
 t('share link keeps PlayStyles, +, spec, facilities, body', back2.ps.join() === 'trick' && back2.plus.join() === 'power' && back2.sp === 'poacher' && back2.fa.join() === 'track' && back2.h === 192 && back2.w === 81);
 
+// Real-data extras (roadmap PB.1 community import): per-attribute cost tiers, per-archetype attribute
+// ceilings, and the new archetype/thresholds specialization shape - alongside the legacy shapes above.
+const gt = { ...g, archetypes: [{ id: 'y', name: 'Y', group: 'FWD', base: { Finishing: { base: 58, max: 80 }, Vision: { base: 58, max: 99 } } }],
+  costTiers: { hard: [{ from: 0, to: 60, cost: 1 }, { from: 60, to: 99, cost: 9 }] },
+  attributeCosts: { y: { Finishing: 'hard' } }, // Vision has no assigned tier -> falls back to the global apCosts curve
+  specializations: [{ id: 'spec-y', name: 'Spec Y', archetype: 'y', thresholds: { Vision: 70 }, grantsPlaystyle: 'ps1', perk: { name: 'Perk', desc: 'd' }, desc: 'Needs Vision 70 -> grants PS1' }] };
+t('attrTop: per-archetype ceiling below the global scale', M.attrTop(gt, M.archOf(gt, 'y'), 'Finishing') === 80 && M.attrTop(gt, M.archOf(gt, 'y'), 'Vision') === 99);
+t('stepCostFor: named tier picked over the global curve', M.stepCostFor(gt, M.archOf(gt, 'y'), 'Finishing', 65) === 9 && M.stepCostFor(gt, M.archOf(gt, 'y'), 'Finishing', 10) === 1);
+t('stepCostFor: falls back to the global curve when no tier is assigned', M.stepCostFor(gt, M.archOf(gt, 'y'), 'Vision', 10) === M.stepCost(gt, 10));
+const evy = M.evaluate(gt, { arch: 'y', level: 10, spent: { Finishing: 5 } });
+t('evaluate uses per-attribute tier cost and per-attribute cap', evy.rows.find((r) => r.name === 'Finishing').cost === M.costOfFor(gt, evy.arch, 'Finishing', 58, 5) && evy.rows.find((r) => r.name === 'Finishing').top === 80);
+t('canAdd respects the per-attribute ceiling', M.canAdd(gt, M.evaluate(gt, { arch: 'y', level: 40, spent: { Finishing: 22 } }), 'Finishing') === null); // 58+22=80=top
+t('specsFor: new archetype/thresholds shape alongside the legacy archetypes[] shape', M.specsFor(gt, 'y').map((s) => s.id).join() === 'spec-y' && M.specsFor(gb, 'x').map((s) => s.id).join() === 'poacher');
+
 const html = fs.readFileSync(`${ROOT}site/builder.html`, 'utf8');
 t('builder page built, behind the builder flag, with coming-soon fallback', html.includes('data-flag="builder"') && html.includes('bd-soon') && html.includes('assets/builder.js'));
+t('Builder nav link hidden behind the flag', /<a href="builder.html"[^>]*data-flag="builder" hidden>Builder<\/a>/.test(html));
+const js = fs.readFileSync(`${ROOT}site/assets/builder.js`, 'utf8');
+t('(c) save / my builds / compare / image / fork wired', ['data-save', 'data-mine', 'data-compare', 'data-image', 'data-fork', '/api/builds/fork'].every((k) => js.includes(k)));
 done();

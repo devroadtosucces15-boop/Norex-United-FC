@@ -60,7 +60,7 @@
     if (!G.data) return window.UI ? UI.skeleton('rows', 4) : '…';
     const { current: c, versions, pending, keys } = G.data;
     const cap = c.levelCap || {};
-    const fm = G.form ?? { version: bump(c.version), levelCap: cap.value ?? '', verified: !!cap.verified, source: cap.verified ? cap.source : '', note: '', changes: '', pending: null };
+    const fm = G.form ?? { version: bump(c.version), levelCap: cap.value ?? '', verified: !!cap.verified, source: cap.verified ? cap.source : '', note: '', changes: '', pending: null, notify: true };
     G.form = fm;
     const pend = pending.filter((p) => !p.same);
     return `<div class="ga">
@@ -76,6 +76,7 @@ ${pend.length ? `<div class="ga-pend">${pend.map((p) => `<div class="card ga-hit
 <label>Version name<input name="version" value="${esc(fm.version)}" maxlength="40" required pattern="[a-z0-9][a-z0-9.\\-]*" placeholder="fc27-tu2"></label>
 <label>Max level<input name="levelCap" type="number" min="1" max="200" value="${esc(fm.levelCap)}" required></label>
 <label class="ga-chk"><input name="verified" type="checkbox"${fm.verified ? ' checked' : ''}> Confirmed by an official EA note</label>
+<label class="ga-chk"><input name="notify" type="checkbox"${fm.notify !== false ? ' checked' : ''}> 🔔 Tell members (what changed + one-click build upgrade)</label>
 <label>Source link<input name="source" type="url" value="${esc(fm.source || '')}" placeholder="https://www.ea.com/games/ea-sports-fc/fc-27/news/…"></label>
 <label class="wide">Note<input name="note" value="${esc(fm.note)}" maxlength="300" placeholder="What changed, e.g. Title Update 2: cap raised"></label>
 <label class="wide">Changed values <small class="muted">(optional JSON – replaces these fields: ${keys.map(esc).join(', ')})</small><textarea name="changes" rows="5" spellcheck="false" placeholder='{"apPerLevel": [2, 2, 3]}'>${esc(fm.changes)}</textarea></label>
@@ -88,7 +89,7 @@ ${pend.length ? `<div class="ga-pend">${pend.map((p) => `<div class="card ga-hit
   function readForm(el) {
     const f = $('[data-ga-form]', el);
     if (!f) return;
-    G.form = { ...G.form, version: f.version.value.trim(), levelCap: f.levelCap.value, verified: f.verified.checked, source: f.source.value.trim(), note: f.note.value, changes: f.changes.value };
+    G.form = { ...G.form, version: f.version.value.trim(), levelCap: f.levelCap.value, verified: f.verified.checked, source: f.source.value.trim(), note: f.note.value, changes: f.changes.value, notify: f.notify.checked };
   }
 
   async function publish(el, ctx, extra = {}) {
@@ -98,7 +99,7 @@ ${pend.length ? `<div class="ga-pend">${pend.map((p) => `<div class="card ga-hit
     try {
       G.data = await ctx.call('/api/game/publish', body);
       G.form = null; cached = null;
-      ctx.toast(`Published ${body.version} – max level ${body.levelCap}`);
+      ctx.toast(`Published ${body.version} – max level ${body.levelCap}${G.data.told ? ` · ${G.data.told} member${G.data.told === 1 ? '' : 's'} told` : ''}`);
     } catch (e) { ctx.toast(e.message, true); }
     G.busy = false; draw(el);
   }
@@ -134,5 +135,9 @@ ${pend.length ? `<div class="ga-pend">${pend.map((p) => `<div class="card ga-hit
     }
   }
 
-  window.NXGame = { load, portal };
+  // PB.6: what changed from an older version to the live one (null when the Worker isn't reachable).
+  const diffs = new Map();
+  const changes = (from) => (diffs.has(from) ? diffs.get(from) : diffs.set(from, (API ? fetch(`${API}/api/game/changes?from=${encodeURIComponent(from)}`).then((r) => (r.ok ? r.json() : null)) : Promise.resolve(null)).catch(() => null)).get(from));
+
+  window.NXGame = { load, portal, changes };
 })();

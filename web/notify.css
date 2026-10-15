@@ -1,0 +1,59 @@
+/* Notification centre (P7.1) + club & privacy requests (P5.6). Injected by notify.js; the bell itself is in style.css. */
+.nt-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.nt-grid{grid-template-columns:minmax(0,1fr)}}
+.nt-side{display:grid;gap:18px;min-width:0}
+.nt-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.nt-head h3{margin:0}.nt-head .btn{margin:0}
+.nt-list .chipset{margin-bottom:12px}
+.nt-items{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.nt-items .nf{cursor:default;border:1px solid var(--line);background:var(--panel2);align-items:flex-start;flex-wrap:wrap;transition:border-color .2s,transform .2s}
+.nt-items .nf:hover{border-color:var(--line2)}
+.nt-items .nf.unread{border-left:3px solid var(--red)}
+.nt-items .nf.unread::after{display:none}
+.nt-items .nf.due{border-color:color-mix(in srgb,var(--gold) 60%,transparent);background:color-mix(in srgb,var(--gold) 7%,var(--panel2))}
+.nt-items .nf-t{flex:1;min-width:0}
+.nt-items .nf-t p{margin:4px 0 2px;color:#cfd5de;font-size:14px;overflow-wrap:anywhere}
+.nf-do{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.nf-do .btn{margin:0}
+.nt-warn{padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--gold) 10%,var(--panel2));border:1px solid color-mix(in srgb,var(--gold) 40%,transparent);font-size:13px}
+.nt-prefs{display:grid;gap:10px;margin:12px 0 14px}
+.nt-pref{display:grid;gap:6px}
+.nt-pref>span{display:flex;gap:8px;font:600 13.5px var(--body)}
+.nt-pref>span i{font-style:normal}
+.seg{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line2);border-radius:10px;overflow:hidden;width:max-content;max-width:100%}
+.seg button{padding:7px 11px;background:var(--ink);border:0;border-right:1px solid var(--line2);color:var(--muted);font:600 12.5px var(--body);cursor:pointer;transition:background .2s,color .2s}
+.seg button:last-child{border-right:0}
+.seg button:hover{color:#fff}
+.seg button.on{background:var(--red);color:#fff}
+.nt-announce form,.req-card{display:grid;gap:10px}
+.nt-announce label,.req-card label{display:grid;gap:5px;font:600 13px var(--body);color:#dfe3ea}
+.nt-announce label.check{display:flex;align-items:center;gap:8px}
+:is(.nt-announce,.req-card,.req-item) :is(input:not([type=checkbox]),select,textarea){padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;font:14px var(--body);width:100%;min-width:0;color-scheme:dark}
+:is(.nt-announce,.req-card,.req-item) :is(input,select,textarea):focus{outline:2px solid var(--red);outline-offset:1px}
+.nt-announce .btn,.req-card .btn{justify-self:start;margin:4px 0 0}
+
+/* requests */
+.req-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.req-card{position:relative;overflow:hidden}
+.req-card h3{margin:0;color:#fff;font-size:18px}
+.req-card p{margin:0}
+.req-card::after{content:"";position:absolute;inset:0 0 auto auto;width:90px;height:6px;background:linear-gradient(90deg,transparent,var(--red))}
+.hp{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
+.req-mine{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.req-mine li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+#req-mine:not(:empty){margin-top:18px}
+.req-list{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.req-item{display:grid;gap:8px;align-content:start}
+.req-item.pending{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.req-item.rejected,.req-item.undone{opacity:.75}
+.req-item p{margin:0}
+.req-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.req-top small{margin-left:auto}
+.req-kind{font:600 12px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.req-subj{font:600 20px var(--head);letter-spacing:.02em;overflow-wrap:anywhere}
+.req-do{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.req-do .btn{margin:0}
+.req-cid{flex:1 1 150px}
+.prose .req-grid{margin:16px 0}
+.prose .req-card{background:var(--panel2)}
+.prose .req-card h3{text-decoration:none}

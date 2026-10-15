@@ -6,6 +6,7 @@ The club website and Discord bot for NOREX UNITED FC, an EA SPORTS FC Pro Clubs 
 - **Match archive:** every match kept with full box scores for both teams
 - **Player profiles:** cards, career totals and per-club stats for everyone we play with or against
 - **Squad Hub:** Discord login, player claims, availability and man-of-the-match votes
+- **Club docs:** announcements (optionally posted to Discord), requirements, rules members acknowledge, FAQ, glossary, Play Style and a suggestion box
 - **Discord bot:** result posts plus `/club`, `/last`, `/results`, `/player`, `/compare`, `/top` and `/site`
 
 ## How it works
@@ -13,6 +14,7 @@ The club website and Discord bot for NOREX UNITED FC, an EA SPORTS FC Pro Clubs 
 ```
 scripts/fetch.mjs   EA Pro Clubs data → data/*.json (the permanent archive)
 scripts/build.mjs   data/ → static HTML in site/
+scripts/cards.mjs   site data → Discord cards (score cards, field views, tables) the bot attaches
 bot/                Cloudflare Worker: Discord commands, member login and API
 ```
 

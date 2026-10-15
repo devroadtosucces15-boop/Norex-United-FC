@@ -6,17 +6,74 @@
 //
 // Env (set by .github/workflows/bot.yml):
 //   GH_DISPATCH_TOKEN  – GitHub token allowed to run this repo's Actions (secret)
+//   DISCORD_BOT_TOKEN  – bot token: DMs (P7.1), Verified role sync (P2.5), Club Intelligence server reads (secret)
 //   DISCORD_PUBLIC_KEY, SITE_URL, GITHUB_REPO – public values in wrangler.toml
 
+import { getCommandSettings, commandBlocked, shapeReply } from './botcommands.js';
 import { handleMembers } from './members.js';
 import { updateLive } from './live.js';
+import { memberLiveCron } from './memberlive.js';
+import { remindersCron } from './reminders.js';
+import { notifyCron } from './notify.js';
+import { eventReminders } from './events.js';
+import { closeDue } from './awards.js';
+import { hotwDue } from './hotw.js';
+import { scoreDue } from './predict.js';
+import { eventButton, playButton, memberCommand, memberOf, MEMBER_COMMANDS } from './botcmds.js';
+import { panelInteraction, PANEL_ID } from './panel.js';
+import { insightsCron, insightsNow, reportMessages } from './insights.js';
+import { matchComponents, matchInteraction } from './matchcard.js';
+import { ROLE_HELP, syncAll } from './discordroles.js';
+import { can, discordRole, flagOn, loadFlagOverrides, withFlagOverrides } from './roles.js';
+import { mediaCron, serveMedia } from './media.js';
+import { exportContent } from './exportcontent.js';
+import { checkUptime } from './monitor.js';
+import { runSpike, spikeReport } from './aispike.js';
+import { checkProfanity, cleanBonus, setupAutoMod } from './profanity.js';
+import { checkHype } from './hype.js';
+import { checkVoiceRecap } from './voicerecap.js';
+import { askAnswer, buildAskContext } from './ask.js';
+import { makeAvatarCard } from './avatarcard.js';
+import { postEmbed } from './docs.js';
+import { refreshStatInsights, handleStatInsightJob, statInsightWeekly, discordInsightEmbed, discordH2hEmbed } from './statinsights.js';
+import { handleHubWaveJob } from './hub.js';
+import { burnerCommand, burnerPick } from './burners.js';
+import { generateCards } from './cardstudio.js';
+import { message, notice, header, cards, facts, text, sep, side, thumb, label, footer, buttons, cardUrl, privateNote, resultAccent, RESULT_ICON } from './ui.js';
+import { it } from './icons.js';
+import { playerFaces } from './faces.js';
+import { zoneChoices } from './host.js';
+import { WATCH_COMMANDS, WATCH_BUTTON, watchCommand, watchButton, watchlistCron } from './watchlist.js';
+import { DISCOVERY_COMMANDS, DISCOVERY_BUTTON, discoveryCommand, discoveryButton } from './discoveries.js';
+import { FUN_COMMANDS, FUN_BUTTON, funCommand, funButton, birthdayCheck } from './fun.js';
+import { SERVER_COMMANDS, SERVER_BUTTON, serverCommand, serverButton, memberWatch, sendDueReminders, tagChoices } from './servertools.js';
 
-const RES_COLOR = { W: 0x22c55e, D: 0xeab308, L: 0xef4444 };
-const RES_EMOJI = { W: '🟩', D: '🟨', L: '🟥' };
 
 export default {
   async scheduled(event, env, ctx) {
+    if (event?.cron === '* * * * *') { // the 1-minute timer only sends /remind reminders – everything else stays on the 10-minute one
+      ctx.waitUntil(sendDueReminders(env).catch((e) => console.log('reminders failed', e.message)));
+      return;
+    }
     ctx.waitUntil(updateLive(env).catch((e) => console.log('live check failed', e.message))); // P1.3 live banner
+    ctx.waitUntil(checkUptime(env).catch((e) => console.log('uptime monitor failed', e.message))); // P11.2 24/7 monitor
+    ctx.waitUntil(checkProfanity(env).then(() => cleanBonus(env)).catch((e) => console.log('profanity check failed', e.message))); // P11.4
+    ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => hotwDue(env)).then(() => scoreDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, P4.1 awards, P6.2 highlight of the week, P3.8 predictions, then P7.1 DMs + reminders
+    ctx.waitUntil(mediaCron(env).catch((e) => console.log('media guard failed', e.message))); // P6.1b R2 storage guard (hourly)
+    const site = (env.SITE_URL || '').replace(/\/?$/, '/');
+    ctx.waitUntil(checkHype(env, (file) => load(site, file, ctx)).catch((e) => console.log('hype poster failed', e.message))); // P11.6/P11.7 auto hype poster
+    ctx.waitUntil(checkVoiceRecap(env, (file) => load(site, file, ctx)).catch((e) => console.log('voice recap failed', e.message))); // P11.13 voice clip → quote card
+    if (flagOn(env, { role: 'owner' }, 'insights')) ctx.waitUntil(insightsCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('insights cron failed', e.message))); // weekly Club Intelligence DM
+    if (flagOn(env, { role: 'owner' }, 'statInsights')) {
+      const loadSite = (file) => load(site, file, ctx);
+      ctx.waitUntil(refreshStatInsights(env, loadSite).then(() => statInsightWeekly(env, postEmbed)).catch((e) => console.log('stat insights cron failed', e.message))); // BE9
+    }
+    if (flagOn(env, { role: 'owner' }, 'reminders')) ctx.waitUntil(remindersCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('reminders failed', e.message))); // E3 gentle nudges
+    if (flagOn(env, { role: 'owner' }, 'memberLive')) ctx.waitUntil(memberLiveCron(env).catch((e) => console.log('member live check failed', e.message))); // 🔴 members' own streams
+    if (flagOn(env, { role: 'owner' }, 'watchlist')) ctx.waitUntil(watchlistCron(env).catch((e) => console.log('watch list cron failed', e.message))); // creators' new videos, about hourly
+    if (flagOn(env, { role: 'owner' }, 'fun')) ctx.waitUntil(birthdayCheck(env, postEmbed).catch((e) => console.log('birthday check failed', e.message))); // 🎂 one post a day
+    if (flagOn(env, { role: 'owner' }, 'serverTools')) ctx.waitUntil(memberWatch(env).catch((e) => console.log('member watch failed', e.message))); // leave/join alerts + welcome posts
+    if (flagOn(env, { role: 'owner' }, 'cardStudio')) ctx.waitUntil(generateCards(env).catch((e) => console.log('card generation failed', e.message))); // Card Studio – approved requests → AI cards (retries included)
     if (!env.GH_DISPATCH_TOKEN || !env.GITHUB_REPO) return;
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/update.yml/dispatches`, {
       method: 'POST',
@@ -33,6 +90,7 @@ export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     if (path.startsWith('/crest/')) return crestProxy(path, ctx);
+    if (path.startsWith('/media/')) return serveMedia(request, env, path.slice(7)); // P6.1b feed photos/clips (R2)
     if (path.startsWith('/auth/') || path.startsWith('/api/')) {
       const site = (env.SITE_URL || '').replace(/\/?$/, '/');
       return handleMembers(request, env, ctx, (file) => load(site, file, ctx));
@@ -45,16 +103,107 @@ export default {
     const i = JSON.parse(body);
 
     if (i.type === 1) return json({ type: 1 }); // PING
+    env = withFlagOverrides(env, await loadFlagOverrides(env)); // the Boardroom's live flag switches apply to Discord too (they used to reach website requests only)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
+    if (i.type === 4 && i.data?.name === 'host') return json({ type: 8, data: { choices: zoneChoices(flatOptions(i.data.options).find((o) => o.focused)?.value) } });
+    if (i.type === 4 && /^tags?$/.test(i.data?.name) && env.DB) return json({ type: 8, data: { choices: await tagChoices(env, flatOptions(i.data.options).find((o) => o.focused)?.value).catch(() => []) } });
     if (i.type === 4) return json({ type: 8, data: { choices: await autocomplete(i, site, ctx) } });
+    const who = discordUser(env, i);
+    const cmdName = i.type === 2 ? i.data?.name : null;
+    const cmdSettings = cmdName ? await getCommandSettings(env) : null;
+    if (cmdName) { // the owner's per-command rules (Boardroom → Bot commands)
+      const msg = await commandBlocked(env, cmdName, who, i.channel_id, cmdSettings);
+      if (msg) return json(privateNote(msg));
+    }
+    const respond = async () => {
+    if (i.type === 3 && /^norex:box:/.test(i.data?.custom_id ?? '')) { // "Box score" under /last and the result posts: the drawn table, privately
+      const id = String(i.data.custom_id).split(':')[2];
+      const [club, deck] = await Promise.all([load(site, 'club', ctx), load(site, 'cards', ctx).catch(() => null)]);
+      const m = club.matches.find((x) => String(x.id) === id), card = cardUrl(deck, 'match', id, 'box');
+      if (!m || !card) return json({ type: 4, data: notice('No box score for that match', 'It is drawn a few minutes after the final whistle, and only recent matches keep one.') });
+      return json({ type: 4, data: message({ ephemeral: true, accent: resultAccent(m.res), blocks: [
+        header({ eyebrow: `${club.name} · Box score`, title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: `<t:${m.ts}:f>` }),
+        cards({ url: card, alt: 'Every player: rating, goals, assists, passes, tackles and shots' }),
+        buttons([{ label: 'Match report', url: m.url }]),
+      ] }) });
+    }
+    if (i.type === 3 && /^norex:mme?:/.test(i.data?.custom_id ?? '')) { // P7.2 "Show my match" menu + "My match" button
+      try {
+        return json(await matchInteraction(i, site, {
+          load: (f) => load(site, f, ctx),
+          claimOf: (uid) => (env.DB ? env.DB.prepare("SELECT player FROM claims WHERE user_id = ? AND status = 'approved'").bind(uid).first('player') : null),
+          allowed: () => flagOn(env, who, 'discordMatch'),
+        }));
+      } catch (e) {
+        return json(privateNote(`⚠️ ${e.message}`));
+      }
+    }
+    if ((i.type === 2 && i.data.name === 'panel') || ((i.type === 3 || i.type === 5) && PANEL_ID.test(i.data?.custom_id ?? ''))) { // the manager panel
+      if (!env.DB) return json({ type: 4, data: notice('The member database isn’t connected') });
+      return json(await panelInteraction(i, env, await memberOf(i, who, env), site, (f) => load(site, f, ctx)));
+    }
+    if (i.type === 2 && WATCH_COMMANDS.has(i.data.name)) return json(await watchCommand(i, env, ctx, who)); // /watch /watchlist
+    if (i.type === 3 && WATCH_BUTTON.test(i.data?.custom_id ?? '')) return json(await watchButton(i, env, who)); // 👍 Useful
+    if (i.type === 2 && DISCOVERY_COMMANDS.has(i.data.name)) return json(await discoveryCommand(i, env, ctx, who)); // /share /discoveries
+    if (i.type === 3 && DISCOVERY_BUTTON.test(i.data?.custom_id ?? '')) return json(await discoveryButton(i, env, who)); // approve / reject / useful
+    if (i.type === 2 && FUN_COMMANDS.has(i.data.name)) return json(await funCommand(i, env, ctx, who)); // /jail /wheel
+    if (i.type === 3 && FUN_BUTTON.test(i.data?.custom_id ?? '')) return json(await funButton(i, env, who)); // bail, rap sheet, spin again
+    if (i.type === 2 && SERVER_COMMANDS.has(i.data.name)) return json(await serverCommand(i, env, ctx, who)); // /setup /purge /tag /tags /remind /reminders
+    if (i.type === 3 && SERVER_BUTTON.test(i.data?.custom_id ?? '')) return json(await serverButton(i, env, who)); // ping-role panel, reminder cancel
+    if (i.type === 2 && i.data.name === 'syncroles') return syncRolesCommand(i, env, ctx, site, who);
+    if (i.type === 2 && i.data.name === 'exportcontent') return exportContentCommand(i, env, ctx, who);
+    if (i.type === 2 && i.data.name === 'aispike') return aiSpikeCommand(i, env, ctx, who);
+    if (i.type === 2 && i.data.name === 'profanitysetup') return profanitySetupCommand(i, env, ctx, who);
+    if (i.type === 2 && i.data.name === 'avatarcard') return avatarCardCommand(i, env, ctx, who, new URL(request.url).origin);
+    if (i.type === 2 && i.data.name === 'ask') return askCommand(i, env, ctx, site, who);
+    if (i.type === 2 && i.data.name === 'insight') return insightCommand(i, env, ctx, site, who); // BE9
+    if (i.type === 2 && i.data.name === 'burner') return burnerCommand(i, env, ctx, who, site, (f) => load(site, f, ctx)); // burner-club tracker
+    if (i.type === 3 && /^norex:bn:/.test(i.data?.custom_id ?? '')) return burnerPick(i, env, ctx, who, (f) => load(site, f, ctx)); // …its pickers
+    if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
+      try { return json(await eventButton(i, env, who)); } catch (e) { return json(privateNote(`⚠️ ${e.message}`)); }
+    }
+    if (i.type === 3 && /^norex:play:\d+:learned$/.test(i.data?.custom_id ?? '')) { // BE1 ✅ Learned it on a shared play
+      try { return json(await playButton(i, env, who)); } catch (e) { return json(privateNote(`⚠️ ${e.message}`)); }
+    }
+    if (i.type === 2 && MEMBER_COMMANDS.has(i.data.name)) { // P7.4 commands that read the member database
+      try {
+        const loadSite = (f) => load(site, f, ctx);
+        const club = await loadSite('club');
+        return json(await memberCommand(i, env, who, site, {
+          load: loadSite, playerMessage: async (p, o) => playerMessage(p, club, site, await loadSite('cards').catch(() => null), { ...o, env, origin: new URL(request.url).origin }),
+          top: async (stat) => ({ type: 4, data: await command({ name: 'top', options: [{ name: 'stat', value: stat }] }, site, ctx, { env }) }),
+        }));
+      } catch (e) {
+        return json(privateNote(`⚠️ ${e.message}`));
+      }
+    }
+    if (i.type === 2 && i.data.name === 'insights') return insightsCommand(i, env, ctx, site, who);
     if (i.type === 2) {
       try {
-        return json({ type: 4, data: await command(i.data, site, ctx) });
+        // P7.2: /last carries the same "Show my match" controls as the auto-posted result, inside its panel.
+        const data = await command(i.data, site, ctx, { matchControls: flagOn(env, who, 'discordMatch'), env, origin: new URL(request.url).origin });
+        return json({ type: 4, data });
       } catch (e) {
-        return json({ type: 4, data: { content: `⚠️ ${e.message}`, flags: 64 } });
+        return json(privateNote(`⚠️ ${e.message}`));
       }
     }
     return new Response('Unhandled', { status: 400 });
+    };
+    return cmdName ? shapeReply(env, cmdName, await respond(), cmdSettings) : respond();
+  },
+
+  // BE9's background jobs (JOBS queue, BE0) – currently just the insight writer; refreshStatInsights()
+  // only enqueues a key whose fact pack actually changed, so this rebuilds the pack and writes it.
+  async queue(batch, env, ctx) {
+    const site = (env.SITE_URL || '').replace(/\/?$/, '/');
+    const loadSite = (file) => load(site, file, ctx);
+    for (const msg of batch.messages) {
+      try {
+        if (msg.body?.type === 'statInsight') await handleStatInsightJob(env, loadSite, msg.body.key);
+        if (msg.body?.type === 'hubWave') await handleHubWaveJob(env, msg.body.to, msg.body.from);
+        msg.ack();
+      } catch (e) { console.log('queue job failed', msg.body?.type, e.message); msg.retry(); }
+    }
   },
 };
 
@@ -70,6 +219,192 @@ async function verify(req, body, publicKey) {
   } catch {
     return false;
   }
+}
+
+// The Discord user behind an interaction, as a permissions user (roles only – `claimed` is not needed here).
+function discordUser(env, i) {
+  const u = i.member?.user ?? i.user;
+  return { u: u?.id, role: u?.id ? discordRole(env, u.id, i.member?.roles ?? []) : 'guest' };
+}
+
+// ---------- P2.5 /syncroles (managers): re-sync the ✅ Verified role for every decided claim ----------
+// Deferred reply (type 5) – the Discord calls can take longer than the 3-second limit – then the result is patched in.
+function syncRolesCommand(i, env, ctx, site, who) {
+  if (!can(who, 'roles.sync') || !flagOn(env, who, 'roleSync')) return json(privateNote('🔒 Managers only (and role sync is not switched on for you yet).'));
+  if (!env.DB) return json(privateNote('⚠️ The member database is not connected.'));
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      const r = await syncAll(env, (f) => load(site, f, ctx));
+      content = r.error && !r.added && !r.removed
+        ? `⚠️ Role sync failed.\n${ROLE_HELP[r.error] ?? r.error}`
+        : [`🪪 **Role sync done** – ✅ Verified given to **${r.added}**, taken from **${r.removed}**${r.failed ? ` · ⚠️ ${r.failed} failed` : ''}.`,
+          r.positions?.length ? `📍 Position roles used: ${r.positions.join(', ')}` : '📍 No GK / DEF / MID / FWD roles in the server – only ✅ Verified is used (create them to add positions).',
+          r.left ? `⏭️ ${r.left} more to go – run **/syncroles** again.` : '',
+          r.error ? ROLE_HELP[r.error] ?? r.error : ''].filter(Boolean).join('\n');
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
+    }).catch((e) => console.log('syncroles reply failed', e.message));
+  })());
+  return json(DEFER_PANEL(true));
+}
+
+// ---------- /exportcontent (owner): dump guide/rule/playstyle/announcement channels to the owner's DMs ----------
+function exportContentCommand(i, env, ctx, who) {
+  if (!can(who, 'settings.bot')) return json(privateNote('🔒 Owner only.'));
+  const opts = Object.fromEntries(flatOptions(i.data.options).map(o => [o.name,o.value]));
+  const options = {...opts,channelId:opts.channel || i.channel_id};
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      const r = await exportContent(env, who, options);
+      content = `📬 Sent to your DMs – ${r.channels.map((n) => `#${n}`).join(', ')} (${r.scanned} scanned, ${r.matched} matched, ${r.messages} DMs).`;
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
+    }).catch((e) => console.log('exportcontent reply failed', e.message));
+  })());
+  return json(DEFER_PANEL(true));
+}
+
+// ---------- /aispike (owner): P11.1 one-off test of the Workers AI text + image models ----------
+function aiSpikeCommand(i, env, ctx, who) {
+  if (!can(who, 'settings.bot')) return json(privateNote('🔒 Owner only.'));
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      content = spikeReport(await runSpike(env, who));
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
+    }).catch((e) => console.log('aispike reply failed', e.message));
+  })());
+  return json(DEFER_PANEL(true));
+}
+
+// ---------- /profanitysetup (owner): P11.4 create/update the Discord AutoMod rule + alert channel ----------
+function profanitySetupCommand(i, env, ctx, who) {
+  if (!can(who, 'settings.bot')) return json(privateNote('🔒 Owner only.'));
+  const channel = flatOptions(i.data.options).find((o) => o.name === 'channel')?.value;
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      await setupAutoMod(env, who, channel);
+      content = `✅ AutoMod profanity rule is set – alerts go to <#${channel}>, and the 10-min cron now turns them into strikes (3 = auto-warning, 5 = 24h auto-mute). If this fails silently, check the bot's role has **Manage Server** in Server Settings → Roles.`;
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
+    }).catch((e) => console.log('profanitysetup reply failed', e.message));
+  })());
+  return json(DEFER_PANEL(true));
+}
+
+// ---------- /avatarcard (members): P11.5 upload an avatar → AI background + stored photo, both served via /media ----------
+function avatarCardCommand(i, env, ctx, who, origin) {
+  if (!flagOn(env, who, 'avatarCard')) return json(privateNote('🔒 Not switched on yet.'));
+  const optId = flatOptions(i.data.options).find((o) => o.name === 'image')?.value;
+  const attachment = i.data.resolved?.attachments?.[optId];
+  if (!attachment) return json(privateNote('⚠️ Attach an image.'));
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      const { photoKey, bgKey } = await makeAvatarCard(env, who.u, attachment);
+      content = [
+        '🎨 **Your club card art is ready!**',
+        `📷 Your photo: ${origin}/media/${photoKey}`,
+        `🖼️ AI background: ${origin}/media/${bgKey}`,
+        "Discord doesn't let bots set another member's avatar for them – download whichever you want and set it yourself (User Settings → Edit Profile).",
+        'An interactive web card combining both is coming in a follow-up.',
+      ].join('\n');
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
+    }).catch((e) => console.log('avatarcard reply failed', e.message));
+  })());
+  return json(DEFER_PANEL(true));
+}
+
+// A deferred reply that will be edited into a design-system panel has to say so up front (the layout flag can't be
+// changed by the edit), and the edit itself carries only the components.
+const DEFER_PANEL = (priv) => ({ type: 5, data: { flags: (1 << 15) | (priv ? 64 : 0) } });
+// A deferred command's finished answer as a panel: steel when it's a warning, club red otherwise.
+const noteMsg = (content) => message({ accent: /^(⚠|🔒|❌)/u.test(content) ? 'steel' : 'red', blocks: [text(String(content).replace(/^(⚠️|🔒|❌)\s*/u, ''))] });
+const panelEdit = (m) => ({ components: m.components, allowed_mentions: m.allowed_mentions ?? { parse: [] } });
+
+// ---------- /insight (public, flag `statInsights`): BE9's stored stat insight as an embed – read-only, no writer call ----------
+async function insightCommand(i, env, ctx, site, who) {
+  if (!flagOn(env, who, 'statInsights')) return json(privateNote('🔒 Club insights are not switched on for you yet.'));
+  const opponent = flatOptions(i.data.options).find((o) => o.name === 'opponent')?.value;
+  if (opponent) { // head to head: may need the writer (slow) → deferred reply, then patched
+    ctx.waitUntil((async () => {
+      const out = await discordH2hEmbed(env, (f) => load(site, f, ctx), opponent, who).catch((e) => ({ error: `⚠️ ${e.message}` }));
+      await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(panelEdit(out.error ? notice(out.error) : out.embed)),
+      }).catch((e) => console.log('insight h2h reply failed', e.message));
+    })());
+    return json(DEFER_PANEL(false));
+  }
+  const stat = flatOptions(i.data.options).find((o) => o.name === 'stat')?.value ?? 'club';
+  const out = await discordInsightEmbed(env, stat, who.role).catch((e) => ({ error: `⚠️ ${e.message}` }));
+  if (out.error) return json(privateNote(out.error));
+  return json({ type: 4, data: out.embed });
+}
+
+// ---------- /ask (public, flag-gated): P11.11 AI club chatbot – site JSON stats as context for the text model ----------
+function askCommand(i, env, ctx, site, who) {
+  if (!flagOn(env, who, 'ask')) return json(privateNote('🔒 The /ask chatbot is not switched on for you yet.'));
+  if (!env.AI) return json(privateNote('⚠️ The AI binding is not connected.'));
+  const question = flatOptions(i.data.options).find((o) => o.name === 'question')?.value;
+  if (!question) return json(privateNote('⚠️ Ask a question.'));
+  ctx.waitUntil((async () => {
+    let content;
+    try {
+      const [club, players] = await Promise.all([load(site, 'club', ctx), load(site, 'players', ctx)]);
+      content = (await askAnswer(env, question, buildAskContext(club, players))) ?? "🤔 Couldn't come up with an answer to that – try rephrasing.";
+    } catch (e) {
+      content = `⚠️ ${e.message}`;
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(noteMsg(content))),
+    }).catch((e) => console.log('ask reply failed', e.message));
+  })());
+  return json(DEFER_PANEL(true));
+}
+
+// ---------- /insights (managers): Club Intelligence report – Discord server + club data → scores and advice ----------
+function insightsCommand(i, env, ctx, site, who) {
+  if (!can(who, 'insights.view') || !flagOn(env, who, 'insights')) return json(privateNote('🔒 Managers only (and Club Intelligence is not switched on for you yet).'));
+  if (!env.DB) return json(privateNote('⚠️ The member database is not connected.'));
+  ctx.waitUntil((async () => {
+    let body, more = [];
+    try {
+      const [first, ...rest] = reportMessages(await insightsNow(env, (f) => load(site, f, ctx)), site);
+      body = first; more = rest;
+    } catch (e) {
+      body = notice('Could not build the report', e.message === 'no-access' ? "The bot can't see the server – check it is still in the server with **View Channels**." : e.message);
+    }
+    await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(panelEdit(body)),
+    }).catch((e) => console.log('insights reply failed', e.message));
+    for (const m of more) { // the detail panel arrives as a second private message
+      await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...m, flags: m.flags | 64 }),
+      }).catch((e) => console.log('insights detail failed', e.message));
+    }
+  })());
+  return json(DEFER_PANEL(true));
 }
 
 const json = (obj) => new Response(JSON.stringify(obj), { headers: { 'Content-Type': 'application/json' } });
@@ -109,6 +444,11 @@ async function load(site, file, ctx) {
 async function autocomplete(i, site, ctx) {
   const focused = flatOptions(i.data.options).find((o) => o.focused);
   const q = String(focused?.value ?? '').toLowerCase();
+  if (focused?.name === 'opponent') { // /insight opponent: the 32 EA clubs in h2h.json
+    const h2h = await load(site, 'h2h', ctx).catch(() => []);
+    return h2h.filter((e) => e.n.toLowerCase().includes(q)).sort((a, b) => b.p - a.p).slice(0, 25)
+      .map((e) => ({ name: `${e.n} · ${e.w}W ${e.d}D ${e.l}L`.slice(0, 100), value: String(e.o) }));
+  }
   const players = await load(site, 'players', ctx);
   return players
     .filter((p) => p.n.toLowerCase().includes(q))
@@ -127,57 +467,86 @@ function findPlayer(players, v) {
 }
 
 // ---------- commands ----------
-async function command(data, site, ctx) {
+// Every reply follows the design system (bot/ui.js): one panel, a header, a drawn card from scripts/cards.mjs for every stat
+// or match, a footer line and buttons last. A card that isn't drawn yet (new match, card step failed) falls back to text.
+const r1 = (v) => (+v || 0).toFixed(1);
+const goalsLine = (m) => (m.scorers ?? []).map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join(', ');
+async function command(data, site, ctx, { matchControls = false, env = {}, origin } = {}) {
   const opt = Object.fromEntries(flatOptions(data.options).map((o) => [o.name, o.value]));
   const club = await load(site, 'club', ctx);
-  const footer = { text: `${club.name} · updates every 15 min`, icon_url: club.crest };
+  const deck = await load(site, 'cards', ctx).catch(() => null); // drawn cards manifest
+  const updated = 'Updates every 10 min';
+  const brand = (s) => `${club.name} · ${s}`;
 
   switch (data.name) {
     case 'club': {
       const gd = club.gf - club.ga;
-      return { embeds: [{
-        title: club.name, url: club.url, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: `**Division ${club.division ?? '–'}** · Skill rating **${club.skill ?? '–'}**${club.streak > 1 ? ` · 🔥 ${club.streak} win streak` : ''}`,
-        fields: [
-          { name: 'Record', value: `${club.w}W ${club.d}D ${club.l}L (${club.gp} played)`, inline: true },
-          { name: 'Goals', value: `${club.gf} scored · ${club.ga} conceded (${gd >= 0 ? '+' : ''}${gd})`, inline: true },
-          { name: 'Form (newest last)', value: [...club.form].reverse().map((r) => RES_EMOJI[r]).join('') || '–' },
-        ],
-        footer,
-      }] };
+      const card = cardUrl(deck, 'club');
+      return message({ blocks: [
+        header({ eyebrow: brand('Club'), title: club.name, sub: `Division ${club.division ?? '–'} · Skill rating ${club.skill ?? '–'}${club.streak > 1 ? ` · 🔥 ${club.streak} win streak` : ''}`, thumb: card ? null : club.crest }),
+        cards(card && { url: card, alt: `${club.w} wins, ${club.d} draws, ${club.l} losses` }),
+        !card && facts([['Record', `${club.w}W ${club.d}D ${club.l}L (${club.gp} played)`], ['Goals', `${club.gf} scored · ${club.ga} conceded (${gd >= 0 ? '+' : ''}${gd})`], ['Form', [...club.form].reverse().map((r) => RESULT_ICON[r]).join('') || '–']]),
+        footer(`${updated} · newest result on the right`),
+        buttons([{ label: 'Club site', url: club.url }, club.apply && { label: 'Trials', url: club.apply }]),
+      ] });
     }
     case 'last': {
       const m = club.matches[0];
-      if (!m) return { content: 'No matches archived yet.' };
-      return { embeds: [matchEmbed(m, club, footer)] };
+      if (!m) return notice('No matches yet', 'The first result shows up here a few minutes after it’s played.');
+      const score = cardUrl(deck, 'match', m.id, 'score'), field = cardUrl(deck, 'match', m.id, 'field');
+      const avg = m.ps?.length ? m.ps.reduce((t, p) => t + (+p.r || 0), 0) / m.ps.length : null;
+      return message({ accent: resultAccent(m.res), blocks: [
+        header({ eyebrow: brand('Match centre · League'), title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: `<t:${m.ts}:f> · ${{ W: 'Win', D: 'Draw', L: 'Defeat' }[m.res]}`, thumb: score ? null : m.oppCrest || club.crest }),
+        cards(score && { url: score, alt: `${club.name} ${m.gf}–${m.ga} ${m.opp}` }),
+        facts([[`${it('goal')} Goals`, goalsLine(m) || 'none'], ['📊 Team rating', avg != null ? r1(avg) : null]]),
+        m.motm ? await (async () => { // man of the match gets a row with their face (card if shipped, else Discord picture)
+          const star = m.ps?.find((p) => p.n === m.motm);
+          const face = star && (await playerFaces(env, [star.k], { origin })).get(String(star.k));
+          return face ? side(`${it('motm')} **Man of the match**\n${m.motm}${star?.r ? ` · ${r1(star.r)}` : ''}`, thumb(face)) : facts([[`${it('motm')} Man of the match`, m.motm]]);
+        })() : null,
+        sep(),
+        field ? [label('Field view · ratings'), cards({ url: field, alt: 'Our players on the pitch with their match ratings' })]
+          : m.ps?.length ? text((m.ps ?? []).slice().sort((a, b) => b.r - a.r).map((p) => `\`${r1(p.r)}\` ${p.n}`).join('\n')) : null,
+        footer(`Gold = man of the match · green 7+ · orange 6–6.9 · red under 6 · ${updated}`),
+        matchControls && m.ps?.length ? matchComponents(m.id, m.ps, m.url).slice(0, 1) : null,
+        buttons([matchControls && m.ps?.length && { label: 'My match', id: `norex:mme:${m.id}`.slice(0, 100), emoji: '🙋' }, cardUrl(deck, 'match', m.id, 'box') && { label: 'Box score', id: `norex:box:${m.id}`.slice(0, 100), emoji: '📊' }, { label: 'Match report', url: m.url }]),
+      ] });
     }
     case 'results': {
       const n = Math.min(10, opt.count ?? 5);
-      return { embeds: [{
-        title: `Last ${n} results`, url: `${club.url}matches/index.html`, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: club.matches.slice(0, n).map((m) => `${RES_EMOJI[m.res]} **${m.gf}–${m.ga}** vs [${m.opp}](${m.url})${m.scorers.length ? ` · ⚽ ${m.scorers.map((s) => s.n + (s.g > 1 ? ` ×${s.g}` : '')).join(', ')}` : ''}`).join('\n') || 'No matches yet.',
-        footer,
-      }] };
+      const card = cardUrl(deck, 'results');
+      const list = club.matches.slice(0, n);
+      return message({ blocks: [
+        header({ eyebrow: brand('Results'), title: `Last ${list.length} results`, sub: list.length ? `${list.filter((m) => m.res === 'W').length}W ${list.filter((m) => m.res === 'D').length}D ${list.filter((m) => m.res === 'L').length}L` : 'No matches yet' }),
+        cards(card && { url: card, alt: 'Recent results' }),
+        (!card || n > 8) && list.length ? text(list.slice(card ? 8 : 0).map((m) => `${RESULT_ICON[m.res]} **${m.gf}–${m.ga}** vs [${m.opp}](${m.url})${m.scorers.length ? ` · ${goalsLine(m)}` : ''}`).join('\n')) : null,
+        footer(updated),
+        buttons([{ label: 'All results', url: `${club.url}results.html` }]),
+      ] });
     }
     case 'player': {
       const players = await load(site, 'players', ctx);
       const p = findPlayer(players, opt.gamertag);
-      if (!p) return { content: `No player called **${opt.gamertag}** found.`, flags: 64 };
-      return { embeds: [playerEmbed(p, club, site, footer)] };
+      if (!p) return notice(`No player called ${opt.gamertag}`, 'Start typing and pick a name from the list.');
+      return playerMessage(p, club, site, deck, { env, origin });
     }
     case 'compare': {
       const players = await load(site, 'players', ctx);
       const a = findPlayer(players, opt.player1), b = findPlayer(players, opt.player2);
-      if (!a || !b) return { content: 'Could not find both players.', flags: 64 };
-      const row = (label, x, y, dec = 0) => {
-        const fx = (+x || 0).toFixed(dec), fy = (+y || 0).toFixed(dec);
-        return `\`${label.padEnd(10)}\` ${+x > +y ? `**${fx}**` : fx}  —  ${+y > +x ? `**${fy}**` : fy}`;
-      };
-      return { embeds: [{
-        title: `${a.n} vs ${b.n}`, url: `${site}compare.html?a=${encodeURIComponent(a.k)}&b=${encodeURIComponent(b.k)}`, color: parseInt(club.color.slice(1), 16),
-        description: [row('OVR', a.ovr, b.ovr), row('Games', a.s?.gp, b.s?.gp), row('Goals', a.s?.g, b.s?.g), row('Assists', a.s?.a, b.s?.a), row('Rating', a.s?.r, b.s?.r, 1), row('MOTM', a.s?.m, b.s?.m), row('Pass %', a.s?.p, b.s?.p), row('Tackle %', a.s?.t, b.s?.t), row('Win %', a.s?.w, b.s?.w)].join('\n'),
-        footer: { ...footer, text: 'Club stats (main club) · open the link for the radar chart' },
-      }] };
+      if (!a || !b) return notice('Couldn’t find both players', 'Pick both names from the list as you type.');
+      const rows = [['OVR', a.ovr, b.ovr], ['Games', a.s?.gp, b.s?.gp], ['Goals', a.s?.g, b.s?.g], ['Assists', a.s?.a, b.s?.a], ['Rating', a.s?.r, b.s?.r, 1], ['MOTM', a.s?.m, b.s?.m], ['Pass %', a.s?.p, b.s?.p], ['Tackle %', a.s?.t, b.s?.t], ['Win %', a.s?.w, b.s?.w]];
+      const cmpCard = cardUrl(deck, 'compare', ...[a.k, b.k].sort());
+      const w = Math.max(10, a.n.length, b.n.length) + 2;
+      const fmt = (v, dec = 0) => (+v || 0).toFixed(dec);
+      const table = ['STAT'.padEnd(10) + a.n.slice(0, w - 2).padStart(w) + b.n.slice(0, w - 2).padStart(w),
+        ...rows.map(([k, x, y, dec]) => `${k.padEnd(10)}${(fmt(x, dec) + (+x > +y ? ' ◀' : '  ')).padStart(w)}${(fmt(y, dec) + (+y > +x ? ' ◀' : '  ')).padStart(w)}`)].join('\n');
+      return message({ blocks: [
+        header({ eyebrow: brand('Compare'), title: `${a.n} vs ${b.n}`, sub: `${a.pos} vs ${b.pos} · club stats this season` }),
+        cmpCard ? cards({ url: cmpCard, alt: `${a.n} and ${b.n} compared stat by stat` }) : cards(cardUrl(deck, 'player', a.k), cardUrl(deck, 'player', b.k)),
+        cmpCard ? null : text(`\`\`\`\n${table}\n\`\`\``),
+        footer('◀ marks the better number · the site has the radar chart'),
+        buttons([{ label: 'Compare on the site', url: `${site}compare.html?a=${encodeURIComponent(a.k)}&b=${encodeURIComponent(b.k)}` }]),
+      ] });
     }
     case 'top': {
       const players = (await load(site, 'players', ctx)).filter((p) => p.home && p.s && p.src === 'club');
@@ -185,65 +554,42 @@ async function command(data, site, ctx) {
       const F = { goals: ['Top scorers', (p) => p.s.g], assists: ['Most assists', (p) => p.s.a], rating: ['Best average rating (3+ games)', (p) => (p.s.gp >= 3 ? p.s.r : 0), 1], motm: ['Most MOTM awards', (p) => p.s.m], games: ['Most appearances', (p) => p.s.gp], ga: ['Goals + assists', (p) => p.s.g + p.s.a] };
       const [title, f, dec = 0] = F[stat] ?? F.goals;
       const list = players.map((p) => [p, f(p)]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
-      const medal = ['🥇', '🥈', '🥉'];
-      return { embeds: [{
-        title: `${club.name} – ${title}`, url: `${club.url}stats.html`, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: list.map(([p, v], i) => `${medal[i] ?? `\`${i + 1}.\``} [${p.n}](${site}players/${encodeURIComponent(p.k)}.html) — **${v.toFixed(dec)}**`).join('\n') || 'No data yet.',
-        footer,
-      }] };
+      const card = cardUrl(deck, 'top', stat);
+      const medal = [it('first'), it('second'), it('third')];
+      return message({ blocks: [
+        header({ eyebrow: brand('Leaderboard'), title, sub: list[0] ? `${list[0][0].n} leads with ${list[0][1].toFixed(dec)}` : 'No games logged yet' }),
+        cards(card && { url: card, alt: title }),
+        !card ? text(list.map(([p, v], i) => `${medal[i] ?? `\`${i + 1}.\``} [${p.n}](${site}players/${encodeURIComponent(p.k)}.html) — **${v.toFixed(dec)}**`).join('\n') || 'No data yet.') : null,
+        footer(updated),
+        buttons([{ label: 'All leaderboards', url: `${club.url}stats.html` }]),
+      ] });
     }
     case 'site':
-      return { embeds: [{
-        title: `${club.name} – links`, url: club.url, color: parseInt(club.color.slice(1), 16), thumbnail: { url: club.crest },
-        description: [`🌐 **Website:** ${club.url}`, club.apply && `👑 **Trials / apply:** ${club.apply}`].filter(Boolean).join('\n'),
-        footer,
-      }] };
+      return message({ blocks: [
+        header({ eyebrow: brand('Links'), title: 'The club site', sub: 'Results, stats, the squad, the Squad Hub and trials', thumb: club.crest }),
+        buttons([{ label: 'Website', url: club.url }, { label: 'Squad Hub', url: `${club.url}members.html` }, club.apply && { label: 'Trials', url: club.apply }]),
+      ] });
     default:
-      return { content: 'Unknown command.', flags: 64 };
+      return notice('Unknown command');
   }
 }
 
-function matchEmbed(m, club, footer) {
-  return {
-    title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, url: m.url, color: RES_COLOR[m.res], thumbnail: { url: m.res === 'L' ? m.oppCrest : club.crest },
-    description: `${m.res === 'W' ? '✅ **Victory**' : m.res === 'L' ? '❌ **Defeat**' : '➖ **Draw**'}`,
-    fields: [
-      m.scorers.length && { name: '⚽ Scorers', value: m.scorers.map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join('\n'), inline: true },
-      m.motm && { name: '⭐ Man of the match', value: m.motm, inline: true },
-    ].filter(Boolean),
-    timestamp: new Date(m.ts * 1000).toISOString(),
-    footer,
-  };
-}
-
-function playerEmbed(p, club, site, footer) {
+// /player and /me share this: header with the club crest, the drawn player card, then career + recent form as text.
+async function playerMessage(p, club, site, deck, { eyebrow = 'Player card', env = {}, origin } = {}) {
   const s = p.s, c = p.car;
-  const r1 = (v) => (+v || 0).toFixed(1);
+  const card = cardUrl(deck, 'player', p.k);
+  const recent = (p.tr ?? []).slice(-5);
   const dot = (r) => (r >= 8 ? '🟢' : r >= 7 ? '🟡' : r >= 6 ? '🟠' : '🔴');
-  const recent = (p.tr ?? []).slice(-5).reverse();
-  const stats = (x) => `${x.gp} games · **${x.g}** goals · **${x.a}** assists\n⭐ Avg rating **${r1(x.r)}** · MOTM **${x.m}**`;
-  const fields = [];
-  if (s && s.gp) {
-    fields.push({
-      name: p.src === 'archive' ? `📋 ${p.sc ?? 'Club'} (from archived matches)` : `📋 ${p.sc ?? 'Club'} this season`,
-      value: `${stats(s)}\nPass **${s.p}%** · Tackle **${s.t}%** · Win **${s.w}%**`,
-    });
-  } else if (p.sc) {
-    fields.push({ name: `📋 ${p.sc}`, value: 'No games for this club yet this season.' });
-  }
-  if (c && c.gp) fields.push({ name: '🌍 Career (every club)', value: stats(c) });
-  if (recent.length) {
-    const avg = recent.reduce((t, v) => t + v, 0) / recent.length;
-    fields.push({
-      name: `📈 Last ${recent.length} match ratings (newest first)`,
-      value: `${recent.map((r) => `${dot(r)} **${r1(r)}**`).join('  ')}\nAverage **${r1(avg)}** · Best **${r1(Math.max(...recent))}**`,
-    });
-  }
-  return {
-    title: `${p.n}${p.ovr ? ` · ${p.ovr} OVR` : ''}`, url: `${site}players/${encodeURIComponent(p.k)}.html`,
-    color: parseInt(club.color.slice(1), 16), thumbnail: p.crest ? { url: p.crest } : undefined,
-    description: `**${p.pos}** · ${p.c.join(', ')}`,
-    fields,
-    footer: { ...footer, text: '🟢 8+  🟡 7+  🟠 6+  🔴 under 6 · full profile on the site' },
-  };
+  return message({ blocks: [
+    header({ eyebrow: `${club.name} · ${eyebrow}`, title: `${p.n}${p.ovr ? ` · ${p.ovr} OVR` : ''}`, sub: `${p.pos} · ${p.c.join(', ')}`, thumb: (await playerFaces(env, [p.k], { origin })).get(String(p.k)) || p.crest }),
+    cards(card && { url: card, alt: `${p.n}: season stats and match ratings` }),
+    !card && s?.gp ? facts([[p.src === 'archive' ? `${p.sc ?? 'Club'} (archived matches)` : `${p.sc ?? 'Club'} this season`, `${s.gp} games · ${s.g} goals · ${s.a} assists · rating ${r1(s.r)} · MOTM ${s.m}`]]) : null,
+    facts([['🌍 Career', c?.gp ? `${c.gp} games · ${c.g} goals · ${c.a} assists · rating ${r1(c.r)}` : null], ['📈 Last 5', recent.length ? `${recent.map((r) => `${dot(r)} ${r1(r)}`).join('  ')}  → newest` : null]]),
+    footer('Updates every 10 min · career covers every club'),
+    buttons([{ label: 'Full profile', url: `${site}players/${encodeURIComponent(p.k)}.html` }]),
+  ] });
 }
+
+export { ChatRoom } from './chatroom.js'; // P6.3b live chat rooms (Durable Object)
+export { ClubRoom } from './clubroom.js'; // BE0 live rooms (Locker/Dugout/Studio broadcast)
+export { HubRoom } from './hubroom.js'; // BE8 Hub live presence/waves (Durable Object)

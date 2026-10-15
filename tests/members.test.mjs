@@ -50,12 +50,16 @@ t('availability set', r.d.days[0].people.length === 2 && r.d.days[0].people.some
 r = await call(other, '/api/availability', { dates: [d], status: 'clear' });
 t('availability clear', r.d.days[0].people.length === 1);
 t('availability in the past → 400', (await call(other, '/api/availability', { dates: ['1999-01-01'], status: 'yes' })).s === 400);
+// voting closes 72 h after a match (board 07), so run this block with the clock an hour after the newest match
+const realNow = Date.now, newest = siteJson('club').matches[0];
+Date.now = () => (newest.ts + 3600) * 1000;
 const m = (await call(other, '/api/vote')).d.matches[0];
 r = await call(other, '/api/vote', { match: m.id, player: m.players[0].k });
 t('MOTM vote', r.d.matches[0].total === 2 && r.d.matches[0].mine === m.players[0].k);
 r = await call(other, '/api/vote', { match: m.id, player: m.players[0].k });
 t('MOTM vote toggles off', r.d.matches[0].total === 1 && r.d.matches[0].mine === null);
 t('vote for a player not in the match → 400', (await call(other, '/api/vote', { match: m.id, player: 'nobody' })).s === 400);
+Date.now = realNow;
 ov = (await call(boss, '/api/admin/claims', { user: '222', action: 'unlink' })).d;
 t('unlink keeps history', ov.claims['222'].status === 'unlinked' && ov.claims['222'].history.map((h) => h.action).join() === 'approved,unlinked');
 t('public cleared after unlink', Object.keys((await call(null, '/api/public')).d.claims).length === 0);
@@ -90,4 +94,25 @@ t('can(): guest blocked, unknown action throws', !can(null, 'hub.use') && !can({
 t('tiers inherit', permsFor('owner').length > permsFor('manager').length && permsFor('manager').length > permsFor('claimed').length && permsFor('claimed').length > permsFor('member').length);
 t('CORS only for the site origin', (await W('/api/public', { headers: { Origin: 'https://evil.example' } })).headers.get('access-control-allow-origin') !== 'https://evil.example');
 t('not-member login not stored, no double migration', n('users') === 5 && !sqlite.prepare("SELECT 1 FROM users WHERE id='999'").get());
+
+// ---------- BE4: claims pre-computed "already claimed" check ----------
+// Two approved claims for the same player can't happen through the normal flow (both /api/claim and
+// /api/admin/claims#approve block it) – simulate it the way legacy/imported data could, to check the flag.
+sqlite.prepare("INSERT INTO claims (user_id, player, player_name, status, at, name) VALUES ('777', ?, ?, 'approved', ?, 'Legacy')").run(p2.k, p2.n, Date.now());
+sqlite.prepare("INSERT INTO claims (user_id, player, player_name, status, at, name) VALUES ('778', ?, ?, 'pending', ?, 'Hopeful')").run(p2.k, p2.n, Date.now());
+let claims = (await call(boss, '/api/admin/overview')).d.claims;
+t('pre-computed check: a pending claim on an already-approved player is flagged "taken"', claims['778'].taken === 'Legacy' && claims['777'].taken === undefined);
+
+// ---------- BE4: squad week (availability + event RSVPs merged, "can we field 9?") ----------
+// A date untouched by earlier tests in this file (today's already got migrated-seed availability on it).
+const sqDate = new Date(Date.now() + 3 * 86400e3).toISOString().slice(0, 10);
+for (let i = 0; i < 9; i++) sqlite.prepare("INSERT INTO users (id, name, role, first_at, last_at, logins) VALUES (?, ?, 'member', ?, ?, 1)").run(`sq${i}`, `Sq${i}`, Date.now(), Date.now());
+for (let i = 0; i < 8; i++) sqlite.prepare("INSERT INTO availability (date, user_id, status, name, at) VALUES (?, ?, 'yes', ?, ?)").run(sqDate, `sq${i}`, `Sq${i}`, Date.now());
+const sqDay = (d) => d.days.find((x) => x.date === sqDate);
+let sw = (await call(boss, '/api/admin/squadweek')).d;
+t('squadweek: 7 days returned, not yet at 9', sw.days.length === 7 && sqDay(sw).yes.length === 8 && sqDay(sw).canField9 === false);
+sqlite.prepare("INSERT INTO availability (date, user_id, status, name, at) VALUES (?, 'sq8', 'yes', 'Sq8', ?)").run(sqDate, Date.now());
+sw = (await call(boss, '/api/admin/squadweek')).d;
+t('squadweek: canField9 flips true at 9 confirmed', sqDay(sw).yes.length === 9 && sqDay(sw).canField9 === true);
+t('member cannot see squad week', (await call(mike, '/api/admin/squadweek')).s === 403);
 done();

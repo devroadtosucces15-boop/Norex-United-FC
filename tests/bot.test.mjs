@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import { ROOT } from './mock.mjs';
 import worker from '../bot/worker.js';
+import { plainText, isV2 } from '../bot/ui.js';
 import { t, tt, done } from './lib.mjs';
 
 const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
@@ -13,14 +14,15 @@ async function send(payload, { badSig = false, raw } = {}) {
   return { s: res.status, d: await res.json().catch(() => null) };
 }
 const cmd = async (name, options) => (await send({ type: 2, data: { name, options } })).d?.data;
-const embed = (d) => d?.embeds?.[0];
+// every reply is a design-system panel (bot/ui.js): V2 flag + a '## title' header
+const title = (d) => (isV2(d) ? plainText(d).match(/^#{2,3} (.+)$/m)?.[1] : null);
 
 t('bad signature → 401', (await send({ type: 1 }, { badSig: true })).s === 401);
 t('ping → pong', (await send({ type: 1 })).d?.type === 1);
 t('GET / health check', (await (await worker.fetch(new Request('https://bot/'), env, {})).text()).includes('running'));
 
 // Every registered slash command must answer without an error message.
-const registered = [...fs.readFileSync(ROOT + 'bot/register.mjs', 'utf8').matchAll(/\{\s*name: '(\w+)'/g)].map((m) => m[1]);
+const registered = [...fs.readFileSync(ROOT + 'bot/commanddefs.js', 'utf8').matchAll(/\{\s*name: '(\w+)'/g)].map((m) => m[1]);
 const players = JSON.parse(fs.readFileSync(ROOT + 'site/api/players.json', 'utf8')).filter((p) => p.home);
 const sample = {
   club: [], last: [], site: [],
@@ -28,14 +30,33 @@ const sample = {
   player: [{ name: 'gamertag', value: players[0].n }],
   compare: [{ name: 'player1', value: players[0].n }, { name: 'player2', value: players[1].n }],
   top: [{ name: 'stat', value: 'rating' }],
+  syncroles: null, // deferred reply – tested in discord.test.mjs (P2.5)
+  schedule: null, availability: null, lineup: null, rush: null, me: null, leaderboard: null, profile: null, awards: null, // P7.4/P7.5 – need the member DB: tests/wave8.test.mjs / tests/wave13.test.mjs
+  points: null, // P11.3 – needs the member DB: tests/points.test.mjs
+  insights: null, // deferred reply – tested in insights.test.mjs (Club Intelligence)
+  exportcontent: null, // deferred reply, owner only – DMs guide/rule/playstyle/announcement channels
+  aispike: null, // deferred reply, owner only – needs the real Workers AI binding (P11.1)
+  profanitysetup: null, // deferred reply, owner only – calls the real Discord AutoMod API (P11.4)
+  avatarcard: null, // deferred reply, needs a resolved attachment – tests/avatarcard.test.mjs (P11.5)
+  insight: null, // BE9 stored insight, flag-gated (owner) – embed + tier gate tested in tests/statinsights.test.mjs
+  ask: null, // deferred reply, flag-gated + needs the real Workers AI binding – tests/ask.test.mjs (P11.11)
+  burner: null, // managers only, deferred EA search + pick menus – tests/burners.test.mjs
+  nextevent: null, feedback: null, suggest: null, announce: null, trial: null, motm: null, history: null, // P11.16 – need the member DB: tests/quickcommands.test.mjs
+  setup: null, purge: null, tag: null, tags: null, remind: null, reminders: null, // server tools – need the member DB + Discord: tests/servertools.test.mjs
+  host: null, // managers, member DB + Discord – tests/host.test.mjs
+  panel: null, // managers, member DB – tests/panel.test.mjs
+  jail: null, wheel: null, trivia: null, share: null, discoveries: null, watch: null, watchlist: null, // tests/discoveries.test.mjs
+  // fun for members, member DB – tests/fun.test.mjs
 };
 for (const name of Object.keys(sample)) {
-  if (!registered.includes(name)) continue;
-  await tt(`/${name} answers with an embed`, async () => { const d = await cmd(name, sample[name]); return !!embed(d)?.title && !d.content?.startsWith('⚠️'); });
+  if (!registered.includes(name) || !sample[name]) continue;
+  await tt(`/${name} answers with a design-system panel`, async () => { const d = await cmd(name, sample[name]); return !!title(d) && !/Something went wrong|Unknown command/.test(plainText(d)); });
 }
 t('every registered command has a test here', registered.length >= 7 && registered.every((n) => n in sample));
-await tt('/player unknown gamertag → friendly message', async () => { const d = await cmd('player', [{ name: 'gamertag', value: 'zz_nobody_zz' }]); return !!d.content || !!embed(d); });
+await tt('/player unknown gamertag → friendly message', async () => { const d = await cmd('player', [{ name: 'gamertag', value: 'zz_nobody_zz' }]); return (d.flags & 64) === 64 && /No player called zz_nobody_zz/.test(plainText(d)); });
 await tt('/site has no repo link (P0.1)', async () => !JSON.stringify(await cmd('site', [])).includes('github.com'));
 await tt('autocomplete returns choices', async () => { const r = await send({ type: 4, data: { name: 'player', options: [{ name: 'gamertag', value: players[0].n.slice(0, 3), focused: true }] } }); return r.d.type === 8 && r.d.data.choices.length > 0; });
+await tt('insight opponent autocomplete lists h2h clubs by id', async () => { const h = JSON.parse(fs.readFileSync(ROOT + 'site/api/h2h.json', 'utf8')); const r = await send({ type: 4, data: { name: 'insight', options: [{ name: 'opponent', value: h[0].n.slice(0, 3).toLowerCase(), focused: true }] } }); const c = r.d.data.choices; return r.d.type === 8 && c.length > 0 && c.length <= 25 && c.some((x) => x.value === String(h[0].o)); });
+t('register.mjs gives /insight an autocomplete opponent option', /name: 'opponent', description: 'Head to head[^\n]*autocomplete: true/.test(fs.readFileSync(ROOT + 'bot/commanddefs.js', 'utf8')));
 t('unknown interaction type → 400', (await send({ type: 99 })).s === 400);
 done();

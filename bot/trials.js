@@ -6,12 +6,19 @@
 //   /api/notes, /api/notes/*  managers – timestamped notes per member, player or trial
 // Flags: trials (contacts, form, portal), scouting, managerNotes. Permissions: bot/roles.js.
 import { can, flagOn } from './roles.js';
+import { notify, notifyManagers, safely } from './notify.js';
 
 const DAY = 86400e3;
 const POSITIONS = ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'CF', 'ST'];
 const PLATFORMS = ['PS5', 'Xbox', 'PC'];
-export const TRIAL_STATUSES = ['recommended', 'applied', 'trialling', 'signed', 'released', 'declined'];
-const OPEN = ['recommended', 'applied', 'trialling'];
+// BE4: the Dugout squad board wants an explicit funnel (applied → booked → played → signed | rejected) –
+// added `booked`/`played` as finer steps inside the existing `trialling` stage rather than renaming anything
+// (old cards sitting in `trialling` still read fine; `trial_events` already logs every status change, so no
+// separate `trial_stage_history` table is needed – it would just duplicate that log).
+export const TRIAL_STATUSES = ['recommended', 'applied', 'booked', 'trialling', 'played', 'signed', 'released', 'declined'];
+const OPEN = ['recommended', 'applied', 'booked', 'trialling', 'played'];
+// Sort order for the Dugout funnel view (STAGE_ORDER.indexOf unknown = -1, sorts first – fine, those are rare).
+export const STAGE_ORDER = TRIAL_STATUSES;
 const NOTE_KINDS = ['member', 'player', 'trial'];
 const NOTE_TAGS = ['strength', 'issue', 'trial', 'general'];
 const FORM_PER_IP = 3; // public applications per IP per day
@@ -91,7 +98,22 @@ export async function applyRoute(request, env, me, loadSite, log) {
   if (await openDupe(env, t.ea)) return fail('We already have an open application for this EA ID. A manager will be in touch on Discord.', 409);
   await insertTrial(env, t, 'form', 'applied', null, ip);
   await log(env, { u: null, n: t.ea, a: null }, 'trial-apply', `${t.positions.join('/')} · ${t.platform}`);
+  await safely(notifyManagers(env, { icon: '👑', title: `New trial application: ${t.ea} (${t.positions.join('/')} · ${t.platform})`, body: t.discord ? `Discord: ${t.discord}` : null, link: 'members.html#manager' }));
   return json({ ok: true });
+}
+
+// BE4 – optional DM when a trial moves stage (type `trialstage`, default off). The player hears it only when
+// they're a linked member (approved claim on that player page); the managers' Dugout gets it the same way.
+const STAGE_NEWS = { applied: 'is on the trial list', booked: 'has a trial session booked 📅', trialling: 'is now on trial ⚽', played: 'has played a trial session', signed: 'signed for NOREX ✍️', released: 'was released after the trial', declined: 'was declined' };
+export async function notifyStage(env, r, status, me) {
+  const word = STAGE_NEWS[status];
+  if (!word) return null;
+  const title = `Trial update: ${r.ea_id} ${word}`;
+  const player = r.player ? await one(env, "SELECT user_id FROM claims WHERE player = ? AND status = 'approved'", r.player) : null;
+  return Promise.all([
+    player ? safely(notify(env, [player.user_id], { type: 'trialstage', title, body: `Updated by ${me.n}.`, link: 'members.html#alerts' })) : null,
+    safely(notifyManagers(env, { type: 'trialstage', icon: '🏟️', title: `Dugout: ${title}`, body: `Updated by ${me.n}.`, link: 'members.html#manager' }, me.u)),
+  ]);
 }
 
 // ---------- trial cards (managers) ----------
@@ -102,7 +124,7 @@ const trialOut = (r, events, notes) => ({
   events: events.map((e) => ({ kind: e.kind, status: opt(e.status), date: opt(e.date), result: opt(e.result), rating: opt(e.rating), detail: opt(e.detail), by: opt(e.by_name), at: e.at })),
   notes,
 });
-async function trialsState(env, me) {
+export async function trialsState(env, me) {
   const rows = await all(env, `SELECT * FROM trials WHERE status IN (${marks(OPEN.length)}) OR updated_at > ? ORDER BY updated_at DESC LIMIT 300`, ...OPEN, Date.now() - 180 * DAY);
   if (!rows.length) return { trials: [], canNotes: canNotes(env, me) };
   const ids = rows.map((r) => r.id);
@@ -138,12 +160,21 @@ async function trialsRoute(p, method, body, me, env, loadSite, log) {
     const stmts = [];
     const add = (sql, ...args) => stmts.push(env.DB.prepare(sql).bind(...args));
     const logs = [];
+    let tell = null; // P7.1 notification sent after the write
     if (body.status !== undefined) {
       if (!TRIAL_STATUSES.includes(body.status) || body.status === 'recommended') return fail('Unknown status');
       if (body.status === r.status) return fail(`Already ${r.status}.`, 409);
       add('UPDATE trials SET status = ?, updated_at = ? WHERE id = ?', body.status, at, r.id);
       add('INSERT INTO trial_events (trial_id, kind, status, detail, by_name, at) VALUES (?, ?, ?, ?, ?, ?)', r.id, 'status', body.status, clean(body.reason, 200) || null, me.n, at);
       logs.push(['trial-status', `${r.ea_id} → ${body.status}`]);
+      // P7.1 – the member who recommended this player hears how their tip is going
+      const scoutWord = { applied: 'is on the trial list', trialling: 'is now on trial ⚽', signed: 'signed for NOREX ✍️', released: 'was released after the trial', declined: 'was declined' }[body.status];
+      tell = () => Promise.all([
+        r.source === 'scout' && r.by_id && r.by_id !== me.u && scoutWord
+          ? safely(notify(env, [r.by_id], { type: 'trial', title: `Your tip ${r.ea_id} ${scoutWord}`, body: `Thanks for scouting! Updated by ${me.n}.`, link: 'members.html#scout' }))
+          : null,
+        notifyStage(env, r, body.status, me), // BE4 – opt-in DMs (trialstage)
+      ]);
     }
     if (body.player !== undefined) {
       let key = null;
@@ -174,6 +205,7 @@ async function trialsRoute(p, method, body, me, env, loadSite, log) {
     if (!stmts.length) return fail('Nothing to change');
     await env.DB.batch(stmts);
     for (const [type, detail] of logs) await log(env, me, type, detail);
+    await tell?.();
     return json(await trialsState(env, me));
   }
   return fail('Not found', 404);
@@ -195,6 +227,7 @@ async function scoutRoute(p, method, body, me, env, loadSite, log) {
   if (dupe) return fail(`${t.ea} is already on the managers' list (${dupe.status}).`, 409);
   await insertTrial(env, t, 'scout', 'recommended', me);
   await log(env, me, 'scout', `${t.ea} · ${t.positions.join('/')}`);
+  await safely(notifyManagers(env, { icon: '🔭', title: `New scouting tip: ${t.ea} (${t.positions.join('/')})`, body: `Recommended by ${me.n}: “${t.note}”`, link: 'members.html#manager' }, me.u));
   return json(await mine());
 }
 

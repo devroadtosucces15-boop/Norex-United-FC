@@ -55,8 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="card mx-board"><h3>📅 Attendance</h3>${bars(d.attendance.map((u) => ({ ...u, v: u.yes })), who, (u) => `${u.yes}${u.maybe ? ` <small class="muted">+${u.maybe}?</small>` : ''}`)}<p class="small muted">Days marked “I’m in” in the Squad Hub</p></div>
 <div class="card mx-board"><h3>⭐ MOTM by vote</h3>${bars(d.motmVotes.map((p) => ({ ...p, v: p.wins })), (p) => `<a href="${pHref(p.k)}">${esc(p.n)}</a>`)}<p class="small muted">Squad-vote winners · ${d.matchesVoted} matches voted</p></div>
 <div class="card mx-board"><h3>🗳️ Most votes cast</h3>${bars(d.voters.map((u) => ({ ...u, v: u.votes })), who)}<p class="small muted">Members who voted for MOTM</p></div>
-<div class="card mx-board lb-soon"><h3>🏅 Weekly awards</h3>${UI.empty({ icon: '🏅', title: 'Coming soon', text: 'Best Striker, Defender, Keeper and Midfielder winners land here once weekly awards open.' })}</div>
-<div class="card mx-board lb-soon"><h3>🔮 Predictions</h3>${UI.empty({ icon: '🔮', title: 'Coming soon', text: 'Score prediction points appear here once predictions open.' })}</div></div>`;
+${d.awards ? `<div class="card mx-board"><h3>🏅 Weekly awards</h3>${bars(d.awards.map((p) => ({ ...p, v: p.wins })), (p) => `<a href="${pHref(p.k)}">${esc(p.n)}</a>`)}<p class="small muted">Weekly award wins (votes + stat awards) this month</p></div>`
+  : `<div class="card mx-board lb-soon"><h3>🏅 Weekly awards</h3>${UI.empty({ icon: '🏅', title: 'Coming soon', text: 'Best Striker, Defender, Keeper and Midfielder winners land here once weekly awards open.' })}</div>`}
+${d.predictions ? `<div class="card mx-board"><h3>🔮 Predictions</h3>${bars(d.predictions.map((u) => ({ ...u, v: u.pts })), who, (u) => `${u.pts}${u.exact ? ` <small class="muted">${u.exact} exact</small>` : ''}`)}<p class="small muted">Prediction points from this month’s match nights</p></div>`
+  : `<div class="card mx-board lb-soon"><h3>🔮 Predictions</h3>${UI.empty({ icon: '🔮', title: 'Coming soon', text: 'Score prediction points appear here once predictions open.' })}</div>`}</div>`;
         } catch (e) { out.innerHTML = UI.empty({ icon: '📡', title: 'Squad boards are unavailable', text: e.message }); }
       };
       UI.tabs($('.lb-months', lb), show);
@@ -67,7 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- P4.6 legends + moments ----------
   const lg = $('[data-hof-legends]');
   const tl = $('[data-hof-timeline]');
-  if (!lg || !flagOn('hallOfFame')) return;
+  const teaser = $('[data-hof-teaser]');
+  if ((!lg && !teaser) || !flagOn('hallOfFame')) return;
   let S = null;
   let playersP;
   const players = () => (playersP ??= fetch(`${BASE}api/players.json`).then((r) => r.json()).catch(() => []));
@@ -76,6 +79,21 @@ document.addEventListener('DOMContentLoaded', () => {
 <small>${esc(x.title || 'Club legend')}</small>${x.text ? `<p>${esc(x.text)}</p>` : ''}<div class="lg-meta">Inducted ${x.date ? nice(x.date) : ''}</div>
 ${S.canManage ? `<button type="button" class="btn sm ghost hof-x" data-rm="${x.id}" aria-label="Remove ${esc(x.n)}">✕ Remove</button>` : ''}</article>`;
   const momentLi = (x) => `<li class="hof-ev moment" data-date="${esc(x.date)}" data-mid="${x.id}"><time datetime="${esc(x.date)}">${nice(x.date)}</time><span class="hof-ic">📜</span><div><b>${esc(x.n)}</b>${S.canManage ? `<button type="button" class="btn sm ghost hof-x" data-rm="${x.id}" aria-label="Remove">✕</button>` : ''}<p>${esc(x.text || '')}</p></div></li>`;
+
+  // Home page teaser (board 04, part 1): one legend card + a link to the full page. Independent of `lg`
+  // so it also works on index.html, which has no full legends/timeline UI. Renders its own heading (rather
+  // than one baked into the page) so the whole section stays invisible until there's a legend to show –
+  // no empty "Hall of Fame" heading floating over nothing before anyone's been inducted.
+  if (teaser) {
+    call('/api/hof').then((d) => {
+      const x = d.legends?.[0];
+      if (!x) return;
+      S = d;
+      teaser.innerHTML = `<h2 class="banner-h">Hall of Fame <small>the players who defined the club</small></h2>${legendCard(x)}<p><a class="btn ghost" href="${BASE}halloffame.html">🏛️ Enter the Hall →</a></p>`;
+      teaser.hidden = false;
+    }).catch(() => {});
+  }
+  if (!lg) return;
 
   function render() {
     lg.innerHTML = `${S.canManage ? `<div class="hof-tools"><button type="button" class="btn sm" data-add="legend">🌟 Induct a legend</button><button type="button" class="btn sm ghost" data-add="moment">📜 Add a history moment</button></div>` : ''}

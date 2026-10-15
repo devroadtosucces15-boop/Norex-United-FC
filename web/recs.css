@@ -1,0 +1,18 @@
+/* Who to play with tonight (P3.6). Uses the tokens from style.css. */
+.rc-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start;justify-content:space-between;margin:0 0 10px}
+.rc-head h3{margin:0 0 4px}.rc-head p{margin:0;max-width:70ch}.rc-modes{margin:0}
+.rc-tonight{margin:0 0 8px;padding:8px 12px;border-radius:10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.4);font-size:14px}
+.rc-only{display:inline-flex;gap:8px;align-items:center;margin:0 0 10px;font-size:14px;cursor:pointer}
+.rc-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.rc-p{display:grid;grid-template-columns:auto 1fr auto;gap:10px 14px;align-items:center;animation:rcIn .3s ease both}
+.rc-rank{font:700 20px var(--head);color:var(--gold);width:26px;text-align:center}
+.rc-main{display:grid;gap:6px;min-width:0}
+.rc-why{display:flex;flex-wrap:wrap;gap:4px}
+.rc-chip{display:inline-flex;gap:4px;align-items:center;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line2);background:rgba(255,255,255,.04)}
+.rc-chip.good{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.08)}.rc-chip.bad{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08)}
+.rc-side{display:grid;gap:8px;justify-items:end}.rc-side .btn{margin:0}
+.rc-bar{display:block;width:90px;height:6px;border-radius:999px;background:var(--ink);overflow:hidden;border:1px solid var(--line)}
+.rc-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--gold))}
+@media (max-width:560px){.rc-p{grid-template-columns:auto 1fr}.rc-side{grid-column:1/-1;grid-template-columns:1fr auto;align-items:center;justify-items:stretch}.rc-bar{width:auto}}
+@keyframes rcIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.rc-p{animation:none}}

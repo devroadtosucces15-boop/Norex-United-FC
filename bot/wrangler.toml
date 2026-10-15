@@ -3,10 +3,11 @@ main = "worker.js"
 compatibility_date = "2025-01-01"
 
 [triggers]
-crons = ["*/10 * * * *"]
+crons = ["*/10 * * * *", "* * * * *"] # every 10 min: site update + checks; every minute: /remind only
 
 [vars]
 SITE_URL = "https://devroadtosucces15-boop.github.io/Norex-United-FC/"
+PUBLIC_URL = "https://norex-bot.norexunited.workers.dev" # this Worker – Card Studio cards are served from /media/ here (bot/faces.js)
 GITHUB_REPO = "devroadtosucces15-boop/Norex-United-FC"
 DISCORD_APP_ID = "1553967740543569970"
 DISCORD_PUBLIC_KEY = "25181955eefb8efef9009dc5688490b496b2f889cd9fda5bd8ecd4ac8ec680b6"
@@ -15,3 +16,41 @@ ADMIN_IDS = "1322770005535756290"
 MEMBER_ROLE_ID = ""
 ADMIN_ROLE_ID = "1371389857649393684"
 OWNER_ROLE_ID = "1451571867579322422"
+# BE0: Web Push (RFC 8292). Public half of the VAPID keypair – safe to commit, sent to browsers on purpose.
+# The private half is VAPID_PRIVATE_KEY, a Worker secret uploaded from the GH Actions secret of the same name.
+VAPID_PUBLIC_KEY = "BHlk5h_Pk73q6Puq3GZBlD2N11-0XNiDukORC4i62w98wxnFxWgoT1V145xhFihpafT1RTwJKFdyFwncyxKru_s"
+
+# P11.1: Workers AI (free 10,000 neurons/day on this account) – image + text models for Phase 11
+[ai]
+binding = "AI"
+
+# Card Studio: shrinks the background/photo references below the 512px FLUX.2 limit
+[images]
+binding = "IMAGES"
+
+# P6.3b live chat: one Durable Object per chat room (SQLite-backed class = Workers Free plan)
+[[durable_objects.bindings]]
+name = "CHAT_ROOM"
+class_name = "ChatRoom"
+
+# BE8 Hub: one shared Durable Object for the whole club's live "who's here" roster + waves
+[[durable_objects.bindings]]
+name = "HUB_ROOM"
+class_name = "HubRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom"]
+
+# Redesign BE0 live rooms: generic ClubRoom DO for Locker/Dugout/Studio broadcast (bot/clubroom.js)
+[[durable_objects.bindings]]
+name = "CLUB_ROOM"
+class_name = "ClubRoom"
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["HubRoom"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["ClubRoom"]

@@ -1,6 +1,7 @@
 // Advanced metrics + period leaderboards (roadmap P1.2 / P4.5). One engine for League and Rush:
 // build.mjs imports it in Node (League, from archived EA matches) and the browser uses it for Rush (from /api/rush).
-// Input: matches as { id, ts, gf, ga, res, players: [{ k, n, g, a, r, motm, shots?, secs?, grp? }] } – our players only.
+// Input: matches as { id, ts, gf, ga, res, players: [{ k, n, g, a, r, motm, shots?, secs?, grp?, dr?, sa? }] } – our players only.
+// dr/sa = dribbles / second assists (P1.8): League games archived since EA event codes were kept; absent elsewhere.
 // Output: plain objects + HTML strings (no DOM), so the same markup comes out of both places.
 (function (root) {
   const avg = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
@@ -20,7 +21,8 @@
     const P = new Map();
     for (const m of ms) for (const p of m.players) {
       if (!p.k) continue;
-      const e = P.get(p.k) ?? { k: p.k, n: p.n, apps: 0, W: 0, D: 0, L: 0, g: 0, a: 0, motm: 0, shots: 0, secs: 0, rs: [], teamGoals: 0, clutch: 0, grps: {}, log: [] };
+      const e = P.get(p.k) ?? { k: p.k, n: p.n, apps: 0, W: 0, D: 0, L: 0, g: 0, a: 0, motm: 0, shots: 0, secs: 0, rs: [], teamGoals: 0, clutch: 0, grps: {}, log: [], evApps: 0, evSecs: 0, dr: 0, sa: 0 };
+      if (p.dr != null) { e.evApps++; e.evSecs += p.secs || 0; e.dr += p.dr; e.sa += p.sa || 0; }
       e.apps++; e[m.res]++; e.g += p.g; e.a += p.a; e.motm += p.motm ? 1 : 0; e.shots += p.shots || 0; e.secs += p.secs || 0; e.n = p.n;
       if (p.r) e.rs.push(p.r);
       e.teamGoals += m.gf;
@@ -41,6 +43,7 @@
       for (const x of e.log) { cur = x.g > 0 ? cur + 1 : 0; best = Math.max(best, cur); }
       for (const x of [...e.log].reverse()) { if (x.res === 'L') break; unb++; }
       const grp = Object.entries(e.grps).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+      const evMins = e.evSecs / 60;
       return {
         k: e.k, n: e.n, apps: e.apps, W: e.W, D: e.D, L: e.L, g: e.g, a: e.a, ga: e.g + e.a, motm: e.motm, shots: e.shots, grp,
         r: r1(r), form: r1(form), sd: sd == null ? null : r2(sd), mins: Math.round(mins),
@@ -48,6 +51,8 @@
         gpg: r2(e.g / e.apps), gapg: r2((e.g + e.a) / e.apps),
         conv: e.shots ? pct(e.g, e.shots) : null, inv: e.teamGoals ? pct(e.g + e.a, e.teamGoals) : null, clutch: e.clutch,
         streak: cur, bestStreak: best, unbeaten: unb, win: pct(e.W, e.apps),
+        evApps: e.evApps, dr: e.evApps ? e.dr : null, sa: e.evApps ? e.sa : null,
+        dr90: evMins >= 90 ? r1((e.dr / evMins) * 90) : e.evApps ? r1(e.dr / e.evApps) : null,
       };
     });
   }
@@ -103,10 +108,12 @@
     const head = [['Player', ''], ['Apps', 'Games played'], ['G+A', 'Goals + assists'], [minutes ? 'G+A/90' : 'G+A/gm', minutes ? 'Goals + assists per 90 minutes' : 'Goals + assists per game'],
       ['Conv %', 'Goals per shot'], ['Inv %', 'Share of the team’s goals they scored or set up'], ['Form', 'Last 5 ratings, newest counts most'], ['Consist.', 'Rating spread (std-dev) – lower is steadier'],
       ['Clutch', 'Goals in games decided by one goal or drawn'], ['Streak', 'Current scoring streak (best)'], ['Unbeaten', 'Current run of apps without a defeat']];
+    const ev = rows.some((p) => p.evApps);
+    if (ev) head.push(['Drb/90', 'Dribbles completed per 90 minutes (EA match events)'], ['2nd A', 'Second assists – the pass before the assist']);
     const sorted = [...rows].sort((a, b) => b.ga - a.ga || b.r - a.r);
     return `<div class="tbl"><table class="mx-table"><thead><tr>${head.map(([h, tip], i) => `<th${i ? ' class="n"' : ''}${tip ? ` title="${tip}"` : ''}>${h}</th>`).join('')}</tr></thead><tbody>${sorted.map((p) => `<tr${p.apps < need ? ' class="mx-few"' : ''}>
 <td data-v="${ctx.esc(p.n.toLowerCase())}">${ctx.link(p)}</td>${cell(p.apps)}${cell(p.ga)}${cell(dash(minutes ? p.ga90 : p.gapg), minutes ? p.ga90 : p.gapg)}${cell(dash(p.conv, '%'), p.conv)}${cell(dash(p.inv, '%'), p.inv)}
-${cell(p.apps >= need ? rp(p.form) : dash(null), p.apps >= need ? p.form : -1)}${cell(p.sd == null ? dash(null) : `±${p.sd.toFixed(2)}`, p.sd == null ? 99 : p.sd)}${cell(p.clutch)}${cell(`${p.streak}${p.bestStreak > p.streak ? ` <small class="muted">(${p.bestStreak})</small>` : ''}`, p.streak)}${cell(p.unbeaten)}</tr>`).join('')}</tbody></table></div>
+${cell(p.apps >= need ? rp(p.form) : dash(null), p.apps >= need ? p.form : -1)}${cell(p.sd == null ? dash(null) : `±${p.sd.toFixed(2)}`, p.sd == null ? 99 : p.sd)}${cell(p.clutch)}${cell(`${p.streak}${p.bestStreak > p.streak ? ` <small class="muted">(${p.bestStreak})</small>` : ''}`, p.streak)}${cell(p.unbeaten)}${ev ? cell(dash(p.dr90), p.dr90) + cell(dash(p.sa), p.sa) : ''}</tr>`).join('')}</tbody></table></div>
 <p class="small muted">Click a column to sort. Averages (form, consistency, per-90) need ${need}+ games; faded rows have fewer.${ctx.note ? ' ' + ctx.note : ''}</p>`;
   }
   const tabs = (items, active, cls) => `<div class="nx-tabs ${cls}" role="tablist">${items.map(([k, l, n]) => `<button type="button" role="tab" data-key="${k}" aria-selected="${k === active}" tabindex="${k === active ? 0 : -1}">${l}${n != null ? `<em>${n}</em>` : ''}</button>`).join('')}</div>`;
