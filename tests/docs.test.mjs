@@ -60,6 +60,30 @@ t('flags: play style + suggestions 404 for a member', (await call(member, '/api/
 t('flags: owner gets in', (await call(owner, '/api/docs')).s === 200 && (await call(owner, '/api/playstyle')).s === 200 && (await call(owner, '/api/suggestions')).s === 200);
 setFlags({ docs: 'public', playStyle: 'members', suggestions: 'members' });
 
+// ----- 0053 club docs content + release hold -----
+const seeded = (await call(member, '/api/docs')).d;
+const byArea = (a) => seeded.items.filter((x) => x.area === a).length;
+t('0053: 27 founder documents seeded (2 announce, 14 rules, 3 requirements, 8 faq)', seeded.items.length === 27 && byArea('announce') === 2 && byArea('rules') === 14 && byArea('requirements') === 3 && byArea('faq') === 8);
+t('0053: nothing public, nothing pinned, nothing to acknowledge', seeded.items.every((x) => !x.public && !x.pinned) && seeded.rules.version === 0 && seeded.rules.acked);
+t('0053: guests still see nothing', (await (await W('/api/docs')).json()).items.length === 0);
+t('0053: the migration notified nobody', !(await call(member, '/api/notify')).d.items.length && !(await call(member, '/api/notify/count')).d.ack);
+t('hold: managers see it, members don’t', (await call(mgr, '/api/docs')).d.held === true && seeded.held === undefined);
+const hAnn = await call(mgr, '/api/docs', { area: 'announce', title: 'Held news', body: 'x', pinned: true, notify: true, discord: { channel: '70001' } });
+t('hold: announcement saves but no pin, no notification, no Discord post', hAnn.s === 200 && hAnn.d.held && !hAnn.d.notified && !hAnn.d.discord && !hAnn.d.items.find((x) => x.id === hAnn.d.id).pinned && !posts.length && !(await call(member, '/api/notify')).d.items.length);
+const hRule = await call(mgr, '/api/docs', { area: 'rules', title: 'Held rule', body: 'x', ack: true });
+t('hold: rule with ack does not bump the rules version', hRule.s === 200 && !hRule.d.rulesVersion && (await call(member, '/api/docs')).d.rules.version === 0);
+t('hold: Discord post refused', (await call(mgr, '/api/docs/discord', { id: hAnn.d.id, channel: '70001' })).s === 400 && !posts.length);
+t('hold: reminders refused', (await call(mgr, '/api/docs/remind', {})).s === 409);
+t('release: owner only', (await call(member, '/api/docs/release', {})).s === 403 && (await call(mgr, '/api/docs/release', {})).s === 403);
+const rel = await call(owner, '/api/docs/release', {});
+const relFounder = rel.d.items?.find((x) => x.title === 'A message from the founder');
+t('release: founder message pinned, rules version 1', rel.s === 200 && rel.d.released && rel.d.version === 1 && relFounder?.pinned && rel.d.items.filter((x) => x.pinned).length === 1 && !rel.d.held);
+const relNotes = (await call(member, '/api/notify')).d.items;
+t('release: members get the founder message + must-acknowledge prompt', relNotes.some((n) => n.title === 'A message from the founder' && n.link === `docs.html#d-${relFounder.id}`) && /rules/i.test((await call(member, '/api/notify/count')).d.ack?.title || ''));
+t('release: only once', (await call(owner, '/api/docs/release', {})).s === 409);
+// Back to an empty, released hub for the tests below.
+sqlite.exec("UPDATE docs SET removed_at = 1 WHERE area != 'playstyle'; DELETE FROM doc_acks; DELETE FROM notifications; UPDATE meta SET value = '0' WHERE key = 'rules_version'; DELETE FROM meta WHERE key IN ('rules_at', 'rules_remind_at')");
+
 // ----- P5.2 docs -----
 t('member cannot write docs (403)', (await call(member, '/api/docs', { area: 'faq', title: 'Hi there', body: 'x' })).s === 403);
 t('unknown area refused', (await call(mgr, '/api/docs', { area: 'nope', title: 'Hello', body: 'x' })).s === 400);
