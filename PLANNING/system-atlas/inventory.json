@@ -1,6 +1,6 @@
 {
-  "revision": "e6ab483e9e26dd10ef0a905156c0fff163299972",
-  "files": 790,
+  "revision": "6addca8b63cdef049b41b112732e2d211573e281",
+  "files": 791,
   "imports": 559,
   "api_paths": 238,
   "tables": 308,
@@ -3244,7 +3244,7 @@
     {
       "path": "bot/social.js",
       "layer": "bot",
-      "lines": 142,
+      "lines": 138,
       "imports": [
         "./roles.js",
         "./notify.js"
@@ -4672,7 +4672,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1132,
+      "lines": 1320,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5377,6 +5377,15 @@
       "path": "data/matches/102496646590109.json",
       "layer": "data",
       "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/102532757960176.json",
+      "layer": "data",
+      "lines": 468,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8033,7 +8042,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 58,
+      "lines": 36,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -10427,6 +10436,7 @@
         "/api/mybuild",
         "/api/notify",
         "/api/notify/ack",
+        "/api/notify/count",
         "/api/notify/prefs",
         "/api/notify/read",
         "/api/notify/test",
@@ -10957,7 +10967,7 @@
     {
       "path": "tests/social.test.mjs",
       "layer": "tests",
-      "lines": 145,
+      "lines": 143,
       "imports": [
         "./mock.mjs",
         "../bot/feed.js",
@@ -12887,7 +12897,7 @@
     {
       "path": "web/presence.js",
       "layer": "web",
-      "lines": 77,
+      "lines": 70,
       "imports": [],
       "endpoints": [
         "/api/presence"
