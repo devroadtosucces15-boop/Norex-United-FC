@@ -1,7 +1,7 @@
 {
-  "revision": "6addca8b63cdef049b41b112732e2d211573e281",
-  "files": 791,
-  "imports": 559,
+  "revision": "969112218000d9acd3918184770b19b77610114f",
+  "files": 793,
+  "imports": 573,
   "api_paths": 238,
   "tables": 308,
   "records": [
@@ -1561,17 +1561,25 @@
     {
       "path": "bot/live.js",
       "layer": "bot",
-      "lines": 82,
-      "imports": [],
+      "lines": 112,
+      "imports": [
+        "./roles.js",
+        "./ui.js",
+        "./docs.js",
+        "./notify.js"
+      ],
       "endpoints": [],
       "tables": [
         "config",
+        "meta",
         "the"
       ],
       "functions": [
+        "announceLive",
         "checkLive",
         "decode",
         "getLive",
+        "livePost",
         "page",
         "parseTwitch",
         "parseYouTube",
@@ -2608,7 +2616,7 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 419,
+      "lines": 421,
       "imports": [
         "./roles.js",
         "./clubroom.js",
@@ -3120,6 +3128,39 @@
       ]
     },
     {
+      "path": "bot/reminders.js",
+      "layer": "bot",
+      "lines": 69,
+      "imports": [
+        "./roles.js",
+        "./notify.js",
+        "./awards.js",
+        "./locker.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "event_rsvps",
+        "events",
+        "meta",
+        "notifications",
+        "rush_prefs",
+        "star_ratings",
+        "the",
+        "users",
+        "votes"
+      ],
+      "functions": [
+        "all",
+        "claim",
+        "eligible",
+        "marks",
+        "one",
+        "remindersCron",
+        "send",
+        "take"
+      ]
+    },
+    {
       "path": "bot/roles.js",
       "layer": "bot",
       "lines": 188,
@@ -3593,12 +3634,13 @@
     {
       "path": "bot/worker.js",
       "layer": "bot",
-      "lines": 591,
+      "lines": 593,
       "imports": [
         "./botcommands.js",
         "./members.js",
         "./live.js",
         "./memberlive.js",
+        "./reminders.js",
         "./notify.js",
         "./events.js",
         "./awards.js",
@@ -3680,7 +3722,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 124,
+      "lines": 127,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4672,7 +4714,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1320,
+      "lines": 1414,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -10077,19 +10119,24 @@
     {
       "path": "tests/live.test.mjs",
       "layer": "tests",
-      "lines": 55,
+      "lines": 83,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
-        "../bot/live.js"
+        "../bot/live.js",
+        "../bot/ui.js"
       ],
       "endpoints": [
         "/api/live"
       ],
       "tables": [
-        "STREAMS"
+        "SET",
+        "STREAMS",
+        "meta"
       ],
-      "functions": []
+      "functions": [
+        "setFlag"
+      ]
     },
     {
       "path": "tests/locker.test.mjs",
@@ -10864,6 +10911,31 @@
         "the"
       ],
       "functions": []
+    },
+    {
+      "path": "tests/reminders.test.mjs",
+      "layer": "tests",
+      "lines": 51,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs",
+        "../bot/reminders.js",
+        "../bot/awards.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "event_rsvps",
+        "events",
+        "notifications",
+        "rush_prefs",
+        "star_ratings",
+        "votes"
+      ],
+      "functions": [
+        "count",
+        "setFlags",
+        "site"
+      ]
     },
     {
       "path": "tests/run.mjs",
@@ -14049,6 +14121,26 @@
       "kind": "imports"
     },
     {
+      "source": "bot/live.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/live.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/live.js",
+      "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/live.js",
+      "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/locker.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -14524,6 +14616,26 @@
       "kind": "imports"
     },
     {
+      "source": "bot/reminders.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/reminders.js",
+      "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/reminders.js",
+      "target": "bot/awards.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/reminders.js",
+      "target": "bot/locker.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/servertools.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -14646,6 +14758,11 @@
     {
       "source": "bot/worker.js",
       "target": "bot/memberlive.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/reminders.js",
       "kind": "imports"
     },
     {
@@ -15669,6 +15786,11 @@
       "kind": "imports"
     },
     {
+      "source": "tests/live.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/locker.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -16061,6 +16183,26 @@
     {
       "source": "tests/redirects.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/reminders.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/reminders.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/reminders.test.mjs",
+      "target": "bot/reminders.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/reminders.test.mjs",
+      "target": "bot/awards.js",
       "kind": "imports"
     },
     {
