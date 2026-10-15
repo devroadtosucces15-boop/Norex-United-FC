@@ -1,7 +1,7 @@
 {
-  "revision": "6dc08a9886347b0e199d478bcf092c1aeb541db7",
-  "files": 803,
-  "imports": 594,
+  "revision": "742598590ec35c165b932a6d0d5e422ac394894e",
+  "files": 808,
+  "imports": 599,
   "api_paths": 240,
   "tables": 308,
   "records": [
@@ -1821,7 +1821,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1112,
+      "lines": 1131,
       "imports": [
         "./panel.js",
         "./live.js",
@@ -1924,6 +1924,7 @@
         "/api/locker/ws",
         "/api/manager/queue",
         "/api/me",
+        "/api/me/prefs",
         "/api/member",
         "/api/overrides",
         "/api/probuilds",
@@ -1983,6 +1984,7 @@
         "callback",
         "claimOut",
         "clean",
+        "cleanMotion",
         "cors",
         "currentRole",
         "days7",
@@ -2004,6 +2006,7 @@
         "marks",
         "memberActivity",
         "migrateKV",
+        "motionOf",
         "one",
         "opt",
         "parseWarnings",
@@ -3715,7 +3718,7 @@
     {
       "path": "bot/worker.js",
       "layer": "bot",
-      "lines": 594,
+      "lines": 596,
       "imports": [
         "./botcommands.js",
         "./members.js",
@@ -3792,6 +3795,7 @@
         "json",
         "load",
         "loadSite",
+        "noteMsg",
         "panelEdit",
         "playerMessage",
         "profanitySetupCommand",
@@ -3804,7 +3808,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 127,
+      "lines": 128,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4607,7 +4611,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 1038,
+      "lines": 1085,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4796,7 +4800,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1320,
+      "lines": 1461,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5525,9 +5529,36 @@
       "functions": []
     },
     {
+      "path": "data/matches/102706932420372.json",
+      "layer": "data",
+      "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/102844545860217.json",
+      "layer": "data",
+      "lines": 429,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/102882112170312.json",
       "layer": "data",
       "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/102950382080242.json",
+      "layer": "data",
+      "lines": 283,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9906,6 +9937,33 @@
       ]
     },
     {
+      "path": "tests/feedbackroom.test.mjs",
+      "layer": "tests",
+      "lines": 50,
+      "imports": [
+        "node:fs",
+        "node:vm",
+        "./mock.mjs",
+        "./lib.mjs"
+      ],
+      "endpoints": [
+        "/api/feedback",
+        "/api/feedback/all",
+        "/api/feedback/hide",
+        "/api/feedback/react",
+        "/api/feedback/read",
+        "/api/feedback/report",
+        "/api/feedback/send",
+        "/api/feedback/why"
+      ],
+      "tables": [],
+      "functions": [
+        "mk",
+        "rd",
+        "run"
+      ]
+    },
+    {
       "path": "tests/flags.test.mjs",
       "layer": "tests",
       "lines": 104,
@@ -10873,6 +10931,24 @@
       "functions": [
         "read"
       ]
+    },
+    {
+      "path": "tests/prefs.test.mjs",
+      "layer": "tests",
+      "lines": 24,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs",
+        "../bot/members.js"
+      ],
+      "endpoints": [
+        "/api/me",
+        "/api/me/prefs"
+      ],
+      "tables": [
+        "meta"
+      ],
+      "functions": []
     },
     {
       "path": "tests/probuilds.test.mjs",
@@ -15815,6 +15891,16 @@
       "kind": "imports"
     },
     {
+      "source": "tests/feedbackroom.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/feedbackroom.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
       "source": "tests/flags.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -16342,6 +16428,21 @@
     {
       "source": "tests/polish.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/prefs.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/prefs.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/prefs.test.mjs",
+      "target": "bot/members.js",
       "kind": "imports"
     },
     {
