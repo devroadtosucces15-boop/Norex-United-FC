@@ -1,8 +1,8 @@
 {
-  "revision": "742598590ec35c165b932a6d0d5e422ac394894e",
-  "files": 808,
-  "imports": 599,
-  "api_paths": 240,
+  "revision": "244f04ffc26c395c62780969cf198ecbc32c1eba",
+  "files": 822,
+  "imports": 605,
+  "api_paths": 242,
   "tables": 308,
   "records": [
     {
@@ -1821,8 +1821,9 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1131,
+      "lines": 1137,
       "imports": [
+        "./faces.js",
         "./panel.js",
         "./live.js",
         "./game.js",
@@ -1905,6 +1906,7 @@
         "/api/docs",
         "/api/events/public",
         "/api/events/report/poster",
+        "/api/faces",
         "/api/feed/public",
         "/api/feed/upload",
         "/api/game",
@@ -3808,7 +3810,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 128,
+      "lines": 129,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5538,6 +5540,15 @@
       "functions": []
     },
     {
+      "path": "data/matches/102758955430060.json",
+      "layer": "data",
+      "lines": 647,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/102844545860217.json",
       "layer": "data",
       "lines": 429,
@@ -5556,9 +5567,108 @@
       "functions": []
     },
     {
+      "path": "data/matches/102948692080466.json",
+      "layer": "data",
+      "lines": 643,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/102950382080242.json",
       "layer": "data",
       "lines": 283,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103234088570061.json",
+      "layer": "data",
+      "lines": 764,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103240011390054.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103490133150494.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103494369330077.json",
+      "layer": "data",
+      "lines": 466,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103514313400210.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103590247680168.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103596108430421.json",
+      "layer": "data",
+      "lines": 573,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103680170840207.json",
+      "layer": "data",
+      "lines": 579,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103692007990444.json",
+      "layer": "data",
+      "lines": 836,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/103692049380251.json",
+      "layer": "data",
+      "lines": 838,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9420,6 +9530,31 @@
       ]
     },
     {
+      "path": "tests/botfeat-sample.mjs",
+      "layer": "tests",
+      "lines": 35,
+      "imports": [
+        "./mock.mjs"
+      ],
+      "endpoints": [
+        "/api/profile"
+      ],
+      "tables": [
+        "card_requests",
+        "discoveries",
+        "discovery_useful",
+        "fun_jail",
+        "fun_trivia_scores",
+        "member_live",
+        "notes",
+        "watch_useful",
+        "watch_videos"
+      ],
+      "functions": [
+        "seedBotSample"
+      ]
+    },
+    {
       "path": "tests/builder.test.mjs",
       "layer": "tests",
       "lines": 86,
@@ -9902,6 +10037,20 @@
         "page",
         "read"
       ]
+    },
+    {
+      "path": "tests/faces-api.test.mjs",
+      "layer": "tests",
+      "lines": 14,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "users"
+      ],
+      "functions": []
     },
     {
       "path": "tests/feed.test.mjs",
@@ -10589,14 +10738,16 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 303,
+      "lines": 342,
       "imports": [
         "node:child_process",
         "node:fs",
         "node:os",
         "node:path",
         "./mock.mjs",
-        "./lib.mjs"
+        "./lib.mjs",
+        "../bot/faces.js",
+        "./botfeat-sample.mjs"
       ],
       "endpoints": [
         "/api/achievements",
@@ -10643,6 +10794,8 @@
         "/api/cards/templates/update",
         "/api/chats/reports/",
         "/api/contacts",
+        "/api/discoveries",
+        "/api/discoveries/useful",
         "/api/docs",
         "/api/docs/ack",
         "/api/docs/acks",
@@ -10673,6 +10826,7 @@
         "/api/intel/remind",
         "/api/issues",
         "/api/live",
+        "/api/live/members",
         "/api/locker",
         "/api/me",
         "/api/me/prefs",
@@ -10713,7 +10867,9 @@
         "/api/trials",
         "/api/trials/apply",
         "/api/trials/update",
-        "/api/vote"
+        "/api/vote",
+        "/api/watchlist",
+        "/api/watchlist/sampleVid001/useful"
       ],
       "tables": [
         "Staff",
@@ -14487,6 +14643,11 @@
     },
     {
       "source": "bot/members.js",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/members.js",
       "target": "bot/panel.js",
       "kind": "imports"
     },
@@ -15556,6 +15717,11 @@
       "kind": "imports"
     },
     {
+      "source": "tests/botfeat-sample.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
       "source": "tests/builder.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -15873,6 +16039,16 @@
     {
       "source": "tests/extradata.test.mjs",
       "target": "scripts/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/faces-api.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/faces-api.test.mjs",
+      "target": "tests/lib.mjs",
       "kind": "imports"
     },
     {
@@ -16278,6 +16454,16 @@
     {
       "source": "tests/next.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/next.test.mjs",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/next.test.mjs",
+      "target": "tests/botfeat-sample.mjs",
       "kind": "imports"
     },
     {
