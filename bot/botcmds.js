@@ -22,6 +22,7 @@ import { notifyRouteAll } from './notify.js';
 import { trialsState } from './trials.js';
 import { markLearned } from './plays.js';
 import { message, panel, reply, notice, header, text, sep, facts, side, thumb, label as heading, footer, buttons } from './ui.js';
+import { it } from './icons.js';
 import { faceOf, playerFaces } from './faces.js';
 import { hostCommand } from './host.js';
 
@@ -154,7 +155,7 @@ export async function memberCommand(i, env, who, site, h) {
     const F = { goals: ['Top scorers', (x) => x.g], assists: ['Most assists', (x) => x.a], ga: ['Goals + assists', (x) => x.g + x.a], rating: ['Best average rating (3+ games)', (x) => (x.gp >= 3 && x.r ? x.r : 0), 1], motm: ['Most MOTM', (x) => x.m], games: ['Most Rush games', (x) => x.gp] };
     const [title, f, dec = 0] = F[stat] ?? F.goals;
     const list = rows.map((x) => [x, f(x)]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    const medal = ['🥇', '🥈', '🥉'];
+    const medal = [it('first'), it('second'), it('third')];
     return reply(message({ blocks: [
       header({ eyebrow: brand('Rush leaderboard'), title: `⚡ ${title}`, sub: list[0] ? `${list[0][0].n} leads with ${list[0][1].toFixed(dec)}` : 'No confirmed Rush results yet' }),
       list.length ? text(list.map(([x, v], k) => `${medal[k] ?? `\`${k + 1}.\``} [${x.n}](${site}players/${encodeURIComponent(x.player)}.html) — **${v.toFixed(dec)}**`).join('\n')) : null,
@@ -266,13 +267,13 @@ export async function memberCommand(i, env, who, site, h) {
     const v = voteView(m, doc, me);
     const ranked = Object.entries(v.tally).sort((a, b) => b[1] - a[1]);
     const nameOf = (k) => v.players.find((p) => p.k === k)?.n ?? k;
-    const board = ranked.length ? ranked.map(([k, n], i) => `${['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`} **${nameOf(k)}** — ${n} vote${n === 1 ? '' : 's'}`).join('\n') : 'No votes yet.';
+    const board = ranked.length ? ranked.map(([k, n], i) => `${[it('first'), it('second'), it('third')][i] ?? `${i + 1}.`} **${nameOf(k)}** — ${n} vote${n === 1 ? '' : 's'}`).join('\n') : 'No votes yet.';
     return reply(message({ accent: 'gold', blocks: [
       header({ eyebrow: brand('Man of the match vote'), title: `🌟 MOTM · vs ${m.opp}`, sub: `${m.gf}–${m.ga} · ${ranked.reduce((t, [, n]) => t + n, 0)} votes so far`, thumb: m.oppCrest || null }),
       ...(await (async () => { // the top 3 on rows with their faces, the rest as a list
         const faces = await playerFaces(env, ranked.slice(0, 3).map(([k]) => k));
         if (!ranked.length || !faces.size) return [text(board)];
-        const rows = ranked.slice(0, 3).map(([k, n], i) => side(`${['🥇', '🥈', '🥉'][i]} **${nameOf(k)}**\n${n} vote${n === 1 ? '' : 's'}`, thumb(faces.get(String(k)))));
+        const rows = ranked.slice(0, 3).map(([k, n], i) => side(`${[it('first'), it('second'), it('third')][i]} **${nameOf(k)}**\n${n} vote${n === 1 ? '' : 's'}`, thumb(faces.get(String(k)))));
         return [...rows, ranked.length > 3 ? text(ranked.slice(3).map(([k, n], i) => `${i + 4}. **${nameOf(k)}** — ${n}`).join('\n')) : null];
       })()),
       buttons([{ label: 'Vote in the Squad Hub', url: `${site}members.html#vote` }, { label: 'Match report', url: m.url }]),

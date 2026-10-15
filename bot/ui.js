@@ -4,6 +4,7 @@
 // Discord can't lay out, a small footer line and the buttons last. With V2 a message has no `content`/`embeds` – all text
 // lives in text blocks.
 //   reply(message({ accent: 'win', blocks: [header({...}), cards(url), text('…'), footer('…'), buttons([...])] }))
+import { it } from './icons.js';
 export const IS_V2 = 1 << 15;
 export const EPHEMERAL = 1 << 6;
 
@@ -16,7 +17,7 @@ export const ACCENT = {
   steel: 0x6c7890, // staff only, private replies, logs, errors
 };
 export const resultAccent = (res) => ({ W: 'win', D: 'gold', L: 'loss' }[res] ?? 'red');
-export const RESULT_ICON = { W: '🟩', D: '🟨', L: '🟥' };
+export const RESULT_ICON = { get W() { return it('win'); }, get D() { return it('draw'); }, get L() { return it('loss'); } };
 export const BRAND = 'NOREX UNITED';
 
 const clip = (s, n) => (String(s).length > n ? `${String(s).slice(0, n - 1)}…` : String(s));
@@ -84,6 +85,10 @@ export function cardUrl(manifest, ...key) {
   for (const k of key) x = x?.[k];
   return typeof x === 'string' && manifest?.base ? manifest.base + x : null;
 }
+
+// A fixed banner picture (jail, wheel, discovery, matchnight – drawn by scripts/cards.mjs). Needs no manifest lookup.
+export const BANNER_V = 4; // = TEMPLATE_VERSION in scripts/cards.mjs
+export const bannerUrl = (env, name) => (env?.SITE_URL ? `${String(env.SITE_URL).replace(/\/?$/, '/')}cards/banner-${name}.png?v=${BANNER_V}` : null);
 
 // Every piece of text in a message, flattened – for tests and for logging.
 export function plainText(msg) {

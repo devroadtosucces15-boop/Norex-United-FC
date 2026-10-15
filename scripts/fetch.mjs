@@ -19,6 +19,7 @@ import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, 
 import { matchComponents } from '../bot/matchcard.js';
 import { MAX_BURNERS, burnerStats, mergeMatches, reportMessage, slimBurnerMatch, updateRoster } from '../bot/burnerstats.js';
 import { message, header, facts, footer, resultAccent } from '../bot/ui.js';
+import { it } from '../bot/icons.js';
 
 const API = 'https://proclubs.ea.com/api/fc/';
 const HEADERS = {
@@ -269,7 +270,7 @@ async function postToDiscord() {
           sub: `<t:${m.timestamp}:f> · ${{ W: 'Win', D: 'Draw', L: 'Defeat' }[res]}`,
           thumb: res === 'L' && oppCrest ? `${crestCdn}${oppCrest}.png` : site ? `${site}assets/crest.png` : undefined,
         }),
-        facts([['⚽ Goals', list('goals').replace(/\n/g, ', ')], ['🎯 Assists', list('assists').replace(/\n/g, ', ')], ['⭐ Man of the match', motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : ''], ['📈 Top rated', best ? `${best.playername} (${num(best.rating).toFixed(1)})` : '']]),
+        facts([[`${it('goal')} Goals`, list('goals').replace(/\n/g, ', ')], [`${it('assist')} Assists`, list('assists').replace(/\n/g, ', ')], [`${it('motm')} Man of the match`, motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : ''], ['📈 Top rated', best ? `${best.playername} (${num(best.rating).toFixed(1)})` : '']]),
         footer('Pick your name below to see your own match'),
         ...components,
       ] });

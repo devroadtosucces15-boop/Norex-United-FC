@@ -11,7 +11,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-export const TEMPLATE_VERSION = 3; // bump to redraw every card after a template change
+export const TEMPLATE_VERSION = 4; // bump to redraw every card after a template change
 const W = 1200;
 const COMPARE_PAIRS = 12; // busiest players whose every pairing gets a /compare picture (12 → 66 cards)
 
@@ -280,6 +280,23 @@ ${ms.map((m) => `<div class="row"><span class="pill ${m.res}" style="text-align:
 
 // ---------- what gets drawn, and the manifest the bot reads ----------
 const hash = (x) => crypto.createHash('sha1').update(JSON.stringify([TEMPLATE_VERSION, x])).digest('hex').slice(0, 10);
+
+// ---------- banners (fixed pictures for the fun, discovery and match-night messages) ----------
+// The bot can't draw a picture per member on the fly, so these are drawn once at build time: a wide banner that sets the
+// scene, with the names, reasons and times left to the message text. Stable file names (the ?v= in the URL busts Discord's cache).
+const BANNER_CSS = 'body{height:300px}.bn{position:absolute;inset:0;display:flex;align-items:center;gap:56px;padding:0 76px}.bn h1{font:700 104px/.95 Oswald;text-transform:uppercase;letter-spacing:.03em;text-shadow:0 8px 40px rgba(200,53,44,.55)}.bn p{margin-top:16px;font:600 26px Inter;letter-spacing:.22em;text-transform:uppercase;color:var(--soft)}.art{flex:none}';
+export const BANNERS = {
+  jail: () => page(`${BANNER_CSS}.bars{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 78px,rgba(255,255,255,.07) 78px 90px)}`,
+    `<div class="bars"></div><div class="bn"><svg class="art" width="170" height="170" viewBox="0 0 40 40"><rect x="4" y="3" width="32" height="34" rx="3" fill="#0b0f16" stroke="#efcf7a" stroke-width="1.6"/><g stroke="#efcf7a" stroke-width="1.6"><path d="M12 3v34M20 3v34M28 3v34"/></g><circle cx="20" cy="20" r="3.2" fill="#c8352c" stroke="#0b0f16" stroke-width="1"/></svg>
+<div><div class="eyebrow">Norex United</div><h1 class="gold">County Jail</h1><p>Just for fun · bail is one tap</p></div></div><div class="brand">NOREX UNITED</div>`),
+  wheel: () => page(`${BANNER_CSS}`, `<div class="bn"><svg class="art" width="210" height="210" viewBox="-50 -50 100 100"><g transform="rotate(-20)"><circle r="44" fill="#c9993a"/><path d="M0 0L0-40A40 40 0 0 1 40 0Z" fill="#c8352c"/><path d="M0 0L40 0A40 40 0 0 1 0 40Z" fill="#1f2a3c"/><path d="M0 0L0 40A40 40 0 0 1-40 0Z" fill="#a82820"/><path d="M0 0L-40 0A40 40 0 0 1 0-40Z" fill="#2a3446"/><circle r="12" fill="#efcf7a"/></g><path d="M0-52L7-42H-7Z" fill="#fff1c2"/></svg>
+<div><div class="eyebrow">Norex United</div><h1 class="gold">Spin the wheel</h1><p>Let fate pick</p></div></div><div class="brand">NOREX UNITED</div>`),
+  discovery: () => page(BANNER_CSS, `<div class="bn"><svg class="art" width="170" height="170" viewBox="0 0 40 40"><circle cx="17" cy="17" r="10.5" fill="none" stroke="#efcf7a" stroke-width="2.6"/><path d="M25 25l10 10" stroke="#efcf7a" stroke-width="3.4" stroke-linecap="round"/><path d="M17 11.5l1.6 3.4 3.7.4-2.8 2.5.8 3.7-3.3-1.9-3.3 1.9.8-3.7-2.8-2.5 3.7-.4z" fill="#c8352c"/></svg>
+<div><div class="eyebrow">Norex United</div><h1 class="gold">Discovery</h1><p>Worth knowing · shared by a teammate</p></div></div><div class="brand">NOREX UNITED</div>`),
+  matchnight: () => page(`${BANNER_CSS}.ln{position:absolute;inset:34px 60px;border:3px solid rgba(255,255,255,.14);border-radius:10px}.ln:before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:3px solid rgba(255,255,255,.14)}.ln:after{content:"";position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px;border:3px solid rgba(255,255,255,.14);border-radius:50%}`,
+    `<div class="ln"></div><div class="bn" style="justify-content:center;text-align:center"><div><div class="eyebrow">Norex United</div><h1 class="gold">Match night</h1><p>Be there · tell us if you can play</p></div></div><div class="brand">NOREX UNITED</div>`),
+};
+
 export function cardJobs(club, players, { matches = 10 } = {}) {
   const jobs = [];
   for (const m of (club.matches ?? []).slice(0, matches)) {
@@ -300,6 +317,7 @@ export function cardJobs(club, players, { matches = 10 } = {}) {
     const rows = topRows(players, stat).map(([p, v]) => [p.n, p.pos, p.s, v]);
     jobs.push({ key: ['top', stat], file: `top-${stat}-${hash([rows, club.name])}.png`, html: () => tableCard(players, stat, club) });
   }
+  for (const [name, html] of Object.entries(BANNERS)) jobs.push({ key: ['banner', name], file: `banner-${name}.png`, html });
   jobs.push({ key: ['club'], file: `club-${hash([club.name, club.crest, club.division, club.gp, club.w, club.d, club.l, club.gf, club.ga, club.form])}.png`, html: () => clubCard(club) });
   jobs.push({ key: ['results'], file: `results-${hash((club.matches ?? []).slice(0, 8))}.png`, html: () => resultsCard(club) });
   return jobs;

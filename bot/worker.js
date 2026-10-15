@@ -40,6 +40,7 @@ import { handleHubWaveJob } from './hub.js';
 import { burnerCommand, burnerPick } from './burners.js';
 import { generateCards } from './cardstudio.js';
 import { message, notice, header, cards, facts, text, sep, side, thumb, label, footer, buttons, cardUrl, resultAccent, RESULT_ICON } from './ui.js';
+import { it } from './icons.js';
 import { playerFaces } from './faces.js';
 import { zoneChoices } from './host.js';
 import { WATCH_COMMANDS, WATCH_BUTTON, watchCommand, watchButton, watchlistCron } from './watchlist.js';
@@ -495,11 +496,11 @@ async function command(data, site, ctx, { matchControls = false, env = {}, origi
       return message({ accent: resultAccent(m.res), blocks: [
         header({ eyebrow: brand('Match centre · League'), title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: `<t:${m.ts}:f> · ${{ W: 'Win', D: 'Draw', L: 'Defeat' }[m.res]}`, thumb: score ? null : m.oppCrest || club.crest }),
         cards(score && { url: score, alt: `${club.name} ${m.gf}–${m.ga} ${m.opp}` }),
-        facts([['⚽ Goals', goalsLine(m) || 'none'], ['📊 Team rating', avg != null ? r1(avg) : null]]),
+        facts([[`${it('goal')} Goals`, goalsLine(m) || 'none'], ['📊 Team rating', avg != null ? r1(avg) : null]]),
         m.motm ? await (async () => { // man of the match gets a row with their face (card if shipped, else Discord picture)
           const star = m.ps?.find((p) => p.n === m.motm);
           const face = star && (await playerFaces(env, [star.k], { origin })).get(String(star.k));
-          return face ? side(`⭐ **Man of the match**\n${m.motm}${star?.r ? ` · ${r1(star.r)}` : ''}`, thumb(face)) : facts([['⭐ Man of the match', m.motm]]);
+          return face ? side(`${it('motm')} **Man of the match**\n${m.motm}${star?.r ? ` · ${r1(star.r)}` : ''}`, thumb(face)) : facts([[`${it('motm')} Man of the match`, m.motm]]);
         })() : null,
         sep(),
         field ? [label('Field view · ratings'), cards({ url: field, alt: 'Our players on the pitch with their match ratings' })]
@@ -552,7 +553,7 @@ async function command(data, site, ctx, { matchControls = false, env = {}, origi
       const [title, f, dec = 0] = F[stat] ?? F.goals;
       const list = players.map((p) => [p, f(p)]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
       const card = cardUrl(deck, 'top', stat);
-      const medal = ['🥇', '🥈', '🥉'];
+      const medal = [it('first'), it('second'), it('third')];
       return message({ blocks: [
         header({ eyebrow: brand('Leaderboard'), title, sub: list[0] ? `${list[0][0].n} leads with ${list[0][1].toFixed(dec)}` : 'No games logged yet' }),
         cards(card && { url: card, alt: title }),

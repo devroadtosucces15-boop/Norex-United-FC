@@ -8,6 +8,7 @@
 import { flagOn } from './roles.js';
 import { parseTwitch, parseYouTube } from './live.js';
 import { message, header, text, sep, footer, buttons } from './ui.js';
+import { it } from './icons.js';
 import { postEmbed } from './docs.js';
 
 const PER_RUN = 8, UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -38,7 +39,7 @@ export async function liveOf(profile, fetcher = fetch) {
 }
 
 export const livePanel = (row) => message({ accent: 'win', mentions: { parse: [] }, blocks: [
-  header({ eyebrow: `NOREX UNITED · Live · ${row.platform}`, title: `🔴 ${row.name ?? 'A member'} is live`, sub: row.title || undefined, size: 3 }),
+  header({ eyebrow: `NOREX UNITED · Live · ${row.platform}`, title: `${it('live')} ${row.name ?? 'A member'} is live`, sub: row.title || undefined, size: 3 }),
   text(`<@${row.user_id}> just went on air – drop in and say hello.`),
   sep(),
   footer('Streaming from their profile on the site'),

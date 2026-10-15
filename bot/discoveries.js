@@ -6,7 +6,7 @@
 //   POST /api/discoveries/useful { id }       toggle "useful" on one
 // Everything is in the design system (bot/ui.js). Rejected shares are kept but never shown.
 import { can, flagOn } from './roles.js';
-import { message, notice, reply, header, text, sep, footer, buttons } from './ui.js';
+import { message, notice, reply, header, text, sep, footer, buttons, cards, bannerUrl } from './ui.js';
 import { notify, notifyManagers, safely } from './notify.js';
 import { postEmbed } from './docs.js';
 
@@ -36,6 +36,7 @@ export function cleanLink(v) {
 // ---------- the approved panel ----------
 export function discoveryPanel(row, useful, env = {}) {
   return message({ accent: 'gold', mentions: { parse: [] }, blocks: [
+    cards(row.image || bannerUrl(env, 'discovery')),
     header({ eyebrow: 'NOREX UNITED · Discovery', title: row.title, sub: `Shared by <@${row.user_id}>${row.approved_by ? ` · approved by <@${row.approved_by}>` : ''}`, size: 3 }),
     text(row.body),
     sep(),

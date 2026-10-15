@@ -7,6 +7,7 @@
 
 import { flagOn } from './roles.js';
 import { message, header, text, sep, footer, buttons } from './ui.js';
+import { it } from './icons.js';
 import { postEmbed } from './docs.js';
 import { notifyMembers } from './notify.js';
 
@@ -84,7 +85,7 @@ export async function updateLive(env) {
 // A stream that blips off and on again within 3 hours is not announced twice. Set after a successful post only.
 const ANNOUNCE_GAP = 3 * 3600e3;
 export const livePost = (v, site) => message({ accent: 'win', mentions: { parse: [] }, blocks: [
-  header({ eyebrow: `NOREX UNITED · Live · ${v.platform === 'twitch' ? 'Twitch' : 'YouTube'}`, title: '🔴 NOREX is live', sub: v.title || undefined, size: 3 }),
+  header({ eyebrow: `NOREX UNITED · Live · ${v.platform === 'twitch' ? 'Twitch' : 'YouTube'}`, title: `${it('live')} NOREX is live`, sub: v.title || undefined, size: 3 }),
   text('We just went on air – drop in, watch along and say hello in the chat.'),
   sep(),
   footer('Watch from the club site or straight on the platform'),

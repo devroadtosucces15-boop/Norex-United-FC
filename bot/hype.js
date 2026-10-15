@@ -13,6 +13,7 @@
 // posts to Discord for now, same scope cut as match-performance points.
 import { safely } from './notify.js';
 import { message, header, text, cards, facts, buttons, resultAccent } from './ui.js';
+import { it } from './icons.js';
 
 const RED = 0xc8352c, GREEN = 0x22c55e, GREY = 0x6b7280;
 const IMAGE_MODEL = '@cf/black-forest-labs/flux-1-schnell';
@@ -78,7 +79,7 @@ export async function checkHype(env, loadSite) {
     header({ eyebrow: `${club.name} · Match centre`, title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: { W: 'Win', D: 'Draw', L: 'Defeat' }[m.res] }),
     text(recap ?? fallback),
     art ? cards('attachment://hype.png') : null,
-    facts([['⚽ Scorers', (m.scorers ?? []).map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join(', ')], ['⭐ Man of the match', m.motm]]),
+    facts([[`${it('goal')} Scorers`, (m.scorers ?? []).map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join(', ')], [`${it('motm')} Man of the match`, m.motm]]),
     buttons([{ label: 'Match report', url: m.url }]),
   ] });
   await safely(postHype(env, channel, msg, art));

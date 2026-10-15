@@ -24,7 +24,7 @@ import { notify, notifyMembers, safely } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
-import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy, cards } from './ui.js';
+import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy, cards, RESULT_ICON } from './ui.js';
 import { facesOf } from './faces.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
@@ -393,7 +393,7 @@ export async function sessionReport(env, id, loadSite) {
 }
 function reportEmbed(env, rep, origin) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), e = rep.event, t = rep.team;
-  const icon = { W: '🟩', D: '🟨', L: '🟥' };
+  const icon = RESULT_ICON;
   const mvp = rep.mvp ? `⭐ Player of the night: **${rep.mvp.n}** (${rep.mvp.avg} avg${rep.mvp.g ? ` · ${rep.mvp.g} G` : ''}${rep.mvp.a ? ` · ${rep.mvp.a} A` : ''})` : '';
   const graded = rep.players.filter((p) => p.grade).slice(0, 10).map((p) => `\`${p.grade.padEnd(2)}\` ${p.n} · ${p.avg}${p.trial ? ` · 🧪 tried ${p.trial.pos}${p.trial.diff != null ? ` (${p.trial.diff >= 0 ? '+' : ''}${p.trial.diff} vs usual)` : ''}` : ''}`).join('\n');
   return message({ accent: t.games ? (t.w > t.l ? 'win' : t.w < t.l ? 'loss' : 'gold') : 'red', blocks: [

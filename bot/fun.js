@@ -6,7 +6,8 @@
 //   birthdays  the 10-min cron posts one 🎂 panel a day (after 08:00 UTC) for members whose profile has a birthday
 // Jail counts feed the member profile (GET /api/member → fun.jail, see bot/members.js).
 import { can, flagOn } from './roles.js';
-import { message, notice, reply, header, text, facts, footer, sep, buttons } from './ui.js';
+import { message, notice, reply, header, text, facts, footer, sep, buttons, cards, bannerUrl } from './ui.js';
+import { it } from './icons.js';
 
 export const FUN_COMMANDS = new Set(['jail', 'wheel', 'trivia']);
 export const FUN_BUTTON = /^norex:fun:/;
@@ -51,10 +52,11 @@ const userName = (i, id) => {
 };
 
 // ---------- /jail ----------
-function jailPanel(row, count, { bail = null } = {}) {
+function jailPanel(row, count, { bail = null, env } = {}) {
   const num = `NRX-${String(row.id).padStart(4, '0')}`;
   const out = row.at + row.minutes * MIN;
   return message({ accent: bail ? 'win' : 'loss', blocks: [
+    cards(bannerUrl(env, 'jail')),
     header({ eyebrow: 'NOREX UNITED · Jail', title: `⛓️ ${row.name}`, sub: `Norex County Jail · ${num}`, size: 2 }),
     text(`Charged with ${row.reason}.`),
     facts([bail ? ['Released', `on bail from ${bail} ${ts(row.bail_at ?? Date.now())}`] : ['Sentence', `${row.minutes} min · out ${ts(out)}`]]),
@@ -79,7 +81,7 @@ async function jail(i, env, who, now) {
     .bind(target, name, me, byName, reason, minutes, now).run();
   const row = { id: res.meta?.last_row_id, user_id: target, name, by_id: me, by_name: byName, reason, minutes, at: now };
   const count = (await env.DB.prepare('SELECT COUNT(*) AS n FROM fun_jail WHERE user_id = ? AND at >= ?').bind(target, monthStart(now)).first())?.n ?? 1;
-  return reply({ ...jailPanel(row, count), allowed_mentions: { parse: [] } });
+  return reply({ ...jailPanel(row, count, { env }), allowed_mentions: { parse: [] } });
 }
 
 async function bail(i, env, who, id, now) {
@@ -91,7 +93,7 @@ async function bail(i, env, who, id, now) {
   const byName = clean(i.member?.nick || i.member?.user?.global_name || i.member?.user?.username || 'a mate', 40);
   await env.DB.prepare('UPDATE fun_jail SET bail_by = ?, bail_at = ? WHERE id = ?').bind(me, now, id).run();
   const count = (await env.DB.prepare('SELECT COUNT(*) AS n FROM fun_jail WHERE user_id = ? AND at >= ?').bind(row.user_id, monthStart(row.at)).first())?.n ?? 1;
-  return upd(jailPanel({ ...row, bail_at: now }, count, { bail: byName }));
+  return upd(jailPanel({ ...row, bail_at: now }, count, { bail: byName, env }));
 }
 
 async function rapSheet(env, userId) {
@@ -107,9 +109,10 @@ async function rapSheet(env, userId) {
 // ---------- /wheel ----------
 export const parseOptions = (s) => [...new Set(String(s ?? '').split(/[,;\n]+/).map((x) => clean(x, 40)).filter(Boolean))].slice(0, MAX_WHEEL);
 
-function wheelPanel(row, options, winnerIdx) {
+function wheelPanel(row, options, winnerIdx, env) {
   const win = options[winnerIdx];
   return message({ accent: 'gold', blocks: [
+    cards(bannerUrl(env, 'wheel')),
     header({ eyebrow: 'NOREX UNITED · Spin the wheel', title: row.question ? `🎡 ${row.question}` : '🎡 The wheel has spoken', size: 3 }),
     text(`## ${win}`),
     sep(),
@@ -127,7 +130,7 @@ async function wheel(i, env, who, now) {
   const question = clean(o.question, 100);
   const res = await env.DB.prepare('INSERT INTO fun_wheels (question, options, by_id, at) VALUES (?, ?, ?, ?)').bind(question, JSON.stringify(options), me, now).run();
   const row = { id: res.meta?.last_row_id, question, by_id: me };
-  return reply({ ...wheelPanel(row, options, rng.pick(options.length)), allowed_mentions: { parse: [] } });
+  return reply({ ...wheelPanel(row, options, rng.pick(options.length), env), allowed_mentions: { parse: [] } });
 }
 
 async function spin(env, id, removeIdx) {
@@ -139,7 +142,7 @@ async function spin(env, id, removeIdx) {
     options = options.filter((_, k) => k !== removeIdx);
     await env.DB.prepare('UPDATE fun_wheels SET options = ? WHERE id = ?').bind(JSON.stringify(options), id).run();
   }
-  return upd(wheelPanel(row, options, rng.pick(options.length)));
+  return upd(wheelPanel(row, options, rng.pick(options.length), env));
 }
 
 // ---------- entry points ----------
@@ -225,7 +228,7 @@ async function trivia(i, env, now) {
   if (sub === 'board') {
     const rows = (await env.DB.prepare('SELECT * FROM fun_trivia_scores WHERE points > 0 ORDER BY points DESC, correct DESC LIMIT 10').all()).results ?? [];
     if (!rows.length) return say('No scores yet', 'Be the first: /trivia');
-    const medal = ['🥇', '🥈', '🥉'];
+    const medal = [it('first'), it('second'), it('third')];
     return reply({ ...message({ accent: 'gold', blocks: [
       header({ eyebrow: 'NOREX UNITED · Trivia', title: '🏆 Trivia table', sub: `${rows.length} player${rows.length === 1 ? '' : 's'} on the board`, size: 3 }),
       text(rows.map((r, k) => `${medal[k] ?? `\`${k + 1}.\``} **${r.name ?? 'A member'}** · ${r.points} pts · ${r.correct}/${r.played} right`).join('\n')),

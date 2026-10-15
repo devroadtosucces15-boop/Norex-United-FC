@@ -1,4 +1,5 @@
 import { message, header, text, sep, facts, label, footer, buttons, resultAccent } from './ui.js';
+import { it } from './icons.js';
 // Burner-club tracker – pure helpers shared by the fetcher (scripts/fetch.mjs), the site build
 // (scripts/burners-page.mjs), the Worker (/burner) and the tests. No imports, no I/O.
 //
@@ -112,11 +113,11 @@ export function reportMessage(burner, m, stats, siteUrl = '') {
   const motm = ps.find((p) => p.mom);
   const best = [...ps].sort((a, b) => b.r - a.r)[0];
   const lineup = [...ps].sort((a, b) => b.r - a.r).slice(0, 11)
-    .map((p) => `\`${r1(p.r)}\` ${p.n}${p.g ? ` ⚽${p.g > 1 ? p.g : ''}` : ''}${p.a ? ` 🎯${p.a > 1 ? p.a : ''}` : ''}`).join('\n');
+    .map((p) => `\`${r1(p.r)}\` ${p.n}${p.g ? ` ${it('goal')}${p.g > 1 ? p.g : ''}` : ''}${p.a ? ` ${it('assist')}${p.a > 1 ? p.a : ''}` : ''}`).join('\n');
   const crest = burner.crest ? `${CREST_CDN}${num(burner.crest)}.png` : undefined;
   return message({ accent: resultAccent(m.res), blocks: [
     header({ eyebrow: `Burner tracker · ${TYPE_LABEL[m.type] ?? 'League'}`, title: `🔥 ${burner.name} ${m.gf}–${m.ga} ${m.opp.name ?? `Club ${m.opp.id}`}`, sub: `${RES_WORD[m.res]} · <t:${m.ts}:f> · burner club report`, thumb: crest }),
-    facts([['⚽ Goals', list('g')], ['🎯 Assists', list('a')], ['⭐ Man of the match', motm ? `${motm.n} (${r1(motm.r)})` : ''], ['📈 Top rated', best && !motm ? `${best.n} (${r1(best.r)})` : '']]),
+    facts([[`${it('goal')} Goals`, list('g')], [`${it('assist')} Assists`, list('a')], [`${it('motm')} Man of the match`, motm ? `${motm.n} (${r1(motm.r)})` : ''], ['📈 Top rated', best && !motm ? `${best.n} (${r1(best.r)})` : '']]),
     lineup ? sep() : null,
     lineup ? label(`Lineup (${ps.length})`) : null,
     lineup ? text(lineup) : null,
