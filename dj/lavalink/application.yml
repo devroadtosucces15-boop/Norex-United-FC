@@ -1,0 +1,41 @@
+server:
+  port: 2333
+  address: 0.0.0.0
+lavalink:
+  plugins:
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.2"
+      snapshot: false
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.3.0"
+      snapshot: false
+  server:
+    password: "${LAVALINK_PASSWORD}"
+    filters:
+      volume: true
+      equalizer: true
+      karaoke: true
+      timescale: true
+      tremolo: true
+      vibrato: true
+      rotation: true
+    sources:
+      youtube: false        # handled by the youtube-source plugin below (fallback; against YouTube ToS, may break)
+      soundcloud: true
+      http: true
+    opusEncodingQuality: 10
+    resamplingQuality: HIGH
+plugins:
+  youtube:
+    enabled: true
+    allowSearch: true
+    oauth:
+      enabled: true
+      refreshToken: "${YOUTUBE_REFRESH_TOKEN}"
+      skipInitialization: true
+    clients: [MUSIC, TV, WEB, WEBEMBEDDED, ANDROID_VR]
+  lavasrc:
+    providers: ["ytmsearch:%QUERY%", "ytsearch:%QUERY%", "scsearch:%QUERY%"]   # Spotify tracks are mirrored to audio: YouTube Music, YouTube, then SoundCloud   # Spotify tracks are mirrored to audio: YouTube Music, YouTube, then SoundCloud
+    sources: { spotify: true, youtube: false }
+    spotify:
+      clientId: "${SPOTIFY_CLIENT_ID}"
+      clientSecret: "${SPOTIFY_CLIENT_SECRET}"
+      countryCode: "US"
