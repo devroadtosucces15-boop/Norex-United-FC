@@ -202,12 +202,28 @@
     // hand the finished item to an open Norex page (it numbers it and queues the upload); if no page answers, leave it for the next page that loads
     function attach(item) {
       let acked = false;
-      const onAck = (ev) => { if (ev.data?.from === 'page' && ev.data.k === 'ack' && ev.data.id === S.id) { acked = true; $('#attachState').textContent = `Attached to your bug session as note #${ev.data.n}.`; } };
+      const onAck = (ev) => { if (ev.data?.from === 'page' && ev.data.k === 'ack' && ev.data.id === S.id) { acked = true; S.note = ev.data.n; S.up = ev.data.up; $('#attachState').textContent = `Attached to your bug session as note #${ev.data.n}.`; upload(); } };
       ch?.addEventListener('message', onAck);
       try { ch?.postMessage({ from: 'host', k: 'done', id: S.id, item }); } catch { /* closed */ }
       $('#attachState').textContent = 'Attaching to your bug session…';
       setTimeout(() => { if (!acked) { store.set(PENDING, { id: S.id, item }); $('#attachState').textContent = 'No Norex page answered – it will attach itself the next time you open one while signed in as owner.'; } }, 1800);
     }
+
+    // the video goes to the Worker's media bucket with the owner's session (handed over by the page); the file on disk stays either way
+    async function upload() {
+      const st = $('#upState'), btn = $('#retry');
+      if (!S.up || !S.note || !S.blob || S.uploaded) { if (!S.up && S.note) st.textContent = 'Video kept on this device only (this build has no upload).'; return; }
+      if (S.blob.size > MAX_BYTES + 5e6) { st.textContent = 'Too big for the server – kept on this device only.'; return; }
+      btn.hidden = true; st.textContent = `Uploading ${fmtBytes(S.blob.size)}…`;
+      try {
+        const r = await fetch(`${S.up.url}?session=${encodeURIComponent(S.up.session)}&n=${S.note}`, { method: 'POST', headers: { Authorization: `Bearer ${S.up.token}`, 'Content-Type': S.mime.split(';')[0] }, body: S.blob });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.error || `Error ${r.status}`);
+        S.uploaded = true; st.textContent = '✓ Video uploaded with the report.';
+        try { ch?.postMessage({ from: 'host', k: 'uploaded', id: S.id, key: j.key }); } catch { /* closed */ }
+      } catch (e) { st.textContent = `Upload failed: ${e.message}. The file is saved on this device.`; btn.hidden = false; }
+    }
+    $('#retry').addEventListener('click', upload);
 
     ch?.addEventListener('message', (ev) => {
       const m = ev.data;
@@ -222,7 +238,7 @@
     $('#discard').addEventListener('click', () => { if (confirm('Discard this recording? Nothing will be saved.')) discard(); });
     $('#moment').addEventListener('click', () => moment());
     $('#mute').addEventListener('click', () => { if (S.mic) { S.mic.enabled = !S.mic.enabled; tick(); } });
-    $('#again').addEventListener('click', () => { if (S.url) URL.revokeObjectURL(S.url); S.state = 'idle'; S.blob = S.url = null; $('#preview').removeAttribute('src'); view('start'); say(''); doc.title = 'Norex recorder'; broadcast(); });
+    $('#again').addEventListener('click', () => { if (S.url) URL.revokeObjectURL(S.url); S.state = 'idle'; S.blob = S.url = null; S.note = S.up = S.uploaded = null; $('#upState').textContent = ''; $('#preview').removeAttribute('src'); view('start'); say(''); doc.title = 'Norex recorder'; broadcast(); });
     $('#jump').addEventListener('click', (e) => { const b = e.target.closest('button[data-t]'); if (b) { const v = $('#preview'); v.currentTime = +b.dataset.t / 1000; v.play().catch(() => {}); } });
     $('#close').addEventListener('click', () => window.close());
     addEventListener('beforeunload', (e) => { if (S.state === 'recording' || S.state === 'paused' || S.state === 'stopping') { e.preventDefault(); e.returnValue = ''; } else if (S.state === 'done' && !S.saved) { /* the file was already saved on stop */ } });

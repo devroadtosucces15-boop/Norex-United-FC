@@ -43,3 +43,10 @@
 .nxr-live[data-tool=erase]{cursor:cell}
 .nxr-live[data-tool=move]{cursor:move}
 .nxr-live[data-tool=point]{cursor:none}
+
+/* reports list */
+.nxr-list{max-height:70vh;overflow:auto}
+.nxr-item{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line2,#2a3342)}
+.nxr-item small{display:block;opacity:.6;font-size:11px}
+.nxr-item.done{opacity:.55}
+.nxr-item button{padding:6px 10px;border-radius:9px;border:1px solid var(--line2,#2a3342);background:none;color:#fff;font:600 13px var(--body,sans-serif);cursor:pointer;white-space:nowrap}

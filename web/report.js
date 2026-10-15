@@ -155,11 +155,12 @@
     bar = Object.assign(document.createElement('div'), { className: 'nxr-bar' });
     bar.dataset.nxr = '';
     bar.innerHTML = `${TOOLS.map(([k, ic, l]) => `<button type="button" data-t="${k}" title="${l}"><span>${ic}</span><small>${l}</small></button>`).join('')}
-<button type="button" data-t="__done" title="Close the tool"><span>✕</span><small>Close</small></button>`;
+${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports – mark them fixed"><span>📋</span><small>Reports</small></button>' : ''}<button type="button" data-t="__done" title="Close the tool"><span>✕</span><small>Close</small></button>`;
     bar.addEventListener('click', (e) => {
       const t = e.target.closest('button')?.dataset.t;
       if (!t) return;
       if (t === '__done') return toggle(false);
+      if (t === '__list') return openList();
       setTool(t);
     });
     document.body.appendChild(bar);
@@ -341,6 +342,30 @@
     }).join('');
   }
 
+  // ---------- reports list: mark fixed → deleted automatically a day later (bot/issues.js issueSweep) ----------
+  let panel = null;
+  async function openList() {
+    if (panel) { panel.remove(); panel = null; return; }
+    panel = Object.assign(document.createElement('div'), { className: 'nxr-sheet nxr-list' }); panel.dataset.nxr = '';
+    document.body.appendChild(panel);
+    const api = (path, opt = {}) => fetch(ctx.rawUpload.base + path, { ...opt, headers: { Authorization: `Bearer ${ctx.rawUpload.token}`, 'Content-Type': 'application/json' }, cache: 'no-store' }).then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `Error ${r.status}`); return j; });
+    const paint = async () => {
+      let items;
+      try { items = (await api('/api/issues')).items; } catch (e) { panel.textContent = `Could not load: ${e.message}`; return; }
+      const left = (t) => { const h = Math.max(0, Math.round((t - Date.now()) / 36e5)); return h ? `deleted in ${h}h` : 'deleted soon'; };
+      panel.innerHTML = `<div class="nxr-head"><b>Reports</b><span>Fixed ones are deleted after a day – reopen to keep.</span></div>${items.length ? items.map((x) => `<div class="nxr-item${x.status === 'open' ? '' : ' done'}"><span><b>#${x.n}</b> ${esc(x.note || x.page).slice(0, 110)}${x.video ? ' 🎥' : ''}<small>${esc(x.page)}${x.deleteAt ? ` · ${left(x.deleteAt)}` : ''}</small></span><button type="button" data-id="${esc(x.id)}" data-s="${x.status === 'open' ? 'fixed' : 'open'}">${x.status === 'open' ? '✓ Fixed' : '↺ Reopen'}</button></div>`).join('') : '<p>No reports yet.</p>'}<div class="nxr-row"><span class="nxr-sp"></span><button type="button" class="nxr-x">Close</button></div>`;
+    };
+    panel.addEventListener('click', async (e) => {
+      if (e.target.closest('.nxr-x')) { panel.remove(); panel = null; return; }
+      const b = e.target.closest('button[data-id]');
+      if (!b) return;
+      b.disabled = true;
+      try { await api('/api/issues/status', { method: 'POST', body: JSON.stringify({ id: b.dataset.id, status: b.dataset.s }) }); } catch (er) { ctx.toast?.(er.message); }
+      paint();
+    });
+    paint();
+  }
+
   // ---------- live drawing + screen recorder (flag issueRecorder) ----------
   // Marks are in document coordinates, drawn on a fixed canvas over the page and never opened as notes. They are real page elements, so any
   // screen / window / tab capture of this page contains them; erase, move, undo and clear all work while recording. State of the recorder
@@ -390,10 +415,13 @@
       if (was === 'idle' && recLive()) pageEvent();
       if (recLive() || was !== m.state) { liveBar(); paintFab(); }
       if (m.state === 'done' || m.state === 'idle') { if (L.tool && was !== m.state) liveTool(null); else liveBar(); }
+    } else if (m.k === 'uploaded') {
+      const it = S.items.find((x) => x.recording?.rid === m.id);
+      if (it && !it.recording.uploaded) { it.recording.uploaded = true; it.recording.key = m.key; save(); enqueue(it); ctx.toast?.(`🎥 Video for #${it.n} uploaded`); }
     } else if (m.k === 'done') {
       if (document.visibilityState !== 'visible' || L.seen.has(m.id)) return; // one tab commits it; the pop-up falls back to the pending slot
       const n = commitRecording(m.item, m.id);
-      hostSend({ k: 'ack', id: m.id, n });
+      hostSend({ k: 'ack', id: m.id, n, up: upTarget() });
     }
   }
   // a finished recording that nobody was around to attach (all Norex tabs closed or hidden) waits in localStorage
@@ -401,8 +429,10 @@
     const p = store.get(REC.pending, null);
     if (!p?.item || document.visibilityState !== 'visible' || !S) return;
     try { localStorage.removeItem(REC.pending); } catch { /* private mode */ }
-    if (!L.seen.has(p.id)) commitRecording(p.item, p.id);
+    if (!L.seen.has(p.id)) { const n = commitRecording(p.item, p.id); hostSend({ k: 'ack', id: p.id, n, up: upTarget() }); }
   }
+  // where the pop-up may upload the video (it has no session of its own); null when this site build can't
+  const upTarget = () => (ctx.rawUpload ? { url: `${ctx.rawUpload.base}/api/issues/recording`, token: ctx.rawUpload.token, session: S.id } : null);
   function commitRecording(rec, rid) {
     L.seen.add(rid);
     const item = { ...rec, n: ++S.n, url: location.href, tabs: activeTabs(), device: deviceInfo(), role: { real: ctx.role, viewAs: ctx.viewAs || null, user: ctx.user?.n || null } };
