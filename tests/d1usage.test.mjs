@@ -1,5 +1,5 @@
 // D1 usage fixes (migration 0054): cached flag read, query plans that seek instead of scan, quieter writes.
-import { env, sqlite, DB } from './mock.mjs';
+import { env, sqlite, DB, W, login } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
 import { loadFlagOverrides, loadFlagOverridesCached, clearFlagOverrides } from '../bot/roles.js';
 import { memberLiveCron } from '../bot/memberlive.js';
@@ -40,5 +40,25 @@ sqlite.exec("INSERT OR REPLACE INTO profiles (user_id, twitch, updated) VALUES (
 const none = async () => ({ ok: false, status: 404, json: async () => null, text: async () => '' });
 await memberLiveCron(env, Date.now(), none); await memberLiveCron(env, Date.now(), none); await memberLiveCron(env, Date.now(), none);
 t('member live: the cursor is written once, not every 10 minutes', writes === 1);
+DB.prepare = realPrepare;
+
+// ---------- public GETs: anonymous answers come from the edge cache, signed-in ones never do ----------
+const store = new Map();
+globalThis.caches = { default: { match: async (r) => store.get(r.url)?.clone(), put: async (r, res) => { store.set(r.url, res.clone()); } } };
+sqlite.exec("DELETE FROM flag_overrides"); clearFlagOverrides();
+env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), hallOfFame: 'public' });
+let hofReads = 0;
+DB.prepare = (sql) => { if (/FROM hof/.test(sql)) hofReads++; return realPrepare(sql); };
+const anon = () => W('/api/hof');
+const r1 = await anon(), r2 = await anon();
+t('public cache: the second anonymous /api/hof does not touch D1', r1.status === 200 && r2.status === 200 && hofReads > 0 && store.size === 1);
+const before = hofReads;
+await anon(); await anon();
+t('public cache: further hits read nothing', hofReads === before);
+const tok = await login('777001');
+await W('/api/hof', { headers: { Authorization: `Bearer ${tok}` } });
+t('public cache: a signed-in request bypasses it', hofReads > before);
+t('public cache: the browser is told not to keep it', (await anon()).headers.get('Cache-Control') === 'no-store');
+delete globalThis.caches;
 DB.prepare = realPrepare;
 done();

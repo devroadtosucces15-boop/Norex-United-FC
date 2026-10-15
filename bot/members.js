@@ -301,7 +301,28 @@ async function doMigrateKV(env) {
   }
 }
 
+// D1 usage: anonymous GETs of these public routes are answered from the edge cache for PUBLIC_TTL seconds. Signed-in requests
+// always go through (their answer depends on role and flags), and only 200s are kept, so a flag that is off never sticks.
+const PUBLIC_TTL = 60;
+const PUBLIC_CACHED = new Set(['/api/hof', '/api/events/public', '/api/hotw/public', '/api/feed/public', '/api/awards/player', '/api/rush', '/api/probuilds',
+  '/api/probuilds/get', '/api/probuilds/player', '/api/docs', '/api/game', '/api/game/changes', '/api/overrides']);
 export async function handleMembers(request, env, ctx, loadSite) {
+  const url = new URL(request.url);
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  if (!cache || request.method !== 'GET' || request.headers.get('Authorization') || !PUBLIC_CACHED.has(url.pathname)) return handleMembersUncached(request, env, ctx, loadSite);
+  const key = new Request(url.toString());
+  const hit = await cache.match(key).catch(() => null);
+  if (hit) { const h = new Headers(hit.headers); h.set('Cache-Control', 'no-store'); return new Response(hit.body, { status: 200, headers: h }); } // the browser itself still asks again
+  const res = await handleMembersUncached(request, env, ctx, loadSite);
+  if (res.status === 200) {
+    const store = new Response(res.clone().body, { status: 200, headers: new Headers(res.headers) });
+    store.headers.set('Cache-Control', `public, max-age=${PUBLIC_TTL}`); store.headers.delete('Vary');
+    const put = cache.put(key, store).catch(() => {});
+    if (ctx?.waitUntil) ctx.waitUntil(put); else await put;
+  }
+  return res;
+}
+async function handleMembersUncached(request, env, ctx, loadSite) {
   const url = new URL(request.url);
   if (!env.DISCORD_CLIENT_SECRET || !env.DISCORD_GUILD_ID || !env.DB) {
     return cors(env, fail('Member login is not set up yet.', 503));

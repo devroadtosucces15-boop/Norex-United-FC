@@ -115,19 +115,41 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
     const out = () => { b.classList.add('out'); setTimeout(() => b.remove(), 300); };
     b.querySelector('.x').onclick = out; setTimeout(out, 9000); d.body.appendChild(b);
   };
+  // D1 usage: one tab polls for all of them. The tab that holds the short lease in localStorage asks the Worker and tells the
+  // others over a BroadcastChannel; a hidden tab neither polls nor keeps the lease, so a visible one takes over.
+  const LEAD = 'norex.hdrlead', LAST = 'norex.hdrlast', ALERT_MS = 120e3, LEASE_MS = 150e3, tabId = Math.random().toString(36).slice(2);
+  const bc = 'BroadcastChannel' in window ? new BroadcastChannel('norex-hdr') : null;
+  const paintAlerts = (a) => {
+    if (!a || !bell) return;
+    bell.hidden = false; dot(bell, a.unread | 0);
+    if (a.chats != null) { chat.hidden = false; dot(chat, a.chats | 0); }
+  };
+  const lead = () => {
+    try {
+      const v = JSON.parse(localStorage.getItem(LEAD) || 'null');
+      if (v && v.id !== tabId && Date.now() - v.t < LEASE_MS) return false;
+      localStorage.setItem(LEAD, JSON.stringify({ id: tabId, t: Date.now() }));
+    } catch {}
+    return true;
+  };
+  const share = (a) => { try { localStorage.setItem(LAST, JSON.stringify(a)); } catch {} try { bc?.postMessage(a); } catch {} };
+  if (bc) bc.onmessage = (e) => paintAlerts(e.data);
   const pollAlerts = () => {
     if (!A?.session || d.hidden) return;
-    A.call('/api/notify/count').then((c) => {
-      bell.hidden = false; dot(bell, c.unread | 0);
+    if (!lead()) { try { paintAlerts(JSON.parse(localStorage.getItem(LAST) || 'null')); } catch {} return; }
+    const out = { unread: 0, chats: null };
+    const count = A.call('/api/notify/count').then((c) => {
+      out.unread = c.unread | 0; paintAlerts(out);
       if (!(c.unread > 0)) return;
-      A.call('/api/notify').then((r) => {
+      return A.call('/api/notify').then((r) => {
         const fresh = (r.items || []).filter((n) => !n.read && !n.readAt && n.id > seenId() && Date.now() - n.at < 15 * 60e3).sort((a, b) => a.id - b.id);
         const top = Math.max(seenId(), ...(r.items || []).map((n) => n.id || 0));
         if (!/\/hub\.html$/.test(location.pathname)) fresh.slice(-2).forEach(banner);
         setSeen(top);
       }).catch(() => {});
     }).catch(() => {});
-    A.call('/api/chats').then((r) => { chat.hidden = false; dot(chat, (r.chats || []).reduce((n, c) => n + (c.unread || 0), 0)); }).catch(() => {});
+    const chats = A.call('/api/chats').then((r) => { out.chats = (r.chats || []).reduce((n, c) => n + (c.unread || 0), 0); paintAlerts(out); }).catch(() => {});
+    Promise.all([count, chats]).then(() => share(out));
   };
 
   // ---------- mount ----------
@@ -143,7 +165,7 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
       chat = d.createElement('a'); chat.className = 'hdr-i hdr-chat'; chat.href = 'hub-clubhouse.html#ch-chat'; chat.hidden = true; chat.setAttribute('aria-label', 'Clubhouse feed and messages'); chat.title = 'Clubhouse feed & messages'; chat.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12Z"/></svg><i class="hdr-n" hidden></i>';
       box.append(pill, bell, chat); ac.onclick = toggleMenu; box.appendChild(ac);
       if (viewAs() && realOwner()) { const ribbon = d.createElement('div'); ribbon.className = 'hdr-va'; ribbon.innerHTML = '👁️ Viewing the site as a <b>' + (viewAs() === 'guest' ? 'guest' : 'member') + '</b> <button type="button">Back to owner</button>'; ribbon.querySelector('button').onclick = () => setViewAs(''); d.body.insertBefore(ribbon, d.body.firstChild); }
-      poll(); pollAlerts(); timer = setInterval(poll, 120e3); setInterval(pollAlerts, 60e3); d.addEventListener('visibilitychange', () => { if (!d.hidden) { poll(); pollAlerts(); } });
+      poll(); pollAlerts(); timer = setInterval(poll, 120e3); setInterval(pollAlerts, ALERT_MS); d.addEventListener('visibilitychange', () => { if (!d.hidden) { poll(); pollAlerts(); } });
     } else if (API) {
       const a = d.createElement('a'); a.className = 'btn ghost hdr-in'; a.href = A?.loginUrl ? A.loginUrl() : '#'; a.setAttribute('data-login', ''); a.textContent = 'Sign in'; box.appendChild(a);
     }

@@ -229,7 +229,7 @@ ${P.group ? `<button type="button" class="btn gold" data-mkgroup${P.sel.length &
 
     (A.ready || Promise.resolve()).then(async () => {
       await loadChats();
-      listTick = setInterval(tick, 30000);
+      listTick = setInterval(tick, 60000); // D1 usage: the list is also refreshed by sockets and the header badge
       const h = location.hash.match(/^#c(\d+)$/); if (h && S.chats.some((c) => c.id === +h[1])) { openChat(+h[1]); box.closest('section')?.scrollIntoView({ block: 'start' }); }
       if (S.pending.length) flush();
     });

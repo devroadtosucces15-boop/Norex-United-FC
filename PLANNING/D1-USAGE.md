@@ -45,3 +45,10 @@ Durable Objects (`ChatRoom`, `HubRoom`, `ClubRoom`), KV, R2 and Workers AI have 
 - Header poll: 60 s → 120 s or "only when the tab is visible" (`next/static/header.js:146`, web side). Halves cause 1 even without the index.
 - Switch the Messages page poll (6 s) to WebSocket-only, which the code already supports.
 - Upgrade to Workers Paid: D1 then includes 25 billion rows read a month, which makes the limit a non-issue.
+
+## Round 2 (second PR)
+
+- **One header poll for all tabs.** `next/static/header.js`: the bell and chat badge poll every 120 s (was 60 s), only in a visible tab, and only in the tab holding a 150 s lease in localStorage. Other tabs get the numbers over a BroadcastChannel. Five open tabs used to cost 5 polls a minute, now 1 every two minutes. Banners for new notifications show from the polling tab.
+- **Clubhouse chat list** refresh 30 s → 60 s (`next/static/clubchat.js`); the Messages page poll already skips hidden tabs and live sockets.
+- **Public routes cached at the edge for 60 s** for anonymous visitors only (`PUBLIC_CACHED` in `bot/members.js`). Signed-in requests are never cached; only 200s are stored.
+- **Usage counter: deliberately not built.** KV allows 1,000 writes a day (see `bot/monitor.js`), and a D1 counter would add the writes this work is trying to remove. Cloudflare already ranks queries by rows read (`wrangler d1 insights norex`, dashboard Metrics), which covers it.
