@@ -83,6 +83,19 @@ t('P3.3 reminder times stored', sqlite.prepare('SELECT remind24_at, remind2_at F
 await call(mgr, '/api/events', { id: e24, type: 'rush', date: day(2), time: '20:00', tz: 'UTC' });
 t('P3.3 moving an event resets its reminders', sqlite.prepare('SELECT remind24_at FROM events WHERE id = ?').get(e24).remind24_at === null);
 
+// E3b: 30 minutes before, everyone who said yes gets the site alert + DM and is tagged by name in the event's channel – once.
+const in20 = new Date(Date.now() + 20 * 60e3);
+const e30 = (await call(mgr, '/api/events', { type: 'training', date: in20.toISOString().slice(0, 10), time: in20.toISOString().slice(11, 16), tz: 'UTC', discord: { channel: '70002' } })).d.id;
+await call(member, '/api/events/rsvp', { ids: [e30], status: 'yes' });
+const b30 = posts.length;
+await eventReminders(env);
+const p30 = posts.slice(b30).find((p) => /30 minutes/.test(txt(p)));
+t('E3b 30-minute reminder tags the yes-players in the event channel', p30 && p30.channel === '70002' && /<@500>/.test(p30.components[0].content) && p30.allowed_mentions.users.includes('500') && !p30.allowed_mentions.users.includes('501'));
+t('E3b … and notifies them (site + DM queue)', (await call(member, '/api/notify')).d.items.some((n) => /30 minutes/.test(n.title)) && ['queued', 'sent'].includes(sqlite.prepare("SELECT dm FROM notifications WHERE user_id = '500' AND title LIKE '%30 minutes%'").get().dm));
+const a30 = posts.length;
+await eventReminders(env);
+t('E3b only once per event', posts.slice(a30).every((p) => !/30 minutes/.test(txt(p))));
+
 // ================= P3.4 =================
 t('zn10 every FC27 formation (29) is selectable and saveable', Object.keys(FORMATIONS).length === 29 && ['4-3-3 (2)', '5-2-3', '4-4-1-1 (2)'].every((k) => FORMATIONS[k]) && (await call(mgr, '/api/events/lineup', { id: evId, formation: '4-2-3-1 (2)', lineup: { 500: 'LM' } })).s === 200);
 t('P3.4 formations have 11 unique slots', Object.values(FORMATIONS).every((f) => f.length === 11 && new Set(f.map((x) => x[0])).size === 11 && f[0][0] === 'GK'));

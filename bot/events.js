@@ -639,11 +639,35 @@ async function nudgeRoute(body, me, env, log) {
 // T-24h and T-2h: a reminder in the event's Discord channel ("7 ✅ – need a GK", with the answer buttons) and a nudge for
 // members who haven't answered yet – bell + DM (remind = dm) or an @mention in that channel (remind = mention).
 // Events scheduled less than 2 h ahead only get the T-2h one. Each fires once (remind24_at / remind2_at).
+// 30 minutes before: everyone who said ✅ gets the site alert + Discord DM (their "Events" alert setting, DM + site by default) and is
+// tagged by name in the event's channel post. Once per event (meta `remind30:<id>`); owner/manager-only while `discordRsvp` is.
+export async function thirtyMinutes(env, now, everyone) {
+  const rows = await all(env, "SELECT * FROM events WHERE status = 'scheduled' AND start > ? AND start <= ? ORDER BY start LIMIT 5", now, now + 30 * 60e3);
+  let sent = 0;
+  for (const e of rows) {
+    const key = `remind30:${e.id}`;
+    const r = await run(env, 'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING', key, String(now));
+    if (!r.meta?.changes) continue;
+    const yes = (await rsvpRows(env, e.id)).filter((x) => x.status === 'yes');
+    if (!yes.length) continue;
+    const ids = yes.map((x) => x.user_id);
+    await safely(notify(env, ids, { type: 'event', icon: '⏰', title: `Starting in 30 minutes · ${label(e)}`, body: 'You said you are in – get ready.', link: `members.html#schedule-${e.id}`, ref: `event30:${e.id}` }));
+    if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
+      const tags = ids.slice(0, 50);
+      const msg = await eventPost(env, e, await rsvpRows(env, e.id), '⏰ ', { ping: `**⏰ Starting in 30 minutes · ${label(e)}**\n${tags.map((id) => `<@${id}>`).join(' ')}`, mentions: { users: tags } });
+      await safely(fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages`, { method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(msg) }));
+    }
+    sent++;
+  }
+  return sent;
+}
+
 export async function eventReminders(env) {
   if (!env.DB || !rsvpButtons(env)) return { sent: 0 };
   const settings = await getBotSettings(env); // P7.5 – "which auto-posts are on"
   const everyone = flagOn(env, { role: 'member' }, 'discordRsvp') && settings.autoPosts.reminders; // owner/managers-only while testing: no channel post
   const now = Date.now();
+  await thirtyMinutes(env, now, everyone); // default for everyone who said yes: site + DM + a tag in the event's channel
   const due = await all(env, `SELECT * FROM events WHERE status = 'scheduled' AND start > ? AND (
     (remind24_at IS NULL AND start <= ? AND start > ?) OR (remind2_at IS NULL AND start <= ?)) ORDER BY start LIMIT 10`, now, now + 24 * HOUR, now + 2 * HOUR, now + 2 * HOUR);
   let sent = 0;

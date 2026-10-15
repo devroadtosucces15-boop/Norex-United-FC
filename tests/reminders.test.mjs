@@ -1,50 +1,46 @@
-// Gentle reminders (E3, bot/reminders.js): MOTM vote, weekly ratings, Rush squad – once each, one per member per day, daytime only.
+// Reminders (E3, bot/reminders.js): feedback waiting for a reaction, and the occasional "this exists" nudge – not nagging.
 import { env, call, login, sqlite } from './mock.mjs';
 import { t, done } from './lib.mjs';
 import { remindersCron } from '../bot/reminders.js';
-import { weekOf } from '../bot/awards.js';
 
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
-setFlags({ notifications: 'members', reminders: 'members' });
+setFlags({ notifications: 'members', reminders: 'members', feedback: 'members' });
 const a = await login('500'), b = await login('501'), c = await login('502');
-const count = (id, type = 'remind') => sqlite.prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND type = ?').get(id, type).n;
+const rem = (id) => sqlite.prepare("SELECT * FROM notifications WHERE user_id = ? AND type = 'remind' ORDER BY id").all(id);
+const NOW = Date.UTC(2026, 9, 13, 14, 0); // Tuesday 14:00 UTC
+const site = async () => ({ matches: [] });
+const stamp = (at) => sqlite.prepare("UPDATE notifications SET at = ? WHERE type = 'remind' AND at > ?").run(at, at); // notify() stamps real time – pin it to the simulated clock
+for (const u of ['500', '501', '502']) sqlite.prepare('UPDATE users SET last_at = ? WHERE id = ?').run(NOW - 3600e3, u);
 
-// Tuesday 2026-10-13 14:00 UTC; the match ended 5 hours earlier
-const NOW = Date.UTC(2026, 9, 13, 14, 0);
-const club = { matches: [{ id: 'm1', opp: 'Rivals FC', ts: Math.floor((NOW - 5 * 3600e3) / 1000), ps: [] }] };
-const site = async () => club;
-sqlite.prepare("INSERT INTO votes (match_id, user_id, player, name, at) VALUES ('m1', '500', 'p1', 'A', ?)").run(NOW);
+// 501 got a message 30 h ago and never reacted; 502 reacted; 500 got one only 2 h ago
+const ins = sqlite.prepare("INSERT INTO feedback (from_id, from_name, to_id, to_name, kind, body, at, reaction) VALUES ('900', 'X', ?, 'N', 'tip', 'a long enough body', ?, ?)");
+ins.run('501', NOW - 30 * 3600e3, null); ins.run('502', NOW - 30 * 3600e3, 'check'); ins.run('500', NOW - 2 * 3600e3, null);
 
 setFlags({ reminders: 'off' });
-t('flag off → nothing', (await remindersCron(env, site, NOW)).motm === 0 && count('501') === 0);
+t('flag off → nothing', (await remindersCron(env, site, NOW)).waiting === 0 && rem('501').length === 0);
 setFlags({ reminders: 'members' });
+t('before 09:00 UTC → nothing', (await remindersCron(env, site, NOW - 6 * 3600e3)).waiting === 0);
 
-const r1 = await remindersCron(env, site, NOW - 6 * 3600e3); // 08:00 UTC
-t('before 09:00 UTC → nothing', r1.motm === 0 && count('501') === 0);
+const r1 = await remindersCron(env, site, NOW); stamp(NOW);
+t('waiting: only the member with feedback unanswered for 24 h+', r1.waiting === 1 && rem('501').length === 1 && rem('500').length === 0 && rem('502').length === 0);
+t('waiting: points at the feedback and carries no message text', rem('501')[0].link === 'members.html#feedback' && !/long enough/.test(JSON.stringify(rem('501')[0])));
+await remindersCron(env, site, NOW + 3 * 3600e3);
+t('waiting: not again the same day', rem('501').length === 1);
+await remindersCron(env, site, NOW + 3 * DAY(1)); stamp(NOW + 3 * DAY(1));
+t('waiting: again after 3 days while it is still unanswered', rem('501').length === 2);
+sqlite.prepare("UPDATE feedback SET reaction = 'like' WHERE to_id = '501'").run();
+await remindersCron(env, site, NOW + 8 * DAY(1));
+t('waiting: stops once they react', rem('501').length === 2);
 
-const r2 = await remindersCron(env, site, NOW);
-t('MOTM: only members who have not voted are nudged', r2.motm >= 2 && count('500') === 0 && count('501') === 1 && count('502') === 1);
-const row = sqlite.prepare("SELECT * FROM notifications WHERE user_id = '501' AND type = 'remind'").get();
-t('MOTM: points at the vote, mentions the opponent', row.link === 'hub-matchnight.html#mn-motm' && /Rivals FC/.test(row.title));
-await remindersCron(env, site, NOW + 600e3);
-t('MOTM: never sent twice for the same match', count('501') === 1);
-
-// Sunday 2026-10-18 13:00 UTC – rating reminder, but only for those without a reminder in the last 20 h (everyone had one Tuesday, so all eligible)
-const SUN = Date.UTC(2026, 9, 18, 13, 0), wk = weekOf(SUN).key;
-sqlite.prepare("INSERT INTO star_ratings (week, user_id, player, stars, name, at) VALUES (?, '500', 'p1', 4, 'A', ?)").run(wk, SUN);
-const r3 = await remindersCron(env, async () => ({ matches: [] }), SUN);
-t('rate: Sunday afternoon, only members who have not rated', r3.rate >= 2 && count('500') === 0 && count('501') === 2);
-await remindersCron(env, async () => ({ matches: [] }), SUN + 600e3);
-t('rate: once per week', count('501') === 2);
-
-// daily cap: a member who just got a reminder is skipped by the next kind
-const MON = Date.UTC(2026, 9, 19, 12, 0);
-sqlite.prepare("INSERT INTO events (type, title, start, duration, tz, status, at) VALUES ('rush', 'Rush night', ?, 120, 'UTC', 'scheduled', ?)").run(MON + 5 * 3600e3, MON);
-const ev = sqlite.prepare('SELECT id FROM events ORDER BY id DESC LIMIT 1').get().id;
-for (const u of ['500', '501']) sqlite.prepare("INSERT INTO event_rsvps (event_id, user_id, name, status, at) VALUES (?, ?, ?, 'yes', ?)").run(ev, u, 'x', MON);
-sqlite.prepare("INSERT INTO rush_prefs (user_id, ranks, updated) VALUES ('500', '[]', ?)").run(MON);
-const r4 = await remindersCron(env, async () => ({ matches: [] }), MON);
-t('squad: RSVP-yes members without picks get one nudge', r4.squad === 1 && count('501') === 3 && count('500') === 0);
-const r5 = await remindersCron(env, async () => ({ matches: [] }), MON + 600e3);
-t('squad: once per event', r5.squad === 0 && count('501') === 3);
+// the occasional nudge: after a match, verified players, once a fortnight
+for (const u of ['501', '502']) sqlite.prepare("INSERT OR REPLACE INTO claims (user_id, player, player_name, status, at) VALUES (?, ?, ?, 'approved', 1)").run(u, `p${u}`, `P${u}`);
+const N2 = NOW + 20 * DAY(1);
+for (const u of ['500', '501', '502']) sqlite.prepare('UPDATE users SET last_at = ? WHERE id = ?').run(N2 - 3600e3, u);
+const match = { matches: [{ id: 'm9', ts: Math.floor((N2 - 5 * 3600e3) / 1000) }] };
+const r2 = await remindersCron(env, async () => match, N2);
+t('nudge: after a match, to verified players only', r2.nudge === 2 && rem('501').at(-1).ref === 'remind:nudge' && rem('502').length === 1 && !rem('500').some((x) => x.ref === 'remind:nudge'));
+const N3 = N2 + 3 * DAY(1);
+for (const u of ['501', '502']) sqlite.prepare('UPDATE users SET last_at = ? WHERE id = ?').run(N3 - 3600e3, u);
+t('nudge: at most once a fortnight', (await remindersCron(env, async () => ({ matches: [{ id: 'm10', ts: Math.floor((N3 - 5 * 3600e3) / 1000) }] }), N3)).nudge === 0);
 done();
+function DAY(n) { return n * 86400e3; }
