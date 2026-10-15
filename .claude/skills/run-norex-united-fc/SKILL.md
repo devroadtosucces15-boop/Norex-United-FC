@@ -3,7 +3,7 @@ name: run-norex-united-fc
 description: Build, run, and drive the NOREX UNITED FC site and Discord bot locally. Use when asked to start or preview the site, screenshot a page, log in as owner/manager/member to see flagged pages (Pro Builder, Squad Hub, leaderboards…), call the member API, try a Discord slash command, or run the tests.
 ---
 
-A static site (`scripts/build.mjs` → `site/`) plus a Cloudflare Worker (`bot/worker.js`: member API, Discord login, slash commands). Drive both with **`.claude/skills/run-norex-united-fc/driver.mjs`**. In one process it:
+A static site (the new design, `next/build.mjs` → `site/`, with the old site kept at `/classic/` from `scripts/build.mjs`) plus a Cloudflare Worker (`bot/worker.js`: member API, Discord login, slash commands). Drive both with **`.claude/skills/run-norex-united-fc/driver.mjs`**. In one process it:
 
 - serves `site/` on `:4321`;
 - runs the real Worker on the repo's in-memory mock (`tests/mock.mjs`: D1, KV and a fake Discord OAuth) on `:8788`;
@@ -22,10 +22,12 @@ All paths are relative to the repo root.
 ## Build
 
 ```bash
-node scripts/build.mjs          # ~0.5 s → "Built 46 clubs, 673 players, 10 matches → site/"
+NOREX_OUT=classic-build node scripts/build.mjs
+node next/build.mjs --out site --public --classic classic-build
+cp -r classic-build site/classic     # what update.yml does
 ```
 
-The driver also runs this itself if `site/api/club.json` is missing. **Rebuild after any edit** to `scripts/`, `web/` or `config.json`, because the server serves `site/` and not `web/`.
+The driver also runs this itself if `site/api/club.json` is missing. **Rebuild after any edit** to `next/`, `scripts/`, `web/` or `config.json`, because the server serves `site/` and not `web/`.
 
 ## Run (agent path)
 

@@ -29,8 +29,12 @@ const serveOnly = process.argv[2] === 'serve';
 
 // tests/mock.mjs reads site/api/club.json on import, so the site must exist first.
 if (!fs.existsSync(path.join(SITE_DIR, 'api/club.json'))) {
-  console.log('site/ missing – running scripts/build.mjs');
-  execFileSync(process.execPath, ['scripts/build.mjs'], { cwd: ROOT, stdio: 'inherit' });
+  // same order as .github/workflows/update.yml: old site to classic-build/, new design (next/) at the root of site/, old one kept at /classic/
+  console.log('site/ missing – building classic-build/ then the new design into site/');
+  const run = (args, env) => execFileSync(process.execPath, args, { cwd: ROOT, stdio: 'inherit', env: { ...process.env, ...env } });
+  run(['scripts/build.mjs'], { NOREX_OUT: 'classic-build' });
+  run(['next/build.mjs', '--out', 'site', '--public', '--classic', 'classic-build']);
+  fs.cpSync(path.join(ROOT, 'classic-build'), path.join(SITE_DIR, 'classic'), { recursive: true });
 }
 const mock = await import(path.join(ROOT, 'tests/mock.mjs'));
 
