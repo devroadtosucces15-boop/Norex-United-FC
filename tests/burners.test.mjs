@@ -3,7 +3,6 @@
 import { env, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
-import { plainText } from '../bot/ui.js';
 import { burnerStats, sharedWithNorex, mergeMatches, reportMessage, slimBurnerMatch, updateRoster, MAX_BURNERS } from '../bot/burnerstats.js';
 import { burnersKey } from '../bot/burners.js';
 import { plainText } from '../bot/ui.js';
