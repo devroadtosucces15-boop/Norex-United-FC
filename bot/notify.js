@@ -202,7 +202,8 @@ export async function notifyCron(env) {
   const again = due.filter((r) => modeOf(parsePrefs(r.prefs), 'announce') === 'dm').map((r) => r.id);
   if (again.length) await run(env, `UPDATE notifications SET dm = 'queued', reminders = reminders + 1 WHERE id IN (${marks(again.length)})`, ...again);
   const res = await deliverDMs(env);
-  if (new Date().getUTCMinutes() < 10) { // hourly housekeeping: read + older than 90 days, and over KEEP per member
+  const now = new Date();
+  if (now.getUTCHours() === 3 && now.getUTCMinutes() < 10) { // daily housekeeping (both statements scan the whole table): read + older than 90 days, and over KEEP per member
     await run(env, 'DELETE FROM notifications WHERE read_at IS NOT NULL AND (ack = 0 OR ack_at IS NOT NULL) AND at < ?', Date.now() - 90 * DAY);
     await run(env, `DELETE FROM notifications WHERE id IN (SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY id DESC) AS rn FROM notifications) WHERE rn > ?)`, KEEP);
   }

@@ -450,11 +450,22 @@ export async function generateCards(env, { limit = 2, now = Date.now() } = {}) {
 
 // Only published website artwork tied to a currently approved player claim is public.
 // Original photos and cinematic outputs remain behind their authenticated endpoints.
-export async function publicPortraits(request, env) {
+// D1 usage: the page-view list was a table scan plus a claims join on every visit, so the rows are kept at the edge for a minute.
+const PORTRAIT_TTL = 60;
+const PORTRAIT_KEY = 'https://norex-cache.invalid/cards/portraits';
+async function portraitRows(env) {
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const hit = await cache?.match(PORTRAIT_KEY).catch(() => null);
+  if (hit) return hit.json();
   const rows = await all(env, `SELECT r.id, COALESCE(r.target_player, c.player) AS player, r.kit_number FROM card_requests r
     LEFT JOIN claims c ON c.user_id = r.user_id AND c.status = 'approved'
     WHERE r.status = 'done' AND r.published = 1 AND r.portrait_key IS NOT NULL AND (r.target_player IS NOT NULL OR c.player IS NOT NULL)
     ORDER BY r.created_at DESC, r.id DESC`);
+  await cache?.put(PORTRAIT_KEY, new Response(JSON.stringify(rows), { headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${PORTRAIT_TTL}` } })).catch(() => {});
+  return rows;
+}
+export async function publicPortraits(request, env) {
+  const rows = await portraitRows(env);
   const url = new URL(request.url), id = url.searchParams.get('id');
   if (id !== null) {
     const row = rows.find(r => String(r.id) === id);

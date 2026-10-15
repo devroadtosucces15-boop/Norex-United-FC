@@ -54,7 +54,7 @@ import { issueSave } from './issues.js';
 import { clubLookup } from './clublookup.js';
 import { awardPoints, pointsRoute } from './points.js';
 import { myAvatarCard } from './avatarcard.js';
-import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
+import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, clearFlagOverrides, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverridesCached, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
 import { healthRoute } from './health.js';
 import { jailCount, triviaPoints } from './fun.js';
 import { discoveriesRoute } from './discoveries.js';
@@ -312,7 +312,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
 
   try {
     await migrateKV(env);
-    env = withFlagOverrides(env, await loadFlagOverrides(env)); // BE5 – live D1 flag edits win over the committed FEATURES var (a fresh env copy – never mutates the shared binding)
+    env = withFlagOverrides(env, await loadFlagOverridesCached(env)); // BE5 – live D1 flag edits win over the committed FEATURES var (a fresh env copy – never mutates the shared binding)
     if (url.pathname === '/auth/callback') return callback(url, env);
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
     if (url.pathname === '/api/rush' && request.method === 'GET') return cors(env, json(await getRushPublic(env)));
@@ -938,6 +938,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       if (!FLAG_LEVELS.includes(level)) return fail('Bad level.', 400);
       await run(env, `INSERT INTO flag_overrides (name, level, by_name, at) VALUES (?, ?, ?, ?)
         ON CONFLICT (name) DO UPDATE SET level = excluded.level, by_name = excluded.by_name, at = excluded.at`, name, level, me.n, Date.now());
+      clearFlagOverrides();
       await log(env, me, 'flag-change', `${name} → ${level}`);
       return json({ flags: { ...flags(env), [name]: level } });
     }
@@ -947,6 +948,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       const committed = committedFlags(env);
       if (!(name in committed)) return fail('Unknown flag.', 404);
       await run(env, 'DELETE FROM flag_overrides WHERE name = ?', name);
+      clearFlagOverrides();
       await log(env, me, 'flag-change', `${name} → reset to committed`);
       return json({ flags: { ...flags(env), [name]: committed[name] } });
     }

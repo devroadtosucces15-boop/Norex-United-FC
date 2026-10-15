@@ -167,6 +167,19 @@ export async function loadFlagOverrides(env) {
     return Object.fromEntries((results || []).map((r) => [r.name, r.level]));
   } catch { return {}; }
 }
+// D1 usage: the website API read the table on every request (each tab polls every minute), so it keeps the result for FLAG_TTL in
+// the isolate. A save here drops it at once (clearFlagOverrides); another isolate sees an edit within FLAG_TTL. Discord keeps the
+// uncached read above.
+const FLAG_TTL = 15e3;
+let flagCache = null;
+export const clearFlagOverrides = () => { flagCache = null; };
+export async function loadFlagOverridesCached(env, now = Date.now()) {
+  if (!env.DB) return {};
+  if (flagCache && flagCache.db === env.DB && now - flagCache.at < FLAG_TTL) return flagCache.flags;
+  const flags = await loadFlagOverrides(env);
+  flagCache = { db: env.DB, at: now, flags };
+  return flags;
+}
 // Returns a NEW env with FEATURES merged (never mutates the one passed in – the Worker's `env` binding is
 // shared across requests within an isolate, so mutating it in place would leak one request's override into
 // the next). `handleMembers` reassigns its own local `env` to the result; the caller's object is untouched.
