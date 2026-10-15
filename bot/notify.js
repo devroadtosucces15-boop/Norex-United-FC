@@ -49,7 +49,8 @@ export const TYPES = {
   play: { icon: '📋', label: 'New plays assigned to me', def: 'dm' }, // BE1
   card: { icon: '🪪', label: 'Card Studio – decisions on my card request', def: 'dm' }, // Card Studio
   wave: { icon: '👋', label: 'Waves from teammates in the Hub', def: 'site' }, // BE8
-  remind: { icon: '⏰', label: 'Gentle reminders – vote, rate teammates, pick your squad', def: 'site' }, // E3 (flag reminders)
+  remind: { icon: '⏰', label: 'Reminders – feedback waiting for you, and the odd nudge to use it', def: 'dm' }, // E3 (flag reminders)
+  caution: { icon: '⚠️', label: 'Caution – a player disagrees with or is confused by feedback', def: 'dm', role: 'manager' },
   live: { icon: '🔴', label: 'NOREX goes live on Twitch or YouTube', def: 'site' }, // E2 (flag liveAnnounce)
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },
 };

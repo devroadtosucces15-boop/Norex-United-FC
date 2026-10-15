@@ -17,3 +17,5 @@
 .fb-kinds label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
 .fb-form select,.fb-form textarea{padding:9px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--ink);color:#fff;color-scheme:dark;resize:vertical}
 .fb-form .row{gap:8px}.fb-form .row .btn{margin:0}
+.fb-anon{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0}
+.fb-react{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}.fb-react .btn{font-size:20px;min-width:46px;padding:6px 10px}.fb-react .btn.on{background:rgba(255,255,255,.16);box-shadow:0 0 0 2px var(--gold,#caa63b) inset}

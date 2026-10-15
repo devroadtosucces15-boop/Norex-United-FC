@@ -90,6 +90,23 @@ await call(mgr, '/api/feedback/hide', { id: fid, hidden: true });
 t('hidden → its bell note is gone too', !sqlite.prepare('SELECT 1 FROM notifications WHERE ref = ?').get(`feedback:${fid}`));
 t('hidden → gone from the inbox, sender sees it was hidden', !(await call(m3, '/api/feedback')).d.inbox.some((f) => f.id === fid) && (await call(m2, '/api/feedback')).d.sent.find((f) => f.id === fid).hidden);
 t('profile shows "Send feedback" to verified players only', (await call(m2, '/api/member?u=502')).d.feedback === true && !(await call(m1, '/api/member?u=502')).d.feedback && !(await call(m3, '/api/member?u=502')).d.feedback);
+// ----- praise & feedback after a match: optional anonymity, five reactions, caution pings, "why" for managers -----
+const named = await call(m3, '/api/feedback/send', { to: '501', kind: 'praise', text: 'Brilliant hold-up play against Rivals FC tonight', anon: false, match: 'm-77' });
+const anonMsg = await call(m3, '/api/feedback/send', { to: '501', kind: 'tip', text: 'Try to drop deeper when we lose the ball' });
+t('feedback: signed message shows the sender to the recipient, anonymous one does not', named.s === 200 && (await call(m2, '/api/feedback')).d.inbox.find((f) => f.text.startsWith('Brilliant'))?.from === 'Player Three' && !('from' in (await call(m2, '/api/feedback')).d.inbox.find((f) => f.text.startsWith('Try'))) && (await call(m2, '/api/feedback')).d.inbox.find((f) => f.text.startsWith('Brilliant')).match === 'm-77');
+const fbA = (await call(m2, '/api/feedback')).d.inbox.find((f) => f.text.startsWith('Brilliant')).id, fbB = (await call(m2, '/api/feedback')).d.inbox.find((f) => f.text.startsWith('Try')).id;
+t('feedback: only the recipient reacts; unknown reaction refused', (await call(m4, '/api/feedback/react', { id: fbA, reaction: 'heart' })).s === 404 && (await call(m2, '/api/feedback/react', { id: fbA, reaction: 'meh' })).s === 400);
+await call(m2, '/api/feedback/react', { id: fbA, reaction: 'heart' });
+t('feedback: a good reaction reaches the sender (bell + their sent list)', (await call(m3, '/api/feedback')).d.sent.find((f) => f.id === fbA).reaction === 'heart' && (await call(m3, '/api/notify')).d.items.some((n) => /reacted ❤️/.test(n.title)));
+const cautionsBefore = (await call(mgr, '/api/notify')).d.items.filter((n) => n.type === 'caution').length;
+await call(m2, '/api/feedback/react', { id: fbB, reaction: 'disagree' });
+t('feedback: ❌ / 😕 are hidden from the sender', (await call(m3, '/api/feedback')).d.sent.find((f) => f.id === fbB).reaction === undefined && !(await call(m3, '/api/notify')).d.items.some((n) => /disagree|confused/i.test(n.title)));
+const cautions = (await call(mgr, '/api/notify')).d.items.filter((n) => n.type === 'caution');
+t('feedback: managers get a ⚠️ caution ping', cautions.length === cautionsBefore + 1 && /Caution/.test(cautions[0].title) && cautions[0].icon === '⚠️');
+t('feedback: "why" needs a ❌ / 😕 first, is filtered, and managers read it', (await call(m2, '/api/feedback/why', { id: fbA, text: 'I just wanted to say more' })).s === 400 && (await call(m2, '/api/feedback/why', { id: fbB, text: 'what a wanker' })).s === 422
+  && (await call(m2, '/api/feedback/why', { id: fbB, text: 'I was told to stay high by the manager' })).s === 200 && (await call(mgr, '/api/feedback/all')).d.items.find((f) => f.id === fbB).reply === 'I was told to stay high by the manager'
+  && (await call(mgr, '/api/feedback/all')).d.items.find((f) => f.id === fbB).caution === true && !JSON.stringify((await call(m3, '/api/feedback')).d).includes('told to stay high'));
+t('feedback: managers still see the author of an anonymous message', (await call(mgr, '/api/feedback/all')).d.items.find((f) => f.id === fbB).fromName === 'Player Three');
 
 // ================= P3.8 predictions =================
 t('points: exact 3 · result + GD 2 · result 1 · miss 0', points({ gf: 2, ga: 1 }, { gf: 2, ga: 1 }) === 3 && points({ gf: 3, ga: 2 }, { gf: 2, ga: 1 }) === 2 && points({ gf: 1, ga: 0 }, { gf: 3, ga: 1 }) === 1 && points({ gf: 0, ga: 1 }, { gf: 2, ga: 1 }) === 0 && points({ gf: 1, ga: 1 }, { gf: 2, ga: 2 }) === 2);
