@@ -16,12 +16,12 @@
 import { can, flagOn } from './roles.js';
 import { eaGet } from './clublookup.js';
 import { MAX_BURNERS, TYPE_LABEL } from './burnerstats.js';
-import { message, header, text, footer, buttons } from './ui.js';
+import { message, header, text, footer, buttons, privateNote } from './ui.js';
 
 const HOME_CLUB = '80869'; // NOREX UNITED FC – overridable with the HOME_CLUB_ID var
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
-const reply = (content, extra = {}) => json({ type: 4, data: { content, flags: 64, allowed_mentions: { parse: [] }, ...extra } });
+const reply = (content, extra = {}) => (Object.keys(extra).length ? json({ type: 4, data: { content, flags: 64, allowed_mentions: { parse: [] }, ...extra } }) : json(privateNote(content)));
 const all = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).all().then((r) => r.results);
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const RED = 0xc8352c;

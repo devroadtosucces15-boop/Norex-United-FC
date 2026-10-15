@@ -3,6 +3,7 @@
 import { env, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
+import { plainText } from '../bot/ui.js';
 import { burnerStats, sharedWithNorex, mergeMatches, reportMessage, slimBurnerMatch, updateRoster, MAX_BURNERS } from '../bot/burnerstats.js';
 import { burnersKey } from '../bot/burners.js';
 import { plainText } from '../bot/ui.js';
@@ -103,7 +104,7 @@ globalThis.fetch = async (url, init = {}) => {
 const settle = async () => { await Promise.all(pending.splice(0)); return patches.at(-1); };
 
 try {
-  t('a plain member is turned away', /Managers only/.test((await slash(MEMBER, 'search', 'telosico')).data.content));
+  t('a plain member is turned away', /Managers only/.test(plainText((await slash(MEMBER, 'search', 'telosico')).data)));
   t('/burner search defers the reply (EA can be slow)', (await slash(MGR, 'search', 'telosico')).type === 5);
   const found = await settle();
   t('search lists every match with its record and a pick menu', body(found).includes('TeloSico') && body(found).includes('TeloSico Reserves')
@@ -113,7 +114,7 @@ try {
   await slash(MGR, 'search', 'zzzz');
   t('no match explains how a brand-new club appears', /no club matching/.test(body(await settle())));
 
-  t('a plain member cannot use /burner recent', /Managers only/.test((await slash(MEMBER, 'recent')).data.content));
+  t('a plain member cannot use /burner recent', /Managers only/.test(plainText((await slash(MEMBER, 'recent')).data)));
   t('/burner recent defers like search', (await slash(MGR, 'recent')).type === 5);
   const rec = await settle();
   const recOpts = sel(rec);
@@ -178,7 +179,7 @@ try {
 
   const again = await pick(MGR, 'norex:bn:pick', ['1355341']);
   t('picking it twice says already tracking, no duplicate row', /Already tracking/.test(body(again.data)) && sqlite.prepare('SELECT COUNT(*) AS n FROM burner_clubs').get().n === 1);
-  t('a plain member cannot use the pick menu', /Managers only/.test((await pick(MEMBER, 'norex:bn:pick', ['1355999'])).data.content));
+  t('a plain member cannot use the pick menu', /Managers only/.test(plainText((await pick(MEMBER, 'norex:bn:pick', ['1355999'])).data)));
 
   await slash(MGR, 'track', 'TELOSICO RESERVES');
   t('/burner track by exact name tracks straight away', /Now tracking\*\* \*\*TeloSico Reserves|Now tracking \*\*TeloSico Reserves/.test(body(await settle())));
@@ -198,7 +199,7 @@ try {
   });
 
   env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), burners: 'off' });
-  t('the flag switches the command off for everyone', /Managers only|not switched on/.test((await slash(MGR, 'list')).data.content));
+  t('the flag switches the command off for everyone', /Managers only|not switched on/.test(plainText((await slash(MGR, 'list')).data)));
 } finally {
   globalThis.fetch = realFetch;
 }
