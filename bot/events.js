@@ -24,7 +24,7 @@ import { notify, notifyMembers, safely } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
-import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy, cards, RESULT_ICON } from './ui.js';
+import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy, cards, RESULT_ICON, bannerUrl } from './ui.js';
 import { facesOf } from './faces.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
@@ -220,6 +220,7 @@ export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, me
   const list = (arr) => (arr.length ? `${arr.slice(0, 25).join(', ')}${arr.length > 25 ? ' …' : ''}` : '–');
   const still = [short && `${short} more player${short > 1 ? 's' : ''}`, ...missing.map(([k, left]) => `${left} ${k}`)].filter(Boolean).join(' · ');
   return message({ ping, mentions, accent: cancelled ? 'steel' : 'red', blocks: [
+    cancelled ? null : cards(bannerUrl(env, 'matchnight')),
     header({ eyebrow: `NOREX UNITED · ${EVENT_TYPES[e.type][1] ?? 'Match night'}`, title: `${EVENT_TYPES[e.type][0]} ${cancelled ? '🚫 Cancelled · ' : ''}${heading}${label(e)}`.slice(0, 200), sub: `<t:${unix}:F> · <t:${unix}:R> · ${length}` }),
     e.notes ? text(`📝 ${String(e.notes).slice(0, 1500)}`) : null,
     sep(),

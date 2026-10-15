@@ -16,10 +16,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, loadBurners, loadCrawlCursor, saveCrawlSlice, num, sleep, eventCounts } from './lib.mjs';
-import { matchComponents } from '../bot/matchcard.js';
 import { MAX_BURNERS, burnerStats, mergeMatches, reportMessage, slimBurnerMatch, updateRoster } from '../bot/burnerstats.js';
-import { message, header, facts, footer, resultAccent } from '../bot/ui.js';
-import { it } from '../bot/icons.js';
+import { postResults } from './lib/resultpost.mjs';
 
 const API = 'https://proclubs.ea.com/api/fc/';
 const HEADERS = {
@@ -235,88 +233,18 @@ async function crawlSlice() {
 
 let overrideHidden = []; // P5.6 "hide me" requests – kept out of the Discord post like on the site
 
-// New home results → Discord. With the bot token and the discordMatch flag on for members/public, each result is
-// posted by the bot into the webhook's channel with the P7.2 "Show my match" menu (plain webhooks can't carry
-// interactive components); if that fails, or otherwise, it goes through the webhook as before.
+// New home results → Discord. In CI the post is deferred (NOREX_DEFER_RESULTS): the matches are written to .outbox/results.json and
+// scripts/post-results.mjs posts them after the site build and the Discord cards, so each result carries its score card and field view.
 async function postToDiscord() {
-  const hook = process.env.DISCORD_WEBHOOK;
-  if (!hook || !newHomeMatches.length) return;
-  const settings = await loadBotSettings(config); // P7.5 – result channel override, ping role, emoji, on/off
-  if (!settings.autoPosts.results) return;
-  const site = config.siteUrl?.replace(/\/?$/, '/') ?? '';
-  const crestCdn = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
-  const hide = new Set([...(config.hiddenPlayers || []), ...overrideHidden].map((h) => String(h).toLowerCase()));
-  const items = newHomeMatches
-    .sort((a, b) => a.timestamp - b.timestamp)
-    .slice(-10)
-    .map((m) => {
-      const us = m.clubs[homeId];
-      const oppId = Object.keys(m.clubs).find((k) => k !== homeId);
-      const opp = m.clubs[oppId];
-      const res = us.wins === '1' ? 'W' : us.losses === '1' ? 'L' : 'D';
-      const ourIds = Object.entries(m.players?.[homeId] || {}).filter(([pid, p]) => !hide.has(pid.toLowerCase()) && !hide.has(String(p.playername).toLowerCase()));
-      const ours = ourIds.map(([, p]) => p);
-      const list = (f) => ours.filter((p) => num(p[f]) > 0).map((p) => `${p.playername}${num(p[f]) > 1 ? ` ×${p[f]}` : ''}`).join('\n');
-      const motm = Object.values(m.players || {}).flatMap((l) => Object.values(l)).find((p) => p.mom === '1');
-      const best = [...ours].sort((a, b) => num(b.rating) - num(a.rating))[0];
-      const oppCrest = opp.details?.customKit?.crestAssetId;
-      const url = site ? `${site}matches/${m.matchId}.html` : undefined;
-      const components = matchComponents(m.matchId, ourIds.map(([k, p]) => ({ k, n: p.playername, r: num(p.rating), g: num(p.goals), a: num(p.assists) })), url);
-      const clubName = us.details?.name ?? 'NOREX';
-      const panel = (ping, mentions) => message({ accent: resultAccent(res), ping, mentions, blocks: [
-        header({
-          eyebrow: `${clubName} · Match centre · ${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}`,
-          title: `${settings.emoji ? `${settings.emoji} ` : ''}${clubName} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
-          sub: `<t:${m.timestamp}:f> · ${{ W: 'Win', D: 'Draw', L: 'Defeat' }[res]}`,
-          thumb: res === 'L' && oppCrest ? `${crestCdn}${oppCrest}.png` : site ? `${site}assets/crest.png` : undefined,
-        }),
-        facts([[`${it('goal')} Goals`, list('goals').replace(/\n/g, ', ')], [`${it('assist')} Assists`, list('assists').replace(/\n/g, ', ')], [`${it('motm')} Man of the match`, motm ? `${motm.playername} (${num(motm.rating).toFixed(1)})` : ''], ['📈 Top rated', best ? `${best.playername} (${num(best.rating).toFixed(1)})` : '']]),
-        footer('Pick your name below to see your own match'),
-        ...components,
-      ] });
-      return { components, panel, embed: {
-        title: `${settings.emoji ? `${settings.emoji} ` : ''}${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
-        url,
-        color: { W: 0x22c55e, D: 0xeab308, L: 0xef4444 }[res],
-        description: res === 'W' ? '✅ **Victory**' : res === 'L' ? '❌ **Defeat**' : '➖ **Draw**',
-        thumbnail: { url: res === 'L' && oppCrest ? `${crestCdn}${oppCrest}.png` : `${site}assets/crest.png` },
-        fields: [
-          list('goals') && { name: '⚽ Goals', value: list('goals'), inline: true },
-          list('assists') && { name: '🎯 Assists', value: list('assists'), inline: true },
-          motm && { name: '⭐ Man of the match', value: `${motm.playername} (${num(motm.rating).toFixed(1)})`, inline: true },
-          best && { name: '📈 Our top rated', value: `${best.playername} (${num(best.rating).toFixed(1)})`, inline: true },
-        ].filter(Boolean),
-        timestamp: new Date(m.timestamp * 1000).toISOString(),
-        footer: { text: m.matchType === 'playoffMatch' ? 'Playoff match' : 'League match' },
-      } };
-    });
-  let rest = items;
-  const token = process.env.DISCORD_BOT_TOKEN;
-  // A "role" equal to the server's own ID is @everyone: <@&id> renders as "@@everyone" and pings nobody, so say it the way Discord expects.
-  const everyone = !!settings.pingRole && settings.pingRole === settings.guildId;
-  const pingContent = everyone ? '@everyone' : settings.pingRole ? `<@&${settings.pingRole}>` : undefined;
-  const allowedMentions = everyone ? { parse: ['everyone'] } : settings.pingRole ? { roles: [settings.pingRole] } : { parse: [] };
-  if (token && ['members', 'public'].includes(settings.flags?.discordMatch ?? config.features?.discordMatch)) { // live Boardroom switch first, committed config as the fallback
-    // P7.5: a configured result channel overrides the webhook's own channel (still needs the bot token to redirect).
-    const channel = settings.resultChannel || await fetch(hook).then((r) => (r.ok ? r.json() : null)).then((w) => w?.channel_id).catch(() => null);
-    while (channel && rest.length) {
-      const { panel } = rest[0];
-      const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, {
-        method: 'POST', headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(panel(pingContent, allowedMentions)),
-      }).catch((e) => ({ ok: false, status: e.message }));
-      if (!r.ok) { console.warn(`Bot post failed (${r.status}) – the bot needs View Channel + Send Messages + Embed Links there. Using the webhook.`); break; }
-      rest = rest.slice(1);
-    }
+  if (!newHomeMatches.length) return;
+  const hidden = overrideHidden;
+  if (process.env.NOREX_DEFER_RESULTS) {
+    fs.mkdirSync('.outbox', { recursive: true });
+    fs.writeFileSync(path.join('.outbox', 'results.json'), JSON.stringify({ matches: newHomeMatches, hidden }));
+    return;
   }
-  if (!rest.length) return;
-  await fetch(hook, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'NOREX UNITED', avatar_url: site ? `${site}assets/crest.png` : undefined, content: pingContent, embeds: rest.map((x) => x.embed), allowed_mentions: allowedMentions }),
-  }).catch((e) => console.warn('Discord post failed:', e.message));
+  await postResults(newHomeMatches, { config, homeId, hidden });
 }
-
 // P5.6: clubs approved in the manager portal. Approved by name only → look the ID up once via EA's club search and
 // report it back. Clubs no longer requested (undone) drop back to 'discovered' – only when the list loaded.
 async function trackRequested() {

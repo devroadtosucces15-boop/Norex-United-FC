@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DATA, readJson, writeJson, loadConfig } from './lib.mjs';
+import { message, header, text as block, footer, buttons } from '../bot/ui.js';
 
 const EA = 'https://www.ea.com';
 const INDEX = `${EA}/games/ea-sports-fc/fc-27/news`;
@@ -132,27 +133,29 @@ async function get(url) {
   return r.text();
 }
 
+// EA's FC updates as design-system panels (bot/ui.js) – one per update, posted through the webhook (V2 needs ?with_components=true).
+export function updatePanel(e, site) {
+  const cap = e.hits.find((h) => h.kind === 'levelCap');
+  return message({ accent: e.clubs ? 'red' : 'steel', blocks: [
+    header({ eyebrow: 'NOREX UNITED · New FC update', title: `📢 ${e.title}`.slice(0, 250), sub: `<t:${Math.floor(Date.parse(e.published) / 1000)}:D> · ${e.clubs ? 'Clubs changes inside' : 'No Clubs section in this one'}`, size: 3 }),
+    block(e.summary ? clip(e.summary, 400) : ''),
+    cap ? block(`**Level cap mentioned**\n${clip(cap.quote, 600)}\n-# A manager can confirm it in the portal.`) : null,
+    footer('Source: EA SPORTS FC pitch notes'),
+    buttons([{ label: 'Read the summary', url: site ? `${site}updates.html#${e.slug}` : e.url }, { label: 'Original on EA.com', url: e.url }]),
+  ] });
+}
+
 async function postToDiscord(entries) {
   const hook = process.env.DISCORD_WEBHOOK;
   if (!hook || !entries.length) return;
   const site = loadConfig().siteUrl?.replace(/\/?$/, '/') ?? '';
-  const embeds = entries.slice(0, 10).map((e) => ({
-    title: `📢 ${e.title}`.slice(0, 256),
-    url: site ? `${site}updates.html#${e.slug}` : e.url,
-    color: e.clubs ? 0xc8352c : 0x64748b,
-    description: [e.clubs ? '⚽ **Clubs changes inside**' : 'No Clubs section in this one.', e.summary && clip(e.summary, 300)].filter(Boolean).join('\n\n'),
-    fields: [
-      e.hits.some((h) => h.kind === 'levelCap') && { name: '🔝 Level cap mentioned', value: clip(e.hits.find((h) => h.kind === 'levelCap').quote, 1000) + '\n*A manager can confirm it in the portal.*' },
-      { name: '🔗 Original', value: `[Read on EA.com](${e.url})` },
-    ].filter(Boolean),
-    timestamp: new Date(e.published).toISOString(),
-    footer: { text: 'New FC update' },
-  }));
-  await fetch(hook, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'NOREX UNITED', avatar_url: site ? `${site}assets/crest.png` : undefined, embeds }),
-  }).catch((e) => console.warn('Discord post failed:', e.message));
+  for (const e of entries.slice(0, 5)) {
+    await fetch(`${hook}${hook.includes('?') ? '&' : '?'}with_components=true`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'NOREX UNITED', avatar_url: site ? `${site}assets/crest.png` : undefined, ...updatePanel(e, site) }),
+    }).catch((err) => console.warn('Discord post failed:', err.message));
+  }
 }
 
 async function main() {

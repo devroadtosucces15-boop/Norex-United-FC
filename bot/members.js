@@ -827,7 +827,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       const until = hours ? Date.now() + hours * 3600e3 : null;
       await run(env, 'UPDATE users SET muted_until = ? WHERE id = ?', until, uid);
       await log(env, me, until ? 'mute' : 'unmute', until ? `${u.name} · ${hours}h` : u.name);
-      if (until) await safely(notify(env, [uid], { type: 'moderation', icon: '🔇', title: 'You’ve been muted by the managers', body: `You can't post, comment or message until ${new Date(until).toLocaleString()}.`, link: 'members.html#me' }));
+      if (until) await safely(notify(env, [uid], { type: 'moderation', icon: '🔇', title: 'You’ve been muted by the managers', body: `You can't post, comment or message until ${new Date(until).toUTCString().slice(5, 22)} UTC.`, link: 'members.html#me' }));
       return json({ ok: true, mutedUntil: until ?? undefined });
     }
     if (p === '/api/admin/claims' && method === 'POST') {

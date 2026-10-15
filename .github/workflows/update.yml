@@ -36,6 +36,7 @@ jobs:
       - name: Fetch from EA
         run: node scripts/fetch.mjs
         env:
+          NOREX_DEFER_RESULTS: "1" # results are posted by the step after the cards, so they carry their pictures
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} # reads approved club requests (P5.6)
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }} # posts results with the "Show my match" menu (P7.2)
@@ -92,6 +93,16 @@ jobs:
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
         continue-on-error: true
         run: node scripts/cards.mjs
+
+      # New results go to Discord once their cards exist. Runs even if the build or the cards failed (then without pictures).
+      - name: Post new results to Discord
+        if: always() && hashFiles('.outbox/results.json') != ''
+        continue-on-error: true
+        run: node scripts/post-results.mjs
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
 
       - uses: actions/configure-pages@v5
         if: steps.commit.outputs.changed == 'true' || github.event_name != 'schedule'
