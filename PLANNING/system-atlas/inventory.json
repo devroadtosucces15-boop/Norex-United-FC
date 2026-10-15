@@ -1,9 +1,9 @@
 {
-  "revision": "244f04ffc26c395c62780969cf198ecbc32c1eba",
-  "files": 822,
+  "revision": "8a93e5689ba2eb2b8fef67b8c7243af533e35409",
+  "files": 823,
   "imports": 605,
-  "api_paths": 242,
-  "tables": 308,
+  "api_paths": 243,
+  "tables": 310,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -773,7 +773,7 @@
     {
       "path": "bot/docs.js",
       "layer": "bot",
-      "lines": 389,
+      "lines": 410,
       "imports": [
         "./ui.js",
         "./roles.js",
@@ -787,6 +787,7 @@
         "/api/docs/acks",
         "/api/docs/discord",
         "/api/docs/history",
+        "/api/docs/release",
         "/api/docs/remind",
         "/api/docs/remove",
         "/api/docs/restore",
@@ -807,6 +808,7 @@
         "notifications",
         "suggestion_votes",
         "suggestions",
+        "the",
         "users"
       ],
       "functions": [
@@ -823,6 +825,7 @@
         "docsList",
         "docsRoute",
         "fail",
+        "held",
         "json",
         "knowledgeRoute",
         "one",
@@ -2680,6 +2683,27 @@
       "endpoints": [],
       "tables": [
         "feedback"
+      ],
+      "functions": []
+    },
+    {
+      "path": "bot/migrations/0053_club_docs_content.sql",
+      "layer": "bot",
+      "lines": 108,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "SET",
+        "a",
+        "an",
+        "doc_acks",
+        "docs",
+        "hard",
+        "meta",
+        "notifications",
+        "organized",
+        "that",
+        "the"
       ],
       "functions": []
     },
@@ -9858,7 +9882,7 @@
     {
       "path": "tests/docs.test.mjs",
       "layer": "tests",
-      "lines": 178,
+      "lines": 202,
       "imports": [
         "node:fs",
         "./mock.mjs",
@@ -9870,6 +9894,7 @@
         "/api/docs/ack",
         "/api/docs/acks",
         "/api/docs/discord",
+        "/api/docs/release",
         "/api/docs/remind",
         "/api/docs/remove",
         "/api/docs/restore",
@@ -9884,9 +9909,14 @@
       ],
       "tables": [
         "activity",
-        "docs"
+        "doc_acks",
+        "docs",
+        "meta",
+        "notifications",
+        "the"
       ],
       "functions": [
+        "byArea",
         "read",
         "setFlags"
       ]
