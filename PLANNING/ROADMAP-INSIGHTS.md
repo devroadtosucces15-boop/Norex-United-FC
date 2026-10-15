@@ -11,7 +11,7 @@ Every item ships behind a flag in `config.json → features`, `owner` first. `no
 3. Tag by `season_id` so the FC27 wipe never mixes numbers.
 4. Honour hide-me requests (P5.6) and the banter opt-out (I2.1) in every card, ranking and share image.
 5. Banter cards are never posted automatically. They are made on demand (site button or Discord command) by a member, and show only members of this club.
-6. Wording is playful and about the stat, not the person. See the naming table in I2.1.
+6. Wording is playful and about the stat, not the person. Confirmed names are in the I2 section.
 7. Written text keeps going through the number checker in `bot/statinsights.js`.
 
 ## I0 – Foundations
@@ -43,11 +43,11 @@ Each is computed at build time from the archive, so pages stay fast and no per-v
 | ID | Item | Size | Side | Depends | Status | Done when |
 |---|---|---|---|---|---|---|
 | I2.1 | Banter engine: opt-out, member-only, share image, wording table below | M | W | I0.3, I1.8 | ☐ | Member can opt out; no auto-post anywhere |
-| I2.2 | Cards: Big Talk Small Output, Main Character, Missing Persons, Loss Collector, Self-Praise Index | M | W | I2.1 | ☐ | Each card shows its formula and sample size |
+| I2.2 | Cards: Big Talk Small Output, Main Character, Ghost, L Merchant, Self-Glazer | M | W | I2.1 | ☐ | Each card shows its formula and sample size |
 | I2.3 | "Dressing Room Gossip" summary (4–5 playful flags for the club, pairs with LLM writer) | S | W + B | I2.2 | ☐ | Managers can switch it off |
 | I2.4 | Discord `/banter` command that returns a card to the person who asked, not the channel | S | B | I2.2 | ☐ | |
 
-Naming table (original PCT name → Norex wording): Fraud Rating → **Big Talk Small Output**; Ghost → **Missing Persons**; L Merchant → **Loss Collector**; Self-Glazer → **Self-Praise Index**; Main Character stays; Red Flag Detector → **Dressing Room Gossip**; Squad Deadwood → **Bench Warmers' Union**.
+Naming (confirmed by Mike 2026-10-15): Fraud Rating → **Big Talk Small Output**; **Ghost**, **L Merchant**, **Self-Glazer** and **Main Character** keep their names; Red Flag Detector → **Dressing Room Gossip**. Squad Deadwood (not discussed) stays **Bench Warmers' Union** until Mike says otherwise.
 
 ## I3 – Sessions and scouting
 | ID | Item | Size | Side | Depends | Status | Done when |
@@ -83,6 +83,5 @@ Naming table (original PCT name → Norex wording): Fraud Rating → **Big Talk 
 5. I5.x, I4.4–I4.6, I1.12–I1.13.
 
 ## Open items for Mike
-- Confirm the banter naming table above.
 - Confirm "never auto-posted" covers scheduled posts such as the Monday leaderboard (I5.2 is off by default).
-- OK to message the bot-side session about I0.3, I2.4, I5.1 and card art.
+- Bot-side items released to the bot session on 2026-10-15 (I0.3 profile field, I2.4, I5.1, I5.2, card art).
