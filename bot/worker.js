@@ -13,6 +13,7 @@ import { getCommandSettings, commandBlocked, shapeReply } from './botcommands.js
 import { handleMembers } from './members.js';
 import { updateLive } from './live.js';
 import { memberLiveCron } from './memberlive.js';
+import { remindersCron } from './reminders.js';
 import { notifyCron } from './notify.js';
 import { eventReminders } from './events.js';
 import { closeDue } from './awards.js';
@@ -66,6 +67,7 @@ export default {
       const loadSite = (file) => load(site, file, ctx);
       ctx.waitUntil(refreshStatInsights(env, loadSite).then(() => statInsightWeekly(env, postEmbed)).catch((e) => console.log('stat insights cron failed', e.message))); // BE9
     }
+    if (flagOn(env, { role: 'owner' }, 'reminders')) ctx.waitUntil(remindersCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('reminders failed', e.message))); // E3 gentle nudges
     if (flagOn(env, { role: 'owner' }, 'memberLive')) ctx.waitUntil(memberLiveCron(env).catch((e) => console.log('member live check failed', e.message))); // 🔴 members' own streams
     if (flagOn(env, { role: 'owner' }, 'watchlist')) ctx.waitUntil(watchlistCron(env).catch((e) => console.log('watch list cron failed', e.message))); // creators' new videos, about hourly
     if (flagOn(env, { role: 'owner' }, 'fun')) ctx.waitUntil(birthdayCheck(env, postEmbed).catch((e) => console.log('birthday check failed', e.message))); // 🎂 one post a day
