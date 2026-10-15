@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-15T05:50:46.557Z",
+ "fetchedAt": "2026-10-15T06:00:47.738Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -729,42 +729,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "KBribiesca0420",
-   "gamesPlayed": "12",
-   "winRate": "66",
-   "goals": "0",
-   "assists": "2",
-   "cleanSheetsDef": "2",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "75",
-   "passSuccessRate": "79",
-   "ratingAve": "7.1",
-   "tacklesMade": "14",
-   "tackleSuccessRate": "41",
-   "proName": "Magic",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "192",
-   "proNationality": "14",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "PulviTheGoat",
    "gamesPlayed": "11",
    "winRate": "45",
@@ -1093,7 +1057,7 @@
   "midfielder": 9,
   "goalkeeper": 0,
   "forward": 10,
-  "defender": 8
+  "defender": 7
  },
  "career": [
   {
@@ -1175,14 +1139,14 @@
   },
   {
    "name": "CGM Splash",
-   "proPos": "25",
-   "gamesPlayed": "243",
+   "proPos": "14",
+   "gamesPlayed": "244",
    "goals": "95",
-   "assists": "104",
+   "assists": "105",
    "manOfTheMatch": "28",
    "ratingAve": "7.6",
    "prevGoals": "0",
-   "favoritePosition": "forward"
+   "favoritePosition": "midfielder"
   },
   {
    "name": "V-_MALDINI4-_XI",
@@ -1302,17 +1266,6 @@
    "assists": "56",
    "manOfTheMatch": "27",
    "ratingAve": "7.7",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
-  },
-  {
-   "name": "KBribiesca0420",
-   "proPos": "5",
-   "gamesPlayed": "223",
-   "goals": "65",
-   "assists": "99",
-   "manOfTheMatch": "19",
-   "ratingAve": "7.3",
    "prevGoals": "0",
    "favoritePosition": "defender"
   },
