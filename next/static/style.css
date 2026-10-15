@@ -1006,3 +1006,6 @@ body:not(.hub-page):after{content:"";position:fixed;inset:0;z-index:-1;pointer-e
 .rec-big{font-size:54px;line-height:1.1}.rec-who{font-size:18px}
 .panel.rec .small{position:relative}
 @media (max-width:640px){.rec-art{width:54%;opacity:.26}}
+
+/* zn11: iOS zooms into any field under 16px and can stay zoomed – every field is 16px+ on touch screens (bigger sizes like the kit number stay) */
+@media (hover:none),(pointer:coarse){:where(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select,[contenteditable]){font-size:16px!important}}

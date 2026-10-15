@@ -23,7 +23,7 @@ t('preview: static assets present', ['style.css', 'widgets.css', 'fx.css', 'fx.j
 t('preview: real card-art API is configured only in preview builds', read('index.html').includes('norex-bot.norexunited.workers.dev'));
 // ---- app shell, phone layout and motion guards (the browser overflow sweep is next/tools/overflow-audit.mjs) ----
 const pages = html.filter((f) => !/^(lookbook|canvas)\.html$/.test(f)), css = ['style.css', 'motion.css', 'widgets.css'].map((f) => read(f)).join('\n');
-t('app: viewport fills the notch (cover) and keeps pinch-zoom for accessibility', pages.every((f) => /name="viewport" content="[^"]*viewport-fit=cover[^"]*"/.test(read(f)) && !/maximum-scale=1|user-scalable=no/.test(read(f))));
+t('app: viewport fills the notch (cover) and locks zoom (zn11: maximum-scale=1, fields 16px+ on touch)', pages.every((f) => /name="viewport" content="[^"]*maximum-scale=1[^"]*viewport-fit=cover[^"]*"/.test(read(f))) && /\(pointer:coarse\)\{:where\(input[^}]*font-size:16px!important/.test(read('style.css')));
 t('app: manifest linked and valid', read('index.html').includes('rel="manifest"') && (() => { try { const m = JSON.parse(read('manifest.webmanifest')); return m.display === 'standalone' && m.start_url && m.icons?.length; } catch { return false; } })());
 t('app: motion system, app layer and motion settings on every page', pages.every((f) => { const h = read(f); return h.includes('motion.css') && h.includes('pwa.js') && h.includes('data-motion-settings'); }));
 t('app: canvas never scrolls sideways and inputs never trigger iOS zoom', /html\{[^}]*overflow-x:clip/.test(css) && /input,select,textarea\{font-size:max\(16px/.test(css));

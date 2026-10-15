@@ -25,7 +25,8 @@ export function audit(dir, { skip = /^(canvas|lookbook)\.html$/ } = {}) {
     const h = read(f); const body = h.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '');
     if (!/<html lang="/.test(h)) add('no lang', f);
     if (!/<title>[^<]{3,}/.test(h)) add('no title', f);
-    if (/user-scalable=no|maximum-scale=1(?![0-9])/.test(h)) add('pinch-zoom blocked', f);
+    // maximum-scale=1 is allowed (zn11, owner): it stops iOS zooming into fields, and Safari tabs still allow pinch-zoom with it
+    if (/user-scalable=(no|0)/.test(h)) add('pinch-zoom blocked', f);
     if (!/<main[ >]/.test(h)) add('no main landmark', f);
     if (!/class="skip"/.test(h)) add('no skip link', f);
     const h1 = (body.match(/<h1[ >]/g) || []).length + (body.match(/<h[23][^>]*aria-level="1"/g) || []).length; if (h1 !== 1) add(h1 ? 'several h1' : 'no h1', f);
