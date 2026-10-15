@@ -10,6 +10,7 @@
 // Data saved by the first (KV-only) version is copied into D1 once, on the first request after the switch.
 // Who may do what: bot/roles.js (can(user, action)).
 
+import { facesOf } from './faces.js';
 import { panelCounts } from './panel.js';
 import { getLive } from './live.js';
 import { gameChanges, gameRoute, latestGame } from './game.js';
@@ -578,6 +579,11 @@ async function route(p, method, body, me, env, loadSite, url) {
     if (!motion) return fail('Pick full, calm or custom:<effects that are off>.');
     await run(env, 'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value', `motion:${me.u}`, motion);
     return json({ ok: true, prefs: { motion } });
+  }
+  if (p === '/api/faces' && method === 'GET') { // faces everywhere (BOT-SITE #7): Card Studio card → Discord picture → default, same order as the bot
+    const ids = String(url?.searchParams.get('ids') ?? '').split(',').map((x) => x.trim()).filter((x) => /^\d{1,25}$/.test(x)).slice(0, 100);
+    const faces = await facesOf(env, ids, { origin: url?.origin });
+    return json(Object.fromEntries(faces));
   }
   if (p === '/api/me' && method === 'GET') {
     const [claim, profile] = await Promise.all([getClaim(env, me.u), one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)]);
