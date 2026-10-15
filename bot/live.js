@@ -5,6 +5,11 @@
 //
 // Env: STREAMS – JSON { twitch: url, youtube: url } copied from config.json → streams by bot.yml.
 
+import { flagOn } from './roles.js';
+import { message, header, text, sep, footer, buttons } from './ui.js';
+import { postEmbed } from './docs.js';
+import { notifyMembers } from './notify.js';
+
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const OFF = { live: false };
 
@@ -71,7 +76,32 @@ export async function updateLive(env) {
   const prev = await env.NOREX_KV.get('live', 'json');
   const same = prev && prev.live === now.live && prev.platform === now.platform && prev.videoId === now.videoId && prev.title === now.title;
   if (!same) await env.NOREX_KV.put('live', JSON.stringify({ ...now, since: now.live ? (prev?.live && prev.platform === now.platform ? prev.since : Date.now()) : null, at: Date.now() }));
+  if (now.live && !prev?.live) await announceLive(env, now).catch((e) => console.log('live announce failed', e.message)); // E2 – only on off → on
   return now;
+}
+
+// E2: one Discord post when the club's own channel goes on air, linking to the site's Watch page (flag `liveAnnounce`).
+// A stream that blips off and on again within 3 hours is not announced twice. Set after a successful post only.
+const ANNOUNCE_GAP = 3 * 3600e3;
+export const livePost = (v, site) => message({ accent: 'win', mentions: { parse: [] }, blocks: [
+  header({ eyebrow: `NOREX UNITED · Live · ${v.platform === 'twitch' ? 'Twitch' : 'YouTube'}`, title: '🔴 NOREX is live', sub: v.title || undefined, size: 3 }),
+  text('We just went on air – drop in, watch along and say hello in the chat.'),
+  sep(),
+  footer('Watch from the club site or straight on the platform'),
+  buttons([{ label: 'Watch on the site', url: `${site}watch.html` }, { label: v.platform === 'twitch' ? 'Open Twitch' : 'Open YouTube', url: v.url }]),
+] });
+export async function announceLive(env, v, now = Date.now()) {
+  if (!env.DB || !env.NOREX_KV || !env.DISCORD_BOT_TOKEN || !flagOn(env, { role: 'owner' }, 'liveAnnounce')) return false;
+  const last = await env.NOREX_KV.get('live_announced', 'json');
+  if (last && now - last.at < ANNOUNCE_GAP) return false;
+  const channel = (await env.DB.prepare("SELECT value FROM meta WHERE key = 'announce_channel'").first())?.value;
+  if (!channel) return false;
+  const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
+  const r = await postEmbed(env, channel, '', livePost(v, site));
+  if (!r?.ok) return false;
+  await env.NOREX_KV.put('live_announced', JSON.stringify({ at: now, platform: v.platform }), { expirationTtl: 86400 });
+  await notifyMembers(env, { type: 'live', title: '🔴 NOREX is live', body: v.title || 'Come and watch', link: 'watch.html', ref: 'live' }).catch(() => {}); // bell + banner; pop-up for members who set Live to "DM + site"
+  return true;
 }
 
 export async function getLive(env) {
