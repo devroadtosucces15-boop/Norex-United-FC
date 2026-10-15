@@ -472,7 +472,7 @@ export async function reportPosterRoute(request, me, env, url) {
 
 // ---------- P3.4 lineup builder ----------
 // Slots per formation: [slot, x %, y %] (y = 0 at the opponent's goal). Slot keys are unique; POS_OF gives the plain position.
-export const FORMATIONS = {
+const HAND = {
   '4-3-3': [['GK', 50, 90], ['LB', 14, 70], ['LCB', 37, 75], ['RCB', 63, 75], ['RB', 86, 70], ['LCM', 28, 50], ['CDM', 50, 58], ['RCM', 72, 50], ['LW', 17, 24], ['ST', 50, 15], ['RW', 83, 24]],
   '4-4-2': [['GK', 50, 90], ['LB', 14, 70], ['LCB', 37, 75], ['RCB', 63, 75], ['RB', 86, 70], ['LM', 14, 44], ['LCM', 38, 50], ['RCM', 62, 50], ['RM', 86, 44], ['LS', 38, 18], ['RS', 62, 18]],
   '4-2-3-1': [['GK', 50, 90], ['LB', 14, 70], ['LCB', 37, 75], ['RCB', 63, 75], ['RB', 86, 70], ['LDM', 38, 57], ['RDM', 62, 57], ['LAM', 20, 34], ['CAM', 50, 37], ['RAM', 80, 34], ['ST', 50, 14]],
@@ -480,7 +480,54 @@ export const FORMATIONS = {
   '3-5-2': [['GK', 50, 90], ['LCB', 27, 74], ['CB', 50, 77], ['RCB', 73, 74], ['LWB', 11, 50], ['LCM', 34, 50], ['CDM', 50, 58], ['RCM', 66, 50], ['RWB', 89, 50], ['LS', 38, 17], ['RS', 62, 17]],
   '5-3-2': [['GK', 50, 90], ['LWB', 10, 64], ['LCB', 30, 74], ['CB', 50, 77], ['RCB', 70, 74], ['RWB', 90, 64], ['LCM', 30, 48], ['CM', 50, 52], ['RCM', 70, 48], ['LS', 38, 18], ['RS', 62, 18]],
 };
-export const POS_OF = (slot) => ({ LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM', LDM: 'CDM', RDM: 'CDM', LAM: 'CAM', RAM: 'CAM', LS: 'ST', RS: 'ST' })[slot] ?? slot;
+// zn10: every FC 27 tactic-builder shape (29, same list as next/data/formations.json), back line first, rows split by ' / '.
+// The six hand-placed shapes above keep their slots so lineups already saved for them still load.
+const SHAPES = {
+  '3-1-4-2': 'LCB CB RCB / CDM / LM LCM RCM RM / LS RS',
+  '3-4-1-2': 'LCB CB RCB / LM LCM RCM RM / CAM / LS RS',
+  '3-4-2-1': 'LCB CB RCB / LM LCM RCM RM / LF RF / ST',
+  '3-5-2': 'LCB CB RCB / LM LDM RDM RM / CAM / LS RS',
+  '3-4-3': 'LCB CB RCB / LM LCM RCM RM / LW ST RW',
+  '4-1-2-1-2': 'LB LCB RCB RB / CDM / LCM RCM / CAM / LS RS',
+  '4-1-2-1-2 (2)': 'LB LCB RCB RB / CDM / LM RM / CAM / LS RS',
+  '4-1-3-2': 'LB LCB RCB RB / CDM / LM CM RM / LS RS',
+  '4-1-4-1': 'LB LCB RCB RB / CDM / LM LCM RCM RM / ST',
+  '4-2-1-3': 'LB LCB RCB RB / LDM RDM / CAM / LW ST RW',
+  '4-2-2-2': 'LB LCB RCB RB / LDM RDM / LAM RAM / LS RS',
+  '4-2-3-1': 'LB LCB RCB RB / LDM RDM / LAM CAM RAM / ST',
+  '4-2-3-1 (2)': 'LB LCB RCB RB / LDM RDM / LM CAM RM / ST',
+  '4-2-4': 'LB LCB RCB RB / LCM RCM / LW LS RS RW',
+  '4-3-1-2': 'LB LCB RCB RB / LCM CM RCM / CAM / LS RS',
+  '4-3-2-1': 'LB LCB RCB RB / LCM CM RCM / LF RF / ST',
+  '4-3-3': 'LB LCB RCB RB / LCM CM RCM / LW ST RW',
+  '4-3-3 (2)': 'LB LCB RCB RB / LCM CDM RCM / LW ST RW',
+  '4-3-3 (3)': 'LB LCB RCB RB / LDM CM RCM / LW ST RW',
+  '4-3-3 (4)': 'LB LCB RCB RB / LCM CAM RCM / LW ST RW',
+  '4-4-1-1 (2)': 'LB LCB RCB RB / LM LCM RCM RM / CF / ST',
+  '4-4-2': 'LB LCB RCB RB / LM LCM RCM RM / LS RS',
+  '4-4-2 (2)': 'LB LCB RCB RB / LM LDM RDM RM / LS RS',
+  '4-5-1': 'LB LCB RCB RB / LM LCM CM RCM RM / ST',
+  '4-5-1 (2)': 'LB LCB RCB RB / LM LDM CAM RDM RM / ST',
+  '5-2-1-2': 'LWB LCB CB RCB RWB / LCM RCM / CAM / LS RS',
+  '5-2-3': 'LWB LCB CB RCB RWB / LCM RCM / LW ST RW',
+  '5-3-2': 'LWB LCB CB RCB RWB / LCM CM RCM / LS RS',
+  '5-4-1': 'LWB LCB CB RCB RWB / LM LCM RCM RM / ST',
+};
+const WIDE = new Set(['LB', 'RB', 'LWB', 'RWB', 'LM', 'RM', 'LW', 'RW']);
+const place = (spec) => {
+  const rows = spec.split(' / ').map((r) => r.split(' ')), out = [['GK', 50, 90]];
+  rows.forEach((row, i) => {
+    const y = Math.round(75 - (i * 59) / (rows.length - 1)), step = row.length >= 5 ? 19 : row.length === 4 ? 24 : row.length === 3 ? 26 : 24;
+    row.forEach((slot, j) => {
+      let x = Math.round(50 + (j - (row.length - 1) / 2) * step);
+      if (WIDE.has(slot) && row.length <= 3) x = slot[0] === 'L' ? 14 : 86;
+      out.push([slot, x, WIDE.has(slot) && i < rows.length - 1 ? y - 4 : y]);
+    });
+  });
+  return out;
+};
+export const FORMATIONS = Object.fromEntries(Object.keys({ ...SHAPES, ...HAND }).sort().map((k) => [k, HAND[k] ?? place(SHAPES[k])]));
+export const POS_OF = (slot) => ({ LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM', LDM: 'CDM', RDM: 'CDM', LAM: 'CAM', RAM: 'CAM', LS: 'ST', RS: 'ST', LF: 'CF', RF: 'CF' })[slot] ?? slot;
 // { lineup, formation } from a request – formation slots, or plain positions for a quick list (formation = null).
 function readLineup(body) {
   const formation = body.formation ? String(body.formation) : null;

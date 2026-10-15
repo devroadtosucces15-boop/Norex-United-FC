@@ -50,7 +50,7 @@ ${list.length ? `<div class="dg-avail">${list.map((p) => `<button type="button" 
   function pitch(e, who) {
     const f = D.ev.formations[D.formation] || [], filled = f.filter(([s]) => D.slots[s]).length;
     return `<div class="dg-h"><h3>🧩 ${esc(D.formation)}</h3><label class="dg-form">Shape <select data-dg="formation" aria-label="Formation">${Object.keys(D.ev.formations).map((k) => `<option${k === D.formation ? ' selected' : ''}>${esc(k)}</option>`).join('')}</select></label><span class="dg-tag">${filled}/${f.length} · ${esc(D.saving || (e.lineupAt ? 'published' : 'draft'))}</span></div>
-<div class="dg-pitch-wrap"><div class="dg-pitch"><span class="dg-mark" aria-hidden="true"></span>${f.map(([slot, x, y]) => {
+<div class="dg-pitch-wrap"><div class="dg-pitch">${f.map(([slot, x, y]) => {
       const p = who.get(D.slots[slot]), warn = p && p.s !== 'yes' && !p.on;
       return `<button type="button" class="dg-slot${p ? ' on' : ''}${warn ? ' warn' : ''}${!p && D.pick ? ' glow' : ''}" style="left:${x}%;top:${y}%" data-slot="${esc(slot)}" aria-label="${esc(POS_OF(slot))}${p ? ': ' + esc(p.n) : ' – empty'}">${p ? av(p) : `<span class="dg-dot">${esc(POS_OF(slot))}</span>`}<small>${p ? esc(short(p.n)) : 'drop here'}</small></button>`;
     }).join('')}</div></div>

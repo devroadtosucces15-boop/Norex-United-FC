@@ -84,6 +84,7 @@ await call(mgr, '/api/events', { id: e24, type: 'rush', date: day(2), time: '20:
 t('P3.3 moving an event resets its reminders', sqlite.prepare('SELECT remind24_at FROM events WHERE id = ?').get(e24).remind24_at === null);
 
 // ================= P3.4 =================
+t('zn10 every FC27 formation (29) is selectable and saveable', Object.keys(FORMATIONS).length === 29 && ['4-3-3 (2)', '5-2-3', '4-4-1-1 (2)'].every((k) => FORMATIONS[k]) && (await call(mgr, '/api/events/lineup', { id: evId, formation: '4-2-3-1 (2)', lineup: { 500: 'LM' } })).s === 200);
 t('P3.4 formations have 11 unique slots', Object.values(FORMATIONS).every((f) => f.length === 11 && new Set(f.map((x) => x[0])).size === 11 && f[0][0] === 'GK'));
 t('P3.4 unknown formation refused', (await call(mgr, '/api/events/lineup', { id: evId, formation: '2-2-6', lineup: {} })).s === 400);
 t('P3.4 slot must exist in the formation', (await call(mgr, '/api/events/lineup', { id: evId, formation: '4-3-3', lineup: { 500: 'LM' } })).s === 400);
