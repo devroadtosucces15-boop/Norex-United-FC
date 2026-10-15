@@ -163,6 +163,12 @@
     const moment = (label = '') => { if (S.state === 'recording') { S.events.push({ t: elapsed(), k: 'moment', label }); $('#moments').textContent = `${S.events.filter((e) => e.k === 'moment').length} moment(s) marked`; } };
     function stop() { if (S.state !== 'recording' && S.state !== 'paused') return; if (S.state === 'paused') S.paused += Date.now() - S.pauseAt; S.stopMs = elapsed(); S.state = 'stopping'; stopCaptions(); try { S.rec.stop(); } catch { finish(); } }
 
+    // throw the take away (nothing saved, nothing attached) and go back to the start screen
+    function discard() {
+      if (S.state === 'recording' || S.state === 'paused') { S.discarded = true; stop(); }
+      else if (S.stream) { cleanup(); S.state = 'idle'; view('start'); broadcast(); }
+    }
+
     function cleanup() {
       clearInterval(S.ticker); stopCaptions();
       S.stream?.getTracks().forEach((t) => t.stop()); S.display?.getTracks().forEach((t) => t.stop()); S.mic?.stop();
@@ -173,6 +179,7 @@
     function finish() {
       const ms = S.stopMs ?? elapsed(), blob = new Blob(S.chunks, { type: S.mime });
       cleanup(); store.del(ACTIVE);
+      if (S.discarded) { S.discarded = false; S.chunks = []; S.bytes = 0; S.state = 'idle'; view('start'); say('Recording discarded – nothing was saved.'); doc.title = 'Norex recorder'; broadcast(); return; }
       S.state = 'done'; S.blob = blob; S.url = URL.createObjectURL(blob);
       const file = fileName(session, S.started, S.mime);
       const pg = S.events.find((e) => e.k === 'page');
@@ -182,6 +189,11 @@
       $('#preview').src = S.url;
       const a = $('#dl'); a.href = S.url; a.download = file; a.textContent = `⬇ Save ${file} (${fmtBytes(blob.size)})`;
       $('#doneInfo').textContent = `${fmtDur(ms)} · ${pages(S.events).length} page(s) · ${S.transcript.length} caption line(s)`;
+      const jump = $('#jump');
+      const rows = [...S.events.filter((e) => e.k === 'page').map((e) => ({ t: e.t, ic: '📄', text: e.url })), ...S.events.filter((e) => e.k === 'moment').map((e) => ({ t: e.t, ic: '🚩', text: 'Marked moment' })), ...S.transcript.map((c) => ({ t: c.t, ic: '💬', text: c.text }))].sort((x, y) => x.t - y.t);
+      jump.innerHTML = rows.map((r) => `<button type="button" data-t="${r.t}"><b>${fmtDur(r.t)}</b> ${r.ic} <span></span></button>`).join('');
+      jump.querySelectorAll('span').forEach((s, i) => { s.textContent = rows[i].text.slice(0, 120); }); // textContent: captions and urls are never parsed as HTML
+      jump.hidden = !rows.length;
       a.click(); // the file is the only copy of the video until the Worker can store it, so save it straight away
       if ($('#attach').checked) attach(item); else $('#attachState').textContent = 'Not attached to a report (you turned that off).';
       broadcast();
@@ -201,15 +213,17 @@
       const m = ev.data;
       if (m?.from !== 'page') return;
       if (m.k === 'event' && S.state === 'recording' && S.events.length < 600) S.events.push({ t: elapsed(), ...m.ev });
-      else if (m.k === 'cmd') { if (m.cmd === 'stop') stop(); else if (m.cmd === 'pause') pause(); else if (m.cmd === 'moment') moment(m.label); else if (m.cmd === 'ping') broadcast(); }
+      else if (m.k === 'cmd') { if (m.cmd === 'stop') stop(); else if (m.cmd === 'pause') pause(); else if (m.cmd === 'moment') moment(m.label); else if (m.cmd === 'discard') discard(); else if (m.cmd === 'ping') broadcast(); }
     });
 
     doc.querySelectorAll('[data-surface]').forEach((b) => b.addEventListener('click', () => start(b.dataset.surface)));
     $('#pause').addEventListener('click', pause);
     $('#stop').addEventListener('click', stop);
+    $('#discard').addEventListener('click', () => { if (confirm('Discard this recording? Nothing will be saved.')) discard(); });
     $('#moment').addEventListener('click', () => moment());
     $('#mute').addEventListener('click', () => { if (S.mic) { S.mic.enabled = !S.mic.enabled; tick(); } });
     $('#again').addEventListener('click', () => { if (S.url) URL.revokeObjectURL(S.url); S.state = 'idle'; S.blob = S.url = null; $('#preview').removeAttribute('src'); view('start'); say(''); doc.title = 'Norex recorder'; broadcast(); });
+    $('#jump').addEventListener('click', (e) => { const b = e.target.closest('button[data-t]'); if (b) { const v = $('#preview'); v.currentTime = +b.dataset.t / 1000; v.play().catch(() => {}); } });
     $('#close').addEventListener('click', () => window.close());
     addEventListener('beforeunload', (e) => { if (S.state === 'recording' || S.state === 'paused' || S.state === 'stopping') { e.preventDefault(); e.returnValue = ''; } else if (S.state === 'done' && !S.saved) { /* the file was already saved on stop */ } });
     addEventListener('pagehide', () => { store.del(ACTIVE); try { ch?.postMessage({ from: 'host', k: 'state', id: S.id, state: 'idle', ms: 0, bytes: 0, session }); } catch { /* closed */ } });

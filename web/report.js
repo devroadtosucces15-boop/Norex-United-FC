@@ -284,7 +284,7 @@
 <div class="nxr-row">${SR ? '<button type="button" class="nxr-mic">🎤 Dictate</button>' : ''}<span class="nxr-sp"></span><button type="button" class="nxr-x">Cancel</button><button type="submit" class="nxr-ok">Save #${n}</button></div>`;
     document.body.appendChild(sheet);
     const ta = sheet.querySelector('textarea');
-    sheet.querySelector('.nxr-x').addEventListener('click', cancel);
+    sheet.querySelector('.nxr-x').addEventListener('click', () => setTool('browse')); // leaving the tool too, or its canvas keeps covering the page
     sheet.addEventListener('submit', (e) => { e.preventDefault(); commit(ta.value.trim(), sheet.querySelector('input[name=sev]:checked').value); });
     const mic = sheet.querySelector('.nxr-mic');
     if (mic) {
@@ -389,7 +389,7 @@
       L.rec = { state: m.state, ms: m.ms, bytes: m.bytes, mic: m.mic, id: m.id }; L.at = Date.now();
       if (was === 'idle' && recLive()) pageEvent();
       if (recLive() || was !== m.state) { liveBar(); paintFab(); }
-      if (m.state === 'done' || m.state === 'idle') liveBar();
+      if (m.state === 'done' || m.state === 'idle') { if (L.tool && was !== m.state) liveTool(null); else liveBar(); }
     } else if (m.k === 'done') {
       if (document.visibilityState !== 'visible' || L.seen.has(m.id)) return; // one tab commits it; the pop-up falls back to the pending slot
       const n = commitRecording(m.item, m.id);
@@ -420,7 +420,7 @@
     const b = (attr, ic, label, extra = '') => `<button type="button" ${attr} title="${label}"${extra}><span>${ic}</span><small>${label}</small></button>`;
     L.bar2 = Object.assign(document.createElement('div'), { className: 'nxr-bar nxr-bar2' }); L.bar2.dataset.nxr = '';
     L.bar2.innerHTML = [
-      live ? `${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'Stop', ' class="red"')}${b('data-l="__moment"', '🚩', 'Moment')}<span class="nxr-clock">● ${fmt(r.ms)}</span>`
+      live ? `${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'Stop', ' class="red"')}${b('data-l="__discard"', '✕', 'Discard')}${b('data-l="__moment"', '🚩', 'Moment')}<span class="nxr-clock">● ${fmt(r.ms)}</span>`
         : b('data-l="__rec"', '🎥', r.state === 'done' ? 'Record again' : 'Record'),
       '<i class="nxr-div"></i>',
       LTOOLS.map(([k, ic, l]) => b(`data-l="${k}"`, ic, l, L.tool === k ? ' class="on"' : '')).join(''),
@@ -436,6 +436,7 @@
       if (k === '__rec') return openRecorder();
       if (k === '__pause') return hostSend({ k: 'cmd', cmd: 'pause' });
       if (k === '__stop') return hostSend({ k: 'cmd', cmd: 'stop' });
+      if (k === '__discard') return hostSend({ k: 'cmd', cmd: 'discard' });
       if (k === '__moment') { hostSend({ k: 'cmd', cmd: 'moment' }); return ctx.toast?.('🚩 Moment marked'); }
       if (k === '__undo') { L.s.undo(); return lChanged(); }
       if (k === '__redo') { L.s.redo(); return lChanged(); }
@@ -501,7 +502,7 @@
   function lKey(e) {
     if (!L.cv || !(open || recLive())) return;
     const typing = e.target.closest?.('input,textarea,select,[contenteditable=true]');
-    if (e.key === 'Escape' && L.tool) { liveTool(null); return; }
+    if (e.key === 'Escape' && (L.tool || tool !== 'browse')) { if (L.tool) liveTool(null); else setTool('browse'); return; }
     if (typing) return;
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === 'z' && L.s.marks.length + (L.s.canUndo ? 1 : 0)) { e.preventDefault(); (e.shiftKey ? L.s.redo() : L.s.undo()); lChanged(); }

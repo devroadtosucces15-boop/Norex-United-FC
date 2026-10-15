@@ -28,6 +28,10 @@ video{width:100%;max-height:180px;border-radius:10px;background:#000;margin:8px 
 #msg{margin-top:10px;font-size:13px;color:#9fe3b0}
 #msg.bad{color:#ffb4ae}
 .muted{opacity:.65;font-size:12px}
+#jump{max-height:140px;overflow:auto;margin:8px 0;border:1px solid #2a3342;border-radius:10px}
+#jump button{display:block;width:100%;text-align:left;border:0;border-radius:0;background:none;font-weight:500;font-size:12px;padding:6px 10px}
+#jump button:hover{background:#121821}
+#jump b{color:#ff8a82;font-variant-numeric:tabular-nums}
 [hidden]{display:none!important}
 </style></head>
 <body data-state="idle">
@@ -62,6 +66,7 @@ video{width:100%;max-height:180px;border-radius:10px;background:#000;margin:8px 
     <button id="mute">🎙 Mic on</button>
     <button id="moment">🚩 Mark moment</button>
     <button id="stop" class="red">⏹ Stop &amp; save</button>
+    <button id="discard">✕ Discard</button>
   </div>
   <p class="muted" id="moments" style="margin-top:8px"></p>
 </section>
@@ -69,6 +74,7 @@ video{width:100%;max-height:180px;border-radius:10px;background:#000;margin:8px 
 <section data-view="done" hidden>
   <video id="preview" controls playsinline></video>
   <p id="doneInfo"></p>
+  <div id="jump" hidden></div>
   <div class="row"><a class="btn red" id="dl" href="#">⬇ Save</a></div>
   <p id="attachState" style="margin-top:10px"></p>
   <p class="muted">The video file is saved on this device. Only the page trail, your marked moments and the captions go into the bug report.</p>

@@ -60,4 +60,7 @@ t('phones fall back to the pin report: the recorder row needs getDisplayMedia', 
 t('recording items are skipped when pins are drawn (they have no shape)', rep.includes('it.shape && it.page === pageKey()'));
 t('one tab commits a finished recording (visible tab), others wait; no duplicates', rep.includes("document.visibilityState !== 'visible' || L.seen.has(m.id)") && rep.includes('REC.pending'));
 t('nothing in bot/ or migrations was needed (no new route is called)', !rep.includes('/api/issues/recording') && !rec.includes('/api/'));
+t('Cancel on a note and Esc both leave the pin tool, so its canvas stops covering the page (browsing bug)', rep.includes("nxr-x').addEventListener('click', () => setTool('browse'))") && rep.includes("tool !== 'browse')) { if (L.tool) liveTool(null); else setTool('browse')"));
+t('discarding a recording: button on the page bar and in the pop-up, nothing saved or attached, drawing tool released', rep.includes("cmd: 'discard'") && rec.includes('function discard()') && rec.includes('S.discarded') && html.includes('id="discard"') && rep.includes("if (L.tool && was !== m.state) liveTool(null)"));
+t('finished recording lists pages, moments and captions that seek the preview (text set with textContent)', html.includes('id="jump"') && rec.includes('v.currentTime = +b.dataset.t / 1000') && rec.includes('s.textContent = rows[i].text'));
 done();
