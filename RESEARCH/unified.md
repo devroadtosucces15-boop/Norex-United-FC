@@ -1,132 +1,115 @@
 # Unified list
 
-58 unique repos from 4 star lists (duplicates merged), grouped by use case. Hand-curated snapshot from 2026-10-15; it does not auto-update like the per-list files.
+58 unique repos from 4 star lists (duplicates merged). Each entry was assessed from its own README and from what Norex already has (Cloudflare Workers AI for /ask, insights and voice recaps; a Lavalink DJ bot; zero-npm-dependency site and tests). Snapshot from 2026-10-15; it does not auto-update.
 
-**First-guess fit** (mine, to be overruled): `Norex` could help this project, `Me` general or personal tooling, `Ref` reference to read, `?` unclear.
+**Verdicts** (mine, yours to overrule): `Try` worth a trial on Norex · `Maybe` only if a need shows up · `Me` your own dev tooling, not the site · `Ref` read for ideas · `Skip` no use here.
 
-| Category | Repos |
-|---|---|
-| [AI coding agents and harnesses](#ai-coding-agents-and-harnesses) | 6 |
-| [Claude Code skills, plugins and memory](#claude-code-skills-plugins-and-memory) | 11 |
-| [LLM APIs, RAG and AI engineering](#llm-apis-rag-and-ai-engineering) | 5 |
-| [Code review, testing and security](#code-review-testing-and-security) | 3 |
-| [Design, diagrams and creative media](#design-diagrams-and-creative-media) | 7 |
-| [Web, frontend and UI](#web-frontend-and-ui) | 4 |
-| [Your own repos](#your-own-repos) | 2 |
-| [Reverse engineering and game tooling](#reverse-engineering-and-game-tooling) | 3 |
-| [PlayStation 5 and console hacking](#playstation-5-and-console-hacking) | 5 |
-| [Learning and reference lists](#learning-and-reference-lists) | 7 |
-| [Free services, APIs and hosting](#free-services-apis-and-hosting) | 5 |
+Totals: Try 3 · Maybe 8 · Me 14 · Ref 11 · Skip 21 · — 1
 
-## AI coding agents and harnesses
+## Could improve Norex directly
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [agent-substrate/substrate](https://github.com/agent-substrate/substrate) | Agent Substrate: the core system | ? | My stack |
-| [anomalyco/opencode](https://github.com/anomalyco/opencode) | The open source coding agent. | Me | unsorted |
-| [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | DeepSeek Harness: Everything is a Plugin. | Me | unsorted |
-| [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) | The agent that grows with you | Me | unsorted |
-| [openclaw/openclaw](https://github.com/openclaw/openclaw) | The AI that really does things. Any OS. Any Platform. The lobster way. 🦞 | Me | unsorted |
-| [paperclipai/paperclip](https://github.com/paperclipai/paperclip) | The open-source app everyone uses to manage agents at work | Me | My stack, Me |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes) | Framework that renders HTML/CSS/animation into deterministic MP4 video; has a Claude Code plugin. | Try | Norex already draws score cards from HTML in `scripts/cards.mjs`. Same templates could become short animated result/MOTM clips for Discord and socials. | My stack |
+| [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) | Agent skill that draws 45 diagram types as one self-contained HTML+SVG file in your brand colours. | Try | Tactics, Play Style and formation pages: generate brand-matched diagrams (Norex ink/red/gold) with no build dependencies. | My stack |
+| [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) | Multi-phase agent security audit with independently verified findings (from Cloudflare's vulnerability harness). | Try | One audit pass over `bot/` (Discord login, member API, D1 queries) before the Hub opens more features to members. | unsorted |
+| [alibaba/open-code-review](https://github.com/alibaba/open-code-review) | CLI that reviews git diffs with an LLM agent and writes line-level comments; Anthropic-compatible. | Maybe | Could run on PRs in CI as an extra reviewer. Needs an API key and costs tokens; Claude Code review already covers this. | My stack |
+| [tester-army/e2e](https://github.com/tester-army/e2e) | E2E test framework where an agent follows plain-English steps, then replays them without model calls. | Maybe | Norex tests are a zero-dependency harness. Only worth it for the login/Hub flows that need a real browser. | unsorted |
+| [DigitalPlatDev/FreeDomain](https://github.com/DigitalPlatDev/FreeDomain) | Free domain registration plus a DNS learning guide. | Maybe | Only if the club wants a custom address for the site; free domains can be unreliable for a club brand. | unsorted |
+| [public-apis/public-apis](https://github.com/public-apis/public-apis) | Big directory of free public APIs, by category. | Maybe | Mine it for fun Discord/site features (weather on match night, football facts); nothing needed today. | unsorted |
 
-## Claude Code skills, plugins and memory
+## Overlaps what Norex already has
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | Production-grade engineering skills for AI coding agents. | Me | unsorted |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code,… | Me | unsorted |
-| [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) | A skill to stop your coding agent from burying the answer. ADHD-friendly output. | Me | unsorted |
-| [hesreallyhim/awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code) | A hand-picked collection of the finest of resources for the most awesome of agents, Claude Code, the undisputed champion of coding… | Ref | My stack |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | Skills for Real Engineers. Straight from my .agents directory. | Me | unsorted |
-| [mksglu/context-mode](https://github.com/mksglu/context-mode) | Context window optimization for AI coding agents. Sandboxes tool output (98% reduction), persists session memory, and enforces routing… | Me | My stack |
-| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | A single CLAUDE.md file to improve Claude Code behavior, derived from Andrej Karpathy's observations on LLM coding pitfalls. | Me | unsorted |
-| [obra/superpowers](https://github.com/obra/superpowers) | An agentic skills framework & software development methodology that works. | Me | unsorted |
-| [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) | Persistent Context Across Sessions for Every Agent – Captures everything your agent does during sessions, compresses it with AI, and… | Me | My stack |
-| [vercel-labs/skills](https://github.com/vercel-labs/skills) | The open agent skills tool - npx skills | Me | unsorted |
-| [VoltAgent/awesome-openclaw-skills](https://github.com/VoltAgent/awesome-openclaw-skills) | The awesome collection of OpenClaw skills. 5,400+ skills filtered and categorized from the official OpenClaw Skills Registry.🦞 | Ref | unsorted |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) | Command-line downloader for audio and video from thousands of sites. | Maybe | The DJ bot already uses Lavalink. Could help the Watch list pull metadata/thumbnails, but YouTube terms apply; the YouTube API is the safer route. | unsorted |
+| [debpalash/VoiceStudio](https://github.com/debpalash/VoiceStudio) | Local voice cloning, dubbing, dictation and transcription app with a local API and MCP. | Maybe | Voice recaps already work through Workers AI. Interesting for a spoken match-recap voice, but cloning members' voices needs their consent. | My stack |
+| [tashfeenahmed/freellmapi](https://github.com/tashfeenahmed/freellmapi) | Self-hosted router that pools free tiers of 34 LLM providers behind one OpenAI-compatible endpoint. README says personal experimentation only. | Skip | Norex already calls Cloudflare Workers AI (`env.AI`) for /ask, insights and voice recaps. A router needs hosting and breaks provider terms for a club service. | My stack |
+| [vercel/ai](https://github.com/vercel/ai) | Provider-agnostic TypeScript AI toolkit (Next.js, React, Svelte). | Skip | Repo rule is no npm dependencies and the bot talks to Workers AI directly. Useful only if the next/ site ever gains an app server. | My stack |
+| [Tencent/WeKnora](https://github.com/Tencent/WeKnora) | Heavy enterprise RAG, agent and wiki platform with Docker sandboxes. | Skip | Norex `/ask` already answers from site JSON. This is far more than a club needs. | My stack |
 
-## LLM APIs, RAG and AI engineering
+## Claude Code workflow tools (for you, not the site)
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [lyogavin/airllm](https://github.com/lyogavin/airllm) | AirLLM 2.8T LLM inference with single 4GB GPU | ? | My stack |
-| [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) | Learn AI Engineering! Learn it. Build it. Ship it for others. | Ref | My stack |
-| [tashfeenahmed/freellmapi](https://github.com/tashfeenahmed/freellmapi) | 7.4 billion tokens per month. 34 free LLM providers. 635 free model endpoints. All behind one /v1 endpoint, plus any custom… | Norex | My stack |
-| [Tencent/WeKnora](https://github.com/Tencent/WeKnora) | Open-source LLM knowledge platform: turn raw documents into a queryable RAG, an autonomous reasoning agent, and a self-maintaining Wiki. | Norex | My stack |
-| [vercel/ai](https://github.com/vercel/ai) | The AI Toolkit for TypeScript. From the creators of Next.js, the AI SDK is a free open-source library for building AI-powered applications… | Norex | My stack |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) | Records what an agent does each session, compresses it and feeds relevant context into later sessions. | Me | Several Claude sessions work on this repo. Could replace some hand-written handoff notes; adds a background service to run. | My stack |
+| [mksglu/context-mode](https://github.com/mksglu/context-mode) | MCP server that keeps raw tool output out of the context window (claimed 98% less) and tracks session state in SQLite. | Me | Helps long sessions on this big repo (344 JS files); try on one session first. | My stack |
+| [obra/superpowers](https://github.com/obra/superpowers) | Composable skills plus a development methodology: spec, plan, test-driven build, review. | Me | Closest match to how you already work; compare with your own CLAUDE.md rules before adopting. | unsorted |
+| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | Skills and 9 slash commands for each phase: spec, plan, build, test, review, ship. | Me | Overlaps superpowers. Pick one set, not both. | unsorted |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | Small composable engineering skills from a developer's daily `.agents` folder. | Me | Light option if superpowers feels too opinionated. | unsorted |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | Large agent harness system: skills, memory, security, with a paid Pro tier. | Me | Big surface area; skim, don't install wholesale. | unsorted |
+| [vercel-labs/skills](https://github.com/vercel-labs/skills) | The `npx skills` CLI that installs agent skills across 75+ agents. | Me | Handy installer for any skills you adopt (diagram-design installs with it). | unsorted |
+| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | One CLAUDE.md file that counters common LLM coding mistakes (assumptions, overcomplication). | Me | Cheapest win: compare its rules to Norex's CLAUDE.md and copy the gaps. | unsorted |
+| [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) | Skill that makes the agent answer action-first with numbered steps and no filler. | Me | Matches your preference for short, direct answers; try it. | unsorted |
+| [hesreallyhim/awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code) | Curated list of Claude Code skills, agents, status lines, tooling and plugins. | Ref | Browse when you want something new, not a to-do. | My stack |
+| [VoltAgent/awesome-openclaw-skills](https://github.com/VoltAgent/awesome-openclaw-skills) | 5,300+ OpenClaw skills sorted by category. | Ref | Only useful if you adopt OpenClaw. | unsorted |
 
-## Code review, testing and security
+## AI agent platforms
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [alibaba/open-code-review](https://github.com/alibaba/open-code-review) | Secure, fast, efficient, battle-tested at Alibaba's scale. Hybrid architecture code review tool: deterministic pipelines + LLM Agent,… | Norex | My stack |
-| [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) | A coding-agent skill for multi-phase security audits with independently verified, machine-readable findings | Norex | unsorted |
-| [tester-army/e2e](https://github.com/tester-army/e2e) | Next generation e2e testing framework for web and mobile apps. | Norex | unsorted |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [paperclipai/paperclip](https://github.com/paperclipai/paperclip) | Node server and React dashboard that runs a team of agents with goals, budgets and org charts. | Maybe | Interesting for running recurring jobs (summaries, moderation) as a managed team, but heavy for now. | My stack, Me |
+| [openclaw/openclaw](https://github.com/openclaw/openclaw) | Self-hosted AI assistant that lives in Discord, Slack, iMessage and 20+ other chats; models are swappable plugins. | Me | Possible personal assistant in your Discord; separate from the club bot. | unsorted |
+| [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) | Self-improving agent with memory and skills, reachable from Telegram, Discord and Slack, with a cron scheduler. | Me | Same niche as OpenClaw; pick one to try. | unsorted |
+| [anomalyco/opencode](https://github.com/anomalyco/opencode) | Open-source terminal coding agent. | Me | Alternative to Claude Code; no reason to switch while Claude Code works. | unsorted |
+| [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | DeepSeek's plugin-based agent harness, developer preview with breaking changes. | Skip | Too early; revisit later. | unsorted |
+| [agent-substrate/substrate](https://github.com/agent-substrate/substrate) | Kubernetes runtime for running millions of agent sandboxes. | Skip | Infrastructure for AI platforms, not a club. | My stack |
+| [lyogavin/airllm](https://github.com/lyogavin/airllm) | Runs 70B models on a 4GB GPU by streaming layers. | Skip | Norex uses hosted Workers AI; no local model need. | My stack |
 
-## Design, diagrams and creative media
+## Design and creative
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) | Editorial diagram design for Claude Code, Codex, GitHub Copilot, Cursor, Factory Droid, and Pi. 44 diagram types. Self-contained HTML +… | Norex | My stack |
-| [debpalash/VoiceStudio](https://github.com/debpalash/VoiceStudio) | VoiceStudio is the open-source, fully-local ElevenLabs alternative — voice cloning, voice design, video dubbing, dictation, transcription… | ? | My stack |
-| [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Give your agent CAD superpowers. | ? | unsorted |
-| [goabstract/Awesome-Design-Tools](https://github.com/goabstract/Awesome-Design-Tools) | The best design tools and plugins for everything 👉 | Ref | My stack |
-| [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes) | Write HTML. Render video. Built for agents. | Norex | My stack |
-| [storytold/artcraft](https://github.com/storytold/artcraft) | ArtCraft is an intentional crafting engine for artists, designers, and filmmakers | ? | My stack |
-| [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) | A feature-rich command-line audio/video downloader | ? | unsorted |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [storytold/artcraft](https://github.com/storytold/artcraft) | Desktop IDE for AI image and video: compose in 2D, stage scenes in 3D, pick models. | Maybe | Crests, kit art or banner images if you want hand-directed AI art rather than the `aispike` crest generator. | My stack |
+| [goabstract/Awesome-Design-Tools](https://github.com/goabstract/Awesome-Design-Tools) | Curated list of design tools, plugins and UI kits (last updated 2024). | Ref | Dated; skip unless you want a design tool. | My stack |
+| [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Agent plugin that generates 3D CAD files (STEP, STL) and manufacturing drawings. | Skip | Nothing to do with a football club site. | unsorted |
 
-## Web, frontend and UI
+## Web and frontend
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [bilawalsidhu/gods-eye-view](https://github.com/bilawalsidhu/gods-eye-view) | A spy satellite simulator in your browser, except the data is real. Live open source spatial intelligence on a photorealistic 3D globe. | Norex | My stack |
-| [dypsilon/frontend-dev-bookmarks](https://github.com/dypsilon/frontend-dev-bookmarks) | Manually curated collection of resources for frontend web developers. | Ref | My stack |
-| [longbridge/gpui-kit](https://github.com/longbridge/gpui-kit) | Rust GUI components for building fantastic cross-platform desktop application by using GPUI. | ? | My stack |
-| [react/react](https://github.com/react/react) | The library for web and native user interfaces. | Ref | unsorted |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [dypsilon/frontend-dev-bookmarks](https://github.com/dypsilon/frontend-dev-bookmarks) | Categorised frontend resources (animation, typography, visualisation, architecture). | Ref | Look up when polishing the `next/` redesign. | My stack |
+| [react/react](https://github.com/react/react) | The React UI library. | Skip | The `next/` site is plain static pages with no framework; React would break the no-dependency rule. | unsorted |
+| [longbridge/gpui-kit](https://github.com/longbridge/gpui-kit) | Rust desktop UI framework (75+ components). | Skip | Desktop apps only; the club has none. | My stack |
+| [bilawalsidhu/gods-eye-view](https://github.com/bilawalsidhu/gods-eye-view) | Browser 3D globe showing live aircraft, ships, satellites, earthquakes and cameras, with voice control. | Skip | You were right: this has nothing to do with Pro Clubs. My earlier tag was based on a loose idea of data visualisation. | My stack |
+
+## Learning and reference
+
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) | 542 lessons across 20 phases on model internals, retrieval and agent runtimes. | Ref | Study material if you want to understand how the AI features work. | My stack |
+| [codecrafters-io/build-your-own-x](https://github.com/codecrafters-io/build-your-own-x) | Step-by-step guides to rebuild technologies (bot, database, git, emulator, game…). | Ref | Learning, including its "build your own bot" section. | unsorted |
+| [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | Guide to designing large-scale systems and interview prep. | Ref | Learning only. | unsorted |
+| [freeCodeCamp/freeCodeCamp](https://github.com/freeCodeCamp/freeCodeCamp) | Free coding curriculum and its platform codebase. | Ref | Learning only. | unsorted |
+| [DovAmir/awesome-design-patterns](https://github.com/DovAmir/awesome-design-patterns) | Curated software and architecture design patterns (serverless, microservices, security…). | Ref | Serverless and Cloudflare Worker patterns are the relevant part. | Me |
+| [trimstray/the-book-of-secret-knowledge](https://github.com/trimstray/the-book-of-secret-knowledge) | Cheatsheets, one-liners and CLI/web tools for sysadmins and pentesters. | Ref | Useful for running the Oracle server behind the DJ bot. | My stack |
+| [awesome-selfhosted/awesome-selfhosted](https://github.com/awesome-selfhosted/awesome-selfhosted) | List of free self-hostable services by category. | Ref | Pick from it if the DJ server or club tools need self-hosting. | unsorted |
+| [DopplerHQ/awesome-interview-questions](https://github.com/DopplerHQ/awesome-interview-questions) | Lists of technical interview questions; no longer maintained. | Skip | No use here. | unsorted |
+| [vinta/awesome-python](https://github.com/vinta/awesome-python) | Opinionated list of Python libraries. | Skip | Norex is JavaScript; only the build-script Python files use it. | unsorted |
+| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | List of open-source iOS apps. | Skip | No iOS app planned. | unsorted |
+| [torvalds/linux](https://github.com/torvalds/linux) | The Linux kernel source. | Skip | No use here. | unsorted |
 
 ## Your own repos
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [devroadtosucces15-boop/Copyweb](https://github.com/devroadtosucces15-boop/Copyweb) | – | Me | unsorted |
-| [devroadtosucces15-boop/Norex-United-FC](https://github.com/devroadtosucces15-boop/Norex-United-FC) | – | Norex | My stack, Inspiration |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [devroadtosucces15-boop/Copyweb](https://github.com/devroadtosucces15-boop/Copyweb) | Your copy of an AI website-cloner template: give an agent a URL and it rebuilds the site as a Next.js app. | Me | Handy for studying other club sites for the `next/` redesign. | unsorted |
+| [devroadtosucces15-boop/Norex-United-FC](https://github.com/devroadtosucces15-boop/Norex-United-FC) | This project: club site, Discord bot and member API. | — | Listed in Inspiration and My stack, so it is already the centre of everything. | My stack, Inspiration |
 
 ## Reverse engineering and game tooling
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [AssetRipper/AssetRipper](https://github.com/AssetRipper/AssetRipper) | GUI application to analyze game files | ? | unsorted |
-| [EpicGames/raddebugger](https://github.com/EpicGames/raddebugger) | A native, user-mode, multi-process, graphical debugger. | ? | My stack |
-| [morluto/rea](https://github.com/morluto/rea) | Reverse engineer anything with agents, from app behavior down to native binaries. | Me | unsorted |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [morluto/rea](https://github.com/morluto/rea) | MCP server for reverse engineering binaries, apps and runtime behaviour (the tools in this session). | Me | Personal tool; not part of Norex. | unsorted |
+| [AssetRipper/AssetRipper](https://github.com/AssetRipper/AssetRipper) | Analyses and converts Unity game files. | Skip | No use here. | unsorted |
+| [EpicGames/raddebugger](https://github.com/EpicGames/raddebugger) | Native Windows graphical debugger (alpha). | Skip | No use here. | My stack |
 
-## PlayStation 5 and console hacking
+## PlayStation 5 tinkering
 
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [boykopovar/AnyPS5](https://github.com/boykopovar/AnyPS5) | Tool for automatic PS5 executables porting to Linux and Windows | ? | My stack, Inspiration |
-| [FunkeyFlo/ps5-mqtt](https://github.com/FunkeyFlo/ps5-mqtt) | Integrate your PlayStation 5 with Home Assistant | ? | unsorted |
-| [itsPLK/ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader) | An automated payload loader for exploited PS5 consoles | ? | unsorted |
-| [Ohjurot/DualSense-Windows](https://github.com/Ohjurot/DualSense-Windows) | Windows API for the PS5 DualSense controller | ? | unsorted |
-| [ps5-linux/ps5-linux-tools](https://github.com/ps5-linux/ps5-linux-tools) | Linux tools for PS5 | ? | unsorted |
-
-## Learning and reference lists
-
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [codecrafters-io/build-your-own-x](https://github.com/codecrafters-io/build-your-own-x) | Master programming by recreating your favorite technologies from scratch. | Ref | unsorted |
-| [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | Learn how to design large-scale systems. Prep for the system design interview. Includes Anki flashcards. | Ref | unsorted |
-| [DopplerHQ/awesome-interview-questions](https://github.com/DopplerHQ/awesome-interview-questions) | :octocat: A curated awesome list of lists of interview questions. Feel free to contribute! :mortar_board: | Ref | unsorted |
-| [DovAmir/awesome-design-patterns](https://github.com/DovAmir/awesome-design-patterns) | A curated list of software and architecture related design patterns. | Ref | Me |
-| [freeCodeCamp/freeCodeCamp](https://github.com/freeCodeCamp/freeCodeCamp) | freeCodeCamp.org's open-source codebase and curriculum. Learn math, programming, and computer science for free. | Ref | unsorted |
-| [trimstray/the-book-of-secret-knowledge](https://github.com/trimstray/the-book-of-secret-knowledge) | A collection of inspiring lists, manuals, cheatsheets, blogs, hacks, one-liners, cli/web tools and more. | Ref | My stack |
-| [vinta/awesome-python](https://github.com/vinta/awesome-python) | The definitive list that answers "I want to do X in Python, which tool should I use?" | Ref | unsorted |
-
-## Free services, APIs and hosting
-
-| Repo | What it is | Fit | Your lists |
-|---|---|---|---|
-| [awesome-selfhosted/awesome-selfhosted](https://github.com/awesome-selfhosted/awesome-selfhosted) | A list of Free Software network services and web applications which can be hosted on your own servers | Ref | unsorted |
-| [DigitalPlatDev/FreeDomain](https://github.com/DigitalPlatDev/FreeDomain) | Free domain registration and practical DNS learning resources for everyone. | Me | unsorted |
-| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | Ref | unsorted |
-| [public-apis/public-apis](https://github.com/public-apis/public-apis) | A collective list of free APIs | Norex | unsorted |
-| [torvalds/linux](https://github.com/torvalds/linux) | Linux kernel source tree | Ref | unsorted |
+| Repo | What it is | Verdict | Proposed use for Norex | Your lists |
+|---|---|---|---|---|
+| [boykopovar/AnyPS5](https://github.com/boykopovar/AnyPS5) | Ports PS5 executables to Linux and Windows. | Skip | Your personal interest, not Norex. | My stack, Inspiration |
+| [ps5-linux/ps5-linux-tools](https://github.com/ps5-linux/ps5-linux-tools) | Linux fan/boost control and install scripts for PS5. | Skip | Not Norex. | unsorted |
+| [itsPLK/ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader) | Autoloader for exploited PS5 consoles. | Skip | Not Norex. | unsorted |
+| [FunkeyFlo/ps5-mqtt](https://github.com/FunkeyFlo/ps5-mqtt) | Home Assistant add-on to control a PS5 over MQTT. | Skip | Not Norex. | unsorted |
+| [Ohjurot/DualSense-Windows](https://github.com/Ohjurot/DualSense-Windows) | Windows C++ API for the DualSense controller. | Skip | Not Norex. | unsorted |
