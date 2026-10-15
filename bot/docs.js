@@ -5,6 +5,7 @@
 //   POST /api/docs                 managers: create / edit { id?, area, title, body, pinned, public, ack, notify, discord }
 //   POST /api/docs/remove          managers: take an item down (kept with removed_at)
 //   GET  /api/docs/history?id=     managers: every version of one item;  POST /api/docs/restore { id, version }
+//   POST /api/docs/release         owner: lift the release hold (until then nothing notifies, pins or posts to Discord)
 //   POST /api/docs/ack             members: acknowledge the current rules
 //   GET  /api/docs/acks            managers: who has / hasn't acknowledged;  POST /api/docs/remind – nudge the rest
 //   GET  /api/docs/discord         managers: text channels + roles to pick from (P5.3)
@@ -44,6 +45,9 @@ const docOut = (r, manager) => ({
 });
 
 // ---------- rules version + acknowledgements ----------
+// Release hold: until the owner releases the docs (meta docs_release = '1'), nothing here reaches members –
+// no notifications, no pins, no "please acknowledge" prompt, no Discord post. Content can still be written and read.
+const held = async (env) => (await one(env, "SELECT value FROM meta WHERE key = 'docs_release'"))?.value !== '1';
 const rulesVersion = async (env) => Number((await one(env, "SELECT value FROM meta WHERE key = 'rules_version'"))?.value) || 0;
 async function rulesState(env, me) {
   const v = await rulesVersion(env);
@@ -52,6 +56,7 @@ async function rulesState(env, me) {
   return { version: v, acked: !!a, ackedAt: opt(a?.at) };
 }
 async function bumpRules(env, me, title) {
+  if (await held(env)) return 0;
   const v = (await rulesVersion(env)) + 1;
   await run(env, "INSERT INTO meta (key, value) VALUES ('rules_version', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", String(v));
   await run(env, "INSERT INTO meta (key, value) VALUES ('rules_at', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", String(Date.now()));
@@ -71,6 +76,7 @@ export async function docsList(env, me) {
   return {
     items: rows.map((r) => docOut(r, manager)),
     rules: member ? await rulesState(env, me) : undefined,
+    held: manager ? await held(env) : undefined,
     canEdit: manager, canDiscord: !!me && can(me, 'announce.discord') && !!env.DISCORD_BOT_TOKEN,
   };
 }
@@ -104,14 +110,16 @@ async function saveDoc(body, me, env, log) {
   if (title.length < 3) return fail('Give it a title (3+ characters).');
   if (area !== 'announce' && !text) return fail('Write something first.');
   if (!row && (await one(env, 'SELECT COUNT(*) AS n FROM docs WHERE removed_at IS NULL')).n >= MAX_DOCS) return fail('That’s a lot of documents – remove an old one first.', 429);
-  const { id, changed } = await writeDoc(env, me, row, { area, title, body: text, pinned: !!body.pinned, public: !!body.public });
+  const hold = await held(env);
+  const { id, changed } = await writeDoc(env, me, row, { area, title, body: text, pinned: !hold && !!body.pinned, public: !!body.public });
   await log(env, me, row ? 'doc-edit' : 'doc-new', `${AREAS[area]} · ${title}`);
   const out = { id };
   if (area === 'rules' && body.ack && (changed || !row)) out.rulesVersion = await bumpRules(env, me, title);
-  if (area === 'announce' && body.notify) {
+  if (hold) out.held = true;
+  if (area === 'announce' && body.notify && !hold) {
     out.notified = await safely(notifyMembers(env, { type: 'announce', title, body: plain(text).slice(0, 600) || null, link: `docs.html#d-${id}`, ack: !!body.ack })) ?? 0;
   }
-  if (body.discord?.channel) out.discord = await postDoc(env, me, id, body.discord, log);
+  if (body.discord?.channel && !hold) out.discord = await postDoc(env, me, id, body.discord, log);
   return json({ ...out, ...(await docsList(env, me)) });
 }
 
@@ -203,6 +211,7 @@ function docMessage(env, me, d) {
 // Posts one docs item as a rich embed. Never throws – returns { ok } or { ok: false, error } for the UI.
 async function postDoc(env, me, id, target, log) {
   if (!can(me, 'announce.discord')) return { ok: false, error: 'Managers only.' };
+  if (await held(env)) return { ok: false, error: 'Club docs are on hold until the owner releases them – nothing is posted yet.' };
   const channel = String(target.channel ?? ''), role = String(target.role ?? '');
   const d = await one(env, 'SELECT * FROM docs WHERE id = ? AND removed_at IS NULL', id);
   if (!d) return { ok: false, error: 'That item no longer exists.' };
@@ -226,6 +235,17 @@ async function docsRoute(p, method, body, me, env, log, url) {
     await run(env, "UPDATE notifications SET ack_at = ?, read_at = COALESCE(read_at, ?) WHERE user_id = ? AND ack = 1 AND ack_at IS NULL AND ref LIKE 'rules:%'", Date.now(), Date.now(), me.u);
     await log(env, me, 'rules-ack', `version ${v}`);
     return json(await docsList(env, me));
+  }
+  if (p === '/api/docs/release' && method === 'POST') { // owner go-live: lifts the hold, pins the founder's message, asks everyone to acknowledge
+    if (!can(me, 'settings.bot')) return fail('Owner only.', 403);
+    if (!(await held(env))) return fail('Already released.', 409);
+    await run(env, "INSERT INTO meta (key, value) VALUES ('docs_release', '1') ON CONFLICT (key) DO UPDATE SET value = '1'");
+    await run(env, "UPDATE docs SET pinned = 1 WHERE removed_at IS NULL AND area = 'announce' AND title = 'A message from the founder'");
+    const founder = await one(env, "SELECT id, body FROM docs WHERE removed_at IS NULL AND area = 'announce' AND title = 'A message from the founder'");
+    const version = await bumpRules(env, me, 'Club philosophy, rules and expectations');
+    if (founder) await safely(notifyMembers(env, { type: 'announce', title: 'A message from the founder', body: plain(founder.body).slice(0, 600) || null, link: `docs.html#d-${founder.id}`, ack: false }));
+    await log(env, me, 'docs-release', `rules version ${version}`);
+    return json({ released: true, version, ...(await docsList(env, me)) });
   }
   if (!can(me, 'content.edit')) return fail('Managers only.', 403);
   if (p === '/api/docs' && method === 'POST') return saveDoc(body, me, env, log);
@@ -252,6 +272,7 @@ async function docsRoute(p, method, body, me, env, log, url) {
   }
   if (p === '/api/docs/acks' && method === 'GET') return json(await ackList(env));
   if (p === '/api/docs/remind' && method === 'POST') {
+    if (await held(env)) return fail('Club docs are on hold until the owner releases them – no reminders yet.', 409);
     const last = Number((await one(env, "SELECT value FROM meta WHERE key = 'rules_remind_at'"))?.value) || 0;
     if (Date.now() - last < DAY / 2) return fail('A reminder already went out in the last 12 hours.', 429);
     const a = await ackList(env);
