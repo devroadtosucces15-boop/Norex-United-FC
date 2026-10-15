@@ -1,9 +1,9 @@
 {
-  "revision": "8a93e5689ba2eb2b8fef67b8c7243af533e35409",
-  "files": 823,
-  "imports": 605,
+  "revision": "8a2e07b007ad5784f282a7fa903cf2a0cc776a3f",
+  "files": 829,
+  "imports": 609,
   "api_paths": 243,
-  "tables": 310,
+  "tables": 314,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -40,6 +40,27 @@
       "tables": [
         "the"
       ],
+      "functions": []
+    },
+    {
+      "path": ".github/workflows/link-inbox.yml",
+      "layer": ".github",
+      "lines": 62,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "RESEARCH",
+        "anyone"
+      ],
+      "functions": []
+    },
+    {
+      "path": ".github/workflows/stars-sync.yml",
+      "layer": ".github",
+      "lines": 36,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
       "functions": []
     },
     {
@@ -9133,6 +9154,34 @@
       ]
     },
     {
+      "path": "scripts/lib/stars.mjs",
+      "layer": "scripts",
+      "lines": 106,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "GitHub",
+        "an",
+        "lists"
+      ],
+      "functions": [
+        "buildLists",
+        "clean",
+        "extractLinks",
+        "githubRepoOf",
+        "inboxLine",
+        "meta",
+        "parseHtmlMeta",
+        "parseInbox",
+        "renderInbox",
+        "renderIndex",
+        "renderList",
+        "repoEntry",
+        "slugify",
+        "summariseReadme"
+      ]
+    },
+    {
       "path": "scripts/lib.mjs",
       "layer": "scripts",
       "lines": 136,
@@ -9163,6 +9212,24 @@
         "saveCrawlSlice",
         "sleep",
         "writeJson"
+      ]
+    },
+    {
+      "path": "scripts/link-inbox.mjs",
+      "layer": "scripts",
+      "lines": 49,
+      "imports": [
+        "node:fs",
+        "./lib/stars.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "RESEARCH",
+        "the"
+      ],
+      "functions": [
+        "describe",
+        "get"
       ]
     },
     {
@@ -9269,6 +9336,25 @@
       "endpoints": [],
       "tables": [],
       "functions": []
+    },
+    {
+      "path": "scripts/stars-sync.mjs",
+      "layer": "scripts",
+      "lines": 68,
+      "imports": [
+        "node:fs",
+        "./lib/stars.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "RESEARCH",
+        "one"
+      ],
+      "functions": [
+        "allLists",
+        "allStars",
+        "gql"
+      ]
     },
     {
       "path": "scripts/tactics-page.mjs",
@@ -11522,6 +11608,20 @@
         "P",
         "setFlags"
       ]
+    },
+    {
+      "path": "tests/stars.test.mjs",
+      "layer": "tests",
+      "lines": 37,
+      "imports": [
+        "./lib.mjs",
+        "../scripts/lib/stars.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "row"
+      ],
+      "functions": []
     },
     {
       "path": "tests/statinsights.test.mjs",
@@ -15547,6 +15647,11 @@
       "kind": "imports"
     },
     {
+      "source": "scripts/link-inbox.mjs",
+      "target": "scripts/lib/stars.mjs",
+      "kind": "imports"
+    },
+    {
       "source": "scripts/media.mjs",
       "target": "scripts/lib.mjs",
       "kind": "imports"
@@ -15564,6 +15669,11 @@
     {
       "source": "scripts/serve.mjs",
       "target": "scripts/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/stars-sync.mjs",
+      "target": "scripts/lib/stars.mjs",
       "kind": "imports"
     },
     {
@@ -16879,6 +16989,16 @@
     {
       "source": "tests/squads.test.mjs",
       "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/stars.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/stars.test.mjs",
+      "target": "scripts/lib/stars.mjs",
       "kind": "imports"
     },
     {

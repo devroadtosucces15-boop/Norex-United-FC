@@ -84,17 +84,18 @@ flowchart LR
   n77["tests/site.test.mjs"]
   n78["tests/social.test.mjs"]
   n79["tests/squads.test.mjs"]
-  n80["tests/statinsights.test.mjs"]
-  n81["tests/studio.test.mjs"]
-  n82["tests/submissions.test.mjs"]
-  n83["tests/tagline.test.mjs"]
-  n84["tests/trials.test.mjs"]
-  n85["tests/updates.test.mjs"]
-  n86["tests/voicerecap.test.mjs"]
-  n87["tests/watchlist.test.mjs"]
-  n88["tests/wave10.test.mjs"]
-  n89["tests/wave11.test.mjs"]
-  n90["tests/wave8.test.mjs"]
+  n80["tests/stars.test.mjs"]
+  n81["tests/statinsights.test.mjs"]
+  n82["tests/studio.test.mjs"]
+  n83["tests/submissions.test.mjs"]
+  n84["tests/tagline.test.mjs"]
+  n85["tests/trials.test.mjs"]
+  n86["tests/updates.test.mjs"]
+  n87["tests/voicerecap.test.mjs"]
+  n88["tests/watchlist.test.mjs"]
+  n89["tests/wave10.test.mjs"]
+  n90["tests/wave11.test.mjs"]
+  n91["tests/wave8.test.mjs"]
   n0 --> n42
   n0 --> n49
   n1 --> n42
@@ -245,7 +246,6 @@ flowchart LR
   n79 --> n42
   n79 --> n49
   n80 --> n42
-  n80 --> n49
   n81 --> n42
   n81 --> n49
   n82 --> n42
@@ -266,4 +266,6 @@ flowchart LR
   n89 --> n49
   n90 --> n42
   n90 --> n49
+  n91 --> n42
+  n91 --> n49
 ```
