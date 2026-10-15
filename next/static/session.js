@@ -26,7 +26,7 @@
   Auth.ready = !session ? Promise.resolve() : call('/api/me').then((m) => {
     const claim = m.claim && m.claim.status === 'approved' ? m.claim.player : null;
     const next = { u: session.u, player: claim, features: m.user?.features ?? null, roleLabel: m.user?.roleLabel ?? '' };
-    ss.set('nx.me', JSON.stringify(next)); Auth.features = next.features; Auth.roleLabel = next.roleLabel;
+    ss.set('nx.me', JSON.stringify(next)); Auth.features = next.features; Auth.roleLabel = next.roleLabel; Auth.prefs = m.user?.prefs ?? m.profile?.prefs ?? null; // B1: motion choice saved on the profile
     if ((cached?.player ?? null) !== claim && !ss.get('nx.reloaded')) { ss.set('nx.reloaded', '1'); location.reload(); } // first sign-in only: re-render with their card
     Auth.player = claim;
   }).catch(() => {});
