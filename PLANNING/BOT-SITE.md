@@ -91,4 +91,14 @@ recovered with #29.
 - After merging, check that the work is really on `main`: `git branch -r --contains <tip>` should list `origin/main`.
 - Delete a stack's branches only once that check passes.
 
-Next on the bot side: the rest of the commands on the design system, then features 1–4 above, then music.
+## Bot design system status (2026-10-15)
+- Done: panel layout for commands and for everything the bots post on their own (result post with score card + field view, match-night
+  and RSVP posts with a banner, reminders, DMs with a stripe colour by type, uptime alerts, EA patch notes, private errors as steel notices).
+- The result post is queued by `scripts/fetch.mjs` (`NOREX_DEFER_RESULTS`) and sent by `scripts/post-results.mjs` after the cards are drawn.
+- Icon set: `bot/iconset.mjs` → uploaded as the bot's own emoji by `bot/ensure-emojis.mjs` (bot.yml) → `bot/icons.js` (`it()` / `ic()`).
+  Positions icons (GK, CAM …) are not drawn yet.
+- Banners (jail, wheel, discovery, matchnight) are fixed pictures in `scripts/cards.mjs` – the Worker can't draw per-member images.
+- Norex DJ (`dj/`) merged into main 2026-10-15; its YouTube WEB client fails now and then and the self-heal script recovers it.
+- Still to do: live check on a real server, then open the `fun`, `discoveries`, `watchlist`, `memberLive` flags to members.
+
+Next on the bot side: features 1–4 above on the site (web side), `POST /api/me/prefs`, then music.
