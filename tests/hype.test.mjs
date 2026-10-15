@@ -3,6 +3,7 @@
 import { env } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
 import { checkHype } from '../bot/hype.js';
+import { plainText, images } from '../bot/ui.js';
 
 env.DISCORD_BOT_TOKEN = 'bot';
 const club = (id, over = {}) => ({ name: 'NOREX', matches: [{ id, gf: 3, ga: 1, res: 'W', opp: 'Rivals FC', url: 'https://x/', scorers: [{ n: 'Alice', g: 2 }], motm: 'Alice', ...over }] });
@@ -25,7 +26,7 @@ globalThis.fetch = async (url, init) => {
   if (String(url).includes('/channels/555/messages')) { posts.push(init); return new Response('{}', { status: 200 }); }
   return realFetch(url, init);
 };
-const lastEmbed = () => JSON.parse(posts.at(-1).body.get('payload_json')).embeds[0];
+const lastMsg = () => JSON.parse(posts.at(-1).body.get('payload_json'));
 
 await tt('first run after deploy remembers the match but does not post', async () => {
   const r = await checkHype(env, loadSite(club('m1')));
@@ -34,19 +35,19 @@ await tt('first run after deploy remembers the match but does not post', async (
 await tt('same match id again → still no-op', async () => (await checkHype(env, loadSite(club('m1')))).posted === false && posts.length === 0);
 await tt('a genuinely new match id → posts once with the AI recap as the description', async () => {
   const r = await checkHype(env, loadSite(club('m2')));
-  return r.posted === true && posts.length === 1 && lastEmbed().description.includes('dominant win');
+  return r.posted === true && posts.length === 1 && plainText(lastMsg()).includes('dominant win');
 });
 await tt('image model failing does not block the post, just drops the image', async () => {
   imgFail = true;
   const r = await checkHype(env, loadSite(club('m3')));
   imgFail = false;
-  return r.posted === true && posts.length === 2 && lastEmbed().image === undefined;
+  return r.posted === true && posts.length === 2 && images(lastMsg()).length === 0;
 });
 await tt('text model failing falls back to a plain result line, still posts', async () => {
   textFail = true;
   const r = await checkHype(env, loadSite(club('m4')));
   textFail = false;
-  return r.posted === true && posts.length === 3 && lastEmbed().description.includes('Victory');
+  return r.posted === true && posts.length === 3 && plainText(lastMsg()).includes('Victory');
 });
 globalThis.fetch = realFetch;
 done();

@@ -2,6 +2,8 @@
 // member database, DMs the owner only when something changes (goes down, or comes back) – never every 10
 // minutes. State lives in KV, not D1, so a D1 outage doesn't also break the monitor's own memory.
 
+import { message, header, text, footer } from './ui.js';
+
 const KEY = 'monitor';
 
 async function siteCheck(env) {
@@ -40,6 +42,17 @@ export function diff(prev, problems) {
   };
 }
 
+// The alert as a design-system panel: steel-red when something is down, green when it's back (the text stays in `alert` for logs and tests).
+export function alertPanel(alert) {
+  const [first, ...rest] = String(alert).split('\n');
+  const down = first.startsWith('🔴');
+  return message({ accent: down ? 'loss' : 'win', blocks: [
+    header({ eyebrow: 'Staff · Uptime monitor', title: first.replace(/^[🔴🟢]\s*/u, '').replace(/\*\*/g, ''), size: 3 }),
+    text(rest.join('\n')),
+    footer('Checked every 10 minutes · you only hear about changes'),
+  ] });
+}
+
 async function dmOwner(env, content) {
   if (!env.DISCORD_BOT_TOKEN) return;
   const ids = String(env.ADMIN_IDS || '').split(',').map((x) => x.trim()).filter(Boolean);
@@ -51,7 +64,7 @@ async function dmOwner(env, content) {
       const d = await r.json().catch(() => ({}));
       if (!d.id) continue;
       await fetch(`https://discord.com/api/v10/channels/${d.id}/messages`, {
-        method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+        method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(alertPanel(content)),
       });
     } catch (e) {
       console.log('monitor DM failed', e.message);

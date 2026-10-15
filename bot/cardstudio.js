@@ -6,6 +6,8 @@ export const CARD_MODEL = '@cf/black-forest-labs/flux-2-klein-9b';
 export const DESCRIBE_MODEL = '@cf/llava-hf/llava-1.5-7b-hf';
 export const MAX_ATTEMPTS = 3;
 const RETRY_AFTER = 2 * 60e3; // a failed try waits this long before the next one
+const DAY = 86400e3;
+const quotaHit = (e) => /\b4006\b|daily free allocation|neurons/i.test(String(e?.message || e)); // Workers AI free tier used up until 00:00 UTC
 const STALE_AFTER = 10 * 60e3; // a "generating" row older than this was abandoned by a dead Worker run
 const NOTES_MAX = 400;
 const REF_MAX = 500; // FLUX.2 wants reference images under 512×512
@@ -486,6 +488,12 @@ async function generateOne(env, r, now) {
     console.log('card generation failed', r.id, attempt, e.message);
     if (resultKey) await dropPhoto(env, resultKey);
     if (portraitKey) await dropPhoto(env, portraitKey);
+    if (quotaHit(e)) { // not the card's fault: park it (attempt refunded) until the daily allowance resets, then retry on its own
+      const resume = (Math.floor(now / DAY) + 1) * DAY - RETRY_AFTER + 60e3;
+      await run(env, "UPDATE card_requests SET status = 'approved', attempts = MAX(attempts - 1, 0), started_at = ? WHERE id = ? AND status = 'generating'", resume, r.id);
+      await safely(notifyManagers(env, { icon: '⏳', title: 'Card artwork is waiting for the AI allowance', body: `Request #${r.id} will be made automatically after the daily free AI limit resets (00:00 UTC).`, link: 'members.html#cards', ref: `cardquota:${new Date(now).toISOString().slice(0, 10)}` }));
+      return 'waiting';
+    }
     const final = attempt >= MAX_ATTEMPTS;
     await run(env, "UPDATE card_requests SET status = ?, started_at = ? WHERE id = ? AND status = 'generating'", final ? 'failed' : 'approved', now, r.id);
     if (final) {

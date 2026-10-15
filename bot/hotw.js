@@ -10,6 +10,7 @@ import { can, flagOn, flags } from './roles.js';
 import { notify, safely } from './notify.js';
 import { weekOf } from './awards.js';
 import { postEmbed } from './docs.js';
+import { message, header, text, footer, buttons } from './ui.js';
 
 const DAY = 86400e3, WEEK = 7 * DAY;
 const RED = 0xc8352c;
@@ -92,14 +93,12 @@ async function announce(env, w) {
   const level = flags(env).hotw;
   const channel = (await one(env, "SELECT value FROM meta WHERE key = 'awards_channel'"))?.value;
   if (!['members', 'public'].includes(level) || !channel || !env.DISCORD_BOT_TOKEN) return;
-  const r = await postEmbed(env, channel, '', {
-    content: w.video ?? '', // Discord unfurls the clip itself under the embed
-    embeds: [{
-      title: `🎬 Highlight of the week · week ${weekNo(w.week)}`, url: `${site}${level === 'public' ? 'index.html' : `feed.html#p${w.post_id}`}`, color: RED,
-      description: `**${w.name}**${w.body ? ` — ${excerpt(w.body.replace(CLIP, '').trim() || '🎬', 300)}` : ''}`,
-      footer: { text: `${w.votes} vote${w.votes === 1 ? '' : 's'} · ${w.entries} clip${w.entries === 1 ? '' : 's'} in the running · NOREX UNITED` },
-    }],
-  });
+  const r = await postEmbed(env, channel, '', message({ accent: 'gold', blocks: [
+    header({ eyebrow: 'NOREX UNITED · Highlight of the week', title: `🎬 ${w.name}`, sub: `Week ${weekNo(w.week)}` }),
+    w.body ? text(excerpt(w.body.replace(CLIP, '').trim() || '🎬', 300)) : null,
+    footer(`${w.votes} vote${w.votes === 1 ? '' : 's'} · ${w.entries} clip${w.entries === 1 ? '' : 's'} in the running`),
+    buttons([w.video && { label: 'Watch clip', url: w.video }, { label: 'On the site', url: `${site}${level === 'public' ? 'index.html' : `feed.html#p${w.post_id}`}` }]),
+  ] }));
   if (r.ok) await run(env, 'UPDATE hotw SET posted_at = ? WHERE week = ?', Date.now(), w.week);
 }
 

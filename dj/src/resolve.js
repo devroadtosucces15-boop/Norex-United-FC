@@ -1,0 +1,71 @@
+// Search order for plain text: YouTube Music → YouTube → Spotify (if configured) → SoundCloud.
+// Links from YouTube/SoundCloud go straight to Lavalink. Spotify (and other metadata-only) links are matched to the exact same
+// recording on YouTube, then SoundCloud (see match.js), and never played if there is no match.
+import { findEquivalent } from './match.js';
+// Links from any platform are recognised (song, video, album, playlist, artist) and sent straight to Lavalink.
+// Bare links without https:// and spotify:track:ID style URIs are fixed up first.
+const HOSTS = /^(?:www\.|m\.|music\.|open\.|on\.|api\.)?(?:youtube\.com|youtu\.be|spotify\.com|spotify\.link|soundcloud\.com|snd\.sc|bandcamp\.com|twitch\.tv|vimeo\.com)(?:\/|$)|\.bandcamp\.com(?:\/|$)/i;
+export function normalizeLink(q) {
+  q = q.trim().replace(/^<(.+)>$/, '$1');
+  const uri = q.match(/^spotify:(track|album|playlist|artist|episode|show):([A-Za-z0-9]+)$/i);
+  if (uri) return `https://open.spotify.com/${uri[1].toLowerCase()}/${uri[2]}`;
+  if (/^https?:\/\/\S+$/i.test(q)) return q;
+  if (HOSTS.test(q) && !/\s/.test(q)) return `https://${q}`;
+  return null;
+}
+export const platformOf = (url) => (/spotify/i.test(url) ? 'Spotify' : /youtu/i.test(url) ? 'YouTube' : /soundcloud|snd\.sc/i.test(url) ? 'SoundCloud' : 'link');
+let spotifyDownUntil = 0; // text search errors on Spotify → skip it for 10 minutes, links still work
+const spotifyOn = () => Boolean(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET) && Date.now() > spotifyDownUntil;
+export const SOURCES = { spotify: 'spsearch', youtube: 'ytmsearch', soundcloud: 'scsearch' };
+
+function shape(r) {
+  if (!r || r.loadType === 'empty') return null;
+  if (r.loadType === 'error') return { error: r.data?.message || 'Could not load that' };
+  if (r.loadType === 'track') return { tracks: [r.data], title: r.data.info.title };
+  if (r.loadType === 'playlist') return { tracks: r.data.tracks, title: r.data.info.name, playlist: true };
+  if (r.loadType === 'search' && r.data.length) return { tracks: [r.data[0]], title: r.data[0].info.title };
+  return null;
+}
+
+export async function resolve(node, query, source = 'auto') {
+  let order;
+  const link = normalizeLink(query);
+  if (link) order = [link];
+  else if (source !== 'auto') order = [`${SOURCES[source]}:${query}`];
+  else order = [`ytmsearch:${query}`, `ytsearch:${query}`, ...(spotifyOn() ? [`spsearch:${query}`] : []), `scsearch:${query}`];
+  let lastError = null;
+  for (const id of order) {
+    let r;
+    try { r = shape(await node.rest.resolve(id)); } catch (e) { lastError = e.message; continue; }
+    if (r?.error) { await new Promise((res) => setTimeout(res, 700)); try { r = shape(await node.rest.resolve(id)); } catch (e) { lastError = e.message; continue; } } // one retry: Spotify and YouTube sometimes blip
+    if (!r) continue;
+    if (r.error) { lastError = r.error; if (id.startsWith('spsearch:')) spotifyDownUntil = Date.now() + 600_000; continue; }
+    // A single Spotify song: find the exact same recording elsewhere now, so the user hears right away if there is none.
+    if (!r.playlist && r.tracks.length === 1 && r.tracks[0].info.sourceName === 'spotify') {
+      const m = await findEquivalent(node, r.tracks[0].info);
+      if (!m) return { noMatch: true, title: r.title };
+      m.info = { ...m.info, artworkUrl: m.info.artworkUrl || r.tracks[0].info.artworkUrl };
+      return { tracks: [m], title: r.title, viaSpotify: true, matchedOn: m.info.sourceName };
+    }
+    return r;
+  }
+  // A YouTube link that YouTube refuses to serve: read its title from oEmbed and play the SoundCloud version instead.
+  if (link && /youtu/i.test(link)) {
+    try {
+      const o = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(link)}`, { signal: AbortSignal.timeout(8000) }).then((r) => r.json());
+      const m = await findEquivalent(node, { title: o.title, author: o.author_name }, ['scsearch']);
+      if (m) return { tracks: [m], title: m.info.title, fallback: true };
+    } catch { /* fall through */ }
+  }
+  if (lastError && order.length === 1) throw new Error(lastError);
+  return null;
+}
+
+// A song stored in a playlist (or queued from a Spotify list): turn it into something playable, matching the exact recording.
+export async function materialize(node, item) {
+  if (item.uri && item.source !== 'spotify' && item.sourceName !== 'spotify') {
+    const r = await resolve(node, item.uri).catch(() => null);
+    if (r?.tracks?.[0]) return r.tracks[0];
+  }
+  return findEquivalent(node, { title: item.title, author: item.author, length: item.length });
+}

@@ -30,7 +30,7 @@ h1,h2,h3,h4,.osw{font-family:Oswald,"Arial Narrow",Impact,sans-serif;text-transf
 .sheen:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);transform:translateX(-130%);animation:sheen 5s ease-in-out infinite;pointer-events:none}
 @keyframes sheen{55%,100%{transform:translateX(130%)}}
 .sub{background:rgba(13,17,25,.9);border-bottom:1px solid var(--line);position:sticky;top:68px;z-index:40}.sub .wrap{display:flex;gap:6px;padding-top:9px;padding-bottom:9px;overflow-x:auto;scrollbar-width:none}
-.sub a{white-space:nowrap;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:500;color:var(--soft);transition:.2s}.sub a:hover{color:#fff;background:var(--p2)}.sub a.on{background:var(--red);color:#fff;box-shadow:0 0 18px var(--redg)}
+.sub a{flex-shrink:0;white-space:nowrap;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:500;color:var(--soft);transition:.2s}.sub a:hover{color:#fff;background:var(--p2)}.sub a.on{background:var(--red);color:#fff;box-shadow:0 0 18px var(--redg)}
 .tabbar{display:none}
 .devbar{position:fixed;left:10px;bottom:10px;z-index:90;background:rgba(13,17,25,.92);border:1px solid var(--line2);border-radius:12px;padding:6px 10px;font-size:11px;display:flex;gap:8px;align-items:center;color:var(--soft)}
 .devbar select{background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:7px;font:500 11px Inter;padding:3px 5px;max-width:150px}
@@ -57,8 +57,8 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb th{font:600
 .hero{position:relative;padding:54px 0 30px;display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center;min-height:560px}
 .hero h1{font-size:clamp(46px,8vw,104px);line-height:.92;margin:10px 0 16px;text-shadow:0 8px 40px rgba(200,53,44,.55)}.hero h1 em{font-style:normal;color:var(--red2)}
 .hero p.lead{font-size:18px;color:#c3cde0;max-width:520px}.stage{perspective:1400px;position:relative;min-height:420px;display:grid;place-items:center}
-.crestwrap{position:relative;width:min(380px,70vw);aspect-ratio:1;display:grid;place-items:center;transform-style:preserve-3d}.crestwrap img{width:78%;position:relative;z-index:2;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6))}
-.crestwrap .halo{position:absolute;inset:-12%;border-radius:50%;background:radial-gradient(circle,rgba(255,138,60,.55),rgba(200,53,44,.28) 45%,transparent 68%);animation:pulse 3.4s ease-in-out infinite}
+.crestwrap{position:relative;width:min(380px,70vw);aspect-ratio:1;display:grid;place-items:center;transform-style:preserve-3d}.crestwrap img{width:78%;position:relative;z-index:2;image-rendering:auto;filter:drop-shadow(0 26px 34px rgba(0,0,0,.55)) drop-shadow(0 0 16px rgba(200,53,44,.5)) drop-shadow(0 0 42px rgba(200,53,44,.3)) drop-shadow(0 0 3px rgba(239,207,122,.22))}
+.crestwrap .halo{position:absolute;inset:-42%;background:radial-gradient(closest-side at 50% 46%,rgba(239,207,122,.07),transparent 38%),radial-gradient(closest-side,rgba(200,53,44,.34),rgba(200,53,44,.28) 10%,rgba(200,53,44,.2) 24%,rgba(200,53,44,.12) 40%,rgba(200,53,44,.06) 55%,rgba(200,53,44,.025) 72%,rgba(200,53,44,.006) 88%,transparent);filter:blur(22px);animation:pulse 3.4s ease-in-out infinite}
 @keyframes pulse{50%{transform:scale(1.12);opacity:.75}}
 .ticker{display:flex;gap:10px;margin:22px 0}.ticker i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:700 14px Oswald;font-style:normal}.ticker .W{background:#12331f;color:#4be08a}.ticker .L{background:#3a1613;color:#ff7d72}.ticker .D{background:#332b12;color:var(--g2)}
 /* ---------- PLAYER CARD FAMILY ---------- */
@@ -69,9 +69,9 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb th{font:600
 .pc .kit{z-index:3;position:absolute;left:50%;top:var(--numY,47%);transform:translate(-50%,-50%);font:700 calc(var(--s)*34px*var(--kk,1)) Oswald;color:rgba(255,255,255,.92);text-shadow:0 2px 0 rgba(0,0,0,.5),0 0 12px rgba(0,0,0,.4);opacity:0;pointer-events:none;letter-spacing:.02em}.pc.has-art.has-kit .kit{opacity:1}
 /* collectible card: gold shield, 5:7 */
 .pc-card{width:calc(var(--s)*240px);aspect-ratio:600/840;filter:drop-shadow(0 18px 24px rgba(0,0,0,.55));transform-style:preserve-3d;will-change:transform}
-.pc-card .shell{position:absolute;inset:0;clip-path:polygon(8.7% 2%,91.3% 2%,97.3% 6.2%,97.3% 86.2%,50% 98.6%,2.7% 86.2%,2.7% 6.2%);background:linear-gradient(145deg,#fff0b8 0%,#e8c56e 28%,#c9993a 62%,#9a7222 100%)}
+.pc-card .shell{isolation:isolate;transform:translateZ(0);-webkit-backface-visibility:hidden;position:absolute;inset:0;clip-path:polygon(8.7% 2%,91.3% 2%,97.3% 6.2%,97.3% 86.2%,50% 98.6%,2.7% 86.2%,2.7% 6.2%);background:linear-gradient(145deg,#fff0b8 0%,#e8c56e 28%,#c9993a 62%,#9a7222 100%)}
 .pc-card .shell:before{content:"";position:absolute;inset:2.2%;clip-path:inherit;background:radial-gradient(120% 70% at 50% 18%,rgba(255,255,255,.55),transparent 55%),linear-gradient(160deg,#f6dc92,#d4aa4e 55%,#b88a2f);}
-.pc-card .shell:after{content:"";position:absolute;inset:0;clip-path:inherit;background:repeating-linear-gradient(115deg,rgba(255,255,255,.07) 0 2px,transparent 2px 9px);mix-blend-mode:overlay}
+.pc-card .shell:after{content:"";position:absolute;inset:0;clip-path:inherit;background:repeating-linear-gradient(115deg,rgba(255,255,255,.07) 0 2px,transparent 2px 9px)}
 .pc-card .art{left:12%;right:12%;top:23.5%;height:39.5%;}
 .pc-card .art:before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(70% 70% at 50% 85%,rgba(255,255,255,.4),transparent 70%)}
 .pc-card .art svg,.pc-card .art img{z-index:1}
@@ -309,8 +309,8 @@ html.mx .cmp.rv-g:not(.in) .cbar i{transform:scaleX(0)}.cmp.rv-g .cbar i{transit
 .gate{max-width:760px;margin:0 auto;text-align:center;padding:40px clamp(18px,4vw,44px) 30px;border-radius:26px;position:relative;overflow:hidden;
  background:radial-gradient(520px 260px at 50% 0,rgba(239,207,122,.18),transparent 70%),linear-gradient(180deg,#171e2a,#0e131b);border:1px solid rgba(239,207,122,.28);box-shadow:0 30px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
 .gate-crest{position:relative;width:120px;height:120px;margin:0 auto 6px;display:grid;place-items:center}
-.gate-crest::before{content:"";position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(239,207,122,.35),transparent 65%);animation:gateGlow 3.2s ease-in-out infinite}
-.gate-crest img{position:relative;width:104px;height:104px;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(0,0,0,.6))}
+.gate-crest::before{content:"";position:absolute;inset:-34px;border-radius:50%;background:radial-gradient(closest-side,rgba(200,53,44,.34),rgba(200,53,44,.2) 30%,rgba(200,53,44,.08) 58%,rgba(200,53,44,.02) 82%,transparent);filter:blur(10px);animation:gateGlow 3.2s ease-in-out infinite}
+.gate-crest img{position:relative;width:104px;height:104px;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(0,0,0,.55)) drop-shadow(0 0 12px rgba(200,53,44,.45)) drop-shadow(0 0 2px rgba(239,207,122,.2))}
 .gate-key{position:absolute;right:-6px;bottom:4px;font-size:30px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6));animation:gateKey 2.8s var(--e-io) infinite}
 @keyframes gateGlow{50%{opacity:.55;transform:scale(1.08)}}
 @keyframes gateKey{0%,70%,100%{transform:rotate(0)}80%{transform:rotate(-24deg)}90%{transform:rotate(8deg)}}
@@ -977,3 +977,52 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{box-shadow:0 0 0
 .nv .drop a:focus-visible{background:rgba(255,255,255,.06)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 html{touch-action:manipulation}
+/* Results filter feedback: count line, picked calendar day, empty state */
+.rfs{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:0 0 14px;padding:10px 14px;border-radius:12px;background:rgba(200,53,44,.1);border:1px solid rgba(200,53,44,.35);font-size:14px}.rfs[hidden],.rfe[hidden]{display:none}.rfs .chip{min-height:36px}
+.rfe{display:grid;justify-items:center;gap:6px;padding:34px 16px;text-align:center;border:1px dashed var(--line2);border-radius:16px;margin-bottom:14px}.rfe>span{font-size:34px}.rfe b{font:600 20px Oswald;letter-spacing:.03em}.rfe p{margin:0}
+.wx .ccol i.pick{outline:2px solid #fff;outline-offset:2px;transform:scale(1.2)}.wx .ccol i[data-day]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* #28 first-frame paint: no lazily promoted layers for the card shadow/glow. will-change only while a card is being moved; the sheen and glare
+   (soft-light blends) are not painted at all until hovered/tilted, so the card and its drop-shadow rasterise in one pass instead of a flat box first. */
+.pc-card,.tilt{will-change:auto}.pc-card.live,.tilt.live,.pc-card:hover,.tilt:hover{will-change:transform}
+.pc-card:before{opacity:0;transition:opacity .2s,background-position .9s var(--ease)}.pc-card:hover:before,.pc-card.live:before{opacity:1}
+.pc-card .glare{visibility:hidden}.pc-card.live .glare,.pc-card:hover .glare{visibility:visible}
+/* #34 club canvas (Carbon & Crimson, brightened a touch): near-black with the red tint, plus a very faint mismatched diagonal line pattern between the canvas and everything else. Hub keeps its own look. */
+body:not(.hub-page):before{background:radial-gradient(900px 560px at 80% -10%,rgba(200,53,44,.42),transparent 62%),radial-gradient(760px 520px at 8% 105%,rgba(200,53,44,.27),transparent 62%),radial-gradient(600px 420px at 3% 30%,rgba(200,53,44,.07),transparent 60%),linear-gradient(180deg,#201a26,#151119)}
+body:not(.hub-page):after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(45deg,rgba(255,255,255,.032) 0 1px,transparent 1px 9px),repeating-linear-gradient(-38deg,rgba(255,255,255,.022) 0 2px,transparent 2px 15px),repeating-linear-gradient(72deg,rgba(0,0,0,.18) 0 1px,transparent 1px 23px)}
+.rfsum{margin:0 0 16px;padding:14px;border-radius:16px;background:linear-gradient(180deg,var(--p2),var(--p1));border:1px solid var(--line)}.rfsum[hidden]{display:none}
+.rsbar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.06);margin-bottom:12px}.rsbar i{display:block;transition:width .4s var(--ease)}.rsbar .w{background:#2fb067}.rsbar .d{background:#c19a33}.rsbar .l{background:#cd4a3f}
+.rsg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}.rst{display:grid;gap:2px;min-width:0}.rst b{font:700 24px Oswald;overflow:hidden;text-overflow:ellipsis}.rst small{color:var(--mute);font-size:12px;overflow-wrap:anywhere}
+
+/* hall of fame record cards: black-and-gold slab, wing stripes, a dimmed black-and-white portrait of the holder (or the crest for club records) */
+.panel.rec{text-align:center;padding:26px 18px 22px;background:linear-gradient(180deg,#141a26,#0b0f16);border-color:rgba(239,207,122,.22);isolation:isolate;min-height:250px}
+.panel.rec:before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(115deg,transparent 0 16px,rgba(239,207,122,.045) 16px 18px),radial-gradient(120% 70% at 50% 0,rgba(239,207,122,.14),transparent 60%)}
+.panel.rec.gold{border-color:rgba(239,207,122,.55);box-shadow:0 0 40px rgba(239,207,122,.14),0 18px 40px rgba(0,0,0,.35)}
+.panel.rec:after{background:none}.panel.rec>.rec-bg{position:absolute}
+.rec-bg{inset:0;z-index:-1;overflow:hidden;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 38%);mask-image:linear-gradient(90deg,transparent 0,#000 38%)}
+.rec-art{position:absolute;right:-8%;bottom:-6%;width:62%;opacity:.3;filter:grayscale(1) contrast(1.15) brightness(1.1)}
+.rec-art .pc-hero{width:100%}.rec-art .bignum{display:none}.rec-art .floor{display:none}
+.rec-crest{position:absolute;right:-10%;bottom:-12%;width:62%;opacity:.12;filter:grayscale(1)}
+.rec-no{position:absolute;top:12px;left:14px;font:700 13px Oswald;letter-spacing:.14em;color:var(--g3);opacity:.9}
+.rec-ic{width:54px;height:54px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:radial-gradient(circle at 35% 30%,rgba(255,241,194,.25),rgba(201,153,58,.1));box-shadow:0 0 0 2px rgba(239,207,122,.55),0 0 22px rgba(239,207,122,.25)}
+.rec-big{font-size:54px;line-height:1.1}.rec-who{font-size:18px}
+.panel.rec .small{position:relative}
+@media (max-width:640px){.rec-art{width:54%;opacity:.26}}
+
+/* zn11: iOS zooms into any field under 16px and can stay zoomed – every field is 16px+ on touch screens (bigger sizes like the kit number stay) */
+@media (hover:none),(pointer:coarse){:where(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select,[contenteditable]){font-size:16px!important}}
+/* ---- Hub › Clubhouse › Praise & feedback (feedbackroom.js) ---- */
+.fb-intro{max-width:760px;margin:0 0 12px}.fb-tabs{margin-bottom:16px}.fb-tabs .chip small{margin-left:4px;font-size:11px}
+.fb-list{display:grid;gap:22px;max-width:760px}
+.fb-item{display:grid;gap:12px;min-width:0;border-left:3px solid var(--line2)}.fb-item.k-praise{border-left-color:#2fbf71}.fb-item.k-tip{border-left-color:var(--g2)}.fb-item.k-concern{border-left-color:#e0603e}
+.fb-item.unread{border-color:rgba(239,207,122,.5);box-shadow:0 0 0 1px rgba(239,207,122,.18) inset}.fb-item.flag{border-color:rgba(224,96,62,.6)}
+.fb-item>p{margin:0;overflow-wrap:anywhere;color:#dfe5ee}.fb-item footer{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fb-ih{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}.fb-ih .grow{flex:1}.fb-kind{font:600 15px Oswald;letter-spacing:.04em}
+.fb-rx{display:flex;flex-wrap:wrap;gap:10px}.fb-r{width:46px;height:46px;font-size:21px;padding:0;display:grid;place-items:center}
+.fb-note{margin:0;padding:10px 12px;border-radius:12px;background:#2a1a12;border:1px solid rgba(224,96,62,.4);font-size:13.5px;overflow-wrap:anywhere}
+.fb-inl{display:grid;gap:10px}.fb-inl textarea,.fb-inl input,.fb-form select,.fb-form textarea{width:100%;min-width:0;padding:11px 14px;border-radius:12px;border:1px solid var(--line2);background:var(--p3);color:#fff;font:inherit}
+.fb-form{display:grid;gap:18px;max-width:760px;border-color:rgba(239,207,122,.28)}.fb-form .fld{display:grid;gap:6px;font-weight:600}
+.fb-warn{padding:12px 14px;border-radius:12px;background:#12331f;border:1px solid #1d6b3d;font-size:13.5px}
+.fb-anon{display:flex;gap:10px;align-items:center;min-height:44px}.fb-anon input{width:20px;height:20px}
+.fb-foot{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.fb-match{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:480px){.fb-r{width:calc((100% - 40px)/5);min-width:44px}.fb-foot .btn{width:100%}}

@@ -108,15 +108,25 @@
     },
   };
   const SECTION = (u) => (/^(index|squad|halloffame|join|scouting|player-)/.test(u) || !u ? 'club' : /^(fixtures|results|opponents|match-)/.test(u) ? 'matches' : /^(stats|leaders|players)/.test(u) ? 'stats' : /^(tactics|playstyle|studio|builds|updates)/.test(u) ? 'tactics' : /^(hub|staff)/.test(u) ? 'hub' : 'club');
-  const KIND = { club: 'ribbon', matches: 'flood', stats: 'sweep', tactics: 'pitch', hub: 'locker' };
+  // Only the Hub keeps the big cinematic transition. The four club sections use one calm, short tint of their own accent (no stripes, no pop).
+  const TINT = { club: '224,87,77', matches: '70,194,138', stats: '98,168,255', tactics: '176,140,255' };
+  for (const [sec, rgb] of Object.entries(TINT)) FX['c' + sec] = {
+    build(full) { const base = mk({ inset: 0, background: '#0b0f16', opacity: full ? 1 : 0 }, '');
+      const line = mk({ left: 0, right: 0, top: 0, height: '3px', background: `rgb(${rgb})`, transformOrigin: '0 50%', transform: full ? 'none' : 'scaleX(0)', opacity: .9 }, '', base);
+      const c = mk({ inset: 0, opacity: full ? .9 : 0 }, '<img class="fxc" src="crest-sm.png" alt="" style="position:absolute;left:50%;top:50%;width:min(64px,16vw);translate:-50% -50%;opacity:.9">', base); return { base, line, c }; },
+    cover: ({ base, line, c }) => Promise.all([run(base, [{ opacity: 0 }, { opacity: 1 }], { duration: 150 }), run(line, [{ transform: 'scaleX(0)' }, { transform: 'none' }], { duration: 220 }), run(c, [{ opacity: 0 }, { opacity: .9 }], { duration: 180, delay: 60 })]),
+    reveal: ({ base, c }) => Promise.all([run(c, [{ opacity: .9 }, { opacity: 0 }], { duration: 160 }), run(base, [{ opacity: 1 }, { opacity: 0 }], { duration: 260, delay: 40 })]),
+  };
+  const KIND = { club: 'cclub', matches: 'cmatches', stats: 'cstats', tactics: 'ctactics', hub: 'locker' };
   const here = () => SECTION(location.pathname.split('/').pop());
-  function pick(a) { if (mmode() !== 'full') return 'fade'; const dest = SECTION((a.getAttribute('href') || '').split('#')[0].split('?')[0]); return dest === here() ? 'ribbon' : KIND[dest]; }
+  function pick(a) { if (mmode() !== 'full') return 'fade'; const dest = SECTION((a.getAttribute('href') || '').split('#')[0].split('?')[0]); return KIND[dest] || 'fade'; }
   const cinematic = () => ['full', 'short'].includes(ls.get('norex.entrance', 'skip'));
   const internal = (a) => { if (!a || a.target || a.hasAttribute('download') || (a.dataset.hub !== undefined && cinematic())) return false; const h = a.getAttribute('href'); if (!h || h[0] === '#' || /^(mailto:|tel:|javascript:)/.test(h)) return false; try { const u = new URL(a.href, location.href); return u.origin === location.origin && u.pathname !== location.pathname && /\.html$|\/$/.test(u.pathname); } catch { return false; } };
   async function go(a) {
     if (busy) return; busy = true; const kind = pick(a), href = a.href;
     ss.set('norex.t', JSON.stringify({ kind, t: Date.now() })); H.classList.add('fx-busy');
     const guard = setTimeout(() => location.assign(href), 1400);
+    setTimeout(() => { busy = false; H.classList.remove('fx-busy'); if (tov) tov.innerHTML = ''; }, 4500);   // a navigation that never happens (offline, blocked) must not leave the page dead
     try { const fx = FX[kind], parts = fx.build(false); await frames(2); await fx.cover(parts); } catch {}
     clearTimeout(guard); location.assign(href);
   }
@@ -151,10 +161,10 @@
   d.addEventListener('pointerdown', (e) => {
     if (calm()) return; const t = e.target.closest(SELI); if (!t) return;
     const r = t.getBoundingClientRect(), s = Math.max(r.width, r.height) * 2.2, i = d.createElement('span'); i.className = 'fx-rip'; Object.assign(i.style, { width: s + 'px', height: s + 'px', left: e.clientX - r.left - s / 2 + 'px', top: e.clientY - r.top - s / 2 + 'px' });
-    if (getComputedStyle(t).position === 'static') t.style.position = 'relative'; t.style.overflow = t.style.overflow || 'hidden'; t.appendChild(i); setTimeout(() => i.remove(), 800);
+    if (getComputedStyle(t).position === 'static') t.style.position = 'relative'; t.style.overflow = t.style.overflow || (CSS.supports('overflow', 'clip') ? 'clip' : 'hidden'); /* clip, not hidden: hidden lets a flex item (menu link, chip) shrink to ~30px on tap and the row shifts under the finger */ t.appendChild(i); setTimeout(() => i.remove(), 800);
   });
   function burst(x, y, n = 12) { const cols = ['#efcf7a', '#c8352c', '#fff', '#ff8a7a']; for (let i = 0; i < n; i++) { const p = d.createElement('i'), a = Math.random() * 6.28, dist = 30 + Math.random() * 70, sz = 3 + Math.random() * 6; Object.assign(p.style, { position: 'fixed', left: x + 'px', top: y + 'px', width: sz + 'px', height: sz + 'px', borderRadius: Math.random() > .5 ? '50%' : '2px', background: cols[i % 4], boxShadow: '0 0 8px currentColor', pointerEvents: 'none', zIndex: 9998 }); d.body.appendChild(p); try { p.animate([{ transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(a) * dist}px,${Math.sin(a) * dist + 26}px) rotate(${Math.random() * 360}deg) scale(0)`, opacity: 0 }], { duration: 600 + Math.random() * 300, easing: 'cubic-bezier(.1,.8,.3,1)' }); } catch {} setTimeout(() => p.remove(), 950); } }
-  d.addEventListener('click', (e) => { if (calm()) return; if (e.target.closest('.btn,.chip,.keybtn,.pick,.pc-card,.fan a,.ob,.ib,.flip,.dk,.cmpbtn')) burst(e.clientX, e.clientY, e.target.closest('.btn.gold,.keybtn,.chip.gold') ? 18 : 10); });
+  d.addEventListener('click', (e) => { if (calm() || window.NorexMotion?.on?.('bursts') === false) return; if (e.target.closest('.btn,.chip,.keybtn,.pick,.pc-card,.fan a,.ob,.ib,.flip,.dk,.cmpbtn')) burst(e.clientX, e.clientY, e.target.closest('.btn.gold,.keybtn,.chip.gold') ? 18 : 10); });
   // spotlight follows the cursor over panels, tiles and cards
   d.addEventListener('pointermove', (e) => { const t = e.target.closest('.panel,.sbt,.tile,.wx .tr,.fw'); if (!t || e.pointerType !== 'mouse') return; const r = t.getBoundingClientRect(); t.style.setProperty('--mx', e.clientX - r.left + 'px'); t.style.setProperty('--my', e.clientY - r.top + 'px'); }, { passive: true });
   // magnetic buttons

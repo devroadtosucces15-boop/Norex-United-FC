@@ -5,12 +5,17 @@
 //   POST /api/feedback/report   recipient: { id, reason } – flags it for the managers
 //   GET  /api/feedback/all      managers: everything, with the author (reported first)
 //   POST /api/feedback/hide     managers: { id, hidden } – hidden messages leave the recipient's inbox
-// The recipient never sees who wrote it; managers always can – the send dialog says so.
+//   POST /api/feedback/react    recipient: { id, reaction } – like 👍 · check ✅ · heart ❤️ (the sender sees these) · disagree ❌ · confused 😕 (the sender never does; managers get a ⚠️ caution)
+//   POST /api/feedback/why      recipient: { id, text } – why they disagree / are confused; only managers read it
+// The sender may stay anonymous (default) or sign it. The recipient never sees an anonymous author; the sender and managers always do.
 import { can, flagOn } from './roles.js';
 import { notify, notifyManagers, safely } from './notify.js';
 
 export const KINDS = { praise: ['👏', 'Praise'], tip: ['💡', 'Tip'], concern: ['⚠️', 'Concern'] };
 export const PER_DAY = 3;
+export const REACTIONS = { like: ['👍', 'Thanks'], check: ['✅', 'Acknowledged'], heart: ['❤️', 'Appreciated'], disagree: ['❌', 'Disagree'], confused: ['😕', 'Confused'] };
+export const GOOD = ['like', 'check', 'heart']; // the only reactions the sender is allowed to see
+const BAD = ['disagree', 'confused'];
 const DAY = 86400e3;
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -39,7 +44,7 @@ async function recipients(env, me) {
   return rows.map((r) => ({ id: r.id, n: r.name, a: opt(r.avatar), player: r.player, playerName: r.player_name }));
 }
 const sentToday = (env, me) => one(env, 'SELECT COUNT(*) AS n, MIN(at) AS first FROM feedback WHERE from_id = ? AND at > ?', me.u, Date.now() - DAY);
-const inboxOut = (r) => ({ id: r.id, kind: r.kind, text: r.body, at: r.at, read: !!r.read_at, reported: !!r.reported_at });
+const inboxOut = (r) => ({ id: r.id, kind: r.kind, text: r.body, at: r.at, read: !!r.read_at, reported: !!r.reported_at, anon: !!r.anon, from: r.anon ? undefined : r.from_name, match: opt(r.match_id), reaction: opt(r.reaction), reply: opt(r.reply) });
 
 async function state(env, me) {
   const [inbox, sent, today] = await Promise.all([
@@ -50,9 +55,9 @@ async function state(env, me) {
   const canSend = can(me, 'feedback.send');
   return {
     inbox: inbox.map(inboxOut), unread: inbox.filter((r) => !r.read_at).length,
-    sent: sent.map((r) => ({ id: r.id, to: r.to_id, toName: r.to_name, kind: r.kind, text: r.body, at: r.at, hidden: !!r.hidden })),
+    sent: sent.map((r) => ({ id: r.id, to: r.to_id, toName: r.to_name, kind: r.kind, text: r.body, at: r.at, hidden: !!r.hidden, anon: !!r.anon, match: opt(r.match_id), reaction: GOOD.includes(r.reaction) ? r.reaction : undefined })), // 😕 / ❌ never reach the sender
     canSend, left: Math.max(0, PER_DAY - today.n), nextAt: today.n >= PER_DAY ? today.first + DAY : undefined, perDay: PER_DAY,
-    recipients: canSend ? await recipients(env, me) : [], kinds: KINDS, canModerate: can(me, 'feedback.authors'),
+    recipients: canSend ? await recipients(env, me) : [], kinds: KINDS, reactions: REACTIONS, canModerate: can(me, 'feedback.authors'),
   };
 }
 
@@ -63,7 +68,7 @@ export async function feedbackRoute(p, method, body, me, env, log) {
   if (p === '/api/feedback/all' && method === 'GET') {
     if (!can(me, 'feedback.authors')) return fail('Managers only.', 403);
     const rows = await all(env, 'SELECT * FROM feedback ORDER BY (reported_at IS NOT NULL AND hidden = 0) DESC, at DESC LIMIT 200');
-    return json({ items: rows.map((r) => ({ ...inboxOut(r), from: r.from_id, fromName: r.from_name, to: r.to_id, toName: r.to_name, hidden: !!r.hidden, hiddenBy: opt(r.hidden_by), report: opt(r.report), reportedAt: opt(r.reported_at) })) });
+    return json({ items: rows.map((r) => ({ ...inboxOut(r), from: r.from_id, fromName: r.from_name, to: r.to_id, toName: r.to_name, hidden: !!r.hidden, hiddenBy: opt(r.hidden_by), report: opt(r.report), reportedAt: opt(r.reported_at), replyAt: opt(r.reply_at), caution: BAD.includes(r.reaction) })) });
   }
   if (method !== 'POST') return fail('Not found', 404);
 
@@ -74,13 +79,15 @@ export async function feedbackRoute(p, method, body, me, env, log) {
     if (!to) return fail('Pick a verified teammate.');
     if (to.id === me.u) return fail('That’s you 😉');
     if (!KINDS[body.kind]) return fail('Pick praise, a tip or a concern.');
+    const anon = body.anon === false ? 0 : 1; // optional: sign it so the player knows who to thank
+    const match = body.match == null || body.match === '' ? null : String(body.match).replace(/[^\w-]/g, '').slice(0, 40) || null;
     const text = cleanText(body.text, 500);
     if (text.length < 10) return fail('Write a bit more (10+ characters).');
     if (unclean(text)) return fail('Keep it clean – rephrase without the bad language.', 422);
     // The daily limit is checked inside the INSERT, so sending several at once can't slip past it.
     const now = Date.now();
-    const ins = await run(env, `INSERT INTO feedback (from_id, from_name, to_id, to_name, kind, body, at) SELECT ?, ?, ?, ?, ?, ?, ?
-      WHERE (SELECT COUNT(*) FROM feedback WHERE from_id = ? AND at > ?) < ?`, me.u, me.n, to.id, to.name, body.kind, text, now, me.u, now - DAY, PER_DAY);
+    const ins = await run(env, `INSERT INTO feedback (from_id, from_name, to_id, to_name, kind, body, at, anon, match_id) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+      WHERE (SELECT COUNT(*) FROM feedback WHERE from_id = ? AND at > ?) < ?`, me.u, me.n, to.id, to.name, body.kind, text, now, anon, match, me.u, now - DAY, PER_DAY);
     if (!ins.meta?.changes) {
       const today = await sentToday(env, me);
       return fail(`That’s ${PER_DAY} today – you can send more ${new Date(today.first + DAY).toUTCString().slice(17, 22)} UTC.`, 429);
@@ -88,6 +95,33 @@ export async function feedbackRoute(p, method, body, me, env, log) {
     // No message text in the bell / DM: a message managers hide later must not already sit in someone's Discord DMs.
     await safely(notify(env, [to.id], { type: 'feedback', icon: KINDS[body.kind][0], title: `New anonymous ${KINDS[body.kind][1].toLowerCase()} from a teammate – open the Squad Hub to read it`, link: 'members.html#feedback', ref: `feedback:${ins.meta.last_row_id}` }));
     await log(env, me, 'feedback-send', `${KINDS[body.kind][1]} → ${to.name}`);
+    return json(await state(env, me));
+  }
+  if (p === '/api/feedback/react') {
+    const f = await one(env, 'SELECT * FROM feedback WHERE id = ? AND to_id = ? AND hidden = 0', Number(body.id) || 0, me.u);
+    if (!f) return fail('Message not found.', 404);
+    const reaction = String(body.reaction ?? '');
+    if (!REACTIONS[reaction]) return fail('Pick one of the five reactions.');
+    if (f.reaction === reaction) return json(await state(env, me));
+    await run(env, 'UPDATE feedback SET reaction = ?, reacted_at = ?, read_at = COALESCE(read_at, ?) WHERE id = ?', reaction, Date.now(), Date.now(), f.id);
+    if (GOOD.includes(reaction)) { // only good news travels back to the sender – and never who reacted beyond the fact
+      await safely(notify(env, [f.from_id], { type: 'feedback', icon: REACTIONS[reaction][0], title: `${f.to_name ?? 'Your teammate'} reacted ${REACTIONS[reaction][0]} to your ${(KINDS[f.kind]?.[1] ?? 'feedback').toLowerCase()}`, link: 'members.html#feedback', ref: `feedback-react:${f.id}` }));
+    } else { // ❌ / 😕: managers get a secondary, clearly marked caution
+      await safely(notifyManagers(env, { type: 'caution', icon: '⚠️', title: `Caution: ${f.to_name ?? 'a player'} ${reaction === 'disagree' ? 'disagrees with' : 'is confused by'} feedback`, body: `${f.anon ? 'Anonymous' : f.from_name ?? 'A teammate'} → ${f.to_name ?? 'a player'}: “${f.body.slice(0, 80)}”`, link: 'members.html#feedback', ref: `feedback-caution:${f.id}` }, me.u));
+    }
+    await log(env, me, 'feedback-react', `#${f.id} ${reaction}`);
+    return json(await state(env, me));
+  }
+  if (p === '/api/feedback/why') {
+    const f = await one(env, 'SELECT * FROM feedback WHERE id = ? AND to_id = ? AND hidden = 0', Number(body.id) || 0, me.u);
+    if (!f) return fail('Message not found.', 404);
+    if (!BAD.includes(f.reaction)) return fail('React ❌ or 😕 first, then tell us why.');
+    const reply = cleanText(body.text, 500);
+    if (reply.length < 5) return fail('Write a little more so the managers understand.');
+    if (unclean(reply)) return fail('Keep it clean – rephrase without the bad language.', 422);
+    await run(env, 'UPDATE feedback SET reply = ?, reply_at = ? WHERE id = ?', reply, Date.now(), f.id);
+    await safely(notifyManagers(env, { type: 'caution', icon: '⚠️', title: `Caution: ${f.to_name ?? 'a player'} explained their ${f.reaction === 'disagree' ? '❌' : '😕'}`, body: reply.slice(0, 100), link: 'members.html#feedback', ref: `feedback-caution:${f.id}` }, me.u));
+    await log(env, me, 'feedback-why', `#${f.id}`);
     return json(await state(env, me));
   }
   if (p === '/api/feedback/read') {

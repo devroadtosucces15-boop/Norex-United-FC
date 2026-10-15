@@ -198,6 +198,7 @@
     const el = document.elementFromPoint(cx, cy);
     cv.style.pointerEvents = '';
     cur = { shape: s, target: describe(el), scroll: { x: round(scrollX), y: round(scrollY), docH: document.documentElement.scrollHeight, docW: document.documentElement.scrollWidth } };
+    g.clearRect(0, 0, innerWidth, innerHeight); drawPins(); // the open mark lives in page coordinates, so a keyboard/scroll shift can't move it off what was marked
     openSheet();
   }
   function shape(type, d) {
@@ -225,7 +226,44 @@
     } else if (s.type === 'pen') { c.beginPath(); s.pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke(); }
     c.restore();
   }
-  function cancel() { drag = null; cur = null; g?.clearRect(0, 0, innerWidth, innerHeight); sheet?.remove(); sheet = null; }
+  function cancel() {
+    stopDictation(true);
+    const at = sheet && cur?.scroll;
+    sheet?.querySelector('textarea')?.blur();
+    drag = null; cur = null; g?.clearRect(0, 0, innerWidth, innerHeight); sheet?.remove(); sheet = null; drawPins();
+    if (at) holdScroll(at); // closing the keyboard must not leave the page somewhere else
+  }
+  // While a note is open the page stays where it was marked (the keyboard opening/closing scrolls it otherwise).
+  let holdAt = null, holdUntil = 0;
+  const holdScroll = (at, ms = 600) => { holdAt = at; holdUntil = ms ? Date.now() + ms : Infinity; pin(); };
+  const pin = () => { if (holdAt && (Math.abs(scrollY - holdAt.y) > 1 || Math.abs(scrollX - holdAt.x) > 1)) scrollTo({ left: holdAt.x, top: holdAt.y, behavior: 'instant' }); };
+  addEventListener('scroll', () => {
+    if (!holdAt) return;
+    if (Date.now() > holdUntil) { holdAt = null; return; }
+    pin();
+  }, { passive: true });
+
+  // ---------- dictation ----------
+  // One recogniser at a time, owned here (not by the sheet), so closing/saving a note always switches the mic off. Short sessions that
+  // restart themselves instead of `continuous` mode, which repeats or stalls on Android Chrome.
+  let dict = null;
+  function stopDictation(discard) { const d = dict; dict = null; d?.end(discard); }
+  function startDictation(SR, ta, mic) {
+    let sr = null, on = true, fails = 0, base = '';
+    const paint = () => { mic.classList.toggle('live', on); mic.textContent = on ? '⏹ Stop' : '🎤 Dictate'; };
+    const run = () => {
+      base = ta.value.trim() ? `${ta.value.trim()} ` : '';
+      sr = new SR(); sr.lang = navigator.language || 'en-GB'; sr.interimResults = true; sr.continuous = false;
+      sr.onresult = (ev) => { fails = 0; ta.value = base + [...ev.results].map((r) => r[0].transcript).join(' ').trim(); };
+      sr.onerror = (ev) => { if (ev.error !== 'no-speech' && ev.error !== 'aborted') fails++; if (/not-allowed|service-not-allowed|audio-capture/.test(ev.error)) on = false; };
+      sr.onend = () => { sr = null; if (on && dict === me && fails < 3 && ta.isConnected) { try { run(); return; } catch { /* fall through */ } } if (dict === me) dict = null; on = false; paint(); };
+      sr.start();
+    };
+    const me = { end(discard) { on = false; paint(); try { discard ? sr?.abort() : sr?.stop(); } catch { /* already ended */ } } };
+    dict = me; paint();
+    try { run(); } catch { dict = null; on = false; paint(); }
+  }
+  addEventListener('pagehide', () => stopDictation(true));
 
   // ---------- note sheet ----------
   const SEV = [['broken', '🔴', 'Broken'], ['wrong', '🟠', 'Wrong'], ['polish', '🟡', 'Polish'], ['idea', '💡', 'Idea']];
@@ -242,25 +280,37 @@
     sheet.querySelector('.nxr-x').addEventListener('click', cancel);
     sheet.addEventListener('submit', (e) => { e.preventDefault(); commit(ta.value.trim(), sheet.querySelector('input[name=sev]:checked').value); });
     const mic = sheet.querySelector('.nxr-mic');
-    if (mic) mic.addEventListener('click', () => {
-      if (mic.rec) { mic.rec.stop(); return; }
-      const rec = new SR(); rec.lang = navigator.language || 'en-GB'; rec.interimResults = true; rec.continuous = true;
-      const base = ta.value ? `${ta.value} ` : '';
-      rec.onresult = (ev) => { ta.value = base + [...ev.results].map((r) => r[0].transcript).join(' '); };
-      rec.onend = () => { mic.rec = null; mic.classList.remove('live'); mic.textContent = '🎤 Dictate'; };
-      rec.onerror = () => rec.onend();
-      mic.rec = rec; mic.classList.add('live'); mic.textContent = '⏹ Stop'; rec.start();
-    });
+    if (mic) {
+      mic.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus (and the keyboard) where it is – no page jump
+      mic.addEventListener('click', () => { if (dict) stopDictation(false); else startDictation(SR, ta, mic); });
+    }
+    holdScroll(cur.scroll, 0);
     setTimeout(() => ta.focus({ preventScroll: true }), 50);
+  }
+
+  // Layout diagnostics (#40: iOS installed app, bottom bar rises mid-screen and scroll stops). Measured at the moment of saving; diagnostic only.
+  function layoutDiag() {
+    const r1 = (n) => Math.round(n * 10) / 10, vv = window.visualViewport;
+    const rect = (el) => { if (!el) return null; const b = el.getBoundingClientRect(), cs = getComputedStyle(el); return { x: r1(b.x), y: r1(b.y), w: r1(b.width), h: r1(b.height), bottom: r1(b.bottom), pos: cs.position, bottomCss: cs.bottom, transform: cs.transform === 'none' ? null : cs.transform.slice(0, 80) }; };
+    const label = (el) => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).slice(0, 3).join('.') : ''}`;
+    const fixed = []; try { for (const el of document.body.querySelectorAll('*')) { if (fixed.length >= 30) break; if (el.closest('[class*="nxr-"]')) continue; const cs = getComputedStyle(el); if (cs.position === 'fixed' || cs.position === 'sticky') { const b = el.getBoundingClientRect(); fixed.push({ el: label(el), pos: cs.position, x: r1(b.x), y: r1(b.y), w: r1(b.width), h: r1(b.height), z: cs.zIndex, hidden: cs.display === 'none' || cs.visibility === 'hidden' }); } } } catch {}
+    const de = document.documentElement, bd = document.body;
+    return {
+      vv: vv ? { offsetTop: r1(vv.offsetTop), offsetLeft: r1(vv.offsetLeft), w: r1(vv.width), h: r1(vv.height), scale: r1(vv.scale), pageTop: r1(vv.pageTop) } : null,
+      innerH: innerHeight, innerW: innerWidth, outerH: outerHeight, clientH: de.clientHeight, scrollY: r1(scrollY), scrollH: de.scrollHeight, maxScroll: de.scrollHeight - de.clientHeight,
+      htmlOverflow: getComputedStyle(de).overflow, bodyOverflow: getComputedStyle(bd).overflow, bodyPos: getComputedStyle(bd).position, bodyH: r1(bd.getBoundingClientRect().height),
+      tabbar: rect(document.querySelector('.tabbar')), header: rect(document.querySelector('.bar, header.top')), fixed,
+    };
   }
 
   function commit(note, severity) {
     if (!cur) return;
     const item = {
       n: ++S.n, t: Date.now(), page: pageKey(), hash: location.hash, url: location.href, title: document.title, tabs: activeTabs(), severity, note,
-      shape: cur.shape, target: cur.target, scroll: cur.scroll, device: deviceInfo(),
+      shape: cur.shape, target: cur.target, scroll: cur.scroll, device: deviceInfo(), diag: layoutDiag(),
       role: { real: ctx.role, viewAs: ctx.viewAs || null, user: ctx.user?.n || null },
     };
+    stopDictation(false);
     S.items.push(item); save(); enqueue(item);
     cancel(); drawPins(); setTool('browse'); paintFab();
     ctx.toast?.(`📌 Saved #${item.n}`);
@@ -272,7 +322,7 @@
     const w = document.documentElement.scrollWidth, h = document.documentElement.scrollHeight;
     svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     if (!open) { svg.innerHTML = ''; return; }
-    svg.innerHTML = S.items.filter((it) => it.page === pageKey()).map((it) => {
+    svg.innerHTML = [...S.items.filter((it) => it.page === pageKey()), ...(cur ? [{ ...cur, n: S.n + 1 }] : [])].map((it) => {
       const sx = it.scroll?.x || 0, sy = it.scroll?.y || 0, p = it.shape.pts.map(([x, y]) => [x + sx, y + sy]), [a, b] = p;
       const bb = { x: it.shape.bbox.x + sx, y: it.shape.bbox.y + sy, w: it.shape.bbox.w, h: it.shape.bbox.h };
       const stroke = 'fill="none" stroke="#ff3b30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';

@@ -23,6 +23,7 @@
 // without it the writer just logs and skips, so the feature never fails the cron or a request.
 import { atLeast, can } from './roles.js';
 import { TEXT_MODEL } from './aispike.js';
+import { message, header, text, sep, facts, footer, buttons } from './ui.js';
 
 const one = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).first();
 const WRITER_MODEL = (env) => env.STAT_INSIGHTS_MODEL || TEXT_MODEL; // Workers AI text model (free allowance on the account) – fact-bounded copy, the number checker catches anything it invents
@@ -386,11 +387,16 @@ export async function discordH2hEmbed(env, loadSite, o, me) {
   }
   return { embed: h2hEmbed(row, pack) };
 }
-const h2hEmbed = (row, pack) => ({
-  title: `✨ ${row.headline}`, description: `${row.body}\n\n👀 ${row.watch}`.slice(0, 3900), color: 0xc8352c,
-  fields: [{ name: `vs ${pack.facts.opponent}`, value: `${pack.facts.wins}W ${pack.facts.draws}D ${pack.facts.losses}L · ${pack.facts.goalsFor}–${pack.facts.goalsAgainst}`, inline: false }],
-  footer: { text: 'NOREX UNITED · head to head' }, timestamp: new Date(row.at).toISOString(),
-});
+// One panel for every insight post: headline, the writer's text, what to watch, a small "written" line.
+const insightPanel = (row, eyebrow, { title = `✨ ${row.headline}`, extra = null } = {}) => message({ blocks: [
+  header({ eyebrow: `NOREX UNITED · ${eyebrow}`, title, size: 3 }),
+  text(row.body),
+  extra,
+  row.watch ? text(`👀 ${row.watch}`) : null,
+  sep(),
+  footer(`Written <t:${Math.floor(row.at / 1000)}:R> from the club's stats`),
+] });
+const h2hEmbed = (row, pack) => insightPanel(row, 'Head to head', { extra: facts([[`vs ${pack.facts.opponent}`, `${pack.facts.wins}W ${pack.facts.draws}D ${pack.facts.losses}L · ${pack.facts.goalsFor}–${pack.facts.goalsAgainst}`]]) });
 export async function statFeedbackRoute(env, me, body) {
   const key = String(body?.key ?? '');
   const vote = body?.vote === 1 || body?.vote === -1 ? body.vote : null;
@@ -411,10 +417,7 @@ export async function statInsightWeekly(env, postEmbed, now = Date.now()) {
   const row = await one(env, "SELECT * FROM stat_insights WHERE key = 'club'");
   const channel = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
   if (row && channel) {
-    await postEmbed(env, channel, '', { embeds: [{
-      title: `✨ Insight of the week – ${row.headline}`, description: `${row.body}\n\n👀 ${row.watch}`.slice(0, 3900),
-      color: 0xc8352c, footer: { text: 'NOREX UNITED · weekly insight' },
-    }] });
+    await postEmbed(env, channel, '', insightPanel(row, 'Insight of the week'));
   }
   await env.DB.prepare("INSERT INTO meta (key, value) VALUES ('stat_insight_week', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(wk).run();
 }
@@ -428,8 +431,5 @@ export async function discordInsightEmbed(env, stat, role = 'guest') {
   const row = await one(env, 'SELECT key, headline, body, watch, tier, at FROM stat_insights WHERE key = ?', key);
   if (!row) return { error: 'No insight for that yet – it appears after the next data refresh.' };
   if (!visibleRow(row, role, null)) return { error: '🔒 That insight is for members only – log in on the site to see it.' };
-  return { embed: {
-    title: `✨ ${row.headline}`, description: `${row.body}\n\n👀 ${row.watch}`.slice(0, 3900),
-    color: 0xc8352c, footer: { text: 'NOREX UNITED · insight' }, timestamp: new Date(row.at).toISOString(),
-  } };
+  return { embed: insightPanel(row, 'Insight') };
 }

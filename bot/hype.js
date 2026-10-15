@@ -12,6 +12,8 @@
 // P11.10 site-side placement is a follow-up (see P11.3's note on the same fetch.mjs↔D1 gap) – the recap only
 // posts to Discord for now, same scope cut as match-performance points.
 import { safely } from './notify.js';
+import { message, header, text, cards, facts, buttons, resultAccent } from './ui.js';
+import { it } from './icons.js';
 
 const RED = 0xc8352c, GREEN = 0x22c55e, GREY = 0x6b7280;
 const IMAGE_MODEL = '@cf/black-forest-labs/flux-1-schnell';
@@ -50,9 +52,9 @@ async function generateRecap(env, club, m) {
   return text ? text.slice(0, 600) : null;
 }
 
-async function postHype(env, channel, embed, art) {
+async function postHype(env, channel, msg, art) {
   const form = new FormData();
-  form.set('payload_json', JSON.stringify({ embeds: [embed], allowed_mentions: { parse: [] } }));
+  form.set('payload_json', JSON.stringify(msg));
   if (art) form.set('files[0]', new Blob([art], { type: 'image/png' }), 'hype.png');
   const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, { method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` }, body: form });
   if (!r.ok) console.log('hype post failed', r.status, await r.text());
@@ -73,15 +75,13 @@ export async function checkHype(env, loadSite) {
     generateRecap(env, club, m).catch((e) => { console.log('hype recap failed', e.message); return null; }),
   ]);
   const fallback = m.res === 'W' ? '🎉 **Victory!**' : m.res === 'L' ? '😤 **Defeat**' : '➖ **Draw**';
-  const embed = {
-    title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, url: m.url, color: m.res === 'W' ? GREEN : m.res === 'L' ? RED : GREY,
-    description: recap ?? fallback,
-    fields: [
-      m.scorers?.length && { name: '⚽ Scorers', value: m.scorers.map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join('\n'), inline: true },
-      m.motm && { name: '⭐ MOTM', value: m.motm, inline: true },
-    ].filter(Boolean),
-    image: art ? { url: 'attachment://hype.png' } : undefined,
-  };
-  await safely(postHype(env, channel, embed, art));
+  const msg = message({ accent: resultAccent(m.res), blocks: [
+    header({ eyebrow: `${club.name} · Match centre`, title: `${club.name} ${m.gf}–${m.ga} ${m.opp}`, sub: { W: 'Win', D: 'Draw', L: 'Defeat' }[m.res] }),
+    text(recap ?? fallback),
+    art ? cards('attachment://hype.png') : null,
+    facts([[`${it('goal')} Scorers`, (m.scorers ?? []).map((s) => `${s.n}${s.g > 1 ? ` ×${s.g}` : ''}`).join(', ')], [`${it('motm')} Man of the match`, m.motm]]),
+    buttons([{ label: 'Match report', url: m.url }]),
+  ] });
+  await safely(postHype(env, channel, msg, art));
   return { posted: true };
 }

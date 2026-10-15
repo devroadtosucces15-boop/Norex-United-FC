@@ -16,6 +16,7 @@
 import { can, flagOn } from './roles.js';
 import { broadcastRoom } from './clubroom.js';
 import { encryptPayload, safeEndpoint, sendPush } from './webpush.js';
+import { message, header, text, footer, buttons } from './ui.js';
 
 const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
@@ -48,9 +49,14 @@ export const TYPES = {
   play: { icon: '📋', label: 'New plays assigned to me', def: 'dm' }, // BE1
   card: { icon: '🪪', label: 'Card Studio – decisions on my card request', def: 'dm' }, // Card Studio
   wave: { icon: '👋', label: 'Waves from teammates in the Hub', def: 'site' }, // BE8
+  remind: { icon: '⏰', label: 'Reminders – feedback waiting for you, and the odd nudge to use it', def: 'dm' }, // E3 (flag reminders)
+  caution: { icon: '⚠️', label: 'Caution – a player disagrees with or is confused by feedback', def: 'dm', role: 'manager' },
+  live: { icon: '🔴', label: 'NOREX goes live on Twitch or YouTube', def: 'site' }, // E2 (flag liveAnnounce)
   test: { icon: '🔔', label: 'Test notifications', def: 'dm', hidden: true },
 };
 const MODES = ['dm', 'site', 'off'];
+// Stripe colour of the DM by kind (bot design system): honours gold, good news green, warnings red, staff to-dos steel, the rest club red.
+const DM_ACCENT = { live: 'win', award: 'gold', card: 'gold', predict: 'gold', moderation: 'loss', queue: 'steel', storage: 'steel', test: 'steel' };
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -172,14 +178,12 @@ export async function deliverDMs(env, limit = 25) {
     channels[n.user_id] = ch;
     const url = siteUrl(env, n.link);
     const r = await discord(env, `/channels/${ch}/messages`, {
-      embeds: [{
-        title: `${n.icon ?? '🔔'} ${n.reminders ? 'Reminder: ' : ''}${n.title}`.slice(0, 250),
-        description: [n.body, n.ack ? '**Please open the site and tap “Got it” to acknowledge.**' : ''].filter(Boolean).join('\n\n').slice(0, 3900) || undefined,
-        url, color: RED, timestamp: new Date(n.at).toISOString(),
-        footer: { text: 'NOREX UNITED · change DM settings: Squad Hub → 🔔 Alerts' },
-      }],
-      components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Open on the site', url }] }],
-      allowed_mentions: { parse: [] },
+      ...message({ accent: DM_ACCENT[n.type] ?? 'red', blocks: [
+        header({ eyebrow: 'NOREX UNITED · Alert', title: `${n.icon ?? '🔔'} ${n.reminders ? 'Reminder: ' : ''}${n.title}`.slice(0, 250), size: 3 }),
+        text([n.body, n.ack ? '**Please open the site and tap “Got it” to acknowledge.**' : ''].filter(Boolean).join('\n\n')),
+        footer(`Sent <t:${Math.floor(n.at / 1000)}:R> · change DM settings: Squad Hub → 🔔 Alerts`),
+        buttons([{ label: 'Open on the site', url }]),
+      ] }),
     });
     if (r.status === 429) break;
     if (r.ok) { await mark(n.id, 'sent'); sent++; continue; }

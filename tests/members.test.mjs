@@ -50,12 +50,16 @@ t('availability set', r.d.days[0].people.length === 2 && r.d.days[0].people.some
 r = await call(other, '/api/availability', { dates: [d], status: 'clear' });
 t('availability clear', r.d.days[0].people.length === 1);
 t('availability in the past → 400', (await call(other, '/api/availability', { dates: ['1999-01-01'], status: 'yes' })).s === 400);
+// voting closes 72 h after a match (board 07), so run this block with the clock an hour after the newest match
+const realNow = Date.now, newest = siteJson('club').matches[0];
+Date.now = () => (newest.ts + 3600) * 1000;
 const m = (await call(other, '/api/vote')).d.matches[0];
 r = await call(other, '/api/vote', { match: m.id, player: m.players[0].k });
 t('MOTM vote', r.d.matches[0].total === 2 && r.d.matches[0].mine === m.players[0].k);
 r = await call(other, '/api/vote', { match: m.id, player: m.players[0].k });
 t('MOTM vote toggles off', r.d.matches[0].total === 1 && r.d.matches[0].mine === null);
 t('vote for a player not in the match → 400', (await call(other, '/api/vote', { match: m.id, player: 'nobody' })).s === 400);
+Date.now = realNow;
 ov = (await call(boss, '/api/admin/claims', { user: '222', action: 'unlink' })).d;
 t('unlink keeps history', ov.claims['222'].status === 'unlinked' && ov.claims['222'].history.map((h) => h.action).join() === 'approved,unlinked');
 t('public cleared after unlink', Object.keys((await call(null, '/api/public')).d.claims).length === 0);

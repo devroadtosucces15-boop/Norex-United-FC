@@ -13,7 +13,7 @@
   const ago = (t) => { const m = Math.round((Date.now() - t) / 60e3); if (m < 1) return 'just now'; if (m < 60) return `${m} min ago`; if (m < 1440) return `${Math.floor(m / 60)} h ago`; if (m < 10080) return `${Math.floor(m / 1440)} d ago`; try { return new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); } catch { return ''; } };
   const hue = (s) => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
   const ini = (n) => String(n || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase() || '?';
-  const av = (a, n, s = 38) => a ? `<img class="sq-av" src="${esc(a)}" alt="" width="${s}" height="${s}" loading="lazy" data-ini="${esc(ini(n))}" style="--s:${s}px;--h:${hue(n)}">` : `<span class="sq-av ini" style="--s:${s}px;--h:${hue(n)}" aria-hidden="true">${esc(ini(n))}</span>`;
+  const av = (a, n, s = 38, id = '') => a ? `<img class="sq-av"${id ? ` data-uid="${esc(id)}"` : ''} src="${esc(a)}" alt="" width="${s}" height="${s}" loading="lazy" data-ini="${esc(ini(n))}" style="--s:${s}px;--h:${hue(n)}">` : `<span class="sq-av ini" style="--s:${s}px;--h:${hue(n)}" aria-hidden="true">${esc(ini(n))}</span>`;
   addEventListener('error', (e) => { const i = e.target; if (!(i instanceof HTMLImageElement) || !i.classList.contains('sq-av')) return; const s = d.createElement('span'); s.className = 'sq-av ini'; s.style.cssText = i.style.cssText; s.textContent = i.dataset.ini || '?'; i.replaceWith(s); }, true);
   const empty = (icon, title, text = '', extra = '') => `<div class="panel sq-empty"><span>${icon}</span><div><b>${title}</b>${text ? `<p class="muted small">${text}</p>` : ''}${extra}</div></div>`;
   const failBox = (k, what, e) => e?.status === 404 && /not available/i.test(e.message)
@@ -42,7 +42,7 @@ ${rest.length ? `<span class="ch-rxadd"><button type="button" class="ch-rx ghost
 <button type="button" class="ch-nc" data-cm aria-expanded="${F.open.has(p.id)}">💬 <b class="num">${p.nComments || 0}</b> ${F.open.has(p.id) ? 'Hide' : p.nComments === 1 ? 'Comment' : p.nComments ? 'Comments' : 'Comment'}</button>`;
   };
   const cmt = (c, p, reply = false) => c.removed ? `<div class="ch-c gone"><span class="muted tiny">Comment removed</span></div>`
-    : `<div class="ch-c${reply ? ' re' : ''}${c.by.id === A.session?.u ? ' own' : ''}" data-cid="${c.id}">${av(c.by.a, c.by.n, reply ? 20 : 24)}<div><b>${esc(c.by.n)}</b> <span class="muted tiny">${ago(c.at)}</span><div class="md small">${md(c.text)}</div><button type="button" class="ch-rp" data-rp="${c.id}" data-rpn="${esc(c.by.n)}">↩️ Reply</button></div></div>`;
+    : `<div class="ch-c${reply ? ' re' : ''}${c.by.id === A.session?.u ? ' own' : ''}" data-cid="${c.id}">${av(c.by.a, c.by.n, reply ? 20 : 24, c.by.id)}<div><b>${esc(c.by.n)}</b> <span class="muted tiny">${ago(c.at)}</span><div class="md small">${md(c.text)}</div><button type="button" class="ch-rp" data-rp="${c.id}" data-rpn="${esc(c.by.n)}">↩️ Reply</button></div></div>`;
   const thread = (p) => {
     const cs = p.comments || [], tops = cs.filter((c) => !c.parent), r = F.reply[p.id];
     return `<div class="ch-thread">${tops.length ? tops.map((c) => cmt(c, p) + cs.filter((x) => x.parent === c.id).map((x) => cmt(x, p, true)).join('')).join('') : '<p class="muted tiny">No comments yet. Start it off.</p>'}
@@ -50,12 +50,12 @@ ${rest.length ? `<span class="ch-rxadd"><button type="button" class="ch-rx ghost
   };
   const card = (p) => {
     const tag = F.tags[p.tag] ?? ['💬', 'Chat'], open = F.open.has(p.id), top = (p.comments || []).filter((c) => !c.removed && !c.parent).slice(-2);
-    return `<article class="ch-post${p.pinned ? ' pin' : ''}" id="p${p.id}" data-pid="${p.id}"><header class="ch-ph">${av(p.by.a, p.by.n)}<div><b class="fit">${esc(p.by.n)}</b><small class="muted">${p.by.tag ? `@${esc(p.by.tag)} · ` : ''}${ago(p.at)}${p.edited ? ' · edited' : ''}</small></div><span class="pill">${tag[0]} ${esc(tag[1])}</span>${p.pinned ? '<span class="pill s">📌 Pinned</span>' : ''}</header>
+    return `<article class="ch-post${p.pinned ? ' pin' : ''}" id="p${p.id}" data-pid="${p.id}"><header class="ch-ph">${av(p.by.a, p.by.n, 38, p.by.id)}<div><b class="fit">${esc(p.by.n)}</b><small class="muted">${p.by.tag ? `@${esc(p.by.tag)} · ` : ''}${ago(p.at)}${p.edited ? ' · edited' : ''}</small></div><span class="pill">${tag[0]} ${esc(tag[1])}</span>${p.pinned ? '<span class="pill s">📌 Pinned</span>' : ''}</header>
 ${p.text ? `<div class="md ch-body">${md(p.text)}</div>` : ''}${media(p.media || [])}
 <footer class="ch-pf">${foot(p)}</footer>
-${open ? thread(p) : top.length ? `<div class="ch-cm">${top.map((c) => `<div class="ch-c">${av(c.by.a, c.by.n, 22)}<div><b>${esc(c.by.n)}</b> <span class="muted tiny">${ago(c.at)}</span><div class="md small">${md(c.text)}</div></div></div>`).join('')}${p.nComments > top.length ? `<button type="button" class="ch-more" data-cm>See all ${p.nComments} comments</button>` : ''}</div>` : ''}</article>`;
+${open ? thread(p) : top.length ? `<div class="ch-cm">${top.map((c) => `<div class="ch-c">${av(c.by.a, c.by.n, 22, c.by.id)}<div><b>${esc(c.by.n)}</b> <span class="muted tiny">${ago(c.at)}</span><div class="md small">${md(c.text)}</div></div></div>`).join('')}${p.nComments > top.length ? `<button type="button" class="ch-more" data-cm>See all ${p.nComments} comments</button>` : ''}</div>` : ''}</article>`;
   };
-  const composer = () => `<form class="panel ch-new" data-newpost><div class="ch-newh">${av(A.avatar, A.name || 'You', 34)}<textarea name="t" rows="2" maxlength="2000" placeholder="Share a goal, a result or a Rush invite…" aria-label="New post"></textarea></div>
+  const composer = () => `<form class="panel ch-new" data-newpost><div class="ch-newh">${av(A.avatar, A.name || 'You', 34, A.session?.u)}<textarea name="t" rows="2" maxlength="2000" placeholder="Share a goal, a result or a Rush invite…" aria-label="New post"></textarea></div>
 <div class="ch-newf"><div class="chips" role="radiogroup" aria-label="Tag">${Object.entries(F.tags).map(([k, [i, l]]) => `<button type="button" role="radio" class="chip${k === F.tag ? ' on' : ''}" aria-checked="${k === F.tag}" data-tag="${k}">${i} ${esc(l)}</button>`).join('')}</div>
 <span class="ch-newgo"><small class="muted tiny" data-left></small>${F.left != null ? `<small class="muted tiny">${F.left} of ${F.perDay} posts left today</small>` : ''}<button type="submit" class="btn"${F.left === 0 ? ' disabled' : ''}>📣 Post</button></span></div>
 <p class="muted tiny ch-tip">**bold**, links and YouTube or Twitch clips work. Photos and clips upload in the live Hub for now. Ctrl + Enter posts.</p></form>`;

@@ -3,8 +3,12 @@
 import { env, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
-import { burnerStats, sharedWithNorex, mergeMatches, reportEmbed, slimBurnerMatch, updateRoster, MAX_BURNERS } from '../bot/burnerstats.js';
+import { burnerStats, sharedWithNorex, mergeMatches, reportMessage, slimBurnerMatch, updateRoster, MAX_BURNERS } from '../bot/burnerstats.js';
 import { burnersKey } from '../bot/burners.js';
+import { plainText } from '../bot/ui.js';
+// the pick menu / body text of a panel message (replies are components now, not embeds)
+const sel = (m) => { let f; const w = (c) => { if (!c || typeof c !== 'object') return; if (Array.isArray(c)) return c.forEach(w); if (c.type === 3 && !f) f = c; w(c.components); }; w(m?.components); return f; };
+const body = (m) => plainText(m ?? {});
 
 // ---------- pure helpers ----------
 const player = (name, o = {}) => ({ playername: name, pos: 'midfielder', rating: '7.0', goals: '0', assists: '0', shots: '1', passattempts: '10', passesmade: '8', tackleattempts: '4', tacklesmade: '2', mom: '0', secondsPlayed: '5400', ...o });
@@ -31,9 +35,10 @@ t('first roster snapshot is not a "join" event', r1.joined.length === 0 && r1.ro
 const r2 = updateRoster(r1.roster, [{ name: 'Jez' }], '2026-10-07T10:00:00Z');
 t('roster diff reports who joined and left, keeping first-seen', r2.joined[0] === 'Jez' && r2.left[0] === 'Mike' && r2.roster.Mike.active === false && r2.roster.Mike.first === '2026-10-06T10:00:00Z');
 
-const emb = reportEmbed({ id: '1355341', name: 'TeloSico', crest: '99' }, m1, s, 'https://site.test/');
-t('report embed: title, MOTM, season line, link to the burner card', emb.title === '🔥 TeloSico 3–1 Poundin Pitches' && emb.fields.some((f) => f.name.includes('Man of the match') && f.value.includes('Mike'))
-  && emb.fields.some((f) => f.value.includes('1W 0D 1L')) && emb.url === 'https://site.test/burners.html#c1355341');
+const emb = reportMessage({ id: '1355341', name: 'TeloSico', crest: '99' }, m1, s, 'https://site.test/');
+const embText = plainText(emb);
+t('report: title, MOTM, season line, link to the burner card', embText.includes('🔥 TeloSico 3–1 Poundin Pitches') && /Man of the match\*\* Mike/.test(embText)
+  && embText.includes('1W 0D 1L') && JSON.stringify(emb.components).includes('https://site.test/burners.html#c1355341'));
 
 const vs = sharedWithNorex({ matches: [m2, m1], roster: { Mike: { active: false }, Ghost: { active: true } } }, new Set(['mike', 'ghost', 'nobody']));
 t('vs NOREX: shared gamertags only, case-insensitive, played-first, roster-only joiners included, left flagged',
@@ -98,24 +103,24 @@ globalThis.fetch = async (url, init = {}) => {
 const settle = async () => { await Promise.all(pending.splice(0)); return patches.at(-1); };
 
 try {
-  t('a plain member is turned away', /Managers only/.test((await slash(MEMBER, 'search', 'telosico')).data.content));
+  t('a plain member is turned away', /Managers only/.test(plainText((await slash(MEMBER, 'search', 'telosico')).data)));
   t('/burner search defers the reply (EA can be slow)', (await slash(MGR, 'search', 'telosico')).type === 5);
   const found = await settle();
-  t('search lists every match with its record and a pick menu', found.embeds[0].description.includes('TeloSico') && found.embeds[0].description.includes('TeloSico Reserves')
-    && found.components[0].components[0].custom_id === 'norex:bn:pick' && found.components[0].components[0].options.length === 2);
-  t('the exact name sorts first', found.embeds[0].description.indexOf('1355341') < found.embeds[0].description.indexOf('1355999'));
+  t('search lists every match with its record and a pick menu', body(found).includes('TeloSico') && body(found).includes('TeloSico Reserves')
+    && sel(found).custom_id === 'norex:bn:pick' && sel(found).options.length === 2);
+  t('the exact name sorts first', body(found).indexOf('1355341') < body(found).indexOf('1355999'));
 
   await slash(MGR, 'search', 'zzzz');
-  t('no match explains how a brand-new club appears', /no club matching/.test((await settle()).content));
+  t('no match explains how a brand-new club appears', /no club matching/.test(body(await settle())));
 
-  t('a plain member cannot use /burner recent', /Managers only/.test((await slash(MEMBER, 'recent')).data.content));
+  t('a plain member cannot use /burner recent', /Managers only/.test(plainText((await slash(MEMBER, 'recent')).data)));
   t('/burner recent defers like search', (await slash(MGR, 'recent')).type === 5);
   const rec = await settle();
-  const recOpts = rec.components[0].components[0];
+  const recOpts = sel(rec);
   t('recent: one row per opponent, newest game first (the friendly beats the older league game), same pick menu',
     recOpts.custom_id === 'norex:bn:pick' && recOpts.options.map((o) => o.value).join() === '1355341,218552' && /drew 2–2 · Friendly/.test(recOpts.options[0].description) && /lost 0–2/.test(recOpts.options[1].description));
   await slash(MGR, 'search');
-  t('/burner search with no name shows the same recent list', (await settle()).components[0].components[0].options.length === 2);
+  t('/burner search with no name shows the same recent list', sel(await settle()).options.length === 2);
 
   // EA unreachable from the Worker (the real-world failure): the site's own club data answers instead.
   const eaDown = globalThis.fetch;
@@ -127,17 +132,17 @@ try {
   };
   await slash(MGR, 'recent');
   const linkedRec = await settle();
-  t('recent lists the clubs our players are also in (not opponents), most shared players first, with who', linkedRec.components[0].components[0].options.map((o) => o.value).join() === '777001,777002'
-    && linkedRec.embeds[0].description.includes('MrMike, Ringerr, oKaede- +1') && /also in/.test(linkedRec.embeds[0].title));
+  t('recent lists the clubs our players are also in (not opponents), most shared players first, with who', sel(linkedRec).options.map((o) => o.value).join() === '777001,777002'
+    && body(linkedRec).includes('MrMike, Ringerr, oKaede- +1') && /also in/.test(body(linkedRec)));
   await slash(MGR, 'search');
-  const siteRec = (await settle()).components[0].components[0];
+  const siteRec = sel(await settle());
   t('EA blocked: search with no name still lists the clubs NOREX just faced, from site data', siteRec.options.map((o) => o.value).join() === '555111,555222' && /won 5–1 · Friendly/.test(siteRec.options[0].description));
   await slash(MGR, 'search', 'sweaty');
   const siteFound = await settle();
-  t('EA blocked: name search finds clubs in the site data, with their crest', siteFound.components[0].components[0].options.length === 2 && siteFound.embeds[0].description.includes('Sweaty Burner FC') && siteFound.embeds[0].description.includes('Sweaty Second'));
+  t('EA blocked: name search finds clubs in the site data, with their crest', sel(siteFound).options.length === 2 && body(siteFound).includes('Sweaty Burner FC') && body(siteFound).includes('Sweaty Second'));
   await slash(MGR, 'track', '999000111');
   const idOnly = await settle();
-  t('EA blocked: an unknown club ID can still be tracked (the Actions fetch fills in the real name)', /Now tracking/.test(idOnly.content) || idOnly.embeds?.[0]?.description.includes('999000111'));
+  t('EA blocked: an unknown club ID can still be tracked (the Actions fetch fills in the real name)', /Now tracking/.test(body(idOnly)) || body(idOnly).includes('999000111'));
   sqlite.prepare('DELETE FROM burner_clubs WHERE club_id = ?').run('999000111');
   siteData = null; globalThis.fetch = eaDown;
 
@@ -148,7 +153,7 @@ try {
   siteData = { opponents: [], clubs: [], linked: [] };
   await slash(MGR, 'search', 'splashbros');
   const asking = await settle();
-  t('relay: an unanswerable name says it is asking EA through GitHub (token never in the dispatch)', /Asking EA for \*\*splashbros\*\*/.test(asking.content) && dispatches.length === 1
+  t('relay: an unanswerable name says it is asking EA through GitHub (token never in the dispatch)', /Asking EA for \*\*splashbros\*\*/.test(body(asking)) && dispatches.length === 1
     && dispatches[0].inputs.q === 'splashbros' && dispatches[0].inputs.kind === 'search' && !JSON.stringify(dispatches[0]).includes('tok'));
   const waiting = sqlite.prepare('SELECT * FROM ea_relay').all();
   t('relay: one waiting row keeps the interaction token server-side', waiting.length === 1 && waiting[0].token === 'tok' && waiting[0].ref === dispatches[0].inputs.ref);
@@ -156,44 +161,44 @@ try {
   t('relay: an unknown ref is refused', (await W('/api/burners/relay', { method: 'POST', headers: { 'X-Norex-Key': key }, body: JSON.stringify({ ref: 'nope', hits: [] }) })).status === 404);
   const ans = await W('/api/burners/relay', { method: 'POST', headers: { 'X-Norex-Key': key }, body: JSON.stringify({ ref: waiting[0].ref, hits: [BOARD[0]] }) });
   const filled = patches.at(-1);
-  t('relay: the Actions answer edits the waiting reply with the pick menu and clears the row', ans.status === 200 && filled.embeds[0].description.includes('TeloSico') && filled.components[0].components[0].custom_id === 'norex:bn:pick'
+  t('relay: the Actions answer edits the waiting reply with the pick menu and clears the row', ans.status === 200 && body(filled).includes('TeloSico') && sel(filled).custom_id === 'norex:bn:pick'
     && sqlite.prepare('SELECT COUNT(*) AS n FROM ea_relay').get().n === 0);
   await slash(MGR, 'search', 'nothinghere');
   await settle();
   const w2 = sqlite.prepare('SELECT ref FROM ea_relay').get().ref;
   await W('/api/burners/relay', { method: 'POST', headers: { 'X-Norex-Key': key }, body: JSON.stringify({ ref: w2, hits: null }) });
-  t('relay: EA not answering is reported, not left hanging', /did not answer/.test(patches.at(-1).content));
+  t('relay: EA not answering is reported, not left hanging', /did not answer/.test(body(patches.at(-1))));
   delete env.GH_DISPATCH_TOKEN; delete env.GITHUB_REPO; siteData = null; globalThis.fetch = eaDown2;
 
   const picked = await pick(MGR, 'norex:bn:pick', ['1355341']);
-  t('picking from the menu tracks the club and confirms in place', picked.type === 7 && /Now tracking/.test(picked.data.content) && picked.data.components.length === 0);
+  t('picking from the menu tracks the club and confirms in place', picked.type === 7 && /Now tracking/.test(body(picked.data)) && !sel(picked.data));
   const row = sqlite.prepare('SELECT * FROM burner_clubs WHERE club_id = ?').get('1355341');
   t('the row remembers who, which channel and the crest', row.active === 1 && row.channel_id === 'chan-1' && row.added_by === '700' && row.crest === '99' && row.name === 'TeloSico');
   t('fetch.mjs now sees it in the tracked list', (await tracked()).map((b) => b.id).join() === '1355341' && (await tracked())[0].channel === 'chan-1');
 
   const again = await pick(MGR, 'norex:bn:pick', ['1355341']);
-  t('picking it twice says already tracking, no duplicate row', /Already tracking/.test(again.data.content) && sqlite.prepare('SELECT COUNT(*) AS n FROM burner_clubs').get().n === 1);
-  t('a plain member cannot use the pick menu', /Managers only/.test((await pick(MEMBER, 'norex:bn:pick', ['1355999'])).data.content));
+  t('picking it twice says already tracking, no duplicate row', /Already tracking/.test(body(again.data)) && sqlite.prepare('SELECT COUNT(*) AS n FROM burner_clubs').get().n === 1);
+  t('a plain member cannot use the pick menu', /Managers only/.test(plainText((await pick(MEMBER, 'norex:bn:pick', ['1355999'])).data)));
 
   await slash(MGR, 'track', 'TELOSICO RESERVES');
-  t('/burner track by exact name tracks straight away', /Now tracking\*\* \*\*TeloSico Reserves|Now tracking \*\*TeloSico Reserves/.test((await settle()).content));
+  t('/burner track by exact name tracks straight away', /Now tracking\*\* \*\*TeloSico Reserves|Now tracking \*\*TeloSico Reserves/.test(body(await settle())));
   await slash(MGR, 'track', 'telos');
-  t('/burner track on a partial name (no exact match) falls back to the menu', !!(await settle()).components?.length && (await tracked()).length === 2);
+  t('/burner track on a partial name (no exact match) falls back to the menu', !!sel(await settle()) && (await tracked()).length === 2);
 
   const list = await slash(MGR, 'list');
-  t('/burner list shows both with a pending note (no site data yet)', list.data.embeds[0].description.includes('TeloSico') && /first collection pending/.test(list.data.embeds[0].description));
+  t('/burner list shows both with a pending note (no site data yet)', body(list.data).includes('TeloSico') && /first collection pending/.test(body(list.data)));
   const rm = await slash(MGR, 'remove');
-  t('/burner remove offers a menu of tracked clubs', rm.data.components[0].components[0].custom_id === 'norex:bn:rm' && rm.data.components[0].components[0].options.length === 2);
+  t('/burner remove offers a menu of tracked clubs', sel(rm.data).custom_id === 'norex:bn:rm' && sel(rm.data).options.length === 2);
   const gone = await pick(MGR, 'norex:bn:rm', ['1355999']);
-  t('removing stops tracking but keeps the row for history', /Stopped tracking/.test(gone.data.content) && sqlite.prepare('SELECT active FROM burner_clubs WHERE club_id = ?').get('1355999').active === 0 && (await tracked()).length === 1);
+  t('removing stops tracking but keeps the row for history', /Stopped tracking/.test(body(gone.data)) && sqlite.prepare('SELECT active FROM burner_clubs WHERE club_id = ?').get('1355999').active === 0 && (await tracked()).length === 1);
 
   await tt(`the ${MAX_BURNERS}-club cap is enforced`, async () => {
     for (let n = 0; n < MAX_BURNERS; n++) sqlite.prepare("INSERT OR IGNORE INTO burner_clubs (club_id, name, added_by, added_at, active) VALUES (?, ?, '1', 1, 1)").run(`9${n}`, `Filler ${n}`);
-    return /already tracking/i.test((await pick(MGR, 'norex:bn:pick', ['1355999'])).data.content);
+    return /already tracking/i.test(body((await pick(MGR, 'norex:bn:pick', ['1355999'])).data));
   });
 
   env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), burners: 'off' });
-  t('the flag switches the command off for everyone', /Managers only|not switched on/.test((await slash(MGR, 'list')).data.content));
+  t('the flag switches the command off for everyone', /Managers only|not switched on/.test(plainText((await slash(MGR, 'list')).data)));
 } finally {
   globalThis.fetch = realFetch;
 }

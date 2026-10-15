@@ -42,8 +42,6 @@
 .pr-panel ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .pr-panel li{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .pr-panel li small{color:var(--muted);font-size:12px;white-space:nowrap}
-.pr-hide{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);cursor:pointer}
-.pr-hide input{accent-color:var(--red)}
 @media (max-width:760px){.pr-btn b{display:none}.pr-btn{padding:6px 8px}}
 @media (prefers-reduced-motion:reduce){.nx-member.is-online>.nx-av:first-child,.pr-btn i,.nx-rx.on span{animation:none}}
 

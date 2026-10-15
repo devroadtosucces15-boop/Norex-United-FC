@@ -3,6 +3,7 @@
 import { env } from './mock.mjs';
 import { t, tt, done } from './lib.mjs';
 import { bestLine, checkVoiceRecap } from '../bot/voicerecap.js';
+import { plainText, images } from '../bot/ui.js';
 
 env.DISCORD_BOT_TOKEN = 'bot';
 const clip = { size: 1000, url: 'https://cdn/x.ogg', content_type: 'audio/ogg', filename: 'voice-message.ogg' };
@@ -35,7 +36,7 @@ env.AI = {
     return { image: Buffer.from('x'.repeat(600)).toString('base64') };
   },
 };
-const lastEmbed = () => JSON.parse(posts.at(-1).body.get('payload_json')).embeds[0];
+const lastMsg = () => JSON.parse(posts.at(-1).body.get('payload_json'));
 
 mockDiscord([msg('m1')]);
 await tt('first run after deploy remembers the clip but does not post', async () => {
@@ -47,7 +48,7 @@ await tt('same clip id again → still no-op', async () => (await checkVoiceReca
 mockDiscord([msg('m2')]);
 await tt('a genuinely new clip → transcribes and posts the quote', async () => {
   const r = await checkVoiceRecap(env, loadSite(club));
-  return r.posted === true && posts.length === 1 && lastEmbed().description.includes('screamer from thirty yards');
+  return r.posted === true && posts.length === 1 && plainText(lastMsg()).includes('screamer from thirty yards');
 });
 
 mockDiscord([{ id: 'm3', author: { username: 'Bob' }, attachments: [] }]);
@@ -58,7 +59,7 @@ await tt('image model failing does not block the post, just drops the image', as
   imgFail = true;
   const r = await checkVoiceRecap(env, loadSite(club));
   imgFail = false;
-  return r.posted === true && posts.length === 2 && lastEmbed().image === undefined;
+  return r.posted === true && posts.length === 2 && !images(lastMsg()).some((u) => u.startsWith('attachment://'));
 });
 
 mockDiscord([msg('m5')]);
@@ -66,7 +67,7 @@ await tt('text model failing falls back to the transcript itself, still posts', 
   textFail = true;
   const r = await checkVoiceRecap(env, loadSite(club));
   textFail = false;
-  return r.posted === true && posts.length === 3 && lastEmbed().description.includes('What a strike!');
+  return r.posted === true && posts.length === 3 && plainText(lastMsg()).includes('What a strike!');
 });
 
 mockDiscord([msg('m6')]);

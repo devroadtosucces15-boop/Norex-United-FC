@@ -8,16 +8,10 @@
   const KIND = { club: ['📈', 'Club form'], 'match.latest': ['⚽', 'Latest match'], 'matches.last5': ['🔟', 'Last five'], 'club.records': ['🏆', 'Records'], 'leaders.goals': ['⚽', 'Scoring race'], 'leaders.rating': ['⭐', 'Ratings race'], 'leaders.assists': ['🅰️', 'Assists race'], 'leaders.motm': ['🏅', 'MOTM race'] };
   const kind = (k) => KIND[k] || (k.startsWith('player.') ? ['🧑‍🎤', 'Player'] : k.startsWith('note.') ? ['📝', "Coach's note"] : k.startsWith('h2h.') ? ['⚔️', 'Head to head'] : k.startsWith('match.') ? ['⚽', 'This match'] : ['✨', 'Insight']);
   const M = () => window.NorexMotion, A = () => window.NorexAuth;
-  const OFF = 'norex.insights';
-  const off = () => { try { return localStorage.getItem(OFF) === 'off'; } catch { return false; } };
-  const paint = () => d.documentElement.classList.toggle('insights-off', off());
-  const toggle = () => { try { localStorage.setItem(OFF, off() ? 'on' : 'off'); } catch {} paint(); M()?.toast(off() ? 'Insights hidden (press I to bring them back)' : '✨ Insights on', { icon: '✨' }); };
-  paint();
+  // B1: the on/off switch lives in Motion & effects (NorexMotion 'insights'); motion.js sets html.insights-off. I still toggles it.
+  const off = () => !(M()?.on ? M().on('insights') : true);
+  const toggle = () => { if (!M()?.set) return; M().set('insights', off()); M().remember(); M().toast(off() ? 'Insights hidden (press I to bring them back)' : '✨ Insights on', { icon: '✨' }); };
   d.addEventListener('keydown', (e) => { if (e.key.toLowerCase() !== 'i' || e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.('input,textarea,[contenteditable]')) return; if ($$('[data-insight]').length) toggle(); });
-  addEventListener('norex:settings', (e) => { const box = e.detail; if (!box || !$$('[data-insight]').length) return;
-    const b = d.createElement('button'); b.type = 'button'; b.className = 'mx-opt'; b.setAttribute('role', 'switch'); b.setAttribute('aria-checked', !off()); b.style.marginTop = '10px';
-    b.innerHTML = '<span class="e">✨</span><span><b>Show insights</b><small>Short notes about the club, matches and players. Press I to toggle</small></span>';
-    b.onclick = () => { toggle(); b.setAttribute('aria-checked', !off()); }; box.appendChild(b); });
 
   function html(key, r) {
     const [ic, lab] = kind(key), member = !!A()?.token;

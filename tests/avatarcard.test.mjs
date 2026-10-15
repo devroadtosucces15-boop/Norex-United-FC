@@ -1,6 +1,7 @@
 // Avatar card backend (P11.5, Discord side only – the web card page is a follow-up, see the roadmap):
 // upload validation, AI background generation, R2 storage under the feed's key scheme, and re-upload (upsert).
 import { call, env, login } from './mock.mjs';
+import { plainText } from '../bot/ui.js';
 import { t, tt, done } from './lib.mjs';
 import { makeAvatarCard, myAvatarCard } from '../bot/avatarcard.js';
 import { serveMedia } from '../bot/media.js';
@@ -70,9 +71,9 @@ async function send(payload) {
 const slash = (id) => ({ type: 2, token: 'tok', member: { user: { id }, roles: [] }, data: { name: 'avatarcard', options: [] } });
 
 setFlags({ avatarCard: 'owner' });
-t('/avatarcard locked for a member while the flag is owner-only', /Not switched on/.test((await send(slash('500'))).d.data.content));
+t('/avatarcard locked for a member while the flag is owner-only', /Not switched on/.test(plainText((await send(slash('500'))).d.data)));
 setFlags({ avatarCard: 'members' });
-t('/avatarcard reachable for a member once the flag opens up (missing attachment → prompts for one, not locked)', /Attach an image/.test((await send(slash('500'))).d.data.content));
+t('/avatarcard reachable for a member once the flag opens up (missing attachment → prompts for one, not locked)', /Attach an image/.test(plainText((await send(slash('500'))).d.data)));
 
 globalThis.fetch = wrapped;
 done();

@@ -1,7 +1,9 @@
 /* NOREX widgets (rails, charts, tables, trophies). Every rule is scoped under .wx so it cannot leak into page styles. */
 .wx .rail{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:14px 8px 20px;scrollbar-width:thin;scrollbar-color:#efcf7a transparent;-webkit-overflow-scrolling:touch}
-.wx .cover{perspective:1100px;padding:30px 40vw 40px;gap:0}
-.wx .cover .ci{flex:0 0 190px;scroll-snap-align:center;display:grid;place-items:center;will-change:transform,opacity;transform-style:preserve-3d}
+/* card wheel (zn3): every card is its own flat layer with its own perspective – no shared 3D space, so neighbours never cut
+   through each other or flicker while the rail scrolls; the first and last card can still reach the middle */
+.wx .cover{padding:30px calc(50% - 95px) 40px;gap:0;scroll-padding-inline:0}
+.wx .cover .ci{flex:0 0 190px;scroll-snap-align:center;scroll-snap-stop:normal;display:grid;place-items:center;will-change:transform,opacity;transform-style:flat;backface-visibility:hidden;contain:layout}
 .wx .cover .ci .pc{--s:.9}
 .wx .film{gap:0;padding:20px 12px;background:#0c101a;border-radius:12px}
 .wx .fr{flex:0 0 150px;scroll-snap-align:start;background:linear-gradient(#202c46,#18223a);margin:0 6px;padding:26px 12px 22px;border-radius:6px;text-align:center;position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
@@ -166,8 +168,9 @@
 .wx .ic svg{width:34px;height:34px;transition:.4s}
 .wx .ic:hover{color:#efcf7a;border-color:#efcf7a;transform:translateY(-4px);box-shadow:0 0 20px rgba(239,207,122,.35)}
 .wx .ic:hover svg{transform:rotate(-8deg) scale(1.2);filter:drop-shadow(0 0 8px #efcf7a)}
-.wx .poster{position:relative;display:grid;place-items:center;padding:26px 10px;border-radius:16px;overflow:hidden;background:radial-gradient(circle at 50% 40%,rgba(239,207,122,.3),transparent 60%),rgba(0,0,0,.35)}
-.wx .rays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,rgba(239,207,122,.14) 0 8deg,transparent 8deg 20deg);animation:rot 40s linear infinite}
+/* zn6: no box – the glow and the turning rays fade out towards the edges instead of stopping at a frame */
+.wx .poster{position:relative;display:grid;place-items:center;padding:26px 10px;overflow:hidden;background:radial-gradient(closest-side at 50% 42%,rgba(239,207,122,.26),transparent)}
+.wx .rays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,rgba(239,207,122,.14) 0 8deg,transparent 8deg 20deg);animation:rot 40s linear infinite;-webkit-mask-image:radial-gradient(circle closest-side,#000 14%,transparent 47%);mask-image:radial-gradient(circle closest-side,#000 14%,transparent 47%)}
 @keyframes rot{to{transform:rotate(360deg)}}
 .wx .poster .pt{position:relative;text-align:center}
 .wx .poster .pt>span{display:block;font:700 12px Inter;letter-spacing:.3em;color:#efcf7a;margin-bottom:8px}
@@ -243,7 +246,8 @@
 .pnote{list-style:none;margin:18px 0 0;padding:0}.pnote li{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-top:1px solid rgba(255,255,255,.07);font:500 13px Inter}.pnote b{font:700 15px Oswald;color:#efcf7a}
 .wx .tbars{display:flex;align-items:flex-end;gap:6px;height:60px;margin-top:16px;padding:0 4px}.wx .tbars span{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:2px}.wx .tbars i{width:42%;border-radius:3px 3px 1px 1px;display:block}.wx .tbars .f{background:linear-gradient(#f4dc95,#b88a2f)}.wx .tbars .a{background:linear-gradient(#ff7d72,#8a2d26)}
 .wx .tcap{margin:6px 0 0;text-align:center;font:500 11px Inter;color:#8e9ab2;letter-spacing:.04em}.wx .tcap .gf{color:#e7c768}.wx .tcap .ga{color:#e5655b}
-.wx .medals{display:flex;flex-wrap:wrap;justify-content:space-around;gap:18px 14px}.wx .medals .md{flex:0 1 150px}
+/* zn5: even columns (the 0×0 gradient <svg> no longer takes a slot and shifts the last row) and room above the ribbons */
+.wx .medals{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));justify-items:center;gap:22px 14px;padding-top:12px}.wx .medals .md{width:100%;max-width:150px}.wx .medals>svg{position:absolute}
 
 /* ---- match reel ---- */
 .wx .reelwrap{display:grid;gap:14px}
@@ -433,3 +437,36 @@ html[data-motion=off] .wx .si{transform:none!important}
 @keyframes gdgrow{from{transform:scaleY(.04);opacity:.4}}
 .wx .stage3{height:270px}
 .wx .tierwhy,.tierwhy{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}.tierwhy span{font:600 11px Inter;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06);color:#aab4c9}.tierwhy b{color:#efcf7a;margin-left:4px}
+/* opponent crests in the form row, season reel and spotlight dots; the W/D/L colour stays as the ring */
+.wx .fo{position:relative;width:40px;height:40px;background:#0f1522!important;border:3px solid var(--rc,#efcf7a);box-shadow:0 0 14px var(--rg,rgba(239,207,122,.4))!important}
+.wx .fo.W{--rc:#22b35e;--rg:rgba(34,179,94,.55)}.wx .fo.L{--rc:#c8352c;--rg:rgba(200,53,44,.55)}.wx .fo.D{--rc:#c9993a;--rg:rgba(201,153,58,.5)}
+.wx .fo img{width:24px;height:24px;object-fit:contain}
+.wx .fo b{position:absolute;right:-6px;bottom:-6px;min-width:17px;height:17px;border-radius:9px;display:grid;place-items:center;font:700 10px Oswald;color:#fff;background:var(--rc);padding:0 3px}
+.wx .tl .pt{width:38px;height:38px;display:grid;place-items:center;background:#0f1522;border:3px solid #efcf7a;box-shadow:0 0 14px rgba(239,207,122,.5)}
+.wx .tl .dot.W .pt{background:#0f1522;border-color:#2ecb78;box-shadow:0 0 14px rgba(46,203,120,.55)}.wx .tl .dot.L .pt{background:#0f1522;border-color:#e0493f;box-shadow:0 0 14px rgba(224,73,63,.55)}.wx .tl .dot.D .pt{border-color:#d4a23c}
+.wx .tl .pt .ecrest{width:24px;height:24px}
+.wx .tl .dot:hover .pt,.wx .tl .dot.on .pt{transform:scale(1.25)}
+.wx .tl .dot:before{top:18px}
+.wx .sdot{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:#0f1522;border:2px solid var(--rc,#efcf7a);opacity:.6}
+.wx .sdot.W{--rc:#22b35e;background:#0f1522}.wx .sdot.D{--rc:#d4a23c;background:#0f1522}.wx .sdot.L{--rc:#d23a2f;background:#0f1522}
+.wx .sdot .ecrest{width:16px;height:16px}
+.wx .sdot.on{width:26px;border-radius:50%;opacity:1;transform:scale(1.25);box-shadow:0 0 12px var(--rc)}
+.wx .sdots{gap:9px}
+
+/* squad card stack: one stage, swipe = move, tap = flip. Only the dragged card is animated by script; the rest are CSS transitions. */
+.wx .stk{max-width:300px;margin:0 auto;outline:0}
+.wx .stk-stage{position:relative;height:392px;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.wx .sk{position:absolute;left:50%;top:0;width:220px;height:340px;margin-left:-110px;background:none;border-radius:0;animation:none;transition:transform .42s cubic-bezier(.2,.8,.2,1),opacity .3s;transform-origin:50% 100%;cursor:grab;will-change:transform}
+.wx .sk.far{visibility:hidden}
+/* zn4: .sk is also the loading-skeleton bar in style.css – without the reset above its shimmer box showed behind every stacked card */
+.wx .sk-in{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.1,.3,1)}
+.wx .sk.on .sk-in{transform:rotateY(180deg)}
+.wx .sk-ft,.wx .sk-bk{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
+.wx .sk-bk{transform:rotateY(180deg);background:linear-gradient(160deg,#efcf7a,#a77a22);color:#1a1405;border-radius:18px;padding:16px;align-content:center;gap:6px;text-align:center;box-shadow:0 0 30px rgba(239,207,122,.35)}
+.wx .sk-bk b{font:700 22px Oswald}.wx .sk-bk em{font:600 12px Inter;font-style:normal;opacity:.7}
+.wx .sk-bk i{font-style:normal;display:flex;justify-content:space-between;width:100%;font:600 12px Inter;border-top:1px solid rgba(0,0,0,.2);padding-top:5px}
+.wx .sk-bk u{text-decoration:none;font:700 18px Oswald}.wx .sk-bk .btn{margin-top:6px;min-height:44px}
+.wx .stk-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px}
+.wx .stk-bar button{min-width:44px;min-height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font:600 24px/1 Inter}
+.wx .stk-n{font:600 14px Oswald;letter-spacing:.1em;color:#c5cdde}
+@media (prefers-reduced-motion:reduce){.wx .sk,.wx .sk-in{transition:none}}

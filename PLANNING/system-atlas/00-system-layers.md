@@ -12,6 +12,7 @@ flowchart LR
   n5["scripts"]
   n6["tests"]
   n7["web"]
+  n1 --> n5
   n5 --> n1
   n6 --> n1
   n6 --> n5

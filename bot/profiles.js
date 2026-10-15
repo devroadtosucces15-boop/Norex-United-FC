@@ -26,7 +26,7 @@ const parse = (s, fb) => { try { return s ? JSON.parse(s) : fb; } catch { return
 export const profileOut = (r) => r && {
   bio: r.bio, positions: parse(r.positions, []), platform: r.platform, updated: r.updated,
   rushPositions: parse(r.rush_positions, []), tz: r.tz || '', playTimes: parse(r.play_times, null),
-  ids: parse(r.ids, {}), twitch: r.twitch || '', youtube: r.youtube || '', country: r.country || '', club: r.fav_club || '',
+  ids: parse(r.ids, {}), twitch: r.twitch || '', kick: r.kick || '', birthday: r.birthday || '', youtube: r.youtube || '', country: r.country || '', club: r.fav_club || '',
   tags: parse(r.tags, []), verified: parse(r.verified, {}), // P2.4 – { psn|xbox|steam|epic: { name, at } } from Discord
 };
 
@@ -60,6 +60,23 @@ function twitch(v) {
   if (!x) return '';
   if (!/^[A-Za-z0-9_]{3,25}$/.test(x)) throw new Error('Twitch: enter your channel name or twitch.tv link.');
   return x;
+}
+function kick(v) {
+  const x = clean(v, 120).replace(/^https?:\/\/(www\.)?kick\.com\//i, '').replace(/[/?#].*$/, '').replace(/^@/, '');
+  if (!x) return '';
+  if (!/^[A-Za-z0-9_]{3,25}$/.test(x)) throw new Error('Kick: enter your channel name or kick.com link.');
+  return x;
+}
+// Birthday as MM-DD (no year, nothing about age): "07-14", "7/14" and "14 July" style are not guessed – the form sends month and day.
+export function birthday(v) {
+  const x = clean(v, 5);
+  if (!x) return '';
+  const m = x.match(/^(\d{1,2})[-/](\d{1,2})$/);
+  if (!m) throw new Error('Birthday: month and day, like 07-14.');
+  const mo = +m[1], d = +m[2];
+  const days = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+  if (!days || d < 1 || d > days) throw new Error('Birthday: that date doesn’t exist.');
+  return `${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 function youtube(v) {
   let x = clean(v, 160);
@@ -98,7 +115,7 @@ function country(v) {
 
 // Saves the fields present in `body`, keeps the rest. Returns the new profile or { error }.
 export async function saveProfile(env, me, body) {
-  const cur = profileOut(await one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)) ?? { bio: '', positions: [], platform: '', rushPositions: [], tz: '', playTimes: null, ids: {}, twitch: '', youtube: '', country: '', club: '', tags: [] };
+  const cur = profileOut(await one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)) ?? { bio: '', positions: [], platform: '', rushPositions: [], tz: '', playTimes: null, ids: {}, twitch: '', youtube: '', kick: '', birthday: '', country: '', club: '', tags: [] };
   const has = (k) => Object.prototype.hasOwnProperty.call(body, k);
   const p = { ...cur };
   try {
@@ -111,19 +128,21 @@ export async function saveProfile(env, me, body) {
     if (has('ids')) p.ids = gameIds(body.ids);
     if (has('twitch')) p.twitch = twitch(body.twitch);
     if (has('youtube')) p.youtube = youtube(body.youtube);
+    if (has('kick')) p.kick = kick(body.kick);
+    if (has('birthday')) p.birthday = birthday(body.birthday);
     if (has('country')) p.country = country(body.country);
     if (has('club')) p.club = clean(body.club, 40);
     if (has('tags')) p.tags = tags(body.tags);
   } catch (e) { return { error: e.message }; }
   if (p.playTimes && !p.tz) return { error: 'Pick your time zone so others see your play times in theirs.' };
   p.updated = Date.now();
-  await env.DB.prepare(`INSERT INTO profiles (user_id, bio, positions, platform, updated, rush_positions, tz, play_times, ids, twitch, youtube, country, fav_club, tags)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  await env.DB.prepare(`INSERT INTO profiles (user_id, bio, positions, platform, updated, rush_positions, tz, play_times, ids, twitch, youtube, country, fav_club, tags, kick, birthday)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (user_id) DO UPDATE SET bio = excluded.bio, positions = excluded.positions, platform = excluded.platform, updated = excluded.updated,
       rush_positions = excluded.rush_positions, tz = excluded.tz, play_times = excluded.play_times, ids = excluded.ids, twitch = excluded.twitch,
-      youtube = excluded.youtube, country = excluded.country, fav_club = excluded.fav_club, tags = excluded.tags`)
+      youtube = excluded.youtube, country = excluded.country, fav_club = excluded.fav_club, tags = excluded.tags, kick = excluded.kick, birthday = excluded.birthday`)
     .bind(me.u, p.bio, JSON.stringify(p.positions), p.platform, p.updated, JSON.stringify(p.rushPositions), p.tz,
-      p.playTimes ? JSON.stringify(p.playTimes) : '', JSON.stringify(p.ids), p.twitch, p.youtube, p.country, p.club, JSON.stringify(p.tags ?? [])).run();
+      p.playTimes ? JSON.stringify(p.playTimes) : '', JSON.stringify(p.ids), p.twitch, p.youtube, p.country, p.club, JSON.stringify(p.tags ?? []), p.kick, p.birthday).run();
   return { profile: p };
 }
 

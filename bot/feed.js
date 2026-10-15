@@ -21,6 +21,7 @@ import { notify, notifyManagers, safely } from './notify.js';
 import { postEmbed } from './docs.js';
 import { mentionMap, mentionTags, notifyMentions, reactionsFor } from './social.js';
 import { attach, checkAttach, dropMedia, IMAGE_MAX, mediaFor, mediaRoute, PER_POST, postMediaKeys, UPLOADS_DAY, VIDEO_MAX } from './media.js';
+import { message, header, text, buttons } from './ui.js';
 
 export const TAGS = { chat: ['💬', 'Chat'], highlight: ['🎬', 'Highlight'], league: ['🏟️', 'League'], rush: ['⚡', 'Rush'] };
 export const EMOJI = ['⚽', '🔥', '👑', '👏', '😂', '😮', '🧤'];
@@ -268,13 +269,11 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     const r = await one(env, `${POST_SQL} WHERE p.id = ? AND p.removed = 0`, id);
     if (!r) return fail('Post not found.', 404);
     const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
-    const res = await postEmbed(env, body.channel, body.role, {
-      embeds: [{
-        title: `${TAGS[r.tag]?.[0] ?? '💬'} ${r.name ?? 'A member'} on the club feed`, url: `${site}feed.html#p${id}`, color: 0xc8352c,
-        description: excerpt(r.body || '(photo/clip)', 400),
-        footer: { text: 'NOREX UNITED · club feed' },
-      }],
-    });
+    const res = await postEmbed(env, body.channel, body.role, message({ blocks: [
+      header({ eyebrow: 'NOREX UNITED · Club feed', title: `${TAGS[r.tag]?.[0] ?? '💬'} ${r.name ?? 'A member'}`, size: 3 }),
+      text(excerpt(r.body || '(photo/clip)', 400)),
+      buttons([{ label: 'Open post', url: `${site}feed.html#p${id}` }]),
+    ] }));
     if (!res.ok) return fail(res.error, 400);
     await run(env, 'UPDATE posts SET discord_at = ? WHERE id = ?', Date.now(), id);
     await log(env, me, 'post-share', `#${id}`);

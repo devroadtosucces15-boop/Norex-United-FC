@@ -10,6 +10,8 @@
 // Data saved by the first (KV-only) version is copied into D1 once, on the first request after the switch.
 // Who may do what: bot/roles.js (can(user, action)).
 
+import { facesOf } from './faces.js';
+import { panelCounts } from './panel.js';
 import { getLive } from './live.js';
 import { gameChanges, gameRoute, latestGame } from './game.js';
 import { applyRoute, getContacts, recruitRoute } from './trials.js';
@@ -54,6 +56,10 @@ import { awardPoints, pointsRoute } from './points.js';
 import { myAvatarCard } from './avatarcard.js';
 import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
 import { healthRoute } from './health.js';
+import { jailCount, triviaPoints } from './fun.js';
+import { discoveriesRoute } from './discoveries.js';
+import { watchlistRoute } from './watchlist.js';
+import { memberLiveRoute } from './memberlive.js';
 
 const enc = new TextEncoder();
 const DAY = 86400;
@@ -551,8 +557,34 @@ export async function currentRole(env, me, request) {
 }
 
 // ---------- API ----------
+// Any /api route, called as `me` from inside the Worker – the Discord manager panel (bot/panel.js) decides claims, cards,
+// Rush results, requests and ideas through the exact same code (checks, logs, notifications) as the Squad Hub.
+export const apiAs = (p, method, body, me, env, loadSite) => route(p, method, body ?? {}, me, env, loadSite, new URL(`https://bot.invalid${p}`));
+// B4 – the site's motion choice (next/static/motion.js): `full` | `calm` | `custom:<effects that are off>`, saved per member in meta.
+const MOTION_FX = ['reveals', 'tilt', 'gyro', 'glow', 'parallax', 'insights', 'bursts', 'haptics'];
+export const cleanMotion = (v) => {
+  const s = String(v ?? '').trim();
+  if (s.length > 120) return null;
+  if (s === 'full' || s === 'calm') return s;
+  const m = /^custom:([a-z,]*)$/.exec(s);
+  if (!m) return null;
+  const off = m[1] ? m[1].split(',') : [];
+  return off.every((k) => MOTION_FX.includes(k)) && new Set(off).size === off.length ? s : null;
+};
+const motionOf = async (env, me) => (await one(env, 'SELECT value FROM meta WHERE key = ?', `motion:${me.u}`))?.value ?? undefined;
 async function route(p, method, body, me, env, loadSite, url) {
   if (!can(me, 'hub.use')) return fail('Members only.', 403);
+  if (p === '/api/me/prefs' && method === 'POST') { // quiet on purpose: no log entry, no site rebuild
+    const motion = cleanMotion(body.motion);
+    if (!motion) return fail('Pick full, calm or custom:<effects that are off>.');
+    await run(env, 'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value', `motion:${me.u}`, motion);
+    return json({ ok: true, prefs: { motion } });
+  }
+  if (p === '/api/faces' && method === 'GET') { // faces everywhere (BOT-SITE #7): Card Studio card → Discord picture → default, same order as the bot
+    const ids = String(url?.searchParams.get('ids') ?? '').split(',').map((x) => x.trim()).filter((x) => /^\d{1,25}$/.test(x)).slice(0, 100);
+    const faces = await facesOf(env, ids, { origin: url?.origin });
+    return json(Object.fromEntries(faces));
+  }
   if (p === '/api/me' && method === 'GET') {
     const [claim, profile] = await Promise.all([getClaim(env, me.u), one(env, 'SELECT * FROM profiles WHERE user_id = ?', me.u)]);
     // BE5 – when previewing as a lower role, `me.role` is already the preview role (see currentRole());
@@ -560,11 +592,16 @@ async function route(p, method, body, me, env, loadSite, url) {
     // and offer only the roles at or below it.
     const user = {
       id: me.u, name: me.n, avatar: me.a, admin: can(me, 'portal.view'), role: me.role, roleLabel: ROLE_LABEL[me.role], perms: permsFor(me.role), features: featuresFor(env, me),
+      prefs: { motion: await motionOf(env, me) },
       ...(me.realRole ? { realRole: me.realRole, realRoleLabel: ROLE_LABEL[me.realRole], viewAsOptions: ROLES.filter((r) => atLeast(me.realRole, r)) } : can(me, 'preview.viewAs') ? { viewAsOptions: ROLES.filter((r) => atLeast(me.role, r)) } : {}),
     };
     return json({ user, claim, profile: profileOut(profile) ?? null });
   }
 
+  if (p === '/api/manager/queue' && method === 'GET') { // what's waiting for a decision – the same counts as Discord's /panel (for the owner's floating button badge)
+    if (!can(me, 'portal.view')) return fail('Managers only.', 403);
+    return json({ ...(await panelCounts(env, me)), at: Date.now() });
+  }
   if (p === '/api/insights/ask' && method === 'POST') { // BE9 – follow-up question, answered only from the stored fact pack
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);
     return json(await statAskRoute(env, me, body));
@@ -625,8 +662,10 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (p === '/api/member' && method === 'GET') { // P2.1 – hover cards + member profile pages
     if (!flagOn(env, me, 'profiles')) return fail('Not available yet.', 404);
     if (!can(me, 'profiles.view')) return fail('Members only.', 403);
-    const card = await memberCard(env, me, String(url.searchParams.get('u') || me.u).slice(0, 24));
-    return card ? json(card) : fail('Member not found', 404);
+    const uid = String(url.searchParams.get('u') || me.u).slice(0, 24);
+    const card = await memberCard(env, me, uid);
+    if (!card) return fail('Member not found', 404);
+    return json(flagOn(env, me, 'fun') ? { ...card, fun: { jail: await jailCount(env, uid), trivia: await triviaPoints(env, uid), birthday: card.profile?.birthday ?? '' } } : card); // fun stats for the profile (bot/fun.js)
   }
 
   if (p === '/api/avatarcard' && method === 'GET') { // P11.5 – web half of the AI club card made by /avatarcard in Discord
@@ -725,6 +764,12 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (kno) return kno;
   const evt = await eventsRoute(p, method, body, me, env, log, loadSite, url); // P3.1 events · P3.2 RSVPs · P3.7 match night
   if (evt) return evt;
+  const mlr = await memberLiveRoute(p, method, me, env); // members' own streams (the club's is /api/live)
+  if (mlr) return mlr;
+  const wlr = await watchlistRoute(p, method, body, me, env, url); // watch list: videos by topic, useful
+  if (wlr) return wlr;
+  const dsc = await discoveriesRoute(p, method, body, me, env); // member tips a manager approved
+  if (dsc) return dsc;
   const lkr = await lockerRoute(p, method, me, env, loadSite); // BE2 Locker Room: next event + vote + unread + achievements, one call
   if (lkr) return lkr;
   const crd = await cardsRoute(p, method, body, me, env, log); // Card Studio: templates, premium unlocks
@@ -807,7 +852,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       const until = hours ? Date.now() + hours * 3600e3 : null;
       await run(env, 'UPDATE users SET muted_until = ? WHERE id = ?', until, uid);
       await log(env, me, until ? 'mute' : 'unmute', until ? `${u.name} · ${hours}h` : u.name);
-      if (until) await safely(notify(env, [uid], { type: 'moderation', icon: '🔇', title: 'You’ve been muted by the managers', body: `You can't post, comment or message until ${new Date(until).toLocaleString()}.`, link: 'members.html#me' }));
+      if (until) await safely(notify(env, [uid], { type: 'moderation', icon: '🔇', title: 'You’ve been muted by the managers', body: `You can't post, comment or message until ${new Date(until).toUTCString().slice(5, 22)} UTC.`, link: 'members.html#me' }));
       return json({ ok: true, mutedUntil: until ?? undefined });
     }
     if (p === '/api/admin/claims' && method === 'POST') {

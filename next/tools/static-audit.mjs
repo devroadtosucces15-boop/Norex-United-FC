@@ -25,7 +25,8 @@ export function audit(dir, { skip = /^(canvas|lookbook)\.html$/ } = {}) {
     const h = read(f); const body = h.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '');
     if (!/<html lang="/.test(h)) add('no lang', f);
     if (!/<title>[^<]{3,}/.test(h)) add('no title', f);
-    if (/user-scalable=no|maximum-scale=1(?![0-9])/.test(h)) add('pinch-zoom blocked', f);
+    // maximum-scale=1 is allowed (zn11, owner): it stops iOS zooming into fields, and Safari tabs still allow pinch-zoom with it
+    if (/user-scalable=(no|0)/.test(h)) add('pinch-zoom blocked', f);
     if (!/<main[ >]/.test(h)) add('no main landmark', f);
     if (!/class="skip"/.test(h)) add('no skip link', f);
     const h1 = (body.match(/<h1[ >]/g) || []).length + (body.match(/<h[23][^>]*aria-level="1"/g) || []).length; if (h1 !== 1) add(h1 ? 'several h1' : 'no h1', f);
@@ -38,7 +39,7 @@ export function audit(dir, { skip = /^(canvas|lookbook)\.html$/ } = {}) {
     const ids = [...body.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]); if (new Set(ids).size < ids.length) add('duplicate ids', f);
     const scripts = [...h.matchAll(/<script src="([^"]+)"([^>]*)>/g)];
     const size = (n) => (fs.existsSync(path.join(dir, n)) ? fs.statSync(path.join(dir, n)).size : 0);
-    rows.push({ f, html: Buffer.byteLength(h), htmlGz: zlib.gzipSync(h).length, scripts: scripts.length, jsBytes: scripts.reduce((n, m) => n + size(m[1]), 0), inline: [...h.matchAll(/<script>([\s\S]*?)<\/script>/g)].reduce((n, m) => n + m[1].length, 0), cssBytes: [...h.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].reduce((n, m) => n + size(m[1]), 0), crestBig: /<img[^>]* src="crest\.png"/.test(h) });
+    rows.push({ f, html: Buffer.byteLength(h), htmlGz: zlib.gzipSync(h).length, scripts: scripts.length, jsBytes: scripts.reduce((n, m) => n + size(m[1]), 0), inline: [...h.matchAll(/<script>([\s\S]*?)<\/script>/g)].reduce((n, m) => n + m[1].length, 0), cssBytes: [...h.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].reduce((n, m) => n + size(m[1]), 0), crestBig: [...h.matchAll(/<img([^>]*) src="crest\.png"([^>]*)>/g)].some((m) => { const a = m[1] + m[2], w = +((/\bwidth="(\d+)"/.exec(a) || /width:(\d+)px/.exec(a) || [])[1] || 0); return !w || w <= 48; }), /* the 180 KB original is for mid-size spots only; logos use crest-sm, hero crests crest-lg */ });
   }
   const sum = (k) => rows.reduce((n, r) => n + r[k], 0); const kb = (n) => Math.round(n / 1024);
   const worst = (k, n = 5) => [...rows].sort((a, b) => b[k] - a[k]).slice(0, n).map((r) => `${r.f} ${kb(r[k])}k`);

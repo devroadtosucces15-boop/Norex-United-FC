@@ -1,7 +1,7 @@
 // Social building blocks shared by the feed now and chats later (roadmap P6.4 + P6.5).
 //   P6.4 online presence – every logged-in request stamps users.seen_at (at most once a minute).
 //     GET  /api/presence                 members: who is online now (5 min) / earlier today (60 min), my "appear offline"
-//     POST /api/presence { hidden }      members: appear offline (you still see everyone else)
+//     (POST /api/presence { hidden } was removed – everyone's activity always shows)
 //   P6.5 mentions + reactions everywhere
 //     GET  /api/mentions?q=              members: people to @mention (name or Discord username)
 //     POST /api/react { kind, id, emoji } members: toggle a club reaction on a comment (chat messages next – P6.3)
@@ -30,18 +30,17 @@ export const touch = (env, me) => (env.DB && me?.u
   : Promise.resolve());
 
 // BE8 – the Hub's site-wide "online now" count reuses this instead of a second presence query.
-export const onlineCount = (env) => one(env, 'SELECT COUNT(*) AS n FROM users WHERE seen_at > ? AND presence_hidden = 0', Date.now() - ONLINE_MS).then((r) => r?.n ?? 0);
+export const onlineCount = (env) => one(env, 'SELECT COUNT(*) AS n FROM users WHERE seen_at > ?', Date.now() - ONLINE_MS).then((r) => r?.n ?? 0);
 
 const personOut = (r) => ({ id: r.id, n: r.name, a: opt(r.avatar), tag: opt(r.tag), at: r.seen_at });
 async function presence(env, me) {
   const now = Date.now();
-  const rows = await all(env, 'SELECT id, name, avatar, tag, seen_at, presence_hidden FROM users WHERE seen_at > ? ORDER BY seen_at DESC LIMIT 200', now - RECENT_MS);
-  const hidden = !!(await one(env, 'SELECT presence_hidden FROM users WHERE id = ?', me.u))?.presence_hidden;
-  const shown = rows.filter((r) => !r.presence_hidden);
+  const rows = await all(env, 'SELECT id, name, avatar, tag, seen_at FROM users WHERE seen_at > ? ORDER BY seen_at DESC LIMIT 200', now - RECENT_MS);
+  const shown = rows;
   return {
     online: shown.filter((r) => r.seen_at > now - ONLINE_MS).map(personOut),
     recent: shown.filter((r) => r.seen_at <= now - ONLINE_MS).slice(0, 40).map(personOut),
-    hidden, me: me.u, onlineMin: ONLINE_MS / 60e3, now,
+    me: me.u, onlineMin: ONLINE_MS / 60e3, now,
   };
 }
 
@@ -102,11 +101,8 @@ export async function socialRoute(p, method, body, me, env, log, url) {
   if (p === '/api/presence') {
     if (!flagOn(env, me, 'presence')) return fail('Not available yet.', 404);
     if (!can(me, 'presence.view')) return fail('Members only.', 403);
-    if (method === 'POST') {
-      const hidden = !!body.hidden;
-      await run(env, 'UPDATE users SET presence_hidden = ? WHERE id = ?', hidden ? 1 : 0, me.u);
-      await log(env, me, hidden ? 'presence-hide' : 'presence-show', '');
-    } else await touch(env, me);
+    if (method === 'POST') return fail('Everyone shows as online now.', 410); // D5 – "Appear offline" was removed
+    await touch(env, me);
     return json(await presence(env, me));
   }
   if (p === '/api/mentions' && method === 'GET') {

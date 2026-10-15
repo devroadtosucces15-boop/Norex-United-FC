@@ -1,5 +1,5 @@
 // Online presence (roadmap P6.4) – loaded by app.js on every page for logged-in members when the `presence` flag is on.
-// "🟢 N online" pill in the header → panel with who's on now / earlier this hour + "Appear offline". Member chips
+// "🟢 N online" pill in the header → panel with who's on now / earlier this hour . Member chips
 // (UI.member, data-hc) anywhere on the page get a green ring when that member is online, amber when seen this hour.
 // Polls GET /api/presence every 2 minutes while the tab is visible – the poll itself keeps you online.
 (() => {
@@ -28,12 +28,10 @@
   function paintPanel() {
     const d = P.d;
     if (!d) return;
-    panel.innerHTML = `<h4>🟢 Online now</h4>${d.online.length ? `<ul>${d.online.map((u) => row(u, u.id === d.me ? 'you' : 'now')).join('')}</ul>` : `<p class="muted small">${d.hidden ? 'You’re hidden – nobody else is on right now.' : 'Nobody else is on right now.'}</p>`}
-${d.recent.length ? `<h4>🕐 Earlier this hour</h4><ul>${d.recent.map((u) => row(u, since(u.at))).join('')}</ul>` : ''}
-<label class="pr-hide"><input type="checkbox" data-pr-hide${d.hidden ? ' checked' : ''}> 🙈 Appear offline <small class="muted">(you still see who’s on)</small></label>`;
-    btn.classList.toggle('off', d.hidden);
+    panel.innerHTML = `<h4>🟢 Online now</h4>${d.online.length ? `<ul>${d.online.map((u) => row(u, u.id === d.me ? 'you' : 'now')).join('')}</ul>` : `<p class="muted small">Nobody else is on right now.</p>`}
+${d.recent.length ? `<h4>🕐 Earlier this hour</h4><ul>${d.recent.map((u) => row(u, since(u.at))).join('')}</ul>` : ''}`;
     btn.innerHTML = `<i aria-hidden="true"></i>${d.online.length}<b>&nbsp;online</b>`;
-    btn.setAttribute('aria-label', `${d.online.length} members online${d.hidden ? ' – you appear offline' : ''}`);
+    btn.setAttribute('aria-label', `${d.online.length} members online`);
   }
   function apply(d) {
     P.d = d;
@@ -61,11 +59,6 @@ ${d.recent.length ? `<h4>🕐 Earlier this hour</h4><ul>${d.recent.map((u) => ro
     };
     document.addEventListener('click', (e) => { if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); } });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { panel.hidden = true; btn.focus(); } });
-    panel.addEventListener('change', async (e) => {
-      if (!e.target.matches('[data-pr-hide]')) return;
-      const hidden = e.target.checked;
-      try { apply(await ctx.call('/api/presence', { hidden })); ctx.toast(hidden ? 'You now appear offline 🙈' : 'You’re visible again 🟢'); } catch (er) { e.target.checked = !hidden; ctx.toast(er.message, true); }
-    });
     // Chips drawn later (feed, hub tabs, hover cards) get their dot too.
     new MutationObserver(later).observe(document.body, { childList: true, subtree: true });
     document.addEventListener('visibilitychange', () => { schedule(); if (!document.hidden) poll(); });

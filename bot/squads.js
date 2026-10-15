@@ -9,6 +9,7 @@ import '../web/squadgen.js';
 import { can, flagOn } from './roles.js';
 import { notify, safely } from './notify.js';
 import { postEmbed } from './docs.js';
+import { message, header, text, sep, footer, buttons } from './ui.js';
 
 const G = globalThis.NXSquadGen;
 const MAX_PREFS = 10, SIZE = 5;
@@ -86,11 +87,12 @@ async function save(body, me, env, log) {
     out.notified = told;
     if (body.channel && can(me, 'announce.discord')) {
       const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
-      out.discord = await postEmbed(env, body.channel, body.role, { embeds: [{
-        title: `🤝 ${title}`.slice(0, 250), url: `${site}members.html#squads`, color: RED,
-        fields: data.squads.map((s, i) => ({ name: `Squad ${i + 1} · chemistry ${s.chemistry}/100`, value: s.ids.map((x) => `\`${String(s.roles[x] === 'FLEX' ? 'FLX' : s.roles[x]).padEnd(3)}\` ${cands.get(x).n}`).join('\n'), inline: true })).slice(0, 24),
-        footer: { text: `${data.bench.length ? `Bench: ${data.bench.map((x) => cands.get(x).n).join(', ')} · ` : ''}NOREX UNITED · Rush squads` },
-      }] });
+      out.discord = await postEmbed(env, body.channel, body.role, message({ blocks: [
+        header({ eyebrow: 'NOREX UNITED · Rush squads', title: `🤝 ${title}`.slice(0, 250) }),
+        ...data.squads.slice(0, 8).flatMap((s, i) => [i ? sep() : null, text(`**Squad ${i + 1}** · chemistry ${s.chemistry}/100\n${s.ids.map((x) => `\`${String(s.roles[x] === 'FLEX' ? 'FLX' : s.roles[x]).padEnd(3)}\` ${cands.get(x).n}`).join('\n')}`)]),
+        footer(data.bench.length ? `Bench: ${data.bench.map((x) => cands.get(x).n).join(', ')}` : ''),
+        buttons([{ label: 'Squads', url: `${site}members.html#squads` }]),
+      ] }));
     }
   }
   return json({ ...out, ...(await state(env, me)) });

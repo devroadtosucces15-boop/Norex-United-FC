@@ -24,6 +24,8 @@ import { notify, notifyMembers, safely } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
+import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy, cards, RESULT_ICON, bannerUrl } from './ui.js';
+import { facesOf } from './faces.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
 import { recommendRoute } from './lineuprec.js';
@@ -203,28 +205,44 @@ function readEvent(body, existing) {
 // buttons; eventButton then checks who may press them).
 const rsvpButtons = (env) => (flags(env).discordRsvp ?? 'off') !== 'off';
 // Discord message for an event: embed with a live timestamp, answers so far, positions still missing + ✅ ❔ ❌ buttons (P3.3).
-export function eventMessage(env, e, rsvps = [], heading = '') {
+// The match-night post (design system, bot/ui.js) – shared by /schedule, /nextevent, /availability, the post a manager
+// sends from the Squad Hub, its live refresh and the 24 h / 2 h reminders. opts: ping (line above the panel), mentions,
+// who (list everyone's answer, for /availability).
+export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, mentions, who = false, faces = null } = {}) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), unix = Math.floor(e.start / 1000);
   const needs = typeof e.needs === 'string' ? parse(e.needs, {}) : e.needs ?? {};
-  const yes = rsvps.filter((r) => r.status === 'yes'), n = (st) => rsvps.filter((r) => r.status === st).length;
+  const yes = rsvps.filter((r) => r.status === 'yes'), names = (st) => rsvps.filter((r) => r.status === st).map((r) => r.name);
+  const posOf = (r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] ?? '';
   const missing = Object.entries(needs).filter(([k]) => k !== 'players').map(([k, v]) => [k, v - yes.filter((r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] === k).length]).filter(([, left]) => left > 0);
   const short = needs.players && yes.length < needs.players ? needs.players - yes.length : 0;
-  const done = e.status === 'cancelled' || e.start + e.duration * MIN < Date.now();
-  return {
-    embeds: [{
-      title: `${EVENT_TYPES[e.type][0]} ${e.status === 'cancelled' ? '🚫 Cancelled · ' : ''}${heading}${label(e)}`.slice(0, 250), url: `${site}members.html#schedule-${e.id ?? ''}`, color: e.status === 'cancelled' ? 0x555555 : RED,
-      description: [`🗓️ <t:${unix}:F> · <t:${unix}:R>`, `⏱️ ${e.duration >= 60 ? `${Math.floor(e.duration / 60)} h${e.duration % 60 ? ` ${e.duration % 60} min` : ''}` : `${e.duration} min`}`, e.notes && `📝 ${e.notes}`].filter(Boolean).join('\n').slice(0, 3000),
-      fields: [
-        { name: 'Answers', value: `✅ ${n('yes')} · ❔ ${n('maybe')} · ❌ ${n('no')}${yes.length ? `\n${yes.slice(0, 20).map((r) => r.name).join(', ')}${yes.length > 20 ? ' …' : ''}` : ''}`.slice(0, 1000) },
-        ...(missing.length || short ? [{ name: '🧩 Still needed', value: [short && `${short} more player${short > 1 ? 's' : ''}`, ...missing.map(([k, left]) => `${left} ${k}`)].filter(Boolean).join(' · ') }] : []),
-      ],
-      footer: { text: done ? 'NOREX UNITED · this event is closed' : 'NOREX UNITED · tap a button to answer (only you see the confirmation)' },
-    }],
-    components: [{ type: 1, components: [
-      ...(done || !rsvpButtons(env) ? [] : [['yes', '✅', 'I’m in', 3], ['maybe', '❔', 'Maybe', 2], ['no', '❌', 'Can’t make it', 4]].map(([st, emoji, lbl, style]) => ({ type: 2, style, label: lbl, emoji: { name: emoji }, custom_id: `norex:ev:${e.id}:${st}` }))),
-      { type: 2, style: 5, label: 'Squad Hub', url: `${site}members.html#schedule` },
-    ] }],
-  };
+  const cancelled = e.status === 'cancelled', done = cancelled || e.start + e.duration * MIN < Date.now();
+  const length = e.duration >= 60 ? `${Math.floor(e.duration / 60)} h${e.duration % 60 ? ` ${e.duration % 60} min` : ''}` : `${e.duration} min`;
+  const list = (arr) => (arr.length ? `${arr.slice(0, 25).join(', ')}${arr.length > 25 ? ' …' : ''}` : '–');
+  const still = [short && `${short} more player${short > 1 ? 's' : ''}`, ...missing.map(([k, left]) => `${left} ${k}`)].filter(Boolean).join(' · ');
+  return message({ ping, mentions, accent: cancelled ? 'steel' : 'red', blocks: [
+    cancelled ? null : cards(bannerUrl(env, 'matchnight')),
+    header({ eyebrow: `NOREX UNITED · ${EVENT_TYPES[e.type][1] ?? 'Match night'}`, title: `${EVENT_TYPES[e.type][0]} ${cancelled ? '🚫 Cancelled · ' : ''}${heading}${label(e)}`.slice(0, 200), sub: `<t:${unix}:F> · <t:${unix}:R> · ${length}` }),
+    e.notes ? text(`📝 ${String(e.notes).slice(0, 1500)}`) : null,
+    sep(),
+    facts([['Answers', `✅ ${yes.length} · ❔ ${names('maybe').length} · ❌ ${names('no').length}`]]),
+    // who's in: one row each with their face on the right (card if shipped, else Discord picture – bot/faces.js)
+    faces ? yes.slice(0, FACE_ROWS).map((r) => side(`✅ **${r.name}**${posOf(r) ? ` · ${posOf(r)}` : ''}`, thumb(faces.get(String(r.user_id))))) : null,
+    faces && yes.length > FACE_ROWS ? text(`+ ${list(names('yes').slice(FACE_ROWS))}`) : !faces && yes.length ? facts([['In', list(names('yes'))]]) : null,
+    who ? facts([[`❔ Maybe (${names('maybe').length})`, list(names('maybe'))], [`❌ Out (${names('no').length})`, list(names('no'))]]) : null,
+    still ? facts([['🧩 Still needed', still]]) : null,
+    footer(done ? 'This event is closed' : 'Tap a button to answer · only you see the confirmation'),
+    buttons([
+      ...(done || !rsvpButtons(env) ? [] : [['yes', '✅', 'I’m in', 'ok'], ['maybe', '❔', 'Maybe', 'grey'], ['no', '❌', 'Can’t make it', 'no']].map(([st, emoji, lbl, style]) => ({ label: lbl, emoji, style, id: `norex:ev:${e.id}:${st}` }))),
+      { label: 'Squad Hub', url: `${site}members.html#schedule-${e.id ?? ''}` },
+    ]),
+  ] });
+}
+// Six rows of faces keeps the post under Discord's 40-component limit with room for the buttons and /schedule's 2nd panel.
+const FACE_ROWS = 6;
+// eventMessage plus everyone's face – what every caller uses unless it's building a post with no answers yet.
+export async function eventPost(env, e, rsvps = [], heading = '', opts = {}) {
+  const yes = rsvps.filter((r) => r.status === 'yes').slice(0, FACE_ROWS).map((r) => r.user_id);
+  return eventMessage(env, e, rsvps, heading, { ...opts, faces: await facesOf(env, yes) });
 }
 const rsvpRows = (env, id) => all(env, 'SELECT r.status, r.name, r.user_id, p.positions, p.rush_positions FROM event_rsvps r LEFT JOIN profiles p ON p.user_id = r.user_id WHERE r.event_id = ? ORDER BY r.at', id);
 // Keeps the Discord post's counts in step with the site. Never throws.
@@ -232,10 +250,13 @@ export async function refreshEventPost(env, id) {
   try {
     const e = await one(env, 'SELECT * FROM events WHERE id = ?', id);
     if (!e?.discord_msg || !e.discord_channel || !env.DISCORD_BOT_TOKEN) return;
-    const msg = eventMessage(env, e, await rsvpRows(env, id), e.series ? 'Weekly · ' : '');
-    await fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages/${e.discord_msg}`, {
-      method: 'PATCH', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ embeds: msg.embeds, components: msg.components }),
+    const msg = await eventPost(env, e, await rsvpRows(env, id), e.series ? 'Weekly · ' : '');
+    const patch = (body) => fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages/${e.discord_msg}`, {
+      method: 'PATCH', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
+    // posts made before the design system can't always switch layout → keep them up to date in the old embed style
+    const r = await patch({ components: msg.components, flags: msg.flags });
+    if (!r.ok) await patch(toLegacy(msg));
   } catch (err) { console.log('event post refresh failed', err.message); }
 }
 // People to tell about a change: everyone who said yes or maybe.
@@ -373,22 +394,19 @@ export async function sessionReport(env, id, loadSite) {
 }
 function reportEmbed(env, rep, origin) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), e = rep.event, t = rep.team;
-  const icon = { W: '🟩', D: '🟨', L: '🟥' };
-  return {
-    embeds: [{
-      title: `📋 Session report · ${label(e)} · Grade ${t.grade ?? '–'}`.slice(0, 250), url: `${site}members.html#schedule`, color: RED, timestamp: new Date(e.start).toISOString(),
-      ...(e.reportPoster && origin ? { image: { url: `${origin}/media/${e.reportPoster}` } } : {}), // BE11 – client-rendered poster, if uploaded
-      description: [
-        t.games ? `**${t.w}W ${t.d}D ${t.l}L** · ${t.gf}–${t.ga}` : 'No results logged for this night yet.',
-        rep.results.map((r) => `${icon[r.res]} ${r.mode === 'rush' ? '⚡ ' : ''}**${r.gf}–${r.ga}** vs ${r.opp}`).join('\n'),
-        rep.mvp ? `⭐ Player of the night: **${rep.mvp.n}** (${rep.mvp.avg} avg${rep.mvp.g ? ` · ${rep.mvp.g} G` : ''}${rep.mvp.a ? ` · ${rep.mvp.a} A` : ''})` : '',
-        rep.players.filter((p) => p.grade).slice(0, 10).map((p) => `\`${p.grade.padEnd(2)}\` ${p.n} · ${p.avg}${p.trial ? ` · 🧪 tried ${p.trial.pos}${p.trial.diff != null ? ` (${p.trial.diff >= 0 ? '+' : ''}${p.trial.diff} vs usual)` : ''}` : ''}`).join('\n'),
-        `👥 ${rep.attendance.came} checked in · ${rep.attendance.saidYes} said yes`,
-      ].filter(Boolean).join('\n\n').slice(0, 3900),
-      footer: { text: 'NOREX UNITED · match night' },
-    }],
-    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Full report', url: `${site}members.html#schedule` }] }],
-  };
+  const icon = RESULT_ICON;
+  const mvp = rep.mvp ? `⭐ Player of the night: **${rep.mvp.n}** (${rep.mvp.avg} avg${rep.mvp.g ? ` · ${rep.mvp.g} G` : ''}${rep.mvp.a ? ` · ${rep.mvp.a} A` : ''})` : '';
+  const graded = rep.players.filter((p) => p.grade).slice(0, 10).map((p) => `\`${p.grade.padEnd(2)}\` ${p.n} · ${p.avg}${p.trial ? ` · 🧪 tried ${p.trial.pos}${p.trial.diff != null ? ` (${p.trial.diff >= 0 ? '+' : ''}${p.trial.diff} vs usual)` : ''}` : ''}`).join('\n');
+  return message({ accent: t.games ? (t.w > t.l ? 'win' : t.w < t.l ? 'loss' : 'gold') : 'red', blocks: [
+    header({ eyebrow: 'NOREX UNITED · Match night', title: `📋 Session report · Grade ${t.grade ?? '–'}`, sub: `${label(e)} · <t:${Math.floor(e.start / 1000)}:f>` }),
+    e.reportPoster && origin ? cards(`${origin}/media/${e.reportPoster}`) : null, // BE11 – client-rendered poster, if uploaded
+    text(t.games ? `**${t.w}W ${t.d}D ${t.l}L** · ${t.gf}–${t.ga}` : 'No results logged for this night yet.'),
+    rep.results.length ? text(rep.results.map((r) => `${icon[r.res]} ${r.mode === 'rush' ? '⚡ ' : ''}**${r.gf}–${r.ga}** vs ${r.opp}`).join('\n')) : null,
+    mvp ? sep() : null, text(mvp), text(graded),
+    sep(),
+    footer(`👥 ${rep.attendance.came} checked in · ${rep.attendance.saidYes} said yes`),
+    buttons([{ label: 'Full report', url: `${site}members.html#schedule` }]),
+  ] });
 }
 
 async function nightRoute(p, method, body, me, env, log, loadSite, url) {
@@ -455,7 +473,7 @@ export async function reportPosterRoute(request, me, env, url) {
 
 // ---------- P3.4 lineup builder ----------
 // Slots per formation: [slot, x %, y %] (y = 0 at the opponent's goal). Slot keys are unique; POS_OF gives the plain position.
-export const FORMATIONS = {
+const HAND = {
   '4-3-3': [['GK', 50, 90], ['LB', 14, 70], ['LCB', 37, 75], ['RCB', 63, 75], ['RB', 86, 70], ['LCM', 28, 50], ['CDM', 50, 58], ['RCM', 72, 50], ['LW', 17, 24], ['ST', 50, 15], ['RW', 83, 24]],
   '4-4-2': [['GK', 50, 90], ['LB', 14, 70], ['LCB', 37, 75], ['RCB', 63, 75], ['RB', 86, 70], ['LM', 14, 44], ['LCM', 38, 50], ['RCM', 62, 50], ['RM', 86, 44], ['LS', 38, 18], ['RS', 62, 18]],
   '4-2-3-1': [['GK', 50, 90], ['LB', 14, 70], ['LCB', 37, 75], ['RCB', 63, 75], ['RB', 86, 70], ['LDM', 38, 57], ['RDM', 62, 57], ['LAM', 20, 34], ['CAM', 50, 37], ['RAM', 80, 34], ['ST', 50, 14]],
@@ -463,7 +481,54 @@ export const FORMATIONS = {
   '3-5-2': [['GK', 50, 90], ['LCB', 27, 74], ['CB', 50, 77], ['RCB', 73, 74], ['LWB', 11, 50], ['LCM', 34, 50], ['CDM', 50, 58], ['RCM', 66, 50], ['RWB', 89, 50], ['LS', 38, 17], ['RS', 62, 17]],
   '5-3-2': [['GK', 50, 90], ['LWB', 10, 64], ['LCB', 30, 74], ['CB', 50, 77], ['RCB', 70, 74], ['RWB', 90, 64], ['LCM', 30, 48], ['CM', 50, 52], ['RCM', 70, 48], ['LS', 38, 18], ['RS', 62, 18]],
 };
-export const POS_OF = (slot) => ({ LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM', LDM: 'CDM', RDM: 'CDM', LAM: 'CAM', RAM: 'CAM', LS: 'ST', RS: 'ST' })[slot] ?? slot;
+// zn10: every FC 27 tactic-builder shape (29, same list as next/data/formations.json), back line first, rows split by ' / '.
+// The six hand-placed shapes above keep their slots so lineups already saved for them still load.
+const SHAPES = {
+  '3-1-4-2': 'LCB CB RCB / CDM / LM LCM RCM RM / LS RS',
+  '3-4-1-2': 'LCB CB RCB / LM LCM RCM RM / CAM / LS RS',
+  '3-4-2-1': 'LCB CB RCB / LM LCM RCM RM / LF RF / ST',
+  '3-5-2': 'LCB CB RCB / LM LDM RDM RM / CAM / LS RS',
+  '3-4-3': 'LCB CB RCB / LM LCM RCM RM / LW ST RW',
+  '4-1-2-1-2': 'LB LCB RCB RB / CDM / LCM RCM / CAM / LS RS',
+  '4-1-2-1-2 (2)': 'LB LCB RCB RB / CDM / LM RM / CAM / LS RS',
+  '4-1-3-2': 'LB LCB RCB RB / CDM / LM CM RM / LS RS',
+  '4-1-4-1': 'LB LCB RCB RB / CDM / LM LCM RCM RM / ST',
+  '4-2-1-3': 'LB LCB RCB RB / LDM RDM / CAM / LW ST RW',
+  '4-2-2-2': 'LB LCB RCB RB / LDM RDM / LAM RAM / LS RS',
+  '4-2-3-1': 'LB LCB RCB RB / LDM RDM / LAM CAM RAM / ST',
+  '4-2-3-1 (2)': 'LB LCB RCB RB / LDM RDM / LM CAM RM / ST',
+  '4-2-4': 'LB LCB RCB RB / LCM RCM / LW LS RS RW',
+  '4-3-1-2': 'LB LCB RCB RB / LCM CM RCM / CAM / LS RS',
+  '4-3-2-1': 'LB LCB RCB RB / LCM CM RCM / LF RF / ST',
+  '4-3-3': 'LB LCB RCB RB / LCM CM RCM / LW ST RW',
+  '4-3-3 (2)': 'LB LCB RCB RB / LCM CDM RCM / LW ST RW',
+  '4-3-3 (3)': 'LB LCB RCB RB / LDM CM RCM / LW ST RW',
+  '4-3-3 (4)': 'LB LCB RCB RB / LCM CAM RCM / LW ST RW',
+  '4-4-1-1 (2)': 'LB LCB RCB RB / LM LCM RCM RM / CF / ST',
+  '4-4-2': 'LB LCB RCB RB / LM LCM RCM RM / LS RS',
+  '4-4-2 (2)': 'LB LCB RCB RB / LM LDM RDM RM / LS RS',
+  '4-5-1': 'LB LCB RCB RB / LM LCM CM RCM RM / ST',
+  '4-5-1 (2)': 'LB LCB RCB RB / LM LDM CAM RDM RM / ST',
+  '5-2-1-2': 'LWB LCB CB RCB RWB / LCM RCM / CAM / LS RS',
+  '5-2-3': 'LWB LCB CB RCB RWB / LCM RCM / LW ST RW',
+  '5-3-2': 'LWB LCB CB RCB RWB / LCM CM RCM / LS RS',
+  '5-4-1': 'LWB LCB CB RCB RWB / LM LCM RCM RM / ST',
+};
+const WIDE = new Set(['LB', 'RB', 'LWB', 'RWB', 'LM', 'RM', 'LW', 'RW']);
+const place = (spec) => {
+  const rows = spec.split(' / ').map((r) => r.split(' ')), out = [['GK', 50, 90]];
+  rows.forEach((row, i) => {
+    const y = Math.round(75 - (i * 59) / (rows.length - 1)), step = row.length >= 5 ? 19 : row.length === 4 ? 24 : row.length === 3 ? 26 : 24;
+    row.forEach((slot, j) => {
+      let x = Math.round(50 + (j - (row.length - 1) / 2) * step);
+      if (WIDE.has(slot) && row.length <= 3) x = slot[0] === 'L' ? 14 : 86;
+      out.push([slot, x, WIDE.has(slot) && i < rows.length - 1 ? y - 4 : y]);
+    });
+  });
+  return out;
+};
+export const FORMATIONS = Object.fromEntries(Object.keys({ ...SHAPES, ...HAND }).sort().map((k) => [k, HAND[k] ?? place(SHAPES[k])]));
+export const POS_OF = (slot) => ({ LCB: 'CB', RCB: 'CB', LCM: 'CM', RCM: 'CM', LDM: 'CDM', RDM: 'CDM', LAM: 'CAM', RAM: 'CAM', LS: 'ST', RS: 'ST', LF: 'CF', RF: 'CF' })[slot] ?? slot;
 // { lineup, formation } from a request – formation slots, or plain positions for a quick list (formation = null).
 function readLineup(body) {
   const formation = body.formation ? String(body.formation) : null;
@@ -481,11 +546,12 @@ function readLineup(body) {
 function lineupEmbed(env, e, lineup, names) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), order = (FORMATIONS[e.formation] ?? []).map((x) => x[0]);
   const rows = Object.entries(lineup).sort((a, b) => order.indexOf(a[1]) - order.indexOf(b[1]));
-  return { embeds: [{
-    title: `🧩 Lineup · ${label(e)}${e.formation ? ` · ${e.formation}` : ''}`.slice(0, 250), url: `${site}members.html#schedule-${e.id}`, color: RED,
-    description: `🗓️ <t:${Math.floor(e.start / 1000)}:F> · <t:${Math.floor(e.start / 1000)}:R>\n\n${rows.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(4)}\` ${names.get(uid) ?? 'Member'}`).join('\n')}`.slice(0, 3900),
-    footer: { text: 'NOREX UNITED · Play Style per position: playstyle.html' },
-  }] };
+  return message({ blocks: [
+    header({ eyebrow: 'NOREX UNITED · Match night', title: `🧩 Lineup${e.formation ? ` · ${e.formation}` : ''}`, sub: `${label(e)} · <t:${Math.floor(e.start / 1000)}:F> · <t:${Math.floor(e.start / 1000)}:R>` }),
+    text(rows.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(4)}\` ${names.get(uid) ?? 'Member'}`).join('\n')),
+    footer('Play Style per position: playstyle.html'),
+    buttons([{ label: 'Schedule', url: `${site}members.html#schedule-${e.id}` }]),
+  ] });
 }
 async function lineupRoute(p, method, body, me, env, log) {
   if (p === '/api/events/templates') {
@@ -573,11 +639,35 @@ async function nudgeRoute(body, me, env, log) {
 // T-24h and T-2h: a reminder in the event's Discord channel ("7 ✅ – need a GK", with the answer buttons) and a nudge for
 // members who haven't answered yet – bell + DM (remind = dm) or an @mention in that channel (remind = mention).
 // Events scheduled less than 2 h ahead only get the T-2h one. Each fires once (remind24_at / remind2_at).
+// 30 minutes before: everyone who said ✅ gets the site alert + Discord DM (their "Events" alert setting, DM + site by default) and is
+// tagged by name in the event's channel post. Once per event (meta `remind30:<id>`); owner/manager-only while `discordRsvp` is.
+export async function thirtyMinutes(env, now, everyone) {
+  const rows = await all(env, "SELECT * FROM events WHERE status = 'scheduled' AND start > ? AND start <= ? ORDER BY start LIMIT 5", now, now + 30 * 60e3);
+  let sent = 0;
+  for (const e of rows) {
+    const key = `remind30:${e.id}`;
+    const r = await run(env, 'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING', key, String(now));
+    if (!r.meta?.changes) continue;
+    const yes = (await rsvpRows(env, e.id)).filter((x) => x.status === 'yes');
+    if (!yes.length) continue;
+    const ids = yes.map((x) => x.user_id);
+    await safely(notify(env, ids, { type: 'event', icon: '⏰', title: `Starting in 30 minutes · ${label(e)}`, body: 'You said you are in – get ready.', link: `members.html#schedule-${e.id}`, ref: `event30:${e.id}` }));
+    if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
+      const tags = ids.slice(0, 50);
+      const msg = await eventPost(env, e, await rsvpRows(env, e.id), '⏰ ', { ping: `**⏰ Starting in 30 minutes · ${label(e)}**\n${tags.map((id) => `<@${id}>`).join(' ')}`, mentions: { users: tags } });
+      await safely(fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages`, { method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(msg) }));
+    }
+    sent++;
+  }
+  return sent;
+}
+
 export async function eventReminders(env) {
   if (!env.DB || !rsvpButtons(env)) return { sent: 0 };
   const settings = await getBotSettings(env); // P7.5 – "which auto-posts are on"
   const everyone = flagOn(env, { role: 'member' }, 'discordRsvp') && settings.autoPosts.reminders; // owner/managers-only while testing: no channel post
   const now = Date.now();
+  await thirtyMinutes(env, now, everyone); // default for everyone who said yes: site + DM + a tag in the event's channel
   const due = await all(env, `SELECT * FROM events WHERE status = 'scheduled' AND start > ? AND (
     (remind24_at IS NULL AND start <= ? AND start > ?) OR (remind2_at IS NULL AND start <= ?)) ORDER BY start LIMIT 10`, now, now + 24 * HOUR, now + 2 * HOUR, now + 2 * HOUR);
   let sent = 0;
@@ -590,11 +680,12 @@ export async function eventReminders(env) {
     const yes = rsvps.filter((r) => r.status === 'yes').length;
     const head = `${soon ? '⏰ Starting soon' : '📅 Tomorrow'} · ${label(e)}`;
     if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
-      const msg = eventMessage(env, e, rsvps, soon ? '⏰ ' : '📅 ');
       const pings = e.remind === 'mention' ? quiet.slice(0, 50) : [];
+      const msg = await eventPost(env, e, rsvps, soon ? '⏰ ' : '📅 ', {
+        ping: `**${head}** – ${yes} ✅ so far${pings.length ? `\nNot answered yet: ${pings.map((id) => `<@${id}>`).join(' ')}` : ''}`, mentions: { users: pings },
+      });
       await safely(fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages`, {
-        method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...msg, content: `**${head}** – ${yes} ✅ so far${pings.length ? `\nNot answered yet: ${pings.map((id) => `<@${id}>`).join(' ')}` : ''}`, allowed_mentions: { users: pings } }),
+        method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(msg),
       }));
     }
     if (e.remind === 'dm' && quiet.length) await safely(notify(env, quiet, { type: 'event', icon: soon ? '⏰' : '📅', title: `${head} – can you make it?`, body: `${yes} said yes so far. Answer ✅ ❔ ❌ in the Squad Hub${e.discord_channel ? ' or on the Discord post' : ''}.`, link: `members.html#schedule-${e.id}` }));

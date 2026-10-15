@@ -15,24 +15,16 @@
   // ---------- club docs ----------
   const AREAS = [['announce', '📣', 'Announcements', 'News from the managers, newest first.'], ['requirements', '✅', 'Requirements', 'What we expect from everyone in the squad.'], ['rules', '📜', 'Rules', 'The club rules. Members acknowledge each new version.'], ['faq', '❓', 'FAQ', 'Questions new and old members ask.'], ['glossary', '📖', 'Glossary', 'Game terms and the numbers on this site, explained.']];
   let D = null;
-  const ackBar = (R) => !R || !R.version ? '' : R.acked
-    ? `<div class="hb-ack ok"><span class="hb-tick">✓</span><div><b>You have acknowledged the rules</b><small class="muted">Version ${R.version}${R.ackedAt ? ` · ${day(R.ackedAt)}` : ''}</small></div></div>`
-    : `<div class="hb-ack"><span>📜</span><div><b>The club rules changed (version ${R.version})</b><small class="muted">Read them below, then confirm. Managers can see who has.</small></div><button type="button" class="btn gold" data-hback>✍️ I have read the rules</button></div>`;
   const item = (x) => `<article class="hb-item${x.pinned ? ' pin' : ''}" id="doc-${x.id}"><h4>${x.pinned ? '📌 ' : ''}${esc(x.title)}</h4><div class="md">${md(x.body)}</div><small class="muted">${esc(x.editedBy || x.by || '')}${x.editedAt || x.at ? ` · ${day(x.editedAt || x.at)}` : ''}${x.version > 1 ? ` · v${x.version}` : ''}</small></article>`;
   const docsHtml = () => {
     const by = Object.fromEntries(AREAS.map(([k]) => [k, (D.items || []).filter((x) => x.area === k)]));
-    return ackBar(D.rules) + `<div class="hb-accs">${AREAS.map(([k, ic, l, sub], i) => `<details class="hb-acc" id="hb-${k}"${(k === 'rules' && D.rules?.version && !D.rules.acked) || (i === 0 && by[k].length) ? ' open' : ''}><summary><span class="hb-ic">${ic}</span><span><b>${l}</b><small class="muted">${sub}</small></span><span class="pill">${by[k].length}</span></summary><div class="hb-body">${by[k].length ? by[k].map(item).join('') : '<p class="muted small">Nothing written here yet.</p>'}</div></details>`).join('')}</div>`;
+    return `<div class="hb-accs">${AREAS.map(([k, ic, l, sub], i) => `<details class="hb-acc" id="hb-${k}"${(i === 0 && by[k].length) ? ' open' : ''}><summary><span class="hb-ic">${ic}</span><span><b>${l}</b><small class="muted">${sub}</small></span><span class="pill">${by[k].length}</span></summary><div class="hb-body">${by[k].length ? by[k].map(item).join('') : '<p class="muted small">Nothing written here yet.</p>'}</div></details>`).join('')}</div>`;
   };
-  const loadDocs = () => { M?.skeleton(docsEl, 5); A.call('/api/docs').then((r) => { D = r; put(docsEl, docsHtml(), openHash); }).catch((e) => { docsEl.removeAttribute('aria-busy'); docsEl.innerHTML = failBox('the club docs', e); M?.toast(e.message || 'Could not load the docs', { kind: 'err' }); }); };
-  docsEl.addEventListener('click', async (e) => {
-    const b = e.target.closest('[data-hback]'); if (!b) return;
-    b.disabled = true;
-    try {
-      const r = await (M ? M.submit(b, () => A.call('/api/docs/ack', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })) : A.call('/api/docs/ack', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }));
-      D = r; const bar = $('.hb-ack', docsEl); if (bar) { bar.outerHTML = ackBar(D.rules); const nb = $('.hb-ack', docsEl); nb.classList.add('mx-pop'); M?.pulse($('.hb-tick', nb)); }
-      M?.toast('Thanks, rules acknowledged', { kind: 'ok' });
-    } catch (er) { b.disabled = false; M?.toast(er.message || 'Could not save that', { kind: 'err' }); }
-  });
+  const loadDocs = () => { M?.skeleton(docsEl, 5); A.call('/api/docs').then((r) => { D = r; clipSync(); put(docsEl, docsHtml(), openHash); }).catch((e) => { docsEl.removeAttribute('aria-busy'); docsEl.innerHTML = failBox('the club docs', e); M?.toast(e.message || 'Could not load the docs', { kind: 'err' }); }); };
+  // the clipboard (clipboard.js) ticks the rules one by one; the last tick acknowledges the current version
+  const ackCall = () => A.call('/api/docs/ack', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  const clipSync = () => { const C = window.NorexClip; if (!C || !D) return; const rules = (D.items || []).filter((x) => x.area === 'rules'); C.sync(D.rules, rules, md);
+    C.onDone = async () => { if (D.rules?.acked || !D.rules?.version) return; try { D = await ackCall(); C.markAcked(D.rules); M?.toast('Thanks, rules acknowledged', { kind: 'ok' }); } catch (er) { M?.toast(er.message || 'Could not save that', { kind: 'err' }); } }; };
 
   // ---------- play style (League ⇄ Rush) ----------
   const PS = [['philosophy', '🧭', 'Philosophy', ['What NOREX football looks like, in one line', 'In possession: how we build, where we attack', 'Out of possession: when we press, when we drop', 'The non-negotiables everyone sticks to'], ['What NOREX Rush looks like, in one line', 'How the small pitch changes our game', 'Risk vs control: when to go for it', 'The non-negotiables everyone sticks to']],

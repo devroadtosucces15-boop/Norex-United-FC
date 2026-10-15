@@ -1,3 +1,5 @@
+import { message, header, text, sep, facts, label, footer, buttons, resultAccent } from './ui.js';
+import { it } from './icons.js';
 // Burner-club tracker – pure helpers shared by the fetcher (scripts/fetch.mjs), the site build
 // (scripts/burners-page.mjs), the Worker (/burner) and the tests. No imports, no I/O.
 //
@@ -103,31 +105,27 @@ export function updateRoster(prev = {}, members = [], nowIso) {
   return { roster, joined, left };
 }
 
-// The "after the game" Discord embed for one new burner match.
-export function reportEmbed(burner, m, stats, siteUrl = '') {
+// The "after the game" Discord post for one new burner match: a design-system panel (bot/ui.js).
+export function reportMessage(burner, m, stats, siteUrl = '') {
   const url = siteUrl ? `${siteUrl.replace(/\/?$/, '/')}burners.html#c${burner.id}` : undefined;
   const ps = m.players;
-  const list = (f) => ps.filter((p) => p[f] > 0).map((p) => `${p.n}${p[f] > 1 ? ` ×${p[f]}` : ''}`).join('\n');
+  const list = (f) => ps.filter((p) => p[f] > 0).map((p) => `${p.n}${p[f] > 1 ? ` ×${p[f]}` : ''}`).join(', ');
   const motm = ps.find((p) => p.mom);
   const best = [...ps].sort((a, b) => b.r - a.r)[0];
   const lineup = [...ps].sort((a, b) => b.r - a.r).slice(0, 11)
-    .map((p) => `\`${r1(p.r)}\` ${p.n}${p.g ? ` ⚽${p.g > 1 ? p.g : ''}` : ''}${p.a ? ` 🎯${p.a > 1 ? p.a : ''}` : ''}`).join('\n');
+    .map((p) => `\`${r1(p.r)}\` ${p.n}${p.g ? ` ${it('goal')}${p.g > 1 ? p.g : ''}` : ''}${p.a ? ` ${it('assist')}${p.a > 1 ? p.a : ''}` : ''}`).join('\n');
   const crest = burner.crest ? `${CREST_CDN}${num(burner.crest)}.png` : undefined;
-  return {
-    title: `🔥 ${burner.name} ${m.gf}–${m.ga} ${m.opp.name ?? `Club ${m.opp.id}`}`,
-    url, color: RES_COLOR[m.res], thumbnail: crest ? { url: crest } : undefined,
-    description: `${RES_WORD[m.res]} · ${TYPE_LABEL[m.type] ?? 'League'} · burner club report`,
-    fields: [
-      list('g') && { name: '⚽ Goals', value: list('g').slice(0, 1000), inline: true },
-      list('a') && { name: '🎯 Assists', value: list('a').slice(0, 1000), inline: true },
-      motm && { name: '⭐ Man of the match', value: `${motm.n} (${r1(motm.r)})`, inline: true },
-      best && !motm && { name: '📈 Top rated', value: `${best.n} (${r1(best.r)})`, inline: true },
-      lineup && { name: `👥 Lineup (${ps.length})`, value: lineup.slice(0, 1000) },
-      { name: '📊 Season so far', value: `${stats.w}W ${stats.d}D ${stats.l}L · ${stats.gf}–${stats.ga} · ${stats.winPct}% wins${stats.streak.n > 1 ? ` · ${stats.streak.n}${stats.streak.res} streak` : ''}` },
-    ].filter(Boolean),
-    timestamp: new Date(m.ts * 1000).toISOString(),
-    footer: { text: `Burner tracker · club ${burner.id}` },
-  };
+  return message({ accent: resultAccent(m.res), blocks: [
+    header({ eyebrow: `Burner tracker · ${TYPE_LABEL[m.type] ?? 'League'}`, title: `🔥 ${burner.name} ${m.gf}–${m.ga} ${m.opp.name ?? `Club ${m.opp.id}`}`, sub: `${RES_WORD[m.res]} · <t:${m.ts}:f> · burner club report`, thumb: crest }),
+    facts([[`${it('goal')} Goals`, list('g')], [`${it('assist')} Assists`, list('a')], [`${it('motm')} Man of the match`, motm ? `${motm.n} (${r1(motm.r)})` : ''], ['📈 Top rated', best && !motm ? `${best.n} (${r1(best.r)})` : '']]),
+    lineup ? sep() : null,
+    lineup ? label(`Lineup (${ps.length})`) : null,
+    lineup ? text(lineup) : null,
+    sep(),
+    facts([['📊 Season so far', `${stats.w}W ${stats.d}D ${stats.l}L · ${stats.gf}–${stats.ga} · ${stats.winPct}% wins${stats.streak.n > 1 ? ` · ${stats.streak.n}${stats.streak.res} streak` : ''}`]]),
+    footer(`Burner tracker · club ${burner.id}`),
+    url ? buttons([{ label: 'Burner card', url }]) : null,
+  ] });
 }
 
 // Burner squad members who share a gamertag with a NOREX member (case-insensitive). `homeNames` is a Set of

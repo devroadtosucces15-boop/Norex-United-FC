@@ -100,6 +100,15 @@ export const PERMS = {
   'statInsights.compare': 'member', // BE9 – ✨ head-to-head insight for two home players, written on demand (flag statInsights on top)
   'statInsights.h2h': 'member', // BE9 – ✨ record-vs-opponent insight for any opponent in h2h.json, written on first view (flag statInsights on top)
   'statInsights.note': 'claimed', // BE9 – ✨ coach's note per home player (private tier): a claimed member (their own player only – the row check) or a manager/owner; flag statInsights on top
+  'watchlist.view': 'member', // watch list – read, mark a video useful
+  'watchlist.manage': 'manager', // add / remove the creators we follow
+  'discoveries.share': 'member', // /share a tip, mark one useful
+  'discoveries.manage': 'manager', // approve / reject shared tips
+  'fun.manage': 'manager', // fun – a manager can post bail for anyone
+  'servertools.setup': 'manager', // server tools – /setup leave-log, welcome channel, ping-role panel
+  'messages.purge': 'manager', // server tools – /purge
+  'tags.manage': 'manager', // server tools – /tags set / delete (anyone can post a tag)
+  'remind.channel': 'manager', // server tools – /remind in another channel or with a role ping
 };
 
 export function can(user, action) {

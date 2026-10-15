@@ -26,7 +26,7 @@ setFlags({ presence: 'members' });
 t('presence: guests refused', [401, 404].includes((await call(null, '/api/presence')).s));
 await call(m2, '/api/presence');
 let pr = (await call(m1, '/api/presence')).d;
-t('presence: both callers are online now', ['500', '501'].every((id) => pr.online.some((u) => u.id === id)) && pr.me === '500' && !pr.hidden);
+t('presence: both callers are online now', ['500', '501'].every((id) => pr.online.some((u) => u.id === id)) && pr.me === '500');
 t('presence: online entries carry name + @username', pr.online.find((u) => u.id === '501')?.n === 'Player Two' && pr.online.find((u) => u.id === '501')?.tag === 'u501');
 // Any logged-in request stamps seen_at (throttled to once a minute).
 sqlite.prepare("UPDATE users SET seen_at = NULL WHERE id = '502'").run();
@@ -39,13 +39,11 @@ await call(mgr, '/api/feed');
 t('presence: no write within a minute of the last one', sqlite.prepare("SELECT seen_at FROM users WHERE id = '600'").get().seen_at === stamp);
 pr = (await call(m1, '/api/presence')).d;
 t('presence: seen 6 min ago → "earlier this hour", not online', pr.recent.some((u) => u.id === '502') && !pr.online.some((u) => u.id === '502'));
-pr = (await call(m2, '/api/presence', { hidden: true })).d;
-t('presence: appear offline', pr.hidden === true && !pr.online.some((u) => u.id === '501'));
+// D5 – "Appear offline" was removed: POST is gone and anyone still flagged hidden shows online again
+t('presence: POST { hidden } refused', (await call(m2, '/api/presence', { hidden: true })).s === 410);
+sqlite.prepare("UPDATE users SET presence_hidden = 1 WHERE id = '501'").run();
 pr = (await call(m1, '/api/presence')).d;
-t('presence: hidden member invisible to others', !pr.online.some((u) => u.id === '501') && !pr.recent.some((u) => u.id === '501'));
-t('presence: switch logged', !!sqlite.prepare("SELECT 1 FROM activity WHERE user_id = '501' AND type = 'presence-hide'").get());
-pr = (await call(m2, '/api/presence', { hidden: false })).d;
-t('presence: visible again', !pr.hidden && pr.online.some((u) => u.id === '501'));
+t('presence: legacy hidden flag ignored – member shows online', pr.online.some((u) => u.id === '501') && pr.hidden === undefined);
 
 // ================= P6.5 mentions =================
 t('mentionTags: usernames, lowercase, no emails / trailing dots', mentionTags('hi @U500 and @u501. mail a@b.com @x').join() === 'u500,u501');

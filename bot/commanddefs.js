@@ -1,6 +1,6 @@
 // The bot's slash command definitions – one list shared by bot/register.mjs (deploy-time registration, a plain Node script)
 // and the Worker (the Boardroom's "Sync to Discord" button, bot/botcommands.js). Keep them here, not in either of those.
-const SUB = 1, STRING = 3, INTEGER = 4, BOOLEAN = 5, USER = 6, CHANNEL = 7, ATTACHMENT = 11;
+const SUB = 1, STRING = 3, INTEGER = 4, BOOLEAN = 5, USER = 6, CHANNEL = 7, ROLE = 8, ATTACHMENT = 11;
 const player = (name, description) => ({ type: STRING, name, description, required: true, autocomplete: true });
 export const COMMANDS = [
   { name: 'club', description: 'Club record, division and form' },
@@ -122,6 +122,118 @@ export const COMMANDS = [
   },
   { name: 'motm', description: 'Current Man of the Match vote standing for the latest match' },
   { name: 'history', description: 'Our record against a past opponent', options: [{ type: STRING, name: 'opponent', description: "Opponent club name (or part of it)", required: true }] },
+  // Fun for members (bot/fun.js)
+  {
+    name: 'jail', description: 'Lock a mate up for a daft offence (just for fun)',
+    options: [
+      { type: USER, name: 'member', description: 'Who is going down', required: true },
+      { type: STRING, name: 'reason', description: 'The charge (leave empty for a random one)', max_length: 140 },
+      { type: INTEGER, name: 'minutes', description: 'Sentence in minutes (default 30)', min_value: 1, max_value: 120 },
+    ],
+  },
+  {
+    name: 'wheel', description: 'Spin a wheel to pick one option',
+    options: [
+      { type: STRING, name: 'options', description: 'Separate with commas, e.g. Jez, Kruger, Davey', required: true, max_length: 400 },
+      { type: STRING, name: 'question', description: 'What the wheel decides, e.g. Who plays GK tonight', max_length: 100 },
+    ],
+  },
+  {
+    name: 'share', description: 'Share something worth knowing with the club – a manager approves it first',
+    options: [
+      { type: STRING, name: 'title', description: 'A short headline', required: true, min_length: 4, max_length: 100 },
+      { type: STRING, name: 'tip', description: 'What should we know?', required: true, min_length: 10, max_length: 600 },
+      { type: STRING, name: 'link', description: 'A link to back it up (optional)', max_length: 300 },
+    ],
+  },
+  { name: 'discoveries', description: 'Managers: shared tips waiting for approval', default_member_permissions: String(1 << 28), contexts: [0] },
+  {
+    name: 'watch', description: 'The latest Pro Clubs videos the squad follows',
+    options: [{ type: STRING, name: 'topic', description: 'Only one topic', choices: ['builds', 'tactics', 'tips', 'meta', 'news'].map((v) => ({ name: v, value: v })) }],
+  },
+  {
+    name: 'watchlist', description: 'Managers: the YouTube creators the watch list follows', default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: SUB, name: 'add', description: 'Follow a creator', options: [
+        { type: STRING, name: 'channel', description: 'Their channel ID (starts with UC…) or channel link', required: true, max_length: 120 },
+        { type: STRING, name: 'name', description: 'How to show their name', max_length: 60 },
+      ] },
+      { type: SUB, name: 'remove', description: 'Stop following a creator', options: [{ type: STRING, name: 'channel', description: 'Channel ID or the name shown in /watchlist list', required: true, max_length: 120 }] },
+      { type: SUB, name: 'list', description: 'Who we follow' },
+    ],
+  },
+  { name: 'trivia', description: 'A football trivia question – points for right answers', options: [{ type: SUB, name: 'play', description: 'Ask a question' }, { type: SUB, name: 'board', description: 'The trivia table' }] },
+  // Server tools – the Miona / Carl-bot replacements (bot/servertools.js)
+  {
+    name: 'setup', description: 'Managers: leave/join alerts, welcome posts and the ping-role panel',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: SUB, name: 'leavelog', description: 'Post leave and join alerts in a channel', options: [{ type: CHANNEL, name: 'channel', description: 'Managers-only channel for the alerts', required: true, channel_types: [0, 5] }] },
+      { type: SUB, name: 'welcome', description: 'Welcome new members in a channel', options: [
+        { type: CHANNEL, name: 'channel', description: 'Where to welcome them', required: true, channel_types: [0, 5] },
+        { type: STRING, name: 'message', description: 'First line – {user} pings them, {name} is their name. Default: "Welcome to the crew, {user}! 👋"', max_length: 300 },
+      ] },
+      { type: SUB, name: 'pingroles', description: 'Post the 🔔 ping-role buttons (creates the roles if needed)', options: [{ type: CHANNEL, name: 'channel', description: 'Where to post the panel', required: true, channel_types: [0, 5] }] },
+      { type: SUB, name: 'off', description: 'Switch leave/join alerts or welcome posts off', options: [{ type: STRING, name: 'feature', description: 'Which one', required: true, choices: [{ name: 'Leave/join alerts', value: 'leavelog' }, { name: 'Welcome posts', value: 'welcome' }] }] },
+    ],
+  },
+  {
+    name: 'purge', description: 'Managers: delete recent messages in this channel',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: INTEGER, name: 'count', description: 'How many (1–100)', required: true, min_value: 1, max_value: 100 },
+      { type: USER, name: 'member', description: 'Only messages from this member' },
+    ],
+  },
+  {
+    name: 'tag', description: 'Post a saved answer (rules, trial info…)', contexts: [0],
+    options: [
+      { type: STRING, name: 'name', description: 'Which tag', required: true, autocomplete: true, max_length: 32 },
+      { type: USER, name: 'member', description: 'Ping someone with it' },
+    ],
+  },
+  {
+    name: 'tags', description: 'List saved answers – managers add and delete them here', contexts: [0],
+    options: [
+      { type: SUB, name: 'list', description: 'Every saved tag' },
+      { type: SUB, name: 'set', description: 'Managers: add or replace a tag', options: [
+        { type: STRING, name: 'name', description: 'Short name, e.g. rules or trial-info', required: true, max_length: 32 },
+        { type: STRING, name: 'text', description: 'What it says – type \\n for a new line', required: true, max_length: 4000 },
+      ] },
+      { type: SUB, name: 'delete', description: 'Managers: delete a tag', options: [{ type: STRING, name: 'name', description: 'Which tag', required: true, autocomplete: true, max_length: 32 }] },
+    ],
+  },
+  {
+    name: 'remind', description: 'Set a reminder – e.g. in: 2h, text: join league', contexts: [0],
+    options: [
+      { type: STRING, name: 'in', description: 'When – 10m, 2h, 1h30m, 1d', required: true, max_length: 40 },
+      { type: STRING, name: 'text', description: 'What to remind about', required: true, max_length: 1000 },
+      { type: CHANNEL, name: 'channel', description: 'Managers: post it in another channel', channel_types: [0, 5] },
+      { type: ROLE, name: 'role', description: 'Managers: ping a role with it' },
+    ],
+  },
+  { name: 'reminders', description: 'Your waiting reminders – cancel any of them', contexts: [0] },
+  // /panel – the manager panel: everything waiting for a decision, approve / reject in place (bot/panel.js)
+  { name: 'panel', description: 'Managers: everything waiting for a decision – approve or reject right here', default_member_permissions: String(1 << 28), contexts: [0] },
+  // /host – schedule + post a session or friendly in one go (bot/host.js); times show in everyone's own zone
+  {
+    name: 'host', description: 'Managers: schedule a League or Rush session or friendly – posted with sign-up buttons',
+    default_member_permissions: String(1 << 28), contexts: [0],
+    options: [
+      { type: STRING, name: 'mode', description: 'League or Rush', required: true, choices: [{ value: 'league', name: '🏆 League' }, { value: 'rush', name: '⚡ Rush' }] },
+      { type: STRING, name: 'kind', description: 'A session for us, or a friendly against another club', required: true, choices: [{ value: 'session', name: 'Session' }, { value: 'friendly', name: 'Friendly' }] },
+      { type: STRING, name: 'when', description: 'tonight 9pm · tomorrow 20:30 · fri 8:30pm · oct 14 9pm · in 2h', required: true, max_length: 40 },
+      { type: STRING, name: 'timezone', description: 'Your time zone (default: the one in your Squad Hub profile)', autocomplete: true, max_length: 64 },
+      { type: INTEGER, name: 'players', description: 'Players needed (default 11 League, 5 Rush)', min_value: 1, max_value: 30 },
+      { type: INTEGER, name: 'length', description: 'How long, in minutes (default 120 League, 90 Rush)', min_value: 15, max_value: 600 },
+      { type: STRING, name: 'opponent', description: 'Friendly: the club we play', max_length: 60 },
+      { type: STRING, name: 'notes', description: 'Lobby info, kit, anything else', max_length: 500 },
+      { type: BOOLEAN, name: 'weekly', description: 'Repeat every week for 4 weeks' },
+      { type: CHANNEL, name: 'channel', description: 'Where to post it (default: here)', channel_types: [0, 5] },
+      { type: ROLE, name: 'ping', description: 'Role to ping (default: the Match night / Rush LFG ping role)' },
+      { type: BOOLEAN, name: 'silent', description: 'Post without pinging anyone' },
+    ],
+  },
 ];
 
 // ---------- per-command settings → what Discord is told ----------
