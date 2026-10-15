@@ -34,11 +34,11 @@ Durable Objects (`ChatRoom`, `HubRoom`, `ClubRoom`), KV, R2 and Workers AI have 
 
 ## What to look at in the Cloudflare dashboard to confirm
 
-1. **Workers & Pages → D1 → norex database → Metrics.** Compare *Rows read* and *Rows written* for the last 24 h. Reads are the likely culprit (limit 5M/day); writes should sit far below 100K.
+1. **Storage & databases → D1 → `norex` → Metrics.** Compare *Rows read* and *Rows written* for the last 24 h. Reads are the likely culprit (limit 5M/day); writes should sit far below 100K.
 2. Same page, **Queries** (top queries by rows read) if your plan shows it. Expect the `chat_messages` unread count and the `notifications ... ack = 1` query at the top. If either shows up, causes 1 and 2 are confirmed.
-3. `wrangler d1 insights norex-members --sort-type sum --sort-by reads --limit 10` gives the same ranking from the CLI.
+3. `wrangler d1 insights norex --sort-type sum --sort-by reads --limit 10` gives the same ranking from the CLI.
 4. Row counts to size the estimates: `SELECT COUNT(*) FROM chat_messages; SELECT COUNT(*) FROM notifications; SELECT COUNT(*) FROM card_requests; SELECT COUNT(*) FROM flag_overrides;`
-5. After deploying, run migration 0054 (`wrangler d1 migrations apply`) and watch Rows read over the next 24 h.
+5. After deploying, the bot workflow applies migration 0054 (`d1 migrations apply norex --remote`); watch Rows read over the next 24 h.
 
 ## Ideas not done (would change behaviour or need the web side)
 
