@@ -37,7 +37,7 @@
     d.head.append(Object.assign(d.createElement('link'), { rel: 'stylesheet', href: 'report.css' }));
     d.head.append(Object.assign(d.createElement('script'), { src: 'report.js', onload: () => window.NXReport?.init({
       call: (path, body) => call(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
-      toast: (m) => window.NorexMotion?.toast(m, { kind: 'ok', icon: '🐞' }), role, viewAs: viewAs || null, user: { u: session.u, n: session.n } }) }));
+      toast: (m) => window.NorexMotion?.toast(m, { kind: 'ok', icon: '🐞' }), role, viewAs: viewAs || null, user: { u: session.u, n: session.n }, recorder: (Auth.features || []).includes('issueRecorder'), libBase: '' }) }));
   });
   // any [data-login] link points at Discord sign-in; the header chip, search and dropdown live in header.js
   const chip = () => [...d.querySelectorAll('[data-login]')].forEach((a) => (a.href = loginUrl()));

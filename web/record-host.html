@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Norex recorder</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;padding:14px;background:#0b0f16;color:#fff;font:14px/1.4 Inter,system-ui,sans-serif}
+h1{margin:0 0 4px;font:700 18px Oswald,Inter,sans-serif;letter-spacing:.04em}
+h1 b{color:#ff3b30}
+p{margin:0 0 10px;opacity:.75;font-size:13px}
+button,select,a.btn{font:600 14px Inter,system-ui,sans-serif;color:#fff;border:1px solid #2a3342;background:#121821;border-radius:10px;padding:9px 12px;cursor:pointer;text-decoration:none;display:inline-block}
+button:hover,a.btn:hover{border-color:#ff3b30}
+button.red{background:#ff3b30;border-color:#ff3b30}
+.surf{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.surf button{padding:12px 6px;display:flex;flex-direction:column;gap:3px;align-items:center}
+.surf span{font-size:22px}
+.surf small{font-weight:500;opacity:.7;font-size:11px}
+label{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+select{padding:6px 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+#clock{font:700 44px/1 Oswald,Inter,sans-serif;font-variant-numeric:tabular-nums}
+body[data-state=recording] #clock::before{content:'';display:inline-block;width:.35em;height:.35em;margin-right:.3em;border-radius:50%;background:#ff3b30;vertical-align:middle;animation:b 1.2s infinite}
+@keyframes b{50%{opacity:.25}}
+#meter{height:6px;border-radius:3px;background:#1a2230;margin:10px 0;overflow:hidden}
+#meter i{display:block;height:100%;width:0;background:#34c759;transition:width .15s}
+#count{font:700 90px/1.2 Oswald,sans-serif;text-align:center;color:#ff3b30}
+video{width:100%;max-height:180px;border-radius:10px;background:#000;margin:8px 0}
+#msg{margin-top:10px;font-size:13px;color:#9fe3b0}
+#msg.bad{color:#ffb4ae}
+.muted{opacity:.65;font-size:12px}
+[hidden]{display:none!important}
+</style></head>
+<body data-state="idle">
+<h1>NOREX <b>RECORDER</b></h1>
+
+<section data-view="start" hidden>
+  <p>Pick what to share, then talk through the problem. Keep this small window open – it is what records, so you can browse the site freely.</p>
+  <div class="surf">
+    <button data-surface="monitor"><span>🖥️</span>Full screen<small>everything you see</small></button>
+    <button data-surface="window"><span>🪟</span>One window<small>just that app</small></button>
+    <button data-surface="browser"><span>🗂️</span>One tab<small>just that page</small></button>
+  </div>
+  <label><input type="checkbox" id="voice" checked> 🎙 Voice-over from my microphone</label>
+  <label id="capsLabel"><input type="checkbox" id="caps" checked> 📝 Write captions as I talk (Chrome / Edge)</label>
+  <label><input type="checkbox" id="sound"> 🔊 Also record sound from the page / computer</label>
+  <label><input type="checkbox" id="attach" checked> 🐞 Attach to my bug-report session</label>
+  <label>Quality <select id="quality"></select></label>
+  <p class="muted">Marks you draw with the toolbar on a Norex page show up in the video because they are on the page – they can't be drawn over other apps.</p>
+</section>
+
+<section data-view="count" hidden>
+  <p style="text-align:center">Starting – switch back to the Norex page.</p>
+  <div id="count">3</div>
+</section>
+
+<section data-view="rec" hidden>
+  <div id="clock">00:00</div>
+  <div class="muted" id="size"></div>
+  <div id="meter"><i></i></div>
+  <div class="row">
+    <button id="pause">⏸ Pause</button>
+    <button id="mute">🎙 Mic on</button>
+    <button id="moment">🚩 Mark moment</button>
+    <button id="stop" class="red">⏹ Stop &amp; save</button>
+  </div>
+  <p class="muted" id="moments" style="margin-top:8px"></p>
+</section>
+
+<section data-view="done" hidden>
+  <video id="preview" controls playsinline></video>
+  <p id="doneInfo"></p>
+  <div class="row"><a class="btn red" id="dl" href="#">⬇ Save</a></div>
+  <p id="attachState" style="margin-top:10px"></p>
+  <p class="muted">The video file is saved on this device. Only the page trail, your marked moments and the captions go into the bug report.</p>
+  <div class="row"><button id="again">🎥 Record another</button><button id="close">Close</button></div>
+</section>
+
+<section data-view="none" hidden>
+  <p>This browser can't record the screen (phones can't). Use the 🐞 pin / arrow / circle tools on the page and dictate a note instead.</p>
+</section>
+
+<div id="msg"></div>
+<script src="record.js"></script>
+<script>NXRec.host(document);</script>
+</body></html>
