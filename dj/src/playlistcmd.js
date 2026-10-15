@@ -3,7 +3,7 @@ import { AttachmentBuilder, MessageFlags, ModalBuilder, TextInputBuilder, TextIn
 import * as pl from './playlists.js';
 import { resolve } from './resolve.js';
 import { panel, small } from './v2.js';
-import { fmt } from './ui.js';
+import { fmt, ok } from './ui.js';
 
 const info = (t) => ({ title: t.info.title, author: t.info.author, length: t.info.length, uri: t.info.uri, sourceName: t.info.sourceName });
 const mm = (ms) => (ms ? fmt(ms) : '');
@@ -102,7 +102,7 @@ export async function run(i, ctx) {
   if (sub === 'export') {
     const r = readable(i, i.options.getString('name')); if (r.error) return i.reply(r.error);
     const text = pl.exportText(r.p, pl.items(r.p.id));
-    return i.reply({ content: `**${r.p.name}** · ${pl.count(r.p.id)} songs. Paste the lines into \`/playlist bulk\` on any playlist to import them.`, files: [new AttachmentBuilder(Buffer.from(text), { name: `${r.p.name.replace(/[^\w.-]+/g, '_')}.txt` })], flags: MessageFlags.Ephemeral });
+    return i.reply({ ...ok(`**${r.p.name}** · ${pl.count(r.p.id)} songs. Paste the lines into \`/playlist bulk\` on any playlist to import them.`, true), files: [new AttachmentBuilder(Buffer.from(text), { name: `${r.p.name.replace(/[^\w.-]+/g, '_')}.txt` })], flags: MessageFlags.Ephemeral });
   }
 
   if (sub === 'rename' || sub === 'delete' || sub === 'visibility') {
