@@ -1,0 +1,61 @@
+name: Link inbox
+
+# Files links into RESEARCH/stars/inbox.md with a short summary. Two ways in:
+#   1. open an issue labelled "link" with the link(s) in the body – it is filed, commented on and closed
+#   2. add links to RESEARCH/inbox.txt (one per line) and push – the file is cleared after filing
+# Issues from anyone but the repo owner are ignored.
+
+on:
+  issues:
+    types: [opened, labeled]
+  push:
+    branches: [main]
+    paths: ["RESEARCH/inbox.txt"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: research-files
+  cancel-in-progress: false
+
+jobs:
+  file:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      github.event_name != 'issues' ||
+      (github.event.issue.state == 'open' &&
+       github.event.issue.user.login == github.repository_owner &&
+       contains(github.event.issue.labels.*.name, 'link'))
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: File links
+        id: file
+        run: node scripts/link-inbox.mjs | tee out.txt && echo "summary=$(tail -1 out.txt)" >> "$GITHUB_OUTPUT"
+        env:
+          ISSUE_BODY: ${{ github.event_name == 'issues' && github.event.issue.body || '' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RESEARCH
+          git diff --cached --quiet || { git commit -m "research: file inbox links"; git pull --rebase origin main && git push; }
+
+      - name: Close the issue
+        if: github.event_name == 'issues'
+        run: gh issue close "$NUMBER" --comment "Filed in RESEARCH/stars/inbox.md ($SUMMARY)."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUMBER: ${{ github.event.issue.number }}
+          SUMMARY: ${{ steps.file.outputs.summary }}
