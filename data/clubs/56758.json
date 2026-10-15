@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-15T22:10:49.899Z",
+ "fetchedAt": "2026-10-15T22:20:51.401Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -223,6 +223,42 @@
    "prevGoals9": "1",
    "prevGoals10": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "MicroMyDraco",
+   "gamesPlayed": "3",
+   "winRate": "33",
+   "goals": "3",
+   "assists": "2",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "75",
+   "passesMade": "37",
+   "passSuccessRate": "74",
+   "ratingAve": "7.9",
+   "tacklesMade": "2",
+   "tackleSuccessRate": "11",
+   "proName": "Neymar JR",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "175",
+   "proNationality": "54",
+   "proOverall": "82",
+   "proOverallStr": "82",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "2",
+   "prevGoals1": "2",
+   "prevGoals2": "1",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "shon_day",
@@ -1092,7 +1128,7 @@
  "positionCount": {
   "midfielder": 12,
   "goalkeeper": 0,
-  "forward": 10,
+  "forward": 11,
   "defender": 4
  },
  "career": [
@@ -1139,6 +1175,17 @@
    "ratingAve": "7.3",
    "prevGoals": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "MicroMyDraco",
+   "proPos": "25",
+   "gamesPlayed": "9",
+   "goals": "6",
+   "assists": "3",
+   "manOfTheMatch": "1",
+   "ratingAve": "7.4",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "shon_day",
