@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-15T03:25:27.471Z",
+ "fetchedAt": "2026-10-15T03:30:45.684Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -693,6 +693,42 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "wygsy",
+   "gamesPlayed": "12",
+   "winRate": "66",
+   "goals": "4",
+   "assists": "1",
+   "cleanSheetsDef": "4",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "57",
+   "passesMade": "146",
+   "passSuccessRate": "82",
+   "ratingAve": "7.6",
+   "tacklesMade": "10",
+   "tackleSuccessRate": "52",
+   "proName": "him",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "182",
+   "proNationality": "54",
+   "proOverall": "80",
+   "proOverallStr": "80",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "Mika-6996",
    "gamesPlayed": "3",
    "winRate": "66",
@@ -1021,7 +1057,7 @@
   "midfielder": 7,
   "goalkeeper": 0,
   "forward": 11,
-  "defender": 7
+  "defender": 8
  },
  "career": [
   {
@@ -1223,9 +1259,20 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "wygsy",
+   "proPos": "5",
+   "gamesPlayed": "252",
+   "goals": "156",
+   "assists": "129",
+   "manOfTheMatch": "38",
+   "ratingAve": "7.9",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "Mika-6996",
    "proPos": "5",
-   "gamesPlayed": "158",
+   "gamesPlayed": "159",
    "goals": "110",
    "assists": "56",
    "manOfTheMatch": "26",
