@@ -217,4 +217,13 @@
   addEventListener('pageshow', (e) => { if (e.persisted) $$('[style*="view-transition-name"]').forEach((x) => (x.style.viewTransitionName = '')); });
   // E1: a keyboard user tabbing into a clipped scroll strip (form pills, calendar dots, rating chips) must see what has focus
   d.addEventListener('focusin', (e) => { const t = e.target; if (!t || !t.matches || !t.matches(':focus-visible') || !t.getBoundingClientRect) return; const r = t.getBoundingClientRect(); if (r.width && (r.right > innerWidth || r.left < 0)) t.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
+  // C1: a quick "dark hallway" flash in the section colour when a bottom tab is tapped (and its tail on the next page). Transform/opacity only, ≤350 ms
+  const HALL = { club: '#e0574d', matches: '#46c28a', stats: '#62a8ff', tactics: '#b08cff', hub: '#efcf7a' };
+  const hall = (col, tail) => { if (mode !== 'full' || !on('glow') || !b.animate) return;
+    const w = d.createElement('div'); w.className = 'hall'; w.style.setProperty('--hc', col); w.innerHTML = '<i class="hd"></i><i class="hb"></i>'; b.appendChild(w);
+    const ms = tail ? 240 : 320, o = { duration: ms, easing: 'cubic-bezier(.22,.8,.3,1)', fill: 'both' };
+    w.firstChild.animate(tail ? [{ opacity: .5 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: .5, offset: .4 }, { opacity: .4 }], o);
+    w.lastChild.animate([{ transform: 'translate3d(-110%,0,0)', opacity: 0 }, { opacity: 1, offset: .3 }, { transform: 'translate3d(110%,0,0)', opacity: 0 }], o).onfinish = () => w.remove(); setTimeout(() => w.remove(), ms + 80); };
+  d.addEventListener('pointerdown', (e) => { const a = e.target.closest && e.target.closest('.tabbar a'); if (!a) return; const k = a.dataset.g || (a.hasAttribute('data-hub') ? 'hub' : ''); if (!HALL[k]) return; ss.set('norex.hall', HALL[k] + '|' + Date.now()); hall(HALL[k]); });
+  { const h = (ss.get('norex.hall') || '').split('|'); ss.set('norex.hall', null); if (h[0] && Date.now() - (+h[1] || 0) < 5000) hall(h[0], true); }
 })();

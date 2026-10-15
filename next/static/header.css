@@ -70,3 +70,33 @@ html.standalone body:has(.hdr-va){--bh:59px}
 @media (max-width:520px){.bar .lg img{width:38px;height:38px;padding:4px;border-radius:11px}.bar .lg::before{width:58px;height:58px;margin-top:-29px;left:-10px}}
 @media (prefers-reduced-motion:reduce){.bar .lg img,.bar .lg::before{animation:none}}
 html[data-motion="off"] .bar .lg img,html[data-motion="calm"] .bar .lg img,html[data-motion="off"] .bar .lg::before,html[data-motion="calm"] .bar .lg::before{animation:none}
+
+/* C1 (zn1): every bottom tab wears the Hub key's look – gold glass tile with a soft drop shadow – plus the hallway flash (motion.js) */
+.tabbar a:not(.key){position:relative;border-radius:16px;background:linear-gradient(180deg,rgba(239,207,122,.2),rgba(239,207,122,.05) 62%,rgba(0,0,0,.18));border:1px solid rgba(239,207,122,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -6px 10px rgba(0,0,0,.25),0 6px 12px rgba(0,0,0,.5),0 0 14px rgba(239,207,122,.12);min-width:58px}
+.tabbar a:not(.key).on{background:linear-gradient(180deg,rgba(239,207,122,.42),rgba(239,207,122,.12) 62%,rgba(0,0,0,.14));border-color:rgba(239,207,122,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 12px rgba(0,0,0,.5),0 0 18px rgba(239,207,122,.3)}
+.tabbar a:not(.key)::after{margin-top:2px!important}
+.tabbar a:not(.key).on::after{box-shadow:0 0 8px var(--tc,#efcf7a)}
+.hall{position:fixed;inset:0;z-index:60;pointer-events:none;overflow:hidden;contain:strict}
+.hall .hd{position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 100%,rgba(0,0,0,.2),rgba(2,4,8,.85));opacity:0;will-change:opacity}
+.hall .hb{position:absolute;top:0;bottom:0;left:0;width:100%;background:linear-gradient(90deg,transparent 15%,var(--hc) 50%,transparent 80%);opacity:0;mix-blend-mode:screen;will-change:transform,opacity}
+html[data-motion=calm] .hall,html[data-motion=off] .hall,html[data-fx-glow=off] .hall{display:none}
+
+/* C2 (qg1): the club canvas keeps its diagonal lines but sparser, and sits a notch darker (not pitch black) */
+body:not(.hub-page):before{background:radial-gradient(900px 560px at 80% -10%,rgba(200,53,44,.36),transparent 62%),radial-gradient(760px 520px at 8% 105%,rgba(200,53,44,.22),transparent 62%),radial-gradient(600px 420px at 3% 30%,rgba(200,53,44,.06),transparent 60%),linear-gradient(180deg,#171320,#0e0a13)}
+body:not(.hub-page):after{background:repeating-linear-gradient(45deg,rgba(255,255,255,.028) 0 1px,transparent 1px 26px),repeating-linear-gradient(-38deg,rgba(255,255,255,.018) 0 1px,transparent 1px 44px)}
+
+/* C4 (wg2): the old hub banner's gold crest as the header logo on every page – it pops in lit (<1 s) and each section adds one small detail of its own,
+   like the locker opening. Full motion only; the loops above keep running after the intro. Uses scale/opacity/transform on the ::after only. */
+html[data-motion=full]:not([data-fx-glow=off]) .bar .lg img{scale:1;animation:lgIntro .8s cubic-bezier(.34,1.56,.64,1) both,lgSweep 5.5s ease-in-out .8s infinite,lgFloat 6s ease-in-out .8s infinite}
+@keyframes lgIntro{0%{scale:.35;opacity:0;filter:brightness(2.2) drop-shadow(0 0 0 rgba(239,207,122,0))}55%{opacity:1;filter:brightness(1.5) drop-shadow(0 0 16px rgba(239,207,122,.95))}100%{scale:1;filter:brightness(1) drop-shadow(0 3px 8px rgba(0,0,0,.5))}}
+html[data-motion=full]:not([data-fx-glow=off]) .bar .lg::after{content:"";position:absolute;left:0;top:50%;width:44px;height:44px;margin-top:-22px;border-radius:13px;pointer-events:none;z-index:2;opacity:0;--ic:239,207,122;animation:lgRing .85s ease-out .1s both}
+html[data-g=club][data-motion=full] .bar .lg::after{--ic:224,87,77;border:2px solid rgba(var(--ic),.9);border-radius:50%}
+html[data-g=matches][data-motion=full] .bar .lg::after{--ic:70,194,138;border:2px dashed rgba(var(--ic),.95);border-radius:50%;animation-name:lgRingSpin}
+html[data-g=stats][data-motion=full] .bar .lg::after{--ic:98,168,255;width:30px;height:30px;margin:-15px 0 0 7px;border-radius:3px;background:linear-gradient(90deg,rgba(var(--ic),.9) 0 22%,transparent 22% 39%,rgba(var(--ic),.9) 39% 61%,transparent 61% 78%,rgba(var(--ic),.9) 78%);transform-origin:50% 100%;animation-name:lgBars}
+html[data-g=tactics][data-motion=full] .bar .lg::after{--ic:176,140,255;border:2px solid rgba(var(--ic),.9);animation-name:lgFrame}
+body.hub-page .bar .lg::after{background:linear-gradient(90deg,rgba(var(--ic),.95) 0 50%,transparent 50%) 0 0/50% 100% no-repeat,linear-gradient(270deg,rgba(var(--ic),.95) 0 50%,transparent 50%) 100% 0/50% 100% no-repeat;animation-name:lgDoors!important}
+@keyframes lgRing{0%{opacity:.95;transform:scale(.7)}100%{opacity:0;transform:scale(2.1)}}
+@keyframes lgRingSpin{0%{opacity:.95;transform:scale(.8) rotate(0)}100%{opacity:0;transform:scale(1.9) rotate(200deg)}}
+@keyframes lgBars{0%{opacity:1;transform:scaleY(.05)}60%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(1.15)}}
+@keyframes lgFrame{0%{opacity:1;transform:scale(2.2) rotate(45deg)}100%{opacity:0;transform:scale(.9) rotate(0)}}
+@keyframes lgDoors{0%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1.7)}}

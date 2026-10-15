@@ -194,3 +194,14 @@ html[data-motion="off"] .mx-md .mx-fx i,html[data-motion="calm"] .mx-md .mx-fx i
 @media (max-width:520px){.clip{padding:30px 8px 8px}.clip-sheet{padding:26px 12px 14px 42px}.clip-sheet:before{left:30px}.clip-r{grid-template-columns:26px minmax(0,1fr) 48px;gap:8px}.clip-n{font-size:22px}}
 @media (prefers-reduced-motion:reduce){.clip-r.active .clip-ck,.clip-r.slide,.clip-stamp{animation:none}}
 html[data-motion="off"] .clip *,html[data-motion="calm"] .clip-r.active .clip-ck{animation:none}
+
+/* C3 (zn7): gold neon lighting behind the Locker Room – tubes along the top and both walls with a soft bloom. Static; it breathes slowly only while the glow effect is on. */
+html:has(>body.hub-page)::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+ background:linear-gradient(90deg,transparent 12%,rgba(var(--hx,239,207,122),.95) 50%,transparent 88%) 0 0/100% 2px no-repeat,
+  linear-gradient(180deg,transparent 8%,rgba(var(--hx,239,207,122),.8) 45%,transparent 92%) 0 0/2px 100% no-repeat,
+  linear-gradient(180deg,transparent 8%,rgba(var(--hx,239,207,122),.8) 45%,transparent 92%) 100% 0/2px 100% no-repeat,
+  radial-gradient(60% 18% at 50% 0,rgba(var(--hx,239,207,122),.26),transparent 75%),
+  radial-gradient(14% 55% at 0 42%,rgba(var(--hx,239,207,122),.2),transparent 80%),radial-gradient(14% 55% at 100% 42%,rgba(var(--hx,239,207,122),.2),transparent 80%);
+ opacity:.8}
+html:has(>body.hub-page):not([data-fx-glow=off]):not([data-motion=calm]):not([data-motion=off])::after{animation:hxNeon 7s ease-in-out infinite}
+@keyframes hxNeon{0%,100%{opacity:.62}50%{opacity:1}}
