@@ -1009,3 +1009,19 @@ body:not(.hub-page):after{content:"";position:fixed;inset:0;z-index:-1;pointer-e
 
 /* zn11: iOS zooms into any field under 16px and can stay zoomed – every field is 16px+ on touch screens (bigger sizes like the kit number stay) */
 @media (hover:none),(pointer:coarse){:where(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select,[contenteditable]){font-size:16px!important}}
+/* ---- Hub › Clubhouse › Praise & feedback (feedbackroom.js) ---- */
+.fb-intro{max-width:760px;margin:0 0 12px}.fb-tabs{margin-bottom:16px}.fb-tabs .chip small{margin-left:4px;font-size:11px}
+.fb-list{display:grid;gap:22px;max-width:760px}
+.fb-item{display:grid;gap:12px;min-width:0;border-left:3px solid var(--line2)}.fb-item.k-praise{border-left-color:#2fbf71}.fb-item.k-tip{border-left-color:var(--g2)}.fb-item.k-concern{border-left-color:#e0603e}
+.fb-item.unread{border-color:rgba(239,207,122,.5);box-shadow:0 0 0 1px rgba(239,207,122,.18) inset}.fb-item.flag{border-color:rgba(224,96,62,.6)}
+.fb-item>p{margin:0;overflow-wrap:anywhere;color:#dfe5ee}.fb-item footer{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fb-ih{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}.fb-ih .grow{flex:1}.fb-kind{font:600 15px Oswald;letter-spacing:.04em}
+.fb-rx{display:flex;flex-wrap:wrap;gap:10px}.fb-r{width:46px;height:46px;font-size:21px;padding:0;display:grid;place-items:center}
+.fb-note{margin:0;padding:10px 12px;border-radius:12px;background:#2a1a12;border:1px solid rgba(224,96,62,.4);font-size:13.5px;overflow-wrap:anywhere}
+.fb-inl{display:grid;gap:10px}.fb-inl textarea,.fb-inl input,.fb-form select,.fb-form textarea{width:100%;min-width:0;padding:11px 14px;border-radius:12px;border:1px solid var(--line2);background:var(--p3);color:#fff;font:inherit}
+.fb-form{display:grid;gap:18px;max-width:760px;border-color:rgba(239,207,122,.28)}.fb-form .fld{display:grid;gap:6px;font-weight:600}
+.fb-warn{padding:12px 14px;border-radius:12px;background:#12331f;border:1px solid #1d6b3d;font-size:13.5px}
+.fb-anon{display:flex;gap:10px;align-items:center;min-height:44px}.fb-anon input{width:20px;height:20px}
+.fb-foot{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.fb-match{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:480px){.fb-r{width:calc((100% - 40px)/5);min-width:44px}.fb-foot .btn{width:100%}}

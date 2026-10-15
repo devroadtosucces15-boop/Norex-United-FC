@@ -107,7 +107,7 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
   const dot = (el, n) => { const i = el?.querySelector('.hdr-n'); if (!i) return; i.hidden = !n; i.textContent = n > 99 ? '99+' : String(n || ''); };
   const SEEN = 'norex.nseen', seenId = () => { try { return +sessionStorage.getItem(SEEN) || 0; } catch { return 0; } };
   const setSeen = (v) => { try { sessionStorage.setItem(SEEN, String(v)); } catch {} };
-  const room = (l) => (/^feed\.html/.test(l || '') ? 'hub-clubhouse.html#ch-feed' : /^messages\.html/.test(l || '') ? 'hub-clubhouse.html#ch-chat' : /^https:/.test(l || '') ? l : 'hub.html#lk-alerts');
+  const room = (l) => (/^feed\.html/.test(l || '') ? 'hub-clubhouse.html#ch-feed' : /^messages\.html/.test(l || '') ? 'hub-clubhouse.html#ch-chat' : /^members\.html#feedback/.test(l || '') ? 'hub-clubhouse.html#ch-feedback' : /^https:/.test(l || '') ? l : 'hub.html#lk-alerts');
   const banner = (n) => {
     if (d.querySelector(`.nx-note[data-id="${n.id}"]`) || d.querySelectorAll('.nx-note').length >= 2) return;
     const b = d.createElement('div'); b.className = 'nx-note'; b.dataset.id = n.id; b.setAttribute('role', 'status');
