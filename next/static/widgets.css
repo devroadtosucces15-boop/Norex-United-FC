@@ -166,8 +166,9 @@
 .wx .ic svg{width:34px;height:34px;transition:.4s}
 .wx .ic:hover{color:#efcf7a;border-color:#efcf7a;transform:translateY(-4px);box-shadow:0 0 20px rgba(239,207,122,.35)}
 .wx .ic:hover svg{transform:rotate(-8deg) scale(1.2);filter:drop-shadow(0 0 8px #efcf7a)}
-.wx .poster{position:relative;display:grid;place-items:center;padding:26px 10px;border-radius:16px;overflow:hidden;background:radial-gradient(circle at 50% 40%,rgba(239,207,122,.3),transparent 60%),rgba(0,0,0,.35)}
-.wx .rays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,rgba(239,207,122,.14) 0 8deg,transparent 8deg 20deg);animation:rot 40s linear infinite}
+/* zn6: no box – the glow and the turning rays fade out towards the edges instead of stopping at a frame */
+.wx .poster{position:relative;display:grid;place-items:center;padding:26px 10px;overflow:hidden;background:radial-gradient(closest-side at 50% 42%,rgba(239,207,122,.26),transparent)}
+.wx .rays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,rgba(239,207,122,.14) 0 8deg,transparent 8deg 20deg);animation:rot 40s linear infinite;-webkit-mask-image:radial-gradient(circle closest-side,#000 14%,transparent 47%);mask-image:radial-gradient(circle closest-side,#000 14%,transparent 47%)}
 @keyframes rot{to{transform:rotate(360deg)}}
 .wx .poster .pt{position:relative;text-align:center}
 .wx .poster .pt>span{display:block;font:700 12px Inter;letter-spacing:.3em;color:#efcf7a;margin-bottom:8px}
@@ -243,7 +244,8 @@
 .pnote{list-style:none;margin:18px 0 0;padding:0}.pnote li{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-top:1px solid rgba(255,255,255,.07);font:500 13px Inter}.pnote b{font:700 15px Oswald;color:#efcf7a}
 .wx .tbars{display:flex;align-items:flex-end;gap:6px;height:60px;margin-top:16px;padding:0 4px}.wx .tbars span{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:2px}.wx .tbars i{width:42%;border-radius:3px 3px 1px 1px;display:block}.wx .tbars .f{background:linear-gradient(#f4dc95,#b88a2f)}.wx .tbars .a{background:linear-gradient(#ff7d72,#8a2d26)}
 .wx .tcap{margin:6px 0 0;text-align:center;font:500 11px Inter;color:#8e9ab2;letter-spacing:.04em}.wx .tcap .gf{color:#e7c768}.wx .tcap .ga{color:#e5655b}
-.wx .medals{display:flex;flex-wrap:wrap;justify-content:space-around;gap:18px 14px}.wx .medals .md{flex:0 1 150px}
+/* zn5: even columns (the 0×0 gradient <svg> no longer takes a slot and shifts the last row) and room above the ribbons */
+.wx .medals{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));justify-items:center;gap:22px 14px;padding-top:12px}.wx .medals .md{width:100%;max-width:150px}.wx .medals>svg{position:absolute}
 
 /* ---- match reel ---- */
 .wx .reelwrap{display:grid;gap:14px}
@@ -454,9 +456,9 @@ html[data-motion=off] .wx .si{transform:none!important}
 .wx .stk-stage{position:relative;height:392px;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .wx .sk{position:absolute;left:50%;top:0;width:220px;height:340px;margin-left:-110px;background:none;border-radius:0;animation:none;transition:transform .42s cubic-bezier(.2,.8,.2,1),opacity .3s;transform-origin:50% 100%;cursor:grab;will-change:transform}
 .wx .sk.far{visibility:hidden}
+/* zn4: .sk is also the loading-skeleton bar in style.css – without the reset above its shimmer box showed behind every stacked card */
 .wx .sk-in{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,1.1,.3,1)}
 .wx .sk.on .sk-in{transform:rotateY(180deg)}
-/* zn4: .sk is also the loading-skeleton bar in style.css – without the reset above its shimmer box showed behind every stacked card */
 .wx .sk-ft,.wx .sk-bk{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
 .wx .sk-bk{transform:rotateY(180deg);background:linear-gradient(160deg,#efcf7a,#a77a22);color:#1a1405;border-radius:18px;padding:16px;align-content:center;gap:6px;text-align:center;box-shadow:0 0 30px rgba(239,207,122,.35)}
 .wx .sk-bk b{font:700 22px Oswald}.wx .sk-bk em{font:600 12px Inter;font-style:normal;opacity:.7}
