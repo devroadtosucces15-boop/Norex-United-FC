@@ -1,0 +1,77 @@
+version: 1
+source_inventory: .norex/context/ND-001_REPOSITORY_INVENTORY.md
+principle: "Implementation evidence, validation evidence, and rollout/exposure are separate dimensions."
+
+frontend:
+  lane: FE
+  state: ACTIVE_PARTIALLY_IMPLEMENTED
+  items:
+    - id: FE-BOARD-01
+      title: "Grouped mega-menu navigation + mobile bottom tab bar"
+      implementation: VERIFIED
+      validation_evidence: PARTIAL
+      commit: 7e92298b770ef5713e05ab4502f18de2abbb8973
+      touched: [scripts/build.mjs, tests/site.test.mjs, web/app.js, web/style.css]
+    - id: FE-BOARD-02
+      title: "Stadium hero / parallax / interactive crest"
+      implementation: VERIFIED
+      validation_evidence: NEEDS_RECONCILIATION
+      commit: d65badcff5218c9a15d8cbee90ca317ace881c3d
+    - id: FE-BOARD-03
+      title: "3D tactics / squad pitch"
+      implementation: VERIFIED
+      validation_evidence: NEEDS_RECONCILIATION
+      commit: 1c487c5b2ac31258e799b3d2778aa3e042aa3b53
+    - id: FE-BOARD-04A
+      title: "Homepage information architecture/reorder"
+      implementation: VERIFIED
+      validation_evidence: PARTIAL
+      commit: 02eade7e3902f3aeb9673128c1fc49f10cec9762
+      touched: [scripts/build.mjs, tests/site.test.mjs, web/honours.js, web/style.css]
+    - id: FE-BOARD-04B
+      title: "3D squad carousel + leaders podium"
+      implementation: VERIFIED
+      validation_evidence: NEEDS_RECONCILIATION
+      commit: 9c2434b23e2e651c715aeff7fe4bdc0f974fe88c
+    - id: FE-BOARD-05B
+      title: "Motion/transitions/tab slide/card tilt and shine"
+      implementation: VERIFIED
+      validation_evidence: NEEDS_RECONCILIATION
+      commit: 856ebfed006cc80c5b7f14f1b8d162e86b25cdb3
+  unresolved:
+    - "Original redesign board source is not committed; missing board numbers/parts must not be invented."
+    - "Responsive and interaction validation must be established from tests/runtime evidence before declaring redesign complete."
+    - "ND-003 must extract the actual design system before Dev OS UI work."
+
+backend:
+  lane: BE
+  state: IMPLEMENTED_WITH_GATED_ROLLOUT_AND_VALIDATION
+  items:
+    - {id: BE-0, title: "Platform provisioning / queue / Web Push", implementation: VERIFIED, rollout: INFRASTRUCTURE}
+    - {id: BE-1, title: "Tactics Studio + versioned Playbook", implementation: VERIFIED, rollout: OWNER_GATED}
+    - {id: BE-2, title: "Locker Room summary", implementation: VERIFIED, rollout: MEMBERS}
+    - {id: BE-3, title: "Lineup ready-check", implementation: VERIFIED, rollout: FEATURE_DEPENDENT}
+    - {id: BE-4, title: "Squad week + trial funnel", implementation: VERIFIED, rollout: FEATURE_DEPENDENT}
+    - {id: BE-5, title: "Live D1 feature flag overrides + preview-as-role", implementation: VERIFIED, rollout: MANAGEMENT}
+    - {id: BE-6, title: "Announcement dry-run + health dashboard", implementation: VERIFIED, rollout: MANAGEMENT}
+    - {id: BE-7, title: "Nightly D1 backup + restore runbook", implementation: VERIFIED, rollout: INFRASTRUCTURE, known_gap: "R2 media itself is not backed up"}
+    - {id: BE-8, title: "Hub live roster/wave Durable Object", implementation: VERIFIED, rollout: OWNER_GATED}
+    - {id: BE-9, title: "Stat insights engine", implementation: VERIFIED, rollout: OWNER_GATED}
+    - {id: BE-10, title: "Club Intelligence HTTP API", implementation: VERIFIED, rollout: OWNER_GATED}
+    - {id: BE-11, title: "Session report poster / match-night reporting", implementation: VERIFIED, rollout: FEATURE_DEPENDENT}
+    - {id: BE-12, title: "Builds Lab / game-version impact", implementation: VERIFIED, rollout: FEATURE_DEPENDENT}
+  unresolved:
+    - "Owner-gated features require explicit product/QA decision before broader exposure."
+    - "Do not equate an implementation commit with production validation."
+    - "R2 media recovery remains a documented infrastructure gap."
+
+cross_lane:
+  deterministic_validation:
+    harness: tests/run.mjs
+    test_modules_observed: 54
+    ci: ".github/workflows/test.yml"
+    policy: "Reuse/integrate existing validation rather than creating a duplicate runner."
+  git_noise:
+    class: DATA_AUTOMATION
+    pattern: "data: update ..."
+    policy: "Suppress from normal engineering-history context unless data history is relevant."
