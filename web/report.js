@@ -419,13 +419,16 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
       if (recLive() && !L.clock) L.clock = setInterval(tickClock, 500);
       if ((m.state === 'done' || m.state === 'idle') && L.tool && was !== m.state) liveTool(null); else liveBar();
       paintFab(); askResend();
+    } else if (m.k === 'min' || m.k === 'close') {
+      rhost(m.k === 'min' ? 'min' : 'gone');
     } else if (m.k === 'uploaded') {
+      rhost('gone');
       const it = S.items.find((x) => x.recording?.rid === m.id);
       if (it && !it.recording.uploaded) { it.recording.uploaded = true; it.recording.key = m.key; save(); enqueue(it); ctx.toast?.(`🎥 Video for #${it.n} uploaded`); }
     } else if (m.k === 'finished') {
       // the take is over: show it in the issue panel (video + text + category). Only the tab being looked at takes it; the others ask again when they come to the front.
       if (document.visibilityState !== 'visible' || L.seen.has(m.id) || L.pending?.id === m.id) return;
-      L.pending = { id: m.id, item: m.item, url: URL.createObjectURL(m.blob) };
+      L.pending = { id: m.id, item: m.item, url: URL.createObjectURL(m.blob) }; rhost('min');
       if (!open) toggle(true);
       liveBar(); openRecordingSheet();
     }
@@ -462,7 +465,7 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
       bar.innerHTML = `${b('data-l="__show"', '🐞', 'Show tools')}${live ? `<span class="nxr-clock">${r.state === 'paused' ? '⏸' : '●'} ${fmt(liveMs())}</span>${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'End', ' class="red"')}` : ''}`;
     } else {
       bar.innerHTML = [
-        live ? `${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'End', ' class="red"')}${b('data-l="__discard"', '✕', 'Cancel')}${b('data-l="__moment"', '🚩', 'Moment')}<span class="nxr-clock">${r.state === 'paused' ? '⏸' : '●'} ${fmt(liveMs())}</span>`
+        live ? `${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'End', ' class="red"')}${b('data-l="__discard"', '✕', 'Cancel')}${b('data-l="__moment"', '🚩', 'Moment')}${L.rh ? b('data-l="__rhost"', '🎛', 'Recorder') : ''}<span class="nxr-clock">${r.state === 'paused' ? '⏸' : '●'} ${fmt(liveMs())}</span>`
           : b('data-l="__rec"', '🎥', r.state === 'starting' ? 'Starting…' : 'Record', r.state === 'starting' ? ' disabled' : ''),
         L.pending ? b('data-l="__finish"', '📎', 'Finish report', ' class="red"') : '',
         '<i class="nxr-div"></i>',
@@ -486,6 +489,7 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
       if (k === '__stop') return hostSend({ k: 'cmd', cmd: 'stop' });
       if (k === '__discard') return hostSend({ k: 'cmd', cmd: 'discard' });
       if (k === '__moment') { hostSend({ k: 'cmd', cmd: 'moment' }); return ctx.toast?.('🚩 Moment marked'); }
+      if (k === '__rhost') return rhost('open');
       if (k === '__finish') return openRecordingSheet();
       if (k === '__note') return setTool(tool === 'pin' ? 'browse' : 'pin');
       if (k === '__undo') { L.s.undo(); return lChanged(); }
@@ -502,11 +506,26 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
     document.body.appendChild(bar);
   }
   function tuck(on) { L.tucked = on; if (on) liveTool(null); store.set('nx_rec_tucked', on); liveBar(); }
+  // Phones: the recorder is a panel inside this page (an iframe), not a second tab, because a tab the user switches away from is suspended and
+  // the recording would stop. 'min' tucks it out of sight but keeps it running; 'gone' removes it once the take is saved.
+  const COARSE = () => { try { return matchMedia('(pointer:coarse)').matches; } catch { return false; } };
+  function rhost(mode) {
+    if (mode === 'gone') { L.rh?.remove(); L.rh = null; return liveBar(); }
+    if (!L.rh) {
+      L.rh = Object.assign(document.createElement('iframe'), { className: 'nxr-rh', src: `${ctx.libBase || ''}record-host.html?s=${encodeURIComponent(S.id)}` });
+      L.rh.dataset.nxr = ''; L.rh.setAttribute('allow', 'display-capture; microphone; autoplay');
+      document.body.appendChild(L.rh);
+    }
+    L.rh.classList.toggle('min', mode === 'min'); liveBar();
+  }
+  addEventListener('beforeunload', (e) => { if (L.rh && recLive()) { e.preventDefault(); e.returnValue = ''; } });
   function openRecorder() {
+    if (L.rh) return rhost('open');
     if (recLive() || L.rec.state === 'starting') return ctx.toast?.('The recorder is already running – it is the small window.');
     if (!navigator.mediaDevices?.getDisplayMedia) return ctx.toast?.('This browser cannot record the screen – use the pin tools.');
     // Open-or-find by name WITHOUT navigating: if the recorder window already exists it is only brought forward, never reloaded
     // (reloading it would end a recording that is in progress).
+    if (COARSE()) return rhost('open');
     const w = window.open('', 'nx-recorder', 'popup=yes,width=420,height=560');
     if (!w) return ctx.toast?.('Pop-up blocked – allow pop-ups for this site, then tap Record again.');
     let fresh = false;
