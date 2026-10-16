@@ -16,7 +16,7 @@
 import { can, flagOn } from './roles.js';
 import { broadcastRoom } from './clubroom.js';
 import { encryptPayload, safeEndpoint, sendPush } from './webpush.js';
-import { message, header, text, footer, buttons } from './ui.js';
+import { message, header, text, footer, buttons, cards, bannerUrl } from './ui.js';
 
 const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
@@ -68,10 +68,19 @@ const run = (env, sql, ...args) => env.DB.prepare(sql).bind(...args).run();
 const marks = (n) => Array(n).fill('?').join(',');
 const opt = (v) => v ?? undefined;
 // Site-relative link ("members.html#alerts", "players/123.html") or an https URL.
+// The redesign moved the Squad Hub tabs to their own pages; links written for the old members.html go straight to the new page
+// (members.html itself only redirects, and its #schedule-12 style fragments never matched).
+export const relink = (s) => {
+  const m = /^members\.html#(schedule|events|rsvp|motm|rush|checkin)(?:-\d+)?$/i.exec(s);
+  if (m) return 'hub-matchnight.html';
+  if (/^members\.html#(squads|awards|predict|recs|scout)/i.test(s)) return 'hub-squad.html';
+  if (/^members\.html#(docs|handbook)/i.test(s)) return 'hub-handbook.html';
+  return s;
+};
 const safeLink = (l) => {
   const s = String(l ?? '').trim().slice(0, 300);
   if (!s) return null;
-  if (/^[a-z0-9_\-./]+\.html([?#][\w\-=&%.#]*)?$/i.test(s) && !s.includes('..') && !s.startsWith('/')) return s;
+  if (/^[a-z0-9_\-./]+\.html([?#][\w\-=&%.#]*)?$/i.test(s) && !s.includes('..') && !s.startsWith('/')) return relink(s);
   try { const u = new URL(s); return u.protocol === 'https:' ? u.href : null; } catch { return null; }
 };
 const parsePrefs = (s) => { try { const p = JSON.parse(s || '{}'); return p && typeof p === 'object' ? p : {}; } catch { return {}; } };
@@ -103,7 +112,10 @@ export async function notify(env, ids, n) {
   const rows = await all(env, `SELECT u.id, u.role, p.prefs FROM users u LEFT JOIN notify_prefs p ON p.user_id = u.id WHERE u.id IN (${marks(ids.length)})`, ...ids);
   const at = Date.now();
   const stmts = [], told = [], pushTo = [];
+  // The same alert twice within 15 minutes (a double tap on Post, two crons, a retry) lands once.
+  const dup = n.type === 'test' ? new Set() : new Set((await all(env, `SELECT user_id FROM notifications WHERE title = ? AND at > ? AND user_id IN (${marks(ids.length)})`, clean(n.title, 140), at - 15 * 60e3, ...ids)).map((d) => String(d.user_id)));
   for (const r of rows) {
+    if (dup.has(String(r.id))) continue;
     if (!flagOn(env, { role: r.role }, 'notifications')) continue;
     const mode = modeOf(parsePrefs(r.prefs), n.type);
     if (mode === 'off') continue;
@@ -161,6 +173,20 @@ const discord = (env, path, body) => fetch(`https://discord.com/api/v10${path}`,
 });
 const siteUrl = (env, link) => (!link ? env.SITE_URL : /^https:/.test(link) ? link : `${String(env.SITE_URL).replace(/\/?$/, '/')}${link}`);
 
+// One DM, in the bot design system. Personal and short: the match-night kinds (line-up, reminders, schedule) get the match-night banner
+// and a big "your position" line; everything else keeps the plain alert layout. Group posts in a channel look different (events.js).
+export function dmMessage(env, n, url) {
+  const lineup = /^lineup:/.test(n.ref ?? ''), night = lineup || n.type === 'event';
+  const title = `${n.icon ?? '🔔'} ${n.reminders ? 'Reminder: ' : ''}${n.title}`.slice(0, 250);
+  return message({ accent: lineup ? 'gold' : DM_ACCENT[n.type] ?? 'red', blocks: [
+    night ? cards(bannerUrl(env, 'matchnight')) : null,
+    header({ eyebrow: lineup ? 'NOREX UNITED · Your position' : night ? 'NOREX UNITED · Match night' : 'NOREX UNITED · Alert', title, size: lineup ? 2 : 3 }),
+    text([n.body, n.ack ? '**Please open the site and tap “Got it” to acknowledge.**' : ''].filter(Boolean).join('\n\n')),
+    footer(`Just for you · <t:${Math.floor(n.at / 1000)}:R> · change DM settings: Hub → Alerts`),
+    buttons([{ label: lineup ? 'Open the line-up' : night ? 'Open match night' : 'Open on the site', url }]),
+  ] });
+}
+
 // Sends queued DMs (oldest first). Stops on Discord rate limits; the next run picks up the rest.
 export async function deliverDMs(env, limit = 25) {
   const q = await all(env, `SELECT n.*, p.dm_channel FROM notifications n LEFT JOIN notify_prefs p ON p.user_id = n.user_id
@@ -174,10 +200,14 @@ export async function deliverDMs(env, limit = 25) {
   const channels = {};
   let sent = 0, failed = 0;
   for (const n of q) {
+    // Claim the row first: the request that queued it and the 10-minute cron can both be sending, and each used to send it.
+    const claimed = await run(env, "UPDATE notifications SET dm = 'sending' WHERE id = ? AND dm = 'queued'", n.id);
+    if (!claimed.meta?.changes) continue;
+    const unclaim = () => run(env, "UPDATE notifications SET dm = 'queued' WHERE id = ? AND dm = 'sending'", n.id);
     let ch = channels[n.user_id] ?? n.dm_channel;
     if (!ch) {
       const r = await discord(env, '/users/@me/channels', { recipient_id: n.user_id });
-      if (r.status === 429) break;
+      if (r.status === 429) { await unclaim(); break; }
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.id) { await mark(n.id, 'failed'); failed++; continue; }
       ch = d.id;
@@ -186,15 +216,8 @@ export async function deliverDMs(env, limit = 25) {
     }
     channels[n.user_id] = ch;
     const url = siteUrl(env, n.link);
-    const r = await discord(env, `/channels/${ch}/messages`, {
-      ...message({ accent: DM_ACCENT[n.type] ?? 'red', blocks: [
-        header({ eyebrow: 'NOREX UNITED · Alert', title: `${n.icon ?? '🔔'} ${n.reminders ? 'Reminder: ' : ''}${n.title}`.slice(0, 250), size: 3 }),
-        text([n.body, n.ack ? '**Please open the site and tap “Got it” to acknowledge.**' : ''].filter(Boolean).join('\n\n')),
-        footer(`Sent <t:${Math.floor(n.at / 1000)}:R> · change DM settings: Squad Hub → 🔔 Alerts`),
-        buttons([{ label: 'Open on the site', url }]),
-      ] }),
-    });
-    if (r.status === 429) break;
+    const r = await discord(env, `/channels/${ch}/messages`, dmMessage(env, n, url));
+    if (r.status === 429) { await unclaim(); break; }
     if (r.ok) { await mark(n.id, 'sent'); sent++; continue; }
     await mark(n.id, 'failed'); failed++;
     // 50007 = the member doesn't accept DMs; a stale channel id is dropped so the next DM opens a new one.

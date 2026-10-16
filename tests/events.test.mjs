@@ -141,7 +141,7 @@ t('post with DM off and no channel: nobody told, nothing on Discord', quiet.s ==
 t('home on: public events carry the line-up (names + positions, no ids)', (await pub()).events?.find((e) => e.id === liveId)?.lineup?.players?.some((p) => p.pos === 'GK') && !JSON.stringify((await pub()).events).includes('"501"'));
 const loud = await call(mgr, '/api/events/lineup', { ...pl, publish: true, dm: true, channel: '70001', tag: true, home: false, discord: false });
 t('post with DM on: each starter who has not muted is told their position', loud.d.notified === 1 && notesFor('500') === before[0] + 1 && notesFor('501') === before[1]);
-const sent = posts.at(-1);
+const sent = posts.at(-1); var lineupMsg = sent;
 t('post to a chosen channel tags the starters (muted one stays a plain name)', sent?.channel === '70001' && loud.d.discord?.ok && loud.d.tagged === 1 && JSON.stringify(sent).includes('<@500>') && !JSON.stringify(sent).includes('<@501>') && sent.allowed_mentions.users.join() === '500');
 t('home off again: line-up leaves the public route', !(await pub()).events?.find((e) => e.id === liveId)?.lineup);
 sqlite.prepare("DELETE FROM notify_prefs WHERE user_id = '501'").run();
@@ -212,4 +212,20 @@ const evJs = readFileSync(new URL('../web/events.js', import.meta.url), 'utf8');
 t('month grid: calendar.js exposes NXCalendar.grid and calls the month endpoint', /window\.NXCalendar\s*=\s*\{\s*grid\s*\}/.test(calJs) && calJs.includes('/api/events/calendar?month='));
 t('month grid: Monday-first offset and no NaN/undefined in the markup path', calJs.includes('(cur.getDay() + 6) % 7') && !/\bundefined\b\s*\+/.test(calJs));
 t('month grid: schedule toggles 📆 Month and loads assets/calendar.js', evJs.includes('data-cal-view') && evJs.includes('assets/calendar.js') && evJs.includes("view = 'list'"));
+
+// ----- notifications: one DM each, new design, links that land on the new pages -----
+const nt = await import('../bot/notify.js');
+t('old members.html links map to the new Hub pages', nt.relink('members.html#schedule-12') === 'hub-matchnight.html' && nt.relink('members.html#awards') === 'hub-squad.html' && nt.relink('players/5.html') === 'players/5.html');
+const dupA = await nt.notify(env, ['500'], { type: 'event', title: 'Dup guard test', link: 'members.html#schedule-3' }), dupB = await nt.notify(env, ['500'], { type: 'event', title: 'Dup guard test', link: 'members.html#schedule-3' });
+t('the same alert twice in a row lands once, with the new link', dupA === 1 && dupB === 0 && sqlite.prepare("SELECT link FROM notifications WHERE user_id = '500' AND title = 'Dup guard test'").get().link === 'hub-matchnight.html');
+sqlite.prepare("DELETE FROM notifications WHERE title = 'Dup guard test'").run();
+await nt.notify(env, ['500'], { type: 'event', title: 'Claim test', link: 'hub-matchnight.html' });
+let dmSends = 0; const wrapped = globalThis.fetch;
+globalThis.fetch = async (u, init) => { if (String(u).endsWith('/channels/dm/messages')) dmSends++; return wrapped(u, init); };
+await Promise.all([nt.deliverDMs(env), nt.deliverDMs(env)]);
+globalThis.fetch = wrapped;
+t('two DM senders at once: the queued DM goes out exactly once', dmSends === 1);
+const dmText = JSON.stringify(nt.dmMessage(env, { type: 'event', icon: '🧩', title: 'You’re starting at CM', ref: 'lineup:4:1', at: Date.now() }, 'https://x/hub-matchnight.html'));
+const chText = JSON.stringify(lineupMsg);
+t('DM and channel post look different: DM is personal with the banner + gold stripe, the channel post groups the XI by line', /your position/i.test(dmText) && dmText.includes('Just for you') && dmText.includes('banner-matchnight') && !chText.includes('Just for you') && /DEFENCE/.test(chText) && /GK/.test(chText) && chText.includes('hub-matchnight.html'));
 done();
