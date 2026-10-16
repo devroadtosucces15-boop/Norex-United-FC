@@ -1,0 +1,122 @@
+{
+ "id": "imv45g6da5c4m:9",
+ "session": "imv45g6da5c4m",
+ "n": 9,
+ "page": "/Norex-United-FC/next/results.html",
+ "severity": "wrong",
+ "note": "Same",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 9,
+  "t": 1791743632667,
+  "page": "/Norex-United-FC/next/results.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/results.html",
+  "title": "Results · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "Same",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     239,
+     383
+    ]
+   ],
+   "bbox": {
+    "x": 239,
+    "y": 383,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div.grid.g2:nth-of-type(2) > div.panel:nth-of-type(1) > div.wx > div.rail.tl:nth-of-type(1) > button.dot.L:nth-of-type(13)",
+   "tag": "button",
+   "id": null,
+   "classes": [
+    "dot",
+    "L"
+   ],
+   "text": "Shortsquad 10 Oct",
+   "href": null,
+   "rect": {
+    "x": 154.2,
+    "y": 319.4,
+    "w": 104,
+    "h": 68
+   },
+   "style": {
+    "position": "relative",
+    "display": "flex",
+    "overflow": "visible",
+    "zIndex": "1",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 251)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.rail",
+    "div.wx",
+    "div.panel",
+    "div.grid"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 1573,
+   "docH": 10864,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791743632667,
+ "updated_at": 1791743632762
+}

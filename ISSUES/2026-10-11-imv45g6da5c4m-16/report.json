@@ -1,0 +1,122 @@
+{
+ "id": "imv45g6da5c4m:16",
+ "session": "imv45g6da5c4m",
+ "n": 16,
+ "page": "/Norex-United-FC/next/tactics.html",
+ "severity": "wrong",
+ "note": "How does this part work I know it's not the studio but there isn't a couple things that I don't get in a couple things are around first of all it says our 11 what is that based off of is that based off the amount of games we have with affirmation and why when I click on affirmations and I select affirmation why is it that I can't it doesn't show when going back and seeing this screen Then we have the pitch finished the changes so that's correct the camera does not push all it says that this is a 3-D broadcast and it's not it's a flat tactical plan out and if you switch between the two doesn't change so we need to add the 3-D one We also need the option to be able to swap manually swap or ride or or formation And all that you're gonna do is go ahead and we don't align the players I'm sorry about choose a place based on her stats our best",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 16,
+  "t": 1791744416496,
+  "page": "/Norex-United-FC/next/tactics.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/tactics.html",
+  "title": "Tactics table · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "How does this part work I know it's not the studio but there isn't a couple things that I don't get in a couple things are around first of all it says our 11 what is that based off of is that based off the amount of games we have with affirmation and why when I click on affirmations and I select affirmation why is it that I can't it doesn't show when going back and seeing this screen Then we have the pitch finished the changes so that's correct the camera does not push all it says that this is a 3-D broadcast and it's not it's a flat tactical plan out and if you switch between the two doesn't change so we need to add the 3-D one We also need the option to be able to swap manually swap or ride or or formation And all that you're gonna do is go ahead and we don't align the players I'm sorry about choose a place based on her stats our best",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     343.66666666666663,
+     377
+    ]
+   ],
+   "bbox": {
+    "x": 343.66666666666663,
+    "y": 377,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div#league > div.txpane.tx-in:nth-of-type(2) > div.chips.pfin:nth-of-type(1)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "chips",
+    "pfin"
+   ],
+   "text": "Pitch finish Striped grass Floodlit night Blueprint Chalkboard",
+   "href": null,
+   "rect": {
+    "x": 17.2,
+    "y": 310.4,
+    "w": 395.6,
+    "h": 74
+   },
+   "style": {
+    "position": "static",
+    "display": "flex",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.txpane",
+    "div",
+    "section.sec",
+    "div.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 3,
+   "docH": 2918,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791744416496,
+ "updated_at": 1791744416690
+}

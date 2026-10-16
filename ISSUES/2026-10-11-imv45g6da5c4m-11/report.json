@@ -1,0 +1,124 @@
+{
+ "id": "imv45g6da5c4m:11",
+ "session": "imv45g6da5c4m",
+ "n": 11,
+ "page": "/Norex-United-FC/next/results.html",
+ "severity": "polish",
+ "note": "We need to fix this for if you see the tiles I think we should probably correctly Lay them out to where there is no space between them and not space between them but no Besides the scored Card it shouldn't have such a big space then in the bottom the larger one larger card to make up for the with an in addition to that the buttons that you click for wind straws losses you know do not work",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 11,
+  "t": 1791743926168,
+  "page": "/Norex-United-FC/next/results.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/results.html",
+  "title": "Results · NOREX UNITED",
+  "tabs": [],
+  "severity": "polish",
+  "note": "We need to fix this for if you see the tiles I think we should probably correctly Lay them out to where there is no space between them and not space between them but no Besides the scored Card it shouldn't have such a big space then in the bottom the larger one larger card to make up for the with an in addition to that the buttons that you click for wind straws losses you know do not work",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     385.3333333333333,
+     572.3333333333333
+    ],
+    [
+     4,
+     163
+    ]
+   ],
+   "bbox": {
+    "x": 4,
+    "y": 163,
+    "w": 381.3333333333333,
+    "h": 409.33333333333326
+   }
+  },
+  "target": {
+   "selector": "section#sec0 > div.sb:nth-of-type(1)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "sb"
+   ],
+   "text": "44 🏆 WON 4 🤝 DRAWN 6 💔 LOST 189 ⚽ SCORED 45 🧤 CONCEDED",
+   "href": null,
+   "rect": {
+    "x": 17.2,
+    "y": 276.4,
+    "w": 395.6,
+    "h": 273.8
+   },
+   "style": {
+    "position": "static",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "section.sec",
+    "div.wrap",
+    "main"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 10864,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791743926168,
+ "updated_at": 1791743926283
+}

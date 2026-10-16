@@ -1,0 +1,123 @@
+{
+ "id": "imv45g6da5c4m:3",
+ "session": "imv45g6da5c4m",
+ "n": 3,
+ "page": "/Norex-United-FC/next/index.html",
+ "severity": "polish",
+ "note": "I need you to take a look at the cards again not just the ones that have an actual avatar like mine And check every card in any any Place site And make sure it formatting is correct cause right now if you check the one with inventory number 15 is supposed to be smaller and align within the shirt correctly but also for any other card if you realize the stats on the bottom They overall so please adjust and there is another one in the bottom which is affecting the bronze Or in this case the top top player of the month Weird animation with the gold background it loads as a block then Please",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 3,
+  "t": 1791743130809,
+  "page": "/Norex-United-FC/next/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "polish",
+  "note": "I need you to take a look at the cards again not just the ones that have an actual avatar like mine And check every card in any any Place site And make sure it formatting is correct cause right now if you check the one with inventory number 15 is supposed to be smaller and align within the shirt correctly but also for any other card if you realize the stats on the bottom They overall so please adjust and there is another one in the bottom which is affecting the bronze Or in this case the top top player of the month Weird animation with the gold background it loads as a block then Please",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     386.66666666666663,
+     744.333333333333
+    ],
+    [
+     30.333333333333332,
+     10
+    ]
+   ],
+   "bbox": {
+    "x": 30.333333333333332,
+    "y": 10,
+    "w": 356.3333333333333,
+    "h": 734.333333333333
+   }
+  },
+  "target": {
+   "selector": "div.cardwrap:nth-of-type(1) > a.pc.pc-card > span.stats:nth-of-type(7) > div:nth-of-type(2) > span",
+   "tag": "span",
+   "id": null,
+   "classes": [],
+   "text": "AST",
+   "href": "player-x_MrMike_x.html",
+   "rect": {
+    "x": 206.1,
+    "y": 376.6,
+    "w": 18.9,
+    "h": 10
+   },
+   "style": {
+    "position": "static",
+    "display": "inline",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "7.65px",
+    "color": "rgb(75, 53, 16)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div",
+    "span.stats",
+    "a.pc",
+    "div.cardwrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 5470,
+   "docH": 9666,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791743130809,
+ "updated_at": 1791743130999
+}

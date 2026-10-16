@@ -1,0 +1,121 @@
+{
+ "id": "imv45g6da5c4m:12",
+ "session": "imv45g6da5c4m",
+ "n": 12,
+ "page": "/Norex-United-FC/next/stats.html",
+ "severity": "wrong",
+ "note": "DM I'm sorry the club sense seems to have the same type of visuals we already carrying the main menu so I don't know if we need to change the main menu to reflect other things or make it simpler to where it only it has the same things but it displayed in a different format or public friendly you could say And this is a bit more specific to the stats but these views these type of visuals skip repeated a lot across the site and doesn't make sense it's confusing and also it's a bit It's a bit Lazy",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 12,
+  "t": 1791744009298,
+  "page": "/Norex-United-FC/next/stats.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/stats.html",
+  "title": "Club stats · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "DM I'm sorry the club sense seems to have the same type of visuals we already carrying the main menu so I don't know if we need to change the main menu to reflect other things or make it simpler to where it only it has the same things but it displayed in a different format or public friendly you could say And this is a bit more specific to the stats but these views these type of visuals skip repeated a lot across the site and doesn't make sense it's confusing and also it's a bit It's a bit Lazy",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     234.33333333333331,
+     455
+    ]
+   ],
+   "bbox": {
+    "x": 234.33333333333331,
+    "y": 455,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "section#sec0 > div.wx:nth-of-type(1) > div.kpi > div.kc.k-rate:nth-of-type(1) > svg.sp",
+   "tag": "svg",
+   "id": null,
+   "classes": [
+    "sp"
+   ],
+   "text": "",
+   "href": null,
+   "rect": {
+    "x": 34.2,
+    "y": 431.2,
+    "w": 361.6,
+    "h": 70
+   },
+   "style": {
+    "position": "static",
+    "display": "block",
+    "overflow": "hidden",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.kc",
+    "div.kpi",
+    "div.wx",
+    "section.sec"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 7320,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791744009298,
+ "updated_at": 1791744009425
+}

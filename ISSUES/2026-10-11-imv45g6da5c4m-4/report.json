@@ -1,0 +1,125 @@
+{
+ "id": "imv45g6da5c4m:4",
+ "session": "imv45g6da5c4m",
+ "n": 4,
+ "page": "/Norex-United-FC/next/index.html",
+ "severity": "polish",
+ "note": "This has weird I don't know it has weird weird animation where it feels laggy once you're scrolling in it feels like a Jetter is a lot it doesn't feel like it goes follow the path of your finger and yes it goes in the correct direction but it feels like super clunky and super tutoring",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 4,
+  "t": 1791743199433,
+  "page": "/Norex-United-FC/next/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "polish",
+  "note": "This has weird I don't know it has weird weird animation where it feels laggy once you're scrolling in it feels like a Jetter is a lot it doesn't feel like it goes follow the path of your finger and yes it goes in the correct direction but it feels like super clunky and super tutoring",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     7,
+     148.33333333333394
+    ],
+    [
+     426.3333333333333,
+     645.3333333333339
+    ]
+   ],
+   "bbox": {
+    "x": 7,
+    "y": 148.33333333333394,
+    "w": 419.3333333333333,
+    "h": 497
+   }
+  },
+  "target": {
+   "selector": "div.rail.cover > div.ci:nth-of-type(8) > a.pc.pc-card > div.art > img.cut",
+   "tag": "img",
+   "id": null,
+   "classes": [
+    "cut"
+   ],
+   "text": "",
+   "href": "player-Semiols.html",
+   "rect": {
+    "x": 133.1,
+    "y": 317.7,
+    "w": 164.2,
+    "h": 93.7
+   },
+   "style": {
+    "position": "absolute",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "1",
+    "fontSize": "15px",
+    "color": "rgb(42, 28, 4)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "0"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.art",
+    "a.pc",
+    "div.ci",
+    "div.rail"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 6558,
+   "docH": 9666,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791743199433,
+ "updated_at": 1791743199555
+}

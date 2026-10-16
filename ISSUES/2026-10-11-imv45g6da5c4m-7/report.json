@@ -1,0 +1,122 @@
+{
+ "id": "imv45g6da5c4m:7",
+ "session": "imv45g6da5c4m",
+ "n": 7,
+ "page": "/Norex-United-FC/next/results.html",
+ "severity": "wrong",
+ "note": "Check the headers for every single page for every single sub that takes you to its homepage seems like it's kind of broken I don't know if that's because of the gold bar we have But it looks like he has something in the background and missile",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 7,
+  "t": 1791743543227,
+  "page": "/Norex-United-FC/next/results.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/results.html",
+  "title": "Results · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "Check the headers for every single page for every single sub that takes you to its homepage seems like it's kind of broken I don't know if that's because of the gold bar we have But it looks like he has something in the background and missile",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     402,
+     243.66666666666666
+    ],
+    [
+     16.666666666666664,
+     25
+    ]
+   ],
+   "bbox": {
+    "x": 16.666666666666664,
+    "y": 25,
+    "w": 385.3333333333333,
+    "h": 218.66666666666666
+   }
+  },
+  "target": {
+   "selector": "header.bar > div.wrap > a.lg:nth-of-type(1) > b",
+   "tag": "b",
+   "id": null,
+   "classes": [],
+   "text": "UNITED",
+   "href": "index.html",
+   "rect": {
+    "x": 150.2,
+    "y": 104,
+    "w": 77.5,
+    "h": 36
+   },
+   "style": {
+    "position": "static",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "24px",
+    "color": "rgb(224, 73, 63)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "a.lg",
+    "div.wrap",
+    "header.bar"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 10864,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791743543227,
+ "updated_at": 1791743543335
+}

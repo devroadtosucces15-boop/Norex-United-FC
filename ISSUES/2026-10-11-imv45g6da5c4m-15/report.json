@@ -1,0 +1,121 @@
+{
+ "id": "imv45g6da5c4m:15",
+ "session": "imv45g6da5c4m",
+ "n": 15,
+ "page": "/Norex-United-FC/next/stats.html",
+ "severity": "wrong",
+ "note": "Here You could I like to type a graph but it has a white thought I'm assuming because of the distribution of the amount of I don't know actually OK I'm guessing it's the ratings the bar itself is zero 210 and the ratings for the white dots and the white line I'm sorry that yellow line is their average Is there a better way to display this using that same type of meter cause it looked the more than it looks messier",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 15,
+  "t": 1791744265133,
+  "page": "/Norex-United-FC/next/stats.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/stats.html",
+  "title": "Club stats · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "Here You could I like to type a graph but it has a white thought I'm assuming because of the distribution of the amount of I don't know actually OK I'm guessing it's the ratings the bar itself is zero 210 and the ratings for the white dots and the white line I'm sorry that yellow line is their average Is there a better way to display this using that same type of meter cause it looked the more than it looks messier",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     111.66666666666666,
+     271.33333333333303
+    ]
+   ],
+   "bbox": {
+    "x": 111.66666666666666,
+    "y": 271.33333333333303,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "section#sec3 > div.panel > div.wx > div.spread > div.sax",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "sax"
+   ],
+   "text": "5 6 7 8 9 10",
+   "href": null,
+   "rect": {
+    "x": 38.2,
+    "y": 263.6,
+    "w": 353.6,
+    "h": 16
+   },
+   "style": {
+    "position": "relative",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "11px",
+    "color": "rgb(127, 139, 163)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.spread",
+    "div.wx",
+    "div.panel",
+    "section.sec"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 4104,
+   "docH": 7320,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791744265133,
+ "updated_at": 1791744265246
+}

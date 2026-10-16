@@ -1,0 +1,119 @@
+{
+ "id": "imv45g6da5c4m:6",
+ "session": "imv45g6da5c4m",
+ "n": 6,
+ "page": "/Norex-United-FC/next/index.html",
+ "severity": "polish",
+ "note": "Overall all cards again broken these here are supposed to be angled and tilt break them more the tilt effect needs to be faster and more responive",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 6,
+  "t": 1791743475054,
+  "page": "/Norex-United-FC/next/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "polish",
+  "note": "Overall all cards again broken these here are supposed to be angled and tilt break them more the tilt effect needs to be faster and more responive",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     238.33333333333331,
+     571.6666666666666
+    ]
+   ],
+   "bbox": {
+    "x": 238.33333333333331,
+    "y": 571.6666666666666,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div.wrap > section.hero:nth-of-type(1) > div.stage:nth-of-type(2) > div.crestwrap.tilt:nth-of-type(1) > img",
+   "tag": "img",
+   "id": null,
+   "classes": [],
+   "text": "",
+   "href": null,
+   "rect": {
+    "x": 108.7,
+    "y": 433.7,
+    "w": 210,
+    "h": 304.1
+   },
+   "style": {
+    "position": "relative",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "2",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.crestwrap",
+    "div.stage",
+    "section.hero",
+    "div.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 162,
+   "docH": 9666,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791743475054,
+ "updated_at": 1791743475252
+}
