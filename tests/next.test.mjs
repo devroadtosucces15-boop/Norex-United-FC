@@ -353,6 +353,13 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('docs release: only the owner sees it, only while the server says held, behind a two-tap, calls POST /api/docs/release', ct.includes("D.held !== true") && ct.includes('!isOwner()') && ct.includes("two('release'") && ct.includes("call('/api/docs/release', {})"));
   t('docs release: card reminds about the founder letter, the one-week clock and announcing in Discord first', ['Founder letter', 'one-week clock', 'Announce it in Discord first'].every((x) => ct.includes(x)));
 }
+{
+  const ui2 = fs.readFileSync(path.join(ROOT, 'next/lib/ui.mjs'), 'utf8'), mcss = fs.readFileSync(path.join(ROOT, 'next/static/motion.css'), 'utf8'), mj3 = fs.readFileSync(path.join(ROOT, 'next/static/motion.js'), 'utf8');
+  t('hub key: glow, rising glitter and a lock, bounce + key-up + lock on tap, then the Hub opens (straight away in Casual)', ['kglow', 'ksp s5', 'class="kl"'].every((x) => ui2.includes(x)) && /\.tabbar \.key\.go \.kk\{transform:translateY/.test(mcss) && mj3.includes("closest('.tabbar .key')") && mj3.includes("mode !== 'full'"));
+  t('tab bar: tiles centred with equal room above and below', /\.tabbar a:not\(\.key\)\{display:flex!important;flex-direction:column/.test(mcss));
+  const home = read('index.html');
+  t('home: five most active players (by games) under the hero, tilt + glow, linking to profiles', (home.match(/class="act5-i tilt"/g) || []).length === 5 && home.includes('Most active') && /\.act5-i \.pc-card\{filter:none\}/.test(fs.readFileSync(path.join(ROOT, 'next/static/style.css'), 'utf8')));
+}
 fs.rmSync(out, { recursive: true, force: true });
 t('squad wheel and reel cards use a flat floor shadow, not a per-frame filter (wheel was ~20 fps on phones)', /\.wx \.cover \.ci \.pc-card,\.wx \.reel \.pc-card[^{]*\{filter:none\}/.test(fs.readFileSync(ROOT + 'next/static/widgets.css', 'utf8')));
 {

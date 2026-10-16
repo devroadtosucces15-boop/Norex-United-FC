@@ -224,6 +224,10 @@
     const ms = tail ? 240 : 320, o = { duration: ms, easing: 'cubic-bezier(.22,.8,.3,1)', fill: 'both' };
     w.firstChild.animate(tail ? [{ opacity: .5 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: .5, offset: .4 }, { opacity: .4 }], o);
     w.lastChild.animate([{ transform: 'translate3d(-110%,0,0)', opacity: 0 }, { opacity: 1, offset: .3 }, { transform: 'translate3d(110%,0,0)', opacity: 0 }], o).onfinish = () => w.remove(); setTimeout(() => w.remove(), ms + 80); };
+  addEventListener('pageshow', () => d.querySelector('.tabbar .key.go')?.classList.remove('go'));
+  // the Hub key: bounce, key slides up, gold lock closes, then the Hub opens (straight away in Casual / reduced motion or with a modifier key)
+  d.addEventListener('click', (e) => { const k = e.target.closest && e.target.closest('.tabbar .key'); if (!k || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    if (mode !== 'full' || !on('glow') || k.classList.contains('go')) return; e.preventDefault(); k.classList.add('go'); try { M.haptic?.(); } catch {} setTimeout(() => { location.href = k.href; }, 520); });
   d.addEventListener('pointerdown', (e) => { const a = e.target.closest && e.target.closest('.tabbar a'); if (!a) return; const k = a.dataset.g || (a.hasAttribute('data-hub') ? 'hub' : ''); if (!HALL[k]) return; ss.set('norex.hall', HALL[k] + '|' + Date.now()); hall(HALL[k]); });
   { const h = (ss.get('norex.hall') || '').split('|'); ss.set('norex.hall', null); if (h[0] && Date.now() - (+h[1] || 0) < 5000) hall(h[0], true); }
 })();
