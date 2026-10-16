@@ -1,5 +1,5 @@
 {
-  "revision": "3d0b88dc28c16820eefd878c527977fd1772e800",
+  "revision": "ece548754808b1d3ea010edc680706fba03e0f8b",
   "files": 840,
   "imports": 623,
   "api_paths": 248,
@@ -11036,7 +11036,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 358,
+      "lines": 359,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -11569,7 +11569,7 @@
     {
       "path": "tests/recorder.test.mjs",
       "layer": "tests",
-      "lines": 72,
+      "lines": 74,
       "imports": [
         "node:fs",
         "./mock.mjs",
@@ -13898,7 +13898,7 @@
     {
       "path": "web/record.js",
       "layer": "web",
-      "lines": 267,
+      "lines": 266,
       "imports": [],
       "endpoints": [],
       "tables": [
