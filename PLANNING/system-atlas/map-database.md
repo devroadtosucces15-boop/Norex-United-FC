@@ -192,124 +192,125 @@ flowchart LR
   n185["bot/migrations/0050_watchlist.sql"]
   n186["bot/migrations/0051_member_live.sql"]
   n187["bot/migrations/0052_feedback_reactions.sql"]
-  n188["bot/migrations/0053_club_docs_content.sql"]
-  n189["bot/notify.js"]
-  n190["bot/panel.js"]
-  n191["bot/playmedia.js"]
-  n192["bot/plays.js"]
-  n193["bot/points.js"]
-  n194["bot/predict.js"]
-  n195["bot/probuilds.js"]
-  n196["bot/profanity.js"]
-  n197["bot/profiles.js"]
-  n198["bot/ratings.js"]
-  n199["bot/recs.js"]
-  n200["bot/register.mjs"]
-  n201["bot/reminders.js"]
-  n202["bot/roles.js"]
-  n203["bot/servertools.js"]
-  n204["bot/social.js"]
-  n205["bot/squads.js"]
-  n206["bot/statinsights.js"]
-  n207["bot/trials.js"]
-  n208["bot/voicerecap.js"]
-  n209["bot/watchlist.js"]
-  n210["bot/worker.js"]
-  n211["data/updates/fc-27-career-mode-developer-launch-update.jso"]
-  n212["data/updates/fc-27-fut-developer-launch-update.json"]
-  n213["data/updates/fc-27-gameplay-developer-launch-update.json"]
-  n214["data/updates/fc-27-the-grounds-developer-launch-update.jso"]
-  n215["data/updates/pitch-notes-fc27-career-mode-deep-dive.json"]
-  n216["data/updates/pitch-notes-fc27-fut-deep-dive.json"]
-  n217["data/updates/pitch-notes-fc27-gameplay-deep-dive.json"]
-  n218["data/updates/pitch-notes-fc27-launch-update.json"]
-  n219["data/updates/pitch-notes-fc27-pc-deep-dive.json"]
-  n220["data/updates/pitch-notes-fc27-the-grounds-deep-dive.json"]
-  n221["scripts/build-atlas-explorer.py"]
-  n222["scripts/build-atlas-history.py"]
-  n223["scripts/build-atlas-local.py"]
-  n224["scripts/build-atlas-private-view.py"]
-  n225["scripts/build-system-atlas.py"]
-  n226["scripts/build.mjs"]
-  n227["scripts/builder-page.mjs"]
-  n228["scripts/burners-page.mjs"]
-  n229["scripts/docs-page.mjs"]
-  n230["scripts/feed-page.mjs"]
-  n231["scripts/fetch.mjs"]
-  n232["scripts/leaders-page.mjs"]
-  n233["scripts/lib/stars.mjs"]
-  n234["scripts/link-inbox.mjs"]
-  n235["scripts/messages-page.mjs"]
-  n236["scripts/post-results.mjs"]
-  n237["scripts/probuilds-page.mjs"]
-  n238["scripts/serve-atlas-private.py"]
-  n239["scripts/stars-sync.mjs"]
-  n240["scripts/test-atlas-local.py"]
-  n241["scripts/updates-page.mjs"]
-  n242["scripts/updates.mjs"]
-  n243["tests/ask.test.mjs"]
-  n244["tests/avatarcard.test.mjs"]
-  n245["tests/awards.test.mjs"]
-  n246["tests/badges.test.mjs"]
-  n247["tests/botfeat-sample.mjs"]
-  n248["tests/builds.test.mjs"]
-  n249["tests/burners-api.test.mjs"]
-  n250["tests/burners.test.mjs"]
-  n251["tests/cardstudio.test.mjs"]
-  n252["tests/chat.test.mjs"]
-  n253["tests/clublookup.test.mjs"]
-  n254["tests/discoveries.test.mjs"]
-  n255["tests/docs.test.mjs"]
-  n256["tests/events.test.mjs"]
-  n257["tests/feed.test.mjs"]
-  n258["tests/fun.test.mjs"]
-  n259["tests/honours.test.mjs"]
-  n260["tests/host.test.mjs"]
-  n261["tests/insights.test.mjs"]
-  n262["tests/issues.test.mjs"]
-  n263["tests/issuesrec.test.mjs"]
-  n264["tests/locker.test.mjs"]
-  n265["tests/media.test.mjs"]
-  n266["tests/memberlive.test.mjs"]
-  n267["tests/members.test.mjs"]
-  n268["tests/mock.mjs"]
-  n269["tests/next.test.mjs"]
-  n270["tests/packs.test.mjs"]
-  n271["tests/panel.test.mjs"]
-  n272["tests/playmedia.test.mjs"]
-  n273["tests/plays.test.mjs"]
-  n274["tests/probuilds.test.mjs"]
-  n275["tests/push.test.mjs"]
-  n276["tests/quickcommands.test.mjs"]
-  n277["tests/recorder.test.mjs"]
-  n278["tests/reminders.test.mjs"]
-  n279["tests/servertools.test.mjs"]
-  n280["tests/site.test.mjs"]
-  n281["tests/social.test.mjs"]
-  n282["tests/statinsights.test.mjs"]
-  n283["tests/updates.test.mjs"]
-  n284["tests/watchlist.test.mjs"]
-  n285["tests/wave10.test.mjs"]
-  n286["tests/wave8.test.mjs"]
-  n287["web/app.js"]
-  n288["web/badges.js"]
-  n289["web/boardroom.js"]
-  n290["web/build-math.js"]
-  n291["web/builder.js"]
-  n292["web/docs.js"]
-  n293["web/events.js"]
-  n294["web/feed-public.js"]
-  n295["web/feed.js"]
-  n296["web/game.js"]
-  n297["web/honours.js"]
-  n298["web/metrics.js"]
-  n299["web/mystats.js"]
-  n300["web/profile.js"]
-  n301["web/recs.js"]
-  n302["web/scout.js"]
-  n303["web/settings.js"]
-  n304["web/squads.js"]
-  n305["web/trials.js"]
+  n188["bot/migrations/0053_card_ai_notes.sql"]
+  n189["bot/migrations/0053_club_docs_content.sql"]
+  n190["bot/notify.js"]
+  n191["bot/panel.js"]
+  n192["bot/playmedia.js"]
+  n193["bot/plays.js"]
+  n194["bot/points.js"]
+  n195["bot/predict.js"]
+  n196["bot/probuilds.js"]
+  n197["bot/profanity.js"]
+  n198["bot/profiles.js"]
+  n199["bot/ratings.js"]
+  n200["bot/recs.js"]
+  n201["bot/register.mjs"]
+  n202["bot/reminders.js"]
+  n203["bot/roles.js"]
+  n204["bot/servertools.js"]
+  n205["bot/social.js"]
+  n206["bot/squads.js"]
+  n207["bot/statinsights.js"]
+  n208["bot/trials.js"]
+  n209["bot/voicerecap.js"]
+  n210["bot/watchlist.js"]
+  n211["bot/worker.js"]
+  n212["data/updates/fc-27-career-mode-developer-launch-update.jso"]
+  n213["data/updates/fc-27-fut-developer-launch-update.json"]
+  n214["data/updates/fc-27-gameplay-developer-launch-update.json"]
+  n215["data/updates/fc-27-the-grounds-developer-launch-update.jso"]
+  n216["data/updates/pitch-notes-fc27-career-mode-deep-dive.json"]
+  n217["data/updates/pitch-notes-fc27-fut-deep-dive.json"]
+  n218["data/updates/pitch-notes-fc27-gameplay-deep-dive.json"]
+  n219["data/updates/pitch-notes-fc27-launch-update.json"]
+  n220["data/updates/pitch-notes-fc27-pc-deep-dive.json"]
+  n221["data/updates/pitch-notes-fc27-the-grounds-deep-dive.json"]
+  n222["scripts/build-atlas-explorer.py"]
+  n223["scripts/build-atlas-history.py"]
+  n224["scripts/build-atlas-local.py"]
+  n225["scripts/build-atlas-private-view.py"]
+  n226["scripts/build-system-atlas.py"]
+  n227["scripts/build.mjs"]
+  n228["scripts/builder-page.mjs"]
+  n229["scripts/burners-page.mjs"]
+  n230["scripts/docs-page.mjs"]
+  n231["scripts/feed-page.mjs"]
+  n232["scripts/fetch.mjs"]
+  n233["scripts/leaders-page.mjs"]
+  n234["scripts/lib/stars.mjs"]
+  n235["scripts/link-inbox.mjs"]
+  n236["scripts/messages-page.mjs"]
+  n237["scripts/post-results.mjs"]
+  n238["scripts/probuilds-page.mjs"]
+  n239["scripts/serve-atlas-private.py"]
+  n240["scripts/stars-sync.mjs"]
+  n241["scripts/test-atlas-local.py"]
+  n242["scripts/updates-page.mjs"]
+  n243["scripts/updates.mjs"]
+  n244["tests/ask.test.mjs"]
+  n245["tests/avatarcard.test.mjs"]
+  n246["tests/awards.test.mjs"]
+  n247["tests/badges.test.mjs"]
+  n248["tests/botfeat-sample.mjs"]
+  n249["tests/builds.test.mjs"]
+  n250["tests/burners-api.test.mjs"]
+  n251["tests/burners.test.mjs"]
+  n252["tests/cardstudio.test.mjs"]
+  n253["tests/chat.test.mjs"]
+  n254["tests/clublookup.test.mjs"]
+  n255["tests/discoveries.test.mjs"]
+  n256["tests/docs.test.mjs"]
+  n257["tests/events.test.mjs"]
+  n258["tests/feed.test.mjs"]
+  n259["tests/fun.test.mjs"]
+  n260["tests/honours.test.mjs"]
+  n261["tests/host.test.mjs"]
+  n262["tests/insights.test.mjs"]
+  n263["tests/issues.test.mjs"]
+  n264["tests/issuesrec.test.mjs"]
+  n265["tests/locker.test.mjs"]
+  n266["tests/media.test.mjs"]
+  n267["tests/memberlive.test.mjs"]
+  n268["tests/members.test.mjs"]
+  n269["tests/mock.mjs"]
+  n270["tests/next.test.mjs"]
+  n271["tests/packs.test.mjs"]
+  n272["tests/panel.test.mjs"]
+  n273["tests/playmedia.test.mjs"]
+  n274["tests/plays.test.mjs"]
+  n275["tests/probuilds.test.mjs"]
+  n276["tests/push.test.mjs"]
+  n277["tests/quickcommands.test.mjs"]
+  n278["tests/recorder.test.mjs"]
+  n279["tests/reminders.test.mjs"]
+  n280["tests/servertools.test.mjs"]
+  n281["tests/site.test.mjs"]
+  n282["tests/social.test.mjs"]
+  n283["tests/statinsights.test.mjs"]
+  n284["tests/updates.test.mjs"]
+  n285["tests/watchlist.test.mjs"]
+  n286["tests/wave10.test.mjs"]
+  n287["tests/wave8.test.mjs"]
+  n288["web/app.js"]
+  n289["web/badges.js"]
+  n290["web/boardroom.js"]
+  n291["web/build-math.js"]
+  n292["web/builder.js"]
+  n293["web/docs.js"]
+  n294["web/events.js"]
+  n295["web/feed-public.js"]
+  n296["web/feed.js"]
+  n297["web/game.js"]
+  n298["web/honours.js"]
+  n299["web/metrics.js"]
+  n300["web/mystats.js"]
+  n301["web/profile.js"]
+  n302["web/recs.js"]
+  n303["web/scout.js"]
+  n304["web/settings.js"]
+  n305["web/squads.js"]
+  n306["web/trials.js"]
   n0 --> n96
   n1 --> n96
   n2 --> n8
@@ -613,272 +614,273 @@ flowchart LR
   n185 --> n102
   n186 --> n65
   n187 --> n51
-  n188 --> n12
-  n188 --> n16
-  n188 --> n43
-  n188 --> n44
-  n188 --> n71
-  n188 --> n95
+  n188 --> n31
   n189 --> n12
+  n189 --> n16
   n189 --> n43
-  n189 --> n49
+  n189 --> n44
   n189 --> n71
-  n189 --> n72
-  n189 --> n88
-  n189 --> n89
-  n190 --> n31
+  n189 --> n95
+  n190 --> n12
+  n190 --> n43
+  n190 --> n49
+  n190 --> n71
+  n190 --> n72
+  n190 --> n88
   n190 --> n89
-  n190 --> n90
-  n190 --> n94
-  n190 --> n98
-  n191 --> n80
-  n191 --> n81
-  n192 --> n79
+  n191 --> n31
+  n191 --> n89
+  n191 --> n90
+  n191 --> n94
+  n191 --> n98
+  n192 --> n80
   n192 --> n81
-  n193 --> n82
-  n194 --> n48
-  n194 --> n86
-  n194 --> n90
-  n195 --> n28
-  n195 --> n29
-  n195 --> n68
-  n195 --> n69
-  n196 --> n12
-  n197 --> n5
-  n197 --> n14
-  n197 --> n48
-  n198 --> n63
-  n199 --> n17
-  n199 --> n19
-  n199 --> n46
-  n199 --> n47
-  n199 --> n90
-  n199 --> n91
-  n199 --> n92
-  n200 --> n66
-  n201 --> n51
-  n201 --> n71
-  n202 --> n4
-  n202 --> n5
-  n202 --> n52
-  n203 --> n15
-  n203 --> n57
-  n203 --> n85
-  n204 --> n71
-  n204 --> n83
+  n193 --> n79
+  n193 --> n81
+  n194 --> n82
+  n195 --> n48
+  n195 --> n86
+  n195 --> n90
+  n196 --> n28
+  n196 --> n29
+  n196 --> n68
+  n196 --> n69
+  n197 --> n12
+  n198 --> n5
+  n198 --> n14
+  n198 --> n48
+  n199 --> n63
+  n200 --> n17
+  n200 --> n19
+  n200 --> n46
+  n200 --> n47
+  n200 --> n90
+  n200 --> n91
+  n200 --> n92
+  n201 --> n66
+  n202 --> n51
+  n202 --> n71
+  n203 --> n4
+  n203 --> n5
+  n203 --> n52
+  n204 --> n15
+  n204 --> n57
   n204 --> n85
-  n205 --> n47
-  n205 --> n92
-  n206 --> n70
-  n207 --> n66
+  n205 --> n71
+  n205 --> n83
+  n205 --> n85
+  n206 --> n47
+  n206 --> n92
   n207 --> n70
-  n207 --> n99
-  n208 --> n98
-  n209 --> n102
-  n210 --> n15
-  n210 --> n49
-  n210 --> n95
-  n211 --> n11
-  n211 --> n26
+  n208 --> n66
+  n208 --> n70
+  n208 --> n99
+  n209 --> n98
+  n210 --> n102
+  n211 --> n15
+  n211 --> n49
+  n211 --> n95
   n212 --> n11
-  n212 --> n103
+  n212 --> n26
   n213 --> n11
-  n214 --> n10
+  n213 --> n103
   n214 --> n11
-  n215 --> n103
-  n216 --> n63
-  n217 --> n26
+  n215 --> n10
+  n215 --> n11
+  n216 --> n103
   n217 --> n63
-  n217 --> n103
-  n218 --> n10
-  n219 --> n103
-  n220 --> n10
+  n218 --> n26
+  n218 --> n63
+  n218 --> n103
+  n219 --> n10
   n220 --> n103
-  n221 --> n78
+  n221 --> n10
+  n221 --> n103
   n222 --> n78
   n223 --> n78
   n224 --> n78
-  n225 --> n74
   n225 --> n78
-  n226 --> n6
-  n226 --> n7
-  n226 --> n16
-  n226 --> n18
-  n226 --> n49
   n226 --> n74
-  n226 --> n75
-  n226 --> n77
-  n226 --> n97
+  n226 --> n78
   n227 --> n6
-  n227 --> n27
-  n228 --> n7
-  n229 --> n6
-  n229 --> n27
-  n229 --> n77
+  n227 --> n7
+  n227 --> n16
+  n227 --> n18
+  n227 --> n49
+  n227 --> n74
+  n227 --> n75
+  n227 --> n77
+  n227 --> n97
+  n228 --> n6
+  n228 --> n27
+  n229 --> n7
+  n230 --> n6
   n230 --> n27
-  n230 --> n61
-  n231 --> n6
-  n231 --> n7
-  n231 --> n40
-  n232 --> n18
-  n232 --> n27
-  n233 --> n16
-  n234 --> n8
-  n235 --> n61
-  n236 --> n93
-  n237 --> n27
-  n238 --> n78
-  n239 --> n8
-  n239 --> n75
-  n240 --> n78
-  n241 --> n6
-  n241 --> n27
-  n242 --> n73
-  n242 --> n85
-  n243 --> n76
-  n243 --> n93
-  n244 --> n20
-  n244 --> n66
-  n245 --> n14
-  n245 --> n22
-  n245 --> n23
-  n245 --> n24
-  n246 --> n13
-  n246 --> n25
-  n246 --> n66
-  n246 --> n71
-  n247 --> n31
-  n247 --> n41
-  n247 --> n42
-  n247 --> n53
-  n247 --> n55
-  n247 --> n65
-  n247 --> n70
-  n247 --> n102
-  n248 --> n29
-  n248 --> n68
-  n249 --> n30
-  n250 --> n5
+  n230 --> n77
+  n231 --> n27
+  n231 --> n61
+  n232 --> n6
+  n232 --> n7
+  n232 --> n40
+  n233 --> n18
+  n233 --> n27
+  n234 --> n16
+  n235 --> n8
+  n236 --> n61
+  n237 --> n93
+  n238 --> n27
+  n239 --> n78
+  n240 --> n8
+  n240 --> n75
+  n241 --> n78
+  n242 --> n6
+  n242 --> n27
+  n243 --> n73
+  n243 --> n85
+  n244 --> n76
+  n244 --> n93
+  n245 --> n20
+  n245 --> n66
+  n246 --> n14
+  n246 --> n22
+  n246 --> n23
+  n246 --> n24
+  n247 --> n13
+  n247 --> n25
+  n247 --> n66
+  n247 --> n71
+  n248 --> n31
+  n248 --> n41
+  n248 --> n42
+  n248 --> n53
+  n248 --> n55
+  n248 --> n65
+  n248 --> n70
+  n248 --> n102
+  n249 --> n29
+  n249 --> n68
   n250 --> n30
-  n250 --> n45
-  n250 --> n93
-  n251 --> n31
-  n251 --> n32
-  n251 --> n33
-  n251 --> n71
-  n252 --> n35
-  n252 --> n103
-  n253 --> n4
-  n254 --> n41
-  n255 --> n14
-  n255 --> n43
-  n255 --> n44
-  n256 --> n6
+  n251 --> n5
+  n251 --> n30
+  n251 --> n45
+  n251 --> n93
+  n252 --> n26
+  n252 --> n31
+  n252 --> n32
+  n252 --> n33
+  n252 --> n71
+  n253 --> n35
+  n253 --> n103
+  n254 --> n4
+  n255 --> n41
   n256 --> n14
-  n256 --> n19
-  n256 --> n46
-  n256 --> n47
-  n256 --> n90
-  n256 --> n91
+  n256 --> n43
+  n256 --> n44
+  n257 --> n6
   n257 --> n14
-  n258 --> n54
-  n258 --> n55
-  n258 --> n56
-  n259 --> n19
-  n259 --> n58
-  n259 --> n101
-  n260 --> n31
-  n260 --> n57
-  n261 --> n99
-  n262 --> n62
-  n263 --> n14
+  n257 --> n19
+  n257 --> n46
+  n257 --> n47
+  n257 --> n90
+  n257 --> n91
+  n258 --> n14
+  n259 --> n54
+  n259 --> n55
+  n259 --> n56
+  n260 --> n19
+  n260 --> n58
+  n260 --> n101
+  n261 --> n57
+  n262 --> n99
   n263 --> n62
-  n264 --> n13
-  n264 --> n21
-  n264 --> n22
-  n264 --> n29
-  n264 --> n47
-  n264 --> n75
-  n264 --> n79
-  n264 --> n81
-  n264 --> n101
-  n265 --> n14
-  n265 --> n64
-  n266 --> n65
-  n267 --> n19
-  n268 --> n4
-  n269 --> n17
-  n269 --> n49
+  n264 --> n14
+  n264 --> n62
+  n265 --> n13
+  n265 --> n21
+  n265 --> n22
+  n265 --> n29
+  n265 --> n47
+  n265 --> n75
+  n265 --> n79
+  n265 --> n81
+  n265 --> n101
+  n266 --> n14
+  n266 --> n64
+  n267 --> n65
+  n268 --> n19
+  n269 --> n4
+  n270 --> n17
   n270 --> n49
-  n271 --> n89
-  n271 --> n90
-  n271 --> n94
-  n272 --> n80
-  n273 --> n26
-  n274 --> n28
-  n275 --> n72
-  n275 --> n88
-  n276 --> n51
-  n276 --> n52
-  n276 --> n94
-  n276 --> n99
-  n277 --> n63
-  n278 --> n51
-  n279 --> n15
-  n279 --> n57
-  n280 --> n63
-  n281 --> n59
-  n281 --> n60
-  n281 --> n84
-  n281 --> n85
-  n282 --> n17
-  n282 --> n70
-  n283 --> n73
-  n284 --> n102
-  n285 --> n17
-  n285 --> n19
-  n285 --> n51
-  n285 --> n86
-  n285 --> n90
-  n285 --> n91
-  n285 --> n92
-  n286 --> n39
-  n286 --> n47
+  n271 --> n49
+  n272 --> n89
+  n272 --> n90
+  n272 --> n94
+  n273 --> n80
+  n274 --> n26
+  n275 --> n28
+  n276 --> n72
+  n276 --> n88
+  n277 --> n51
+  n277 --> n52
+  n277 --> n94
+  n277 --> n99
+  n278 --> n63
+  n279 --> n51
+  n280 --> n15
+  n280 --> n57
+  n281 --> n63
+  n282 --> n59
+  n282 --> n60
+  n282 --> n84
+  n282 --> n85
+  n283 --> n17
+  n283 --> n70
+  n284 --> n73
+  n285 --> n102
+  n286 --> n17
+  n286 --> n19
+  n286 --> n51
+  n286 --> n86
+  n286 --> n90
   n286 --> n91
-  n287 --> n27
-  n287 --> n37
+  n286 --> n92
   n287 --> n39
-  n287 --> n50
-  n287 --> n63
-  n287 --> n95
-  n288 --> n103
-  n289 --> n5
-  n290 --> n98
-  n291 --> n27
-  n291 --> n37
-  n291 --> n103
-  n292 --> n50
-  n292 --> n76
-  n293 --> n6
-  n293 --> n37
-  n293 --> n39
-  n294 --> n61
-  n295 --> n63
-  n296 --> n6
-  n296 --> n16
-  n297 --> n98
-  n298 --> n6
-  n298 --> n18
-  n298 --> n37
-  n298 --> n73
-  n299 --> n103
-  n300 --> n75
-  n301 --> n17
-  n301 --> n97
-  n302 --> n37
-  n302 --> n95
-  n303 --> n5
+  n287 --> n47
+  n287 --> n91
+  n288 --> n27
+  n288 --> n37
+  n288 --> n39
+  n288 --> n50
+  n288 --> n63
+  n288 --> n95
+  n289 --> n103
+  n290 --> n5
+  n291 --> n98
+  n292 --> n27
+  n292 --> n37
+  n292 --> n103
+  n293 --> n50
+  n293 --> n76
+  n294 --> n6
+  n294 --> n37
+  n294 --> n39
+  n295 --> n61
+  n296 --> n63
+  n297 --> n6
+  n297 --> n16
+  n298 --> n98
+  n299 --> n6
+  n299 --> n18
+  n299 --> n37
+  n299 --> n73
+  n300 --> n103
+  n301 --> n75
+  n302 --> n17
+  n302 --> n97
   n303 --> n37
-  n304 --> n50
-  n305 --> n97
+  n303 --> n95
+  n304 --> n5
+  n304 --> n37
+  n305 --> n50
+  n306 --> n97
 ```

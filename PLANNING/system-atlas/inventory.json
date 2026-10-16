@@ -1,8 +1,8 @@
 {
-  "revision": "1080333c6547d7d7c0604ae5a61c04aab8c0eb06",
-  "files": 833,
+  "revision": "d9c4bd5cfefcf448626f1899caff5b4a1c29762b",
+  "files": 834,
   "imports": 616,
-  "api_paths": 246,
+  "api_paths": 248,
   "tables": 314,
   "records": [
     {
@@ -538,7 +538,7 @@
     {
       "path": "bot/cardstudio.js",
       "layer": "bot",
-      "lines": 474,
+      "lines": 541,
       "imports": [
         "./roles.js",
         "./media.js",
@@ -554,6 +554,8 @@
         "/api/cards/request/cancel",
         "/api/cards/requests",
         "/api/cards/requests/decide",
+        "/api/cards/requests/delete",
+        "/api/cards/requests/notes",
         "/api/cards/requests/retry",
         "/api/cards/requests/review",
         "/api/cards/revoke",
@@ -579,6 +581,7 @@
         "cardTemplateUpload",
         "cardsRoute",
         "clean",
+        "describe",
         "dropPhoto",
         "fail",
         "gate",
@@ -589,6 +592,7 @@
         "one",
         "photoType",
         "pngSize",
+        "portraitPrompt",
         "publicPortraits",
         "quotaHit",
         "readAsset",
@@ -596,6 +600,7 @@
         "render",
         "reqView",
         "run",
+        "staffView",
         "startsWith",
         "takeCardKick",
         "view"
@@ -2717,6 +2722,17 @@
       "endpoints": [],
       "tables": [
         "feedback"
+      ],
+      "functions": []
+    },
+    {
+      "path": "bot/migrations/0053_card_ai_notes.sql",
+      "layer": "bot",
+      "lines": 4,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "card_requests"
       ],
       "functions": []
     },
@@ -9784,7 +9800,7 @@
     {
       "path": "tests/cardstudio.test.mjs",
       "layer": "tests",
-      "lines": 291,
+      "lines": 330,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
@@ -9802,6 +9818,8 @@
         "/api/cards/request/cancel",
         "/api/cards/requests",
         "/api/cards/requests/decide",
+        "/api/cards/requests/delete",
+        "/api/cards/requests/notes",
         "/api/cards/requests/retry",
         "/api/cards/requests/review",
         "/api/cards/revoke",
@@ -9809,6 +9827,7 @@
         "/api/cards/templates/update"
       ],
       "tables": [
+        "both",
         "card_requests",
         "card_templates",
         "card_unlocks",
@@ -12634,7 +12653,7 @@
     {
       "path": "web/cardstudio.js",
       "layer": "web",
-      "lines": 285,
+      "lines": 286,
       "imports": [],
       "endpoints": [
         "/api/cards/kit-number",
@@ -12644,6 +12663,7 @@
         "/api/cards/request/cancel",
         "/api/cards/requests",
         "/api/cards/requests/decide",
+        "/api/cards/requests/delete",
         "/api/cards/requests/retry",
         "/api/cards/requests/review",
         "/api/cards/templates",
