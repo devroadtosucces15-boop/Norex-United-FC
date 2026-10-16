@@ -1,5 +1,5 @@
 {
-  "revision": "c0650a88c738c40bcd0edbb05f209e89bd8089e3",
+  "revision": "b4aa9f79c2fb614767a78ee1fcdc0d9c7507c1e0",
   "files": 836,
   "imports": 620,
   "api_paths": 248,
@@ -11494,7 +11494,7 @@
     {
       "path": "tests/recorder.test.mjs",
       "layer": "tests",
-      "lines": 71,
+      "lines": 72,
       "imports": [
         "node:fs",
         "./mock.mjs",
@@ -13823,7 +13823,7 @@
     {
       "path": "web/record.js",
       "layer": "web",
-      "lines": 258,
+      "lines": 267,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -13843,6 +13843,7 @@
         "fitItem",
         "fmtBytes",
         "fmtDur",
+        "goBack",
         "host",
         "moment",
         "pad",
@@ -13892,16 +13893,18 @@
     {
       "path": "web/report.js",
       "layer": "web",
-      "lines": 639,
+      "lines": 658,
       "imports": [],
       "endpoints": [
         "/api/issues",
         "/api/issues/status"
       ],
       "tables": [
+        "is",
         "the"
       ],
       "functions": [
+        "COARSE",
         "NXRecPages",
         "activeTabs",
         "api",
@@ -13963,6 +13966,7 @@
         "r1",
         "recLive",
         "rect",
+        "rhost",
         "round",
         "run",
         "safeArea",
