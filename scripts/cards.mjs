@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { FORMATIONS, POS_OF } from '../bot/events.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const TEMPLATE_VERSION = 4; // bump to redraw every card after a template change
@@ -297,6 +298,27 @@ export const BANNERS = {
     `<div class="ln"></div><div class="bn" style="justify-content:center;text-align:center"><div><div class="eyebrow">Norex United</div><h1 class="gold">Match night</h1><p>Be there · tell us if you can play</p></div></div><div class="brand">NOREX UNITED</div>`),
 };
 
+// ---------- line-up pitch (Staff Dugout posts) ----------
+// One empty pitch per formation – the bot can't draw per event, so the spots are drawn here at build time and the names sit in the
+// message text beside it. Stable file names (lineup-<slug>.png); same pitch and markers as the field view.
+export const lineupSlug = (f) => String(f).toLowerCase().replace(/[^0-9a-z]+/g, '-').replace(/^-|-$/g, '');
+export function lineupCard(formation) {
+  const stripes = Array.from({ length: 7 }, (_, k) => `<rect x="${7.5 + 15 * k}" width="7.5" height="68" fill="#17603a"/>`).join('');
+  const markers = (FORMATIONS[formation] ?? []).map(([slot, x, y]) => {
+    const px = 6 + ((92 - y) / 80) * 90, py = 5 + (x / 100) * 58;
+    return `<g><circle cx="${px}" cy="${py}" r="4" fill="#0b0f16" stroke="#e0493f" stroke-width=".6"/><text x="${px}" y="${py + 1.1}" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="3" fill="#efcf7a">${esc(POS_OF(slot))}</text></g>`;
+  }).join('');
+  return page('body{height:777px}svg{display:block}', `<svg viewBox="0 0 105 68" width="${W}" height="777">
+<defs><radialGradient id="vig" cx=".5" cy=".5" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs>
+<rect width="105" height="68" fill="#14502e"/>${stripes}
+<g fill="none" stroke="#ffffffb0" stroke-width=".3"><rect x="1" y="1" width="103" height="66"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/>
+<rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="1" y="24.84" width="5.5" height="18.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/><rect x="98.5" y="24.84" width="5.5" height="18.32"/></g>
+<rect width="105" height="68" fill="url(#vig)"/>
+<text x="3" y="4.4" font-family="Inter" font-weight="800" font-size="1.75" letter-spacing=".45" fill="#ffffffb0">NOREX LINE-UP · ${esc(formation).toUpperCase()}</text>
+<text x="102" y="4.4" text-anchor="end" font-family="Inter" font-weight="800" font-size="1.75" letter-spacing=".45" fill="#ffffffb0">ATTACKING →</text>
+${markers}</svg>`);
+}
+
 export function cardJobs(club, players, { matches = 10 } = {}) {
   const jobs = [];
   for (const m of (club.matches ?? []).slice(0, matches)) {
@@ -317,6 +339,7 @@ export function cardJobs(club, players, { matches = 10 } = {}) {
     const rows = topRows(players, stat).map(([p, v]) => [p.n, p.pos, p.s, v]);
     jobs.push({ key: ['top', stat], file: `top-${stat}-${hash([rows, club.name])}.png`, html: () => tableCard(players, stat, club) });
   }
+  for (const f of Object.keys(FORMATIONS)) jobs.push({ key: ['lineup', f], file: `lineup-${lineupSlug(f)}.png`, html: () => lineupCard(f) });
   for (const [name, html] of Object.entries(BANNERS)) jobs.push({ key: ['banner', name], file: `banner-${name}.png`, html });
   jobs.push({ key: ['club'], file: `club-${hash([club.name, club.crest, club.division, club.gp, club.w, club.d, club.l, club.gf, club.ga, club.form])}.png`, html: () => clubCard(club) });
   jobs.push({ key: ['results'], file: `results-${hash((club.matches ?? []).slice(0, 8))}.png`, html: () => resultsCard(club) });

@@ -17,6 +17,7 @@ import { can, flagOn } from './roles.js';
 import { broadcastRoom } from './clubroom.js';
 import { encryptPayload, safeEndpoint, sendPush } from './webpush.js';
 import { message, header, text, footer, buttons, cards, bannerUrl } from './ui.js';
+import { faceOf } from './faces.js';
 
 const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
@@ -175,12 +176,12 @@ const siteUrl = (env, link) => (!link ? env.SITE_URL : /^https:/.test(link) ? li
 
 // One DM, in the bot design system. Personal and short: the match-night kinds (line-up, reminders, schedule) get the match-night banner
 // and a big "your position" line; everything else keeps the plain alert layout. Group posts in a channel look different (events.js).
-export function dmMessage(env, n, url) {
+export function dmMessage(env, n, url, face = null) {
   const lineup = /^lineup:/.test(n.ref ?? ''), night = lineup || n.type === 'event';
   const title = `${n.icon ?? '🔔'} ${n.reminders ? 'Reminder: ' : ''}${n.title}`.slice(0, 250);
   return message({ accent: lineup ? 'gold' : DM_ACCENT[n.type] ?? 'red', blocks: [
     night ? cards(bannerUrl(env, 'matchnight')) : null,
-    header({ eyebrow: lineup ? 'NOREX UNITED · Your position' : night ? 'NOREX UNITED · Match night' : 'NOREX UNITED · Alert', title, size: lineup ? 2 : 3 }),
+    header({ eyebrow: lineup ? 'NOREX UNITED · Your position' : night ? 'NOREX UNITED · Match night' : 'NOREX UNITED · Alert', title, size: lineup ? 2 : 3, thumb: face }),
     text([n.body, n.ack ? '**Please open the site and tap “Got it” to acknowledge.**' : ''].filter(Boolean).join('\n\n')),
     footer(`Just for you · <t:${Math.floor(n.at / 1000)}:R> · change DM settings: Hub → Alerts`),
     buttons([{ label: lineup ? 'Open the line-up' : night ? 'Open match night' : 'Open on the site', url }]),
@@ -216,7 +217,8 @@ export async function deliverDMs(env, limit = 25) {
     }
     channels[n.user_id] = ch;
     const url = siteUrl(env, n.link);
-    const r = await discord(env, `/channels/${ch}/messages`, dmMessage(env, n, url));
+    const face = /^lineup:/.test(n.ref ?? '') ? await faceOf(env, n.user_id).catch(() => null) : null; // their own face, top right
+    const r = await discord(env, `/channels/${ch}/messages`, dmMessage(env, n, url, face));
     if (r.status === 429) { await unclaim(); break; }
     if (r.ok) { await mark(n.id, 'sent'); sent++; continue; }
     await mark(n.id, 'failed'); failed++;
