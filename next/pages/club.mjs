@@ -31,6 +31,7 @@ export function home() {
  </section>
 
  ${liveStrip}
+ <section class="sec hl-sec" id="home-lineup" data-home-lineup hidden><header><div><span class="ribbon">🧢 Match night line-up</span></div><a class="btn ghost" href="hub-matchnight.html">Match night</a></header><div class="panel" data-hl-body></div><script src="homelineup.js" defer></script></section>
  ${homeWatch ? `<section class="sec" id="home-watch" data-home-watch="${homeWatch}" hidden><header><div><span class="ribbon">🔴 Live now</span></div><a class="btn ghost" href="watch.html">Open Watch</a></header><div data-watch-live data-compact></div></section>` : ''}
  <section class="sec" style="margin-top:8px"><header><div><span class="ribbon">Club at a glance</span></div><a class="btn ghost" href="stats.html">Full stats</a></header><div class="panel reveal">${W.digits()}</div>
   <div class="panel reveal" style="margin-top:22px"><h3>Form · last ${recent.length} games</h3>${W.formWave()}</div></section>

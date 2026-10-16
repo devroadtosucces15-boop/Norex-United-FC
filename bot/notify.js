@@ -81,6 +81,15 @@ const modeOf = (prefs, type) => {
   return m === 'off' && t.mute === false ? 'site' : m;
 };
 
+// Who has muted this kind of notification (mode 'off'). Used where something is not a notification but should still honour the
+// choice – e.g. @-tagging someone in a line-up post. Returns a Set of user ids.
+export async function mutedFor(env, ids, type) {
+  ids = [...new Set((ids ?? []).filter(Boolean).map(String))].slice(0, 100);
+  if (!ids.length || !env.DB) return new Set();
+  const rows = await all(env, `SELECT u.id, p.prefs FROM users u LEFT JOIN notify_prefs p ON p.user_id = u.id WHERE u.id IN (${marks(ids.length)})`, ...ids);
+  return new Set(rows.filter((r) => modeOf(parsePrefs(r.prefs), type) === 'off').map((r) => String(r.id)));
+}
+
 // ---------- sending ----------
 let kick = false; // a DM was queued during this request → handleMembers sends it right after responding
 export const takeKick = () => { const k = kick; kick = false; return k; };
