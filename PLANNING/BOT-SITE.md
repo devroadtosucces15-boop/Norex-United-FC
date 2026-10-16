@@ -113,3 +113,6 @@ Next on the bot side: features 1–4 above on the site (web side), `POST /api/me
 ## Issue tool recordings (web side touched bot/ with the owner's OK, PR #41)
 `bot/issues.js` (+ 2 route lines in `members.js`, 1 cron line in `worker.js`): `POST/GET /api/issues/recording` (raw video → MEDIA R2 `issues/<session>/<n>.<ext>`),
 `GET /api/issues`, `POST /api/issues/status`, and `issueSweep` deleting fixed/wontfix reports (and videos) 24 h after they were marked. No migration. Tests: `tests/issuesrec.test.mjs`.
+
+## Dugout post options (web side touched bot/ with the owner's OK)
+`POST /api/events/lineup` takes `dm`, `channel` + `tag`, `home` and `preview` (see `bot/events.js`). Migration `0055_lineup_home.sql` adds `events.lineup_home`; `GET /api/events/public` then carries `lineup` (names + positions) for events a manager chose to show on the home page. `bot/notify.js` gained `mutedFor()` so tagging honours the "event" alert mute. Home page: `next/static/homelineup.js`. Tests: `tests/events.test.mjs`, `tests/dugout.test.mjs`.

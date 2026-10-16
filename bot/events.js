@@ -20,7 +20,7 @@
 // stay live (refreshEventPost after every answer), and eventReminders() – run by the 10-minute cron – posts T-24h / T-2h
 // reminders and nudges members who haven't answered (event.remind: dm = bell + DM · mention = @ in the channel · off).
 import { can, flagOn, flags } from './roles.js';
-import { notify, notifyMembers, safely } from './notify.js';
+import { notify, notifyMembers, safely, mutedFor } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
@@ -174,8 +174,14 @@ export async function calendarMonth(env, me, month) {
   };
 }
 export async function publicEvents(env) {
-  const rows = await all(env, "SELECT id, type, title, start, duration, tz FROM events WHERE public = 1 AND status = 'scheduled' AND start + duration * 60000 > ? ORDER BY start LIMIT 3", Date.now());
-  return { events: rows.map((r) => ({ id: r.id, type: r.type, title: opt(r.title), start: r.start, duration: r.duration, tz: r.tz })) };
+  const rows = await all(env, "SELECT id, type, title, start, duration, tz, lineup, formation, lineup_at, lineup_home FROM events WHERE (public = 1 OR lineup_home = 1) AND status = 'scheduled' AND start + duration * 60000 > ? ORDER BY start LIMIT 3", Date.now());
+  // A line-up shows only when a manager ticked "post on the home page" while posting it: display names + positions, no ids.
+  const onHome = rows.filter((r) => r.lineup_home && r.lineup_at);
+  const ids = [...new Set(onHome.flatMap((r) => Object.keys(parse(r.lineup, {}))))];
+  const names = ids.length ? new Map((await all(env, `SELECT id, name FROM users WHERE id IN (${marks(ids.length)})`, ...ids)).map((u) => [u.id, u.name])) : new Map();
+  const order = (f) => (FORMATIONS[f] ?? []).map((x) => x[0]);
+  return { events: rows.map((r) => ({ id: r.id, type: r.type, title: opt(r.title), start: r.start, duration: r.duration, tz: r.tz,
+    ...(r.lineup_home && r.lineup_at ? { lineup: { formation: opt(r.formation), at: r.lineup_at, players: Object.entries(parse(r.lineup, {})).sort((a, b) => order(r.formation).indexOf(a[1]) - order(r.formation).indexOf(b[1])).map(([uid, slot]) => ({ n: names.get(uid) ?? 'Member', pos: POS_OF(slot) })) } } : {}) })) };
 }
 
 // ---------- writing ----------
@@ -543,15 +549,15 @@ function readLineup(body) {
   }
   return { lineup, formation };
 }
-function lineupEmbed(env, e, lineup, names) {
+function lineupEmbed(env, e, lineup, names, tagged = new Set()) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), order = (FORMATIONS[e.formation] ?? []).map((x) => x[0]);
   const rows = Object.entries(lineup).sort((a, b) => order.indexOf(a[1]) - order.indexOf(b[1]));
   return message({ blocks: [
     header({ eyebrow: 'NOREX UNITED · Match night', title: `🧩 Lineup${e.formation ? ` · ${e.formation}` : ''}`, sub: `${label(e)} · <t:${Math.floor(e.start / 1000)}:F> · <t:${Math.floor(e.start / 1000)}:R>` }),
-    text(rows.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(4)}\` ${names.get(uid) ?? 'Member'}`).join('\n')),
+    text(rows.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(4)}\` ${tagged.has(uid) ? `<@${uid}>` : names.get(uid) ?? 'Member'}`).join('\n')),
     footer('Play Style per position: playstyle.html'),
     buttons([{ label: 'Schedule', url: `${site}members.html#schedule-${e.id}` }]),
-  ] });
+  ], mentions: tagged.size ? { parse: [], users: [...tagged] } : { parse: [] } });
 }
 async function lineupRoute(p, method, body, me, env, log) {
   if (p === '/api/events/templates') {
@@ -572,26 +578,42 @@ async function lineupRoute(p, method, body, me, env, log) {
     await run(env, 'DELETE FROM lineup_templates WHERE id = ?', Number(body.id) || 0);
     return lineupRoute('/api/events/templates', 'GET', {}, me, env, log);
   }
-  // POST /api/events/lineup { id, formation?, lineup, publish?, channel?, role? }
+  // POST /api/events/lineup { id, formation?, lineup, publish?, channel?, role?, dm?, tag?, home?, preview? }
+  //   dm      – tell each starter their position (bell + DM, per their own notification settings). Omitted = yes (older callers).
+  //   channel – a Discord channel id to post the line-up in; tag = @-tag the starters there (not those who muted match-night alerts).
+  //   home    – show the line-up on the public home page (events.lineup_home).
+  //   preview – answer who would be told and tagged, and change nothing.
   const row = await one(env, "SELECT * FROM events WHERE id = ? AND status = 'scheduled'", Number(body.id) || 0);
   if (!row) return fail('That event is not on.', 404);
   const { lineup, formation, error } = readLineup(body);
   if (error) return fail(error);
-  const publish = !!body.publish && Object.keys(lineup).length > 0;
-  await run(env, `UPDATE events SET lineup = ?, formation = ?${publish ? ', lineup_at = ?' : ''} WHERE id = ?`, JSON.stringify(lineup), formation, ...(publish ? [Date.now()] : []), row.id);
-  await log(env, me, publish ? 'event-lineup-publish' : 'event-lineup', `${label(row)}${formation ? ` · ${formation}` : ''} · ${Object.keys(lineup).length} players`);
+  const ids = Object.keys(lineup);
+  const wantDm = body.dm === undefined ? true : !!body.dm;
+  const channel = body.channel || (body.discord !== false ? row.discord_channel : null) || null;
+  if (body.preview) {
+    const muted = await mutedFor(env, ids, 'event');
+    return json({ preview: { players: ids.length, dm: wantDm ? ids.filter((u) => !muted.has(u)) : [], tag: channel && body.tag ? ids.filter((u) => !muted.has(u)) : [], muted: [...muted], channel: channel ?? null, home: !!body.home } });
+  }
+  const publish = !!body.publish && ids.length > 0;
+  const homeSet = publish && typeof body.home === 'boolean' ? (body.home ? 1 : 0) : null;
+  await run(env, `UPDATE events SET lineup = ?, formation = ?${publish ? ', lineup_at = ?' : ''}${homeSet === null ? '' : ', lineup_home = ?'} WHERE id = ?`, JSON.stringify(lineup), formation, ...(publish ? [Date.now()] : []), ...(homeSet === null ? [] : [homeSet]), row.id);
+  await log(env, me, publish ? 'event-lineup-publish' : 'event-lineup', `${label(row)}${formation ? ` · ${formation}` : ''} · ${ids.length} players${publish ? `${wantDm ? ' · DM' : ''}${channel ? ' · channel' : ''}${homeSet ? ' · home' : ''}` : ''}`);
   await pushLineup(env, row.id, publish ? 'publish' : 'draft'); // BE3: other managers with the builder open refresh
   const out = {};
   if (publish) {
-    const ids = Object.keys(lineup);
     const names = new Map((await all(env, `SELECT id, name FROM users WHERE id IN (${marks(ids.length)})`, ...ids)).map((u) => [u.id, u.name]));
     for (const r of await all(env, 'SELECT user_id, name FROM event_rsvps WHERE event_id = ?', row.id)) if (!names.has(r.user_id)) names.set(r.user_id, r.name);
     // Everyone told their own position (one notification each – the text differs).
     let told = 0;
-    for (const uid of ids) told += (await safely(notify(env, [uid], { type: 'event', icon: '🧩', title: `You’re starting at ${POS_OF(lineup[uid])} – ${label(row)} · ${when(row)}`, body: formation ? `Formation ${formation}. Check the Play Style for your position.` : null, link: `members.html#schedule-${row.id}` }))) ?? 0;
+    if (wantDm) for (const uid of ids) told += (await safely(notify(env, [uid], { type: 'event', icon: '🧩', title: `You’re starting at ${POS_OF(lineup[uid])} – ${label(row)} · ${when(row)}`, body: formation ? `Formation ${formation}. Check the Play Style for your position.` : null, link: `members.html#schedule-${row.id}` }))) ?? 0;
     out.notified = told;
-    const channel = body.channel || (body.discord !== false ? row.discord_channel : null);
-    if (channel && can(me, 'announce.discord')) out.discord = await postEmbed(env, channel, body.role, lineupEmbed(env, { ...row, formation }, lineup, names));
+    if (channel && can(me, 'announce.discord')) {
+      const muted = body.tag ? await mutedFor(env, ids, 'event') : new Set();
+      const tagged = body.tag ? new Set(ids.filter((u) => !muted.has(u))) : new Set();
+      out.discord = await postEmbed(env, channel, body.role, lineupEmbed(env, { ...row, formation }, lineup, names, tagged));
+      out.tagged = tagged.size;
+    }
+    if (homeSet !== null) out.home = !!homeSet;
   }
   return json({ ...out, ...(await listFor(env, me)) });
 }

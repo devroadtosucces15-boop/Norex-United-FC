@@ -18,7 +18,7 @@
   const short = (n) => String(n ?? '').slice(0, 13);
   const ago = (t) => { const s = Math.max(1, Math.round((Date.now() - t) / 1000)); return s < 90 ? 'just now' : s < 5400 ? Math.round(s / 60) + ' min ago' : s < 129600 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago'; };
 
-  const D = { ev: null, at: 0, evId: null, formation: null, slots: {}, pick: null, saving: '', dirty: false, live: false, tipped: '' };
+  const D = { ev: null, at: 0, evId: null, formation: null, slots: {}, pick: null, sheet: null, post: null, saving: '', dirty: false, live: false, tipped: '' };
   let saveTimer = null, live = null;
   const nextEvent = () => (D.ev?.events || []).filter((e) => e.status === 'scheduled' && e.end > Date.now()).sort((a, b) => a.start - b.start)[0] || null;
   const people = (e) => {
@@ -54,7 +54,7 @@ ${list.length ? `<div class="dg-avail">${list.map((p) => `<button type="button" 
       const p = who.get(D.slots[slot]), warn = p && p.s !== 'yes' && !p.on;
       return `<button type="button" class="dg-slot${p ? ' on' : ''}${warn ? ' warn' : ''}${!p && D.pick ? ' glow' : ''}" style="left:${x}%;top:${y}%" data-slot="${esc(slot)}" aria-label="${esc(POS_OF(slot))}${p ? ': ' + esc(p.n) : ' – empty'}">${p ? av(p) : `<span class="dg-dot">${esc(POS_OF(slot))}</span>`}<small>${p ? esc(short(p.n)) : 'drop here'}</small></button>`;
     }).join('')}</div></div>
-<p class="muted small dg-help">${D.pick ? `Now tap a spot for <b>${esc(who.get(D.pick)?.n)}</b>.` : 'Drag a name onto a spot, or tap a name and then a spot. Tap a filled spot to send them back. Changes save as a draft.'}</p>`;
+<p class="muted small dg-help">${D.pick ? `Now tap a spot for <b>${esc(who.get(D.pick)?.n)}</b>.` : 'Tap an empty spot and pick a player from the list (or drag a name onto a spot). Tap a filled spot to send them back. Changes save as a draft.'}</p>`;
   }
   // ---------- ③ ready check + ④ short positions ----------
   function ready(e, who) {
@@ -77,6 +77,33 @@ ${e.lineupAt ? line(true, `Published ${esc(ago(e.lineupAt))}`) : line(null, 'Not
 <div class="dg-h" style="margin-top:16px"><h3>📣 Short on…</h3></div>
 ${shortOn.length ? `<div class="dg-short">${shortOn.map((pos) => `<button type="button" class="chip" data-nudge="${esc(pos)}">${esc(pos)} · nudge</button>`).join('')}</div><p class="muted tiny">Sends an alert to members who play that position and haven’t answered.</p>` : '<p class="muted small">Every position in this shape has someone who said yes. 👌</p>'}`;
   }
+  // ---------- tap-a-spot picker ----------
+  function sheet(who) {
+    if (!D.sheet) return '';
+    const slot = D.sheet, placed = new Set(Object.values(D.slots)), order = { yes: 0, maybe: 1, null: 2, no: 3 };
+    const list = [...who.values()].filter((p) => p.s !== 'no').sort((a, b) => (placed.has(a.id) - placed.has(b.id)) || (order[a.s] ?? 2) - (order[b.s] ?? 2) || a.n.localeCompare(b.n));
+    const fits = (p) => p.pos.includes(POS_OF(slot));
+    return `<div class="dg-ov" data-dg="closesheet"><div class="dg-sheet" role="dialog" aria-modal="true" aria-label="Pick a player for ${esc(POS_OF(slot))}"><div class="dg-h"><h3>Pick your ${esc(POS_OF(slot))}</h3><button type="button" class="chip" data-dg="closesheet">Close</button></div>
+${list.length ? `<div class="dg-avail">${list.map((p) => `<button type="button" class="dg-p s-${esc(p.s || 'none')}${placed.has(p.id) ? ' placed' : ''}" data-pick="${esc(p.id)}">${av(p)}<span><b>${esc(p.n)}</b><small>${placed.has(p.id) ? 'on the pitch – moves here' : fits(p) ? `plays ${esc(POS_OF(slot))}` : p.s === 'maybe' ? 'maybe' : p.s ? 'available' : p.on ? 'checked in' : 'no answer yet'}</small></span><i>${p.s ? ICON[p.s] : p.on ? '🟢' : '⏳'}</i><em>${esc(p.pos[0] || '')}</em></button>`).join('')}</div>` : '<p class="muted small">Nobody to pick yet – players show up as they answer.</p>'}</div></div>`;
+  }
+  // ---------- post dialog ----------
+  const tick = (key, on, title, hint) => `<label class="dg-opt"><input type="checkbox" data-opt="${key}"${on ? ' checked' : ''}><span><b>${title}</b><small>${hint}</small></span></label>`;
+  function postDlg(e, who) {
+    const P = D.post; if (!P) return '';
+    const ids = Object.values(D.slots), ch = (P.channels || []).find((c) => c.id === P.channel), pv = P.preview;
+    const rows = (D.ev.formations[D.formation] || []).filter(([s]) => D.slots[s]).map(([s]) => `<li><code>${esc(POS_OF(s))}</code> ${esc(who.get(D.slots[s])?.n || 'Member')}</li>`).join('');
+    const who2 = (a) => a.map((id) => esc(who.get(id)?.n || 'Member')).join(', ');
+    return `<div class="dg-ov"><div class="dg-sheet dg-post" role="dialog" aria-modal="true" aria-label="Post line-up"><div class="dg-h"><h3>📣 Post line-up</h3><button type="button" class="chip" data-dg="closepost">Cancel</button></div>
+<p class="muted small">${ids.length} player${ids.length === 1 ? '' : 's'} · ${esc(D.formation)}${e.lineupAt ? ' · posting again' : ''}. Pick where it goes:</p>
+${tick('dm', P.dm, '💬 DM each player their position', 'Bell + Discord DM, following each member’s own alert settings')}
+${tick('chan', P.chan, '📢 Send to a Discord channel', 'Posts the line-up card')}
+${P.chan ? `<div class="dg-sub"><select data-opt="channel" aria-label="Discord channel">${P.channels ? `<option value="">Choose a channel…</option>${P.channels.map((c) => `<option value="${esc(c.id)}"${c.id === P.channel ? ' selected' : ''}>#${esc(c.name)}</option>`).join('')}` : '<option>Loading channels…</option>'}</select>${P.chanErr ? `<small class="dg-err">${esc(P.chanErr)}</small>` : ''}
+${tick('tag', P.tag, '🏷️ Tag the players in it', 'Pings each starter by name (not anyone who muted match-night alerts)')}</div>` : ''}
+${tick('home', P.home, '🏠 Show on the Norex home page', 'Public: names and positions, until the match ends')}
+<div class="dg-prev"><b>Preview</b><ul>${rows}</ul>
+<p class="small">${[P.dm ? `💬 ${pv ? pv.dm.length : ids.length} DM${(pv ? pv.dm.length : ids.length) === 1 ? '' : 's'}${pv?.muted?.length ? ` (${pv.muted.length} muted: skipped)` : ''}` : '', P.chan ? `📢 ${ch ? '#' + esc(ch.name) : 'pick a channel'}${P.tag ? ` · tags ${pv ? pv.tag.length : ids.length}` : ''}` : '', P.home ? '🏠 Home page' : ''].filter(Boolean).join(' · ') || 'Only saves and marks it posted – nobody is told.'}</p>${pv?.dm?.length ? `<p class="muted tiny">Will be told: ${who2(pv.dm)}</p>` : ''}</div>
+<div class="dg-acts"><button type="button" class="btn" data-dg="sendpost"${P.busy || (P.chan && !P.channel) ? ' disabled' : ''}>${P.busy ? 'Posting…' : 'Post now'}</button></div></div></div>`;
+  }
   // ---------- paint ----------
   function paint() {
     if (!root.isConnected) return;
@@ -87,8 +114,8 @@ ${shortOn.length ? `<div class="dg-short">${shortOn.map((pos) => `<button type="
     const when = e ? new Date(e.start).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
     root.innerHTML = `<div class="dg"><div class="dg-head"><h3>${e ? `${esc(e.title || (e.type === 'league' ? 'League match' : 'Match night'))} · ${esc(when)}` : 'The Dugout'}</h3>
 <div class="dg-acts">${e && D.live ? '<span class="dg-live" title="Updates by itself when another manager edits or players answer">🟢 Live</span>' : ''}${e && flagOn('lineupRec') ? '<button type="button" class="chip" data-dg="suggest">✨ Suggest line-up</button>' : ''}${e ? `<button type="button" class="chip" data-dg="clear">Clear</button><button type="button" class="btn" data-dg="publish">📣 Post line-up${e.lineupAt ? ' again' : ''}</button>` : ''}</div></div>
-${e ? `<div class="dg-top"><section class="panel dg-sec dg-av">${available(e, who)}</section><section class="panel dg-sec dg-pi">${pitch(e, who)}</section><section class="panel dg-sec dg-rd">${ready(e, who)}</section></div>`
-      : empty('🗓️', 'No match night coming up', 'Schedule one in the live Hub and the line-up builder opens here.')}</div>`;
+${e ? `<div class="dg-top"><section class="panel dg-sec dg-who">${available(e, who)}</section><section class="panel dg-sec dg-pi">${pitch(e, who)}</section><section class="panel dg-sec dg-rd">${ready(e, who)}</section></div>`
+      : empty('🗓️', 'No match night coming up', 'Schedule one in the live Hub and the line-up builder opens here.')}${e ? sheet(who) + postDlg(e, who) : ''}</div>`;
   }
   // ---------- actions ----------
   function reshape(next) {   // switching shape keeps the players: each goes to a free spot with the same position, the rest fill what's left
@@ -100,7 +127,8 @@ ${e ? `<div class="dg-top"><section class="panel dg-sec dg-av">${available(e, wh
   function place(slot) {
     const cur = D.slots[slot];
     if (D.pick) { for (const k of Object.keys(D.slots)) if (D.slots[k] === D.pick) delete D.slots[k]; D.slots[slot] = D.pick; D.pick = null; }
-    else if (cur) delete D.slots[slot]; else return;
+    else if (cur) delete D.slots[slot];
+    else { D.sheet = slot; return paint(); }   // empty spot, nobody picked yet: open the list of players
     queueSave(); paint();
   }
   function queueSave() { D.saving = 'saving…'; D.dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(() => save(false), 900); }
@@ -109,15 +137,33 @@ ${e ? `<div class="dg-top"><section class="panel dg-sec dg-av">${available(e, wh
     const e = nextEvent(); if (!e) return;
     const lineup = Object.fromEntries(Object.entries(D.slots).map(([slot, id]) => [id, slot]));
     if (publish && !Object.keys(lineup).length) return toast('Place at least one player before posting', true);
-    if (publish && !confirm(`Post the line-up?\n\n${Object.keys(lineup).length} players get an alert${e.lineupAt ? ' (again)' : ''} and it goes to Discord.`)) return;
     try {
-      const r = await call('/api/events/lineup', { id: e.id, formation: D.formation, lineup, publish });
+      const P = publish ? D.post : null;
+      const r = await call('/api/events/lineup', { id: e.id, formation: D.formation, lineup, publish, ...(P ? { dm: P.dm, discord: false, ...(P.chan ? { channel: P.channel, tag: P.tag } : {}), home: P.home } : {}) });
+      D.post = null;
       D.ev = { ...D.ev, ...r }; D.dirty = false;
       D.saving = publish ? '' : e.lineupAt ? 'saved · post again to tell players' : 'draft saved ✓';
       paint();
-      if (publish) toast(`Line-up posted · ${r.notified ?? 0} players told${r.discord?.ok ? ' · on Discord' : ''}`);
+      if (publish) toast(`Line-up posted${r.notified ? ` · ${r.notified} players told` : ''}${r.discord?.ok ? ` · on Discord${r.tagged ? ` (${r.tagged} tagged)` : ''}` : ''}${r.home ? ' · on the home page' : ''}`);
       if (r.discord && !r.discord.ok) toast(`Discord: ${r.discord.error}`, true);
-    } catch (er) { D.saving = 'not saved'; paint(); toast(er.message, true); }
+    } catch (er) { D.saving = 'not saved'; if (D.post) D.post.busy = false; paint(); toast(er.message, true); }
+  }
+  async function openPost() {
+    const e = nextEvent(); if (!e) return;
+    if (!Object.keys(D.slots).length) return toast('Place at least one player before posting', true);
+    D.post = { dm: false, chan: false, channel: '', tag: false, home: true, channels: D.channels || null, chanErr: '', preview: null, busy: false };
+    paint(); refreshPreview();
+  }
+  async function loadChannels() {
+    const P = D.post; if (!P || P.channels) return;
+    try { const r = await call('/api/events/discord'); if (!r.ready) throw new Error(r.error || 'Discord isn’t set up'); D.channels = P.channels = r.channels; if (!P.channel && r.channels.some((c) => c.id === r.last)) P.channel = r.last; }
+    catch (er) { P.chanErr = er.message; P.channels = []; }
+    paint(); refreshPreview();
+  }
+  async function refreshPreview() {   // asks the server who would really be told/tagged (it knows who muted alerts); saves nothing
+    const P = D.post, e = nextEvent(); if (!P || !e) return;
+    const lineup = Object.fromEntries(Object.entries(D.slots).map(([slot, id]) => [id, slot]));
+    try { const r = await call('/api/events/lineup', { id: e.id, formation: D.formation, lineup, preview: true, dm: P.dm, ...(P.chan && P.channel ? { channel: P.channel, tag: P.tag } : { discord: false }), home: P.home }); if (D.post === P) { P.preview = r.preview; paint(); } } catch { /* the preview is only a nicety */ }
   }
   async function suggest() {
     const e = nextEvent(); if (!e) return;
@@ -134,16 +180,28 @@ ${e ? `<div class="dg-top"><section class="panel dg-sec dg-av">${available(e, wh
   }
   function bind() {
     root.onclick = (ev) => {
-      const t = ev.target.closest('[data-p],[data-slot],[data-dg],[data-nudge]'); if (!t) return;
+      if (ev.target.closest('[data-opt]')) return;   // checkboxes / select are handled in onchange
+      const t = ev.target.closest('[data-pick],[data-p],[data-slot],[data-dg],[data-nudge]'); if (!t) return;
       const k = t.dataset;
+      if (k.dg === 'closesheet') { if (t.classList.contains('dg-ov') && ev.target !== t) return; D.sheet = null; return paint(); }
+      if (k.pick) { const slot = D.sheet; D.sheet = null; D.pick = k.pick; return place(slot); }
+      if (k.dg === 'closepost') { D.post = null; return paint(); }
+      if (k.dg === 'sendpost') { if (!D.post || D.post.busy) return; D.post.busy = true; paint(); return save(true); }
       if (k.p) { D.pick = D.pick === k.p ? null : k.p; paint(); }
       else if (k.slot) place(k.slot);
       else if (k.nudge) nudge(k.nudge);
-      else if (k.dg === 'publish') save(true);
+      else if (k.dg === 'publish') openPost();
       else if (k.dg === 'suggest') suggest();
       else if (k.dg === 'clear') { D.slots = {}; D.pick = null; queueSave(); paint(); }
     };
-    root.onchange = (ev) => { if (ev.target.matches('[data-dg="formation"]')) { reshape(ev.target.value); D.pick = null; queueSave(); paint(); } };
+    root.onchange = (ev) => {
+      const o = ev.target.dataset?.opt, P = D.post;
+      if (o && P) {
+        if (o === 'channel') P.channel = ev.target.value; else P[o] = ev.target.type === 'checkbox' ? ev.target.checked : ev.target.value;
+        if (o === 'tag' && P.tag && !P.chan) P.chan = true;
+        paint(); if (o === 'chan' && P.chan) loadChannels(); else refreshPreview(); return;
+      }
+      if (ev.target.matches('[data-dg="formation"]')) { reshape(ev.target.value); D.pick = null; queueSave(); paint(); } };
     root.ondragstart = (ev) => { const p = ev.target.closest?.('[data-p]'); if (p) { D.pick = p.dataset.p; ev.dataTransfer.setData('text/plain', D.pick); root.classList.add('dragging'); } };
     root.ondragend = () => { root.classList.remove('dragging'); D.pick = null; };
     root.ondragover = (ev) => { if (ev.target.closest?.('[data-slot]')) ev.preventDefault(); };

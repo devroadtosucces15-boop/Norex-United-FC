@@ -127,6 +127,24 @@ t('ready check: slots sorted by formation, each with its answer + check-in', rea
 t('ready check: subs = said yes but not in the lineup', readyEv.ready.subs.some((s) => s.id === '501') && !readyEv.ready.subs.some((s) => s.id === '500'));
 t('ready check: counts tally the slots', readyEv.ready.counts.yes === 1 && readyEv.ready.counts.unanswered === 1);
 t('ready check hidden from members (manager-only field)', (await call(member, '/api/events')).d.events.find((e) => e.id === liveId)?.ready === undefined);
+
+// ----- Dugout post options: DM, channel + tags, home page, preview -----
+const notesFor = (u) => sqlite.prepare("SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND title LIKE 'You%starting at%'").get(u).n;
+const pub = async () => (await W('/api/events/public')).json();
+const pl = { id: liveId, formation: '4-3-3', lineup: { 500: 'LCB', 501: 'GK' } };
+sqlite.prepare('INSERT OR REPLACE INTO notify_prefs (user_id, prefs, updated) VALUES (?, ?, ?)').run('501', JSON.stringify({ event: 'off' }), Date.now());
+const pv = await call(mgr, '/api/events/lineup', { ...pl, preview: true, dm: true, channel: '70001', tag: true, home: true });
+t('preview: says who is told and tagged (muted skipped) and changes nothing', pv.d.preview.dm.join() === '500' && pv.d.preview.tag.join() === '500' && pv.d.preview.muted.join() === '501' && pv.d.preview.home === true && !(await call(mgr, '/api/events')).d.events.find((e) => e.id === liveId).lineupAt);
+const before = [notesFor('500'), notesFor('501')], nPosts = posts.length;
+const quiet = await call(mgr, '/api/events/lineup', { ...pl, publish: true, dm: false, discord: false, home: true });
+t('post with DM off and no channel: nobody told, nothing on Discord', quiet.s === 200 && !quiet.d.notified && posts.length === nPosts && notesFor('500') === before[0]);
+t('home on: public events carry the line-up (names + positions, no ids)', (await pub()).events?.find((e) => e.id === liveId)?.lineup?.players?.some((p) => p.pos === 'GK') && !JSON.stringify((await pub()).events).includes('"501"'));
+const loud = await call(mgr, '/api/events/lineup', { ...pl, publish: true, dm: true, channel: '70001', tag: true, home: false, discord: false });
+t('post with DM on: each starter who has not muted is told their position', loud.d.notified === 1 && notesFor('500') === before[0] + 1 && notesFor('501') === before[1]);
+const sent = posts.at(-1);
+t('post to a chosen channel tags the starters (muted one stays a plain name)', sent?.channel === '70001' && loud.d.discord?.ok && loud.d.tagged === 1 && JSON.stringify(sent).includes('<@500>') && !JSON.stringify(sent).includes('<@501>') && sent.allowed_mentions.users.join() === '500');
+t('home off again: line-up leaves the public route', !(await pub()).events?.find((e) => e.id === liveId)?.lineup);
+sqlite.prepare("DELETE FROM notify_prefs WHERE user_id = '501'").run();
 setFlags({ matchNight: 'owner' });
 t('match night flag gates check-in', (await call(member, '/api/events/checkin', { id: liveId, on: true })).s === 404);
 setFlags({ matchNight: 'members' });

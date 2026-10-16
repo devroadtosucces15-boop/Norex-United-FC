@@ -402,3 +402,14 @@ html.nx-safe #fxov,html.nx-safe[data-tin]::before,html.nx-safe[data-tin]::after{
 @media(min-width:861px){#nx-safe-bar{left:auto;right:18px;bottom:18px;max-width:440px}}
 /* landscape phones have ~340px of height: no install banner over the page */
 @media(orientation:landscape) and (max-height:500px){#nx-inst{display:none}}
+
+/* Dugout: tap-a-spot picker + post dialog (sits above the floating tool buttons) */
+.dg-ov{position:fixed;inset:0;z-index:10050;background:rgba(4,7,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:0}
+.dg-sheet{background:#121827;border:1px solid var(--line2,#2a3344);border-radius:20px 20px 0 0;width:min(560px,100%);max-height:85vh;max-height:85dvh;overflow:auto;padding:16px 16px calc(20px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.dg-sheet .dg-avail{max-height:none}.dg-sheet .dg-p{cursor:pointer;min-height:48px}
+@media(min-width:700px){.dg-ov{align-items:center}.dg-sheet{border-radius:20px}}
+.dg-opt{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);margin:8px 0;cursor:pointer}.dg-opt input{width:22px;height:22px;margin-top:2px;flex:none}.dg-opt b{display:block;font:600 14px Inter}.dg-opt small{display:block;color:#8e9ab2;font:500 12px Inter}
+.dg-sub{margin:-2px 0 8px 14px;padding-left:12px;border-left:2px solid rgba(255,255,255,.12)}.dg-sub select{width:100%;background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:12px;padding:12px;font:500 15px Inter}.dg-err{color:#ff7d72;display:block;margin-top:4px}
+.dg-prev{margin:12px 0;padding:12px;border-radius:12px;border:1px dashed rgba(255,255,255,.2)}.dg-prev ul{list-style:none;margin:6px 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font:500 13px Inter}.dg-prev code{color:#efcf7a;font:700 11px Oswald;display:inline-block;min-width:34px}
+.dg-slot{touch-action:manipulation}.dg-p{touch-action:manipulation}
+.hl-sec .hl-pitch{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;list-style:none;margin:10px 0 0;padding:0}.hl-sec .hl-pitch li{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05);font:600 14px Inter}.hl-sec .hl-pitch code{color:#efcf7a;font:700 12px Oswald;min-width:34px}

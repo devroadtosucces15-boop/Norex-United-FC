@@ -129,4 +129,10 @@ t('board 08 C3: Dugout listens on the lineup room and keeps unsaved edits', dgJs
   t('D4: the old chip row stays as the fallback when the Dugout flag is off', /<div class="chipset sub-tabs">\$\{sub\.map/.test(app));
   t('D4: ☰ toggle on narrow screens, aria-expanded kept in sync', /\.mgr-toggle/.test(app) && /\.mgr-rail\.open \.mgr-groups\{display:block\}/.test(css) && /@media \(max-width:1100px\)/.test(css));
 }
+// ----- redesign Dugout: phone picker + post dialog -----
+const nxDg = fs.readFileSync(ROOT + 'next/static/dugout.js', 'utf8'), nxCss = fs.readFileSync(ROOT + 'next/static/motion.css', 'utf8');
+t('Dugout: the "Who\'s in" panel no longer shares the .dg-av avatar class (it was squashed to a 34px circle)', !/<section[^>]*\bdg-av\b/.test(nxDg) && nxDg.includes('dg-sec dg-who'));
+t('Dugout: tapping an empty spot opens a player picker; picking places them', nxDg.includes('D.sheet = slot') && nxDg.includes('data-pick=') && nxDg.includes("k.dg === 'closesheet'"));
+t('Dugout: Post opens a dialog with DM / channel / tag / home toggles + preview, defaults DM off, tag off, home on', nxDg.includes("dm: false, chan: false, channel: '', tag: false, home: true") && nxDg.includes('/api/events/discord') && nxDg.includes('preview: true'));
+t('Dugout: the picker and dialog sit above the floating buttons', /\.dg-ov\{[^}]*z-index:10050/.test(nxCss));
 done();
