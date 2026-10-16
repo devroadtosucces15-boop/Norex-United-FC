@@ -24,7 +24,7 @@ import { notify, notifyMembers, safely, mutedFor } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
-import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy, cards, RESULT_ICON, bannerUrl } from './ui.js';
+import { message, header, text, sep, facts, footer, buttons, side, thumb, toLegacy, cards, RESULT_ICON, bannerUrl, lineupUrl } from './ui.js';
 import { facesOf } from './faces.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
@@ -564,8 +564,8 @@ function lineupEmbed(env, e, lineup, names, tagged = new Set()) {
     ping: tagged.size ? `**🧩 Line-up is out · ${label(e)}**\n${[...tagged].map((u) => `<@${u}>`).join(' ')}` : null,
     mentions: tagged.size ? { parse: [], users: [...tagged] } : { parse: [] },
     blocks: [
-      cards(bannerUrl(env, 'matchnight')),
-      header({ eyebrow: 'NOREX UNITED · Line-up', title: `🧩 ${e.formation ?? 'Starting XI'}`, sub: `${label(e)} · <t:${unix}:F> · <t:${unix}:R>` }),
+      cards(lineupUrl(env, e.formation) ?? bannerUrl(env, 'matchnight')),   // field view: the shape's pitch (names below)
+      header({ eyebrow: 'NOREX UNITED · Match night', title: `🧩 ${e.formation ?? 'Starting XI'}`, sub: `${label(e)} · <t:${unix}:F> · <t:${unix}:R>` }),
       sep(),
       ...[...byLine, ['Others', rest]].filter(([, r]) => r.length).map(([name, r]) => text(`-# **${name.toUpperCase()}**\n${r.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(3)}\` ${who([uid])}`).join('\n')}`)),
       footer(`${rows.length} starting · Play Style per position in the Handbook`),

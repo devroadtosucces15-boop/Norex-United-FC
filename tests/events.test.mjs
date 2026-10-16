@@ -228,4 +228,6 @@ t('two DM senders at once: the queued DM goes out exactly once', dmSends === 1);
 const dmText = JSON.stringify(nt.dmMessage(env, { type: 'event', icon: '🧩', title: 'You’re starting at CM', ref: 'lineup:4:1', at: Date.now() }, 'https://x/hub-matchnight.html'));
 const chText = JSON.stringify(lineupMsg);
 t('DM and channel post look different: DM is personal with the banner + gold stripe, the channel post groups the XI by line', /your position/i.test(dmText) && dmText.includes('Just for you') && dmText.includes('banner-matchnight') && !chText.includes('Just for you') && /DEFENCE/.test(chText) && /GK/.test(chText) && chText.includes('hub-matchnight.html'));
+const { cardJobs, lineupSlug } = await import('../scripts/cards.mjs');
+t('line-up post carries the drawn pitch for its shape (field view), and the build draws one per shape', JSON.stringify(lineupMsg).includes('cards/lineup-4-3-3.png') && cardJobs({ matches: [] }, []).filter((j) => j.key[0] === 'lineup').length === Object.keys((await import('../bot/events.js')).FORMATIONS).length && lineupSlug('4-3-3 (2)') === '4-3-3-2');
 done();
