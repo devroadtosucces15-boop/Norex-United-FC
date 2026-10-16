@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-16T00:40:31.736Z",
+ "fetchedAt": "2026-10-16T00:45:42.120Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -187,42 +187,6 @@
    "prevGoals9": "1",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "ocularAbyss",
-   "gamesPlayed": "22",
-   "winRate": "54",
-   "goals": "8",
-   "assists": "17",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "38",
-   "passesMade": "305",
-   "passSuccessRate": "74",
-   "ratingAve": "7.4",
-   "tacklesMade": "15",
-   "tackleSuccessRate": "46",
-   "proName": "Riri",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "186",
-   "proNationality": "57",
-   "proOverall": "76",
-   "proOverallStr": "76",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "1",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "1",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "MicroMyDraco",
@@ -1129,7 +1093,7 @@
   "midfielder": 12,
   "goalkeeper": 0,
   "forward": 11,
-  "defender": 4
+  "defender": 3
  },
  "career": [
   {
@@ -1164,17 +1128,6 @@
    "ratingAve": "8.1",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "ocularAbyss",
-   "proPos": "5",
-   "gamesPlayed": "99",
-   "goals": "35",
-   "assists": "46",
-   "manOfTheMatch": "4",
-   "ratingAve": "7.3",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "MicroMyDraco",
@@ -1278,12 +1231,12 @@
   {
    "name": "CaptainFluffyCat",
    "proPos": "25",
-   "gamesPlayed": "174",
+   "gamesPlayed": "175",
    "goals": "142",
    "assists": "72",
    "manOfTheMatch": "39",
    "ratingAve": "7.5",
-   "prevGoals": "1",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
@@ -1409,14 +1362,14 @@
   },
   {
    "name": "MAYOROFCALI_510",
-   "proPos": "14",
-   "gamesPlayed": "452",
+   "proPos": "5",
+   "gamesPlayed": "453",
    "goals": "155",
    "assists": "127",
    "manOfTheMatch": "10",
    "ratingAve": "7.0",
    "prevGoals": "0",
-   "favoritePosition": "midfielder"
+   "favoritePosition": "defender"
   },
   {
    "name": "ItachiQ60s_228",
