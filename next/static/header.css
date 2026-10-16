@@ -122,3 +122,31 @@ html[data-motion=calm] .nx-note,html[data-motion=off] .nx-note,html[data-fx-burs
 /* phones under 400px: logo + 5 buttons ran past the right edge and clipped the avatar, so the online pill steps aside */
 @media(max-width:400px){.hdr-on{display:none}}
 @media(max-width:380px){.bar .lg{font-size:17px;letter-spacing:.02em;gap:6px}}
+/* own drop-downs (Active / Alerts / Messages) and the active badge on the avatar corner */
+.hdr-av{position:relative;display:inline-flex}
+.hdr-on.hdr-badge{position:absolute;right:-6px;bottom:-6px;min-width:20px;min-height:20px;width:auto;height:20px;padding:0 5px;gap:3px;font-size:10px;line-height:1;background:#0c1119;border:1px solid rgba(47,191,113,.7);z-index:2}
+.hdr-on.hdr-badge i{width:7px;height:7px;box-shadow:0 0 0 2px rgba(47,191,113,.22)}
+@media(max-width:820px){.hdr-on.hdr-badge{min-width:20px;min-height:20px;padding:0 5px}}
+@media(max-width:480px){.hdr-on.hdr-badge{min-width:20px;min-height:20px;padding:0 4px;gap:3px}}
+@media(max-width:400px){.hdr-on.hdr-badge{display:inline-flex}}
+.hdr-dd{padding:0;display:flex;flex-direction:column}
+.hdr-dd .dd-h2{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.hdr-dd .dd-h2 b{font:600 15px Oswald;letter-spacing:.06em;text-transform:uppercase}
+.hdr-dd .dd-x{min-width:36px;min-height:36px;border-radius:50%;background:rgba(255,255,255,.06);border:0;color:#fff;cursor:pointer}
+.hdr-dd .dd-b{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 14px;display:block}
+.hdr-dd .dd-s input{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:#fff;padding:0 12px;font:500 16px Inter;margin-bottom:12px;box-sizing:border-box}
+.hdr-dd .dd-b h4{margin:0 0 6px}.hdr-dd .dd-l h4:not(:first-child){margin-top:14px}
+.hdr-dd .pn.dm{background:none;border:0;color:#fff;font:500 14px Inter;text-align:left;cursor:pointer;min-height:36px;padding:0}
+.hdr-dd .pn.dm:hover{text-decoration:underline}
+.hdr-dd .pavl{display:inline-flex;border-radius:50%}
+.hdr-dd .dd-h{margin-top:10px;font-size:12px}
+.hdr-dd .dd-n li{align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line)}
+.hdr-dd .dd-n li.un{background:rgba(239,207,122,.06)}
+.hdr-dd .dd-n a,.hdr-dd .dd-row{display:flex;align-items:center;gap:10px;flex:1;min-width:0;color:#fff;text-decoration:none}
+.hdr-dd .dd-n a b,.hdr-dd .dd-row b{display:block;font:600 14px Inter;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-dd .dd-n a small,.hdr-dd .dd-row small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-dd .dd-row>span:not(.pav):not(.ni){min-width:0;flex:1}
+.hdr-dd .ni{font-size:20px;width:28px;text-align:center;flex:none}
+.hdr-dd .dd-u{font-style:normal;background:var(--gold,#efcf7a);color:#1a1405;border-radius:999px;font:800 11px/19px Inter;min-width:19px;text-align:center}
+.hdr-dd .dd-f{display:flex;justify-content:space-between;gap:10px;padding-top:10px}
+.hdr-dd .dd-f a,.hdr-dd .dd-f button{color:var(--gold,#efcf7a);background:none;border:0;font:600 13px Inter;cursor:pointer;min-height:36px;display:inline-flex;align-items:center;text-decoration:none}

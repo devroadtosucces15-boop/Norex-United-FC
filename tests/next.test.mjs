@@ -355,4 +355,9 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
 }
 fs.rmSync(out, { recursive: true, force: true });
 t('squad wheel and reel cards use a flat floor shadow, not a per-frame filter (wheel was ~20 fps on phones)', /\.wx \.cover \.ci \.pc-card,\.wx \.reel \.pc-card[^{]*\{filter:none\}/.test(fs.readFileSync(ROOT + 'next/static/widgets.css', 'utf8')));
+{
+  const hj = fs.readFileSync(path.join(ROOT, 'next/static/header.js'), 'utf8'), hc = fs.readFileSync(path.join(ROOT, 'next/static/header.css'), 'utf8');
+  t('header: Active, Alerts and Messages are their own drop-downs; the online badge sits on the avatar and the account menu no longer lists who is online', ['toggleDrop(\'active\'', 'toggleDrop(\'alerts\'', 'toggleDrop(\'chats\'', 'hdr-av'].every((x) => hj.includes(x)) && !hj.includes('class="ps"') && /\.hdr-on\.hdr-badge\{position:absolute/.test(hc));
+  t('header: Active list has member search, last activity, name -> DM and avatar -> profile', ['type="search"', 'Last active', "kind: 'dm'", 'pavl'].every((x) => hj.includes(x)));
+}
 done();
