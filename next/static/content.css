@@ -13,3 +13,4 @@
 .ct-meter{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin:10px 0}.ct-meter i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#c8352c,#efcf7a)}
 .ct-body{margin-top:14px}
 @media(max-width:700px){.ct-ul .chip{margin-left:0}}
+.ct-release{display:grid;gap:12px;margin-bottom:16px;border-color:rgba(239,207,122,.55);background:linear-gradient(135deg,rgba(239,207,122,.1),transparent 60%)}.ct-release b{font:600 16px Inter}.ct-rl{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}

@@ -124,6 +124,8 @@
     "homeWatch": "owner",
     "liveAnnounce": "owner",
     "reminders": "owner",
-    "feedbackRoom": "members"
+    "feedbackRoom": "members",
+    "music": "owner",
+    "ownerFab": "owner"
   }
 }
