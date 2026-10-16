@@ -52,6 +52,12 @@
   // ---------- the pop-up ----------
   function host(doc) {
     const $ = (s) => doc.querySelector(s);
+    const INLINE = window.parent !== window; // phones: shown as a panel inside the Norex page, so there is no second tab for the browser to suspend
+    function goBack(k) {
+      if (INLINE) { try { ch?.postMessage({ from: 'host', k }); } catch { /* closed */ } return; }
+      try { window.opener?.focus(); } catch { /* cross-origin opener */ }
+      try { window.blur(); } catch { /* ignored */ }
+    }
     const ch = typeof BroadcastChannel === 'function' ? new BroadcastChannel(CHANNEL) : null;
     const qs = new URLSearchParams(location.search), session = (qs.get('s') || '').replace(/[^a-z0-9]/gi, '').slice(0, 40);
     const store = {
@@ -152,7 +158,7 @@
       rec.start(1000);
       startCaptions();
       view('rec'); S.ticker = setInterval(tick, 500); tick();
-      say('Recording. Go back to the Norex page – this window can sit behind it.');
+      say(INLINE ? 'Recording. Tap Back to page – the recording keeps going. On a phone keep this browser open: leaving the app pauses the capture.' : 'Recording. Tap Back to page, or just click the Norex page – this window can sit behind it.');
     }
 
     function tick() {
@@ -240,7 +246,10 @@
     $('#mute').addEventListener('click', () => { if (S.mic) { S.mic.enabled = !S.mic.enabled; tick(); } });
     $('#again').addEventListener('click', () => { if (S.url) URL.revokeObjectURL(S.url); S.state = 'idle'; S.blob = S.url = S.item = null; S.unsaved = false; S.note = S.up = S.uploaded = null; $('#upState').textContent = ''; $('#preview').removeAttribute('src'); view('start'); say(''); doc.title = 'Norex recorder'; broadcast(); });
     $('#jump').addEventListener('click', (e) => { const b = e.target.closest('button[data-t]'); if (b) { const v = $('#preview'); v.currentTime = +b.dataset.t / 1000; v.play().catch(() => {}); } });
-    $('#close').addEventListener('click', () => window.close());
+    $('#close').addEventListener('click', () => (INLINE ? goBack('close') : window.close()));
+    $('#back').addEventListener('click', () => goBack('min'));
+    $('#back2').addEventListener('click', () => goBack('min'));
+    if (INLINE) $('#backTop').hidden = false;
     addEventListener('beforeunload', (e) => { if (S.state === 'recording' || S.state === 'paused' || S.state === 'stopping' || S.unsaved) { e.preventDefault(); e.returnValue = ''; } });
     addEventListener('pagehide', () => { store.del(ACTIVE); try { ch?.postMessage({ from: 'host', k: 'state', id: S.id, state: 'idle', ms: 0, bytes: 0, session }); } catch { /* closed */ } });
 

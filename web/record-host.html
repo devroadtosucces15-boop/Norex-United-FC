@@ -63,6 +63,7 @@ video{width:100%;max-height:180px;border-radius:10px;background:#000;margin:8px 
   <div class="row">
     <button id="pause">⏸ Pause</button>
     <button id="mute">🎙 Mic on</button>
+    <button id="back">⬅ Back to page</button>
     <button id="moment">🚩 Mark moment</button>
     <button id="stop" class="red">⏹ Stop &amp; save</button>
     <button id="discard">✕ Discard</button>
@@ -85,6 +86,7 @@ video{width:100%;max-height:180px;border-radius:10px;background:#000;margin:8px 
   <p>This browser can't record the screen (phones can't). Use the 🐞 pin / arrow / circle tools on the page and dictate a note instead.</p>
 </section>
 
+<div class="row" id="backTop" hidden><button id="back2">⬅ Back to page</button></div>
 <div id="msg"></div>
 <script src="record.js"></script>
 <script>NXRec.host(document);</script>
