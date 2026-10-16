@@ -1,9 +1,9 @@
 {
-  "revision": "d9c4bd5cfefcf448626f1899caff5b4a1c29762b",
-  "files": 834,
-  "imports": 616,
+  "revision": "0f0a40b71633a88b2265df343ebca8402223837c",
+  "files": 836,
+  "imports": 620,
   "api_paths": 248,
-  "tables": 314,
+  "tables": 315,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -538,7 +538,7 @@
     {
       "path": "bot/cardstudio.js",
       "layer": "bot",
-      "lines": 541,
+      "lines": 552,
       "imports": [
         "./roles.js",
         "./media.js",
@@ -568,6 +568,8 @@
         "card_unlocks",
         "claims",
         "image",
+        "on",
+        "scan",
         "the",
         "users"
       ],
@@ -593,6 +595,7 @@
         "photoType",
         "pngSize",
         "portraitPrompt",
+        "portraitRows",
         "publicPortraits",
         "quotaHit",
         "readAsset",
@@ -1861,7 +1864,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1150,
+      "lines": 1176,
       "imports": [
         "./faces.js",
         "./panel.js",
@@ -2040,6 +2043,7 @@
         "getPublic",
         "getRushPublic",
         "handleMembers",
+        "handleMembersUncached",
         "histOut",
         "hmac",
         "int",
@@ -2758,6 +2762,15 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0054_d1_usage_indexes.sql",
+      "layer": "bot",
+      "lines": 16,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "bot/monitor.js",
       "layer": "bot",
       "lines": 86,
@@ -2779,7 +2792,7 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 424,
+      "lines": 427,
       "imports": [
         "./roles.js",
         "./clubroom.js",
@@ -2806,6 +2819,7 @@
         "a",
         "doc_acks",
         "every",
+        "meta",
         "notifications",
         "notify_prefs",
         "push_subs",
@@ -3319,19 +3333,21 @@
     {
       "path": "bot/roles.js",
       "layer": "bot",
-      "lines": 188,
+      "lines": 204,
       "imports": [],
       "endpoints": [],
       "tables": [
         "D1",
         "Discord",
         "flag_overrides",
+        "on",
         "the",
         "users"
       ],
       "functions": [
         "atLeast",
         "can",
+        "clearFlagOverrides",
         "committedFlags",
         "discordRole",
         "featuresFor",
@@ -3339,9 +3355,11 @@
         "flags",
         "ids",
         "loadFlagOverrides",
+        "loadFlagOverridesCached",
         "muted",
         "permsFor",
         "rank",
+        "readFlagOverrides",
         "sessionRole",
         "viewAsRole",
         "withFlagOverrides"
@@ -9916,6 +9934,38 @@
       ]
     },
     {
+      "path": "tests/d1usage.test.mjs",
+      "layer": "tests",
+      "lines": 73,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs",
+        "../bot/roles.js",
+        "../bot/memberlive.js"
+      ],
+      "endpoints": [
+        "/api/hof"
+      ],
+      "tables": [
+        "card_requests",
+        "chat_members",
+        "chat_messages",
+        "chats",
+        "flag_overrides",
+        "hof",
+        "meta",
+        "notifications",
+        "profiles",
+        "the",
+        "users"
+      ],
+      "functions": [
+        "anon",
+        "none",
+        "plan"
+      ]
+    },
+    {
       "path": "tests/design.test.mjs",
       "layer": "tests",
       "lines": 112,
@@ -16188,6 +16238,26 @@
     {
       "source": "tests/crawl.test.mjs",
       "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/d1usage.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/d1usage.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/d1usage.test.mjs",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/d1usage.test.mjs",
+      "target": "bot/memberlive.js",
       "kind": "imports"
     },
     {
