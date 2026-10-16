@@ -1,7 +1,7 @@
 {
-  "revision": "d72680afd07089c68213f2528bfe9dcf3d832a58",
+  "revision": "d6b022ace77fbea1a54547433f46725ca1bc1008",
   "files": 840,
-  "imports": 624,
+  "imports": 628,
   "api_paths": 248,
   "tables": 317,
   "records": [
@@ -2817,12 +2817,13 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 459,
+      "lines": 461,
       "imports": [
         "./roles.js",
         "./clubroom.js",
         "./webpush.js",
-        "./ui.js"
+        "./ui.js",
+        "./faces.js"
       ],
       "endpoints": [
         "/api/admin/requests",
@@ -3704,7 +3705,7 @@
     {
       "path": "bot/ui.js",
       "layer": "bot",
-      "lines": 132,
+      "lines": 135,
       "imports": [
         "./icons.js"
       ],
@@ -3723,6 +3724,7 @@
         "images",
         "isV2",
         "label",
+        "lineupUrl",
         "message",
         "notice",
         "panel",
@@ -8984,12 +8986,13 @@
     {
       "path": "scripts/cards.mjs",
       "layer": "scripts",
-      "lines": 381,
+      "lines": 404,
       "imports": [
         "node:fs",
         "node:path",
         "node:crypto",
         "node:url",
+        "../bot/events.js",
         "./lib/chrome.mjs"
       ],
       "endpoints": [],
@@ -9012,6 +9015,8 @@
         "get",
         "hash",
         "inlineCrests",
+        "lineupCard",
+        "lineupSlug",
         "local",
         "main",
         "page",
@@ -10222,7 +10227,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 232,
+      "lines": 234,
       "imports": [
         "../bot/ui.js",
         "node:fs",
@@ -10230,7 +10235,9 @@
         "./lib.mjs",
         "../bot/events.js",
         "node:fs",
-        "../bot/notify.js"
+        "../bot/notify.js",
+        "../scripts/cards.mjs",
+        "../bot/events.js"
       ],
       "endpoints": [
         "/api/admin/overview",
@@ -15373,6 +15380,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/notify.js",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/panel.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -15925,6 +15937,11 @@
     {
       "source": "scripts/burners-page.mjs",
       "target": "bot/burnerstats.js",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/cards.mjs",
+      "target": "bot/events.js",
       "kind": "imports"
     },
     {
@@ -16525,6 +16542,16 @@
     {
       "source": "tests/events.test.mjs",
       "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "scripts/cards.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/events.js",
       "kind": "imports"
     },
     {
