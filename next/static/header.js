@@ -119,37 +119,53 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
   // others over a BroadcastChannel; a hidden tab neither polls nor keeps the lease, so a visible one takes over.
   const LEAD = 'norex.hdrlead', LAST = 'norex.hdrlast', ALERT_MS = 120e3, LEASE_MS = 150e3, tabId = Math.random().toString(36).slice(2);
   const bc = 'BroadcastChannel' in window ? new BroadcastChannel('norex-hdr') : null;
+  const who = () => String(A?.id ?? A?.name ?? '');
+  let shown = 0;
   const paintAlerts = (a) => {
     if (!a || !bell) return;
     bell.hidden = false; dot(bell, a.unread | 0);
     if (a.chats != null) { chat.hidden = false; dot(chat, a.chats | 0); }
+    shown = a.unread | 0;
   };
+  const lease = () => { try { return JSON.parse(localStorage.getItem(LEAD) || 'null'); } catch { return null; } };
   const lead = () => {
     try {
-      const v = JSON.parse(localStorage.getItem(LEAD) || 'null');
+      const v = lease();
       if (v && v.id !== tabId && Date.now() - v.t < LEASE_MS) return false;
       localStorage.setItem(LEAD, JSON.stringify({ id: tabId, t: Date.now() }));
     } catch {}
     return true;
   };
+  const release = () => { try { if (lease()?.id === tabId) localStorage.removeItem(LEAD); } catch {} }; // a hidden or closed tab hands over at once
+  const last = () => { try { const v = JSON.parse(localStorage.getItem(LAST) || 'null'); return v && v.w === who() && Date.now() - v.at < 10 * 60e3 ? v : null; } catch { return null; } };
   const share = (a) => { try { localStorage.setItem(LAST, JSON.stringify(a)); } catch {} try { bc?.postMessage(a); } catch {} };
-  if (bc) bc.onmessage = (e) => paintAlerts(e.data);
+  // Banners for new notifications: each tab keeps its own "seen" marker, so a tab that learns of a rise in the unread count fetches them itself.
+  const fetchBanners = () => A.call('/api/notify').then((r) => {
+    const fresh = (r.items || []).filter((n) => !n.read && !n.readAt && n.id > seenId() && Date.now() - n.at < 15 * 60e3).sort((x, y) => x.id - y.id);
+    const top = Math.max(seenId(), ...(r.items || []).map((n) => n.id || 0));
+    if (!/\/hub\.html$/.test(location.pathname)) fresh.slice(-2).forEach(banner);
+    setSeen(top);
+  }).catch(() => {});
+  const heard = (a) => {
+    if (!a || a.w !== who()) return;
+    const rose = (a.unread | 0) > shown && !d.hidden;
+    paintAlerts(a);
+    if (rose) fetchBanners();
+  };
+  if (bc) bc.onmessage = (e) => heard(e.data);
+  d.addEventListener('visibilitychange', () => { if (d.hidden) release(); });
+  addEventListener('pagehide', release);
   const pollAlerts = () => {
     if (!A?.session || d.hidden) return;
-    if (!lead()) { try { paintAlerts(JSON.parse(localStorage.getItem(LAST) || 'null')); } catch {} return; }
-    const out = { unread: 0, chats: null };
+    if (!lead()) { heard(last()); return; }
+    const prev = last() || {}, out = { w: who(), at: Date.now(), unread: prev.unread | 0, chats: prev.chats ?? null };
+    let got = false;
     const count = A.call('/api/notify/count').then((c) => {
-      out.unread = c.unread | 0; paintAlerts(out);
-      if (!(c.unread > 0)) return;
-      return A.call('/api/notify').then((r) => {
-        const fresh = (r.items || []).filter((n) => !n.read && !n.readAt && n.id > seenId() && Date.now() - n.at < 15 * 60e3).sort((a, b) => a.id - b.id);
-        const top = Math.max(seenId(), ...(r.items || []).map((n) => n.id || 0));
-        if (!/\/hub\.html$/.test(location.pathname)) fresh.slice(-2).forEach(banner);
-        setSeen(top);
-      }).catch(() => {});
+      out.unread = c.unread | 0; got = true; paintAlerts(out);
+      return c.unread > 0 ? fetchBanners() : null;
     }).catch(() => {});
-    const chats = A.call('/api/chats').then((r) => { out.chats = (r.chats || []).reduce((n, c) => n + (c.unread || 0), 0); paintAlerts(out); }).catch(() => {});
-    Promise.all([count, chats]).then(() => share(out));
+    const chats = A.call('/api/chats').then((r) => { out.chats = (r.chats || []).reduce((n, c) => n + (c.unread || 0), 0); got = true; paintAlerts(out); }).catch(() => {});
+    Promise.all([count, chats]).then(() => { if (got) share(out); }); // a failed fetch keeps the last known number
   };
 
   // ---------- mount ----------

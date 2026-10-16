@@ -310,7 +310,10 @@ export async function handleMembers(request, env, ctx, loadSite) {
   const url = new URL(request.url);
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   if (!cache || request.method !== 'GET' || request.headers.get('Authorization') || !PUBLIC_CACHED.has(url.pathname)) return handleMembersUncached(request, env, ctx, loadSite);
-  const key = new Request(url.toString());
+  if (url.search.length > 64) return handleMembersUncached(request, env, ctx, loadSite); // unbounded query values would only fill the cache
+  const flagState = JSON.stringify(await loadFlagOverridesCached(env)); // a flag edit changes the key, so gated content never outlives the switch
+  let h = 0; for (const c of flagState) h = (h * 31 + c.charCodeAt(0)) | 0;
+  const key = new Request(`${url}${url.search ? '&' : '?'}_f=${h}`);
   const hit = await cache.match(key).catch(() => null);
   if (hit) { const h = new Headers(hit.headers); h.set('Cache-Control', 'no-store'); return new Response(hit.body, { status: 200, headers: h }); } // the browser itself still asks again
   const res = await handleMembersUncached(request, env, ctx, loadSite);

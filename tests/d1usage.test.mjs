@@ -20,6 +20,14 @@ clearFlagOverrides(); await loadFlagOverridesCached(env, 1000 + 16e3);
 t('flags: clearFlagOverrides (a Boardroom save) forces a fresh read', reads === 3);
 reads = 0; await loadFlagOverrides(env); await loadFlagOverrides(env);
 t('flags: the Discord path keeps the uncached read', reads === 2);
+// a failed read is not kept
+clearFlagOverrides();
+let boom = true;
+DB.prepare = (sql) => { if (/FROM flag_overrides/.test(sql) && boom) throw new Error('d1 down'); return realPrepare(sql); };
+const failed = await loadFlagOverridesCached(env, 5000);
+boom = false;
+const healed = await loadFlagOverridesCached(env, 5001);
+t('flags: a failed D1 read is not cached for 15 s', Object.keys(failed).length === 0 && healed.d1usage === 'owner');
 DB.prepare = realPrepare;
 
 // ---------- query plans ----------

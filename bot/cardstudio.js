@@ -537,8 +537,8 @@ export async function publicPortraits(request, env) {
   if (id !== null) {
     const row = rows.find(r => String(r.id) === id);
     if (!row || rows.find(r => r.player === row.player)?.id !== row.id) return new Response('Not found', { status: 404 });
-    const record = await one(env, 'SELECT portrait_key FROM card_requests WHERE id = ?', row.id);
-    const obj = await env.MEDIA?.get(record.portrait_key);
+    const record = await one(env, "SELECT portrait_key FROM card_requests WHERE id = ? AND status = 'done' AND published = 1", row.id);
+    const obj = record ? await env.MEDIA?.get(record.portrait_key) : null;
     if (!obj) return new Response('Not found', { status: 404 });
     const headers = new Headers(); obj.writeHttpMetadata(headers);
     headers.set('X-Content-Type-Options', 'nosniff');
