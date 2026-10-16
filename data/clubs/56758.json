@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-16T05:40:48.411Z",
+ "fetchedAt": "2026-10-16T05:50:47.632Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -981,42 +981,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "DR7M70",
-   "gamesPlayed": "30",
-   "winRate": "73",
-   "goals": "5",
-   "assists": "13",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "38",
-   "passesMade": "344",
-   "passSuccessRate": "79",
-   "ratingAve": "7.5",
-   "tacklesMade": "25",
-   "tackleSuccessRate": "33",
-   "proName": "Danny",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "170",
-   "proNationality": "83",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "0",
-   "redCards": "1",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Delandon19",
    "gamesPlayed": "0",
    "favoritePosition": "",
@@ -1054,7 +1018,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 10,
+  "midfielder": 9,
   "goalkeeper": 0,
   "forward": 11,
   "defender": 5
@@ -1140,7 +1104,7 @@
   {
    "name": "CGM Splash",
    "proPos": "25",
-   "gamesPlayed": "262",
+   "gamesPlayed": "263",
    "goals": "106",
    "assists": "110",
    "manOfTheMatch": "32",
@@ -1343,17 +1307,6 @@
    "assists": "136",
    "manOfTheMatch": "29",
    "ratingAve": "7.7",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "DR7M70",
-   "proPos": "14",
-   "gamesPlayed": "126",
-   "goals": "36",
-   "assists": "69",
-   "manOfTheMatch": "18",
-   "ratingAve": "7.9",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   }
