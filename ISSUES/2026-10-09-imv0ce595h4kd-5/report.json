@@ -1,0 +1,123 @@
+{
+ "id": "imv0ce595h4kd:5",
+ "session": "imv0ce595h4kd",
+ "n": 5,
+ "page": "/Norex-United-FC/index.html?source=pwa",
+ "severity": "idea",
+ "note": "I think we should probably be a little bit more Here for example what a long text in the phone you specifically it's a lot of text I don't want you to shut you know not display that that much specifics I like it having more data better but it's displayed incorrectly here I think the best approach to take is one Order it because it's not really People can't get lost on what the three separate views are for insights at least on this page because it doesn't really specify or give a clear understanding of insight of what that is needs three cards so that's why it shows like it's a lot of text and it's gonna get overlook so maybe display it in a better way like for example We do a drop-down for each type of insight and you'd be clear on what insights that's for",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 5,
+  "t": 1791513317904,
+  "page": "/Norex-United-FC/index.html?source=pwa",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html?source=pwa",
+  "title": "NOREX UNITED FC – Official Pro Clubs hub",
+  "tabs": [
+   "All",
+   "⚽ Goals",
+   "🛡️ Club"
+  ],
+  "severity": "idea",
+  "note": "I think we should probably be a little bit more Here for example what a long text in the phone you specifically it's a lot of text I don't want you to shut you know not display that that much specifics I like it having more data better but it's displayed incorrectly here I think the best approach to take is one Order it because it's not really People can't get lost on what the three separate views are for insights at least on this page because it doesn't really specify or give a clear understanding of insight of what that is needs three cards so that's why it shows like it's a lot of text and it's gonna get overlook so maybe display it in a better way like for example We do a drop-down for each type of insight and you'd be clear on what insights that's for",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     205.66666666666666,
+     378
+    ]
+   ],
+   "bbox": {
+    "x": 205.66666666666666,
+    "y": 378,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "main.wrap > div.card:nth-of-type(5) > p:nth-of-type(2)",
+   "tag": "p",
+   "id": null,
+   "classes": [
+    "nx-ins-body"
+   ],
+   "text": "We dominated the pitch, bagging four goals against a struggling MIXFC side. oKaede- stole ",
+   "href": null,
+   "rect": {
+    "x": 35,
+    "y": 342.2,
+    "w": 360,
+    "h": 116.3
+   },
+   "style": {
+    "position": "static",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.nx-insight",
+    "main.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 2644,
+   "docH": 7953,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T02:21:45.311Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791513317904,
+ "updated_at": 1791513318011
+}

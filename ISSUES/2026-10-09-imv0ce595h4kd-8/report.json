@@ -1,0 +1,124 @@
+{
+ "id": "imv0ce595h4kd:8",
+ "session": "imv0ce595h4kd",
+ "n": 8,
+ "page": "/Norex-United-FC/feed.html",
+ "severity": "polish",
+ "note": "Similar to the issue that we had on the home feed here make sure that when it's a video or link that has a video or anything like that display a thumbnail at the very least where we oughta play the videos for a couple seconds And then keep the thumbnail on the last flight so we could visually be attractive and not broken",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 8,
+  "t": 1791513912418,
+  "page": "/Norex-United-FC/feed.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/feed.html",
+  "title": "Club feed – NOREX UNITED FC",
+  "tabs": [
+   "📰 All",
+   "🛡️ Club"
+  ],
+  "severity": "polish",
+  "note": "Similar to the issue that we had on the home feed here make sure that when it's a video or link that has a video or anything like that display a thumbnail at the very least where we oughta play the videos for a couple seconds And then keep the thumbnail on the last flight so we could visually be attractive and not broken",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     318,
+     228.66666666666663
+    ]
+   ],
+   "bbox": {
+    "x": 318,
+    "y": 228.66666666666663,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "article#p2 > header.fd-head > span.fd-meta:nth-of-type(1)",
+   "tag": "span",
+   "id": null,
+   "classes": [
+    "fd-meta"
+   ],
+   "text": "🌐 Public ⚡ Rush 20h ago",
+   "href": null,
+   "rect": {
+    "x": 29,
+    "y": 205.8,
+    "w": 372,
+    "h": 24.6
+   },
+   "style": {
+    "position": "static",
+    "display": "flex",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "12px",
+    "color": "rgb(141, 151, 168)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "header.fd-head",
+    "article.fd-post",
+    "div.fd-list",
+    "div.fd"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 714,
+   "docH": 1725,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T02:44:20.250Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791513912418,
+ "updated_at": 1791513912548
+}

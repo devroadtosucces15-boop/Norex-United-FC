@@ -1,0 +1,128 @@
+{
+ "id": "imv0ce595h4kd:2",
+ "session": "imv0ce595h4kd",
+ "n": 2,
+ "page": "/Norex-United-FC/index.html?source=pwa",
+ "severity": "polish",
+ "note": "Yeah on this one we should probably focus on making it more better From club team and it should be pride because in this case we're considering that that is an actual video and I don't know displays the newspaper icon and the rest just makes it seem like it's formatted but it's a document what if we just embed a small clip as a thumbnail of the video And like any reactions to comments aside if you got any things like that that make it you know more fun and dynamic",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 2,
+  "t": 1791512909985,
+  "page": "/Norex-United-FC/index.html?source=pwa",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html?source=pwa",
+  "title": "NOREX UNITED FC – Official Pro Clubs hub",
+  "tabs": [
+   "All",
+   "⚽ Goals",
+   "🛡️ Club"
+  ],
+  "severity": "polish",
+  "note": "Yeah on this one we should probably focus on making it more better From club team and it should be pride because in this case we're considering that that is an actual video and I don't know displays the newspaper icon and the rest just makes it seem like it's formatted but it's a document what if we just embed a small clip as a thumbnail of the video And like any reactions to comments aside if you got any things like that that make it you know more fun and dynamic",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     6,
+     171
+    ],
+    [
+     429.3333333333333,
+     365
+    ]
+   ],
+   "bbox": {
+    "x": 6,
+    "y": 171,
+    "w": 423.3333333333333,
+    "h": 194
+   }
+  },
+  "target": {
+   "selector": "main.wrap > div:nth-of-type(2) > section.feed-home.card > ul.fdp-list",
+   "tag": "ul",
+   "id": null,
+   "classes": [
+    "fdp-list"
+   ],
+   "text": "🎬 ⚡ 𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱 Toma leche Dani",
+   "href": null,
+   "rect": {
+    "x": 17,
+    "y": 267.8,
+    "w": 396,
+    "h": 80
+   },
+   "style": {
+    "position": "static",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "section.feed-home",
+    "div",
+    "main.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 774,
+   "docH": 7953,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T02:21:45.311Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791512909985,
+ "updated_at": 1791512910012
+}

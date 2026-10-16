@@ -1,0 +1,128 @@
+{
+ "id": "imv0ce595h4kd:24",
+ "session": "imv0ce595h4kd",
+ "n": 24,
+ "page": "/Norex-United-FC/index.html",
+ "severity": "wrong",
+ "note": "",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 24,
+  "t": 1791515598232,
+  "page": "/Norex-United-FC/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html",
+  "title": "NOREX UNITED FC – Official Pro Clubs hub",
+  "tabs": [
+   "All",
+   "⚽ Goals",
+   "🛡️ Club"
+  ],
+  "severity": "wrong",
+  "note": "",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     153.33333333333331,
+     729.3333333333333
+    ],
+    [
+     216,
+     753
+    ]
+   ],
+   "bbox": {
+    "x": 153.33333333333331,
+    "y": 729.3333333333333,
+    "w": 62.666666666666686,
+    "h": 23.666666666666742
+   }
+  },
+  "target": {
+   "selector": "div.sheet:nth-of-type(7) > div.sheet-body:nth-of-type(2) > span.auth-slot > div.acct",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "acct"
+   ],
+   "text": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱 ▾",
+   "href": null,
+   "rect": {
+    "x": 22,
+    "y": 709,
+    "w": 392,
+    "h": 38
+   },
+   "style": {
+    "position": "relative",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "span.auth-slot",
+    "div.sheet-body",
+    "div.sheet"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 456,
+   "docH": 7953,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T03:04:24.745Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791515598232,
+ "updated_at": 1791515598368
+}

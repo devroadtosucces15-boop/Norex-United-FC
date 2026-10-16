@@ -1,0 +1,130 @@
+{
+ "id": "imv0ce595h4kd:16",
+ "session": "imv0ce595h4kd",
+ "n": 16,
+ "page": "/Norex-United-FC/stats.html",
+ "severity": "broken",
+ "note": "Throughout the site look at any of these sections where we have filters or orange slicers as and then multiple we're gonna have the same issue where it shows like a white bar across some I'm guessing that's gonna be because of the Kohl's option So fix it please because it's it's it's broken it looks white maybe it works but it looks broken",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 16,
+  "t": 1791514930456,
+  "page": "/Norex-United-FC/stats.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/stats.html",
+  "title": "Stats – NOREX UNITED FC",
+  "tabs": [
+   "🏆 LEAGUE",
+   "Goals",
+   "🏆 LEAGUE",
+   "📊 Stats"
+  ],
+  "severity": "broken",
+  "note": "Throughout the site look at any of these sections where we have filters or orange slicers as and then multiple we're gonna have the same issue where it shows like a white bar across some I'm guessing that's gonna be because of the Kohl's option So fix it please because it's it's it's broken it looks white maybe it works but it looks broken",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     382.3333333333333,
+     533.6666666666666
+    ],
+    [
+     5.666666666666666,
+     349
+    ]
+   ],
+   "bbox": {
+    "x": 5.666666666666666,
+    "y": 349,
+    "w": 376.66666666666663,
+    "h": 184.66666666666663
+   }
+  },
+  "target": {
+   "selector": "div.modes > div:nth-of-type(2) > section.block.reveal:nth-of-type(1) > div.tabs.chipset:nth-of-type(1) > button.chip:nth-of-type(3)",
+   "tag": "button",
+   "id": null,
+   "classes": [
+    "chip"
+   ],
+   "text": "G+A",
+   "href": null,
+   "rect": {
+    "x": 161.6,
+    "y": 428,
+    "w": 53.5,
+    "h": 31
+   },
+   "style": {
+    "position": "relative",
+    "display": "flex",
+    "overflow": "visible",
+    "zIndex": "1",
+    "fontSize": "13px",
+    "color": "rgb(227, 231, 238)",
+    "background": "rgba(255, 255, 255, 0.06)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.tabs",
+    "section.block",
+    "div",
+    "div.modes"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 7030,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T02:54:11.567Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791514930456,
+ "updated_at": 1791514930582
+}

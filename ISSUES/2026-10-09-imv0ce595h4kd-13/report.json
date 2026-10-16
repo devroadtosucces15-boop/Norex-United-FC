@@ -1,0 +1,124 @@
+{
+ "id": "imv0ce595h4kd:13",
+ "session": "imv0ce595h4kd",
+ "n": 13,
+ "page": "/Norex-United-FC/hub/index.html",
+ "severity": "idea",
+ "note": "So I don't know if this is gonna be This is the hub I don't know if these are attractive enough it should be much much more attractive And what's the benefit Actually I think what you're calling for or what you want for in this case is more focused towards a view or you know each person can have let's say like the option of their own locker more specifics down to them and not so much club details it's gonna be like their their own special room But it feels planned if I'm honest I like to fit in at the aspect with locker that I love the fact that we have like a very special view and even their own block nation that's awesome but I think the initial animation to enter the hub should actually be something like that rather than this which is just straight heart On the 3-D which is which is not this this is a 3-D view is super simple and super I don't know not aesthetically wow so fix these or propose something else that we could do but definitely keep it in a separate section and maybe there is some things from the main tab not the hub that we can move over here propose something don't make changes to this just yet",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 13,
+  "t": 1791514468706,
+  "page": "/Norex-United-FC/hub/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/hub/index.html",
+  "title": "The Hub – NOREX UNITED FC",
+  "tabs": [],
+  "severity": "idea",
+  "note": "So I don't know if this is gonna be This is the hub I don't know if these are attractive enough it should be much much more attractive And what's the benefit Actually I think what you're calling for or what you want for in this case is more focused towards a view or you know each person can have let's say like the option of their own locker more specifics down to them and not so much club details it's gonna be like their their own special room But it feels planned if I'm honest I like to fit in at the aspect with locker that I love the fact that we have like a very special view and even their own block nation that's awesome but I think the initial animation to enter the hub should actually be something like that rather than this which is just straight heart On the 3-D which is which is not this this is a 3-D view is super simple and super I don't know not aesthetically wow so fix these or propose something else that we could do but definitely keep it in a separate section and maybe there is some things from the main tab not the hub that we can move over here propose something don't make changes to this just yet",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     7,
+     63.33333333333337
+    ],
+    [
+     429.3333333333333,
+     768.6666666666665
+    ]
+   ],
+   "bbox": {
+    "x": 7,
+    "y": 63.33333333333337,
+    "w": 422.3333333333333,
+    "h": 705.3333333333331
+   }
+  },
+  "target": {
+   "selector": "div#hubworld > div.hubw-stage:nth-of-type(2)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "hubw-stage"
+   ],
+   "text": "🎽 Locker Room Me · stats · builds 🗓️ Match Night Centre Schedule · RSVP · reports 🧠 Tac",
+   "href": null,
+   "rect": {
+    "x": 16,
+    "y": 162.7,
+    "w": 398,
+    "h": 554.2
+   },
+   "style": {
+    "position": "static",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.hubworld",
+    "div",
+    "main.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 611,
+   "docH": 1530,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T02:44:20.250Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791514468706,
+ "updated_at": 1791514468817
+}

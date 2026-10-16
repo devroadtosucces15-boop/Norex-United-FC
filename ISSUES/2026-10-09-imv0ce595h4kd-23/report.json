@@ -1,0 +1,125 @@
+{
+ "id": "imv0ce595h4kd:23",
+ "session": "imv0ce595h4kd",
+ "n": 23,
+ "page": "/Norex-United-FC/index.html",
+ "severity": "polish",
+ "note": "When you When you click on the top option which is your user like iPhone it gives you the drop-down in the bottom first of all I don't like that it gives you a box box inside the box it's just so we could include a drop-down to then only sure we cut version of it and I'll show you that image afterwards So can we do it in a different way where display from top and it doesn't open a box but it opens at least the scroll view of the drop-down with all the options and and made it cleanly don't add any horizontal scroll bars to it once to do it and don't cut it short make it dynamic so in the future if we add things will remove them the size of that background for that drop down actually Actually adapt",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 23,
+  "t": 1791515537718,
+  "page": "/Norex-United-FC/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html",
+  "title": "NOREX UNITED FC – Official Pro Clubs hub",
+  "tabs": [
+   "All",
+   "⚽ Goals",
+   "🛡️ Club"
+  ],
+  "severity": "polish",
+  "note": "When you When you click on the top option which is your user like iPhone it gives you the drop-down in the bottom first of all I don't like that it gives you a box box inside the box it's just so we could include a drop-down to then only sure we cut version of it and I'll show you that image afterwards So can we do it in a different way where display from top and it doesn't open a box but it opens at least the scroll view of the drop-down with all the options and and made it cleanly don't add any horizontal scroll bars to it once to do it and don't cut it short make it dynamic so in the future if we add things will remove them the size of that background for that drop down actually Actually adapt",
+  "shape": {
+   "type": "arrow",
+   "pts": [
+    [
+     345.66666666666663,
+     419.66666666666663
+    ],
+    [
+     188,
+     599.3333333333333
+    ]
+   ],
+   "bbox": {
+    "x": 188,
+    "y": 419.66666666666663,
+    "w": 157.66666666666663,
+    "h": 179.66666666666663
+   }
+  },
+  "target": {
+   "selector": "div.sheet-backdrop:nth-of-type(8)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "sheet-backdrop",
+    "open"
+   ],
+   "text": "",
+   "href": null,
+   "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 430,
+    "h": 873
+   },
+   "style": {
+    "position": "fixed",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "25",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0.55)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": []
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 7953,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T03:04:24.745Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791515537718,
+ "updated_at": 1791515537826
+}

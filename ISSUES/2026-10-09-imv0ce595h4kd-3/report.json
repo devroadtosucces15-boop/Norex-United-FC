@@ -1,0 +1,129 @@
+{
+ "id": "imv0ce595h4kd:3",
+ "session": "imv0ce595h4kd",
+ "n": 3,
+ "page": "/Norex-United-FC/index.html?source=pwa",
+ "severity": "polish",
+ "note": "He on this part Let on the web version on desktop you could actually scroll horizontal lead to the latest results we should probably add it here but don't add it the same way we have the cards in the bottom I'll show you right now because that actually needs some fixing so apply a similar design But do watch out for the cabin we're gonna fix the other one",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 3,
+  "t": 1791513025237,
+  "page": "/Norex-United-FC/index.html?source=pwa",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html?source=pwa",
+  "title": "NOREX UNITED FC – Official Pro Clubs hub",
+  "tabs": [
+   "All",
+   "⚽ Goals",
+   "🛡️ Club"
+  ],
+  "severity": "polish",
+  "note": "He on this part Let on the web version on desktop you could actually scroll horizontal lead to the latest results we should probably add it here but don't add it the same way we have the cards in the bottom I'll show you right now because that actually needs some fixing so apply a similar design But do watch out for the cabin we're gonna fix the other one",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     6,
+     106.33333333333326
+    ],
+    [
+     429.66666666666663,
+     587
+    ]
+   ],
+   "bbox": {
+    "x": 6,
+    "y": 106.33333333333326,
+    "w": 423.66666666666663,
+    "h": 480.66666666666674
+   }
+  },
+  "target": {
+   "selector": "div#poster-74392378650231 > div.po-main:nth-of-type(2)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "po-main"
+   ],
+   "text": "NOREX UNITED FC ⚽ Ringerr ⚽ oKaede- ×2 ⚽ x_MrMike_x 4:0 MIXFC",
+   "href": null,
+   "rect": {
+    "x": 52,
+    "y": 237.6,
+    "w": 326,
+    "h": 160.1
+   },
+   "style": {
+    "position": "static",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.poster",
+    "div.card",
+    "div.grid3",
+    "section.block"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 1232,
+   "docH": 7953,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T02:21:45.311Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791513025237,
+ "updated_at": 1791513025315
+}

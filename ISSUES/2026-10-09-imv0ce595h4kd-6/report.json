@@ -1,0 +1,130 @@
+{
+ "id": "imv0ce595h4kd:6",
+ "session": "imv0ce595h4kd",
+ "n": 6,
+ "page": "/Norex-United-FC/index.html?source=pwa",
+ "severity": "broken",
+ "note": "This one view needs fixing I love the design ID it's keep it it's really cool but it just looks messy but we need to fix it because one the names are cut short if you see that and at least then in this platform it's being cut short and it needs to display the full name a clean card Basically I like the shapes I like the glow the style of it everything but also the transparency are the ones behind it if you notice they don't look Well they're transparent basically so we either lose transparency and just dim them down against the ones that are closer to the center being displayed so we could keep that sort of animation or I don't know any other fix but that's probably what we need to do And review the scrolling make sure that it's smooth and full animated that I wanna keep it fully you don't like weight per se don't you know simplify it just fix it or enhance it",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 6,
+  "t": 1791513507407,
+  "page": "/Norex-United-FC/index.html?source=pwa",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html?source=pwa",
+  "title": "NOREX UNITED FC – Official Pro Clubs hub",
+  "tabs": [
+   "All",
+   "⚽ Goals",
+   "🛡️ Club"
+  ],
+  "severity": "broken",
+  "note": "This one view needs fixing I love the design ID it's keep it it's really cool but it just looks messy but we need to fix it because one the names are cut short if you see that and at least then in this platform it's being cut short and it needs to display the full name a clean card Basically I like the shapes I like the glow the style of it everything but also the transparency are the ones behind it if you notice they don't look Well they're transparent basically so we either lose transparency and just dim them down against the ones that are closer to the center being displayed so we could keep that sort of animation or I don't know any other fix but that's probably what we need to do And review the scrolling make sure that it's smooth and full animated that I wanna keep it fully you don't like weight per se don't you know simplify it just fix it or enhance it",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     3,
+     116
+    ],
+    [
+     429,
+     570.333333333333
+    ]
+   ],
+   "bbox": {
+    "x": 3,
+    "y": 116,
+    "w": 426,
+    "h": 454.33333333333303
+   }
+  },
+  "target": {
+   "selector": "div.carousel-ring > div.carousel-card:nth-of-type(36) > div.carousel-flip > div.carousel-front:nth-of-type(1) > a.fut.tier-plain",
+   "tag": "a",
+   "id": null,
+   "classes": [
+    "fut",
+    "tier-plain"
+   ],
+   "text": "– FWD JBRANK23_SR 0 GLS 0 AST 0.0 RAT 0% PAS 0% TKL – GP",
+   "href": "players/n-jbrank23_sr.html",
+   "rect": {
+    "x": 96.5,
+    "y": 274.9,
+    "w": 127.6,
+    "h": 189.2
+   },
+   "style": {
+    "position": "relative",
+    "display": "grid",
+    "overflow": "hidden",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(255, 255, 255)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.carousel-front",
+    "div.carousel-flip",
+    "div.carousel-card",
+    "div.carousel-ring"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 3956,
+   "docH": 7953,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T02:21:45.311Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791513507407,
+ "updated_at": 1791513507519
+}

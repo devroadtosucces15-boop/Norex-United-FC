@@ -1,0 +1,128 @@
+{
+ "id": "imv0ce595h4kd:21",
+ "session": "imv0ce595h4kd",
+ "n": 21,
+ "page": "/Norex-United-FC/tactics.html",
+ "severity": "polish",
+ "note": "",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 21,
+  "t": 1791515369815,
+  "page": "/Norex-United-FC/tactics.html",
+  "hash": "#play1",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/tactics.html#play1",
+  "title": "Tactics – NOREX UNITED FC",
+  "tabs": [
+   "🧠 Tactics"
+  ],
+  "severity": "polish",
+  "note": "",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     393,
+     548
+    ],
+    [
+     0,
+     -27.66666666666663
+    ]
+   ],
+   "bbox": {
+    "x": 0,
+    "y": -27.66666666666663,
+    "w": 393,
+    "h": 575.6666666666666
+   }
+  },
+  "target": {
+   "selector": "main.wrap > div:nth-of-type(1) > div.tx > div.tx-pitch.tx-edit:nth-of-type(3)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "tx-pitch",
+    "tx-edit",
+    "tool-move"
+   ],
+   "text": "Tactics board",
+   "href": null,
+   "rect": {
+    "x": 16,
+    "y": 194,
+    "w": 398,
+    "h": 254.7
+   },
+   "style": {
+    "position": "relative",
+    "display": "block",
+    "overflow": "hidden",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.tx",
+    "div",
+    "main.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 346,
+   "docH": 1365,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T03:04:24.745Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791515369815,
+ "updated_at": 1791515369922
+}

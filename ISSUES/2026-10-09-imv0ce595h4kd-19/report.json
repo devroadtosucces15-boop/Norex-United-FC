@@ -1,0 +1,125 @@
+{
+ "id": "imv0ce595h4kd:19",
+ "session": "imv0ce595h4kd",
+ "n": 19,
+ "page": "/Norex-United-FC/probuilds.html",
+ "severity": "polish",
+ "note": "This part honestly looks Like the rest of it looks good but it is a bit a bit noisy I don't know it's like too much buttons in the same view so they try to Lay it out differently without hiding any information just different",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 19,
+  "t": 1791515196347,
+  "page": "/Norex-United-FC/probuilds.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/probuilds.html",
+  "title": "Pro Builds – NOREX UNITED FC",
+  "tabs": [
+   "🔥 Hot",
+   "All",
+   "🧠 Tactics"
+  ],
+  "severity": "polish",
+  "note": "This part honestly looks Like the rest of it looks good but it is a bit a bit noisy I don't know it's like too much buttons in the same view so they try to Lay it out differently without hiding any information just different",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     261,
+     459.66666666666663
+    ]
+   ],
+   "bbox": {
+    "x": 261,
+    "y": 459.66666666666663,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div:nth-of-type(1) > div.pb > div.pb-grid:nth-of-type(3) > article.pb-card > div.pb-body:nth-of-type(2)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "pb-body"
+   ],
+   "text": "FINISHER RUSH 𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱 3d ago ⚡ Finisher 🔝 MAX ✓ Current patch 📍 ST ⚡ Rush 📏 ",
+   "href": null,
+   "rect": {
+    "x": 79,
+    "y": 438.7,
+    "w": 320,
+    "h": 280.9
+   },
+   "style": {
+    "position": "static",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "article.pb-card",
+    "div.pb-grid",
+    "div.pb",
+    "div"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 79,
+   "docH": 1100,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-09T03:04:24.745Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791515196347,
+ "updated_at": 1791515196457
+}
