@@ -78,7 +78,7 @@
   function step() { raf = 0; gx += (tx - gx) * .12; gy += (ty - gy) * .12;             // low-pass filter: smooth, no jitter
     H.style.setProperty('--gx', gx.toFixed(2)); H.style.setProperty('--gy', gy.toFixed(2)); if (Math.abs(tx - gx) + Math.abs(ty - gy) > .02) raf = requestAnimationFrame(step); }
   const start = () => { if (on || !wanted() || !granted || d.hidden) return; on = true; base0 = null; H.classList.add('gyro-on'); addEventListener('deviceorientation', onOri); };
-  const stop = () => { if (!on) return; on = false; removeEventListener('deviceorientation', onOri); H.classList.remove('gyro-on'); H.style.removeProperty('--gx'); H.style.removeProperty('--gy'); };
+  const stop = () => { if (!on) return; on = false; removeEventListener('deviceorientation', onOri); cancelAnimationFrame(raf); raf = 0; gx = gy = tx = ty = 0; /* a pending smoothing frame used to re-apply the old tilt after switching it off */ H.classList.remove('gyro-on'); H.style.removeProperty('--gx'); H.style.removeProperty('--gy'); };
   async function enable() {
     if (!canGyro) return false;
     try { if (!granted) { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') throw new Error('denied'); granted = true; } start(); return true; }
@@ -88,6 +88,8 @@
   if (canGyro) { if (askable) { try { DeviceOrientationEvent.requestPermission().then((r) => { if (r === 'granted') { granted = true; start(); } }, () => {}); } catch {} } else start(); }
   d.addEventListener('visibilitychange', () => (d.hidden ? stop() : start()));
   addEventListener('norex:motion', () => (wanted() ? start() : stop()));
+  // motion.js may load after this file: tilt must not start in Casual just because the choice was not known yet (page opened with a side look)
+  d.readyState === 'loading' ? d.addEventListener('DOMContentLoaded', () => (wanted() ? start() : stop())) : (wanted() || stop());
   const gyro = { enable, stop, get on() { return on; }, can: canGyro, get needsAsk() { return canGyro && !granted; } };
   window.NorexApp = { standalone, ios, discord, resetZoom, gyro };
 })();

@@ -26,9 +26,9 @@
   const changed = () => { apply(); dispatchEvent(new CustomEvent('norex:motion', { detail: mode })); };
   const M = window.NorexMotion = {
     get mode() { return mode; }, get preset() { return pref.p; }, get value() { return ser(pref); }, FX, on,
-    // a style ('full' | 'calm' | 'custom') or one effect (set('tilt', false) → Custom). Applies now, for this visit; remember() keeps it.
+    // a style ('full' | 'calm' | 'custom') or one effect (set('tilt', false) → Custom). Applies now and is saved on this device (and the profile).
     set(k, val) { if (FX.includes(k)) { const off = new Set(pref.off); val ? off.delete(k) : off.add(k); pref = { p: 'custom', off }; } else pref = k === 'custom' ? { p: 'custom', off: new Set(pref.off) } : parse(k);
-      ss.set('norex.mx', ser(pref)); changed(); },
+      ss.set('norex.mx', ser(pref)); ls.set('norex.mx', ser(pref)); clearTimeout(M.saveT); M.saveT = setTimeout(() => M.remember(), 700); changed(); },   // every change is kept (this device now, the profile a moment later): no more re-asking after an update
     remember() { const v = ser(pref); ls.set('norex.mx', v); ls.set('norex.motion', null); ls.set('norex.insights', null); const A = window.NorexAuth;
       return A?.token ? A.call('/api/me/prefs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ motion: v }) }).then(() => true, () => false) : Promise.resolve(false); },
     setMode(m) { M.set(m === 'off' ? 'custom:' + FX.join(',') : m); M.remember(); },   // old API (dev panel)
@@ -149,7 +149,7 @@
     const sync = () => { $$('.mx-pb', sh).forEach((x) => x.setAttribute('aria-checked', x.dataset.p === pref.p));
       $$('.mx-sw', sh).forEach((x) => { const k = x.dataset.fx, sm = x.querySelector('small'); x.setAttribute('aria-checked', on(k));
         sm.textContent = k === 'gyro' && on(k) && G?.needsAsk ? 'Tap to allow motion access on this phone' : sm.dataset.s; }); };
-    const touched = () => { sync(); ask.hidden = false; ask.classList.remove('done'); ask.firstChild.textContent = 'Remember this choice?'; $$('button', ask).forEach((x) => (x.hidden = false)); };
+    const touched = () => { sync(); ask.hidden = false; ask.classList.add('done'); ask.firstChild.textContent = '✅ Saved. It stays after updates'; $$('button', ask).forEach((x) => (x.hidden = true)); };
     // iOS only asks for motion access from a tap, so the tap that turns phone tilt on (or picks Full) also asks
     const gyroUp = async () => { if (!G || !on('gyro')) return; if (!(await G.enable())) { M.set('gyro', false); } sync(); };
     sync(); sync.t = setInterval(sync, 1000);   // phone tilt can start/stop behind the sheet (permission, tab switch)

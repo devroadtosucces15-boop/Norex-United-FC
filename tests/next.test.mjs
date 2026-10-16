@@ -360,4 +360,9 @@ t('squad wheel and reel cards use a flat floor shadow, not a per-frame filter (w
   t('header: Active, Alerts and Messages are their own drop-downs; the online badge sits on the avatar and the account menu no longer lists who is online', ['toggleDrop(\'active\'', 'toggleDrop(\'alerts\'', 'toggleDrop(\'chats\'', 'hdr-av'].every((x) => hj.includes(x)) && !hj.includes('class="ps"') && /\.hdr-on\.hdr-badge\{position:absolute/.test(hc));
   t('header: Active list has member search, last activity, name -> DM and avatar -> profile', ['type="search"', 'Last active', "kind: 'dm'", 'pavl'].every((x) => hj.includes(x)));
 }
+{
+  const mj2 = fs.readFileSync(path.join(ROOT, 'next/static/motion.js'), 'utf8'), pj = fs.readFileSync(path.join(ROOT, 'next/static/pwa.js'), 'utf8');
+  t('motion: every change is saved on the device and profile by itself (survives updates, no re-asking)', mj2.includes("ls.set('norex.mx', ser(pref)); clearTimeout(M.saveT)") && mj2.includes('It stays after updates'));
+  t('phone tilt: switching it off cancels the pending smoothing frame and zeroes the tilt; Casual never starts it on load', /const stop = \(\) => \{[^}]*cancelAnimationFrame\(raf\)[^}]*gx = gy = tx = ty = 0/.test(pj) && pj.includes("DOMContentLoaded', () => (wanted() ? start() : stop())"));
+}
 done();
