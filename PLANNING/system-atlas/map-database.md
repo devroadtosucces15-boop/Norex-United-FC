@@ -267,48 +267,49 @@ flowchart LR
   n260["tests/host.test.mjs"]
   n261["tests/insights.test.mjs"]
   n262["tests/issues.test.mjs"]
-  n263["tests/locker.test.mjs"]
-  n264["tests/media.test.mjs"]
-  n265["tests/memberlive.test.mjs"]
-  n266["tests/members.test.mjs"]
-  n267["tests/mock.mjs"]
-  n268["tests/next.test.mjs"]
-  n269["tests/packs.test.mjs"]
-  n270["tests/panel.test.mjs"]
-  n271["tests/playmedia.test.mjs"]
-  n272["tests/plays.test.mjs"]
-  n273["tests/probuilds.test.mjs"]
-  n274["tests/push.test.mjs"]
-  n275["tests/quickcommands.test.mjs"]
-  n276["tests/reminders.test.mjs"]
-  n277["tests/servertools.test.mjs"]
-  n278["tests/site.test.mjs"]
-  n279["tests/social.test.mjs"]
-  n280["tests/squads.test.mjs"]
-  n281["tests/statinsights.test.mjs"]
-  n282["tests/updates.test.mjs"]
-  n283["tests/watchlist.test.mjs"]
-  n284["tests/wave10.test.mjs"]
-  n285["tests/wave8.test.mjs"]
-  n286["web/app.js"]
-  n287["web/badges.js"]
-  n288["web/boardroom.js"]
-  n289["web/build-math.js"]
-  n290["web/builder.js"]
-  n291["web/docs.js"]
-  n292["web/events.js"]
-  n293["web/feed-public.js"]
-  n294["web/feed.js"]
-  n295["web/game.js"]
-  n296["web/honours.js"]
-  n297["web/metrics.js"]
-  n298["web/mystats.js"]
-  n299["web/profile.js"]
-  n300["web/recs.js"]
-  n301["web/scout.js"]
-  n302["web/settings.js"]
-  n303["web/squads.js"]
-  n304["web/trials.js"]
+  n263["tests/issuesrec.test.mjs"]
+  n264["tests/locker.test.mjs"]
+  n265["tests/media.test.mjs"]
+  n266["tests/memberlive.test.mjs"]
+  n267["tests/members.test.mjs"]
+  n268["tests/mock.mjs"]
+  n269["tests/next.test.mjs"]
+  n270["tests/packs.test.mjs"]
+  n271["tests/panel.test.mjs"]
+  n272["tests/playmedia.test.mjs"]
+  n273["tests/plays.test.mjs"]
+  n274["tests/probuilds.test.mjs"]
+  n275["tests/push.test.mjs"]
+  n276["tests/quickcommands.test.mjs"]
+  n277["tests/recorder.test.mjs"]
+  n278["tests/reminders.test.mjs"]
+  n279["tests/servertools.test.mjs"]
+  n280["tests/site.test.mjs"]
+  n281["tests/social.test.mjs"]
+  n282["tests/statinsights.test.mjs"]
+  n283["tests/updates.test.mjs"]
+  n284["tests/watchlist.test.mjs"]
+  n285["tests/wave10.test.mjs"]
+  n286["tests/wave8.test.mjs"]
+  n287["web/app.js"]
+  n288["web/badges.js"]
+  n289["web/boardroom.js"]
+  n290["web/build-math.js"]
+  n291["web/builder.js"]
+  n292["web/docs.js"]
+  n293["web/events.js"]
+  n294["web/feed-public.js"]
+  n295["web/feed.js"]
+  n296["web/game.js"]
+  n297["web/honours.js"]
+  n298["web/metrics.js"]
+  n299["web/mystats.js"]
+  n300["web/profile.js"]
+  n301["web/recs.js"]
+  n302["web/scout.js"]
+  n303["web/settings.js"]
+  n304["web/squads.js"]
+  n305["web/trials.js"]
   n0 --> n96
   n1 --> n96
   n2 --> n8
@@ -483,6 +484,7 @@ flowchart LR
   n134 --> n90
   n134 --> n99
   n134 --> n101
+  n135 --> n14
   n135 --> n62
   n136 --> n17
   n136 --> n36
@@ -789,93 +791,94 @@ flowchart LR
   n260 --> n57
   n261 --> n99
   n262 --> n62
-  n263 --> n13
-  n263 --> n21
-  n263 --> n22
-  n263 --> n29
-  n263 --> n47
-  n263 --> n75
-  n263 --> n79
-  n263 --> n81
-  n263 --> n101
-  n264 --> n14
-  n264 --> n64
-  n265 --> n65
-  n266 --> n19
-  n267 --> n4
-  n268 --> n17
-  n268 --> n49
+  n263 --> n14
+  n263 --> n62
+  n264 --> n13
+  n264 --> n21
+  n264 --> n22
+  n264 --> n29
+  n264 --> n47
+  n264 --> n75
+  n264 --> n79
+  n264 --> n81
+  n264 --> n101
+  n265 --> n14
+  n265 --> n64
+  n266 --> n65
+  n267 --> n19
+  n268 --> n4
+  n269 --> n17
   n269 --> n49
-  n270 --> n89
-  n270 --> n90
-  n270 --> n94
-  n271 --> n80
-  n272 --> n26
-  n273 --> n28
-  n274 --> n72
-  n274 --> n88
-  n275 --> n51
-  n275 --> n52
-  n275 --> n94
-  n275 --> n99
+  n270 --> n49
+  n271 --> n89
+  n271 --> n90
+  n271 --> n94
+  n272 --> n80
+  n273 --> n26
+  n274 --> n28
+  n275 --> n72
+  n275 --> n88
   n276 --> n51
-  n277 --> n15
-  n277 --> n57
-  n278 --> n63
-  n279 --> n14
-  n279 --> n59
-  n279 --> n60
-  n279 --> n84
-  n279 --> n85
-  n280 --> n14
-  n281 --> n17
-  n281 --> n70
-  n282 --> n73
-  n283 --> n102
-  n284 --> n17
-  n284 --> n19
-  n284 --> n51
-  n284 --> n86
-  n284 --> n90
-  n284 --> n91
-  n284 --> n92
-  n285 --> n39
-  n285 --> n47
+  n276 --> n52
+  n276 --> n94
+  n276 --> n99
+  n277 --> n63
+  n278 --> n51
+  n279 --> n15
+  n279 --> n57
+  n280 --> n63
+  n281 --> n59
+  n281 --> n60
+  n281 --> n84
+  n281 --> n85
+  n282 --> n17
+  n282 --> n70
+  n283 --> n73
+  n284 --> n102
+  n285 --> n17
+  n285 --> n19
+  n285 --> n51
+  n285 --> n86
+  n285 --> n90
   n285 --> n91
-  n286 --> n27
-  n286 --> n37
+  n285 --> n92
   n286 --> n39
-  n286 --> n50
-  n286 --> n63
-  n286 --> n95
-  n287 --> n103
-  n288 --> n5
-  n289 --> n98
-  n290 --> n27
-  n290 --> n37
-  n290 --> n103
-  n291 --> n50
-  n291 --> n76
-  n292 --> n6
-  n292 --> n37
-  n292 --> n39
-  n293 --> n61
-  n294 --> n63
-  n295 --> n6
-  n295 --> n16
-  n296 --> n98
-  n297 --> n6
-  n297 --> n18
-  n297 --> n37
-  n297 --> n73
-  n298 --> n103
-  n299 --> n75
-  n300 --> n17
-  n300 --> n97
-  n301 --> n37
-  n301 --> n95
-  n302 --> n5
+  n286 --> n47
+  n286 --> n91
+  n287 --> n27
+  n287 --> n37
+  n287 --> n39
+  n287 --> n50
+  n287 --> n63
+  n287 --> n95
+  n288 --> n103
+  n289 --> n5
+  n290 --> n98
+  n291 --> n27
+  n291 --> n37
+  n291 --> n103
+  n292 --> n50
+  n292 --> n76
+  n293 --> n6
+  n293 --> n37
+  n293 --> n39
+  n294 --> n61
+  n295 --> n63
+  n296 --> n6
+  n296 --> n16
+  n297 --> n98
+  n298 --> n6
+  n298 --> n18
+  n298 --> n37
+  n298 --> n73
+  n299 --> n103
+  n300 --> n75
+  n301 --> n17
+  n301 --> n97
   n302 --> n37
-  n303 --> n50
-  n304 --> n97
+  n302 --> n95
+  n303 --> n5
+  n303 --> n37
+  n304 --> n50
+  n305 --> n97
 ```
