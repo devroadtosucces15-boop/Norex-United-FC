@@ -119,3 +119,6 @@ body.hub-page .bar .lg::after{background:linear-gradient(90deg,rgba(var(--ic),.9
 @keyframes nxNoteIn{from{opacity:0;transform:translate(-50%,-16px)}to{opacity:1;transform:translateX(-50%)}}
 html[data-motion=calm] .nx-note,html[data-motion=off] .nx-note,html[data-fx-bursts=off] .nx-note{animation:none}
 @media(max-width:480px){.bar .lg{font-size:19px;gap:8px;letter-spacing:.03em}.bar .lg img{width:34px}.hdr-r{gap:3px}.hdr-s,.hdr-r .ac,.hdr-i{min-width:38px;min-height:38px}.hdr-r .ac{width:38px;height:38px}.hdr-i{width:38px}.hdr-on{min-width:38px;min-height:38px;padding:0 8px;gap:4px}.hdr-r .pav{width:30px;height:30px}}
+/* phones under 400px: logo + 5 buttons ran past the right edge and clipped the avatar, so the online pill steps aside */
+@media(max-width:400px){.hdr-on{display:none}}
+@media(max-width:380px){.bar .lg{font-size:17px;letter-spacing:.02em;gap:6px}}
