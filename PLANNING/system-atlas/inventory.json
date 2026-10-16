@@ -1,9 +1,9 @@
 {
-  "revision": "b4aa9f79c2fb614767a78ee1fcdc0d9c7507c1e0",
-  "files": 836,
-  "imports": 620,
+  "revision": "6238306aa919920658faf069f78f11091c00ef0b",
+  "files": 839,
+  "imports": 623,
   "api_paths": 248,
-  "tables": 315,
+  "tables": 317,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -38,6 +38,18 @@
       "imports": [],
       "endpoints": [],
       "tables": [
+        "the"
+      ],
+      "functions": []
+    },
+    {
+      "path": ".github/workflows/issues-sync.yml",
+      "layer": ".github",
+      "lines": 47,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "ISSUES",
         "the"
       ],
       "functions": []
@@ -4895,7 +4907,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1461,
+      "lines": 1414,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9127,6 +9139,35 @@
       ]
     },
     {
+      "path": "scripts/issues-sync.mjs",
+      "layer": "scripts",
+      "lines": 106,
+      "imports": [
+        "node:child_process",
+        "node:fs",
+        "node:path",
+        "node:url"
+      ],
+      "endpoints": [],
+      "tables": [
+        "ISSUES",
+        "each",
+        "issue_reports"
+      ],
+      "functions": [
+        "clip",
+        "d1",
+        "dirName",
+        "main",
+        "mmss",
+        "pad",
+        "pickFrames",
+        "renderReport",
+        "slug",
+        "wrangler"
+      ]
+    },
+    {
       "path": "scripts/leaders-page.mjs",
       "layer": "scripts",
       "lines": 100,
@@ -10649,6 +10690,22 @@
         "setFlags",
         "up"
       ]
+    },
+    {
+      "path": "tests/issuessync.test.mjs",
+      "layer": "tests",
+      "lines": 22,
+      "imports": [
+        "node:fs",
+        "./mock.mjs",
+        "./lib.mjs",
+        "../scripts/issues-sync.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "the"
+      ],
+      "functions": []
     },
     {
       "path": "tests/lib.mjs",
@@ -16705,6 +16762,21 @@
     {
       "source": "tests/issuesrec.test.mjs",
       "target": "bot/issues.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/issuessync.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/issuessync.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/issuessync.test.mjs",
+      "target": "scripts/issues-sync.mjs",
       "kind": "imports"
     },
     {
