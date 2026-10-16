@@ -26,6 +26,7 @@ import { matchComponents, matchInteraction } from './matchcard.js';
 import { ROLE_HELP, syncAll } from './discordroles.js';
 import { can, discordRole, flagOn, loadFlagOverrides, withFlagOverrides } from './roles.js';
 import { mediaCron, serveMedia } from './media.js';
+import { issueSweep } from './issues.js';
 import { exportContent } from './exportcontent.js';
 import { checkUptime } from './monitor.js';
 import { runSpike, spikeReport } from './aispike.js';
@@ -59,6 +60,7 @@ export default {
     ctx.waitUntil(checkUptime(env).catch((e) => console.log('uptime monitor failed', e.message))); // P11.2 24/7 monitor
     ctx.waitUntil(checkProfanity(env).then(() => cleanBonus(env)).catch((e) => console.log('profanity check failed', e.message))); // P11.4
     ctx.waitUntil(eventReminders(env).then(() => closeDue(env)).then(() => hotwDue(env)).then(() => scoreDue(env)).then(() => notifyCron(env)).catch((e) => console.log('notify cron failed', e.message))); // P3.3 event reminders, P4.1 awards, P6.2 highlight of the week, P3.8 predictions, then P7.1 DMs + reminders
+    ctx.waitUntil(issueSweep(env).catch((e) => console.log('issue clean-up failed', e.message))); // fixed issue reports (and their videos) are deleted after a day
     ctx.waitUntil(mediaCron(env).catch((e) => console.log('media guard failed', e.message))); // P6.1b R2 storage guard (hourly)
     const site = (env.SITE_URL || '').replace(/\/?$/, '/');
     ctx.waitUntil(checkHype(env, (file) => load(site, file, ctx)).catch((e) => console.log('hype poster failed', e.message))); // P11.6/P11.7 auto hype poster

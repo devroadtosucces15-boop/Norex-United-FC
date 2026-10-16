@@ -40,8 +40,8 @@ Until then the web side can build against the shapes below with sample data.
 | 2 | **Watch list** (Pro Clubs YouTube videos sorted by topic) | creator list, upload checks, AI topic sorting, `GET /api/watchlist`, `POST /api/watchlist/:id/useful`, Discord video alerts | Watch list page with topic filters; a "Related videos" block on build, tactics and position pages | Web side built behind flag `watchlist` (position pages: not yet) |
 | 3 | **Discoveries** (member FYI posts approved by managers) | `/share` in Discord, manager approve/reject, `GET /api/discoveries`, `POST /api/discoveries/:id/useful` | Discoveries feed page (and a Hub widget) | Web side built behind flag `discoveries` |
 | 4 | **Fun stats on profiles** | jail count, trivia points, birthdays in `GET /api/member` | badges / counters on the member profile page | Web side built (shows when `fun` is open) |
-| 5 | **Music** (Norex DJ) | the music bot (Oracle server), room state, controls, playlist import, `GET /api/music/rooms`, a live room socket, `GET/POST /api/music/playlists` | Music page (live player: queue, search, skip, volume) and a playlist section on profiles | Later (needs the Oracle server) |
-| 6 | **Owner floating button** (Mike's request) | `GET /api/manager/queue` → what's waiting (same counts as Discord's `/panel`), for a badge | A floating button only the owner sees, with its own **owner stamp/crest**, premium look (gold, sheen, spring animations, its own colours – richer than anything members get), opening owner tools: the approvals queue with the badge, Boardroom, flags, preview-as, health, announcements, issue reporter | Bot side built (PR #22) – web side to build |
+| 5 | **Music** (Norex DJ) | the music bot (Oracle server), room state, controls, playlist import, `GET /api/music/rooms`, a live room socket, `GET/POST /api/music/playlists` | Music page (live player: queue, search, skip, volume) and a playlist section on profiles | Web side: music page built behind flag `music` (owner), against the draft below, with a sample-rooms preview. Bot side: no HTTP routes yet (the DJ only talks to Discord and Lavalink) |
+| 6 | **Owner floating button** (Mike's request) | `GET /api/manager/queue` → what's waiting (same counts as Discord's `/panel`), for a badge | A floating button only the owner sees, with its own **owner stamp/crest**, premium look (gold, sheen, spring animations, its own colours – richer than anything members get), opening owner tools: the approvals queue with the badge, Boardroom, flags, preview-as, health, announcements, issue reporter | Bot side built (PR #22). Web side built behind flag `ownerFab` (owner): crest button with a queue badge, sheet with the approvals queue, Boardroom, flags, health, announcements, preview-as, issue reporter, and a pointer to the docs release |
 | 7 | **Faces everywhere** | `bot/faces.js` in Discord: a shipped Card Studio card beats the Discord picture beats the default. `GET /api/faces?ids=` for the site | The same rule on the site wherever a person has a picture (sign-ups, profiles, chat, rosters, votes) | Discord done (PR #22), site built behind new flag `facesSite` (owner) |
 
 ### API shapes (draft – the bot side fills these in as each lands)
@@ -63,6 +63,13 @@ Until then the web side can build against the shapes below with sample data.
 
 // GET /api/manager/queue (managers) – built in PR #22
 { "claims": 1, "cards": 0, "rush": 2, "requests": 0, "ideas": 3, "at": 1791600000000 } // only the queues this person may decide
+
+// GET /api/music/rooms (flag `music`) – web side's proposal for the music bot to serve; length/position in seconds, at = server ms
+[{ "id": "room1", "name": "Match Night", "channel": "Match night lounge", "listeners": 7, "paused": false, "volume": 60, "loop": "off|track|queue", "at": 1791600000000,
+   "now": { "id": "…", "title": "…", "artist": "…", "thumb": "https://…", "url": "https://…", "length": 214, "position": 71 },   // null when idle
+   "queue": [{ "id": "…", "title": "…", "artist": "…", "length": 188, "by": "Jez" }] }]
+// POST /api/music/rooms/:id/control  { "action": "pause|resume|skip|stop|clear|volume|loop|add|remove", "level": 0-100, "query": "name or link", "item": "queueId" }
+//   → the room, same shape. Managers may control; any member may `add`. The page polls every 5 s and moves the bar itself from position + at.
 
 // GET /api/member?id=… (existing) – new block
 { "fun": { "jail": 3, "trivia": 120, "birthday": "07-14" } }
@@ -102,3 +109,7 @@ recovered with #29.
 - Still to do: live check on a real server, then open the `fun`, `discoveries`, `watchlist`, `memberLive` flags to members.
 
 Next on the bot side: features 1–4 above on the site (web side), `POST /api/me/prefs`, then music.
+
+## Issue tool recordings (web side touched bot/ with the owner's OK, PR #41)
+`bot/issues.js` (+ 2 route lines in `members.js`, 1 cron line in `worker.js`): `POST/GET /api/issues/recording` (raw video → MEDIA R2 `issues/<session>/<n>.<ext>`),
+`GET /api/issues`, `POST /api/issues/status`, and `issueSweep` deleting fixed/wontfix reports (and videos) 24 h after they were marked. No migration. Tests: `tests/issuesrec.test.mjs`.

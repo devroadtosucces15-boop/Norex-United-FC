@@ -91,6 +91,7 @@
     "insights": "managers",
     "burners": "members",
     "issueTool": "owner",
+    "issueRecorder": "owner",
     "editGear": "owner",
     "staffNav": "owner",
     "compareView": "owner",
@@ -123,6 +124,8 @@
     "homeWatch": "owner",
     "liveAnnounce": "owner",
     "reminders": "owner",
-    "feedbackRoom": "members"
+    "feedbackRoom": "members",
+    "music": "owner",
+    "ownerFab": "owner"
   }
 }

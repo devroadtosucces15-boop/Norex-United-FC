@@ -27,3 +27,26 @@
 .nxr-row .nxr-mic.live{background:#ff3b30;border-color:#ff3b30}
 /* the tool's own chrome never takes part in what it measures, and the page can't be zoomed while marking */
 .nxr-open{touch-action:manipulation}
+
+/* screen recorder row (web/report.js live layer) */
+.nxr-fab.rec{background:#ff3b30;border-color:#ff3b30;animation:nxr-rec 1.4s infinite}
+@keyframes nxr-rec{50%{box-shadow:0 0 0 8px rgba(255,59,48,.18)}}
+.nxr-bar2{top:calc(66px + env(safe-area-inset-top));flex-wrap:wrap;justify-content:center;align-items:center;width:max-content}
+.nxr-bar2 button:disabled{opacity:.35;cursor:default}
+.nxr-bar2 button.red{background:#ff3b30}
+.nxr-div{width:1px;align-self:stretch;margin:4px 3px;background:var(--line2,#2a3342)}
+.nxr-sw{min-width:22px!important;width:22px;height:22px;padding:0!important;margin:auto 2px;border-radius:50%!important;background:var(--c)!important;border:2px solid transparent!important}
+.nxr-sw.on{border-color:#fff!important;box-shadow:0 0 0 2px #0a0e14 inset}
+.nxr-clock{align-self:center;padding:0 8px;font:700 13px var(--body,sans-serif);font-variant-numeric:tabular-nums;color:#ff8a82}
+.nxr-live{position:fixed;z-index:9987;left:0;top:0;pointer-events:none;touch-action:none}
+.nxr-live.on{pointer-events:auto;cursor:crosshair}
+.nxr-live[data-tool=erase]{cursor:cell}
+.nxr-live[data-tool=move]{cursor:move}
+.nxr-live[data-tool=point]{cursor:none}
+
+/* reports list */
+.nxr-list{max-height:70vh;overflow:auto}
+.nxr-item{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line2,#2a3342)}
+.nxr-item small{display:block;opacity:.6;font-size:11px}
+.nxr-item.done{opacity:.55}
+.nxr-item button{padding:6px 10px;border-radius:9px;border:1px solid var(--line2,#2a3342);background:none;color:#fff;font:600 13px var(--body,sans-serif);cursor:pointer;white-space:nowrap}

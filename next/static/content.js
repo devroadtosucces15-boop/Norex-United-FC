@@ -1,5 +1,6 @@
 // Staff › Content (swap-over: the rest of the classic manager portal, on the same live routes).
-//   Docs        – GET|POST /api/docs, POST /api/docs/remove, GET /api/docs/history?id=, POST /api/docs/restore, GET /api/docs/acks, POST /api/docs/remind
+//   Docs        – GET|POST /api/docs, POST /api/docs/remove, GET /api/docs/history?id=, POST /api/docs/restore, GET /api/docs/acks, POST /api/docs/remind,
+//                 POST /api/docs/release (owner, once: lifts the release hold – shown only while GET /api/docs says held:true)
 //   Ideas       – GET /api/suggestions, POST /api/suggestions/decide {id, status, reply}, POST /api/suggestions/remove {id}
 //   Squad week  – GET /api/admin/squadweek  (7 days of availability + RSVPs, "can we field 9?")
 //   Storage     – GET /api/feed/storage, POST /api/feed/media/delete {key}   (owner only)
@@ -32,7 +33,7 @@
     if (S.hist) return history();
     if (S.acks) return ackView();
     const v = D.rules?.version;
-    const head = `<div class="chips dk-row"><button class="chip on" type="button" data-doc="new">＋ New item</button>${v ? `<button class="chip" type="button" data-doc="acks">✋ Who accepted the rules (v${v})</button>` : ''}<span class="muted small" style="margin-left:auto">${D.items.length} item${D.items.length === 1 ? '' : 's'}</span></div>`;
+    const head = releaseCard(D) + `<div class="chips dk-row"><button class="chip on" type="button" data-doc="new">＋ New item</button>${v ? `<button class="chip" type="button" data-doc="acks">✋ Who accepted the rules (v${v})</button>` : ''}<span class="muted small" style="margin-left:auto">${D.items.length} item${D.items.length === 1 ? '' : 's'}</span></div>`;
     const groups = AREAS.map(([k, ico, name]) => {
       const rows = D.items.filter((x) => x.area === k); if (!rows.length) return '';
       return `<h3 class="ct-h">${ico} ${name} <em>${rows.length}</em></h3><div class="ct-list">${rows.map((x) => `<article class="panel ct-item" id="d-${x.id}"><div class="ct-top"><b>${x.pinned ? '📌 ' : ''}${esc(x.title)}</b><span class="muted tiny">v${x.version} · ${esc(x.by || '')}${x.editedAt ? ` · edited ${ago(x.editedAt)}${x.editedBy ? ' by ' + esc(x.editedBy) : ''}` : ` · ${ago(x.at)}`}${x.discord ? ' · 💬 posted to Discord' : ''}</span></div>
@@ -40,6 +41,13 @@
 <div class="chips dk-row"><button class="chip" type="button" data-doc="edit" data-id="${x.id}">✏️ Edit</button><button class="chip" type="button" data-doc="hist" data-id="${x.id}">🕘 History</button>${two('docrm:' + x.id, '🗑 Remove', 'chip danger', `data-doc="rm" data-id="${x.id}"`)}</div></article>`).join('')}</div>`;
     }).join('');
     return head + (groups || empty('📄', 'No club docs yet', 'Add an announcement, the rules, requirements, an FAQ entry or a glossary term.'));
+  }
+  // The owner's go-live switch. Until it is pressed nothing reaches members (no pin, no notification, no Discord post), so the card says what will happen.
+  function releaseCard(D) {
+    if (!isOwner() || D.held !== true) return '';
+    return `<section class="panel ct-release" aria-label="Release the club docs"><div><b>🚀 Club docs are on hold</b><p class="muted small">Members see nothing yet. Releasing pins the founder’s message, bumps the rules version and asks every member to accept it. It can only be done once.</p>
+<ul class="muted small ct-rl"><li>Founder letter cut the way you want it?</li><li>Remember the one-week clock for members to accept.</li><li>Announce it in Discord first, so nobody is surprised by the notification.</li></ul></div>
+<div class="chips dk-row">${two('release', '🚀 Release club docs', 'btn', 'data-doc="release"')}</div></section>`;
   }
   function docForm() {
     const f = S.form, editing = !!f.id;
@@ -122,6 +130,7 @@ ${rows.length ? `<div class="ct-list">${rows.map((x) => `<form class="panel ct-i
     else if (k.doc === 'cancel' || k.doc === 'back') { S.form = null; S.hist = null; S.acks = null; paint(); }
     else if (k.doc === 'hist') act(async () => { S.hist = 'loading'; paint(); S.hist = await call(`/api/docs/history?id=${encodeURIComponent(k.id)}`).catch((e) => ({ error: e.message })); S.histId = Number(k.id); paint(); });
     else if (k.doc === 'restore') act(async () => { S.docs = await call('/api/docs/restore', { id: S.histId, version: Number(k.v) }); S.hist = null; paint(); toast(`Restored version ${k.v} – saved as a new version`); });
+    else if (k.doc === 'release') act(async () => { t.disabled = true; S.docs = await call('/api/docs/release', {}); paint(); toast(`🚀 Club docs released · rules version ${S.docs.rules?.version ?? ''}`.trim()); });
     else if (k.doc === 'rm') act(async () => { S.docs = await call('/api/docs/remove', { id: Number(k.id) }); paint(); toast('Removed – its history is kept'); });
     else if (k.doc === 'acks') act(async () => { S.acks = 'loading'; paint(); S.acks = await call('/api/docs/acks').catch((e) => ({ error: e.message })); paint(); });
     else if (k.doc === 'remind') act(async () => { const r = await call('/api/docs/remind', {}); S.acks = r; paint(); toast(r.sent ? `Reminder sent to ${r.sent}` : 'Nobody could be reminded (their notifications may be off)'); });

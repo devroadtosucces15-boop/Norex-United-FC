@@ -3,11 +3,13 @@ import { hex } from './media.js';
 import { notify, notifyManagers, safely } from './notify.js';
 
 export const CARD_MODEL = '@cf/black-forest-labs/flux-2-klein-9b';
+export const DESCRIBE_MODEL = '@cf/llava-hf/llava-1.5-7b-hf';
 export const MAX_ATTEMPTS = 3;
 const RETRY_AFTER = 2 * 60e3; // a failed try waits this long before the next one
 const DAY = 86400e3;
 const quotaHit = (e) => /\b4006\b|daily free allocation|neurons/i.test(String(e?.message || e)); // Workers AI free tier used up until 00:00 UTC
 const STALE_AFTER = 10 * 60e3; // a "generating" row older than this was abandoned by a dead Worker run
+const NOTES_MAX = 400;
 const REF_MAX = 500; // FLUX.2 wants reference images under 512×512
 
 export const CARD_SIZE = 1024;
@@ -92,6 +94,7 @@ const reqView = (r, extra = {}) => ({
   id: r.id, month: r.month, status: r.status === 'done' && r.published === 0 ? 'review' : r.status, note: r.note, bg: r.bg_name ?? null, pose: r.pose_name ?? null,
   createdAt: r.created_at, decidedAt: r.decided_at, hasPhoto: !!r.photo_key, targetPlayer: r.target_player ?? null, hasResult: !!r.result_key, hasPortrait: !!r.portrait_key, kitNumber: r.kit_number ?? null, avatarEnabled: r.avatar_enabled !== 0, portraitEnabled: r.portrait_enabled === 1, attempts: r.attempts, ...extra,
 });
+const staffView = (r, extra = {}) => reqView(r, { aiNotes: r.ai_notes ?? '', notesManual: r.ai_notes_manual === 1, ...extra });
 const REQ_SQL = `SELECT r.*, b.name AS bg_name, p.name AS pose_name FROM card_requests r
   LEFT JOIN card_templates b ON b.id = r.bg_id LEFT JOIN card_templates p ON p.id = r.pose_id`;
 
@@ -238,7 +241,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
     const rows = await all(env, `SELECT r.*, u.name AS user_name, COALESCE(r.target_player, c.player) AS player FROM card_requests r
       LEFT JOIN users u ON u.id = r.user_id LEFT JOIN claims c ON c.user_id = r.user_id AND c.status = 'approved'
       ORDER BY r.created_at DESC, r.id DESC LIMIT 500`);
-    return json({ requests: rows.map(r => reqView(r, { user: r.user_name || r.player || 'Member', userId: r.user_id, player: r.player })) });
+    return json({ requests: rows.map(r => staffView(r, { user: r.user_name || r.player || 'Member', userId: r.user_id, player: r.player })) });
   }
   if (p === '/api/cards/owner/revoke' && method === 'POST') {
     if (me.role !== 'owner') return fail('Owner only.', 403);
@@ -262,7 +265,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
       LEFT JOIN card_templates b ON b.id = r.bg_id LEFT JOIN card_templates p ON p.id = r.pose_id
       LEFT JOIN users u ON u.id = r.user_id LEFT JOIN users d ON d.id = r.decided_by
       WHERE r.status = 'pending' OR (r.status = 'done' AND r.published = 0) OR r.decided_at > ? ORDER BY (r.status = 'pending') DESC, COALESCE(r.decided_at, r.created_at) DESC LIMIT 100`, Date.now() - 14 * 864e5);
-    return json({ requests: rows.map((r) => reqView(r, { user: r.user_name || 'Member', userId: r.user_id, decider: r.decider || null })) });
+    return json({ requests: rows.map((r) => staffView(r, { user: r.user_name || 'Member', userId: r.user_id, decider: r.decider || null })) });
   }
 
   if (p === '/api/cards/requests/decide' && method === 'POST') {
@@ -287,6 +290,28 @@ export async function cardsRoute(p, method, body, me, env, log) {
     return json({ ok: true, status });
   }
 
+  if (p === '/api/cards/requests/notes' && method === 'POST') {
+    if (!manage) return fail('Managers only.', 403);
+    const r = await one(env, 'SELECT id FROM card_requests WHERE id = ?', Number(body.id));
+    if (!r) return fail('Request not found.', 404);
+    const notes = clean(body.notes, NOTES_MAX);
+    await run(env, 'UPDATE card_requests SET ai_notes = ?, ai_notes_manual = ? WHERE id = ?', notes, notes ? 1 : 0, r.id);
+    await log(env, me, 'card-notes', `#${r.id}`);
+    return json({ ok: true, notes, manual: !!notes });
+  }
+
+  // Delete removes the request and every file it made. Owners can delete anything; managers only what is not on the site.
+  if (p === '/api/cards/requests/delete' && method === 'POST') {
+    if (!manage) return fail('Managers only.', 403);
+    const r = await one(env, 'SELECT * FROM card_requests WHERE id = ?', Number(body.id));
+    if (!r) return fail('Request not found.', 404);
+    if (r.published === 1 && me.role !== 'owner') return fail('Only the owner can delete published artwork.', 403);
+    await run(env, 'DELETE FROM card_requests WHERE id = ?', r.id);
+    await Promise.all([dropPhoto(env, r.photo_key), dropPhoto(env, r.result_key), dropPhoto(env, r.portrait_key)]);
+    await log(env, me, 'card-delete', `#${r.id} ${r.target_player || r.user_id}`);
+    return json({ ok: true });
+  }
+
   if (p === '/api/cards/kit-number' && method === 'POST') {
     const value = body.kitNumber;
     if (value !== null && (!Number.isInteger(value) || value < 0 || value > 99)) return fail('Kit number must be between 0 and 99.');
@@ -308,6 +333,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
       // Retain uploaded photos privately for owner inspection and download.
       if (!r.user_id.startsWith('player:')) await safely(notify(env, [r.user_id], { type: 'card', icon: '🏁', title: 'Your NOREX artwork is ready', body: 'Manager-approved artwork is ready to download.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
     } else {
+      if (typeof body.notes === 'string') { const notes = clean(body.notes, NOTES_MAX); await run(env, 'UPDATE card_requests SET ai_notes = ?, ai_notes_manual = ? WHERE id = ?', notes, notes ? 1 : 0, r.id); }
       const updated = await run(env, "UPDATE card_requests SET status = 'approved', published = 0, attempts = 0, started_at = NULL, result_key = NULL, portrait_key = NULL WHERE id = ? AND status = 'done' AND published = 0", r.id);
       if (!updated.meta?.changes) return fail('Already reviewed.', 409);
       await Promise.all([dropPhoto(env, r.result_key), dropPhoto(env, r.portrait_key)]);
@@ -351,10 +377,47 @@ export async function cardResult(request, me, env, id) {
   return new Response(obj.body, { headers: h });
 }
 
-export const cardPrompt = (poseFragment) =>
+// Shared by every prompt: the picture must stay recognisably the same person/character, whoever they are.
+const LIKENESS = 'Likeness is the top priority. Keep the same gender presentation, age, face shape, skin tone and hairstyle as the reference. '
+  + 'Keep every distinctive feature exactly as shown: facial hair, glasses, headwear or helmet, scars, freckles, piercings, and any unusual, exaggerated or non-human features. '
+  + 'Do not beautify, idealise, slim down, de-age or make them more conventionally attractive. Stylise the rendering, never the person. '
+  + 'The reference can be a real photo, a game avatar or an illustrated character of any gender, age, skin tone or build. ';
+
+// Association football (soccer) kit. Spelled out because "football jersey" alone gets American football gear.
+const KIT = 'wearing a plain soccer jersey in black, red and white: slim fit, natural shoulders, round or V-neck collar, short sleeves with narrow cuffs, '
+  + 'like an association football (soccer) shirt, not an American football jersey, no shoulder pads, no boxy oversized cut, no mesh, no sleeve stripes';
+
+export const portraitPrompt = (notes = '') =>
+  'Image 0 is the person. '
+  + LIKENESS
+  + (notes ? `Reference notes, which are authoritative: ${notes} ` : '')
+  + 'Create a consistent clean semi-cartoon soccer player bust portrait, head and chest only, straight-on camera, neutral relaxed pose, centered with generous margins, '
+  + `${KIT}, no text, no numbers, no logos, no badges, no frame, no scenery. `
+  + 'Solid contrasting light background suitable for automated cutout. Match a repeatable professional game-card illustration style.';
+
+export const cardPrompt = (poseFragment, notes = '') =>
   'Image 0 is the card background: keep its colours, framing and empty centre exactly. '
-  + `Image 1 is the player: keep their real face, hair and skin tone. Place the player from image 1 in the centre of image 0, ${poseFragment}. `
-  + 'Esports football club player card, clean studio lighting, sharp, no text, no logos, no watermark.';
+  + `Image 1 is the player: ${LIKENESS}`
+  + (notes ? `Reference notes, which are authoritative: ${notes} ` : '')
+  + `Place the player from image 1 in the centre of image 0, ${poseFragment}. `
+  + 'Esports soccer club player card, clean studio lighting, sharp, no text, no logos, no watermark.';
+
+// Best effort: a vision model writes down what the photo actually shows, so the artwork model is told rather than left to guess.
+// Any failure just means the prompt goes out without notes.
+async function describe(env, photo) {
+  if (!env.AI) return '';
+  try {
+    const out = await env.AI.run(DESCRIBE_MODEL, {
+      image: [...photo.bytes],
+      max_tokens: 160,
+      prompt: 'Describe this person or character for an artist who must redraw them faithfully. In under 60 words, plain text, state: apparent gender (man, woman, boy, girl, or non-binary), approximate age, skin tone, hair colour and style, facial hair, glasses or headwear, expression, and any distinctive or unusual feature. Say if it is a real photo, a game avatar or a drawing. Do not judge or flatter.',
+    });
+    return clean(out?.description ?? out?.response, 400);
+  } catch (e) {
+    console.log('photo description skipped', e.message);
+    return '';
+  }
+}
 
 // FLUX.2 rejects references of 512×512 or more; shrink with the Images binding when it is bound.
 async function reference(env, bytes, type) {
@@ -363,10 +426,10 @@ async function reference(env, bytes, type) {
   return new Blob([await out.response().arrayBuffer()], { type: 'image/png' });
 }
 
-async function render(env, bg, pose, photo, portrait = false) {
+async function render(env, bg, pose, photo, portrait, notes) {
   if (!env.AI) throw new Error('The AI binding is not connected.');
   const form = new FormData();
-  form.append('prompt', portrait ? 'Image 0 is the person. Preserve their facial identity, hairstyle, skin tone and expression. Create a consistent clean semi-cartoon football player bust portrait, head and chest only, straight-on camera, neutral relaxed pose, centered with generous margins, wearing a generic black red and white football jersey, no text, no numbers, no logos, no badges, no frame, no scenery. Solid contrasting light background suitable for automated cutout. Match a repeatable professional game-card illustration style.' : cardPrompt(pose.prompt));
+  form.append('prompt', portrait ? portraitPrompt(notes) : cardPrompt(pose.prompt, notes));
   form.append('width', String(CARD_SIZE));
   form.append('height', String(CARD_SIZE));
   if (!portrait) form.append('input_image_0', await reference(env, bg.bytes, bg.type), 'background.png');
@@ -403,13 +466,17 @@ async function generateOne(env, r, now) {
     const [bg, photo] = await Promise.all([readAsset(env, bgT?.asset_key), readAsset(env, r.photo_key)]);
     if (r.avatar_enabled !== 0 && (!bg || !poseT)) throw new Error('The chosen background or pose is gone.');
     if (!photo) throw new Error('The photo is gone.');
+    // A manager's notes win; otherwise the photo is described once and shared by both outputs. The notes used are saved so staff can edit them.
+    const manual = r.ai_notes_manual === 1;
+    const notes = manual ? clean(r.ai_notes, NOTES_MAX) : await describe(env, photo);
+    if (!manual && notes !== (r.ai_notes ?? '')) await run(env, 'UPDATE card_requests SET ai_notes = ? WHERE id = ?', notes, r.id);
     if (r.avatar_enabled !== 0) {
-      const card = await render(env, bg, poseT, photo);
+      const card = await render(env, bg, poseT, photo, false, notes);
       resultKey = `cardresult/${hex(16)}.${card.type[1]}`;
       await env.MEDIA.put(resultKey, card.bytes, { httpMetadata: { contentType: card.type[0] } });
     }
     if (r.portrait_enabled === 1) {
-      const portrait = await render(env, bg, poseT, photo, true);
+      const portrait = await render(env, bg, poseT, photo, true, notes);
       portraitKey = `cardresult/${hex(16)}.${portrait.type[1]}`;
       await env.MEDIA.put(portraitKey, portrait.bytes, { httpMetadata: { contentType: portrait.type[0] } });
     }

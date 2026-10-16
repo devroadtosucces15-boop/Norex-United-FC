@@ -22,7 +22,7 @@ t('preview: all 29 FC27 formations ship with the tactics pages', (JSON.parse(rea
 t('preview: static assets present', ['style.css', 'widgets.css', 'fx.css', 'fx.js', 'widgets.js', 'pitch.js', 'cards.js', 'crest.png'].every((f) => fs.existsSync(path.join(out, f))));
 t('preview: real card-art API is configured only in preview builds', read('index.html').includes('norex-bot.norexunited.workers.dev'));
 // ---- app shell, phone layout and motion guards (the browser overflow sweep is next/tools/overflow-audit.mjs) ----
-const pages = html.filter((f) => !/^(lookbook|canvas)\.html$/.test(f)), css = ['style.css', 'motion.css', 'widgets.css'].map((f) => read(f)).join('\n');
+const pages = html.filter((f) => !/^(lookbook|canvas|record-host)\.html$/.test(f)), css = ['style.css', 'motion.css', 'widgets.css'].map((f) => read(f)).join('\n');
 t('app: viewport fills the notch (cover) and locks zoom (zn11: maximum-scale=1, fields 16px+ on touch)', pages.every((f) => /name="viewport" content="[^"]*maximum-scale=1[^"]*viewport-fit=cover[^"]*"/.test(read(f))) && /\(pointer:coarse\)\{:where\(input[^}]*font-size:16px!important/.test(read('style.css')));
 t('app: manifest linked and valid', read('index.html').includes('rel="manifest"') && (() => { try { const m = JSON.parse(read('manifest.webmanifest')); return m.display === 'standalone' && m.start_url && m.icons?.length; } catch { return false; } })());
 t('app: motion system, app layer and motion settings on every page', pages.every((f) => { const h = read(f); return h.includes('motion.css') && h.includes('pwa.js') && h.includes('data-motion-settings'); }));
@@ -336,6 +336,22 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('bot routes: the form’s cleaned values save as sent (kick, birthday 03-09)', sv.s === 200 && sv.d.profile.kick === 'Mike_K' && sv.d.profile.birthday === '03-09');
   const closed = Object.fromEntries(await Promise.all(['/api/live/members', '/api/watchlist', '/api/discoveries'].map(async (r) => [r, (await call(tok['222'], r)).s])));
   t('bot routes: owner-level flags — an ordinary member gets 404 on every new route, so nothing shows', Object.values(closed).every((c) => c === 404));
+}
+
+// ---------- music page, owner button, docs release button (BOT-SITE #5, #6) ----------
+{
+  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8')).features;
+  const run = (file, window) => { const code = read(file); new Function('window', 'document', code)(window, { querySelector: () => null }); return window; };
+  const mu = run('music.js', {}).NorexMusic, of = run('ownerfab.js', {}).NorexOwnerFab, ct = read('content.js'), mh = read('hub-music.html'), hub = read('hub.html');
+  t('music: flag starts at owner, page exists, sub-nav link and Hub card hidden until the flag is on', cfg.music === 'owner' && html.includes('hub-music.html') && /<a href="hub-music\.html" class="[^"]*" data-flag="music" hidden>/.test(hub) && /data-flag="music" hidden href="hub-music\.html"/.test(hub));
+  t('music: page shows an "isn\u2019t open yet" notice, fetches nothing before the flag is on, and talks to the drafted routes', /data-mu-off[^>]*hidden/.test(mh) && read('music.js').includes("B.flag('music').then") && ['/api/music/rooms', '/control'].every((x) => read('music.js').includes(x)));
+  t('music: times and the moving position bar (paused stays put, never past the end)', mu.fmt(75) === '1:15' && mu.fmt(3725) === '1:02:05' && mu.place({ now: { length: 100, position: 10 }, at: 1000, paused: false }, 6000) === 15 && mu.place({ now: { length: 100, position: 10 }, at: 1000, paused: true }, 6000) === 10 && mu.place({ now: { length: 100, position: 98 }, at: 1 }, 9000) === 100 && mu.pct({ now: { length: 200, position: 50 }, at: 0, paused: true }) === 25);
+  t('music: sample rooms are all labelled SAMPLE so they can never pass for real ones', mu.sampleRooms().length === 3 && mu.sampleRooms().every((r) => /^SAMPLE/.test(r.name)));
+  t('owner button: flag ownerFab starts at owner, shell loads it on every page, only the owner and only with the flag', cfg.ownerFab === 'owner' && html.filter((f) => read(f).includes('<header class="bar">')).every((f) => /src="ownerfab\.js"/.test(read(f)) && /ownerfab\.css/.test(read(f))) && read('ownerfab.js').includes("A.role !== 'owner'") && read('ownerfab.js').includes("includes('ownerFab')"));
+  t('owner button: badge adds up the queues it was given and ignores anything else', of.tally({ claims: 2, cards: 1, rush: 0, ideas: 3, bogus: 9, requests: 'x' }).total === 6 && of.tally(null).total === 0 && of.tally({ claims: -4 }).total === 0);
+  t('owner button: reads the queue and the docs hold, never calls the release route or posts anything', (() => { const code = read('ownerfab.js').replace(/\/\/.*$/gm, ''); return code.includes('/api/manager/queue') && code.includes("'/api/docs'") && !code.includes('docs/release') && !/POST/.test(code); })());
+  t('docs release: only the owner sees it, only while the server says held, behind a two-tap, calls POST /api/docs/release', ct.includes("D.held !== true") && ct.includes('!isOwner()') && ct.includes("two('release'") && ct.includes("call('/api/docs/release', {})"));
+  t('docs release: card reminds about the founder letter, the one-week clock and announcing in Discord first', ['Founder letter', 'one-week clock', 'Announce it in Discord first'].every((x) => ct.includes(x)));
 }
 fs.rmSync(out, { recursive: true, force: true });
 done();

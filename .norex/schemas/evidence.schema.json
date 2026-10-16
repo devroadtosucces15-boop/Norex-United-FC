@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Norex Evidence",
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "subject",
+    "result",
+    "source"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "STATIC",
+        "DETERMINISTIC",
+        "RUNTIME",
+        "VISUAL",
+        "PRODUCTION",
+        "USER"
+      ]
+    },
+    "subject": {
+      "type": "string"
+    },
+    "result": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "OBSERVED",
+        "INCONCLUSIVE"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "commit": {
+      "type": "string"
+    },
+    "surface": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "details": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string"
+    }
+  }
+}

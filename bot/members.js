@@ -50,7 +50,7 @@ import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { botCommandsRoute } from './botcommands.js';
 import { crawlRoute } from './crawl.js';
 import { burnersRoute, burnersRelay, burnersAdminRoute } from './burners.js';
-import { issueSave } from './issues.js';
+import { issueList, issueRecordingGet, issueRecordingUpload, issueSave, issueStatus } from './issues.js';
 import { clubLookup } from './clublookup.js';
 import { awardPoints, pointsRoute } from './points.js';
 import { myAvatarCard } from './avatarcard.js';
@@ -458,6 +458,11 @@ async function handleMembersUncached(request, env, ctx, loadSite) {
     if (url.pathname === '/api/cards/templates/upload' && request.method === 'POST') return cors(env, await cardTemplateUpload(request, me, env, url, log)); // Card Studio – raw image body
     const pmu = /^\/api\/plays\/(\d+)\/media$/.exec(url.pathname);
     if (pmu && request.method === 'POST') return cors(env, await playMediaUpload(request, me, env, url, Number(pmu[1]), log)); // BE1 – Tactics Studio recording, raw body
+    if (url.pathname === '/api/issues/recording' && request.method === 'POST') { // owner issue tool – screen recording, raw body
+      const r = await issueRecordingUpload(request, me, env, url);
+      return cors(env, r.error ? fail(r.error, r.status) : json(r));
+    }
+    if (url.pathname === '/api/issues/recording' && request.method === 'GET') return cors(env, await issueRecordingGet(request, me, env, url));
     if (url.pathname === '/api/events/report/poster' && request.method === 'POST') return cors(env, await reportPosterRoute(request, me, env, url)); // BE11 – raw PNG body
     const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
     const res = await route(url.pathname, request.method, body, me, env, loadSite, url);
@@ -638,6 +643,14 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (p === '/api/issues' && method === 'POST') { // owner issue tool: one pinned note per call
     if (!can(me, 'issues.report') || !flagOn(env, me, 'issueTool')) return fail('Owner only.', 403);
     return json(await issueSave(env, me, body));
+  }
+  if (p === '/api/issues' && method === 'GET') { // owner: the list, with when each fixed one will be cleared
+    const r = await issueList(env, me);
+    return r.error ? fail(r.error, 403) : json(r);
+  }
+  if (p === '/api/issues/status' && method === 'POST') { // owner: open | fixed | wontfix – fixed ones are deleted automatically (issues.js)
+    const r = await issueStatus(env, me, body);
+    return r.error ? fail(r.error, r.error === 'Owner only.' ? 403 : 400) : json(r);
   }
   if (p === '/api/insights/feedback' && method === 'POST') { // BE9 – 👍/👎 on a stat insight
     if (!flagOn(env, me, 'statInsights')) return fail('Not available yet.', 404);

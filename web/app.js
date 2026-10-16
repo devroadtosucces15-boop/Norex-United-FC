@@ -1213,7 +1213,7 @@ ${VIEW_RANK.indexOf(realRole) >= VIEW_RANK.indexOf('manager') ? `<div class="acc
       if (!r.ok) throw new Error(`Error ${r.status}`);
       return r.json();
     };
-    loadAsset('report.js', 'NXReport').then(() => NXReport.init({ call: post, toast, role: realRole, viewAs: previewAs, user: { u: session.u, n: session.n } })).catch(() => {});
+    loadAsset('report.js', 'NXReport').then(() => NXReport.init({ call: post, toast, role: realRole, viewAs: previewAs, user: { u: session.u, n: session.n }, recorder: flagOn('issueRecorder', 'owner'), rawUpload: { base: MAPI, token: session.token }, libBase: `${BASE}assets/` })).catch(() => {});
   }
   const hotwEl = $('[data-hotw]');
   if (hotwEl && flagOn('hotw', baseRole || 'guest')) loadAsset('hotw.js', 'NXHotw').then(() => NXHotw.home(hotwEl)).catch(() => {});

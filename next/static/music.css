@@ -1,0 +1,20 @@
+/* Music page (music.js). Same panels and gold/red accents as the rest of the Hub; everything scoped under .nxm / .nxm-rooms. */
+.nxm-bar{align-items:center;justify-content:space-between;margin-top:var(--nx-gap,16px)}
+.nxm-rooms{display:grid;align-items:start;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--nx-gap,16px);margin-top:var(--nx-gap,16px)}
+.nxm{display:grid;gap:14px;align-content:start}.nxm.paused .nxm-art{filter:grayscale(.7)}
+.nxm-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.nxm-h h3{margin:0;font:600 18px Oswald;letter-spacing:.04em;overflow-wrap:anywhere}
+.nxm-now{display:grid;grid-template-columns:72px 1fr;gap:14px;align-items:center}
+.nxm-art{width:72px;height:72px;border-radius:14px;display:grid;place-items:center;font-size:28px;overflow:hidden;background:linear-gradient(135deg,rgba(239,207,122,.18),rgba(255,255,255,.04));border:1px solid rgba(239,207,122,.3)}.nxm-art img{width:100%;height:100%;object-fit:cover}
+.nxm-t{display:grid;gap:4px;min-width:0}.nxm-t b{font:600 15px Inter;overflow-wrap:anywhere}.nxm-t a{color:inherit;text-decoration:none}.nxm-t a:hover{text-decoration:underline}
+.nxm-bar2{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:4px}.nxm-bar2 i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#c9993a,#efcf7a);transition:width 1s linear}
+.nxm-tm{display:flex;justify-content:space-between}
+.nxm-none{margin:0}
+.nxm-c{align-items:center}.nxm-vol{display:flex;align-items:center;gap:8px;flex:1;min-width:150px}.nxm-vol input{flex:1;accent-color:#efcf7a;min-width:80px}.nxm-vol b{min-width:2ch;text-align:right;font-size:12px}
+.nxm-add{display:flex;gap:8px}.nxm-add input{flex:1;min-width:0;background:var(--p3);color:#fff;border:1px solid var(--line2);border-radius:12px;padding:10px 12px;font:500 14px Inter}.nxm-add input:focus{outline:2px solid #efcf7a;outline-offset:1px}.nxm-add input::placeholder{color:var(--soft)}
+.nxm-q{list-style:none;margin:0;padding:0;display:grid;gap:8px}.nxm-q li{display:grid;grid-template-columns:22px 1fr auto auto;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)}
+.nxm-qt{display:grid;min-width:0}.nxm-qt b{font:600 13px Inter;overflow-wrap:anywhere}
+.nxm-eq{display:inline-flex;gap:3px;align-items:flex-end;height:18px}.nxm-eq i{width:4px;border-radius:2px;background:#efcf7a;animation:nxmEq 1s ease-in-out infinite}.nxm-eq i:nth-child(2){animation-delay:.2s}.nxm-eq i:nth-child(3){animation-delay:.4s}
+@keyframes nxmEq{0%,100%{height:4px}50%{height:18px}}
+@media(prefers-reduced-motion:reduce){.nxm-eq i{animation:none;height:12px}}
+html[data-motion="calm"] .nxm-eq i,html[data-motion="off"] .nxm-eq i{animation:none;height:12px}
+@media(max-width:560px){.nxm-rooms{grid-template-columns:1fr}}

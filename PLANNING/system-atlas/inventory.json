@@ -1,8 +1,8 @@
 {
-  "revision": "8a2e07b007ad5784f282a7fa903cf2a0cc776a3f",
-  "files": 829,
-  "imports": 609,
-  "api_paths": 243,
+  "revision": "d9c4bd5cfefcf448626f1899caff5b4a1c29762b",
+  "files": 834,
+  "imports": 616,
+  "api_paths": 248,
   "tables": 314,
   "records": [
     {
@@ -538,7 +538,7 @@
     {
       "path": "bot/cardstudio.js",
       "layer": "bot",
-      "lines": 474,
+      "lines": 541,
       "imports": [
         "./roles.js",
         "./media.js",
@@ -554,6 +554,8 @@
         "/api/cards/request/cancel",
         "/api/cards/requests",
         "/api/cards/requests/decide",
+        "/api/cards/requests/delete",
+        "/api/cards/requests/notes",
         "/api/cards/requests/retry",
         "/api/cards/requests/review",
         "/api/cards/revoke",
@@ -579,6 +581,7 @@
         "cardTemplateUpload",
         "cardsRoute",
         "clean",
+        "describe",
         "dropPhoto",
         "fail",
         "gate",
@@ -589,6 +592,7 @@
         "one",
         "photoType",
         "pngSize",
+        "portraitPrompt",
         "publicPortraits",
         "quotaHit",
         "readAsset",
@@ -596,6 +600,7 @@
         "render",
         "reqView",
         "run",
+        "staffView",
         "startsWith",
         "takeCardKick",
         "view"
@@ -1606,16 +1611,27 @@
     {
       "path": "bot/issues.js",
       "layer": "bot",
-      "lines": 31,
-      "imports": [],
+      "lines": 112,
+      "imports": [
+        "./roles.js"
+      ],
       "endpoints": [],
       "tables": [
         "SET",
+        "activity",
         "issue_reports"
       ],
       "functions": [
         "clip",
-        "issueSave"
+        "gate",
+        "issueList",
+        "issueRecordingGet",
+        "issueRecordingUpload",
+        "issueSave",
+        "issueStatus",
+        "issueSweep",
+        "ownerGate",
+        "recKey"
       ]
     },
     {
@@ -1845,7 +1861,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1137,
+      "lines": 1150,
       "imports": [
         "./faces.js",
         "./panel.js",
@@ -1946,6 +1962,8 @@
         "/api/insights/h2h",
         "/api/insights/player",
         "/api/issues",
+        "/api/issues/recording",
+        "/api/issues/status",
         "/api/live",
         "/api/locker/ws",
         "/api/manager/queue",
@@ -2704,6 +2722,17 @@
       "endpoints": [],
       "tables": [
         "feedback"
+      ],
+      "functions": []
+    },
+    {
+      "path": "bot/migrations/0053_card_ai_notes.sql",
+      "layer": "bot",
+      "lines": 4,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "card_requests"
       ],
       "functions": []
     },
@@ -3765,7 +3794,7 @@
     {
       "path": "bot/worker.js",
       "layer": "bot",
-      "lines": 596,
+      "lines": 598,
       "imports": [
         "./botcommands.js",
         "./members.js",
@@ -3784,6 +3813,7 @@
         "./discordroles.js",
         "./roles.js",
         "./media.js",
+        "./issues.js",
         "./exportcontent.js",
         "./monitor.js",
         "./aispike.js",
@@ -3855,7 +3885,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 129,
+      "lines": 132,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9770,7 +9800,7 @@
     {
       "path": "tests/cardstudio.test.mjs",
       "layer": "tests",
-      "lines": 291,
+      "lines": 330,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
@@ -9788,6 +9818,8 @@
         "/api/cards/request/cancel",
         "/api/cards/requests",
         "/api/cards/requests/decide",
+        "/api/cards/requests/delete",
+        "/api/cards/requests/notes",
         "/api/cards/requests/retry",
         "/api/cards/requests/review",
         "/api/cards/revoke",
@@ -9795,6 +9827,7 @@
         "/api/cards/templates/update"
       ],
       "tables": [
+        "both",
         "card_requests",
         "card_templates",
         "card_unlocks",
@@ -10544,6 +10577,30 @@
       ]
     },
     {
+      "path": "tests/issuesrec.test.mjs",
+      "layer": "tests",
+      "lines": 45,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs",
+        "../bot/issues.js"
+      ],
+      "endpoints": [
+        "/api/issues",
+        "/api/issues/status"
+      ],
+      "tables": [
+        "activity",
+        "issue_reports"
+      ],
+      "functions": [
+        "get",
+        "item",
+        "setFlags",
+        "up"
+      ]
+    },
+    {
       "path": "tests/lib.mjs",
       "layer": "tests",
       "lines": 15,
@@ -10854,7 +10911,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 342,
+      "lines": 358,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -10916,6 +10973,7 @@
         "/api/docs/ack",
         "/api/docs/acks",
         "/api/docs/history",
+        "/api/docs/release",
         "/api/docs/remind",
         "/api/docs/remove",
         "/api/docs/restore",
@@ -10944,9 +11002,11 @@
         "/api/live",
         "/api/live/members",
         "/api/locker",
+        "/api/manager/queue",
         "/api/me",
         "/api/me/prefs",
         "/api/member",
+        "/api/music/rooms",
         "/api/mybuild",
         "/api/notify",
         "/api/notify/ack",
@@ -11380,6 +11440,32 @@
       "endpoints": [],
       "tables": [],
       "functions": []
+    },
+    {
+      "path": "tests/recorder.test.mjs",
+      "layer": "tests",
+      "lines": 68,
+      "imports": [
+        "node:fs",
+        "./mock.mjs",
+        "./lib.mjs"
+      ],
+      "endpoints": [
+        "/api/issues",
+        "/api/issues/recording",
+        "/api/issues/status"
+      ],
+      "tables": [
+        "it",
+        "the",
+        "web"
+      ],
+      "functions": [
+        "discard",
+        "lines",
+        "many",
+        "read"
+      ]
     },
     {
       "path": "tests/redirects.test.mjs",
@@ -11977,6 +12063,26 @@
       ]
     },
     {
+      "path": "web/annotate.js",
+      "layer": "web",
+      "lines": 121,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "alphaOf",
+        "bbox",
+        "hit",
+        "paint",
+        "paintTrail",
+        "push",
+        "segDist",
+        "shift",
+        "simplify",
+        "store"
+      ]
+    },
+    {
       "path": "web/app.js",
       "layer": "web",
       "lines": 2141,
@@ -12547,7 +12653,7 @@
     {
       "path": "web/cardstudio.js",
       "layer": "web",
-      "lines": 285,
+      "lines": 286,
       "imports": [],
       "endpoints": [
         "/api/cards/kit-number",
@@ -12557,6 +12663,7 @@
         "/api/cards/request/cancel",
         "/api/cards/requests",
         "/api/cards/requests/decide",
+        "/api/cards/requests/delete",
         "/api/cards/requests/retry",
         "/api/cards/requests/review",
         "/api/cards/templates",
@@ -13663,6 +13770,50 @@
       ]
     },
     {
+      "path": "web/record.js",
+      "layer": "web",
+      "lines": 258,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "the"
+      ],
+      "functions": [
+        "$",
+        "attach",
+        "broadcast",
+        "buildItem",
+        "capMs",
+        "cleanup",
+        "discard",
+        "elapsed",
+        "ext",
+        "fileName",
+        "finish",
+        "fitItem",
+        "fmtBytes",
+        "fmtDur",
+        "host",
+        "moment",
+        "onAck",
+        "pad",
+        "pages",
+        "paint",
+        "pause",
+        "pickMime",
+        "run",
+        "say",
+        "start",
+        "startCaptions",
+        "stop",
+        "stopCaptions",
+        "summarize",
+        "tick",
+        "upload",
+        "view"
+      ]
+    },
+    {
       "path": "web/recs.js",
       "layer": "web",
       "lines": 117,
@@ -13690,18 +13841,22 @@
     {
       "path": "web/report.js",
       "layer": "web",
-      "lines": 348,
+      "lines": 579,
       "imports": [],
       "endpoints": [
-        "/api/issues"
+        "/api/issues",
+        "/api/issues/status"
       ],
       "tables": [],
       "functions": [
         "activeTabs",
+        "api",
         "b",
         "buildBar",
         "cancel",
+        "clearMarks",
         "commit",
+        "commitRecording",
         "cssPath",
         "describe",
         "deviceInfo",
@@ -13710,24 +13865,46 @@
         "enqueue",
         "esc",
         "flush",
+        "fmt",
         "holdScroll",
+        "hostSend",
         "init",
+        "lChanged",
+        "lDown",
+        "lErase",
+        "lKey",
+        "lMove",
+        "lMsg",
+        "lPt",
+        "lUp",
         "label",
         "layoutDiag",
+        "left",
+        "liveBar",
+        "liveDraw",
+        "liveMount",
+        "liveSize",
+        "liveTool",
         "loadHigh",
         "loadState",
+        "marksKey",
         "mount",
         "move",
         "mq",
+        "openList",
+        "openRecorder",
         "openSheet",
         "ownEl",
+        "pageEvent",
         "pageKey",
         "paint",
         "paintFab",
         "paintShape",
         "parseUA",
+        "persistMarks",
         "pin",
         "r1",
+        "recLive",
         "rect",
         "round",
         "run",
@@ -13738,8 +13915,10 @@
         "sizeCanvas",
         "startDictation",
         "stopDictation",
+        "takePending",
         "toggle",
         "up",
+        "upTarget",
         "ver"
       ]
     },
@@ -14672,6 +14851,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/issues.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/lineuprec.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -15404,6 +15588,11 @@
     {
       "source": "bot/worker.js",
       "target": "bot/media.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/issues.js",
       "kind": "imports"
     },
     {
@@ -16422,6 +16611,21 @@
       "kind": "imports"
     },
     {
+      "source": "tests/issuesrec.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/issuesrec.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/issuesrec.test.mjs",
+      "target": "bot/issues.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/lineuprec.test.mjs",
       "target": "tests/mock.mjs",
       "kind": "imports"
@@ -16864,6 +17068,16 @@
     {
       "source": "tests/rankings.test.mjs",
       "target": "scripts/rankings.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/recorder.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/recorder.test.mjs",
+      "target": "tests/lib.mjs",
       "kind": "imports"
     },
     {
