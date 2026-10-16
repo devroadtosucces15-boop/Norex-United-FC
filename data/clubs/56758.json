@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-16T05:30:47.902Z",
+ "fetchedAt": "2026-10-16T05:40:48.411Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -693,6 +693,42 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "PATRICKSTARR11",
+   "gamesPlayed": "18",
+   "winRate": "77",
+   "goals": "0",
+   "assists": "1",
+   "cleanSheetsDef": "1",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "167",
+   "passSuccessRate": "84",
+   "ratingAve": "7.6",
+   "tacklesMade": "30",
+   "tackleSuccessRate": "50",
+   "proName": "EA IS TRASH",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "186",
+   "proNationality": "47",
+   "proOverall": "78",
+   "proOverallStr": "78",
+   "manOfTheMatch": "2",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "griffp420",
    "gamesPlayed": "3",
    "winRate": "0",
@@ -1021,7 +1057,7 @@
   "midfielder": 10,
   "goalkeeper": 0,
   "forward": 11,
-  "defender": 4
+  "defender": 5
  },
  "career": [
   {
@@ -1038,7 +1074,7 @@
   {
    "name": "ika_cabrera7",
    "proPos": "25",
-   "gamesPlayed": "247",
+   "gamesPlayed": "248",
    "goals": "215",
    "assists": "91",
    "manOfTheMatch": "38",
@@ -1159,12 +1195,12 @@
   {
    "name": "CaptainFluffyCat",
    "proPos": "25",
-   "gamesPlayed": "186",
-   "goals": "149",
+   "gamesPlayed": "187",
+   "goals": "151",
    "assists": "78",
    "manOfTheMatch": "40",
    "ratingAve": "7.5",
-   "prevGoals": "1",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
@@ -1221,6 +1257,17 @@
    "ratingAve": "8.2",
    "prevGoals": "1",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "PATRICKSTARR11",
+   "proPos": "25",
+   "gamesPlayed": "191",
+   "goals": "39",
+   "assists": "33",
+   "manOfTheMatch": "18",
+   "ratingAve": "7.3",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "griffp420",
