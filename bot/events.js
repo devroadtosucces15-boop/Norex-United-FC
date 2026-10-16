@@ -239,7 +239,7 @@ export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, me
     footer(done ? 'This event is closed' : 'Tap a button to answer · only you see the confirmation'),
     buttons([
       ...(done || !rsvpButtons(env) ? [] : [['yes', '✅', 'I’m in', 'ok'], ['maybe', '❔', 'Maybe', 'grey'], ['no', '❌', 'Can’t make it', 'no']].map(([st, emoji, lbl, style]) => ({ label: lbl, emoji, style, id: `norex:ev:${e.id}:${st}` }))),
-      { label: 'Squad Hub', url: `${site}members.html#schedule-${e.id ?? ''}` },
+      { label: 'Match night', url: `${site}hub-matchnight.html` },
     ]),
   ] });
 }
@@ -549,15 +549,29 @@ function readLineup(body) {
   }
   return { lineup, formation };
 }
+// The line-up post for a channel (group look: banner, the XI by line, tags in the line above the panel). The DM each starter gets is
+// a different, personal layout (notify.js dmMessage).
+const LINES = [['GK', ['GK']], ['Defence', ['CB', 'LB', 'RB', 'LWB', 'RWB']], ['Midfield', ['CDM', 'CM', 'CAM', 'LM', 'RM']], ['Attack', ['LW', 'RW', 'CF', 'ST']]];
 function lineupEmbed(env, e, lineup, names, tagged = new Set()) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), order = (FORMATIONS[e.formation] ?? []).map((x) => x[0]);
   const rows = Object.entries(lineup).sort((a, b) => order.indexOf(a[1]) - order.indexOf(b[1]));
-  return message({ blocks: [
-    header({ eyebrow: 'NOREX UNITED · Match night', title: `🧩 Lineup${e.formation ? ` · ${e.formation}` : ''}`, sub: `${label(e)} · <t:${Math.floor(e.start / 1000)}:F> · <t:${Math.floor(e.start / 1000)}:R>` }),
-    text(rows.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(4)}\` ${tagged.has(uid) ? `<@${uid}>` : names.get(uid) ?? 'Member'}`).join('\n')),
-    footer('Play Style per position: playstyle.html'),
-    buttons([{ label: 'Schedule', url: `${site}members.html#schedule-${e.id}` }]),
-  ], mentions: tagged.size ? { parse: [], users: [...tagged] } : { parse: [] } });
+  const who = ([uid]) => (tagged.has(uid) ? `<@${uid}>` : `**${names.get(uid) ?? 'Member'}**`);
+  const byLine = LINES.map(([name, pos]) => [name, rows.filter(([, slot]) => pos.includes(POS_OF(slot)))]);
+  const rest = rows.filter(([, slot]) => !LINES.some(([, pos]) => pos.includes(POS_OF(slot))));
+  const unix = Math.floor(e.start / 1000);
+  return message({
+    accent: 'red',
+    ping: tagged.size ? `**🧩 Line-up is out · ${label(e)}**\n${[...tagged].map((u) => `<@${u}>`).join(' ')}` : null,
+    mentions: tagged.size ? { parse: [], users: [...tagged] } : { parse: [] },
+    blocks: [
+      cards(bannerUrl(env, 'matchnight')),
+      header({ eyebrow: 'NOREX UNITED · Line-up', title: `🧩 ${e.formation ?? 'Starting XI'}`, sub: `${label(e)} · <t:${unix}:F> · <t:${unix}:R>` }),
+      sep(),
+      ...[...byLine, ['Others', rest]].filter(([, r]) => r.length).map(([name, r]) => text(`-# **${name.toUpperCase()}**\n${r.map(([uid, slot]) => `\`${POS_OF(slot).padEnd(3)}\` ${who([uid])}`).join('\n')}`)),
+      footer(`${rows.length} starting · Play Style per position in the Handbook`),
+      buttons([{ label: 'Match night', url: `${site}hub-matchnight.html` }]),
+    ],
+  });
 }
 async function lineupRoute(p, method, body, me, env, log) {
   if (p === '/api/events/templates') {
@@ -605,7 +619,7 @@ async function lineupRoute(p, method, body, me, env, log) {
     for (const r of await all(env, 'SELECT user_id, name FROM event_rsvps WHERE event_id = ?', row.id)) if (!names.has(r.user_id)) names.set(r.user_id, r.name);
     // Everyone told their own position (one notification each – the text differs).
     let told = 0;
-    if (wantDm) for (const uid of ids) told += (await safely(notify(env, [uid], { type: 'event', icon: '🧩', title: `You’re starting at ${POS_OF(lineup[uid])} – ${label(row)} · ${when(row)}`, body: formation ? `Formation ${formation}. Check the Play Style for your position.` : null, link: `members.html#schedule-${row.id}` }))) ?? 0;
+    if (wantDm) for (const uid of ids) told += (await safely(notify(env, [uid], { type: 'event', icon: '🧩', title: `You’re starting at ${POS_OF(lineup[uid])} – ${label(row)} · ${when(row)}`, body: formation ? `Formation ${formation}. Check the Play Style for your position.` : null, link: 'hub-matchnight.html', ref: `lineup:${row.id}:${Date.now()}` }))) ?? 0;
     out.notified = told;
     if (channel && can(me, 'announce.discord')) {
       const muted = body.tag ? await mutedFor(env, ids, 'event') : new Set();

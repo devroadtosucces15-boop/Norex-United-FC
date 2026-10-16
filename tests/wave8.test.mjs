@@ -78,7 +78,7 @@ const r1 = await eventReminders(env);
 const reminder = posts.slice(before).find((p) => /Tomorrow/.test(txt(p)));
 t('P3.3 cron sends both reminders once', r1.sent === 2 && (await eventReminders(env)).sent === 0);
 t('P3.3 T-24h reminder in the channel @mentions only members who haven’t answered', reminder && reminder.allowed_mentions.users.includes('501') && !reminder.allowed_mentions.users.includes('500') && /<@501>/.test(reminder.components[0].content) && btnsOf(reminder).length === 4);
-t('P3.3 T-2h nudge by bell / DM for dm mode', (await call(member2, '/api/notify')).d.items.some((n) => n.type === 'event' && /Starting soon/.test(n.title) && n.link === `members.html#schedule-${e2}`));
+t('P3.3 T-2h nudge by bell / DM for dm mode', (await call(member2, '/api/notify')).d.items.some((n) => n.type === 'event' && /Starting soon/.test(n.title) && n.link === 'hub-matchnight.html'));
 t('P3.3 reminder times stored', sqlite.prepare('SELECT remind24_at, remind2_at FROM events WHERE id = ?').get(e2).remind2_at > 0 && sqlite.prepare('SELECT remind24_at FROM events WHERE id = ?').get(e24).remind24_at > 0);
 await call(mgr, '/api/events', { id: e24, type: 'rush', date: day(2), time: '20:00', tz: 'UTC' });
 t('P3.3 moving an event resets its reminders', sqlite.prepare('SELECT remind24_at FROM events WHERE id = ?').get(e24).remind24_at === null);
@@ -108,7 +108,7 @@ t('P3.4 save a draft (not published, nobody told)', draft.s === 200 && draft.d.e
 t('P3.4 /lineup says not published yet', /No lineup published/.test(txt((await slash('lineup')).data)));
 const pub = await call(mgr, '/api/events/lineup', { id: evId, formation: '4-3-3', lineup: { 500: 'LCM', 501: 'GK' }, publish: true });
 t('P3.4 publish → each starter told their position', pub.d.notified === 2 && (await call(member, '/api/notify')).d.items.some((n) => /You’re starting at CM/.test(n.title)));
-t('P3.4 publish → lineup posted in the event’s Discord channel', /Lineup/.test(plainText(posts.at(-1))) && /`CM  ` Player One/.test(plainText(posts.at(-1))) && posts.at(-1).channel === '70001');
+t('P3.4 publish → lineup posted in the event’s Discord channel', /line-up/i.test(plainText(posts.at(-1))) && /`CM ` \*\*Player One\*\*/.test(plainText(posts.at(-1))) && posts.at(-1).channel === '70001');
 t('P3.4 lineup players who never answered still come with their name', pub.d.events.find((e) => e.id === evId).lineupPeople['501']?.n === 'Player Two');
 t('P3.4 profile shows “starting at”', (await call(member2, '/api/member?u=500')).d.starting?.pos === 'CM');
 t('P3.4 /lineup shows the published lineup', /GK/.test(txt((await slash('lineup')).data)));
