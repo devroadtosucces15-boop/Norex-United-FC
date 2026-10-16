@@ -1,7 +1,7 @@
 {
-  "revision": "ece548754808b1d3ea010edc680706fba03e0f8b",
+  "revision": "2b3e5f10fc2a523bcaccab576cce35748e265158",
   "files": 840,
-  "imports": 623,
+  "imports": 624,
   "api_paths": 248,
   "tables": 317,
   "records": [
@@ -931,7 +931,7 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 754,
+      "lines": 768,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -1049,6 +1049,7 @@
         "validZone",
         "weekEvents",
         "when",
+        "who",
         "zonedToUtc"
       ]
     },
@@ -2816,7 +2817,7 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 436,
+      "lines": 459,
       "imports": [
         "./roles.js",
         "./clubroom.js",
@@ -2861,6 +2862,7 @@
         "deliverDMs",
         "discord",
         "dispatchSite",
+        "dmMessage",
         "fail",
         "insertRequest",
         "ipHash",
@@ -2884,6 +2886,7 @@
         "parsePrefs",
         "publicRequestRoute",
         "readRequest",
+        "relink",
         "reqOut",
         "requestRoute",
         "run",
@@ -2892,7 +2895,8 @@
         "sendWebPush",
         "siteUrl",
         "state",
-        "takeKick"
+        "takeKick",
+        "unclaim"
       ]
     },
     {
@@ -4920,7 +4924,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1414,
+      "lines": 1367,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -10218,14 +10222,15 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 216,
+      "lines": 232,
       "imports": [
         "../bot/ui.js",
         "node:fs",
         "./mock.mjs",
         "./lib.mjs",
         "../bot/events.js",
-        "node:fs"
+        "node:fs",
+        "../bot/notify.js"
       ],
       "endpoints": [
         "/api/admin/overview",
@@ -16515,6 +16520,11 @@
     {
       "source": "tests/events.test.mjs",
       "target": "bot/events.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/notify.js",
       "kind": "imports"
     },
     {
