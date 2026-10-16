@@ -247,7 +247,6 @@
     $('#again').addEventListener('click', () => { if (S.url) URL.revokeObjectURL(S.url); S.state = 'idle'; S.blob = S.url = S.item = null; S.unsaved = false; S.note = S.up = S.uploaded = null; $('#upState').textContent = ''; $('#preview').removeAttribute('src'); view('start'); say(''); doc.title = 'Norex recorder'; broadcast(); });
     $('#jump').addEventListener('click', (e) => { const b = e.target.closest('button[data-t]'); if (b) { const v = $('#preview'); v.currentTime = +b.dataset.t / 1000; v.play().catch(() => {}); } });
     $('#close').addEventListener('click', () => (INLINE ? goBack('close') : window.close()));
-    $('#back').addEventListener('click', () => goBack('min'));
     $('#back2').addEventListener('click', () => goBack('min'));
     if (INLINE) $('#backTop').hidden = false;
     addEventListener('beforeunload', (e) => { if (S.state === 'recording' || S.state === 'paused' || S.state === 'stopping' || S.unsaved) { e.preventDefault(); e.returnValue = ''; } });

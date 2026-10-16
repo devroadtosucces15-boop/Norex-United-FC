@@ -5,6 +5,10 @@
 .wx .cover{padding:30px calc(50% - 95px) 40px;gap:0;scroll-padding-inline:0}
 .wx .cover .ci{flex:0 0 190px;scroll-snap-align:center;scroll-snap-stop:normal;display:grid;place-items:center;will-change:transform,opacity;transform-style:flat;backface-visibility:hidden;contain:layout}
 .wx .cover .ci .pc{--s:.9}
+/* a card's soft shadow is a filter: recomputed for every card on every scroll frame it made the wheel crawl on phones (and heated them), so wheel and reel cards get a flat floor shadow instead */
+.wx .cover .ci .pc-card,.wx .reel .pc-card,.wx .cover .pc-card .crestm img,.wx .reel .pc-card .crestm img,.wx .cover .pc-card .cut,.wx .reel .pc-card .cut{filter:none}
+.wx .cover .ci::before,.wx .reel .si::before{content:"";position:absolute;left:10%;right:10%;bottom:6%;height:7%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent);pointer-events:none}
+.wx .cover .ci,.wx .reel .si{position:relative}
 .wx .film{gap:0;padding:20px 12px;background:#0c101a;border-radius:12px}
 .wx .fr{flex:0 0 150px;scroll-snap-align:start;background:linear-gradient(#202c46,#18223a);margin:0 6px;padding:26px 12px 22px;border-radius:6px;text-align:center;position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
 .wx .fr:hover{transform:translateY(-10px) scale(1.05);box-shadow:0 18px 30px rgba(0,0,0,.5)}
