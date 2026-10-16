@@ -354,4 +354,5 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('docs release: card reminds about the founder letter, the one-week clock and announcing in Discord first', ['Founder letter', 'one-week clock', 'Announce it in Discord first'].every((x) => ct.includes(x)));
 }
 fs.rmSync(out, { recursive: true, force: true });
+t('squad wheel and reel cards use a flat floor shadow, not a per-frame filter (wheel was ~20 fps on phones)', /\.wx \.cover \.ci \.pc-card,\.wx \.reel \.pc-card[^{]*\{filter:none\}/.test(fs.readFileSync(ROOT + 'next/static/widgets.css', 'utf8')));
 done();

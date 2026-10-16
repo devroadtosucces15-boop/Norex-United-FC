@@ -415,7 +415,7 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
     if (m.k === 'state') {
       const was = L.rec.state;
       L.rec = { state: m.state, ms: m.ms, bytes: m.bytes, mic: m.mic, id: m.id, unsaved: m.unsaved }; L.at = Date.now();
-      if (was === 'idle' && recLive()) pageEvent();
+      if (was !== 'recording' && was !== 'paused' && recLive()) pageEvent(); // the page the recording starts on (the state before is 'starting', not 'idle')
       if (recLive() && !L.clock) L.clock = setInterval(tickClock, 500);
       if ((m.state === 'done' || m.state === 'idle') && L.tool && was !== m.state) liveTool(null); else liveBar();
       paintFab(); askResend();
