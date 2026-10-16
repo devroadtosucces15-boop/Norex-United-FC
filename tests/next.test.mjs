@@ -353,6 +353,23 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('docs release: only the owner sees it, only while the server says held, behind a two-tap, calls POST /api/docs/release', ct.includes("D.held !== true") && ct.includes('!isOwner()') && ct.includes("two('release'") && ct.includes("call('/api/docs/release', {})"));
   t('docs release: card reminds about the founder letter, the one-week clock and announcing in Discord first', ['Founder letter', 'one-week clock', 'Announce it in Discord first'].every((x) => ct.includes(x)));
 }
+{
+  const ui2 = fs.readFileSync(path.join(ROOT, 'next/lib/ui.mjs'), 'utf8'), mcss = fs.readFileSync(path.join(ROOT, 'next/static/motion.css'), 'utf8'), mj3 = fs.readFileSync(path.join(ROOT, 'next/static/motion.js'), 'utf8');
+  t('hub key: glow, rising glitter and a lock, bounce + key-up + lock on tap, then the Hub opens (straight away in Casual)', ['kglow', 'ksp s5', 'class="kl"'].every((x) => ui2.includes(x)) && /\.tabbar \.key\.go \.kk\{transform:translateY/.test(mcss) && mj3.includes("closest('.tabbar .key')") && mj3.includes("mode !== 'full'"));
+  t('tab bar: tiles centred with equal room above and below', /\.tabbar a:not\(\.key\)\{display:flex!important;flex-direction:column/.test(mcss));
+  const home = read('index.html');
+  t('home: five most active players (by games) under the hero, tilt + glow, linking to profiles', (home.match(/class="act5-i tilt"/g) || []).length === 5 && home.includes('Most active') && /\.act5-i \.pc-card\{filter:none\}/.test(fs.readFileSync(path.join(ROOT, 'next/static/style.css'), 'utf8')));
+}
 fs.rmSync(out, { recursive: true, force: true });
 t('squad wheel and reel cards use a flat floor shadow, not a per-frame filter (wheel was ~20 fps on phones)', /\.wx \.cover \.ci \.pc-card,\.wx \.reel \.pc-card[^{]*\{filter:none\}/.test(fs.readFileSync(ROOT + 'next/static/widgets.css', 'utf8')));
+{
+  const hj = fs.readFileSync(path.join(ROOT, 'next/static/header.js'), 'utf8'), hc = fs.readFileSync(path.join(ROOT, 'next/static/header.css'), 'utf8');
+  t('header: Active, Alerts and Messages are their own drop-downs; the online badge sits on the avatar and the account menu no longer lists who is online', ['toggleDrop(\'active\'', 'toggleDrop(\'alerts\'', 'toggleDrop(\'chats\'', 'hdr-av'].every((x) => hj.includes(x)) && !hj.includes('class="ps"') && /\.hdr-on\.hdr-badge\{position:absolute/.test(hc));
+  t('header: Active list has member search, last activity, name -> DM and avatar -> profile', ['type="search"', 'Last active', "kind: 'dm'", 'pavl'].every((x) => hj.includes(x)));
+}
+{
+  const mj2 = fs.readFileSync(path.join(ROOT, 'next/static/motion.js'), 'utf8'), pj = fs.readFileSync(path.join(ROOT, 'next/static/pwa.js'), 'utf8');
+  t('motion: every change is saved on the device and profile by itself (survives updates, no re-asking)', mj2.includes("ls.set('norex.mx', ser(pref)); clearTimeout(M.saveT)") && mj2.includes('It stays after updates'));
+  t('phone tilt: switching it off cancels the pending smoothing frame and zeroes the tilt; Casual never starts it on load', /const stop = \(\) => \{[^}]*cancelAnimationFrame\(raf\)[^}]*gx = gy = tx = ty = 0/.test(pj) && pj.includes("DOMContentLoaded', () => (wanted() ? start() : stop())"));
+}
 done();

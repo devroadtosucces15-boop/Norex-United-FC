@@ -30,6 +30,8 @@ export function home() {
   </div>
  </section>
 
+ <section class="sec act5" aria-label="Most active players"><header><div><span class="ribbon">🔥 Most active</span></div><p>The five who play the most for the club.</p></header>
+  <div class="act5-row" data-stagger>${[...players].sort((a, b) => b.gp - a.gp).slice(0, 5).map((p, i) => `<a class="act5-i tilt" data-tilt="12" href="player-${slug(p.k)}.html" aria-label="${esc(p.n)}, ${p.gp} games"><span class="act5-n">${i + 1}</span>${card(p, { s: .5, link: false })}<b>${esc(p.n)}</b><small>${p.gp} games</small></a>`).join('')}</div></section>
  ${liveStrip}
  <section class="sec hl-sec" id="home-lineup" data-home-lineup hidden><header><div><span class="ribbon">🧢 Match night line-up</span></div><a class="btn ghost" href="hub-matchnight.html">Match night</a></header><div class="panel" data-hl-body></div><script src="homelineup.js" defer></script></section>
  ${homeWatch ? `<section class="sec" id="home-watch" data-home-watch="${homeWatch}" hidden><header><div><span class="ribbon">🔴 Live now</span></div><a class="btn ghost" href="watch.html">Open Watch</a></header><div data-watch-live data-compact></div></section>` : ''}

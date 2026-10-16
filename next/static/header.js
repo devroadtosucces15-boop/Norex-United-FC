@@ -45,11 +45,12 @@
       pal.addEventListener('click', (e) => { if (e.target === pal || e.target.closest('.pclose')) closePal(); const a = e.target.closest('a[data-act]'); if (a) { e.preventDefault(); go(results.find((r) => r.act === a.dataset.act)); } });
       pal.querySelector('input').addEventListener('input', drawPal);
     }
-    closeMenu(); pal.hidden = false; pal.querySelector('input').value = ''; drawPal(); pal.querySelector('input').focus({ preventScroll: true });
+    closeMenu(); closeDrop?.(); pal.hidden = false; pal.querySelector('input').value = ''; drawPal(); pal.querySelector('input').focus({ preventScroll: true });
     d.documentElement.classList.add('hdr-lock');
   };
   const closePal = () => { if (pal) pal.hidden = true; d.documentElement.classList.remove('hdr-lock'); };
   d.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrop();
     const typing = /INPUT|TEXTAREA|SELECT/.test(d.activeElement?.tagName) || d.activeElement?.isContentEditable;
     if ((e.key === '/' && !typing) || (e.key === 'k' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); openPal(); return; }
     if (e.key === 'Escape') { if (pal && !pal.hidden) closePal(); closeMenu(); return; }
@@ -72,9 +73,7 @@
     if (!panel) return;
     const on = state.people, va = viewAs();
     panel.innerHTML = `<div class="ph"><span class="pav big">${A.avatar ? `<img src="${esc(A.avatar)}" alt="" width="44" height="44">` : esc((A.name || 'M')[0].toUpperCase())}</span><div><b>${esc(A.name || 'Member')}</b><small>${esc(A.roleLabel || (A.role === 'owner' ? 'Founder' : A.role === 'manager' ? 'Manager' : 'Member'))} · Discord</small></div></div>
-${state.ok ? `<div class="ps"><h4>🟢 ${state.online} online now</h4>${on.length ? `<ul class="pl">${on.slice(0, 8).map((u) => person(u, u.id === A.session?.u ? 'you' : 'now')).join('')}</ul>${on.length > 8 ? `<p class="pm">+ ${on.length - 8} more</p>` : ''}` : `<p class="pm">Nobody else is on right now.</p>`}
-${state.recent.length ? `<h4>🕐 Earlier this hour</h4><ul class="pl">${state.recent.slice(0, 4).map((u) => person(u, since(u.at))).join('')}</ul>` : ''}
-</div>` : ''}
+
 <div class="pa"><a href="hub.html"><span aria-hidden="true">🔑</span>My Locker</a><button type="button" data-motion-settings><span aria-hidden="true">🎬</span>Motion &amp; effects</button>
 ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁️ Preview as</span><button type="button" data-va="" class="${va ? '' : 'on'}">Owner</button><button type="button" data-va="member" class="${va === 'member' ? 'on' : ''}">Member</button><button type="button" data-va="guest" class="${va === 'guest' ? 'on' : ''}">Guest</button></div>` : ''}
 <button type="button" data-out class="pout"><span aria-hidden="true">🚪</span>Sign out</button></div>`;
@@ -101,6 +100,53 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
   const poll = () => {
     if (!A?.session || d.hidden) return;
     A.call('/api/presence').then(apply).catch(() => A.call('/api/hub').then((h) => { state = { ...state, ok: true, online: h.online | 0, people: [], recent: [] }; paintPanel(); }).catch(() => {}));
+  };
+
+  // ---------- own drop-downs: 🟢 Active, 🔔 Alerts, 💬 Messages (each its own panel, never the account menu) ----------
+  let dd = null, ddKind = '';
+  const since2 = (t) => { const m = Math.max(1, Math.round((Date.now() - (t || 0)) / 60e3)); return m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
+  const avatar = (u) => `<span class="pav">${u.a ? `<img src="${esc(u.a)}" alt="" width="28" height="28" loading="lazy">` : esc((u.n || '?')[0].toUpperCase())}</span>`;
+  const closeDrop = () => { if (!dd) return; dd.hidden = true; ddKind = ''; [pill, bell, chat].forEach((b) => b?.setAttribute('aria-expanded', 'false')); };
+  const room2 = (id) => `hub-clubhouse.html#c${id}`;
+  const slugOf = (n) => { const p = (N.players || []).find((x) => String(x.n || '').toLowerCase() === String(n || '').toLowerCase()); return p ? `player-${slug(p.k)}.html` : ''; };
+  const openDm = async (u, btn) => { if (btn) btn.disabled = true; try { const r = await A.call('/api/chats', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'dm', user: u }) }); const id = (await r.json?.() ?? r).chat?.id; if (id) { location.href = room2(id); if (/hub-clubhouse/.test(location.pathname)) location.reload(); } } catch { location.href = 'hub-clubhouse.html#ch-chat'; } };
+  const drawActive = (q = '') => {
+    const f = (list) => list.filter((u) => !q || String(u.n || '').toLowerCase().includes(q.toLowerCase()));
+    const row = (u, sub) => { const pr = slugOf(u.n); return `<li>${pr ? `<a class="pavl" href="${pr}" aria-label="${esc(u.n)}'s profile">${avatar(u)}</a>` : avatar(u)}<button type="button" class="pn dm" data-dm="${esc(u.id)}" title="Message ${esc(u.n || 'member')}">${esc(u.n || 'Member')}</button><small>${esc(sub)}</small></li>`; };
+    const on = f(state.people), rec = f(state.recent);
+    return `${on.length ? `<h4>🟢 ${on.length} online now</h4><ul class="pl">${on.map((u) => row(u, u.id === A.session?.u ? 'you' : 'now')).join('')}</ul>` : `<p class="pm">${q ? 'Nobody online matches.' : 'Nobody else is on right now.'}</p>`}${rec.length ? `<h4>🕐 Last active</h4><ul class="pl">${rec.map((u) => row(u, since2(u.at) + ' ago')).join('')}</ul>` : ''}`;
+  };
+  const fillDrop = async (kind) => {
+    const body = dd.querySelector('.dd-b');
+    if (kind === 'active') {
+      body.innerHTML = `<div class="dd-s"><input type="search" placeholder="Search members" aria-label="Search members" autocomplete="off"></div><div class="dd-l">${drawActive()}</div><p class="pm dd-h">Tap a name to message them, a picture to see their profile.</p>`;
+      const inp = body.querySelector('input'); inp.oninput = () => { body.querySelector('.dd-l').innerHTML = drawActive(inp.value.trim()); };
+      return;
+    }
+    body.innerHTML = '<p class="pm">Loading…</p>';
+    try {
+      if (kind === 'alerts') {
+        const r = await A.call('/api/notify'), items = (r.items || []).slice().sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 12);
+        body.innerHTML = `${items.length ? `<ul class="pl dd-n">${items.map((n) => `<li class="${n.read || n.readAt ? '' : 'un'}"><span class="ni" aria-hidden="true">${esc(n.icon || '🔔')}</span><a href="${esc(room(n.link))}"><b>${esc(n.title)}</b>${n.body ? `<small>${esc(String(n.body).slice(0, 90))}</small>` : ''}</a><small>${since2(n.at)}</small></li>`).join('')}</ul>` : '<p class="pm">No alerts yet.</p>'}<div class="dd-f"><button type="button" data-readall>Mark all read</button><a href="hub.html#lk-alerts">Open all alerts</a></div>`;
+        body.querySelector('[data-readall]')?.addEventListener('click', () => A.call('/api/notify/read', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ all: true }) }).then(() => { dot(bell, 0); fillDrop('alerts'); }).catch(() => {}));
+      } else {
+        const r = await A.call('/api/chats'), cs = (r.chats || []).slice().sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 12);
+        body.innerHTML = `${cs.length ? `<ul class="pl dd-n">${cs.map((c) => `<li class="${c.unread ? 'un' : ''}"><a class="dd-row" href="${room2(c.id)}">${c.emoji ? `<span class="ni" aria-hidden="true">${esc(c.emoji)}</span>` : avatar({ a: c.avatar || c.other?.a, n: c.name })}<span><b>${esc(c.name)}</b><small>${esc(c.last ? (c.last.mine ? 'You: ' : '') + c.last.text : 'No messages yet')}</small></span>${c.unread ? `<i class="dd-u">${c.unread}</i>` : ''}</a></li>`).join('')}</ul>` : '<p class="pm">No chats yet.</p>'}<div class="dd-f"><a href="hub-clubhouse.html#ch-chat">Open Clubhouse chat</a></div>`;
+      }
+    } catch { body.innerHTML = '<p class="pm">Could not load that right now.</p>'; }
+  };
+  const toggleDrop = (kind, btn) => {
+    if (!dd) {
+      dd = d.createElement('div'); dd.className = 'hdr-menu hdr-dd'; dd.hidden = true; dd.setAttribute('role', 'dialog'); dd.innerHTML = '<div class="dd-h2"><b></b><button type="button" class="dd-x" aria-label="Close">✕</button></div><div class="dd-b"></div>'; d.body.appendChild(dd);
+      dd.addEventListener('click', (e) => { if (e.target.closest('.dd-x')) return closeDrop(); const m = e.target.closest('[data-dm]'); if (m) openDm(m.dataset.dm, m); });
+      d.addEventListener('click', (e) => { if (dd && !dd.hidden && !dd.contains(e.target) && ![pill, bell, chat].some((b) => b?.contains(e.target))) closeDrop(); });
+    }
+    if (!dd.hidden && ddKind === kind) return closeDrop();
+    closeMenu(); closePal(); closeDrop(); ddKind = kind;
+    dd.querySelector('.dd-h2 b').textContent = kind === 'active' ? '🟢 Active members' : kind === 'alerts' ? '🔔 Alerts' : '💬 Messages';
+    dd.setAttribute('aria-label', dd.querySelector('.dd-h2 b').textContent);
+    const bb = box.getBoundingClientRect(); dd.style.top = Math.round(bb.bottom + 8) + 'px'; dd.style.maxHeight = `calc(100dvh - ${Math.round(bb.bottom + 8)}px - 12px)`;
+    dd.hidden = false; btn?.setAttribute('aria-expanded', 'true'); fillDrop(kind);
   };
 
   // ---------- 🔔 bell, 💬 clubhouse button, in-app banners ----------
@@ -176,10 +222,11 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
     if (A?.session) {
       const ac = d.createElement('button'); ac.type = 'button'; ac.className = 'ac'; ac.setAttribute('aria-haspopup', 'dialog'); ac.setAttribute('aria-expanded', 'false'); ac.setAttribute('aria-label', `Account: ${A.name || 'Member'}`);
       ac.innerHTML = `<span class="pav">${A.avatar ? `<img src="${esc(A.avatar)}" alt="" width="34" height="34">` : esc((A.name || 'M')[0].toUpperCase())}</span><span class="acn">${esc(A.name || 'Member')}</span>`;
-      pill = d.createElement('button'); pill.type = 'button'; pill.className = 'hdr-on'; pill.hidden = true; pill.title = 'Who is online'; pill.innerHTML = '<i aria-hidden="true"></i><b>0</b>'; pill.onclick = toggleMenu;
+      pill = d.createElement('button'); pill.type = 'button'; pill.className = 'hdr-on hdr-badge'; pill.hidden = true; pill.title = 'Who is active'; pill.setAttribute('aria-haspopup', 'dialog'); pill.setAttribute('aria-expanded', 'false'); pill.innerHTML = '<i aria-hidden="true"></i><b>0</b>'; pill.onclick = (e) => { e.stopPropagation(); toggleDrop('active', pill); };
       bell = d.createElement('a'); bell.className = 'hdr-i hdr-bell'; bell.href = 'hub.html#lk-alerts'; bell.hidden = true; bell.setAttribute('aria-label', 'Alerts'); bell.title = 'Alerts'; bell.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><i class="hdr-n" hidden></i>';
       chat = d.createElement('a'); chat.className = 'hdr-i hdr-chat'; chat.href = 'hub-clubhouse.html#ch-chat'; chat.hidden = true; chat.setAttribute('aria-label', 'Clubhouse feed and messages'); chat.title = 'Clubhouse feed & messages'; chat.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12Z"/></svg><i class="hdr-n" hidden></i>';
-      box.append(pill, bell, chat); ac.onclick = toggleMenu; box.appendChild(ac);
+      bell.onclick = (e) => { e.preventDefault(); toggleDrop('alerts', bell); }; chat.onclick = (e) => { e.preventDefault(); toggleDrop('chats', chat); }; bell.setAttribute('aria-haspopup', 'dialog'); chat.setAttribute('aria-haspopup', 'dialog');
+      const av = d.createElement('div'); av.className = 'hdr-av'; ac.onclick = () => { closeDrop(); toggleMenu(); }; av.append(ac, pill); box.append(bell, chat, av);
       if (viewAs() && realOwner()) { const ribbon = d.createElement('div'); ribbon.className = 'hdr-va'; ribbon.innerHTML = '👁️ Viewing the site as a <b>' + (viewAs() === 'guest' ? 'guest' : 'member') + '</b> <button type="button">Back to owner</button>'; ribbon.querySelector('button').onclick = () => setViewAs(''); d.body.insertBefore(ribbon, d.body.firstChild); }
       poll(); pollAlerts(); timer = setInterval(poll, 120e3); setInterval(pollAlerts, ALERT_MS); d.addEventListener('visibilitychange', () => { if (!d.hidden) { poll(); pollAlerts(); } });
     } else if (API) {

@@ -413,3 +413,29 @@ html.nx-safe #fxov,html.nx-safe[data-tin]::before,html.nx-safe[data-tin]::after{
 .dg-prev{margin:12px 0;padding:12px;border-radius:12px;border:1px dashed rgba(255,255,255,.2)}.dg-prev ul{list-style:none;margin:6px 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font:500 13px Inter}.dg-prev code{color:#efcf7a;font:700 11px Oswald;display:inline-block;min-width:34px}
 .dg-slot{touch-action:manipulation}.dg-p{touch-action:manipulation}
 .hl-sec .hl-pitch{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;list-style:none;margin:10px 0 0;padding:0}.hl-sec .hl-pitch li{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05);font:600 14px Inter}.hl-sec .hl-pitch code{color:#efcf7a;font:700 12px Oswald;min-width:34px}
+
+/* Hub key (tab bar): glowing, glittering gold key that reacts to tilt; a tap bounces the ring, the key rises and a gold lock closes */
+.tabbar .key{overflow:visible;transition:transform .35s var(--e-out,ease)}
+.tabbar .key .kglow{position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,226,140,.65),rgba(239,207,122,.18) 60%,transparent 72%);pointer-events:none;animation:kglow 2.6s ease-in-out infinite;transform:translate(calc(var(--gx,0)*1.4px),calc(var(--gy,0)*1.4px))}
+.tabbar .key .kk{position:relative;z-index:1;display:grid;place-items:center;transition:transform .32s cubic-bezier(.5,-.4,.6,1),opacity .24s}
+.tabbar .key .kl{position:absolute;z-index:1;opacity:0;transform:scale(.4) translateY(8px)}
+.tabbar .key .ksh{transform-origin:16px 11px;transform:translateY(-3px) rotate(-18deg);transition:transform .25s .18s}
+.tabbar .key .ksp{position:absolute;bottom:50%;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#fff6c8;box-shadow:0 0 6px 2px rgba(255,226,140,.9);opacity:0;pointer-events:none;animation:ksp 2.4s ease-out infinite}
+.tabbar .key .s1{--dx:-14px;animation-delay:0s}.tabbar .key .s2{--dx:9px;animation-delay:.5s;width:3px;height:3px}.tabbar .key .s3{--dx:-4px;animation-delay:1s}.tabbar .key .s4{--dx:15px;animation-delay:1.5s;width:3px;height:3px}.tabbar .key .s5{--dx:-18px;animation-delay:1.9s;width:2px;height:2px}
+@keyframes kglow{0%,100%{opacity:.55;scale:.95}50%{opacity:1;scale:1.08}}
+@keyframes ksp{0%{opacity:0;transform:translate(0,6px) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(var(--dx),-46px) scale(1.1)}}
+.tabbar .key.go{animation:none;transform:scale(1.14);transition-duration:.18s}
+.tabbar .key.go .kk{transform:translateY(-130%);opacity:0}
+.tabbar .key.go .kl{opacity:1;transform:none;transition:opacity .22s .12s,transform .32s .12s cubic-bezier(.3,1.6,.5,1)}
+.tabbar .key.go .ksh{transform:none}
+.tabbar .key.go .kring{animation:keyring .5s ease-out 2}
+html[data-motion=calm] .tabbar .key .kglow,html[data-motion=off] .tabbar .key .kglow,html[data-motion=calm] .tabbar .key .ksp,html[data-motion=off] .tabbar .key .ksp,html[data-fx-glow=off] .tabbar .key .ksp{animation:none;opacity:0}
+html[data-motion=calm] .tabbar .key .kglow,html[data-motion=off] .tabbar .key .kglow{opacity:.6}
+@media (prefers-reduced-motion:reduce){.tabbar .key .kglow,.tabbar .key .ksp{animation:none}.tabbar .key .ksp{opacity:0}}
+
+/* Tab bar: same dark-gold glass as the Hub, tiles centred with equal room above and below */
+.tabbar{background:linear-gradient(180deg,rgba(26,30,40,.94),rgba(10,13,20,.97))!important;border-color:rgba(239,207,122,.3)!important;box-shadow:inset 0 1px 0 rgba(255,238,170,.22),0 14px 34px rgba(0,0,0,.6),0 0 22px rgba(239,207,122,.1)!important;padding:8px 8px calc(8px + env(safe-area-inset-bottom)*.5)!important;align-items:center!important}
+.tabbar a:not(.key){display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;padding:4px 6px!important}
+.tabbar a:not(.key)::after{margin:0!important;height:3px;flex:none}
+.tabbar a:not(.key) .tbi{margin:0!important}
+.tabbar .key{margin-top:-34px!important;align-self:flex-start}

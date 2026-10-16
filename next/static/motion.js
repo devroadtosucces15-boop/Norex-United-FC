@@ -26,9 +26,9 @@
   const changed = () => { apply(); dispatchEvent(new CustomEvent('norex:motion', { detail: mode })); };
   const M = window.NorexMotion = {
     get mode() { return mode; }, get preset() { return pref.p; }, get value() { return ser(pref); }, FX, on,
-    // a style ('full' | 'calm' | 'custom') or one effect (set('tilt', false) → Custom). Applies now, for this visit; remember() keeps it.
+    // a style ('full' | 'calm' | 'custom') or one effect (set('tilt', false) → Custom). Applies now and is saved on this device (and the profile).
     set(k, val) { if (FX.includes(k)) { const off = new Set(pref.off); val ? off.delete(k) : off.add(k); pref = { p: 'custom', off }; } else pref = k === 'custom' ? { p: 'custom', off: new Set(pref.off) } : parse(k);
-      ss.set('norex.mx', ser(pref)); changed(); },
+      ss.set('norex.mx', ser(pref)); ls.set('norex.mx', ser(pref)); clearTimeout(M.saveT); M.saveT = setTimeout(() => M.remember(), 700); changed(); },   // every change is kept (this device now, the profile a moment later): no more re-asking after an update
     remember() { const v = ser(pref); ls.set('norex.mx', v); ls.set('norex.motion', null); ls.set('norex.insights', null); const A = window.NorexAuth;
       return A?.token ? A.call('/api/me/prefs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ motion: v }) }).then(() => true, () => false) : Promise.resolve(false); },
     setMode(m) { M.set(m === 'off' ? 'custom:' + FX.join(',') : m); M.remember(); },   // old API (dev panel)
@@ -149,7 +149,7 @@
     const sync = () => { $$('.mx-pb', sh).forEach((x) => x.setAttribute('aria-checked', x.dataset.p === pref.p));
       $$('.mx-sw', sh).forEach((x) => { const k = x.dataset.fx, sm = x.querySelector('small'); x.setAttribute('aria-checked', on(k));
         sm.textContent = k === 'gyro' && on(k) && G?.needsAsk ? 'Tap to allow motion access on this phone' : sm.dataset.s; }); };
-    const touched = () => { sync(); ask.hidden = false; ask.classList.remove('done'); ask.firstChild.textContent = 'Remember this choice?'; $$('button', ask).forEach((x) => (x.hidden = false)); };
+    const touched = () => { sync(); ask.hidden = false; ask.classList.add('done'); ask.firstChild.textContent = '✅ Saved. It stays after updates'; $$('button', ask).forEach((x) => (x.hidden = true)); };
     // iOS only asks for motion access from a tap, so the tap that turns phone tilt on (or picks Full) also asks
     const gyroUp = async () => { if (!G || !on('gyro')) return; if (!(await G.enable())) { M.set('gyro', false); } sync(); };
     sync(); sync.t = setInterval(sync, 1000);   // phone tilt can start/stop behind the sheet (permission, tab switch)
@@ -224,6 +224,10 @@
     const ms = tail ? 240 : 320, o = { duration: ms, easing: 'cubic-bezier(.22,.8,.3,1)', fill: 'both' };
     w.firstChild.animate(tail ? [{ opacity: .5 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: .5, offset: .4 }, { opacity: .4 }], o);
     w.lastChild.animate([{ transform: 'translate3d(-110%,0,0)', opacity: 0 }, { opacity: 1, offset: .3 }, { transform: 'translate3d(110%,0,0)', opacity: 0 }], o).onfinish = () => w.remove(); setTimeout(() => w.remove(), ms + 80); };
+  addEventListener('pageshow', () => d.querySelector('.tabbar .key.go')?.classList.remove('go'));
+  // the Hub key: bounce, key slides up, gold lock closes, then the Hub opens (straight away in Casual / reduced motion or with a modifier key)
+  d.addEventListener('click', (e) => { const k = e.target.closest && e.target.closest('.tabbar .key'); if (!k || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    if (mode !== 'full' || !on('glow') || k.classList.contains('go')) return; e.preventDefault(); k.classList.add('go'); try { M.haptic?.(); } catch {} setTimeout(() => { location.href = k.href; }, 520); });
   d.addEventListener('pointerdown', (e) => { const a = e.target.closest && e.target.closest('.tabbar a'); if (!a) return; const k = a.dataset.g || (a.hasAttribute('data-hub') ? 'hub' : ''); if (!HALL[k]) return; ss.set('norex.hall', HALL[k] + '|' + Date.now()); hall(HALL[k]); });
   { const h = (ss.get('norex.hall') || '').split('|'); ss.set('norex.hall', null); if (h[0] && Date.now() - (+h[1] || 0) < 5000) hall(h[0], true); }
 })();

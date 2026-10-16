@@ -232,6 +232,7 @@ ${P.group ? `<button type="button" class="btn gold" data-mkgroup${P.sel.length &
       listTick = setInterval(tick, 30000);
       const h = location.hash.match(/^#c(\d+)$/); if (h && S.chats.some((c) => c.id === +h[1])) { openChat(+h[1]); box.closest('section')?.scrollIntoView({ block: 'start' }); }
       if (S.pending.length) flush();
+      addEventListener('hashchange', () => { const g = location.hash.match(/^#c(\d+)$/); if (g) loadChats().then(() => { if (S.chats.some((c) => c.id === +g[1])) openChat(+g[1]); }); });
     });
     window.NXChat = { state: S, flush, unread: unreadAll }; // QA hook (read the queue, force a retry)
   }
