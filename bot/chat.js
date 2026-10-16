@@ -107,7 +107,7 @@ async function myChats(env, me, wantAll) {
   const ids = rows.map((r) => r.id);
   const [members, lastRows, unreadRows] = await Promise.all([
     all(env, `SELECT * FROM chat_members WHERE chat_id IN (${marks(ids.length)})`, ...ids),
-    all(env, `SELECT m.* FROM chat_messages m JOIN (SELECT chat_id, MAX(id) mid FROM chat_messages WHERE chat_id IN (${marks(ids.length)}) AND removed = 0 GROUP BY chat_id) x ON x.mid = m.id`, ...ids),
+    all(env, `SELECT m.* FROM chats c JOIN chat_messages m ON m.id = (SELECT id FROM chat_messages WHERE chat_id = c.id AND removed = 0 ORDER BY id DESC LIMIT 1) WHERE c.id IN (${marks(ids.length)})`, ...ids), // one index seek per chat (migration 0054)
     wantAll ? [] : all(env, `SELECT cm.chat_id, COUNT(*) n FROM chat_messages cm JOIN chat_members me ON me.chat_id = cm.chat_id AND me.user_id = ?
       WHERE cm.chat_id IN (${marks(ids.length)}) AND cm.removed = 0 AND cm.user_id != ? AND cm.at > me.read_at GROUP BY cm.chat_id`, me.u, ...ids, me.u),
   ]);

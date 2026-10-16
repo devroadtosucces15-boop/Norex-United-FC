@@ -1,5 +1,5 @@
 // Social building blocks shared by the feed now and chats later (roadmap P6.4 + P6.5).
-//   P6.4 online presence – every logged-in request stamps users.seen_at (at most once a minute).
+//   P6.4 online presence – every logged-in request stamps users.seen_at (at most once every 2.5 minutes).
 //     GET  /api/presence                 members: who is online now (5 min) / earlier today (60 min), my "appear offline"
 //     (POST /api/presence { hidden } was removed – everyone's activity always shows)
 //   P6.5 mentions + reactions everywhere
@@ -12,7 +12,7 @@ import { notify, safely } from './notify.js';
 export const CLUB_EMOJI = ['⚽', '🔥', '👑', '👏', '😂', '😮', '🧤'];
 export const ONLINE_MS = 5 * 60e3;
 export const RECENT_MS = 60 * 60e3;
-const TOUCH_MS = 60e3;
+const TOUCH_MS = 150e3; // D1 usage: each stamp rewrites the user row and the users_seen index; 2.5 min stays well inside the 5-minute ONLINE_MS window
 const MAX_MENTIONS = 10;
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -24,7 +24,7 @@ const opt = (v) => v ?? undefined;
 const excerpt = (s, n = 90) => { const t = String(s).replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
 
 // ---------- P6.4 presence ----------
-// The WHERE makes this a no-op write most of the time: D1 only bills rows that actually change.
+// The WHERE makes this a no-op write most of the time (a write still costs the row plus its users_seen index entry).
 export const touch = (env, me) => (env.DB && me?.u
   ? run(env, 'UPDATE users SET seen_at = ?1 WHERE id = ?2 AND (seen_at IS NULL OR seen_at < ?1 - ?3)', Date.now(), me.u, TOUCH_MS).catch(() => {})
   : Promise.resolve());

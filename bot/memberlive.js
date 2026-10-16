@@ -54,7 +54,7 @@ export async function memberLiveCron(env, now = Date.now(), fetcher = fetch) {
   if (!members.length) return { checked: 0, live: 0, posted: 0 };
   const start = cursor % members.length;
   const batch = [...members.slice(start), ...members.slice(0, start)].slice(0, PER_RUN);
-  await env.DB.prepare("INSERT INTO meta (key, value) VALUES ('memberlive_cursor', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(String(start + batch.length)).run();
+  if (start + batch.length !== cursor) await env.DB.prepare("INSERT INTO meta (key, value) VALUES ('memberlive_cursor', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(String(start + batch.length)).run(); // skip the no-op write when everyone fits in one run
   const channel = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
   let live = 0, posted = 0;
   for (const m of batch) {

@@ -54,7 +54,7 @@ import { issueList, issueRecordingGet, issueRecordingUpload, issueSave, issueSta
 import { clubLookup } from './clublookup.js';
 import { awardPoints, pointsRoute } from './points.js';
 import { myAvatarCard } from './avatarcard.js';
-import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverrides, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
+import { FLAG_LEVELS, ROLES, ROLE_LABEL, atLeast, can, clearFlagOverrides, committedFlags, discordRole, featuresFor, flagOn, flags, loadFlagOverridesCached, permsFor, sessionRole, viewAsRole, withFlagOverrides } from './roles.js';
 import { healthRoute } from './health.js';
 import { jailCount, triviaPoints } from './fun.js';
 import { discoveriesRoute } from './discoveries.js';
@@ -301,7 +301,31 @@ async function doMigrateKV(env) {
   }
 }
 
+// D1 usage: anonymous GETs of these public routes are answered from the edge cache for PUBLIC_TTL seconds. Signed-in requests
+// always go through (their answer depends on role and flags), and only 200s are kept, so a flag that is off never sticks.
+const PUBLIC_TTL = 60;
+const PUBLIC_CACHED = new Set(['/api/hof', '/api/events/public', '/api/hotw/public', '/api/feed/public', '/api/awards/player', '/api/rush', '/api/probuilds',
+  '/api/probuilds/get', '/api/probuilds/player', '/api/docs', '/api/game', '/api/game/changes', '/api/overrides']);
 export async function handleMembers(request, env, ctx, loadSite) {
+  const url = new URL(request.url);
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  if (!cache || request.method !== 'GET' || request.headers.get('Authorization') || !PUBLIC_CACHED.has(url.pathname)) return handleMembersUncached(request, env, ctx, loadSite);
+  if (url.search.length > 64) return handleMembersUncached(request, env, ctx, loadSite); // unbounded query values would only fill the cache
+  const flagState = JSON.stringify(await loadFlagOverridesCached(env)); // a flag edit changes the key, so gated content never outlives the switch
+  let h = 0; for (const c of flagState) h = (h * 31 + c.charCodeAt(0)) | 0;
+  const key = new Request(`${url}${url.search ? '&' : '?'}_f=${h}`);
+  const hit = await cache.match(key).catch(() => null);
+  if (hit) { const h = new Headers(hit.headers); h.set('Cache-Control', 'no-store'); return new Response(hit.body, { status: 200, headers: h }); } // the browser itself still asks again
+  const res = await handleMembersUncached(request, env, ctx, loadSite);
+  if (res.status === 200) {
+    const store = new Response(res.clone().body, { status: 200, headers: new Headers(res.headers) });
+    store.headers.set('Cache-Control', `public, max-age=${PUBLIC_TTL}`); store.headers.delete('Vary');
+    const put = cache.put(key, store).catch(() => {});
+    if (ctx?.waitUntil) ctx.waitUntil(put); else await put;
+  }
+  return res;
+}
+async function handleMembersUncached(request, env, ctx, loadSite) {
   const url = new URL(request.url);
   if (!env.DISCORD_CLIENT_SECRET || !env.DISCORD_GUILD_ID || !env.DB) {
     return cors(env, fail('Member login is not set up yet.', 503));
@@ -312,7 +336,7 @@ export async function handleMembers(request, env, ctx, loadSite) {
 
   try {
     await migrateKV(env);
-    env = withFlagOverrides(env, await loadFlagOverrides(env)); // BE5 – live D1 flag edits win over the committed FEATURES var (a fresh env copy – never mutates the shared binding)
+    env = withFlagOverrides(env, await loadFlagOverridesCached(env)); // BE5 – live D1 flag edits win over the committed FEATURES var (a fresh env copy – never mutates the shared binding)
     if (url.pathname === '/auth/callback') return callback(url, env);
     if (url.pathname === '/api/public') return cors(env, json(await getPublic(env)));
     if (url.pathname === '/api/rush' && request.method === 'GET') return cors(env, json(await getRushPublic(env)));
@@ -951,6 +975,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       if (!FLAG_LEVELS.includes(level)) return fail('Bad level.', 400);
       await run(env, `INSERT INTO flag_overrides (name, level, by_name, at) VALUES (?, ?, ?, ?)
         ON CONFLICT (name) DO UPDATE SET level = excluded.level, by_name = excluded.by_name, at = excluded.at`, name, level, me.n, Date.now());
+      clearFlagOverrides();
       await log(env, me, 'flag-change', `${name} → ${level}`);
       return json({ flags: { ...flags(env), [name]: level } });
     }
@@ -960,6 +985,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       const committed = committedFlags(env);
       if (!(name in committed)) return fail('Unknown flag.', 404);
       await run(env, 'DELETE FROM flag_overrides WHERE name = ?', name);
+      clearFlagOverrides();
       await log(env, me, 'flag-change', `${name} → reset to committed`);
       return json({ flags: { ...flags(env), [name]: committed[name] } });
     }
