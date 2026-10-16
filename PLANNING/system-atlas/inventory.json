@@ -1,6 +1,6 @@
 {
-  "revision": "6238306aa919920658faf069f78f11091c00ef0b",
-  "files": 839,
+  "revision": "3d0b88dc28c16820eefd878c527977fd1772e800",
+  "files": 840,
   "imports": 623,
   "api_paths": 248,
   "tables": 317,
@@ -931,7 +931,7 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 732,
+      "lines": 754,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -1017,6 +1017,7 @@
         "offsetAt",
         "one",
         "opt",
+        "order",
         "parse",
         "parts",
         "patch",
@@ -2783,6 +2784,17 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0055_lineup_home.sql",
+      "layer": "bot",
+      "lines": 3,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "events"
+      ],
+      "functions": []
+    },
+    {
       "path": "bot/monitor.js",
       "layer": "bot",
       "lines": 86,
@@ -2804,7 +2816,7 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 427,
+      "lines": 436,
       "imports": [
         "./roles.js",
         "./clubroom.js",
@@ -2858,6 +2870,7 @@
         "marks",
         "mine",
         "modeOf",
+        "mutedFor",
         "notify",
         "notifyCron",
         "notifyManagers",
@@ -10153,7 +10166,7 @@
     {
       "path": "tests/dugout.test.mjs",
       "layer": "tests",
-      "lines": 133,
+      "lines": 139,
       "imports": [
         "node:fs",
         "./mock.mjs",
@@ -10164,6 +10177,7 @@
       "endpoints": [
         "/api/events",
         "/api/events/checkin",
+        "/api/events/discord",
         "/api/events/lineup",
         "/api/events/plays",
         "/api/events/rsvp",
@@ -10204,7 +10218,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 198,
+      "lines": 216,
       "imports": [
         "../bot/ui.js",
         "node:fs",
@@ -10237,6 +10251,8 @@
         "event_rsvps",
         "events",
         "members",
+        "notifications",
+        "notify_prefs",
         "rush_matches",
         "rush_players",
         "the",
@@ -10245,7 +10261,9 @@
       "functions": [
         "PNG",
         "iso",
+        "notesFor",
         "posterUp",
+        "pub",
         "setFlags"
       ]
     },
