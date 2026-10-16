@@ -1,5 +1,5 @@
 {
-  "revision": "2b3e5f10fc2a523bcaccab576cce35748e265158",
+  "revision": "d72680afd07089c68213f2528bfe9dcf3d832a58",
   "files": 840,
   "imports": 624,
   "api_paths": 248,
@@ -11041,7 +11041,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 359,
+      "lines": 376,
       "imports": [
         "node:child_process",
         "node:fs",
