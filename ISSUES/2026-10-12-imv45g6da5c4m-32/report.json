@@ -1,0 +1,122 @@
+{
+ "id": "imv45g6da5c4m:32",
+ "session": "imv45g6da5c4m",
+ "n": 32,
+ "page": "/Norex-United-FC/next/watch.html",
+ "severity": "wrong",
+ "note": "On these if we're not If we're not actually alive please go ahead and post Or in bed the short clips of whatever media we have within those platforms because we have we have recordings and we have clips as well twitch and we have shorts and videos as well on YouTube so try to display the embedded version of the mini player you know the one that you can hover over on YouTube or twitch and it It plays for some second the actual Go ahead and do that but please when doing so go ahead and make sure that once that mini clip is done to repeat itself rather than just stop and show a black page or white page make sure it's in the loop but just with that Short clip",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 32,
+  "t": 1791784180404,
+  "page": "/Norex-United-FC/next/watch.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/watch.html",
+  "title": "Watch · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "On these if we're not If we're not actually alive please go ahead and post Or in bed the short clips of whatever media we have within those platforms because we have we have recordings and we have clips as well twitch and we have shorts and videos as well on YouTube so try to display the embedded version of the mini player you know the one that you can hover over on YouTube or twitch and it It plays for some second the actual Go ahead and do that but please when doing so go ahead and make sure that once that mini clip is done to repeat itself rather than just stop and show a black page or white page make sure it's in the loop but just with that Short clip",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     212.33333333333331,
+     481
+    ]
+   ],
+   "bbox": {
+    "x": 212.33333333333331,
+    "y": 481,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div.wrap > section.sec:nth-of-type(2) > div > div.panel.wt-off > p.muted.small",
+   "tag": "p",
+   "id": null,
+   "classes": [
+    "muted",
+    "small"
+   ],
+   "text": "When NOREX goes live on Twitch or YouTube the player appears here by itself, and a red bar",
+   "href": null,
+   "rect": {
+    "x": 44.2,
+    "y": 429.5,
+    "w": 341.6,
+    "h": 58.1
+   },
+   "style": {
+    "position": "relative",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "12.5px",
+    "color": "rgb(155, 167, 189)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.panel",
+    "div",
+    "section.sec",
+    "div.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 7,
+   "docH": 1236,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791784180404,
+ "updated_at": 1791784180587
+}

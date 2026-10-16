@@ -1,0 +1,122 @@
+{
+ "id": "imv45g6da5c4m:26",
+ "session": "imv45g6da5c4m",
+ "n": 26,
+ "page": "/Norex-United-FC/next/index.html",
+ "severity": "wrong",
+ "note": "",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 26,
+  "t": 1791746139526,
+  "page": "/Norex-United-FC/next/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     218.33333333333331,
+     209.66666666666652
+    ],
+    [
+     291.3333333333333,
+     248
+    ]
+   ],
+   "bbox": {
+    "x": 218.33333333333331,
+    "y": 209.66666666666652,
+    "w": 73,
+    "h": 38.333333333333485
+   }
+  },
+  "target": {
+   "selector": "main#main > div.wrap",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "wrap"
+   ],
+   "text": "EA SPORTS FC 27 · DIVISION 1 · LEAGUE & RUSH ONE CLUB. ONE CROWN. NOREX UNITED FC is alway",
+   "href": null,
+   "rect": {
+    "x": 0,
+    "y": -3189.9,
+    "w": 430,
+    "h": 9124.5
+   },
+   "style": {
+    "position": "static",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "main"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 3319,
+   "docH": 9666,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791746139526,
+ "updated_at": 1791746140146
+}

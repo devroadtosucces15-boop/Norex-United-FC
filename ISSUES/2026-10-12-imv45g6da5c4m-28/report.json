@@ -1,0 +1,125 @@
+{
+ "id": "imv45g6da5c4m:28",
+ "session": "imv45g6da5c4m",
+ "n": 28,
+ "page": "/Norex-United-FC/next/index.html",
+ "severity": "polish",
+ "note": "Can you take a look at this one I now remember what number 26 was number 26 if you check the card for best rating player It has this cool let's see Light in the background Or glow and right now it's displayed fine but you have to basically stay on that on that view a little bit like a couple seconds for it to actually render correctly like it's been shown but before that it displayed like the glow as a box that doesn't have fades is in Isn't actually a glow just looks like a transparent box yellow box in the back with semi transplant looks so can we have it render correctly or rendering time",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 28,
+  "t": 1791783752101,
+  "page": "/Norex-United-FC/next/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "polish",
+  "note": "Can you take a look at this one I now remember what number 26 was number 26 if you check the card for best rating player It has this cool let's see Light in the background Or glow and right now it's displayed fine but you have to basically stay on that on that view a little bit like a couple seconds for it to actually render correctly like it's been shown but before that it displayed like the glow as a box that doesn't have fades is in Isn't actually a glow just looks like a transparent box yellow box in the back with semi transplant looks so can we have it render correctly or rendering time",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     398.3333333333333,
+     753.3333333333335
+    ],
+    [
+     36.33333333333333,
+     252.66666666666697
+    ]
+   ],
+   "bbox": {
+    "x": 36.33333333333333,
+    "y": 252.66666666666697,
+    "w": 362,
+    "h": 500.6666666666665
+   }
+  },
+  "target": {
+   "selector": "div.cardwrap:nth-of-type(3) > a.pc.pc-card > span.stats:nth-of-type(7) > div:nth-of-type(2) > b.num",
+   "tag": "b",
+   "id": null,
+   "classes": [
+    "num"
+   ],
+   "text": "26",
+   "href": "player-Alysalsa_.html",
+   "rect": {
+    "x": 190.2,
+    "y": 500.4,
+    "w": 51,
+    "h": 16.8
+   },
+   "style": {
+    "position": "static",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "16.200001px",
+    "color": "rgb(20, 26, 34)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div",
+    "span.stats",
+    "a.pc",
+    "div.cardwrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 3114,
+   "docH": 6763,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791783752101,
+ "updated_at": 1791783752182
+}

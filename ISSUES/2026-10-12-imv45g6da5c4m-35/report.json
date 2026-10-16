@@ -1,0 +1,121 @@
+{
+ "id": "imv45g6da5c4m:35",
+ "session": "imv45g6da5c4m",
+ "n": 35,
+ "page": "/Norex-United-FC/next/squad.html",
+ "severity": "wrong",
+ "note": "This place is this one is very glitchy Very jammy For starters I don't understand why we have the bottom view the one that looks like a domino card layout where it flips it what Why don't we just merge this one and the one on top the one that's a deck and just have different movements represent something different because right now the instructions you give for that specific one of the deck one is tapped to view or tap to flip it over which is the same Movement so maybe let's say swipe right to get I don't know move it over Swipe down or no tap to view with stats Then I don't know but I don't think we should have two separate views that's just creates a lot of con",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 35,
+  "t": 1791784706841,
+  "page": "/Norex-United-FC/next/squad.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/squad.html",
+  "title": "Squad · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "This place is this one is very glitchy Very jammy For starters I don't understand why we have the bottom view the one that looks like a domino card layout where it flips it what Why don't we just merge this one and the one on top the one that's a deck and just have different movements represent something different because right now the instructions you give for that specific one of the deck one is tapped to view or tap to flip it over which is the same Movement so maybe let's say swipe right to get I don't know move it over Swipe down or no tap to view with stats Then I don't know but I don't think we should have two separate views that's just creates a lot of con",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     203,
+     473
+    ]
+   ],
+   "bbox": {
+    "x": 203,
+    "y": 473,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "section#sec2 > div.grid.g2",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "grid",
+    "g2"
+   ],
+   "text": "XM 1585FWD X_MRMIKE_XFINISHER 35 GLS 19 AST 7.5 RAT 70% PAS 23% TKL 44 GP IM 85MID IM_TRAS",
+   "href": null,
+   "rect": {
+    "x": 17.2,
+    "y": 10.9,
+    "w": 395.6,
+    "h": 1430.6
+   },
+   "style": {
+    "position": "static",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "section.sec",
+    "div.wrap",
+    "main"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 6392,
+   "docH": 8246,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791784706841,
+ "updated_at": 1791784707007
+}

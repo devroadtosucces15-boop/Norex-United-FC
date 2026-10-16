@@ -1,0 +1,122 @@
+{
+ "id": "imv45g6da5c4m:43",
+ "session": "imv45g6da5c4m",
+ "n": 43,
+ "page": "/Norex-United-FC/next/opponents.html",
+ "severity": "wrong",
+ "note": "I'm not a fan of this table cause on phone it looks looks offputting that we for example that first of all the scroll area is too small because the many of the costs we have aren't that much so I think we can maybe make this smaller or more compact but as long as it's clearly visible that each each column is noticeable like Aligned and each row does the same I think we could achieve the same look but more clearer and also when draws and loss I don't like them being being Vertical think that I could creek well it's not confusion it just doesn't look good in my opinion besides this I see a slicer top for burner clubs I'm confused why they're there because burner clubs are not teams we face or not opponents burner clubs are teams that we the club members start up as temporary clubs When we have very few people And we just wanna play some league games we don't do it for competitive reasons we don't do it to face ourselves so it's not opponents we do it really because we wanna we don't wanna affect the stats of the team If it goes badly but remember take from the first or from the original that we We It's supposed to have its own section maybe we could do that you know in the stats Menu because it's supposed to have its own section yes but we're also supposed to be having the ability or not the ability but Capable of actually selecting if we want Norris numbers and a tick box if we also wanted to see Burner numbers where we would get the combination of Norris numbers and the burners but within the selection we would also be able to choose what specific burners teams we want And even if that's the case include a specific view where we just see the burner stats per team or combined all in but that doesn't include orange so two sides here",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 43,
+  "t": 1791785619705,
+  "page": "/Norex-United-FC/next/opponents.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/opponents.html",
+  "title": "Opponents · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "I'm not a fan of this table cause on phone it looks looks offputting that we for example that first of all the scroll area is too small because the many of the costs we have aren't that much so I think we can maybe make this smaller or more compact but as long as it's clearly visible that each each column is noticeable like Aligned and each row does the same I think we could achieve the same look but more clearer and also when draws and loss I don't like them being being Vertical think that I could creek well it's not confusion it just doesn't look good in my opinion besides this I see a slicer top for burner clubs I'm confused why they're there because burner clubs are not teams we face or not opponents burner clubs are teams that we the club members start up as temporary clubs When we have very few people And we just wanna play some league games we don't do it for competitive reasons we don't do it to face ourselves so it's not opponents we do it really because we wanna we don't wanna affect the stats of the team If it goes badly but remember take from the first or from the original that we We It's supposed to have its own section maybe we could do that you know in the stats Menu because it's supposed to have its own section yes but we're also supposed to be having the ability or not the ability but Capable of actually selecting if we want Norris numbers and a tick box if we also wanted to see Burner numbers where we would get the combination of Norris numbers and the burners but within the selection we would also be able to choose what specific burners teams we want And even if that's the case include a specific view where we just see the burner stats per team or combined all in but that doesn't include orange so two sides here",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     215.33333333333331,
+     367
+    ]
+   ],
+   "bbox": {
+    "x": 215.33333333333331,
+    "y": 367,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "table.tb > tbody > tr:nth-of-type(1) > td:nth-of-type(4) > span.pill.w:nth-of-type(1)",
+   "tag": "span",
+   "id": null,
+   "classes": [
+    "pill",
+    "w"
+   ],
+   "text": "0",
+   "href": null,
+   "rect": {
+    "x": 211,
+    "y": 361.9,
+    "w": 27.8,
+    "h": 21
+   },
+   "style": {
+    "position": "static",
+    "display": "inline-block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "10px",
+    "color": "rgb(75, 224, 138)",
+    "background": "rgb(18, 51, 31)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "td",
+    "tr",
+    "tbody",
+    "table.tb"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 3994,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791785619705,
+ "updated_at": 1791785619888
+}

@@ -1,0 +1,119 @@
+{
+ "id": "imv45g6da5c4m:45",
+ "session": "imv45g6da5c4m",
+ "n": 45,
+ "page": "/Norex-United-FC/next/tactics.html",
+ "severity": "wrong",
+ "note": "OK so feedback here I mean it did change now from 3-D broadcast to flat tactical and the few change but it's still not what we had which I asked you to replicate The biggest issue before was that the aligning of the formation was very very incorrect as it was displayed the opposite side of orientation so that's fixed yes but the field itself is not exactly what we had and by that I mean especially the 3-D broadcast In the old or original site we have an actual movable 3-D version of the field that we could know swipe around and you know view from every angle besides the bottom Or excluding the bottom But I know it's complex if it's gonna be attacked board that we're meant to be writing over I know the complexity for that so if we're only allow the talk only allow this isn't even the place I'm sorry disregard that last part I was gonna say that the only reason that we I find the complex to actually include this is because they were writing over it creating tactics with the studio Then it would be difficult because it would be two same registers that do something different move the 3-D design for you You know add lines or add something with the tools of the studio Therefore I haven't checked that but therefore I was gonna recommend that if that was the case to only be able to create tactics or add to the map or move move things around to create tactic If it was it should only be applicable if you're in a flat tactical view Then after that you could submit your not submit but you know go out of the you would say that specific part without exiting the studio or exiting the tactic for the draft and now you would be able to click on 3-D broadcast again and move around And if you wanted to edit again you would click edit and then once again it will take you to the flat tech but it's not the case here so forget it but if it is included in the tactic studio which I haven't seen then take this note and I'll remind you then",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 45,
+  "t": 1791786071224,
+  "page": "/Norex-United-FC/next/tactics.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/tactics.html",
+  "title": "Tactics table · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "OK so feedback here I mean it did change now from 3-D broadcast to flat tactical and the few change but it's still not what we had which I asked you to replicate The biggest issue before was that the aligning of the formation was very very incorrect as it was displayed the opposite side of orientation so that's fixed yes but the field itself is not exactly what we had and by that I mean especially the 3-D broadcast In the old or original site we have an actual movable 3-D version of the field that we could know swipe around and you know view from every angle besides the bottom Or excluding the bottom But I know it's complex if it's gonna be attacked board that we're meant to be writing over I know the complexity for that so if we're only allow the talk only allow this isn't even the place I'm sorry disregard that last part I was gonna say that the only reason that we I find the complex to actually include this is because they were writing over it creating tactics with the studio Then it would be difficult because it would be two same registers that do something different move the 3-D design for you You know add lines or add something with the tools of the studio Therefore I haven't checked that but therefore I was gonna recommend that if that was the case to only be able to create tactics or add to the map or move move things around to create tactic If it was it should only be applicable if you're in a flat tactical view Then after that you could submit your not submit but you know go out of the you would say that specific part without exiting the studio or exiting the tactic for the draft and now you would be able to click on 3-D broadcast again and move around And if you wanted to edit again you would click edit and then once again it will take you to the flat tech but it's not the case here so forget it but if it is included in the tactic studio which I haven't seen then take this note and I'll remind you then",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     210.66666666666666,
+     553.3333333333333
+    ]
+   ],
+   "bbox": {
+    "x": 210.66666666666666,
+    "y": 553.3333333333333,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div.camera:nth-of-type(1) > div.pitchbox.tilt3d > svg.pf > g > rect:nth-of-type(13)",
+   "tag": "rect",
+   "id": null,
+   "classes": [],
+   "text": "",
+   "href": null,
+   "rect": {
+    "x": 79.1,
+    "y": 541,
+    "w": 271.7,
+    "h": 24.8
+   },
+   "style": {
+    "position": "static",
+    "display": "inline",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "g",
+    "svg.pf",
+    "div.pitchbox",
+    "div.camera"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 140,
+   "docH": 3246,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791786071224,
+ "updated_at": 1791786071325
+}

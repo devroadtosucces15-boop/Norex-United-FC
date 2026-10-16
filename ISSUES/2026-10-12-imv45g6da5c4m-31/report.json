@@ -1,0 +1,121 @@
+{
+ "id": "imv45g6da5c4m:31",
+ "session": "imv45g6da5c4m",
+ "n": 31,
+ "page": "/Norex-United-FC/next/news.html",
+ "severity": "wrong",
+ "note": "For every Page on the site make sure that it is displayed correctly within the pulling length everything is you know properly placing overlap if you take a look here it is showing It is definitely showing correctly the top bar but it seems like it merged the menu bar on top it it is transparent so it's not that much of an issue but the part from the bottom isn't that visible so that that's what creates issues the one that says or has the title basically of that page It's doing that for multiple so FYI that's what I'm saying take care of that throughout the entire site",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 31,
+  "t": 1791784062381,
+  "page": "/Norex-United-FC/next/news.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/news.html",
+  "title": "News · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "For every Page on the site make sure that it is displayed correctly within the pulling length everything is you know properly placing overlap if you take a look here it is showing It is definitely showing correctly the top bar but it seems like it merged the menu bar on top it it is transparent so it's not that much of an issue but the part from the bottom isn't that visible so that that's what creates issues the one that says or has the title basically of that page It's doing that for multiple so FYI that's what I'm saying take care of that throughout the entire site",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     387.66666666666663,
+     286.66666666666663
+    ],
+    [
+     0,
+     70.66666666666666
+    ]
+   ],
+   "bbox": {
+    "x": 0,
+    "y": 70.66666666666666,
+    "w": 387.66666666666663,
+    "h": 215.99999999999997
+   }
+  },
+  "target": {
+   "selector": "div.sub:nth-of-type(1) > div.wrap > a:nth-of-type(2)",
+   "tag": "a",
+   "id": null,
+   "classes": [],
+   "text": "👥 Squad",
+   "href": "squad.html",
+   "rect": {
+    "x": 115.4,
+    "y": 161,
+    "w": 95.2,
+    "h": 34.1
+   },
+   "style": {
+    "position": "static",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "13px",
+    "color": "rgb(155, 167, 189)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.wrap",
+    "div.sub"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 2631,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791784062381,
+ "updated_at": 1791784062464
+}
