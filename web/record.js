@@ -8,7 +8,6 @@
 (() => {
   const CHANNEL = 'nx-rec';
   const ACTIVE = 'nx_rec_active';           // localStorage: { id, state, ts } written by the pop-up every second while it lives
-  const PENDING = 'nx_issue_pending_rec';   // localStorage: a finished recording nobody was around to attach
   const MAX_BYTES = 55e6;                   // matches the 60 MB media cap the Tactics Studio already uses, with headroom for container overhead
   const MAX_ITEM = 50000;                   // bot/issues.js refuses a report whose JSON is over 60 000 characters; the page adds device info on top
   const QUALITY = { standard: { label: 'Standard · 1 Mbps', video: 1_000_000, audio: 64_000 }, sharp: { label: 'Sharp · 2.5 Mbps', video: 2_500_000, audio: 64_000 } };
@@ -60,12 +59,12 @@
       del(k) { try { localStorage.removeItem(k); } catch { /* private mode */ } },
     };
     const S = { state: 'idle', stream: null, mic: null, rec: null, ac: null, chunks: [], bytes: 0, started: 0, runStart: 0, paused: 0, pauseAt: 0, events: [], transcript: [], mime: '', q: QUALITY.standard, voice: false, id: `r${Date.now().toString(36)}`, blob: null, url: null, sr: null, srOn: false, level: null, ticker: 0 };
-    const elapsed = () => (S.state === 'idle' ? 0 : (S.state === 'paused' ? S.pauseAt : Date.now()) - S.runStart - S.paused);
+    const elapsed = () => (S.state === 'idle' || S.state === 'starting' ? 0 : (S.state === 'paused' ? S.pauseAt : Date.now()) - S.runStart - S.paused);
     const view = (name) => doc.querySelectorAll('[data-view]').forEach((e) => { e.hidden = e.dataset.view !== name; });
     const say = (msg, bad) => { const el = $('#msg'); el.textContent = msg || ''; el.className = bad ? 'bad' : ''; };
 
     function broadcast() {
-      const m = { from: 'host', k: 'state', id: S.id, state: S.state, ms: elapsed(), bytes: S.bytes, mic: !!S.mic && S.mic.enabled !== false, session };
+      const m = { from: 'host', k: 'state', id: S.id, state: S.state, ms: elapsed(), bytes: S.bytes, mic: !!S.mic && S.mic.enabled !== false, unsaved: !!S.unsaved, session };
       try { ch?.postMessage(m); } catch { /* channel closed */ }
       if (S.state === 'recording' || S.state === 'paused') store.set(ACTIVE, { id: S.id, state: S.state, ts: Date.now(), startedAt: S.runStart });
     }
@@ -100,7 +99,13 @@
     }
     const stopCaptions = () => { S.srOn = false; try { S.sr?.abort(); } catch { /* ended */ } S.sr = null; };
 
+    // 'starting' covers the screen picker and the countdown, so the page's Record button can tell a recorder is already there
     async function start(surface) {
+      if (S.state !== 'idle') return;
+      S.state = 'starting'; broadcast();
+      try { await startInner(surface); } finally { if (S.state === 'starting') { S.state = 'idle'; broadcast(); } }
+    }
+    async function startInner(surface) {
       say('');
       const withSound = $('#sound').checked;
       S.q = QUALITY[$('#quality').value] || QUALITY.standard;
@@ -195,19 +200,13 @@
       jump.querySelectorAll('span').forEach((s, i) => { s.textContent = rows[i].text.slice(0, 120); }); // textContent: captions and urls are never parsed as HTML
       jump.hidden = !rows.length;
       a.click(); // the file is the only copy of the video until the Worker can store it, so save it straight away
-      if ($('#attach').checked) attach(item); else $('#attachState').textContent = 'Not attached to a report (you turned that off).';
-      broadcast();
+      S.item = item; S.unsaved = true;
+      $('#attachState').textContent = 'Back on the Norex page: add text, pick a category and Save & send. The video uploads then.';
+      sendFinished(); broadcast();
     }
 
-    // hand the finished item to an open Norex page (it numbers it and queues the upload); if no page answers, leave it for the next page that loads
-    function attach(item) {
-      let acked = false;
-      const onAck = (ev) => { if (ev.data?.from === 'page' && ev.data.k === 'ack' && ev.data.id === S.id) { acked = true; S.note = ev.data.n; S.up = ev.data.up; $('#attachState').textContent = `Attached to your bug session as note #${ev.data.n}.`; upload(); } };
-      ch?.addEventListener('message', onAck);
-      try { ch?.postMessage({ from: 'host', k: 'done', id: S.id, item }); } catch { /* closed */ }
-      $('#attachState').textContent = 'Attaching to your bug session…';
-      setTimeout(() => { if (!acked) { store.set(PENDING, { id: S.id, item }); $('#attachState').textContent = 'No Norex page answered – it will attach itself the next time you open one while signed in as owner.'; } }, 1800);
-    }
+    // the finished take goes to the Norex page, which shows it in the issue panel (video, text, category); Save there sends the report and starts the upload
+    function sendFinished() { try { ch?.postMessage({ from: 'host', k: 'finished', id: S.id, item: S.item, blob: S.blob }); } catch { /* closed */ } }
 
     // the video goes to the Worker's media bucket with the owner's session (handed over by the page); the file on disk stays either way
     async function upload() {
@@ -228,8 +227,9 @@
     ch?.addEventListener('message', (ev) => {
       const m = ev.data;
       if (m?.from !== 'page') return;
-      if (m.k === 'event' && S.state === 'recording' && S.events.length < 600) S.events.push({ t: elapsed(), ...m.ev });
-      else if (m.k === 'cmd') { if (m.cmd === 'stop') stop(); else if (m.cmd === 'pause') pause(); else if (m.cmd === 'moment') moment(m.label); else if (m.cmd === 'discard') discard(); else if (m.cmd === 'ping') broadcast(); }
+      if (m.k === 'ack' && m.id === S.id) { S.note = m.n; S.up = m.up; S.unsaved = false; $('#attachState').textContent = `Saved as note #${m.n}.`; upload(); broadcast(); }
+      else if (m.k === 'event' && S.state === 'recording' && S.events.length < 600) S.events.push({ t: elapsed(), ...m.ev });
+      else if (m.k === 'cmd') { if (m.cmd === 'stop') stop(); else if (m.cmd === 'pause') pause(); else if (m.cmd === 'moment') moment(m.label); else if (m.cmd === 'discard') discard(); else if (m.cmd === 'resend') { if (S.unsaved) sendFinished(); } else if (m.cmd === 'forget') { S.unsaved = false; $('#attachState').textContent = 'Report discarded – the video file is still in your downloads.'; broadcast(); } else if (m.cmd === 'ping') broadcast(); }
     });
 
     doc.querySelectorAll('[data-surface]').forEach((b) => b.addEventListener('click', () => start(b.dataset.surface)));
@@ -238,10 +238,10 @@
     $('#discard').addEventListener('click', () => { if (confirm('Discard this recording? Nothing will be saved.')) discard(); });
     $('#moment').addEventListener('click', () => moment());
     $('#mute').addEventListener('click', () => { if (S.mic) { S.mic.enabled = !S.mic.enabled; tick(); } });
-    $('#again').addEventListener('click', () => { if (S.url) URL.revokeObjectURL(S.url); S.state = 'idle'; S.blob = S.url = null; S.note = S.up = S.uploaded = null; $('#upState').textContent = ''; $('#preview').removeAttribute('src'); view('start'); say(''); doc.title = 'Norex recorder'; broadcast(); });
+    $('#again').addEventListener('click', () => { if (S.url) URL.revokeObjectURL(S.url); S.state = 'idle'; S.blob = S.url = S.item = null; S.unsaved = false; S.note = S.up = S.uploaded = null; $('#upState').textContent = ''; $('#preview').removeAttribute('src'); view('start'); say(''); doc.title = 'Norex recorder'; broadcast(); });
     $('#jump').addEventListener('click', (e) => { const b = e.target.closest('button[data-t]'); if (b) { const v = $('#preview'); v.currentTime = +b.dataset.t / 1000; v.play().catch(() => {}); } });
     $('#close').addEventListener('click', () => window.close());
-    addEventListener('beforeunload', (e) => { if (S.state === 'recording' || S.state === 'paused' || S.state === 'stopping') { e.preventDefault(); e.returnValue = ''; } else if (S.state === 'done' && !S.saved) { /* the file was already saved on stop */ } });
+    addEventListener('beforeunload', (e) => { if (S.state === 'recording' || S.state === 'paused' || S.state === 'stopping' || S.unsaved) { e.preventDefault(); e.returnValue = ''; } });
     addEventListener('pagehide', () => { store.del(ACTIVE); try { ch?.postMessage({ from: 'host', k: 'state', id: S.id, state: 'idle', ms: 0, bytes: 0, session }); } catch { /* closed */ } });
 
     if (!navigator.mediaDevices?.getDisplayMedia || typeof MediaRecorder === 'undefined') {
@@ -253,5 +253,5 @@
     view('start'); broadcast();
   }
 
-  window.NXRec = { CHANNEL, ACTIVE, PENDING, QUALITY, MAX_BYTES, MAX_ITEM, pickMime, fmtDur, fmtBytes, capMs, fileName, summarize, fitItem, buildItem, pages, host };
+  window.NXRec = { CHANNEL, ACTIVE, QUALITY, MAX_BYTES, MAX_ITEM, pickMime, fmtDur, fmtBytes, capMs, fileName, summarize, fitItem, buildItem, pages, host };
 })();

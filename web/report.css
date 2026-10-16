@@ -50,3 +50,10 @@
 .nxr-item small{display:block;opacity:.6;font-size:11px}
 .nxr-item.done{opacity:.55}
 .nxr-item button{padding:6px 10px;border-radius:9px;border:1px solid var(--line2,#2a3342);background:none;color:#fff;font:600 13px var(--body,sans-serif);cursor:pointer;white-space:nowrap}
+
+/* live timer on the 🐞 button, tucked pill, finished-recording sheet */
+.nxr-fab em{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);padding:1px 6px;border-radius:9px;background:#ff3b30;color:#fff;font:700 10px/14px var(--body,sans-serif);font-style:normal;white-space:nowrap}
+.nxr-fab em:empty{display:none}
+.nxr-pill{top:calc(10px + env(safe-area-inset-top));flex-wrap:nowrap;opacity:.92}
+.nxr-vid{width:100%;max-height:220px;border-radius:10px;background:#000;margin:6px 0}
+.nxr-del{background:none;border:1px solid var(--line2,#2a3342);color:#ff8a82;border-radius:10px;padding:8px 12px;cursor:pointer}

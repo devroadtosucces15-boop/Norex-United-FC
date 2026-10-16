@@ -9,7 +9,7 @@
 (() => {
   const BASE = document.body?.dataset.base || '';
   const KEY = 'nx_issue_session', QUEUE = 'nx_issue_queue';
-  const REC = { channel: 'nx-rec', active: 'nx_rec_active', pending: 'nx_issue_pending_rec', marks: 'nx_rec_marks:' };
+  const REC = { channel: 'nx-rec', active: 'nx_rec_active', marks: 'nx_rec_marks:' };
   const store = {
     get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
@@ -126,7 +126,7 @@
   const TOOLS = [['browse', '✋', 'Browse'], ['pin', '📍', 'Pin'], ['arrow', '➡️', 'Arrow'], ['circle', '⭕', 'Circle'], ['box', '▭', 'Box'], ['pen', '✏️', 'Pen']];
   function mount() {
     if (!document.querySelector('link[href$="report.css"]')) document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: `${BASE}assets/report.css` }));
-    fab = Object.assign(document.createElement('button'), { type: 'button', className: 'nxr-fab', title: 'Issue tool', innerHTML: '🐞<b hidden></b>' });
+    fab = Object.assign(document.createElement('button'), { type: 'button', className: 'nxr-fab', title: 'Issue tool', innerHTML: '🐞<b hidden></b><em></em>' });
     fab.dataset.nxr = '';
     fab.addEventListener('click', () => toggle());
     if (ctx.recorder) liveMount();
@@ -141,16 +141,18 @@
     const b = fab.querySelector('b'), unsent = store.get(QUEUE, []).length;
     b.hidden = !S.items.length; b.textContent = S.items.length;
     fab.classList.toggle('on', open); fab.classList.toggle('unsent', unsent > 0); fab.classList.toggle('rec', recLive());
+    const em = fab.querySelector('em'); if (em) em.textContent = recLive() ? `${L.rec.state === 'paused' ? '⏸' : '●'} ${fmt(liveMs())}` : '';
     fab.title = `Issue tool · ${S.items.length} note${S.items.length === 1 ? '' : 's'} this session${unsent ? ` · ${unsent} waiting to upload` : ''}`;
   }
   function toggle(force) {
     open = force ?? !open;
     document.documentElement.classList.toggle('nxr-open', open);
-    if (open) { buildBar(); drawPins(); setTool('browse'); liveBar(); } else { bar?.remove(); bar = null; cancel(); svg.innerHTML = ''; L.tool ? liveTool(null) : liveBar(); }
+    if (open) { buildBar(); drawPins(); setTool('browse'); } else { bar?.remove(); bar = null; cancel(); svg.innerHTML = ''; if (L.tool) liveTool(null); }
     liveDraw();
     paintFab();
   }
   function buildBar() {
+    if (ctx.recorder && L.cv) return liveBar(); // one toolbar: the recorder build replaces the pin toolbar
     bar?.remove();
     bar = Object.assign(document.createElement('div'), { className: 'nxr-bar' });
     bar.dataset.nxr = '';
@@ -169,6 +171,7 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
     tool = t; cancel();
     if (t !== 'browse') liveTool(null);
     bar?.querySelectorAll('button[data-t]').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+    if (ctx.recorder && L.cv) liveBar();
     if (t === 'browse') { cv?.remove(); cv = null; return; }
     if (!cv) {
       cv = Object.assign(document.createElement('canvas'), { className: 'nxr-cv' }); cv.dataset.nxr = '';
@@ -370,7 +373,7 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
   // Marks are in document coordinates, drawn on a fixed canvas over the page and never opened as notes. They are real page elements, so any
   // screen / window / tab capture of this page contains them; erase, move, undo and clear all work while recording. State of the recorder
   // pop-up arrives over a BroadcastChannel (L.rec); commands (pause / stop / moment) go back the same way.
-  const L = { tool: null, color: 0, fade: false, s: null, cv: null, g: null, bar2: null, trail: [], drag: null, sel: null, raf: 0, ch: null, rec: { state: 'idle', ms: 0, bytes: 0, mic: true }, seen: new Set(), at: 0 };
+  const L = { tucked: store.get('nx_rec_tucked', false), pending: null, clock: 0, tool: null, color: 0, fade: false, s: null, cv: null, g: null, bar2: null, trail: [], drag: null, sel: null, raf: 0, ch: null, rec: { state: 'idle', ms: 0, bytes: 0, mic: true }, seen: new Set(), at: 0 };
   const LTOOLS = [['point', '☝️', 'Point'], ['highlight', '🖍️', 'Highlight'], ['pen', '✏️', 'Pen'], ['arrow', '➡️', 'Arrow'], ['box', '▭', 'Box'], ['circle', '⭕', 'Circle'], ['erase', '🧽', 'Erase'], ['move', '✥', 'Move']];
   const recLive = () => L.rec.state === 'recording' || L.rec.state === 'paused' || L.rec.state === 'stopping';
   const fmt = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
@@ -397,8 +400,8 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
     hostSend({ k: 'cmd', cmd: 'ping' });
     addEventListener('hashchange', () => recLive() && pageEvent());
     addEventListener('pagehide', persistMarks);
-    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && takePending());
-    takePending(); paintFab(); liveDraw();
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && askResend());
+    paintFab(); liveDraw();
   }
   function liveSize() {
     if (!L.cv) return;
@@ -411,25 +414,31 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
     if (m?.from !== 'host') return;
     if (m.k === 'state') {
       const was = L.rec.state;
-      L.rec = { state: m.state, ms: m.ms, bytes: m.bytes, mic: m.mic, id: m.id }; L.at = Date.now();
+      L.rec = { state: m.state, ms: m.ms, bytes: m.bytes, mic: m.mic, id: m.id, unsaved: m.unsaved }; L.at = Date.now();
       if (was === 'idle' && recLive()) pageEvent();
-      if (recLive() || was !== m.state) { liveBar(); paintFab(); }
-      if (m.state === 'done' || m.state === 'idle') { if (L.tool && was !== m.state) liveTool(null); else liveBar(); }
+      if (recLive() && !L.clock) L.clock = setInterval(tickClock, 500);
+      if ((m.state === 'done' || m.state === 'idle') && L.tool && was !== m.state) liveTool(null); else liveBar();
+      paintFab(); askResend();
     } else if (m.k === 'uploaded') {
       const it = S.items.find((x) => x.recording?.rid === m.id);
       if (it && !it.recording.uploaded) { it.recording.uploaded = true; it.recording.key = m.key; save(); enqueue(it); ctx.toast?.(`🎥 Video for #${it.n} uploaded`); }
-    } else if (m.k === 'done') {
-      if (document.visibilityState !== 'visible' || L.seen.has(m.id)) return; // one tab commits it; the pop-up falls back to the pending slot
-      const n = commitRecording(m.item, m.id);
-      hostSend({ k: 'ack', id: m.id, n, up: upTarget() });
+    } else if (m.k === 'finished') {
+      // the take is over: show it in the issue panel (video + text + category). Only the tab being looked at takes it; the others ask again when they come to the front.
+      if (document.visibilityState !== 'visible' || L.seen.has(m.id) || L.pending?.id === m.id) return;
+      L.pending = { id: m.id, item: m.item, url: URL.createObjectURL(m.blob) };
+      if (!open) toggle(true);
+      liveBar(); openRecordingSheet();
     }
   }
-  // a finished recording that nobody was around to attach (all Norex tabs closed or hidden) waits in localStorage
-  function takePending() {
-    const p = store.get(REC.pending, null);
-    if (!p?.item || document.visibilityState !== 'visible' || !S) return;
-    try { localStorage.removeItem(REC.pending); } catch { /* private mode */ }
-    if (!L.seen.has(p.id)) { const n = commitRecording(p.item, p.id); hostSend({ k: 'ack', id: p.id, n, up: upTarget() }); }
+  // a tab that missed the 'finished' message (hidden, or loaded after it) asks the recorder window to send it again
+  function askResend() {
+    if (L.rec.state === 'done' && L.rec.unsaved && !L.pending && !L.seen.has(L.rec.id) && document.visibilityState === 'visible') hostSend({ k: 'cmd', cmd: 'resend' });
+  }
+  const liveMs = () => L.rec.ms + (L.rec.state === 'recording' ? Date.now() - L.at : 0);
+  function tickClock() {
+    if (!recLive()) { clearInterval(L.clock); L.clock = 0; paintFab(); return; }
+    document.querySelectorAll('.nxr-clock').forEach((c) => { c.textContent = `${L.rec.state === 'paused' ? '⏸' : '●'} ${fmt(liveMs())}`; });
+    paintFab();
   }
   // where the pop-up may upload the video (it has no session of its own); null when this site build can't
   const upTarget = () => (ctx.rawUpload ? { url: `${ctx.rawUpload.base}/api/issues/recording`, token: ctx.rawUpload.token, session: S.id } : null);
@@ -438,29 +447,38 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
     const item = { ...rec, n: ++S.n, url: location.href, tabs: activeTabs(), device: deviceInfo(), role: { real: ctx.role, viewAs: ctx.viewAs || null, user: ctx.user?.n || null } };
     item.recording = { ...item.recording, rid };
     S.items.push(item); save(); enqueue(item); clearMarks(); L.s.load([]); liveDraw(); paintFab();
-    ctx.toast?.(`🎥 Recording attached as #${item.n}`);
+    ctx.toast?.(`📌 Saved #${item.n} with the recording`);
     return item.n;
   }
 
-  // ----- the bar -----
+  // ----- the bar (the only toolbar when the recorder is on) -----
   function liveBar() {
-    L.bar2?.remove(); L.bar2 = null;
-    if (!ctx.recorder || !L.cv || !(open)) return;
+    bar?.remove(); bar = null;
+    if (!ctx.recorder || !L.cv || !open) return;
     const r = L.rec, live = recLive();
     const b = (attr, ic, label, extra = '') => `<button type="button" ${attr} title="${label}"${extra}><span>${ic}</span><small>${label}</small></button>`;
-    L.bar2 = Object.assign(document.createElement('div'), { className: 'nxr-bar nxr-bar2' }); L.bar2.dataset.nxr = '';
-    L.bar2.innerHTML = [
-      live ? `${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'Stop', ' class="red"')}${b('data-l="__discard"', '✕', 'Discard')}${b('data-l="__moment"', '🚩', 'Moment')}<span class="nxr-clock">● ${fmt(r.ms)}</span>`
-        : b('data-l="__rec"', '🎥', r.state === 'done' ? 'Record again' : 'Record'),
-      '<i class="nxr-div"></i>',
-      LTOOLS.map(([k, ic, l]) => b(`data-l="${k}"`, ic, l, L.tool === k ? ' class="on"' : '')).join(''),
-      '<i class="nxr-div"></i>',
-      b('data-l="__undo"', '↶', 'Undo', L.s.canUndo ? '' : ' disabled'), b('data-l="__redo"', '↷', 'Redo', L.s.canRedo ? '' : ' disabled'), b('data-l="__clear"', '🗑️', 'Clear', L.s.marks.length ? '' : ' disabled'),
-      '<i class="nxr-div"></i>',
-      NXAnnotate.COLORS.map((c, i) => `<button type="button" data-l="__color${i}" class="nxr-sw${L.color === i ? ' on' : ''}" style="--c:${c}" title="Colour"></button>`).join(''),
-      b('data-l="__fade"', '⏳', 'Fade', L.fade ? ' class="on"' : ''),
-    ].join('');
-    L.bar2.addEventListener('click', (e) => {
+    bar = Object.assign(document.createElement('div'), { className: `nxr-bar nxr-bar2${L.tucked ? ' nxr-pill' : ''}` }); bar.dataset.nxr = '';
+    if (L.tucked) { // out of the way so the whole screen can be shown; the timer and stop stay
+      bar.innerHTML = `${b('data-l="__show"', '🐞', 'Show tools')}${live ? `<span class="nxr-clock">${r.state === 'paused' ? '⏸' : '●'} ${fmt(liveMs())}</span>${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'End', ' class="red"')}` : ''}`;
+    } else {
+      bar.innerHTML = [
+        live ? `${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'End', ' class="red"')}${b('data-l="__discard"', '✕', 'Cancel')}${b('data-l="__moment"', '🚩', 'Moment')}<span class="nxr-clock">${r.state === 'paused' ? '⏸' : '●'} ${fmt(liveMs())}</span>`
+          : b('data-l="__rec"', '🎥', r.state === 'starting' ? 'Starting…' : 'Record', r.state === 'starting' ? ' disabled' : ''),
+        L.pending ? b('data-l="__finish"', '📎', 'Finish report', ' class="red"') : '',
+        '<i class="nxr-div"></i>',
+        b('data-l="__note"', '📍', 'Note', tool === 'pin' ? ' class="on"' : ''),
+        LTOOLS.map(([k, ic, l]) => b(`data-l="${k}"`, ic, l, L.tool === k ? ' class="on"' : '')).join(''),
+        '<i class="nxr-div"></i>',
+        b('data-l="__undo"', '↶', 'Undo', L.s.canUndo ? '' : ' disabled'), b('data-l="__redo"', '↷', 'Redo', L.s.canRedo ? '' : ' disabled'), b('data-l="__clear"', '🗑️', 'Clear', L.s.marks.length ? '' : ' disabled'),
+        '<i class="nxr-div"></i>',
+        NXAnnotate.COLORS.map((c, i) => `<button type="button" data-l="__color${i}" class="nxr-sw${L.color === i ? ' on' : ''}" style="--c:${c}" title="Colour"></button>`).join(''),
+        `<button type="button" data-l="__fade" class="${L.fade ? 'on' : ''}" title="Auto-fade: marks you draw disappear by themselves after 5 seconds"><span>⏳</span><small>${L.fade ? 'Fade 5s ✓' : 'Auto-fade'}</small></button>`,
+        '<i class="nxr-div"></i>',
+        ctx.rawUpload ? b('data-l="__list"', '📋', 'Reports') : '',
+        b('data-l="__hide"', '⌃', 'Hide'), b('data-l="__close"', '✕', 'Close'),
+      ].join('');
+    }
+    bar.addEventListener('click', (e) => {
       const k = e.target.closest('button')?.dataset.l;
       if (!k) return;
       if (k === '__rec') return openRecorder();
@@ -468,23 +486,64 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
       if (k === '__stop') return hostSend({ k: 'cmd', cmd: 'stop' });
       if (k === '__discard') return hostSend({ k: 'cmd', cmd: 'discard' });
       if (k === '__moment') { hostSend({ k: 'cmd', cmd: 'moment' }); return ctx.toast?.('🚩 Moment marked'); }
+      if (k === '__finish') return openRecordingSheet();
+      if (k === '__note') return setTool(tool === 'pin' ? 'browse' : 'pin');
       if (k === '__undo') { L.s.undo(); return lChanged(); }
       if (k === '__redo') { L.s.redo(); return lChanged(); }
       if (k === '__clear') { L.s.clear(); hostSend({ k: 'event', ev: { k: 'mark', op: 'clear' } }); return lChanged(); }
       if (k === '__fade') { L.fade = !L.fade; return liveBar(); }
+      if (k === '__list') return openList();
+      if (k === '__hide') return tuck(true);
+      if (k === '__show') return tuck(false);
+      if (k === '__close') return toggle(false);
       if (k.startsWith('__color')) { L.color = +k.slice(7); return liveBar(); }
       liveTool(L.tool === k ? null : k);
     });
-    document.body.appendChild(L.bar2);
-    // keep the clock honest between state messages
-    if (live && !L.clock) L.clock = setInterval(() => { if (!recLive() || !L.bar2) { clearInterval(L.clock); L.clock = 0; return; } const c = L.bar2.querySelector('.nxr-clock'); if (c) c.textContent = `${L.rec.state === 'paused' ? '⏸' : '●'} ${fmt(L.rec.ms + (L.rec.state === 'recording' ? Date.now() - L.at : 0))}`; }, 500);
+    document.body.appendChild(bar);
   }
+  function tuck(on) { L.tucked = on; if (on) liveTool(null); store.set('nx_rec_tucked', on); liveBar(); }
   function openRecorder() {
-    if (recLive()) return ctx.toast?.('The recorder is already running – it is the small window.');
+    if (recLive() || L.rec.state === 'starting') return ctx.toast?.('The recorder is already running – it is the small window.');
     if (!navigator.mediaDevices?.getDisplayMedia) return ctx.toast?.('This browser cannot record the screen – use the pin tools.');
-    const w = window.open(`${ctx.libBase || ''}record-host.html?s=${encodeURIComponent(S.id)}`, 'nx-recorder', 'popup=yes,width=420,height=560');
-    if (!w) ctx.toast?.('Pop-up blocked – allow pop-ups for this site, then tap Record again.');
+    // Open-or-find by name WITHOUT navigating: if the recorder window already exists it is only brought forward, never reloaded
+    // (reloading it would end a recording that is in progress).
+    const w = window.open('', 'nx-recorder', 'popup=yes,width=420,height=560');
+    if (!w) return ctx.toast?.('Pop-up blocked – allow pop-ups for this site, then tap Record again.');
+    let fresh = false;
+    try { fresh = w.location.href === 'about:blank'; } catch { fresh = false; }
+    if (fresh) w.location.href = `${ctx.libBase || ''}record-host.html?s=${encodeURIComponent(S.id)}`; else w.focus();
   }
+
+  // ----- finish a recording: the video, text and category go into the same panel as any other note -----
+  function openRecordingSheet() {
+    const p = L.pending;
+    if (!p) return;
+    cancel();
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition, r = p.item.recording;
+    sheet = Object.assign(document.createElement('form'), { className: 'nxr-sheet' }); sheet.dataset.nxr = '';
+    sheet.innerHTML = `<div class="nxr-head"><b>🎥</b> <span>Recording · ${fmt(r.ms)} · ${NXRecPages(r)} page(s) · ${(r.bytes / 1e6).toFixed(1)} MB</span></div>
+<video class="nxr-vid" src="${p.url}" controls playsinline></video>
+<div class="nxr-sev">${SEV.map(([k, ic, l]) => `<label><input type="radio" name="sev" value="${k}"${k === 'wrong' ? ' checked' : ''}><span>${ic} ${l}</span></label>`).join('')}</div>
+<textarea name="note" rows="3" placeholder="Add a note if needed (what should we look at?)"></textarea>
+<div class="nxr-row">${SR ? '<button type="button" class="nxr-mic">🎤 Dictate</button>' : ''}<span class="nxr-sp"></span><button type="button" class="nxr-x">Later</button><button type="button" class="nxr-del">Discard</button><button type="submit" class="nxr-ok">Save &amp; send</button></div>`;
+    document.body.appendChild(sheet);
+    const ta = sheet.querySelector('textarea'), done = () => { stopDictation(true); sheet?.remove(); sheet = null; liveBar(); };
+    sheet.querySelector('.nxr-x').addEventListener('click', done); // keep it: the 📎 Finish report button on the bar brings it back
+    sheet.querySelector('.nxr-del').addEventListener('click', () => { hostSend({ k: 'cmd', cmd: 'forget' }); URL.revokeObjectURL(p.url); L.pending = null; L.seen.add(p.id); done(); });
+    sheet.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = ta.value.trim(), sev = sheet.querySelector('input[name=sev]:checked').value;
+      stopDictation(false);
+      const item = { ...p.item, severity: sev, note: `${text}${text ? '\n\n' : ''}${p.item.note}`.slice(0, 1900) };
+      const n = commitRecording(item, p.id);
+      hostSend({ k: 'ack', id: p.id, n, up: upTarget() });
+      URL.revokeObjectURL(p.url); L.pending = null;
+      done();
+    });
+    const mic = sheet.querySelector('.nxr-mic');
+    if (mic) { mic.addEventListener('mousedown', (e) => e.preventDefault()); mic.addEventListener('click', () => { if (dict) stopDictation(false); else startDictation(SR, ta, mic); }); }
+  }
+  const NXRecPages = (r) => new Set((r.events || []).filter((e) => e.k === 'page').map((e) => e.url)).size || 1;
   function liveTool(t) {
     L.tool = t; L.sel = null; L.drag = null;
     if (t) { if (tool !== 'browse') setTool('browse'); L.trail = []; }
@@ -534,6 +593,7 @@ ${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports –
     const typing = e.target.closest?.('input,textarea,select,[contenteditable=true]');
     if (e.key === 'Escape' && (L.tool || tool !== 'browse')) { if (L.tool) liveTool(null); else setTool('browse'); return; }
     if (typing) return;
+    if (e.altKey && e.key.toLowerCase() === 'h') { e.preventDefault(); tuck(!L.tucked); return; }
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === 'z' && L.s.marks.length + (L.s.canUndo ? 1 : 0)) { e.preventDefault(); (e.shiftKey ? L.s.redo() : L.s.undo()); lChanged(); }
     else if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); L.s.redo(); lChanged(); }
