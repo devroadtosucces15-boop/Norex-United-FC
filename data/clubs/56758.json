@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-16T20:10:49.843Z",
+ "fetchedAt": "2026-10-16T20:20:47.201Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -223,42 +223,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "REFROD30",
-   "gamesPlayed": "10",
-   "winRate": "70",
-   "goals": "1",
-   "assists": "2",
-   "cleanSheetsDef": "2",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "100",
-   "passesMade": "151",
-   "passSuccessRate": "88",
-   "ratingAve": "7.5",
-   "tacklesMade": "7",
-   "tackleSuccessRate": "23",
-   "proName": "REFROD",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "187",
-   "proNationality": "83",
-   "proOverall": "76",
-   "proOverallStr": "76",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "1",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "MicroMyDraco",
@@ -1126,7 +1090,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 7,
+  "midfielder": 6,
   "goalkeeper": 0,
   "forward": 12,
   "defender": 9
@@ -1173,17 +1137,6 @@
    "assists": "35",
    "manOfTheMatch": "16",
    "ratingAve": "7.6",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "REFROD30",
-   "proPos": "14",
-   "gamesPlayed": "196",
-   "goals": "197",
-   "assists": "126",
-   "manOfTheMatch": "41",
-   "ratingAve": "8.1",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
