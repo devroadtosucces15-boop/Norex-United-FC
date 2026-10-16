@@ -23,7 +23,7 @@
 | [DopplerHQ/awesome-interview-questions](https://github.com/DopplerHQ/awesome-interview-questions) | :octocat: A curated awesome list of lists of interview questions. Feel free to contribute! :mortar_board: | – | 2024-07-29 |
 | [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Give your agent CAD superpowers. | Python | 2026-10-16 |
 | [freeCodeCamp/freeCodeCamp](https://github.com/freeCodeCamp/freeCodeCamp) | freeCodeCamp.org's open-source codebase and curriculum. Learn math, programming, and computer science for free. | TypeScript | 2026-10-16 |
-| [FunkeyFlo/ps5-mqtt](https://github.com/FunkeyFlo/ps5-mqtt) | Integrate your PlayStation 5 with Home Assistant | TypeScript | 2026-10-08 |
+| [FunkeyFlo/ps5-mqtt](https://github.com/FunkeyFlo/ps5-mqtt) | Integrate your PlayStation 5 with Home Assistant | TypeScript | 2026-10-16 |
 | [itsPLK/ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader) | An automated payload loader for exploited PS5 consoles | JavaScript | 2026-10-08 |
 | [mattpocock/skills](https://github.com/mattpocock/skills) | Skills for Real Engineers. Straight from my .agents directory. | Shell | 2026-10-13 |
 | [morluto/rea](https://github.com/morluto/rea) | Reverse engineer anything with agents, from app behavior down to native binaries. | TypeScript | 2026-10-16 |
