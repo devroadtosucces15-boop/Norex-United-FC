@@ -1,6 +1,6 @@
 import { call, env, login, r2objects, W } from './mock.mjs';
 import { t, done } from './lib.mjs';
-import { canUseTemplate, CARD_SIZE, pngSize, photoType, monthKey, generateCards, cardPrompt, CARD_MODEL } from '../bot/cardstudio.js';
+import { canUseTemplate, CARD_SIZE, pngSize, photoType, monthKey, generateCards, cardPrompt, portraitPrompt, CARD_MODEL, DESCRIBE_MODEL } from '../bot/cardstudio.js';
 
 const setFlags = (o) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), ...o }); };
 const owner = await login('111', [], 'Boss');
@@ -157,9 +157,16 @@ t('after cancelling the month is free again', (await reqUp(m1, `bg=${bgId}&pose=
 const realAI = env.AI;
 const outPng = Buffer.alloc(3000, 7); outPng.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]); outPng.writeUInt32BE(1024, 16); outPng.writeUInt32BE(1024, 20);
 const calls = [];
+const described = [];
 let aiMode = 'ok';
-env.AI = {
+let describeMode = 'ok';
+const mockAI = env.AI = {
   run: async (model, input) => {
+    if (model === DESCRIBE_MODEL) {
+      described.push(input);
+      if (describeMode === 'throw') throw new Error('vision busy');
+      return { description: 'A woman in her twenties with long braids.' };
+    }
     const form = await new Response(input.multipart.body, { headers: { 'content-type': input.multipart.contentType } }).formData();
     calls.push({ model, form });
     if (aiMode === 'throw') throw new Error('model busy');
@@ -171,6 +178,9 @@ const row = (id) => env.DB.prepare('SELECT * FROM card_requests WHERE id = ?').b
 const resGet = (tok, id) => W(`/api/cards/result/${id}`, { headers: tok ? { Authorization: 'Bearer ' + tok } : {} });
 const posePrompt = await env.DB.prepare('SELECT prompt FROM card_templates WHERE id = ?').bind(poseId).first('prompt');
 
+t('portrait prompt demands soccer kit, not American football', /soccer/i.test(portraitPrompt()) && /not an American football/i.test(portraitPrompt()) && !/generic black red and white football jersey/.test(portraitPrompt()));
+t('prompts protect likeness, gender and unusual features', [portraitPrompt(), cardPrompt('x')].every((p) => /same gender/i.test(p) && /do not beautify/i.test(p) && /unusual/i.test(p)));
+t('photo notes are passed into both prompts', portraitPrompt('a woman').includes('a woman') && cardPrompt('x', 'a woman').includes('a woman'));
 t('prompt carries the pose fragment', cardPrompt('arms crossed').includes('arms crossed') && /image 0/i.test(cardPrompt('x')));
 const pendingId = (await env.DB.prepare("SELECT id FROM card_requests WHERE user_id = '500'").first('id'));
 t('pending request is not picked up', (await row(pendingId)).status === 'pending');
@@ -185,6 +195,13 @@ const g1 = await generateCards(env, { now: 1e12 });
 const done2 = await row(two.id);
 t('approved request is generated', g1[0] === 'done' && done2.status === 'done' && done2.attempts === 1);
 t('uses the flux model with prompt, size, bg and photo', calls[0].model === CARD_MODEL && calls[0].form.get('prompt').includes(posePrompt) && calls[0].form.get('width') === '1024' && calls[0].form.get('height') === '1024');
+t('photo is described first and the notes reach the prompt', described.length >= 1 && calls[0].form.get('prompt').includes('A woman in her twenties'));
+describeMode = 'throw';
+calls.length = 0;
+await env.DB.prepare("UPDATE card_requests SET status = 'approved', attempts = 0, started_at = NULL WHERE id = ?").bind(two.id).run();
+t('a failing description never blocks the artwork', (await generateCards(env, { now: 1.5e12 }))[0] === 'done' && calls.length >= 1 && !calls[0].form.get('prompt').includes('Reference notes'));
+describeMode = 'ok';
+await env.DB.prepare("UPDATE card_requests SET status = 'done', published = 0 WHERE id = ?").bind(two.id).run();
 t('background is sent as image 0 untouched', Buffer.from(await calls[0].form.get('input_image_0').arrayBuffer()).equals(bgBytes) && !!calls[0].form.get('input_image_1'));
 t('result stored privately under cardresult/', done2.result_key.startsWith('cardresult/') && r2objects.get(done2.result_key).buf.equals(outPng));
 t('result is not served by /media', (await W(`/media/${done2.result_key}`)).status === 404);
@@ -287,4 +304,26 @@ await env.DB.prepare("UPDATE claims SET status = 'approved' WHERE user_id = '501
 await env.DB.prepare("INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, target_player, published) VALUES ('501', '2025-01', 0, 0, '', 'done', 1, 'different-player', 1)").run();
 t('owner revokes claimed-player artwork', (await call(owner, '/api/cards/owner/revoke', {id:two.id})).s === 200);
 t('revocation preserves explicit artwork assigned to a different player', (await env.DB.prepare("SELECT published FROM card_requests WHERE target_player = 'different-player'").first('published')) === 1);
+
+// editable AI notes and deleting
+const noteReq = (await env.DB.prepare("SELECT id FROM card_requests WHERE user_id = '501' AND target_player = 'different-player'").first('id'));
+t('member cannot edit AI notes', (await call(m2, '/api/cards/requests/notes', { id: noteReq, notes: 'x' })).s === 403);
+t('manager saves AI notes', (await call(mgr, '/api/cards/requests/notes', { id: noteReq, notes: 'A woman with a scrum cap' })).d.manual === true);
+t('staff list shows the notes', (await call(owner, '/api/cards/owner/requests')).d.requests.find((r) => r.id === noteReq).aiNotes === 'A woman with a scrum cap');
+t('member view never shows the notes', !('aiNotes' in ((await call(m2, '/api/cards/request')).d.request ?? {})));
+await env.DB.prepare("UPDATE card_requests SET status = 'approved', published = 0, attempts = 0, started_at = NULL, photo_key = ?, bg_id = ?, pose_id = ? WHERE id = ?").bind(photoKey2, bgId, poseId, noteReq).run();
+env.AI = mockAI; aiMode = 'ok'; described.length = 0; calls.length = 0;
+t('request with manager notes generates', (await generateCards(env, { now: 4e12 }))[0] === 'done');
+t('manager notes replace the vision description', described.length === 0 && calls[0].form.get('prompt').includes('A woman with a scrum cap'));
+await call(mgr, '/api/cards/requests/notes', { id: noteReq, notes: '' });
+t('clearing the notes goes back to automatic', (await row(noteReq)).ai_notes_manual === 0);
+const keys = await row(noteReq);
+const delKeys = [keys.result_key, keys.portrait_key].filter(Boolean);
+env.AI = realAI;
+t('manager can delete unpublished artwork and its files', (await call(mgr, '/api/cards/requests/delete', { id: noteReq })).s === 200 && (await row(noteReq)) === null && delKeys.every((k) => !r2objects.has(k)));
+await env.DB.prepare("INSERT INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, created_at, target_player, published) VALUES ('501', '2025-02', 0, 0, '', 'done', 1, 'pub-player', 1)").run();
+const pubId = await env.DB.prepare("SELECT id FROM card_requests WHERE target_player = 'pub-player'").first('id');
+t('manager cannot delete published artwork', (await call(mgr, '/api/cards/requests/delete', { id: pubId })).s === 403);
+t('owner can delete published artwork', (await call(owner, '/api/cards/requests/delete', { id: pubId })).s === 200 && (await row(pubId)) === null);
+t('deleting a missing request is a 404', (await call(owner, '/api/cards/requests/delete', { id: pubId })).s === 404);
 done();
