@@ -1,11 +1,15 @@
 // Owner issue tool: a 🐞 button on every page (flag `issueTool`, owner only). Switch it on, pick a tool (pin / arrow / circle / box /
 // pen), mark the problem, type or dictate what's wrong, Save – then keep browsing, the session carries over every page and sub-tab.
 // Each note records the page, the element you pointed at, the role you were using (and previewing as) and the device/OS/browser.
-//   NXReport.init({ call, role, viewAs, user })   mounted by app.js
+//   NXReport.init({ call, role, viewAs, user, recorder?, libBase? })   mounted by app.js / next session.js
+// With `recorder` (flag issueRecorder, desktop browsers that have getDisplayMedia) a second toolbar row adds the screen recorder and live
+// drawing tools (point, highlight, pen, arrow, box, circle, erase, move, undo): web/annotate.js draws them on the page itself, and
+// web/record-host.html (a small pop-up that survives page changes) records the screen + voice-over. See web/record.js for the design.
 //   NXReport.parseUA(ua, platform, touch)         pure helper (tested)
 (() => {
   const BASE = document.body?.dataset.base || '';
   const KEY = 'nx_issue_session', QUEUE = 'nx_issue_queue';
+  const REC = { channel: 'nx-rec', active: 'nx_rec_active', pending: 'nx_issue_pending_rec', marks: 'nx_rec_marks:' };
   const store = {
     get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
@@ -125,6 +129,7 @@
     fab = Object.assign(document.createElement('button'), { type: 'button', className: 'nxr-fab', title: 'Issue tool', innerHTML: '🐞<b hidden></b>' });
     fab.dataset.nxr = '';
     fab.addEventListener('click', () => toggle());
+    if (ctx.recorder) liveMount();
     document.body.appendChild(fab);
     svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'nxr-pins'); svg.dataset.nxr = '';
@@ -135,13 +140,14 @@
     if (!fab) return;
     const b = fab.querySelector('b'), unsent = store.get(QUEUE, []).length;
     b.hidden = !S.items.length; b.textContent = S.items.length;
-    fab.classList.toggle('on', open); fab.classList.toggle('unsent', unsent > 0);
+    fab.classList.toggle('on', open); fab.classList.toggle('unsent', unsent > 0); fab.classList.toggle('rec', recLive());
     fab.title = `Issue tool · ${S.items.length} note${S.items.length === 1 ? '' : 's'} this session${unsent ? ` · ${unsent} waiting to upload` : ''}`;
   }
   function toggle(force) {
     open = force ?? !open;
     document.documentElement.classList.toggle('nxr-open', open);
-    if (open) { buildBar(); drawPins(); setTool('browse'); } else { bar?.remove(); bar = null; cancel(); svg.innerHTML = ''; }
+    if (open) { buildBar(); drawPins(); setTool('browse'); liveBar(); } else { bar?.remove(); bar = null; cancel(); svg.innerHTML = ''; L.tool ? liveTool(null) : liveBar(); }
+    liveDraw();
     paintFab();
   }
   function buildBar() {
@@ -149,17 +155,19 @@
     bar = Object.assign(document.createElement('div'), { className: 'nxr-bar' });
     bar.dataset.nxr = '';
     bar.innerHTML = `${TOOLS.map(([k, ic, l]) => `<button type="button" data-t="${k}" title="${l}"><span>${ic}</span><small>${l}</small></button>`).join('')}
-<button type="button" data-t="__done" title="Close the tool"><span>✕</span><small>Close</small></button>`;
+${ctx.rawUpload ? '<button type="button" data-t="__list" title="Your reports – mark them fixed"><span>📋</span><small>Reports</small></button>' : ''}<button type="button" data-t="__done" title="Close the tool"><span>✕</span><small>Close</small></button>`;
     bar.addEventListener('click', (e) => {
       const t = e.target.closest('button')?.dataset.t;
       if (!t) return;
       if (t === '__done') return toggle(false);
+      if (t === '__list') return openList();
       setTool(t);
     });
     document.body.appendChild(bar);
   }
   function setTool(t) {
     tool = t; cancel();
+    if (t !== 'browse') liveTool(null);
     bar?.querySelectorAll('button[data-t]').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
     if (t === 'browse') { cv?.remove(); cv = null; return; }
     if (!cv) {
@@ -277,7 +285,7 @@
 <div class="nxr-row">${SR ? '<button type="button" class="nxr-mic">🎤 Dictate</button>' : ''}<span class="nxr-sp"></span><button type="button" class="nxr-x">Cancel</button><button type="submit" class="nxr-ok">Save #${n}</button></div>`;
     document.body.appendChild(sheet);
     const ta = sheet.querySelector('textarea');
-    sheet.querySelector('.nxr-x').addEventListener('click', cancel);
+    sheet.querySelector('.nxr-x').addEventListener('click', () => setTool('browse')); // leaving the tool too, or its canvas keeps covering the page
     sheet.addEventListener('submit', (e) => { e.preventDefault(); commit(ta.value.trim(), sheet.querySelector('input[name=sev]:checked').value); });
     const mic = sheet.querySelector('.nxr-mic');
     if (mic) {
@@ -322,7 +330,7 @@
     const w = document.documentElement.scrollWidth, h = document.documentElement.scrollHeight;
     svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     if (!open) { svg.innerHTML = ''; return; }
-    svg.innerHTML = [...S.items.filter((it) => it.page === pageKey()), ...(cur ? [{ ...cur, n: S.n + 1 }] : [])].map((it) => {
+    svg.innerHTML = [...S.items.filter((it) => it.shape && it.page === pageKey()), ...(cur ? [{ ...cur, n: S.n + 1 }] : [])].map((it) => {
       const sx = it.scroll?.x || 0, sy = it.scroll?.y || 0, p = it.shape.pts.map(([x, y]) => [x + sx, y + sy]), [a, b] = p;
       const bb = { x: it.shape.bbox.x + sx, y: it.shape.bbox.y + sy, w: it.shape.bbox.w, h: it.shape.bbox.h };
       const stroke = 'fill="none" stroke="#ff3b30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';
@@ -334,10 +342,233 @@
     }).join('');
   }
 
+  // ---------- reports list: mark fixed → deleted automatically a day later (bot/issues.js issueSweep) ----------
+  let panel = null;
+  async function openList() {
+    if (panel) { panel.remove(); panel = null; return; }
+    panel = Object.assign(document.createElement('div'), { className: 'nxr-sheet nxr-list' }); panel.dataset.nxr = '';
+    document.body.appendChild(panel);
+    const api = (path, opt = {}) => fetch(ctx.rawUpload.base + path, { ...opt, headers: { Authorization: `Bearer ${ctx.rawUpload.token}`, 'Content-Type': 'application/json' }, cache: 'no-store' }).then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `Error ${r.status}`); return j; });
+    const paint = async () => {
+      let items;
+      try { items = (await api('/api/issues')).items; } catch (e) { panel.textContent = `Could not load: ${e.message}`; return; }
+      const left = (t) => { const h = Math.max(0, Math.round((t - Date.now()) / 36e5)); return h ? `deleted in ${h}h` : 'deleted soon'; };
+      panel.innerHTML = `<div class="nxr-head"><b>Reports</b><span>Fixed ones are deleted after a day – reopen to keep.</span></div>${items.length ? items.map((x) => `<div class="nxr-item${x.status === 'open' ? '' : ' done'}"><span><b>#${x.n}</b> ${esc(x.note || x.page).slice(0, 110)}${x.video ? ' 🎥' : ''}<small>${esc(x.page)}${x.deleteAt ? ` · ${left(x.deleteAt)}` : ''}</small></span><button type="button" data-id="${esc(x.id)}" data-s="${x.status === 'open' ? 'fixed' : 'open'}">${x.status === 'open' ? '✓ Fixed' : '↺ Reopen'}</button></div>`).join('') : '<p>No reports yet.</p>'}<div class="nxr-row"><span class="nxr-sp"></span><button type="button" class="nxr-x">Close</button></div>`;
+    };
+    panel.addEventListener('click', async (e) => {
+      if (e.target.closest('.nxr-x')) { panel.remove(); panel = null; return; }
+      const b = e.target.closest('button[data-id]');
+      if (!b) return;
+      b.disabled = true;
+      try { await api('/api/issues/status', { method: 'POST', body: JSON.stringify({ id: b.dataset.id, status: b.dataset.s }) }); } catch (er) { ctx.toast?.(er.message); }
+      paint();
+    });
+    paint();
+  }
+
+  // ---------- live drawing + screen recorder (flag issueRecorder) ----------
+  // Marks are in document coordinates, drawn on a fixed canvas over the page and never opened as notes. They are real page elements, so any
+  // screen / window / tab capture of this page contains them; erase, move, undo and clear all work while recording. State of the recorder
+  // pop-up arrives over a BroadcastChannel (L.rec); commands (pause / stop / moment) go back the same way.
+  const L = { tool: null, color: 0, fade: false, s: null, cv: null, g: null, bar2: null, trail: [], drag: null, sel: null, raf: 0, ch: null, rec: { state: 'idle', ms: 0, bytes: 0, mic: true }, seen: new Set(), at: 0 };
+  const LTOOLS = [['point', '☝️', 'Point'], ['highlight', '🖍️', 'Highlight'], ['pen', '✏️', 'Pen'], ['arrow', '➡️', 'Arrow'], ['box', '▭', 'Box'], ['circle', '⭕', 'Circle'], ['erase', '🧽', 'Erase'], ['move', '✥', 'Move']];
+  const recLive = () => L.rec.state === 'recording' || L.rec.state === 'paused' || L.rec.state === 'stopping';
+  const fmt = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+  const hostSend = (m) => { try { L.ch?.postMessage({ from: 'page', ...m }); } catch { /* channel closed */ } };
+  const pageEvent = () => hostSend({ k: 'event', ev: { k: 'page', url: pageKey() + location.hash, title: document.title.replace(/ – .*$/, '') } });
+  const marksKey = () => REC.marks + pageKey();
+  const persistMarks = () => { if (L.s.marks.length) store.set(marksKey(), L.s.marks); else try { localStorage.removeItem(marksKey()); } catch { /* private mode */ } };
+  const clearMarks = () => { try { Object.keys(localStorage).filter((k) => k.startsWith(REC.marks)).forEach((k) => localStorage.removeItem(k)); } catch { /* private mode */ } };
+
+  function liveMount() {
+    if (L.cv || !window.NXAnnotate) return;
+    L.s = NXAnnotate.store(); L.s.load(store.get(marksKey(), []));
+    L.cv = Object.assign(document.createElement('canvas'), { className: 'nxr-live' }); L.cv.dataset.nxr = '';
+    document.body.appendChild(L.cv); liveSize();
+    for (const [ev, fn] of [['pointerdown', lDown], ['pointermove', lMove], ['pointerup', lUp], ['pointercancel', lUp]]) L.cv.addEventListener(ev, fn);
+    addEventListener('scroll', () => liveDraw(), { passive: true });
+    addEventListener('resize', () => { liveSize(); liveDraw(); });
+    addEventListener('keydown', lKey);
+    try { L.ch = new BroadcastChannel(REC.channel); } catch { L.ch = null; }
+    L.ch?.addEventListener('message', (ev) => lMsg(ev.data));
+    // is a recording already running (we just navigated)? tell it where we are
+    const act = store.get(REC.active, null);
+    if (act && Date.now() - act.ts < 6000) { L.rec = { ...L.rec, state: act.state, id: act.id }; pageEvent(); }
+    hostSend({ k: 'cmd', cmd: 'ping' });
+    addEventListener('hashchange', () => recLive() && pageEvent());
+    addEventListener('pagehide', persistMarks);
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && takePending());
+    takePending(); paintFab(); liveDraw();
+  }
+  function liveSize() {
+    if (!L.cv) return;
+    const d = devicePixelRatio || 1;
+    L.cv.width = innerWidth * d; L.cv.height = innerHeight * d; L.cv.style.width = `${innerWidth}px`; L.cv.style.height = `${innerHeight}px`;
+    L.g = L.cv.getContext('2d'); L.g.setTransform(d, 0, 0, d, 0, 0);
+  }
+
+  function lMsg(m) {
+    if (m?.from !== 'host') return;
+    if (m.k === 'state') {
+      const was = L.rec.state;
+      L.rec = { state: m.state, ms: m.ms, bytes: m.bytes, mic: m.mic, id: m.id }; L.at = Date.now();
+      if (was === 'idle' && recLive()) pageEvent();
+      if (recLive() || was !== m.state) { liveBar(); paintFab(); }
+      if (m.state === 'done' || m.state === 'idle') { if (L.tool && was !== m.state) liveTool(null); else liveBar(); }
+    } else if (m.k === 'uploaded') {
+      const it = S.items.find((x) => x.recording?.rid === m.id);
+      if (it && !it.recording.uploaded) { it.recording.uploaded = true; it.recording.key = m.key; save(); enqueue(it); ctx.toast?.(`🎥 Video for #${it.n} uploaded`); }
+    } else if (m.k === 'done') {
+      if (document.visibilityState !== 'visible' || L.seen.has(m.id)) return; // one tab commits it; the pop-up falls back to the pending slot
+      const n = commitRecording(m.item, m.id);
+      hostSend({ k: 'ack', id: m.id, n, up: upTarget() });
+    }
+  }
+  // a finished recording that nobody was around to attach (all Norex tabs closed or hidden) waits in localStorage
+  function takePending() {
+    const p = store.get(REC.pending, null);
+    if (!p?.item || document.visibilityState !== 'visible' || !S) return;
+    try { localStorage.removeItem(REC.pending); } catch { /* private mode */ }
+    if (!L.seen.has(p.id)) { const n = commitRecording(p.item, p.id); hostSend({ k: 'ack', id: p.id, n, up: upTarget() }); }
+  }
+  // where the pop-up may upload the video (it has no session of its own); null when this site build can't
+  const upTarget = () => (ctx.rawUpload ? { url: `${ctx.rawUpload.base}/api/issues/recording`, token: ctx.rawUpload.token, session: S.id } : null);
+  function commitRecording(rec, rid) {
+    L.seen.add(rid);
+    const item = { ...rec, n: ++S.n, url: location.href, tabs: activeTabs(), device: deviceInfo(), role: { real: ctx.role, viewAs: ctx.viewAs || null, user: ctx.user?.n || null } };
+    item.recording = { ...item.recording, rid };
+    S.items.push(item); save(); enqueue(item); clearMarks(); L.s.load([]); liveDraw(); paintFab();
+    ctx.toast?.(`🎥 Recording attached as #${item.n}`);
+    return item.n;
+  }
+
+  // ----- the bar -----
+  function liveBar() {
+    L.bar2?.remove(); L.bar2 = null;
+    if (!ctx.recorder || !L.cv || !(open)) return;
+    const r = L.rec, live = recLive();
+    const b = (attr, ic, label, extra = '') => `<button type="button" ${attr} title="${label}"${extra}><span>${ic}</span><small>${label}</small></button>`;
+    L.bar2 = Object.assign(document.createElement('div'), { className: 'nxr-bar nxr-bar2' }); L.bar2.dataset.nxr = '';
+    L.bar2.innerHTML = [
+      live ? `${b('data-l="__pause"', r.state === 'paused' ? '▶' : '⏸', r.state === 'paused' ? 'Resume' : 'Pause')}${b('data-l="__stop"', '⏹', 'Stop', ' class="red"')}${b('data-l="__discard"', '✕', 'Discard')}${b('data-l="__moment"', '🚩', 'Moment')}<span class="nxr-clock">● ${fmt(r.ms)}</span>`
+        : b('data-l="__rec"', '🎥', r.state === 'done' ? 'Record again' : 'Record'),
+      '<i class="nxr-div"></i>',
+      LTOOLS.map(([k, ic, l]) => b(`data-l="${k}"`, ic, l, L.tool === k ? ' class="on"' : '')).join(''),
+      '<i class="nxr-div"></i>',
+      b('data-l="__undo"', '↶', 'Undo', L.s.canUndo ? '' : ' disabled'), b('data-l="__redo"', '↷', 'Redo', L.s.canRedo ? '' : ' disabled'), b('data-l="__clear"', '🗑️', 'Clear', L.s.marks.length ? '' : ' disabled'),
+      '<i class="nxr-div"></i>',
+      NXAnnotate.COLORS.map((c, i) => `<button type="button" data-l="__color${i}" class="nxr-sw${L.color === i ? ' on' : ''}" style="--c:${c}" title="Colour"></button>`).join(''),
+      b('data-l="__fade"', '⏳', 'Fade', L.fade ? ' class="on"' : ''),
+    ].join('');
+    L.bar2.addEventListener('click', (e) => {
+      const k = e.target.closest('button')?.dataset.l;
+      if (!k) return;
+      if (k === '__rec') return openRecorder();
+      if (k === '__pause') return hostSend({ k: 'cmd', cmd: 'pause' });
+      if (k === '__stop') return hostSend({ k: 'cmd', cmd: 'stop' });
+      if (k === '__discard') return hostSend({ k: 'cmd', cmd: 'discard' });
+      if (k === '__moment') { hostSend({ k: 'cmd', cmd: 'moment' }); return ctx.toast?.('🚩 Moment marked'); }
+      if (k === '__undo') { L.s.undo(); return lChanged(); }
+      if (k === '__redo') { L.s.redo(); return lChanged(); }
+      if (k === '__clear') { L.s.clear(); hostSend({ k: 'event', ev: { k: 'mark', op: 'clear' } }); return lChanged(); }
+      if (k === '__fade') { L.fade = !L.fade; return liveBar(); }
+      if (k.startsWith('__color')) { L.color = +k.slice(7); return liveBar(); }
+      liveTool(L.tool === k ? null : k);
+    });
+    document.body.appendChild(L.bar2);
+    // keep the clock honest between state messages
+    if (live && !L.clock) L.clock = setInterval(() => { if (!recLive() || !L.bar2) { clearInterval(L.clock); L.clock = 0; return; } const c = L.bar2.querySelector('.nxr-clock'); if (c) c.textContent = `${L.rec.state === 'paused' ? '⏸' : '●'} ${fmt(L.rec.ms + (L.rec.state === 'recording' ? Date.now() - L.at : 0))}`; }, 500);
+  }
+  function openRecorder() {
+    if (recLive()) return ctx.toast?.('The recorder is already running – it is the small window.');
+    if (!navigator.mediaDevices?.getDisplayMedia) return ctx.toast?.('This browser cannot record the screen – use the pin tools.');
+    const w = window.open(`${ctx.libBase || ''}record-host.html?s=${encodeURIComponent(S.id)}`, 'nx-recorder', 'popup=yes,width=420,height=560');
+    if (!w) ctx.toast?.('Pop-up blocked – allow pop-ups for this site, then tap Record again.');
+  }
+  function liveTool(t) {
+    L.tool = t; L.sel = null; L.drag = null;
+    if (t) { if (tool !== 'browse') setTool('browse'); L.trail = []; }
+    L.cv?.classList.toggle('on', !!t); L.cv && (L.cv.dataset.tool = t || '');
+    liveBar(); liveDraw();
+  }
+  function lChanged() { persistMarks(); liveBar(); liveDraw(); }
+
+  // ----- pointer -----
+  const lPt = (e) => [e.clientX + scrollX, e.clientY + scrollY];
+  function lDown(e) {
+    if (!L.tool) return;
+    e.preventDefault(); L.cv.setPointerCapture?.(e.pointerId);
+    const [x, y] = lPt(e);
+    if (L.tool === 'erase') { L.drag = { erase: true }; return lErase(x, y); }
+    if (L.tool === 'move') {
+      const m = L.s.topAt(x, y, 10); L.sel = m?.id || null;
+      L.drag = m ? { move: m, x0: x, y0: y, cur: m } : null; return liveDraw();
+    }
+    if (L.tool === 'point') { L.drag = { point: true }; L.trail.push({ x: e.clientX, y: e.clientY, t: Date.now() }); return liveDraw(); }
+    L.drag = { type: L.tool, pts: [[x, y]] };
+  }
+  function lMove(e) {
+    const [x, y] = lPt(e);
+    if (L.tool === 'point') { L.trail.push({ x: e.clientX, y: e.clientY, t: Date.now() }); if (L.trail.length > 80) L.trail.shift(); return liveDraw(); } // trails even without a button down
+    const d = L.drag;
+    if (!d) return;
+    if (d.erase) return lErase(x, y);
+    if (d.move) { d.cur = NXAnnotate.shift(d.move, x - d.x0, y - d.y0); return liveDraw(); }
+    if (d.type === 'pen' || d.type === 'highlight') d.pts.push([x, y]); else d.pts = [d.pts[0], [x, y]];
+    liveDraw();
+  }
+  function lUp() {
+    const d = L.drag; L.drag = null;
+    if (!d || d.erase || d.point) return;
+    if (d.move) { if (d.cur !== d.move) { L.s.replace(d.cur); hostSend({ k: 'event', ev: { k: 'mark', op: 'move' } }); } return lChanged(); }
+    const long = d.pts.length > 1 && Math.hypot(d.pts.at(-1)[0] - d.pts[0][0], d.pts.at(-1)[1] - d.pts[0][1]) > 6 || d.pts.length > 4;
+    if (!long && d.type !== 'pen' && d.type !== 'highlight') return liveDraw(); // a tap with a shape tool is not a shape
+    const pts = d.type === 'pen' || d.type === 'highlight' ? NXAnnotate.simplify(d.pts) : d.pts;
+    L.s.add(NXAnnotate.make(d.type, pts, { color: NXAnnotate.COLORS[L.color], fadeAfter: L.fade ? 5000 : 0 }));
+    hostSend({ k: 'event', ev: { k: 'mark', op: 'add', type: d.type } });
+    lChanged();
+  }
+  function lErase(x, y) { const m = L.s.topAt(x, y, 10); if (m) { L.s.remove(m.id); hostSend({ k: 'event', ev: { k: 'mark', op: 'erase' } }); lChanged(); } }
+  function lKey(e) {
+    if (!L.cv || !(open || recLive())) return;
+    const typing = e.target.closest?.('input,textarea,select,[contenteditable=true]');
+    if (e.key === 'Escape' && (L.tool || tool !== 'browse')) { if (L.tool) liveTool(null); else setTool('browse'); return; }
+    if (typing) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 'z' && L.s.marks.length + (L.s.canUndo ? 1 : 0)) { e.preventDefault(); (e.shiftKey ? L.s.redo() : L.s.undo()); lChanged(); }
+    else if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); L.s.redo(); lChanged(); }
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && L.sel) { e.preventDefault(); L.s.remove(L.sel); L.sel = null; lChanged(); }
+  }
+
+  // ----- paint -----
+  function liveDraw() {
+    if (!L.g) return;
+    const g = L.g, now = Date.now();
+    g.clearRect(0, 0, innerWidth, innerHeight);
+    if (!(open || recLive() || L.s.marks.length)) return;
+    if (L.s.sweep(now)) { persistMarks(); liveBar(); }
+    L.trail = L.trail.filter((p) => now - p.t < 700);
+    const moving = L.drag?.move;
+    for (const m of L.s.marks) if (!moving || m.id !== moving.id) NXAnnotate.paint(g, m, scrollX, scrollY, now);
+    if (moving) NXAnnotate.paint(g, L.drag.cur, scrollX, scrollY, now);
+    const d = L.drag;
+    if (d?.type) NXAnnotate.paint(g, NXAnnotate.make(d.type, d.pts, { color: NXAnnotate.COLORS[L.color] }), scrollX, scrollY, now);
+    const sel = L.sel && (moving && moving.id === L.sel ? L.drag.cur : L.s.marks.find((m) => m.id === L.sel));
+    if (sel) { const b = NXAnnotate.bbox(sel); g.save(); g.setLineDash([6, 4]); g.strokeStyle = '#0a84ff'; g.lineWidth = 1.5; g.strokeRect(b.x - scrollX - 6, b.y - scrollY - 6, b.w + 12, b.h + 12); g.restore(); }
+    NXAnnotate.paintTrail(g, L.trail, now);
+    cancelAnimationFrame(L.raf);
+    if (L.trail.length || L.s.marks.some((m) => m.exp)) L.raf = requestAnimationFrame(liveDraw);
+  }
+
   async function init(c) {
     if (ctx) return;
     ctx = c; loadState(); save();
     await loadHigh();
+    // the recorder needs a desktop browser that can share a screen; phones keep the pin + dictate report
+    ctx.recorder = !!c.recorder && !!navigator.mediaDevices?.getDisplayMedia && typeof MediaRecorder !== 'undefined';
+    if (ctx.recorder && !window.NXAnnotate) {
+      await new Promise((ok) => document.head.append(Object.assign(document.createElement('script'), { src: `${ctx.libBase || ''}annotate.js`, onload: ok, onerror: () => { ctx.recorder = false; ok(); } })));
+    }
     mount(); flush();
     addEventListener('online', flush);
     addEventListener('pagehide', save);

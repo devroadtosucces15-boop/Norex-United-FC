@@ -102,3 +102,7 @@ recovered with #29.
 - Still to do: live check on a real server, then open the `fun`, `discoveries`, `watchlist`, `memberLive` flags to members.
 
 Next on the bot side: features 1–4 above on the site (web side), `POST /api/me/prefs`, then music.
+
+## Issue tool recordings (web side touched bot/ with the owner's OK, PR #41)
+`bot/issues.js` (+ 2 route lines in `members.js`, 1 cron line in `worker.js`): `POST/GET /api/issues/recording` (raw video → MEDIA R2 `issues/<session>/<n>.<ext>`),
+`GET /api/issues`, `POST /api/issues/status`, and `issueSweep` deleting fixed/wontfix reports (and videos) 24 h after they were marked. No migration. Tests: `tests/issuesrec.test.mjs`.
