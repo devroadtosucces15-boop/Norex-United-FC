@@ -1,5 +1,5 @@
 {
-  "revision": "0f0a40b71633a88b2265df343ebca8402223837c",
+  "revision": "c0650a88c738c40bcd0edbb05f209e89bd8089e3",
   "files": 836,
   "imports": 620,
   "api_paths": 248,
@@ -11494,7 +11494,7 @@
     {
       "path": "tests/recorder.test.mjs",
       "layer": "tests",
-      "lines": 68,
+      "lines": 71,
       "imports": [
         "node:fs",
         "./mock.mjs",
@@ -11506,6 +11506,7 @@
         "/api/issues/status"
       ],
       "tables": [
+        "a",
         "it",
         "the",
         "web"
@@ -13830,7 +13831,6 @@
       ],
       "functions": [
         "$",
-        "attach",
         "broadcast",
         "buildItem",
         "capMs",
@@ -13845,7 +13845,6 @@
         "fmtDur",
         "host",
         "moment",
-        "onAck",
         "pad",
         "pages",
         "paint",
@@ -13853,8 +13852,10 @@
         "pickMime",
         "run",
         "say",
+        "sendFinished",
         "start",
         "startCaptions",
+        "startInner",
         "stop",
         "stopCaptions",
         "summarize",
@@ -13891,16 +13892,20 @@
     {
       "path": "web/report.js",
       "layer": "web",
-      "lines": 579,
+      "lines": 639,
       "imports": [],
       "endpoints": [
         "/api/issues",
         "/api/issues/status"
       ],
-      "tables": [],
+      "tables": [
+        "the"
+      ],
       "functions": [
+        "NXRecPages",
         "activeTabs",
         "api",
+        "askResend",
         "b",
         "buildBar",
         "cancel",
@@ -13933,6 +13938,7 @@
         "liveBar",
         "liveDraw",
         "liveMount",
+        "liveMs",
         "liveSize",
         "liveTool",
         "loadHigh",
@@ -13943,6 +13949,7 @@
         "mq",
         "openList",
         "openRecorder",
+        "openRecordingSheet",
         "openSheet",
         "ownEl",
         "pageEvent",
@@ -13965,8 +13972,9 @@
         "sizeCanvas",
         "startDictation",
         "stopDictation",
-        "takePending",
+        "tickClock",
         "toggle",
+        "tuck",
         "up",
         "upTarget",
         "ver"
