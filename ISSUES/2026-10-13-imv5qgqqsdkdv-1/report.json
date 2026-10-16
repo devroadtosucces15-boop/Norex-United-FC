@@ -1,0 +1,163 @@
+{
+ "id": "imv5qgqqsdkdv:1",
+ "session": "imv5qgqqsdkdv",
+ "n": 1,
+ "page": "/Norex-United-FC/index.html",
+ "severity": "polish",
+ "note": "I didn't end up being much of a fan of my request where asked you to change the canvas background with those line designs and make a bit more light yeah I think I changed my mind Do do the lines but don't do it that dance don't do that much lines make him you know a bit more sparse less of them so that way it doesn't make it Opa besides that I mean going off that I do think it looks a bit pale so if we could get darker without going almost pitch black like it used to that should be good",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 506x874 @3x · browser",
+ "data": {
+  "n": 1,
+  "t": 1791855670025,
+  "page": "/Norex-United-FC/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "polish",
+  "note": "I didn't end up being much of a fan of my request where asked you to change the canvas background with those line designs and make a bit more light yeah I think I changed my mind Do do the lines but don't do it that dance don't do that much lines make him you know a bit more sparse less of them so that way it doesn't make it Opa besides that I mean going off that I do think it looks a bit pale so if we could get darker without going almost pitch black like it used to that should be good",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     82.74509571827824,
+     423.62743503082197
+    ]
+   ],
+   "bbox": {
+    "x": 82.74509571827824,
+    "y": 423.62743503082197,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div.wrap > section.hero:nth-of-type(1) > div.stage:nth-of-type(2) > div.crestwrap.tilt:nth-of-type(1) > span.halo",
+   "tag": "span",
+   "id": null,
+   "classes": [
+    "halo"
+   ],
+   "text": "",
+   "href": null,
+   "rect": {
+    "x": -35.5,
+    "y": 256.1,
+    "w": 577.1,
+    "h": 650.4
+   },
+   "style": {
+    "position": "absolute",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.crestwrap",
+    "div.stage",
+    "section.hero",
+    "div.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 145,
+   "docH": 6405,
+   "docW": 506
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 506,
+    "h": 874
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": false,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 0,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "diag": {
+   "vv": {
+    "offsetTop": 0,
+    "offsetLeft": 0,
+    "w": 506,
+    "h": 874,
+    "scale": 0.9,
+    "pageTop": 180
+   },
+   "innerH": 874,
+   "innerW": 506,
+   "outerH": 932,
+   "clientH": 874,
+   "scrollY": 180,
+   "scrollH": 6405,
+   "maxScroll": 5531,
+   "htmlOverflow": "clip visible",
+   "bodyOverflow": "clip visible",
+   "bodyPos": "relative",
+   "bodyH": 6371,
+   "tabbar": {
+    "x": 10,
+    "y": 788.8,
+    "w": 486,
+    "h": 73.3,
+    "bottom": 862.1,
+    "pos": "fixed",
+    "bottomCss": "12px",
+    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+   },
+   "header": {
+    "x": 0,
+    "y": 0,
+    "w": 506,
+    "h": 59,
+    "bottom": 59,
+    "pos": "sticky",
+    "bottomCss": "auto",
+    "transform": null
+   },
+   "fixed": []
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791855670025,
+ "updated_at": 1791855670638
+}

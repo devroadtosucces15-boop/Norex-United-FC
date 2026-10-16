@@ -1,0 +1,166 @@
+{
+ "id": "imv5znk4uejek:12",
+ "session": "imv5znk4uejek",
+ "n": 12,
+ "page": "/Norex-United-FC/hub.html",
+ "severity": "broken",
+ "note": "This one I need you to take priority right away be the first thing so it's giving a error None of the pictures are actually going through They could be approved by me but the after three attempts of AI response that they couldn't process the image and this is doing the same evening for myself",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 12,
+  "t": 1791858055964,
+  "page": "/Norex-United-FC/hub.html",
+  "hash": "#lk-cards",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/hub.html#lk-cards",
+  "title": "My Locker · NOREX UNITED",
+  "tabs": [
+   "🏅 All 34",
+   "📬 All 60"
+  ],
+  "severity": "broken",
+  "note": "This one I need you to take priority right away be the first thing so it's giving a error None of the pictures are actually going through They could be approved by me but the after three attempts of AI response that they couldn't process the image and this is doing the same evening for myself",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     264.3137180763959,
+     421.35259498280175
+    ]
+   ],
+   "bbox": {
+    "x": 264.3137180763959,
+    "y": 421.35259498280175,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div#lkcards > div.cs-top > div.panel.cs-stat:nth-of-type(1) > p.small",
+   "tag": "p",
+   "id": null,
+   "classes": [
+    "small"
+   ],
+   "text": "A manager has been told and can try again. You do not need to send anything.",
+   "href": null,
+   "rect": {
+    "x": 41.2,
+    "y": 383,
+    "w": 423.5,
+    "h": 38.8
+   },
+   "style": {
+    "position": "relative",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "12.5px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.panel",
+    "div.cs-top",
+    "div.sq-mount",
+    "section.sec"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 11921,
+   "docH": 28566,
+   "docW": 506
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": false,
+   "builtAt": null
+  },
+  "diag": {
+   "vv": {
+    "offsetTop": 510,
+    "offsetLeft": 0,
+    "w": 430,
+    "h": 517,
+    "scale": 1,
+    "pageTop": 12608
+   },
+   "innerH": 932,
+   "innerW": 430,
+   "outerH": 932,
+   "clientH": 1027,
+   "scrollY": 12608,
+   "scrollH": 28566,
+   "maxScroll": 27539,
+   "htmlOverflow": "clip visible",
+   "bodyOverflow": "clip visible",
+   "bodyPos": "relative",
+   "bodyH": 28565.8,
+   "tabbar": {
+    "x": 10,
+    "y": 414.7,
+    "w": 486,
+    "h": 90.3,
+    "bottom": 505,
+    "pos": "fixed",
+    "bottomCss": "12px",
+    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+   },
+   "header": {
+    "x": 0,
+    "y": -510,
+    "w": 506,
+    "h": 118,
+    "bottom": -392,
+    "pos": "sticky",
+    "bottomCss": "auto",
+    "transform": null
+   },
+   "fixed": []
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791858055964,
+ "updated_at": 1791858056529
+}

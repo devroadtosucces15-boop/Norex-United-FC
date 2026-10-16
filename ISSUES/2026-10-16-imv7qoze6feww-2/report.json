@@ -1,0 +1,212 @@
+{
+ "id": "imv7qoze6feww:2",
+ "session": "imv7qoze6feww",
+ "n": 2,
+ "page": "/",
+ "severity": "polish",
+ "note": "🎥 Screen recording · 06:30 · 0 pages · 52.6 MB (norex-bug-imv7qoze6feww-20261015-1756.webm) — “OK so for starters please fix this It's basically behind the top iPhone bar just drag it down So now I'm going into the page here is where I want you to So for example here I think it already fixed itself but I'll give you an example when I click on motion effects I'll say have it casual OK save the settings That actually shouldn't be the lucky should be getting if you see their kind of tilted but that wasn't really what I was gonna check Straight here it's working fine when it's casual but it breaks as soon as we change it to tilt the top remained in the tilt function until you actually click on the for that back Check that but most importantly if I go once again to the to the motion flex in change it back to full Things should start acting weirdly the meet the squad with this This is very broken super slow and it's probably making phones slow too so we need to fix this ASAP it needs to…”",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 506x1096 @3x · installed app",
+ "data": {
+  "kind": "recording",
+  "page": "/",
+  "title": "",
+  "severity": "polish",
+  "t": 1792112208682,
+  "recording": {
+   "file": "norex-bug-imv7qoze6feww-20261015-1756.webm",
+   "mime": "video/webm;codecs=vp9,opus",
+   "ms": 389958,
+   "bytes": 52605436,
+   "quality": "standard",
+   "voice": true,
+   "captions": true,
+   "uploaded": true,
+   "events": [
+    {
+     "t": 236268,
+     "k": "mark",
+     "op": "add",
+     "type": "pen"
+    },
+    {
+     "t": 257799,
+     "k": "mark",
+     "op": "erase"
+    },
+    {
+     "t": 262052,
+     "k": "mark",
+     "op": "add",
+     "type": "pen"
+    },
+    {
+     "t": 263919,
+     "k": "mark",
+     "op": "add",
+     "type": "pen"
+    },
+    {
+     "t": 286625,
+     "k": "mark",
+     "op": "erase"
+    }
+   ],
+   "transcript": [
+    {
+     "t": 6373,
+     "text": "OK so for starters please fix this"
+    },
+    {
+     "t": 16392,
+     "text": "It's basically behind the top iPhone bar just drag it down"
+    },
+    {
+     "t": 25247,
+     "text": "So now I'm going into the page here is where I want you to"
+    },
+    {
+     "t": 38495,
+     "text": "So for example here I think it already fixed itself but I'll give you an example when I click on motion effects I'll say have it casual"
+    },
+    {
+     "t": 43463,
+     "text": "OK save the settings"
+    },
+    {
+     "t": 58934,
+     "text": "That actually shouldn't be the lucky should be getting if you see their kind of tilted but that wasn't really what I was gonna check"
+    },
+    {
+     "t": 79216,
+     "text": "Straight here it's working fine when it's casual but it breaks as soon as we change it to tilt the top remained in the tilt function until you actually click on the for that back"
+    },
+    {
+     "t": 95254,
+     "text": "Check that but most importantly if I go once again to the to the motion flex in change it back to full"
+    },
+    {
+     "t": 107072,
+     "text": "Things should start acting weirdly the meet the squad with this"
+    },
+    {
+     "t": 140610,
+     "text": "This is very broken super slow and it's probably making phones slow too so we need to fix this ASAP it needs to be the same function that these have basically you see you see that they can't move I think we could be more smooth with the animation of the tilt for the card specifically increase the sensitivity"
+    },
+    {
+     "t": 147225,
+     "text": "It's not sideways right now so this something is going on"
+    },
+    {
+     "t": 171896,
+     "text": "In addition to that when you first load the page after it changes were made it's always gonna have that side look regardless of your own casual or not so make it make this work from the very start and remember the default motion and effects that every user supposed to have"
+    },
+    {
+     "t": 178188,
+     "text": "Puna every update right but let's say that"
+    },
+    {
+     "t": 194307,
+     "text": "First time they set up the app it's always gonna be on no matter what it's always gonna be on but if they make their own changes and either select custom"
+    },
+    {
+     "t": 197271,
+     "text": "Casual"
+    },
+    {
+     "t": 216715,
+     "text": "Process throughout changes made to the site afterwards if it's the same app it should persist meaning it shouldn't prompt them those options once again and it shouldn't prompt them the drivers group option or the microphone option or any other permission they gave"
+    },
+    {
+     "t": 231554,
+     "text": "Please include that we need to fix that that's very important and from this page that's so far that's it oh actually no"
+    },
+    {
+     "t": 234582,
+     "text": "These right here"
+    },
+    {
+     "t": 240732,
+     "text": "If I click on them nothing happens"
+    },
+    {
+     "t": 251456,
+     "text": "Nothing at all happens so I'm clicking on them right now I like I'll leave point I'm quick enough condom now nothing's happening"
+    },
+    {
+     "t": 283528,
+     "text": "We have the hub all that this is not what I had previously asked for I mean I like the club the matches in that cold background it does look premium but I think it doesn't fit well with the bottom card right"
+    },
+    {
+     "t": 303641,
+     "text": "Sustaining them together and what I mean by that just pointing at it directly would be this part in the middle one doesn't fit well with these show either way adapt these to the background or adapt the background to the parts"
+    },
+    {
+     "t": 313673,
+     "text": "Let's align them because I noticed that they're a bit closer to the top and they are to the bottom and that"
+    },
+    {
+     "t": 340154,
+     "text": "Is not the one I had asked for the original app before this redesign that's but type I want which is more of a dis iconic straightforward just a straight key that doesn't go fit well with a theme of the page itself it should be a symbol that's quite animated"
+    },
+    {
+     "t": 374860,
+     "text": "It should display a glow effect with glitter effect that goes towards the top like kind of a little bit and should be reactive with the tool defect but also should be reactive when clicked one clicked it's gonna make expand the circle a little bit like bounce and the key is gonna make animation to go up and lock the gold locker"
+    }
+   ],
+   "session": "imv7qoze6feww",
+   "rid": "rmva9bk3y",
+   "key": "issues/imv7qoze6feww/2.webm"
+  },
+  "note": "🎥 Screen recording · 06:30 · 0 pages · 52.6 MB (norex-bug-imv7qoze6feww-20261015-1756.webm) — “OK so for starters please fix this It's basically behind the top iPhone bar just drag it down So now I'm going into the page here is where I want you to So for example here I think it already fixed itself but I'll give you an example when I click on motion effects I'll say have it casual OK save the settings That actually shouldn't be the lucky should be getting if you see their kind of tilted but that wasn't really what I was gonna check Straight here it's working fine when it's casual but it breaks as soon as we change it to tilt the top remained in the tilt function until you actually click on the for that back Check that but most importantly if I go once again to the to the motion flex in change it back to full Things should start acting weirdly the meet the squad with this This is very broken super slow and it's probably making phones slow too so we need to fix this ASAP it needs to…”",
+  "n": 2,
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html",
+  "tabs": [],
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 506,
+    "h": 1096
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1792112208682,
+ "updated_at": 1792112612793
+}

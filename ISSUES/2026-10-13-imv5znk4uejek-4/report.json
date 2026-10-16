@@ -1,0 +1,163 @@
+{
+ "id": "imv5znk4uejek:4",
+ "session": "imv5znk4uejek",
+ "n": 4,
+ "page": "/Norex-United-FC/squad.html",
+ "severity": "polish",
+ "note": "It looks like we forgot to kind of remove the Previous full Car design like if you see that there's like this transparent box and the cut outs would be our cards can't is there any way of cleaning it up actually looks clean",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 506x1097 @3x · installed app",
+ "data": {
+  "n": 4,
+  "t": 1791856381963,
+  "page": "/Norex-United-FC/squad.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/squad.html",
+  "title": "Squad · NOREX UNITED",
+  "tabs": [],
+  "severity": "polish",
+  "note": "It looks like we forgot to kind of remove the Previous full Car design like if you see that there's like this transparent box and the cut outs would be our cards can't is there any way of cleaning it up actually looks clean",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     247.11627906976747,
+     450.5302325581397
+    ]
+   ],
+   "bbox": {
+    "x": 247.11627906976747,
+    "y": 450.5302325581397,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div.sk:nth-of-type(22) > div.sk-in > div.sk-ft:nth-of-type(1) > div.pc.pc-card > span.shell:nth-of-type(1)",
+   "tag": "span",
+   "id": null,
+   "classes": [
+    "shell"
+   ],
+   "text": "",
+   "href": null,
+   "rect": {
+    "x": 143.8,
+    "y": 391.5,
+    "w": 230.4,
+    "h": 324
+   },
+   "style": {
+    "position": "absolute",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(42, 28, 4)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.pc",
+    "div.sk-ft",
+    "div.sk-in",
+    "div.sk"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 5625,
+   "docH": 6906,
+   "docW": 506
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 506,
+    "h": 1097
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": false,
+   "builtAt": null
+  },
+  "diag": {
+   "vv": {
+    "offsetTop": 0,
+    "offsetLeft": 0,
+    "w": 506,
+    "h": 1097,
+    "scale": 0.9,
+    "pageTop": 5625
+   },
+   "innerH": 1097,
+   "innerW": 506,
+   "outerH": 932,
+   "clientH": 1027,
+   "scrollY": 5625,
+   "scrollH": 6906,
+   "maxScroll": 5879,
+   "htmlOverflow": "clip visible",
+   "bodyOverflow": "clip visible",
+   "bodyPos": "relative",
+   "bodyH": 6906.4,
+   "tabbar": {
+    "x": 10,
+    "y": 994.4,
+    "w": 486,
+    "h": 90.3,
+    "bottom": 1084.7,
+    "pos": "fixed",
+    "bottomCss": "12px",
+    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+   },
+   "header": {
+    "x": 0,
+    "y": 0,
+    "w": 506,
+    "h": 118,
+    "bottom": 118,
+    "pos": "sticky",
+    "bottomCss": "auto",
+    "transform": null
+   },
+   "fixed": []
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791856381963,
+ "updated_at": 1791856382532
+}

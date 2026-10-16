@@ -1,0 +1,125 @@
+{
+ "id": "imv4wg5732pbn:1",
+ "session": "imv4wg5732pbn",
+ "n": 1,
+ "page": "/Norex-United-FC/hub/index.html",
+ "severity": "wrong",
+ "note": "Can I Can I tell you want you to some things on this site and you keep that record in reference it later for the new site That I want to take from like that I like",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x873 @3x · installed app",
+ "data": {
+  "n": 1,
+  "t": 1791788305903,
+  "page": "/Norex-United-FC/hub/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/hub/index.html",
+  "title": "The Hub – NOREX UNITED FC",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "Can I Can I tell you want you to some things on this site and you keep that record in reference it later for the new site That I want to take from like that I like",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     422.3333333333333,
+     623.6666666666665
+    ],
+    [
+     3.6666666666666665,
+     143.33333333333326
+    ]
+   ],
+   "bbox": {
+    "x": 3.6666666666666665,
+    "y": 143.33333333333326,
+    "w": 418.66666666666663,
+    "h": 480.33333333333326
+   }
+  },
+  "target": {
+   "selector": "section.hubg-sec:nth-of-type(1) > div.hubg-grid > div.hubg-lockercard > div.hubg-inside > div.hubg-hook:nth-of-type(1)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "hubg-hook"
+   ],
+   "text": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱 ⚽ 1007531598629 ☄️ 🧱 📈 🎽 🧠 17/34",
+   "href": null,
+   "rect": {
+    "x": 45,
+    "y": 382.9,
+    "w": 340,
+    "h": 87.9
+   },
+   "style": {
+    "position": "static",
+    "display": "flex",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(242, 244, 247)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.hubg-inside",
+    "div.hubg-lockercard",
+    "div.hubg-grid",
+    "section.hubg-sec"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 522,
+   "docH": 2787,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 873
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 0,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": "2026-10-12T06:55:15.592Z"
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "𝐱_𝐌𝐫𝐌𝐢𝐤𝐞_𝐱"
+  }
+ },
+ "created_at": 1791788305903,
+ "updated_at": 1791788306040
+}

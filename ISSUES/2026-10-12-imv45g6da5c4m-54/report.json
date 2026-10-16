@@ -1,0 +1,121 @@
+{
+ "id": "imv45g6da5c4m:54",
+ "session": "imv45g6da5c4m",
+ "n": 54,
+ "page": "/Norex-United-FC/next/staff-boardroom.html",
+ "severity": "wrong",
+ "note": "OK on this for which is boardroom now we're talking specifics to me here I don't care about the animations and all that I don't I don't want them what I care for is in Ease of navigation and And vote It's ease of navigation I care for and also the proper handling and tooling That I have so I care for the amount of tools I could use in to do anything within the site that's either connected to discord or the bots or the server or anything else including the hub Cloudflare accounts or any other service that we were using I want it all Control vote from here or viewable with the quick navigation option to the source That being said if I had to give you points of reference for this is each of those toggles right right now the switches each of those toggles shown where I select the level That that specific specific view or tool the public members or owner manager should have That I would actually add for easy navigation to all of them each one will carry the same options simple toggles to view to to redirect to that specific part in that specific Axis or you know point in the page whether that's all the way to the bottom of the page but I want you to redirect me to page and on top of that scroll me and move me along the way automatically to take me to that specific section where that is located But one side toggle before it you redirect me and I click you know show me or something like that show me button I want you to them prompt a longer box where I could select the view ass where it would allow me to then read redirect me as I'm viewing like a member or a guest or the public center whatever maybe the case but that would be awesome Now Yeah that's so far what I got from here Maybe do it some formatting or some better visual display for this Slicers we're used to the switches to help the audience and all that maybe you change it to look better maybe not so stacked Well listing for keep in mind all the different boxes that we're adding so consider them as well but the oth",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 54,
+  "t": 1791787807600,
+  "page": "/Norex-United-FC/next/staff-boardroom.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/staff-boardroom.html",
+  "title": "Boardroom · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "OK on this for which is boardroom now we're talking specifics to me here I don't care about the animations and all that I don't I don't want them what I care for is in Ease of navigation and And vote It's ease of navigation I care for and also the proper handling and tooling That I have so I care for the amount of tools I could use in to do anything within the site that's either connected to discord or the bots or the server or anything else including the hub Cloudflare accounts or any other service that we were using I want it all Control vote from here or viewable with the quick navigation option to the source That being said if I had to give you points of reference for this is each of those toggles right right now the switches each of those toggles shown where I select the level That that specific specific view or tool the public members or owner manager should have That I would actually add for easy navigation to all of them each one will carry the same options simple toggles to view to to redirect to that specific part in that specific Axis or you know point in the page whether that's all the way to the bottom of the page but I want you to redirect me to page and on top of that scroll me and move me along the way automatically to take me to that specific section where that is located But one side toggle before it you redirect me and I click you know show me or something like that show me button I want you to them prompt a longer box where I could select the view ass where it would allow me to then read redirect me as I'm viewing like a member or a guest or the public center whatever maybe the case but that would be awesome Now Yeah that's so far what I got from here Maybe do it some formatting or some better visual display for this Slicers we're used to the switches to help the audience and all that maybe you change it to look better maybe not so stacked Well listing for keep in mind all the different boxes that we're adding so consider them as well but the other thing was to close this out because it's a lot and we need to get this down ASAP Points I can't reference directly shown are the web PWA icon that people get when they go to home screen for this new link Is ugly the crust is wide it's all zoomed in so give it a gold look to you like a gold ring around the icon shape not the crest with the crust in middle kind of floating I'm actually gonna send you a screenshot of one animation I really liked for the crust of how it was being displayed and I'm hoping you could mimic that feeling through the icon but also use that same look for the top Section of this the new site that it repeats across any in every page which is the badge and united with some transparency I'll send you the screenshot what I mean so you could reference that in the original site but that was point one second point Try to be a perfectionist with every single fix You know test it from different aspects maybe test the test that I didn't run myself so I might've missed but I think I carried a lot but dig deeper and be more detailed Secondly as Functionality is gonna functionality for PWA the mobile web app is gonna be the go to the most used version so we need to create functions around that system that function for iPhone and android Where it's gonna it One toggle or one certain animation is not gonna break the site to the point where they have to close the app and reopen it no Just check make those test test appropriate and look for things to be organized correct format and all one thing I forgot to mention was he the stats animation is probably the only thing I didn't like when you open that click that toggle on the bottom menu that's probably the only thing I didn't like and the yellow with red I will change that with something else Yeah just remember that each of the menu has kind of like their own theme Let's try to get that feeling of themes across each different menu with its own representation or little details but they don't need to be big as long as they're small the only ones that should have big animations should really be the hub itself at any any awards section any kudos section Any anything like that should really have big animations Hall of Fame you know but besides that no I don't really think there is any other place we should have some huge huge animations when I mean huge is like popping in your face kind of trying to get the attention like you would do in Hall of Fame or sports Just get the theme down into the the car designs or the background of the car design things like that small things Go ahead and work on it",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     253.33333333333331,
+     461.3333333333333
+    ]
+   ],
+   "bbox": {
+    "x": 253.33333333333331,
+    "y": 461.3333333333333,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div#brLive > div.dk-pane:nth-of-type(2)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "dk-pane"
+   ],
+   "text": "59 switches · 15 live overrides ↶ Undo 🗓️ MATCH NIGHTS Events events live override · comm",
+   "href": null,
+   "rect": {
+    "x": 17.2,
+    "y": 370.4,
+    "w": 395.6,
+    "h": 8738.9
+   },
+   "style": {
+    "position": "static",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div",
+    "div",
+    "section.sec",
+    "div.wrap"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 9521,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791787807600,
+ "updated_at": 1791787807691
+}

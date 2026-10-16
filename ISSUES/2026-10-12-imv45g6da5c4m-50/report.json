@@ -1,0 +1,122 @@
+{
+ "id": "imv45g6da5c4m:50",
+ "session": "imv45g6da5c4m",
+ "n": 50,
+ "page": "/Norex-United-FC/next/hub-matchnight.html",
+ "severity": "wrong",
+ "note": "This entire page is a perfect example of Where the members were other people are gonna lose attention why because everything from the very start is displayed as the same thing again and again and again and again for each card So that meaning it's a lot of text repeated text it looks it People right away look at them then they admit it because they don't they don't wanna do all that so first of all focus on a visual aspect yes something that's visually more attractive yes also on simplifying things maybe don't have every single date displayed with the same exact toggles maybe have a different way to for them to select those days But that's easier without having to click so much and read so much and the same goes for the star ratings below for each card or each player I'm sorry you could also include a simple swipe system or something like that but you get my point",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 50,
+  "t": 1791786741730,
+  "page": "/Norex-United-FC/next/hub-matchnight.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/hub-matchnight.html",
+  "title": "Match Night · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "This entire page is a perfect example of Where the members were other people are gonna lose attention why because everything from the very start is displayed as the same thing again and again and again and again for each card So that meaning it's a lot of text repeated text it looks it People right away look at them then they admit it because they don't they don't wanna do all that so first of all focus on a visual aspect yes something that's visually more attractive yes also on simplifying things maybe don't have every single date displayed with the same exact toggles maybe have a different way to for them to select those days But that's easier without having to click so much and read so much and the same goes for the star ratings below for each card or each player I'm sorry you could also include a simple swipe system or something like that but you get my point",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     232.66666666666666,
+     383.66666666666663
+    ]
+   ],
+   "bbox": {
+    "x": 232.66666666666666,
+    "y": 383.66666666666663,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "section#sec1 > div > div.grid.g2",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "grid",
+    "g2"
+   ],
+   "text": "RSVP No match night is scheduled. When one is, you answer here and managers see who is in.",
+   "href": null,
+   "rect": {
+    "x": 17.2,
+    "y": 257.4,
+    "w": 395.6,
+    "h": 3473.4
+   },
+   "style": {
+    "position": "static",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div",
+    "section.sec",
+    "div.wrap",
+    "main"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 4383,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791786741730,
+ "updated_at": 1791786741837
+}

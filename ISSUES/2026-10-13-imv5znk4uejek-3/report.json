@@ -1,0 +1,165 @@
+{
+ "id": "imv5znk4uejek:3",
+ "session": "imv5znk4uejek",
+ "n": 3,
+ "page": "/Norex-United-FC/index.html",
+ "severity": "polish",
+ "note": "On this part of the motion effects I would say overall it looks good and it's clear but if I click on the full option for example I understand that you're gonna include insights and all that but other people don't it's best if you leave the checkmarks on everything else when selecting full like a checkmarks everything except calm we're off but what I was gonna say here is that the all the effects the extra effects that we have Going for them for one are very glitchy I think it's probably like the fourth or fifth time that I've been asking you about the card the card spinning wheel roulette and you know that design is still messed up I'll pin it right now next point without saying anything And I don't know if we should fix it I think it's fine how we have it right now but what does work that I haven't given you feedback negative feedback on the animations and transitions of the Full motion effects if I haven't given you negative feedback go ahead into emerge between the calm and full to meet somewhere in the middle but I'm certain I've definitely mentioned which ones I like And please keep those",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 506x1097 @3x · installed app",
+ "data": {
+  "n": 3,
+  "t": 1791856061455,
+  "page": "/Norex-United-FC/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "polish",
+  "note": "On this part of the motion effects I would say overall it looks good and it's clear but if I click on the full option for example I understand that you're gonna include insights and all that but other people don't it's best if you leave the checkmarks on everything else when selecting full like a checkmarks everything except calm we're off but what I was gonna say here is that the all the effects the extra effects that we have Going for them for one are very glitchy I think it's probably like the fourth or fifth time that I've been asking you about the card the card spinning wheel roulette and you know that design is still messed up I'll pin it right now next point without saying anything And I don't know if we should fix it I think it's fine how we have it right now but what does work that I haven't given you feedback negative feedback on the animations and transitions of the Full motion effects if I haven't given you negative feedback go ahead into emerge between the calm and full to meet somewhere in the middle but I'm certain I've definitely mentioned which ones I like And please keep those",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     468.3441860465117,
+     1006.9736434108545
+    ],
+    [
+     3.137984496124031,
+     283.27596899224955
+    ]
+   ],
+   "bbox": {
+    "x": 3.137984496124031,
+    "y": 283.27596899224955,
+    "w": 465.2062015503877,
+    "h": 723.697674418605
+   }
+  },
+  "target": {
+   "selector": "div.mx-sheet-body > div.mx-opts:nth-of-type(1) > button.mx-opt:nth-of-type(1) > span:nth-of-type(2) > small",
+   "tag": "small",
+   "id": null,
+   "classes": [],
+   "text": "Every reveal, tilt, glow and transition",
+   "href": null,
+   "rect": {
+    "x": 80,
+    "y": 645.7,
+    "w": 201.9,
+    "h": 15
+   },
+   "style": {
+    "position": "static",
+    "display": "inline",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "11.666666px",
+    "color": "rgb(154, 166, 184)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "span",
+    "button.mx-opt",
+    "div.mx-opts",
+    "div.mx-sheet-body"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 6554,
+   "docH": 7651,
+   "docW": 506
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 506,
+    "h": 1097
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": false,
+   "builtAt": null
+  },
+  "diag": {
+   "vv": {
+    "offsetTop": 0,
+    "offsetLeft": 0,
+    "w": 506,
+    "h": 1097,
+    "scale": 0.9,
+    "pageTop": 6554
+   },
+   "innerH": 1097,
+   "innerW": 506,
+   "outerH": 932,
+   "clientH": 1027,
+   "scrollY": 6554,
+   "scrollH": 7651,
+   "maxScroll": 6624,
+   "htmlOverflow": "clip visible",
+   "bodyOverflow": "clip visible",
+   "bodyPos": "relative",
+   "bodyH": 7651.2,
+   "tabbar": {
+    "x": 10,
+    "y": 994.4,
+    "w": 486,
+    "h": 90.3,
+    "bottom": 1084.7,
+    "pos": "fixed",
+    "bottomCss": "12px",
+    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+   },
+   "header": {
+    "x": 0,
+    "y": 0,
+    "w": 506,
+    "h": 118,
+    "bottom": 118,
+    "pos": "sticky",
+    "bottomCss": "auto",
+    "transform": null
+   },
+   "fixed": []
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791856061455,
+ "updated_at": 1791856061926
+}

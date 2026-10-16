@@ -1,0 +1,121 @@
+{
+ "id": "imv45g6da5c4m:53",
+ "session": "imv45g6da5c4m",
+ "n": 53,
+ "page": "/Norex-United-FC/next/index.html",
+ "severity": "wrong",
+ "note": "Poop and by the way I didn't check there was a different view I'm seeing it as owner I guess but is that same moving icon for the menu is it the same for members as well just with their specific toggles or is this just for me If it is Well I need to be able to see the member as well unless he didn't know that they had their own",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 53,
+  "t": 1791787262933,
+  "page": "/Norex-United-FC/next/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "Poop and by the way I didn't check there was a different view I'm seeing it as owner I guess but is that same moving icon for the menu is it the same for members as well just with their specific toggles or is this just for me If it is Well I need to be able to see the member as well unless he didn't know that they had their own",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     65.66666666666666,
+     342.33333333333303
+    ]
+   ],
+   "bbox": {
+    "x": 65.66666666666666,
+    "y": 342.33333333333303,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "section#sec3 > div.cards.c",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "cards",
+    "c"
+   ],
+   "text": "XM 1585FWD X_MRMIKE_XFINISHER 35 GLS 19 AST 7.5 RAT 70% PAS 23% TKL 44 GP ⚽ Top scorer · 3",
+   "href": null,
+   "rect": {
+    "x": 17.2,
+    "y": 248.3,
+    "w": 395.6,
+    "h": 1047
+   },
+   "style": {
+    "position": "static",
+    "display": "flex",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "section.sec",
+    "div.wrap",
+    "main"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 2450,
+   "docH": 6763,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791787262933,
+ "updated_at": 1791787263027
+}

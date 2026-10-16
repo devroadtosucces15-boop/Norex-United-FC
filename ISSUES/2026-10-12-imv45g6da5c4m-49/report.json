@@ -1,0 +1,116 @@
+{
+ "id": "imv45g6da5c4m:49",
+ "session": "imv45g6da5c4m",
+ "n": 49,
+ "page": "/Norex-United-FC/next/hub-matchnight.html",
+ "severity": "wrong",
+ "note": "",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 430x932 @3x · installed app",
+ "data": {
+  "n": 49,
+  "t": 1791786618932,
+  "page": "/Norex-United-FC/next/hub-matchnight.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/next/hub-matchnight.html",
+  "title": "Match Night · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     280.66666666666663,
+     890.6666666666666
+    ]
+   ],
+   "bbox": {
+    "x": 280.66666666666663,
+    "y": 890.6666666666666,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "nav.tabbar > a:nth-of-type(4)",
+   "tag": "a",
+   "id": null,
+   "classes": [],
+   "text": "📊 Stats",
+   "href": "stats.html",
+   "rect": {
+    "x": 269.1,
+    "y": 836.7,
+    "w": 56,
+    "h": 57.3
+   },
+   "style": {
+    "position": "static",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "11px",
+    "color": "rgb(155, 167, 189)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "nav.tabbar"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 4383,
+   "docW": 430
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "dark",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": true,
+   "builtAt": null
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791786618932,
+ "updated_at": 1791786619032
+}

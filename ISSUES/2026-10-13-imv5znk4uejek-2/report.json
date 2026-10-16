@@ -1,0 +1,165 @@
+{
+ "id": "imv5znk4uejek:2",
+ "session": "imv5znk4uejek",
+ "n": 2,
+ "page": "/Norex-United-FC/index.html",
+ "severity": "idea",
+ "note": "Hello Hello So up here you know how I requested the picture to be back up with the search bar and all that It does give you the green status icon but it's not the way that I wanted it only gives her right now if you click on your picture it should give the people online like this between the search and your profile picture and we should also have the bell that bell is not patience but those two things should be outside of the drop-down now in it because then they wouldn't know if they do if they do have notifications In addition to that What if we temporarily display the notifications like within the screen like you know you would receive a pop or a banner and ILS do kind of the same effect here like a quick banner the same way that we had the FYI for installing the web app kind of do the same thing but for notification of top more More than a better fit version to represent the notification",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 506x1097 @3x · installed app",
+ "data": {
+  "n": 2,
+  "t": 1791855912589,
+  "page": "/Norex-United-FC/index.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/index.html",
+  "title": "Home · NOREX UNITED",
+  "tabs": [],
+  "severity": "idea",
+  "note": "Hello Hello So up here you know how I requested the picture to be back up with the search bar and all that It does give you the green status icon but it's not the way that I wanted it only gives her right now if you click on your picture it should give the people online like this between the search and your profile picture and we should also have the bell that bell is not patience but those two things should be outside of the drop-down now in it because then they wouldn't know if they do if they do have notifications In addition to that What if we temporarily display the notifications like within the screen like you know you would receive a pop or a banner and ILS do kind of the same effect here like a quick banner the same way that we had the FYI for installing the web app kind of do the same thing but for notification of top more More than a better fit version to represent the notification",
+  "shape": {
+   "type": "box",
+   "pts": [
+    [
+     107.08372093023257,
+     318.8976744186047
+    ],
+    [
+     505.6077519379845,
+     58.052713178294574
+    ]
+   ],
+   "bbox": {
+    "x": 107.08372093023257,
+    "y": 58.052713178294574,
+    "w": 398.52403100775194,
+    "h": 260.8449612403101
+   }
+  },
+  "target": {
+   "selector": "main#main > div.wrap > section.hero:nth-of-type(1)",
+   "tag": "section",
+   "id": null,
+   "classes": [
+    "hero"
+   ],
+   "text": "EA SPORTS FC 27 · DIVISION 1 · LEAGUE & RUSH ONE CLUB. ONE CROWN. NOREX UNITED FC is alway",
+   "href": null,
+   "rect": {
+    "x": 20.2,
+    "y": 171.1,
+    "w": 465.5,
+    "h": 834.2
+   },
+   "style": {
+    "position": "relative",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": true,
+   "inside": [
+    "div.wrap",
+    "main"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 0,
+   "docH": 7651,
+   "docW": 506
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 506,
+    "h": 1097
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": false,
+   "builtAt": null
+  },
+  "diag": {
+   "vv": {
+    "offsetTop": 0,
+    "offsetLeft": 0,
+    "w": 506,
+    "h": 1097,
+    "scale": 0.9,
+    "pageTop": 0
+   },
+   "innerH": 1097,
+   "innerW": 506,
+   "outerH": 932,
+   "clientH": 1027,
+   "scrollY": 0,
+   "scrollH": 7651,
+   "maxScroll": 6624,
+   "htmlOverflow": "clip visible",
+   "bodyOverflow": "clip visible",
+   "bodyPos": "relative",
+   "bodyH": 7651.2,
+   "tabbar": {
+    "x": 10,
+    "y": 994.4,
+    "w": 486,
+    "h": 90.3,
+    "bottom": 1084.7,
+    "pos": "fixed",
+    "bottomCss": "12px",
+    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+   },
+   "header": {
+    "x": 0,
+    "y": 0,
+    "w": 506,
+    "h": 118,
+    "bottom": 118,
+    "pos": "sticky",
+    "bottomCss": "auto",
+    "transform": null
+   },
+   "fixed": []
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791855912589,
+ "updated_at": 1791855913100
+}

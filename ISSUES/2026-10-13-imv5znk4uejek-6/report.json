@@ -1,0 +1,167 @@
+{
+ "id": "imv5znk4uejek:6",
+ "session": "imv5znk4uejek",
+ "n": 6,
+ "page": "/Norex-United-FC/halloffame.html",
+ "severity": "wrong",
+ "note": "This part should not it should have no borders the animation is all right but basically shouldn't have a box it should kind of fade away little by little so it can make that you know The animation are part of a box and the miss line you could just kind of be displayed as something shown up that way",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 506x1097 @3x · installed app",
+ "data": {
+  "n": 6,
+  "t": 1791857197599,
+  "page": "/Norex-United-FC/halloffame.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/halloffame.html",
+  "title": "Hall of Fame · NOREX UNITED",
+  "tabs": [],
+  "severity": "wrong",
+  "note": "This part should not it should have no borders the animation is all right but basically shouldn't have a box it should kind of fade away little by little so it can make that you know The animation are part of a box and the miss line you could just kind of be displayed as something shown up that way",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     280.8496124031008,
+     609.6062015503885
+    ]
+   ],
+   "bbox": {
+    "x": 280.8496124031008,
+    "y": 609.6062015503885,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "div > div.wx > div.poster > div.pt:nth-of-type(2) > a.pc.pc-card",
+   "tag": "a",
+   "id": null,
+   "classes": [
+    "pc",
+    "pc-card",
+    "t-silver",
+    "hot",
+    "tilt"
+   ],
+   "text": "AL 75FWD ALYSALSA_FINISHER 34 GLS 26 AST 8.4 RAT 78% PAS 31% TKL 35 GP 🔥",
+   "href": "player-Alysalsa_.html",
+   "rect": {
+    "x": 137.6,
+    "y": 363.6,
+    "w": 187.9,
+    "h": 265.5
+   },
+   "style": {
+    "position": "relative",
+    "display": "block",
+    "overflow": "visible",
+    "zIndex": "auto",
+    "fontSize": "15px",
+    "color": "rgb(42, 28, 4)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "div.pt",
+    "div.poster",
+    "div.wx",
+    "div"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 3853,
+   "docH": 5331,
+   "docW": 506
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 506,
+    "h": 1097
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": false,
+   "builtAt": null
+  },
+  "diag": {
+   "vv": {
+    "offsetTop": 0,
+    "offsetLeft": 0,
+    "w": 506,
+    "h": 1097,
+    "scale": 0.9,
+    "pageTop": 3853
+   },
+   "innerH": 1097,
+   "innerW": 506,
+   "outerH": 932,
+   "clientH": 1027,
+   "scrollY": 3853,
+   "scrollH": 5331,
+   "maxScroll": 4304,
+   "htmlOverflow": "clip visible",
+   "bodyOverflow": "clip visible",
+   "bodyPos": "relative",
+   "bodyH": 5331,
+   "tabbar": {
+    "x": 10,
+    "y": 994.4,
+    "w": 486,
+    "h": 90.3,
+    "bottom": 1084.7,
+    "pos": "fixed",
+    "bottomCss": "12px",
+    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+   },
+   "header": {
+    "x": 0,
+    "y": 0,
+    "w": 506,
+    "h": 118,
+    "bottom": 118,
+    "pos": "sticky",
+    "bottomCss": "auto",
+    "transform": null
+   },
+   "fixed": []
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791857197599,
+ "updated_at": 1791857198342
+}

@@ -1,0 +1,166 @@
+{
+ "id": "imv5znk4uejek:7",
+ "session": "imv5znk4uejek",
+ "n": 7,
+ "page": "/Norex-United-FC/hub.html",
+ "severity": "wrong",
+ "note": "This is very clean look I like it but I would add in the background maybe some gold lighting like neon lighting to make you feel that extra extra special work for extra",
+ "status": "open",
+ "role": "owner",
+ "view_as": null,
+ "device": "iPhone · iOS 18.7 · Safari 27.0 · 506x1097 @3x · installed app",
+ "data": {
+  "n": 7,
+  "t": 1791857328329,
+  "page": "/Norex-United-FC/hub.html",
+  "hash": "",
+  "url": "https://devroadtosucces15-boop.github.io/Norex-United-FC/hub.html",
+  "title": "My Locker · NOREX UNITED",
+  "tabs": [
+   "🏅 All 34",
+   "📬 All 60"
+  ],
+  "severity": "wrong",
+  "note": "This is very clean look I like it but I would add in the background maybe some gold lighting like neon lighting to make you feel that extra extra special work for extra",
+  "shape": {
+   "type": "pin",
+   "pts": [
+    [
+     235.74108527131784,
+     300.23255813953506
+    ]
+   ],
+   "bbox": {
+    "x": 235.74108527131784,
+    "y": 300.23255813953506,
+    "w": 0,
+    "h": 0
+   }
+  },
+  "target": {
+   "selector": "section#lockstage > div.side.l:nth-of-type(1)",
+   "tag": "div",
+   "id": null,
+   "classes": [
+    "side",
+    "l"
+   ],
+   "text": "🗓️ NEXT MATCH NIGHT 22m TO KICK-OFF END OF SEASON GAMES? Mon, Oct 12 at 07:30 PM 8 in · ✅",
+   "href": null,
+   "rect": {
+    "x": 20.2,
+    "y": -212.2,
+    "w": 465.5,
+    "h": 753.1
+   },
+   "style": {
+    "position": "static",
+    "display": "grid",
+    "overflow": "visible",
+    "zIndex": "2",
+    "fontSize": "15px",
+    "color": "rgb(238, 242, 249)",
+    "background": "rgba(0, 0, 0, 0)",
+    "opacity": "1"
+   },
+   "scrollsSideways": false,
+   "inside": [
+    "section.lockstage",
+    "div",
+    "main"
+   ]
+  },
+  "scroll": {
+   "x": 0,
+   "y": 953,
+   "docH": 28566,
+   "docW": 506
+  },
+  "device": {
+   "os": "iOS",
+   "osVersion": "18.7",
+   "device": "iPhone",
+   "browser": "Safari",
+   "browserVersion": "27.0",
+   "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "platform": "iPhone",
+   "viewport": {
+    "w": 506,
+    "h": 1097
+   },
+   "screen": {
+    "w": 430,
+    "h": 932
+   },
+   "dpr": 3,
+   "orientation": "portrait-primary",
+   "standalone": true,
+   "touch": 5,
+   "colorScheme": "light",
+   "reducedMotion": false,
+   "lang": "en-US",
+   "tz": "America/Hermosillo",
+   "online": true,
+   "connection": null,
+   "memoryGB": null,
+   "cores": 4,
+   "safeArea": {
+    "top": 59,
+    "right": 0,
+    "bottom": 34,
+    "left": 0
+   },
+   "swControlled": false,
+   "builtAt": null
+  },
+  "diag": {
+   "vv": {
+    "offsetTop": 0,
+    "offsetLeft": 0,
+    "w": 506,
+    "h": 1097,
+    "scale": 0.9,
+    "pageTop": 953
+   },
+   "innerH": 1097,
+   "innerW": 506,
+   "outerH": 932,
+   "clientH": 1027,
+   "scrollY": 953,
+   "scrollH": 28566,
+   "maxScroll": 27539,
+   "htmlOverflow": "clip visible",
+   "bodyOverflow": "clip visible",
+   "bodyPos": "relative",
+   "bodyH": 28565.8,
+   "tabbar": {
+    "x": 10,
+    "y": 994.4,
+    "w": 486,
+    "h": 90.3,
+    "bottom": 1084.7,
+    "pos": "fixed",
+    "bottomCss": "12px",
+    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+   },
+   "header": {
+    "x": 0,
+    "y": 0,
+    "w": 506,
+    "h": 118,
+    "bottom": 118,
+    "pos": "sticky",
+    "bottomCss": "auto",
+    "transform": null
+   },
+   "fixed": []
+  },
+  "role": {
+   "real": "owner",
+   "viewAs": null,
+   "user": "X_MrMike_X"
+  }
+ },
+ "created_at": 1791857328329,
+ "updated_at": 1791857329174
+}
