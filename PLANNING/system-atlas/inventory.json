@@ -1,8 +1,8 @@
 {
-  "revision": "a59b3b6916986bec427c3204da68172d9721d77e",
+  "revision": "1080333c6547d7d7c0604ae5a61c04aab8c0eb06",
   "files": 833,
   "imports": 616,
-  "api_paths": 245,
+  "api_paths": 246,
   "tables": 314,
   "records": [
     {
@@ -3869,7 +3869,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 130,
+      "lines": 132,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -10892,7 +10892,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 342,
+      "lines": 358,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -10954,6 +10954,7 @@
         "/api/docs/ack",
         "/api/docs/acks",
         "/api/docs/history",
+        "/api/docs/release",
         "/api/docs/remind",
         "/api/docs/remove",
         "/api/docs/restore",
@@ -10982,9 +10983,11 @@
         "/api/live",
         "/api/live/members",
         "/api/locker",
+        "/api/manager/queue",
         "/api/me",
         "/api/me/prefs",
         "/api/member",
+        "/api/music/rooms",
         "/api/mybuild",
         "/api/notify",
         "/api/notify/ack",
