@@ -364,7 +364,9 @@ async function inlineCrests(club, siteDir) {
     }
     return cache.get(url);
   };
-  club.crest = await get(club.crest) ?? club.crest;
+  // Our own crest: the published URL, else the file in the site folder, else the drawn shield (never a broken picture).
+  const ownFile = ['assets/crest.png', 'crest.png'].map((f) => path.join(siteDir, f)).find((f) => fs.existsSync(f));
+  club.crest = await get(club.crest) ?? (ownFile ? `data:image/png;base64,${fs.readFileSync(ownFile).toString('base64')}` : null);
   for (const m of club.matches ?? []) m.oppCrest = await get(m.oppCrest);
 }
 

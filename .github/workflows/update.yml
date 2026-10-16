@@ -83,6 +83,11 @@ jobs:
             echo "::warning::new design build failed - publishing the old site at the root"
             rm -rf site && cp -r classic-build site
           fi
+          # The bot's cards, Discord thumbnails and api/club.json point at <site>/assets/crest.png. The redesign has no assets/ folder
+          # at the root (the crest lives at /crest.png), so those links broke: publish the crest at the old address too.
+          mkdir -p site/assets
+          [ -f site/assets/crest.png ] || cp "$( [ -f site/crest.png ] && echo site/crest.png || echo classic-build/assets/crest.png )" site/assets/crest.png
+          [ -f site/assets/crest-ea.png ] || cp classic-build/assets/crest-ea.png site/assets/crest-ea.png 2>/dev/null || true
         env:
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }} # reads approved "hide me" requests (P5.6)
 
