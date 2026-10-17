@@ -3,7 +3,7 @@ import { env, call, login, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
 import { plainText, images } from '../bot/ui.js';
-import { topicOf, tagsOf, parseFeed, watchlistCron, TOPICS } from '../bot/watchlist.js';
+import { topicOf, tagsOf, parseFeed, parseSource, resolveSource, watchlistCron, TOPICS } from '../bot/watchlist.js';
 
 const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
 env.DISCORD_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', kp.publicKey)).toString('hex');
@@ -52,10 +52,18 @@ const MEMBER = as('500', 'Jez'), MGR = as('900', 'Kruger', ['mgr']);
 t('flag owner: a member is told it isn’t on yet', /switched on/.test(plainText((await cmd(MEMBER, 'watch')).d.data)));
 setFlags({ watchlist: 'members' });
 await tt('/watchlist: members can’t change it', async () => /Only managers/.test(plainText((await cmd(MEMBER, 'watchlist', [{ type: 1, name: 'list' }])).d.data)));
-await tt('/watchlist add: a bad id is explained', async () => /isn’t a channel ID/.test(plainText((await cmd(MGR, 'watchlist', [{ type: 1, name: 'add', options: [{ name: 'channel', value: 'nope' }] }])).d.data)));
-await tt('/watchlist add: a channel link works, name kept', async () => {
-  const r = await cmd(MGR, 'watchlist', [{ type: 1, name: 'add', options: [{ name: 'channel', value: `https://www.youtube.com/channel/${UC1}?x=1` }, { name: 'name', value: 'Pitch Co' }] }]);
-  return /Following Pitch Co/.test(plainText(r.d.data)) && sqlite.prepare('SELECT * FROM watch_creators').get().channel_id === UC1;
+t('source: channel, @handle, video and short links are all understood', parseSource(`https://www.youtube.com/channel/${UC1}?x=1`).id === UC1 && parseSource(UC1).id === UC1
+  && parseSource('@PitchCo').page === 'https://www.youtube.com/@PitchCo' && parseSource('https://youtu.be/abcDEF12345?t=4').page === 'https://www.youtube.com/watch?v=abcDEF12345'
+  && parseSource('https://www.youtube.com/watch?v=abcDEF12345&list=x').page === 'https://www.youtube.com/watch?v=abcDEF12345' && parseSource('https://twitch.tv/x') === null && parseSource('nope nope') === null);
+feeds[UC1] = feed('Pitch Co', []);
+const page = (id) => new Response(`<html><link rel="canonical" href="https://www.youtube.com/channel/${id}"></html>`);
+t('resolve: a handle page gives the channel and its name; a dead page gives null', (await resolveSource('@PitchCo', async (u) => (/feeds/.test(u) ? new Response(feed('Pitch Co', [])) : page(UC1))))?.name === 'Pitch Co'
+  && (await resolveSource('@Ghost', async () => new Response('nothing', { status: 404 }))) === null);
+await tt('/watchlist add: something that isn’t a channel is explained', async () => /couldn’t find/.test(plainText((await cmd(MGR, 'watchlist', [{ type: 1, name: 'add', options: [{ name: 'source', value: 'nope' }] }])).d.data)));
+await tt('/watchlist add: a pasted link works, name comes from YouTube, posts to the chosen channel', async () => {
+  const r = await cmd(MGR, 'watchlist', [{ type: 1, name: 'add', options: [{ name: 'source', value: `https://www.youtube.com/channel/${UC1}?x=1` }, { name: 'channel', value: '77777' }] }]);
+  const row = sqlite.prepare('SELECT * FROM watch_creators').get();
+  return /Following Pitch Co/.test(plainText(r.d.data)) && row.channel_id === UC1 && row.post_channel === '77777';
 });
 await tt('/watchlist list shows who we follow', async () => /Pitch Co/.test(plainText((await cmd(MGR, 'watchlist', [{ type: 1, name: 'list' }])).d.data)));
 await tt('/watch with nothing yet', async () => /No videos yet/.test(plainText((await cmd(MEMBER, 'watch')).d.data)));
@@ -71,13 +79,14 @@ await tt('cron: stores both, posts only the fresh one (the old backlog is silent
   const rows = sqlite.prepare('SELECT id, topic, tags, posted_at FROM watch_videos ORDER BY id').all();
   const panel = posts.at(-1)?.components?.find((c) => c.type === 17);
   return c1.stored === 2 && c1.posted === 1 && rows.length === 2 && rows.find((r) => r.id === 'new00000001').topic === 'builds' && rows.find((r) => r.id === 'new00000001').tags === '["CAM"]'
-    && rows.every((r) => r.posted_at) && posts.length === 1 && posts[0].channel === '42420' && panel.accent_color === 0xc8352c
+    && rows.every((r) => r.posted_at) && posts.length === 1 && posts[0].channel === '77777' && panel.accent_color === 0xc8352c
     && /Best CAM build/.test(plainText(posts[0])) && images(posts[0]).some((u) => /hq\.jpg/.test(u)) && ids(posts[0]).join() === 'norex:wl:useful:new00000001';
 });
 t('cron: not again within the hour', (await watchlistCron(env, NOW + 600e3)).stored === 0 && posts.length === 1);
 feeds[UC1] = feed('Pitch Co', [{ id: 'new00000002', title: 'Defending tips', at: NOW + 3600e3 }, { id: 'new00000001', title: 'Best CAM build after the patch', at: NOW - 2 * 3600e3 }]);
+sqlite.prepare('UPDATE watch_creators SET post_channel = NULL').run();
 const c2 = await watchlistCron(env, NOW + 2 * 3600e3);
-t('cron: a later upload is stored and posted, already-seen ones are not repeated', c2.stored === 1 && c2.posted === 1 && posts.length === 2 && /Defending tips/.test(plainText(posts[1])));
+t('cron: a later upload is stored and posted, already-seen ones are not repeated', c2.stored === 1 && c2.posted === 1 && posts.length === 2 && posts[1].channel === '42420' && /Defending tips/.test(plainText(posts[1])));
 t('cron: a broken feed (404) is skipped quietly', ((await watchlistCron(env, NOW + 4 * 3600e3, async () => new Response('x', { status: 404 }))).stored) === 0);
 
 // ---------- /watch + Useful ----------
