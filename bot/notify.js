@@ -120,9 +120,10 @@ export async function notify(env, ids, n) {
   for (const r of rows) {
     if (dup.has(String(r.id))) continue;
     if (!flagOn(env, { role: r.role }, 'notifications')) continue;
-    let mode = n.route ?? modeOf(parsePrefs(r.prefs), n.type); // the owner's route beats the member's choice
-    if (mode === 'off' && n.locked) mode = TYPES[n.type]?.def ?? 'site';
+    let mode = modeOf(parsePrefs(r.prefs), n.type);
+    if (mode === 'off' && n.locked) mode = TYPES[n.type]?.def ?? 'site'; // owner: members cannot mute this one
     if (mode === 'off') continue;
+    if (n.route) mode = n.route; // owner-chosen route for those who have not muted it
     const dm = mode === 'dm' ? 'queued' : null;
     if (dm) kick = true;
     if (dm && flagOn(env, { role: r.role }, 'push')) pushTo.push(String(r.id)); // BE0: "dm" is the tier where a member asked to be told – push goes there too

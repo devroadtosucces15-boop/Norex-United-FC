@@ -69,4 +69,12 @@ const site = async () => ({ matches: [] });
 t('reminder window moved by the owner', (await remindersCron(env, site, NOW)).waiting === 0);
 await save({ key: 'remind.waiting', reset: true });
 t('reset → back to the default window', (await remindersCron(env, site, NOW)).waiting === 1);
+t('a title that drops every placeholder is rejected', (await save({ key: 'event.cancelled', title: 'Session cancelled' })).s === 400);
+t('reminder window must be from < to', (await save({ key: 'remind.waiting', timing: { from: 22, to: 21 } })).s === 400);
+await save({ key: 'award.won', route: 'dm', locked: false });
+sqlite.prepare('UPDATE notifications SET at = 1').run(); // outside the 15-minute repeat window
+const k = rows('502').length;
+sqlite.prepare("UPDATE notify_prefs SET prefs = ? WHERE user_id = '502'").run(JSON.stringify({ award: 'off' }));
+await send(['502'], { title: 'q' });
+t('a route does not override a member mute unless locked', rows('502').length === k);
 done();

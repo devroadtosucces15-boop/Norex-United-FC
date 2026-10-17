@@ -29,13 +29,13 @@ const clean = (s, max) => String(s ?? '').replace(/\r/g, '').replace(/[\u0000-\u
 let cache = null; // { at, cfg } – a few seconds, so a burst of notifications reads D1 once
 export async function getNotifConfig(env) {
   if (cache && Date.now() - cache.at < 15e3 && cache.env === env) return cache.cfg;
-  let cfg = {};
+  let cfg = {}, ok = true;
   try {
     const row = await env.DB.prepare('SELECT value FROM meta WHERE key = ?').bind(KEY).first();
     const p = row?.value ? JSON.parse(row.value) : {};
     cfg = p && typeof p === 'object' ? p : {};
-  } catch { cfg = {}; }
-  cache = { at: Date.now(), cfg, env };
+  } catch { cfg = {}; ok = false; }
+  if (ok) cache = { at: Date.now(), cfg, env }; // a failed read is not remembered
   return cfg;
 }
 
@@ -87,7 +87,12 @@ export async function notifCenterRoute(p, method, body, me, env, log, notify) {
     if ('enabled' in body) next.enabled = !!body.enabled;
     if ('route' in body) { if (!ROUTES.includes(body.route)) return fail('Bad route.'); next.route = body.route === 'default' ? undefined : body.route; }
     if ('locked' in body) next.locked = !!body.locked;
-    if ('title' in body) next.title = clean(body.title, 140) || undefined;
+    if ('title' in body) {
+      next.title = clean(body.title, 140) || undefined;
+      // Identical titles within 15 minutes are treated as a repeat, so a title must keep one of the default's placeholders.
+      const need = [...r.title.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+      if (next.title && need.length && !need.some((v) => next.title.includes(`{${v}}`))) return fail(`Keep at least one of ${need.map((v) => `{${v}}`).join(' ')} in the title so different ones are not mistaken for repeats.`);
+    }
     if ('body' in body) next.body = clean(body.body, 1500) || undefined;
     if (body.timing && typeof body.timing === 'object' && r.timing) {
       next.timing = { ...(prev.timing ?? {}) };
@@ -97,6 +102,8 @@ export async function notifCenterRoute(p, method, body, me, env, log, notify) {
         next.timing[k] = v;
       }
     }
+    const w = next.timing;
+    if (r.key === 'remind.waiting' && w && (w.from ?? 9) >= (w.to ?? 21)) return fail('The earliest hour must be before the latest hour.');
     for (const k of Object.keys(next)) if (next[k] === undefined) delete next[k];
     if (Object.keys(next).length) cur[r.key] = next; else delete cur[r.key];
   }

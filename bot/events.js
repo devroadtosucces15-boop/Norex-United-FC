@@ -676,7 +676,7 @@ async function nudgeRoute(body, me, env, log) {
 // T-24h and T-2h: a reminder in the event's Discord channel ("7 ✅ – need a GK", with the answer buttons) and a nudge for
 // members who haven't answered yet – bell + DM (remind = dm) or an @mention in that channel (remind = mention).
 // Events scheduled less than 2 h ahead only get the T-2h one. Each fires once (remind24_at / remind2_at).
-// 30 minutes before: everyone who said ✅ gets the site alert + Discord DM (their "Events" alert setting, DM + site by default) and is
+// Owner-set minutes before (default 30): everyone who said ✅ gets the site alert + Discord DM (their "Events" alert setting, DM + site by default) and is
 // tagged by name in the event's channel post. Once per event (meta `remind30:<id>`); owner/manager-only while `discordRsvp` is.
 export async function thirtyMinutes(env, now, everyone) {
   const mins = await notifTiming(env, 'event.start30', 'mins'); // owner-set in the Notification Center (default 30)
@@ -692,7 +692,7 @@ export async function thirtyMinutes(env, now, everyone) {
     await safely(notify(env, ids, { type: 'event', nkey: 'event.start30', vars: { mins, event: label(e) }, icon: '⏰', title: `Starting in ${mins} minutes · ${label(e)}`, body: 'You said you are in – get ready.', link: `members.html#schedule-${e.id}`, ref: `event30:${e.id}` }));
     if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
       const tags = ids.slice(0, 50);
-      const msg = await eventPost(env, e, await rsvpRows(env, e.id), '⏰ ', { ping: `**⏰ Starting in 30 minutes · ${label(e)}**\n${tags.map((id) => `<@${id}>`).join(' ')}`, mentions: { users: tags } });
+      const msg = await eventPost(env, e, await rsvpRows(env, e.id), '⏰ ', { ping: `**⏰ Starting in ${mins} minutes · ${label(e)}**\n${tags.map((id) => `<@${id}>`).join(' ')}`, mentions: { users: tags } });
       await safely(fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages`, { method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(msg) }));
     }
     sent++;

@@ -94,7 +94,7 @@ ${pend.length ? `<div class="dk-grid">${pend.map((p) => `<article class="panel d
     const f = failed('notif', 'the notifications'); if (f) return f;
     if (!S.notif) return skel;
     const groups = [...new Set(S.notif.items.map((i) => i.group))];
-    return `<h4 class="dk-h" style="margin-top:0">🔔 Notification Center</h4><p class="muted small">Change what each notification says, who gets it and how, and when. Use <code>{placeholders}</code> in the wording. Blank = the wording as built. “Send me a test” goes to you only, never to members.</p>${groups.map((g) => `<h4 class="dk-h">${esc(g)}</h4>${S.notif.items.filter((i) => i.group === g).map((i) => {
+    return `<h4 class="dk-h" style="margin-top:0">🔔 Notification Center</h4><p class="muted small">Change what each notification says, who gets it and how, and when. Use <code>{placeholders}</code> in the wording. Blank = the wording as built. “Send me a test” sends the wording with sample values to you only, never to members, whatever the route above.</p>${groups.map((g) => `<h4 class="dk-h">${esc(g)}</h4>${S.notif.items.filter((i) => i.group === g).map((i) => {
       const c = i.saved || {};
       const timing = Object.entries(i.timing || {}).map(([k, t]) => `<label>${esc(t.label)}<input name="t-${k}" type="number" min="${t.min}" max="${t.max}" value="${esc(c.timing?.[k] ?? t.def)}"></label>`).join('');
       return `<form class="panel dk-nf" data-n-form="${esc(i.key)}"><b>${esc(i.label)}</b>
@@ -189,7 +189,9 @@ ${i.vars.length ? `<p class="muted small">Placeholders: ${i.vars.map((v) => `<co
       if (k.g === 'apply') act(() => publish({ levelCap: hit.value, verified: true, source: hit.url, note: `${hit.title}: max level ${hit.value}`, pending: hit.id }));
       else if (k.g === 'use') { readGame(); S.form = { ...S.form, verified: true, source: hit.url, note: hit.title, pendingId: hit.id }; paint(); root.querySelector('[name=levelCap]')?.focus(); }
       else if (k.g === 'dismiss') act(async () => { S.game = await call('/api/game/dismiss', { id: hit.id }); paint(); toast('Dismissed'); });
-    } else if (k.b === 'save-cmds') act(async () => { S.busy = true; await call('/api/bot/commands', { commands: readCmds() }); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast('Command rules saved'); });
+    } else if (k.nTest) act(async () => { await call('/api/admin/notif/test', { key: k.nTest }); toast('Test sent to you'); });
+    else if (k.nReset) act(async () => { S.notif = await call('/api/admin/notif', { key: k.nReset, reset: true }); paint(); toast('Back to the default wording'); });
+    else if (k.b === 'save-cmds') act(async () => { S.busy = true; await call('/api/bot/commands', { commands: readCmds() }); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast('Command rules saved'); });
     else if (k.b === 'sync') act(async () => { S.busy = true; paint(); const r = await call('/api/bot/commands/sync', {}); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast(`Synced ${r.count} commands to Discord`); });
     else if (k.aw === 'close') act(async () => { S.awards = await call('/api/awards/close', {}); paint(); toast('Week closed – winners are out'); });
     else if (k.aw === 'retire') act(async () => { S.awards = await call('/api/awards/category/remove', { id: Number(k.id) }); paint(); toast('Award retired'); });
