@@ -34,7 +34,7 @@ onAir = {};
 t('liveOf: nobody on air, or a failing fetch, is "not live"', (await liveOf({ twitch: 'jez_tv', kick: 'jezk' }, fake)) === null && (await liveOf({ twitch: 'x' }, async () => { throw new Error('net'); })) === null);
 
 // ---------- cron ----------
-setFlags({ memberLive: 'members' });
+setFlags({ memberLive: 'members', streamAlerts: 'off', alertRoute: 'off' }); // the old post only runs while /streamalerts is off
 const a = await login('500', []), b = await login('501', []);
 await call(a, '/api/profile', { twitch: 'jez_tv' });
 await call(b, '/api/profile', { kick: 'bashk' });
