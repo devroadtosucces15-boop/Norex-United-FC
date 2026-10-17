@@ -19,6 +19,7 @@
 import { can, flagOn, muted } from './roles.js';
 import { notify, notifyManagers, safely } from './notify.js';
 import { postEmbed } from './docs.js';
+import { postAlert, postAlertCard } from './alertroute.js';
 import { mentionMap, mentionTags, notifyMentions, reactionsFor } from './social.js';
 import { attach, checkAttach, dropMedia, IMAGE_MAX, mediaFor, mediaRoute, PER_POST, postMediaKeys, UPLOADS_DAY, VIDEO_MAX } from './media.js';
 import { message, header, text, buttons } from './ui.js';
@@ -154,6 +155,7 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     await attach(env, me, ins.meta.last_row_id, m.keys);
     await log(env, me, 'post', `${TAGS[v.tag][0]} ${m.keys.length ? '📎 ' : ''}${excerpt(v.text || 'photo/clip', 60)}`);
     await notifyMentions(env, me, { text: v.text, flag: 'feed', where: 'in a feed post', link: `feed.html#p${ins.meta.last_row_id}`, ref: `feed:${ins.meta.last_row_id}` }); // P6.5
+    await safely(postAlert(env, 'posts', postAlertCard(env, { id: ins.meta.last_row_id, tag: v.tag, name: me.n, text: v.text, media: m.keys.length }))); // Discord alerts channel (flag alertRoute)
     return json({ post: await onePost(env, me, ins.meta.last_row_id) });
   }
   if (p === '/api/feed/edit') {

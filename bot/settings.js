@@ -16,7 +16,8 @@ const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u001f<>]/g, ' ').rep
 
 export const DEFAULT_SETTINGS = {
   resultChannel: '', reminderChannel: '', pingRole: '', color: 'c8352c', emoji: '⚽',
-  autoPosts: { results: true, reminders: true, awards: true },
+  alertChannel: '1560827976348602429', // new site posts + live streams also post here (bot/alertroute.js, flag `alertRoute`)
+  autoPosts: { results: true, reminders: true, awards: true, posts: true, live: true },
 };
 
 export async function getBotSettings(env) {
@@ -46,12 +47,13 @@ export async function botSettingsRoute(p, method, body, me, env, log) {
   const cur = await getBotSettings(env);
   const ch = (v) => (v === '' || v == null ? '' : CH.test(String(v)) ? String(v) : null);
   const resultChannel = ch(body.resultChannel), reminderChannel = ch(body.reminderChannel), pingRole = ch(body.pingRole);
-  if (resultChannel === null || reminderChannel === null || pingRole === null) return fail('Channel/role IDs must be plain Discord IDs (right-click → Copy ID).');
+  const alertChannel = 'alertChannel' in body ? ch(body.alertChannel) : cur.alertChannel;
+  if (resultChannel === null || reminderChannel === null || pingRole === null || alertChannel === null) return fail('Channel/role IDs must be plain Discord IDs (right-click → Copy ID).');
   const color = /^#?[0-9a-fA-F]{6}$/.test(body.color ?? '') ? String(body.color).replace('#', '') : cur.color;
   const emoji = clean(body.emoji, 8) || cur.emoji;
   const autoPosts = { ...cur.autoPosts };
   if (body.autoPosts && typeof body.autoPosts === 'object') for (const k of Object.keys(autoPosts)) if (k in body.autoPosts) autoPosts[k] = !!body.autoPosts[k];
-  const saved = await saveBotSettings(env, { resultChannel, reminderChannel, pingRole, color, emoji, autoPosts });
+  const saved = await saveBotSettings(env, { resultChannel, reminderChannel, pingRole, alertChannel, color, emoji, autoPosts });
   await log?.(env, me, 'bot-settings', 'Updated bot personalisation');
   return json(saved);
 }

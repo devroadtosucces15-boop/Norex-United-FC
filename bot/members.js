@@ -47,6 +47,7 @@ import { playMediaRoute, playMediaUpload } from './playmedia.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
+import { alertRoute } from './alertroute.js';
 import { botCommandsRoute } from './botcommands.js';
 import { crawlRoute } from './crawl.js';
 import { burnersRoute, burnersRelay, burnersAdminRoute } from './burners.js';
@@ -841,6 +842,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (hw) return hw;
   const cht = await chatRoute(p, method, body, me, env, log, url); // P6.3a messaging: DMs + group chats
   if (cht) return cht;
+  const alr = await alertRoute(p, method, body, me, env, log); // alerts channel test send (owner)
+  if (alr) return alr;
   const bst = await botSettingsRoute(p, method, body, me, env, log); // P7.5 bot personalisation
   if (bst) return bst;
   const bcm = await botCommandsRoute(p, method, body, me, env, log); // per-command bot control

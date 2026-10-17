@@ -20,7 +20,7 @@
   const GRP = { GK: '🧤 Keepers', DEF: '🛡️ Defenders', MID: '🎯 Midfielders', FWD: '⚽ Forwards', any: '👥 Anyone' };
   const ROLE_OPTS = [['guest', 'Everyone'], ['member', 'Members'], ['claimed', 'Verified players'], ['manager', 'Managers'], ['owner', 'Owner only']];
   const REPLY_OPTS = [['default', 'As built'], ['private', 'Private (only them)'], ['public', 'Public']];
-  const AP = [['results', '⚽ Match results'], ['reminders', '⏰ Event reminders'], ['awards', '🏆 Weekly awards']];
+  const AP = [['results', '⚽ Match results'], ['reminders', '⏰ Event reminders'], ['awards', '🏆 Weekly awards'], ['posts', '📝 New site posts → alerts channel'], ['live', '🔴 Live streams → alerts channel']];
   const S = { tab: 'subm', type: 'feedback', q: '', rows: null, reports: null, game: null, form: null, bot: null, cmds: null, awards: null, channels: null, ask: null, busy: false, err: {} };
   const bump = (v) => { const m = String(v || 'fc27').match(/^(.*?)(\d+)$/); return m && /-v$|-tu$|\.$/.test(m[1]) ? m[1] + (+m[2] + 1) : `${v}-v2`; };
   const sel = (list, cur) => list.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
@@ -101,6 +101,7 @@ ${pend.length ? `<div class="dk-grid">${pend.map((p) => `<article class="panel d
 <form class="panel dk-nf" data-b-form><label>Result channel ID<input name="resultChannel" value="${esc(s.resultChannel)}" placeholder="Blank = the webhook's own channel" pattern="\\d{5,25}" maxlength="25"></label>
 <label>Reminder ping role ID<input name="pingRole" value="${esc(s.pingRole)}" placeholder="Optional – pinged on result posts" pattern="\\d{1,25}" maxlength="25"></label>
 <label>Default reminder channel ID<input name="reminderChannel" value="${esc(s.reminderChannel)}" placeholder="Prefill for new events" pattern="\\d{5,25}" maxlength="25"></label>
+<label>Alerts channel ID<input name="alertChannel" value="${esc(s.alertChannel)}" placeholder="New posts and live streams also post here" pattern="\\d{5,25}" maxlength="25"><span class="muted small">Needs the <b>alertRoute</b> switch on (Boardroom → Switches). <button class="chip" type="button" data-b="alert-test">Send me a test DM</button></span></label>
 <label>Embed colour<input name="color" type="color" value="#${esc(s.color)}"></label><label>Emoji<input name="emoji" value="${esc(s.emoji)}" maxlength="8" placeholder="⚽"></label>
 <div><b class="small">Auto-posts on</b>${AP.map(([k, l]) => `<label><input name="ap-${k}" type="checkbox"${s.autoPosts[k] ? ' checked' : ''}> ${l}</label>`).join('')}</div>
 <div class="dk-btns"><button class="btn" type="submit"${S.busy ? ' disabled' : ''}>💾 Save settings</button></div></form>
@@ -167,6 +168,7 @@ ${pend.length ? `<div class="dk-grid">${pend.map((p) => `<article class="panel d
       else if (k.g === 'use') { readGame(); S.form = { ...S.form, verified: true, source: hit.url, note: hit.title, pendingId: hit.id }; paint(); root.querySelector('[name=levelCap]')?.focus(); }
       else if (k.g === 'dismiss') act(async () => { S.game = await call('/api/game/dismiss', { id: hit.id }); paint(); toast('Dismissed'); });
     } else if (k.b === 'save-cmds') act(async () => { S.busy = true; await call('/api/bot/commands', { commands: readCmds() }); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast('Command rules saved'); });
+    else if (k.b === 'alert-test') act(async () => { const r = await call('/api/bot/alerts/test', { kind: 'posts' }); toast(r.active ? 'Test sent to your DMs' : 'Test sent to your DMs – alerts are still off (switch alertRoute)'); });
     else if (k.b === 'sync') act(async () => { S.busy = true; paint(); const r = await call('/api/bot/commands/sync', {}); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast(`Synced ${r.count} commands to Discord`); });
     else if (k.aw === 'close') act(async () => { S.awards = await call('/api/awards/close', {}); paint(); toast('Week closed – winners are out'); });
     else if (k.aw === 'retire') act(async () => { S.awards = await call('/api/awards/category/remove', { id: Number(k.id) }); paint(); toast('Award retired'); });
@@ -177,7 +179,7 @@ ${pend.length ? `<div class="dk-grid">${pend.map((p) => `<article class="panel d
     else if (f.matches('[data-g-form]')) act(() => publish(S.form?.pendingId ? { pending: S.form.pendingId } : {}));
     else if (f.matches('[data-b-form]')) act(async () => {
       S.busy = true; paint();
-      S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), reminderChannel: f.reminderChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
+      S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), reminderChannel: f.reminderChannel.value.trim(), alertChannel: f.alertChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
       S.busy = false; paint(); toast('Bot settings saved');
     });
     else if (f.matches('[data-aw-form]')) act(async () => { const el = f.elements; S.awards = await call('/api/awards/category', { name: el.namedItem('name').value, icon: el.namedItem('icon').value, grp: el.namedItem('grp').value }); paint(); toast('Award added to this week’s ballot'); });
