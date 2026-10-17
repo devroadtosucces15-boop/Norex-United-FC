@@ -3,7 +3,7 @@ import { env, sqlite } from './mock.mjs';
 import worker from '../bot/worker.js';
 import { t, tt, done } from './lib.mjs';
 import { plainText } from '../bot/ui.js';
-import { parseLink, streamAlertsCron } from '../bot/streamalerts.js';
+import { parseLink, streamAlertsCron, streamPush } from '../bot/streamalerts.js';
 import { updateLive } from '../bot/live.js';
 
 const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
@@ -99,6 +99,23 @@ setFlags({ streamAlerts: 'off' });
 await kv.delete('live'); await kv.delete('live_announced');
 twitchLive = false; await updateLive(env); twitchLive = true; await updateLive(env);
 t('flag off: the old live post still works', posts.some((p) => p.channel === '42420'));
+
+// ---------- push now: already live, or not live ----------
+setFlags({ streamAlerts: 'owner' });
+const row = sqlite.prepare('SELECT * FROM stream_sources WHERE id = 1').get();
+posts.length = 0; twitchLive = true;
+const p1 = await streamPush(env, row, Date.now(), globalThis.fetch);
+t('push: on air → the live card with the stream preview, in the source channel', p1.ok && p1.live && posts.at(-1).channel === '777777' && /is live/.test(plainText(posts.at(-1))) && JSON.stringify(posts.at(-1).components).includes('previews-ttv/live_user_norexfc'));
+posts.length = 0; twitchLive = false;
+const p2 = await streamPush(env, row, Date.now(), globalThis.fetch);
+t('push: not live → the channel card (no "is live"), still posted', p2.ok && !p2.live && /Not live right now/.test(plainText(posts.at(-1))) && !/ is live/.test(plainText(posts.at(-1))));
+t('push: card shows the facts block and a link button', /Status/.test(plainText(posts.at(-1))) && JSON.stringify(posts.at(-1).components).includes('twitch.tv/norexfc'));
+await tt('push command answers and an unknown id is refused', async () => /Posting now|Posted/.test(plainText((await sa(owner, 'push', { id: 1 })).d.data)) && /Not found/.test(plainText((await sa(owner, 'push', { id: 99 })).d.data)));
+// ---------- adding a streamer who is already live announces straight away ----------
+posts.length = 0; twitchLive = true;
+await sa(owner, 'add', { source: 'contributor', link: 'https://www.twitch.tv/alreadyon', channel: '999111', name: 'Jaz' });
+await new Promise((r) => setTimeout(r, 400));
+t('add: already on air → announced at once, no waiting for the next check', posts.filter((p) => p.channel === '999111').length === 1 && /Jaz/.test(plainText(posts.find((p) => p.channel === '999111'))));
 
 globalThis.fetch = realFetch;
 done();

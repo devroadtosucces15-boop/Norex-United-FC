@@ -164,6 +164,7 @@ export const COMMANDS = [
       ] },
       { type: SUB, name: 'list', description: 'Everything being watched' },
       { type: SUB, name: 'remove', description: 'Stop watching a source', options: [{ type: INTEGER, name: 'id', description: 'The number from /streamalerts list', required: true, min_value: 1 }] },
+      { type: SUB, name: 'push', description: 'Post the card now – the live card if they are on air, else the channel card', options: [{ type: INTEGER, name: 'id', description: 'The number from /streamalerts list', required: true, min_value: 1 }] },
       { type: SUB, name: 'test', description: 'Show me the alert card (only I see it)', options: [{ type: INTEGER, name: 'id', description: 'The number from /streamalerts list', required: true, min_value: 1 }] },
     ],
   },

@@ -7,7 +7,7 @@
 // become the shared announce channel. With the flag on, the old live posts in bot/live.js and bot/memberlive.js stop.
 // Twitch and Kick posts (clips) need API access we do not have: live works on all three, posts on YouTube only.
 import { can, flagOn } from './roles.js';
-import { message, notice, reply, header, text, sep, footer, buttons, cards } from './ui.js';
+import { message, notice, reply, header, text, sep, facts, footer, buttons, cards, bannerUrl } from './ui.js';
 import { it } from './icons.js';
 import { postEmbed } from './docs.js';
 import { getBotSettings } from './settings.js';
@@ -37,15 +37,22 @@ export function parseLink(input) {
   return null;
 }
 
-// ---------- the Discord cards (same look as the site's Watch and media pages: NOREX eyebrow, red/green accent, Watch buttons) ----------
+// ---------- the Discord cards (same panels as the post-match stats and the DJ: eyebrow, big picture, facts, link buttons) ----------
 const who = (src) => (src.scope === 'main' ? 'NOREX' : src.label || 'A contributor');
-export function livePanel(src, v, site, ephemeral = false) {
-  const main = src.scope === 'main';
-  return message({ accent: 'win', ephemeral, mentions: { parse: [] }, blocks: [
-    header({ eyebrow: `NOREX UNITED · ${main ? 'Live' : 'Member live'} · ${PLATFORM[src.platform]}`, title: `${it('live')} ${who(src)} ${main ? 'is live' : 'is live now'}`, sub: v.title || undefined, size: 3 }),
-    text(main ? 'We just went on air – drop in, watch along and say hello in the chat.' : `${who(src)} just went on air – drop in and say hello.`),
+// The big picture: the stream's own preview while it is live, else the banner drawn for the site (scripts/cards.mjs).
+function preview(src, v, env, now) {
+  if (src.platform === 'twitch') return v.live === false ? bannerUrl(env, 'channel') : `https://static-cdn.jtvnw.net/previews-ttv/live_user_${src.handle}-1280x720.jpg?t=${Math.floor(now / 60e3)}`;
+  if (src.platform === 'youtube' && v.url?.includes('watch?v=') && v.live !== false) return `https://i.ytimg.com/vi/${v.url.split('v=')[1]}/maxresdefault_live.jpg`;
+  return bannerUrl(env, v.live === false ? 'channel' : 'onair');
+}
+export function livePanel(src, v, site, ephemeral = false, env = null, now = Date.now()) {
+  const main = src.scope === 'main', on = v.live !== false;
+  return message({ accent: on ? 'win' : 'red', ephemeral, mentions: { parse: [] }, blocks: [
+    header({ eyebrow: `NOREX UNITED · ${on ? (main ? 'Live' : 'Member live') : 'Channel'} · ${PLATFORM[src.platform]}`, title: on ? `${it('live')} ${who(src)} is live` : `${it('live')} ${who(src)} on ${PLATFORM[src.platform]}`, sub: on ? v.title || undefined : 'Not live right now', size: 3 }),
+    cards(preview(src, v, env, now)),
+    facts([['Where', PLATFORM[src.platform]], ['Channel', src.handle.replace(/^channel\//, '')], ['Status', on ? '🟢 On air' : '⚪ Offline']]),
     sep(),
-    footer(main ? 'Watch from the club site or straight on the platform' : 'A NOREX contributor'),
+    footer(on ? (main ? 'Drop in, watch along and say hello in the chat' : 'A NOREX contributor · drop in and say hello') : 'Follow the channel to catch the next stream'),
     buttons([...(main && site ? [{ label: 'Watch on the site', url: `${site}watch.html` }] : []), { label: `Open ${PLATFORM[src.platform]}`, url: v.url || src.url }]),
   ] });
 }
@@ -54,6 +61,7 @@ export function videoPanel(src, v, ephemeral = false) {
   return message({ accent: 'red', ephemeral, mentions: { parse: [] }, blocks: [
     header({ eyebrow: `NOREX UNITED · New ${kind.toLowerCase()} · ${src.scope === 'main' ? 'NOREX' : 'Contributor'}`, title: v.title, sub: who(src), size: 3 }),
     cards({ url: v.thumb, alt: v.title }),
+    facts([['Where', 'YouTube'], ['Type', kind]]),
     sep(),
     buttons([{ label: v.short ? 'Watch the Short' : 'Watch', url: v.short ? `https://www.youtube.com/shorts/${v.id}` : `https://www.youtube.com/watch?v=${v.id}` }, { label: 'Channel', url: src.url }]),
   ] });
@@ -77,7 +85,7 @@ async function checkLive(env, src, now, fetcher, out) {
   const recent = src.live_announced_at && now - src.live_announced_at < BLIP_GAP; // a stream that blips off and on is not a new one
   const claim = await run(env, `UPDATE stream_sources SET live = 1${recent ? '' : ', live_announced_at = ?'} WHERE id = ? AND live = 0`, ...(recent ? [] : [now]), src.id);
   if (!claim.meta?.changes || recent) return;
-  const r = await postEmbed(env, src.channel_id, '', livePanel(src, found, siteOf(env)), { remember: false });
+  const r = await postEmbed(env, src.channel_id, '', livePanel(src, found, siteOf(env), false, env, now), { remember: false });
   if (r?.ok) out.live++;
   else await run(env, 'UPDATE stream_sources SET live = 0, live_announced_at = ? WHERE id = ?', src.live_announced_at ?? null, src.id); // retry next run
 }
@@ -116,6 +124,15 @@ export async function streamAlertsCron(env, now = Date.now(), fetcher = fetch) {
   return out;
 }
 
+// Post the card now. Live → the live card (and the stream counts as announced, so the cron will not post it again);
+// not live → the channel card ("not live right now"). Used by /streamalerts push.
+export async function streamPush(env, src, now = Date.now(), fetcher = fetch) {
+  const found = await liveOf({ [src.platform]: src.handle }, fetcher).catch(() => null);
+  if (found) await run(env, 'UPDATE stream_sources SET live = 1, live_announced_at = ? WHERE id = ?', now, src.id);
+  const r = await postEmbed(env, src.channel_id, '', livePanel(src, found ?? { live: false, url: src.url }, siteOf(env), false, env, now), { remember: false });
+  return { live: !!found, ok: !!r?.ok, error: r?.error };
+}
+
 // ---------- the command ----------
 const ID = /^\d{5,25}$/;
 export async function streamCommand(i, env, ctx, me) {
@@ -137,6 +154,10 @@ export async function streamCommand(i, env, ctx, me) {
       await run(env, `INSERT INTO stream_sources (scope, platform, handle, url, label, user_id, channel_id, want_live, want_posts, added_by, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (platform, handle, channel_id) DO UPDATE SET scope = excluded.scope, label = excluded.label, user_id = excluded.user_id, want_live = excluded.want_live, want_posts = excluded.want_posts, active = 1`,
         scope, link.platform, link.handle, link.url, label, ID.test(String(o.member ?? '')) ? String(o.member) : null, channel, wantLive, wantPosts, me.u, Date.now());
+      if (wantLive && streamAlertsOn(env) && ctx?.waitUntil) { // already on air? announce now instead of waiting for the next 10-minute check
+        const row = await one(env, 'SELECT * FROM stream_sources WHERE platform = ? AND handle = ? AND channel_id = ?', link.platform, link.handle, channel);
+        ctx.waitUntil(checkLive(env, row, Date.now(), fetch, { live: 0 }).catch((e) => console.log('stream check failed', e.message)));
+      }
       const note = [wantLive ? 'goes live' : null, wantPosts ? 'posts a video or Short' : null].filter(Boolean).join(' and ');
       return reply(notice(`Watching ${label}`, `I’ll post in <#${channel}> once when they ${note}. Existing videos are not posted.${streamAlertsOn(env) ? '' : '\nAlerts are switched off for now (flag `streamAlerts`), so nothing posts yet. Try `/streamalerts test` to see the card.'}${what !== 'live' && link.platform !== 'youtube' ? '\nPosts are YouTube only, so this source does live alerts only.' : ''}`, { accent: 'win' }));
     }
@@ -144,11 +165,18 @@ export async function streamCommand(i, env, ctx, me) {
       const r = await run(env, 'UPDATE stream_sources SET active = 0 WHERE id = ?', Number(o.id) || 0);
       return r.meta?.changes ? say('Stopped', 'No more alerts from that source.') : say('Not found', 'Use the number shown in /streamalerts list.');
     }
+    if (sub?.name === 'push') {
+      const src = await one(env, 'SELECT * FROM stream_sources WHERE id = ? AND active = 1', Number(o.id) || 0);
+      if (!src) return say('Not found', 'Use the number shown in /streamalerts list.');
+      if (!ctx?.waitUntil) { const r = await streamPush(env, src); return r.ok ? say('Posted', `In <#${src.channel_id}> (${r.live ? 'live' : 'not live'}).`) : say('Could not post', r.error ?? 'Discord refused it.'); }
+      ctx.waitUntil(streamPush(env, src).catch((e) => console.log('stream push failed', e.message)));
+      return say('Posting now', `I’ll check ${src.label} and post in <#${src.channel_id}>: the live card if they are on air, otherwise the channel card.`);
+    }
     if (sub?.name === 'test') {
       const src = await one(env, 'SELECT * FROM stream_sources WHERE id = ?', Number(o.id) || 0);
       if (!src) return say('Not found', 'Use the number shown in /streamalerts list.');
       const card = src.want_live || src.platform !== 'youtube'
-        ? livePanel(src, { title: 'Test alert: this is how a live stream looks', url: src.url }, siteOf(env), true)
+        ? livePanel(src, { title: 'Test alert: this is how a live stream looks', url: src.url }, siteOf(env), true, env)
         : videoPanel(src, { id: 'dQw4w9WgXcQ', title: 'Test alert: this is how a new video looks', thumb: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg' }, true);
       return reply(card); // ephemeral: only the owner who ran it sees the card
     }
