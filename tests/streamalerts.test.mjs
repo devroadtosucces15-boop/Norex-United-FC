@@ -20,12 +20,16 @@ const as = (id, name) => ({ member: { user: { id, username: name }, roles: [] },
 const sa = (who, sub, o = {}) => send({ type: 2, ...who, data: { name: 'streamalerts', options: [{ type: 1, name: sub, options: Object.entries(o).map(([name, value]) => ({ name, value })) }] } });
 const owner = as('111', 'Boss'), member = as('500', 'Player');
 
-const posts = []; let twitchLive = false, ytLive = false, feed = [];
+const posts = []; let gqlDown = false, twitchLive = false, ytLive = false, feed = [];
 const realFetch = globalThis.fetch;
 const entry = (id, title, ts) => `<entry><yt:videoId>${id}</yt:videoId><title>${title}</title><published>${new Date(ts).toISOString()}</published><author><name>Jez</name></author></entry>`;
 globalThis.fetch = async (url, init = {}) => {
   const u = String(url), m = u.match(/\/channels\/(\w+)\/messages$/);
   if (m) { posts.push({ channel: m[1], ...JSON.parse(init.body) }); return Response.json({ id: 'm1' }); }
+  if (u.includes('gql.twitch.tv')) {
+    if (gqlDown) return new Response('', { status: 503 });
+    return Response.json({ data: { user: { stream: twitchLive ? { type: 'live', title: 'FC 27 League', viewersCount: 7, game: { name: 'EA Sports FC 27' }, previewImageURL: 'https://static-cdn.jtvnw.net/previews-ttv/live_user_norexfc-1280x720.jpg' } : null } } });
+  }
   if (u.startsWith('https://www.twitch.tv/')) return new Response(twitchLive ? '<meta name="description" content="Rush night | Streaming FC for 3 viewers."/>"isLiveBroadcast":true' : '<html></html>');
   if (u.endsWith('/live')) return new Response(ytLive ? '<link rel="canonical" href="https://www.youtube.com/watch?v=abcdefghijk">"isLiveNow":true<meta name="title" content="Grind">' : '<html></html>');
   if (u.startsWith('https://www.youtube.com/@')) return new Response('<html>"channelId":"UCaaaaaaaaaaaaaaaaaaaaaa"</html>');
@@ -116,6 +120,16 @@ posts.length = 0; twitchLive = true;
 await sa(owner, 'add', { source: 'contributor', link: 'https://www.twitch.tv/alreadyon', channel: '999111', name: 'Jaz' });
 await new Promise((r) => setTimeout(r, 400));
 t('add: already on air → announced at once, no waiting for the next check', posts.filter((p) => p.channel === '999111').length === 1 && /Jaz/.test(plainText(posts.find((p) => p.channel === '999111'))));
+
+// ---------- title, viewers and a snapshot picture; page fallback when Twitch's endpoint is down ----------
+posts.length = 0; twitchLive = true;
+await streamPush(env, row, Date.now(), globalThis.fetch);
+const snap = posts.at(-1), snapText = plainText(snap);
+t('push: live card carries the title, game, viewers and the platform preview picture', /FC 27 League/.test(snapText) && /EA Sports FC 27/.test(snapText) && /7 when posted/.test(snapText) && JSON.stringify(snap.components).includes('previews-ttv/live_user_norexfc'));
+gqlDown = true; posts.length = 0;
+const p4 = await streamPush(env, row, Date.now(), globalThis.fetch);
+t('push: Twitch endpoint down → falls back to the channel page and still sees them live', p4.live && /is live/.test(plainText(posts.at(-1))));
+gqlDown = false;
 
 globalThis.fetch = realFetch;
 done();

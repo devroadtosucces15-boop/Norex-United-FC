@@ -12,6 +12,7 @@ const realFetch = globalThis.fetch;
 const fake = async (url, init = {}) => {
   const u = String(url);
   let m;
+  if (u.includes('gql.twitch.tv')) return new Response('', { status: 503 }); // falls back to the channel page
   if ((m = u.match(/twitch\.tv\/(\w+)$/))) return new Response(onAir[m[1]] === 'twitch' ? '<html><meta name="description" content="Rush night | Streaming FC 26 for 12 viewers."/>"isLiveBroadcast":true</html>' : '<html>offline</html>');
   if ((m = u.match(/youtube\.com\/(@[\w.-]+)\/live$/))) return new Response(onAir[m[1]] === 'youtube' ? '<link rel="canonical" href="https://www.youtube.com/watch?v=abcdefghijk">"isLiveNow":true<meta name="title" content="Pro Clubs grind">' : '<html>no</html>');
   if ((m = u.match(/kick\.com\/api\/v2\/channels\/(\w+)$/))) return onAir[m[1]] === 'kick' ? Response.json({ livestream: { session_title: 'Kick night' } }) : Response.json({ livestream: null });
