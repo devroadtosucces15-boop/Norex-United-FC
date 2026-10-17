@@ -21,6 +21,7 @@
 // reminders and nudges members who haven't answered (event.remind: dm = bell + DM · mention = @ in the channel · off).
 import { can, flagOn, flags } from './roles.js';
 import { notify, notifyMembers, safely, mutedFor } from './notify.js';
+import { notifTiming } from './notifcenter.js';
 import { broadcastRoom } from './clubroom.js';
 import { POSITIONS } from './profiles.js';
 import { discordTargets, postEmbed } from './docs.js';
@@ -284,7 +285,7 @@ async function saveEvent(body, me, env, log) {
     out.id = existing.id;
     await log(env, me, 'event-edit', `${label(e)} · ${when(e)}`);
     if (existing.start !== e.start && existing.status === 'scheduled') {
-      out.notified = await safely(notify(env, await keen(env, existing.id), { type: 'event', icon: '🕒', title: `Time changed: ${label(e)} – now ${when(e)}`, link: 'members.html#schedule' })) ?? 0;
+      out.notified = await safely(notify(env, await keen(env, existing.id), { type: 'event', nkey: 'event.timechange', vars: { event: label(e), when: when(e) }, icon: '🕒', title: `Time changed: ${label(e)} – now ${when(e)}`, link: 'members.html#schedule' })) ?? 0;
     }
   } else {
     const repeat = Math.max(0, Math.min(8, Math.round(Number(body.repeat) || 0)));
@@ -675,10 +676,11 @@ async function nudgeRoute(body, me, env, log) {
 // T-24h and T-2h: a reminder in the event's Discord channel ("7 ✅ – need a GK", with the answer buttons) and a nudge for
 // members who haven't answered yet – bell + DM (remind = dm) or an @mention in that channel (remind = mention).
 // Events scheduled less than 2 h ahead only get the T-2h one. Each fires once (remind24_at / remind2_at).
-// 30 minutes before: everyone who said ✅ gets the site alert + Discord DM (their "Events" alert setting, DM + site by default) and is
+// Owner-set minutes before (default 30): everyone who said ✅ gets the site alert + Discord DM (their "Events" alert setting, DM + site by default) and is
 // tagged by name in the event's channel post. Once per event (meta `remind30:<id>`); owner/manager-only while `discordRsvp` is.
 export async function thirtyMinutes(env, now, everyone) {
-  const rows = await all(env, "SELECT * FROM events WHERE status = 'scheduled' AND start > ? AND start <= ? ORDER BY start LIMIT 5", now, now + 30 * 60e3);
+  const mins = await notifTiming(env, 'event.start30', 'mins'); // owner-set in the Notification Center (default 30)
+  const rows = await all(env, "SELECT * FROM events WHERE status = 'scheduled' AND start > ? AND start <= ? ORDER BY start LIMIT 5", now, now + mins * 60e3);
   let sent = 0;
   for (const e of rows) {
     const key = `remind30:${e.id}`;
@@ -687,10 +689,10 @@ export async function thirtyMinutes(env, now, everyone) {
     const yes = (await rsvpRows(env, e.id)).filter((x) => x.status === 'yes');
     if (!yes.length) continue;
     const ids = yes.map((x) => x.user_id);
-    await safely(notify(env, ids, { type: 'event', icon: '⏰', title: `Starting in 30 minutes · ${label(e)}`, body: 'You said you are in – get ready.', link: `members.html#schedule-${e.id}`, ref: `event30:${e.id}` }));
+    await safely(notify(env, ids, { type: 'event', nkey: 'event.start30', vars: { mins, event: label(e) }, icon: '⏰', title: `Starting in ${mins} minutes · ${label(e)}`, body: 'You said you are in – get ready.', link: `members.html#schedule-${e.id}`, ref: `event30:${e.id}` }));
     if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
       const tags = ids.slice(0, 50);
-      const msg = await eventPost(env, e, await rsvpRows(env, e.id), '⏰ ', { ping: `**⏰ Starting in 30 minutes · ${label(e)}**\n${tags.map((id) => `<@${id}>`).join(' ')}`, mentions: { users: tags } });
+      const msg = await eventPost(env, e, await rsvpRows(env, e.id), '⏰ ', { ping: `**⏰ Starting in ${mins} minutes · ${label(e)}**\n${tags.map((id) => `<@${id}>`).join(' ')}`, mentions: { users: tags } });
       await safely(fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages`, { method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(msg) }));
     }
     sent++;
@@ -724,7 +726,7 @@ export async function eventReminders(env) {
         method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(msg),
       }));
     }
-    if (e.remind === 'dm' && quiet.length) await safely(notify(env, quiet, { type: 'event', icon: soon ? '⏰' : '📅', title: `${head} – can you make it?`, body: `${yes} said yes so far. Answer ✅ ❔ ❌ in the Squad Hub${e.discord_channel ? ' or on the Discord post' : ''}.`, link: `members.html#schedule-${e.id}` }));
+    if (e.remind === 'dm' && quiet.length) await safely(notify(env, quiet, { type: 'event', nkey: 'event.nudge', vars: { head, yes }, icon: soon ? '⏰' : '📅', title: `${head} – can you make it?`, body: `${yes} said yes so far. Answer ✅ ❔ ❌ in the Squad Hub${e.discord_channel ? ' or on the Discord post' : ''}.`, link: `members.html#schedule-${e.id}` }));
     sent++;
   }
   return { sent };
@@ -760,7 +762,7 @@ export async function eventsRoute(p, method, body, me, env, log, loadSite, url) 
     await run(env, "UPDATE events SET status = 'cancelled', cancel_reason = ?, edited_by = ?, edited_at = ? WHERE id = ?", reason, me.n, Date.now(), row.id);
     await log(env, me, 'event-cancel', `${label(row)} · ${when(row)}`);
     await refreshEventPost(env, row.id);
-    const notified = await safely(notify(env, await keen(env, row.id), { type: 'event', icon: '🚫', title: `Cancelled: ${label(row)} – ${when(row)}`, body: reason, link: 'members.html#schedule' })) ?? 0;
+    const notified = await safely(notify(env, await keen(env, row.id), { type: 'event', nkey: 'event.cancelled', vars: { event: label(row), when: when(row), reason }, icon: '🚫', title: `Cancelled: ${label(row)} – ${when(row)}`, body: reason, link: 'members.html#schedule' })) ?? 0;
     return json({ notified, ...(await listFor(env, me)) });
   }
   return fail('Not found', 404);

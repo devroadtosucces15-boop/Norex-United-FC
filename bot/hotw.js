@@ -88,7 +88,7 @@ export async function hotwDue(env) {
 
 async function announce(env, w) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
-  await safely(notify(env, [w.user_id], { type: 'award', icon: '🎬', title: `Your clip is the Highlight of week ${weekNo(w.week)}! 🏆`, body: `${w.votes} vote${w.votes === 1 ? '' : 's'} from the squad.`, link: `feed.html#p${w.post_id}` }));
+  await safely(notify(env, [w.user_id], { type: 'award', nkey: 'award.hotw', vars: { week: weekNo(w.week), votes: `${w.votes} vote${w.votes === 1 ? '' : 's'}` }, icon: '🎬', title: `Your clip is the Highlight of week ${weekNo(w.week)}! 🏆`, body: `${w.votes} vote${w.votes === 1 ? '' : 's'} from the squad.`, link: `feed.html#p${w.post_id}` }));
   // Discord only once members can see it – while the flag is owner/managers the club shouldn't be told about it.
   const level = flags(env).hotw;
   const channel = (await one(env, "SELECT value FROM meta WHERE key = 'awards_channel'"))?.value;

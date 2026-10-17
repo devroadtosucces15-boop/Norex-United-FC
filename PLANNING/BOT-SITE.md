@@ -116,3 +116,6 @@ Next on the bot side: features 1–4 above on the site (web side), `POST /api/me
 
 ## Dugout post options (web side touched bot/ with the owner's OK)
 `POST /api/events/lineup` takes `dm`, `channel` + `tag`, `home` and `preview` (see `bot/events.js`). Migration `0055_lineup_home.sql` adds `events.lineup_home`; `GET /api/events/public` then carries `lineup` (names + positions) for events a manager chose to show on the home page. `bot/notify.js` gained `mutedFor()` so tagging honours the "event" alert mute. Home page: `next/static/homelineup.js`. Tests: `tests/events.test.mjs`, `tests/dugout.test.mjs`.
+
+## Notification Center (owner only, web side touched bot/ with the owner's OK)
+`bot/notifcenter.js` + hooks in `bot/notify.js` (`nkey`/`vars`/route/lock) and call sites in `events.js`, `awards.js`, `hotw.js`, `reminders.js`. `GET/POST /api/admin/notif`, `POST /api/admin/notif/test` (owner only, `settings.bot`; test goes to the owner only). Settings in `meta.notif_center`, no migration. Staff Tools → 🔔 Notifications (`next/static/tools.js`). Phase 1 covers events, awards and reminders; add a notification by giving its `notify()` call an `nkey` + `vars` and a row in `REGISTRY`. Tests: `tests/notifcenter.test.mjs`.
