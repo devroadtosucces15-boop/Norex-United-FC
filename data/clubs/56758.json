@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-17T06:30:47.769Z",
+ "fetchedAt": "2026-10-17T06:40:47.234Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -907,46 +907,10 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "DR7M70",
-   "gamesPlayed": "33",
-   "winRate": "72",
-   "goals": "6",
-   "assists": "14",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "40",
-   "passesMade": "427",
-   "passSuccessRate": "80",
-   "ratingAve": "7.6",
-   "tacklesMade": "30",
-   "tackleSuccessRate": "34",
-   "proName": "Danny",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "170",
-   "proNationality": "83",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "2",
-   "redCards": "1",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
   }
  ],
  "positionCount": {
-  "midfielder": 6,
+  "midfielder": 5,
   "goalkeeper": 0,
   "forward": 10,
   "defender": 8
@@ -966,9 +930,9 @@
   {
    "name": "ika_cabrera7",
    "proPos": "25",
-   "gamesPlayed": "259",
+   "gamesPlayed": "260",
    "goals": "234",
-   "assists": "96",
+   "assists": "97",
    "manOfTheMatch": "42",
    "ratingAve": "7.5",
    "prevGoals": "0",
@@ -1204,17 +1168,6 @@
    "ratingAve": "7.1",
    "prevGoals": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "DR7M70",
-   "proPos": "14",
-   "gamesPlayed": "129",
-   "goals": "37",
-   "assists": "70",
-   "manOfTheMatch": "20",
-   "ratingAve": "7.9",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   }
  ],
  "leaderboard": {
