@@ -1,8 +1,8 @@
 {
-  "revision": "09d05d2157f796c08b4dceff483d8bd4b6519620",
-  "files": 845,
-  "imports": 628,
-  "api_paths": 248,
+  "revision": "df3cd95301710fdaa0fa7d20cf09e80872058567",
+  "files": 871,
+  "imports": 637,
+  "api_paths": 250,
   "tables": 317,
   "records": [
     {
@@ -931,10 +931,11 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 768,
+      "lines": 770,
       "imports": [
         "./roles.js",
         "./notify.js",
+        "./notifcenter.js",
         "./clubroom.js",
         "./profiles.js",
         "./docs.js",
@@ -2815,17 +2816,48 @@
       ]
     },
     {
+      "path": "bot/notifcenter.js",
+      "layer": "bot",
+      "lines": 115,
+      "imports": [
+        "./roles.js"
+      ],
+      "endpoints": [
+        "/api/admin/notif",
+        "/api/admin/notif/test"
+      ],
+      "tables": [
+        "SET",
+        "meta",
+        "the"
+      ],
+      "functions": [
+        "applyNotifConfig",
+        "clean",
+        "fail",
+        "getNotifConfig",
+        "json",
+        "notifCenterRoute",
+        "notifTiming",
+        "render",
+        "sample",
+        "view"
+      ]
+    },
+    {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 461,
+      "lines": 466,
       "imports": [
         "./roles.js",
         "./clubroom.js",
         "./webpush.js",
         "./ui.js",
-        "./faces.js"
+        "./faces.js",
+        "./notifcenter.js"
       ],
       "endpoints": [
+        "/api/admin/notif",
         "/api/admin/requests",
         "/api/admin/requests/decide",
         "/api/notify",
@@ -3337,10 +3369,12 @@
     {
       "path": "bot/reminders.js",
       "layer": "bot",
-      "lines": 55,
+      "lines": 56,
       "imports": [
         "./roles.js",
-        "./notify.js"
+        "./notify.js",
+        "./notifcenter.js",
+        ") || hour >= await notifTiming(env, "
       ],
       "endpoints": [],
       "tables": [
@@ -3943,7 +3977,7 @@
     {
       "path": "data/burners/1355341.json",
       "layer": "data",
-      "lines": 355,
+      "lines": 344,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4737,7 +4771,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 1085,
+      "lines": 1038,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5149,6 +5183,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/636104.json",
+      "layer": "data",
+      "lines": 187,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/63632.json",
       "layer": "data",
       "lines": 751,
@@ -5333,7 +5376,7 @@
     {
       "path": "data/clubs/80869.json",
       "layer": "data",
-      "lines": 1931,
+      "lines": 2072,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5808,6 +5851,15 @@
       "functions": []
     },
     {
+      "path": "data/matches/106258877080383.json",
+      "layer": "data",
+      "lines": 688,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/106260789250420.json",
       "layer": "data",
       "lines": 715,
@@ -5835,9 +5887,207 @@
       "functions": []
     },
     {
+      "path": "data/matches/106438905640090.json",
+      "layer": "data",
+      "lines": 579,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106444561560338.json",
+      "layer": "data",
+      "lines": 801,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106446435190240.json",
+      "layer": "data",
+      "lines": 875,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106450614540297.json",
+      "layer": "data",
+      "lines": 653,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/106460270690193.json",
       "layer": "data",
       "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106464807090139.json",
+      "layer": "data",
+      "lines": 505,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106700810230303.json",
+      "layer": "data",
+      "lines": 505,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106738078050434.json",
+      "layer": "data",
+      "lines": 801,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106754220660359.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106756728300213.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106758804640072.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106780455670480.json",
+      "layer": "data",
+      "lines": 503,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106952291830477.json",
+      "layer": "data",
+      "lines": 542,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106958035760096.json",
+      "layer": "data",
+      "lines": 573,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106958086870485.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106980038630160.json",
+      "layer": "data",
+      "lines": 577,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/106990110710378.json",
+      "layer": "data",
+      "lines": 503,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109230929040363.json",
+      "layer": "data",
+      "lines": 320,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109584204580399.json",
+      "layer": "data",
+      "lines": 320,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109588702950036.json",
+      "layer": "data",
+      "lines": 579,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109644496240062.json",
+      "layer": "data",
+      "lines": 614,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109652419270367.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109780091010489.json",
+      "layer": "data",
+      "lines": 355,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8494,7 +8744,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 58,
+      "lines": 65,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8512,7 +8762,7 @@
     {
       "path": "data/state.json",
       "layer": "data",
-      "lines": 9582,
+      "lines": 9583,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -11249,6 +11499,36 @@
         "read",
         "run",
         "store"
+      ]
+    },
+    {
+      "path": "tests/notifcenter.test.mjs",
+      "layer": "tests",
+      "lines": 81,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs",
+        "../bot/notify.js",
+        "../bot/reminders.js",
+        "../bot/notifcenter.js"
+      ],
+      "endpoints": [
+        "/api/admin/notif",
+        "/api/admin/notif/test"
+      ],
+      "tables": [
+        "SET",
+        "feedback",
+        "notifications",
+        "notify_prefs",
+        "users"
+      ],
+      "functions": [
+        "rows",
+        "save",
+        "send",
+        "setFlags",
+        "site"
       ]
     },
     {
@@ -14811,6 +15091,11 @@
     },
     {
       "source": "bot/events.js",
+      "target": "bot/notifcenter.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/events.js",
       "target": "bot/clubroom.js",
       "kind": "imports"
     },
@@ -15405,6 +15690,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/notifcenter.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/notify.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -15427,6 +15717,11 @@
     {
       "source": "bot/notify.js",
       "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/notify.js",
+      "target": "bot/notifcenter.js",
       "kind": "imports"
     },
     {
@@ -15592,6 +15887,11 @@
     {
       "source": "bot/reminders.js",
       "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/reminders.js",
+      "target": "bot/notifcenter.js",
       "kind": "imports"
     },
     {
@@ -17062,6 +17362,31 @@
     {
       "source": "tests/next.test.mjs",
       "target": "tests/botfeat-sample.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/notifcenter.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/notifcenter.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/notifcenter.test.mjs",
+      "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/notifcenter.test.mjs",
+      "target": "bot/reminders.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/notifcenter.test.mjs",
+      "target": "bot/notifcenter.js",
       "kind": "imports"
     },
     {
