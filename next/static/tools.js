@@ -14,14 +14,14 @@
   const ago = (t) => { const s = Math.max(1, Math.round((Date.now() - t) / 1000)); return s < 90 ? 'just now' : s < 5400 ? Math.round(s / 60) + ' min ago' : s < 129600 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago'; };
   const empty = (icon, title, text) => `<div class="panel sq-empty"><span>${icon}</span><div><b>${esc(title)}</b><p class="muted small">${esc(text || '')}</p></div></div>`;
   const skel = '<div class="dg-skel"><i></i></div>';
-  const TABS = [['subm', '📥 Submissions'], ['reports', '🚩 Reports'], ['game', '🎮 Game data'], ['bot', '🤖 Bot'], ['awards', '🏆 Awards']];
+  const TABS = [['subm', '📥 Submissions'], ['reports', '🚩 Reports'], ['game', '🎮 Game data'], ['bot', '🤖 Bot'], ['awards', '🏆 Awards'], ['notif', '🔔 Notifications']];
   const SUBM = { feedback: '💌 Feedback', ratings: '🌟 Ratings', awardVotes: '🏆 Award votes', predictions: '🔮 Predictions', suggestions: '💡 Suggestions', builds: '🧬 Builds' };
   const SRC = { post: '📰 Post', feedback: '💌 Feedback', message: '💬 Message' };
   const GRP = { GK: '🧤 Keepers', DEF: '🛡️ Defenders', MID: '🎯 Midfielders', FWD: '⚽ Forwards', any: '👥 Anyone' };
   const ROLE_OPTS = [['guest', 'Everyone'], ['member', 'Members'], ['claimed', 'Verified players'], ['manager', 'Managers'], ['owner', 'Owner only']];
   const REPLY_OPTS = [['default', 'As built'], ['private', 'Private (only them)'], ['public', 'Public']];
   const AP = [['results', '⚽ Match results'], ['reminders', '⏰ Event reminders'], ['awards', '🏆 Weekly awards']];
-  const S = { tab: 'subm', type: 'feedback', q: '', rows: null, reports: null, game: null, form: null, bot: null, cmds: null, awards: null, channels: null, ask: null, busy: false, err: {} };
+  const S = { tab: 'subm', type: 'feedback', q: '', rows: null, reports: null, game: null, form: null, bot: null, cmds: null, awards: null, notif: null, channels: null, ask: null, busy: false, err: {} };
   const bump = (v) => { const m = String(v || 'fc27').match(/^(.*?)(\d+)$/); return m && /-v$|-tu$|\.$/.test(m[1]) ? m[1] + (+m[2] + 1) : `${v}-v2`; };
   const sel = (list, cur) => list.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
   const failed = (k, what) => (S.err[k] ? empty('⚠️', `Could not load ${what}`, S.err[k]) : null);
@@ -88,6 +88,28 @@ ${pend.length ? `<div class="dk-grid">${pend.map((p) => `<article class="panel d
     S.busy = false; paint();
   }
 
+  // ---------- Notifications (owner only) ----------
+  const ROUTE_LABEL = { default: 'As built (member decides)', dm: 'Bell + Discord DM', site: 'Bell only', off: 'Off' };
+  function notif() {
+    const f = failed('notif', 'the notifications'); if (f) return f;
+    if (!S.notif) return skel;
+    const groups = [...new Set(S.notif.items.map((i) => i.group))];
+    return `<h4 class="dk-h" style="margin-top:0">🔔 Notification Center</h4><p class="muted small">Change what each notification says, who gets it and how, and when. Use <code>{placeholders}</code> in the wording. Blank = the wording as built. “Send me a test” goes to you only, never to members.</p>${groups.map((g) => `<h4 class="dk-h">${esc(g)}</h4>${S.notif.items.filter((i) => i.group === g).map((i) => {
+      const c = i.saved || {};
+      const timing = Object.entries(i.timing || {}).map(([k, t]) => `<label>${esc(t.label)}<input name="t-${k}" type="number" min="${t.min}" max="${t.max}" value="${esc(c.timing?.[k] ?? t.def)}"></label>`).join('');
+      return `<form class="panel dk-nf" data-n-form="${esc(i.key)}"><b>${esc(i.label)}</b>
+<label><input name="enabled" type="checkbox"${c.enabled === false ? '' : ' checked'}> Send this notification</label>
+<label>How it is sent<select name="route">${sel(Object.entries(ROUTE_LABEL), c.route || 'default')}</select></label>
+<label><input name="locked" type="checkbox"${c.locked ? ' checked' : ''}> Members cannot mute it</label>
+<label>Title<input name="title" maxlength="140" value="${esc(c.title || '')}" placeholder="${esc(i.title)}"></label>
+<label>Message<textarea name="body" rows="2" maxlength="1500" placeholder="${esc(i.body)}">${esc(c.body || '')}</textarea></label>
+${i.vars.length ? `<p class="muted small">Placeholders: ${i.vars.map((v) => `<code>{${esc(v)}}</code>`).join(' ')}</p>` : ''}${timing}
+<div class="dk-btns"><button class="btn" type="submit"${S.busy ? ' disabled' : ''}>💾 Save</button><button class="chip" type="button" data-n-test="${esc(i.key)}">📨 Send me a test</button><button class="chip" type="button" data-n-reset="${esc(i.key)}">Reset</button></div></form>`;
+    }).join('')}`).join('')}`;
+  }
+  const readNotif = (f) => { const e = (n) => f.elements.namedItem(n); return { key: f.dataset.nForm, enabled: e('enabled').checked, route: e('route').value, locked: e('locked').checked, title: e('title').value, body: e('body').value,
+    timing: Object.fromEntries([...f.querySelectorAll('[name^="t-"]')].map((el) => [el.name.slice(2), Number(el.value)])) }; }; // elements.namedItem: form.title is the HTML attribute
+
   // ---------- Bot ----------
   function bot() {
     const f = failed('bot', 'the bot settings'); if (f) return f;
@@ -133,7 +155,7 @@ ${pend.length ? `<div class="dk-grid">${pend.map((p) => `<article class="panel d
   function paint() {
     if (!root.isConnected) return;
     const focus = d.activeElement?.name ? { n: d.activeElement.name } : null;
-    root.innerHTML = `<div class="chips dk-tabs">${TABS.map(([k, n]) => `<button class="chip${S.tab === k ? ' on' : ''}" type="button" data-tab="${k}">${n}${k === 'reports' && S.reports?.length ? ` <span class="dk-n">${S.reports.length}</span>` : ''}</button>`).join('')}</div><div class="dk-pane">${{ subm, reports, game, bot, awards }[S.tab]()}</div>`;
+    root.innerHTML = `<div class="chips dk-tabs">${TABS.filter(([k]) => k !== 'notif' || A.role === 'owner').map(([k, n]) => `<button class="chip${S.tab === k ? ' on' : ''}" type="button" data-tab="${k}">${n}${k === 'reports' && S.reports?.length ? ` <span class="dk-n">${S.reports.length}</span>` : ''}</button>`).join('')}</div><div class="dk-pane">${{ subm, reports, game, bot, awards, notif }[S.tab]()}</div>`;
     if (focus) root.querySelector(`[name="${focus.n}"]`)?.focus({ preventScroll: true });
   }
   const guard = async (k, fn) => { try { const r = await fn(); S.err[k] = null; return r; } catch (e) { S.err[k] = e.message; return null; } };
@@ -145,6 +167,7 @@ ${pend.length ? `<div class="dk-grid">${pend.map((p) => `<article class="panel d
       if (!S.bot) S.bot = await guard('bot', () => call('/api/bot/settings'));
       if (!S.cmds) S.cmds = await guard('cmds', () => call('/api/bot/commands'));
     }
+    if (tab === 'notif' && !S.notif) S.notif = await guard('notif', () => call('/api/admin/notif'));
     if (tab === 'awards') {
       if (!S.awards) S.awards = await guard('awards', () => call('/api/awards'));
       if (!S.channels) S.channels = await call('/api/events/discord').then((t) => (t.ready ? t.channels : [])).catch(() => []);
@@ -180,6 +203,7 @@ ${pend.length ? `<div class="dk-grid">${pend.map((p) => `<article class="panel d
       S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), reminderChannel: f.reminderChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
       S.busy = false; paint(); toast('Bot settings saved');
     });
+    else if (f.matches('[data-n-form]')) act(async () => { S.busy = true; S.notif = await call('/api/admin/notif', readNotif(f)); S.busy = false; paint(); toast('Notification saved'); });
     else if (f.matches('[data-aw-form]')) act(async () => { const el = f.elements; S.awards = await call('/api/awards/category', { name: el.namedItem('name').value, icon: el.namedItem('icon').value, grp: el.namedItem('grp').value }); paint(); toast('Award added to this week’s ballot'); });
   });
   root.addEventListener('change', (ev) => {

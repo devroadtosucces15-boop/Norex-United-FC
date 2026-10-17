@@ -18,6 +18,7 @@ import { broadcastRoom } from './clubroom.js';
 import { encryptPayload, safeEndpoint, sendPush } from './webpush.js';
 import { message, header, text, footer, buttons, cards, bannerUrl } from './ui.js';
 import { faceOf } from './faces.js';
+import { applyNotifConfig, notifCenterRoute } from './notifcenter.js';
 
 const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
@@ -110,6 +111,7 @@ export const takeKick = () => { const k = kick; kick = false; return k; };
 export async function notify(env, ids, n) {
   ids = [...new Set((ids ?? []).filter(Boolean).map(String))].slice(0, 1000);
   if (!ids.length || !env.DB) return 0;
+  if (n.nkey) { n = await applyNotifConfig(env, n); if (!n) return 0; } // Notification Center: owner's wording, route and on/off
   const rows = await all(env, `SELECT u.id, u.role, p.prefs FROM users u LEFT JOIN notify_prefs p ON p.user_id = u.id WHERE u.id IN (${marks(ids.length)})`, ...ids);
   const at = Date.now();
   const stmts = [], told = [], pushTo = [];
@@ -118,7 +120,8 @@ export async function notify(env, ids, n) {
   for (const r of rows) {
     if (dup.has(String(r.id))) continue;
     if (!flagOn(env, { role: r.role }, 'notifications')) continue;
-    const mode = modeOf(parsePrefs(r.prefs), n.type);
+    let mode = n.route ?? modeOf(parsePrefs(r.prefs), n.type); // the owner's route beats the member's choice
+    if (mode === 'off' && n.locked) mode = TYPES[n.type]?.def ?? 'site';
     if (mode === 'off') continue;
     const dm = mode === 'dm' ? 'queued' : null;
     if (dm) kick = true;
@@ -452,6 +455,7 @@ async function overridesRoute(request, env) {
 }
 
 export async function notifyRouteAll(p, method, body, me, env, loadSite, log) {
+  if (p.startsWith('/api/admin/notif')) return notifCenterRoute(p, method, body, me, env, log, notify); // owner only, checked inside
   if (p === '/api/notify' || p.startsWith('/api/notify/')) {
     if (!flagOn(env, me, 'notifications')) return fail('Not available yet.', 404);
     return notifyRoute(p, method, body, me, env, log);
