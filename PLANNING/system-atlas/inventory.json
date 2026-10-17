@@ -1,5 +1,5 @@
 {
-  "revision": "a25b545ea2fd70998c4c8f68dea50e110d299c2d",
+  "revision": "d6c2b2e41681b1d6c927ceba628790aafe64a0bb",
   "files": 877,
   "imports": 666,
   "api_paths": 251,
@@ -1875,7 +1875,7 @@
     {
       "path": "bot/memberlive.js",
       "layer": "bot",
-      "lines": 88,
+      "lines": 108,
       "imports": [
         "./roles.js",
         "./live.js",
@@ -1890,6 +1890,7 @@
       ],
       "tables": [
         "SET",
+        "a",
         "member_live",
         "meta",
         "profiles",
@@ -1905,7 +1906,8 @@
         "memberLiveCron",
         "memberLiveRoute",
         "one",
-        "page"
+        "page",
+        "twitchGql"
       ]
     },
     {
@@ -3737,7 +3739,7 @@
     {
       "path": "bot/streamalerts.js",
       "layer": "bot",
-      "lines": 192,
+      "lines": 193,
       "imports": [
         "./roles.js",
         "./ui.js",
@@ -3753,7 +3755,8 @@
         "per",
         "stream_seen",
         "stream_sources",
-        "that"
+        "that",
+        "when"
       ],
       "functions": [
         "all",
@@ -8848,7 +8851,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 65,
+      "lines": 36,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -11310,7 +11313,7 @@
     {
       "path": "tests/memberlive.test.mjs",
       "layer": "tests",
-      "lines": 78,
+      "lines": 79,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
@@ -12350,7 +12353,7 @@
     {
       "path": "tests/streamalerts.test.mjs",
       "layer": "tests",
-      "lines": 122,
+      "lines": 136,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
