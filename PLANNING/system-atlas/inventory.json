@@ -1,9 +1,9 @@
 {
-  "revision": "49f8c7d609287155d1e020b40fb72a1a2af44793",
-  "files": 873,
+  "revision": "caafc3b4a05ea368ddcfd9bd89a892657af8838d",
+  "files": 874,
   "imports": 650,
   "api_paths": 251,
-  "tables": 317,
+  "tables": 318,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -735,7 +735,7 @@
     {
       "path": "bot/commanddefs.js",
       "layer": "bot",
-      "lines": 255,
+      "lines": 256,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -2828,6 +2828,17 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0056_watchlist_channel.sql",
+      "layer": "bot",
+      "lines": 3,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "watch_creators"
+      ],
+      "functions": []
+    },
+    {
       "path": "bot/monitor.js",
       "layer": "bot",
       "lines": 86,
@@ -3846,7 +3857,7 @@
     {
       "path": "bot/watchlist.js",
       "layer": "bot",
-      "lines": 196,
+      "lines": 238,
       "imports": [
         "./roles.js",
         "./ui.js",
@@ -3859,6 +3870,7 @@
         "SET",
         "keyword",
         "meta",
+        "the",
         "watch_creators",
         "watch_useful",
         "watch_videos"
@@ -3868,10 +3880,13 @@
         "clean",
         "decode",
         "fail",
+        "get",
         "json",
         "listPanel",
         "one",
         "parseFeed",
+        "parseSource",
+        "resolveSource",
         "say",
         "tagsOf",
         "topicOf",
@@ -12417,7 +12432,7 @@
     {
       "path": "tests/watchlist.test.mjs",
       "layer": "tests",
-      "lines": 111,
+      "lines": 120,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
@@ -12432,6 +12447,7 @@
       ],
       "tables": [
         "SET",
+        "YouTube",
         "last",
         "meta",
         "watch_creators",
@@ -12443,6 +12459,7 @@
         "feed",
         "ids",
         "iso",
+        "page",
         "press",
         "send",
         "setFlags",
