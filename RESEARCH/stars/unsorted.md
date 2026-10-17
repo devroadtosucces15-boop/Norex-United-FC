@@ -33,7 +33,7 @@
 | [Ohjurot/DualSense-Windows](https://github.com/Ohjurot/DualSense-Windows) | Windows API for the PS5 DualSense controller | C++ | 2025-03-10 |
 | [openclaw/openclaw](https://github.com/openclaw/openclaw) | The AI that really does things. Any OS. Any Platform. The lobster way. 🦞 | TypeScript | 2026-10-17 |
 | [ps5-linux/ps5-linux-tools](https://github.com/ps5-linux/ps5-linux-tools) | Linux tools for PS5 | C | 2026-07-04 |
-| [public-apis/public-apis](https://github.com/public-apis/public-apis) | A collective list of free APIs | Python | 2026-10-15 |
+| [public-apis/public-apis](https://github.com/public-apis/public-apis) | A collective list of free APIs | Python | 2026-10-17 |
 | [react/react](https://github.com/react/react) | The library for web and native user interfaces. | JavaScript | 2026-10-15 |
 | [storytold/photocraft](https://github.com/storytold/photocraft) | PhotoCraft: An open-source, photo editor written by scratch in pure Rust | Rust | 2026-10-17 |
 | [tester-army/e2e](https://github.com/tester-army/e2e) | Next generation e2e testing framework for web and mobile apps. | TypeScript | 2026-10-17 |
