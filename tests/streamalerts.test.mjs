@@ -40,7 +40,8 @@ t('link: twitch, kick, youtube @handle and /channel/UC… parse', parseLink('htt
 t('link: other sites and junk are refused', parseLink('https://evil.com/x') === null && parseLink('twitch.tv/a') === null && parseLink('') === null);
 
 // ---------- command: owner only ----------
-t('config ships with streamAlerts off', JSON.parse((await import('node:fs')).readFileSync(new URL('../config.json', import.meta.url))).features.streamAlerts === 'off');
+t('config has streamAlerts at owner level (never public)', JSON.parse((await import('node:fs')).readFileSync(new URL('../config.json', import.meta.url))).features.streamAlerts === 'owner');
+setFlags({ streamAlerts: 'off' }); // set-up works while the alerts are off
 await tt('members are refused', async () => /Owner only/.test(plainText((await sa(member, 'add', { source: 'main', link: 'twitch.tv/norexfc', channel: '777777' })).d.data)));
 await tt('bad link → friendly refusal', async () => /can’t read that link/.test(plainText((await sa(owner, 'add', { source: 'main', link: 'https://evil.com/x', channel: '777777' })).d.data)));
 await tt('add main twitch (live) + contributor youtube (both)', async () => {
@@ -57,6 +58,7 @@ await tt('list shows both with ids and channels', async () => { const r = plainT
 await tt('test shows the card privately, nothing posted', async () => { const n = posts.length; const r = (await sa(owner, 'test', { id: 1 })).d; return (r.data.flags & 64) === 64 && /Test alert/.test(plainText(r.data)) && posts.length === n; });
 
 // ---------- cron: flag off posts nothing ----------
+setFlags({ streamAlerts: 'off' });
 const NOW = Date.now();
 twitchLive = true;
 await streamAlertsCron(env, NOW, globalThis.fetch);

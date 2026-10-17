@@ -53,7 +53,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (u.startsWith('https://www.youtube.com/')) return new Response('<html></html>');
   return realFetch(url, init);
 };
-const setFlag = (v) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), liveAnnounce: v }); };
+const setFlag = (v) => { env.FEATURES = JSON.stringify({ ...JSON.parse(env.FEATURES), liveAnnounce: v, streamAlerts: 'off', alertRoute: 'off' }); }; // the old post only runs while /streamalerts is off (tests/streamalerts.test.mjs)
 await KV.delete('live'); await KV.delete('live_announced');
 setFlag('off'); air = true; await updateLive(env);
 t('announce: flag off → no post', posts.length === 0);

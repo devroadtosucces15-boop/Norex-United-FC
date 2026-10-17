@@ -22,12 +22,12 @@ globalThis.fetch = async (url, init = {}) => {
 env.STREAMS = JSON.stringify({ twitch: 'https://www.twitch.tv/norexunitedfc' });
 const owner = await login('111', [], 'Boss');
 const m1 = await login('500', [], 'Player One');
-setFlags({ feed: 'members', liveAnnounce: 'owner' });
+setFlags({ feed: 'members', liveAnnounce: 'owner', streamAlerts: 'off' }); // live alerts here are the old path; /streamalerts replaces it
 sqlite.prepare("INSERT INTO meta (key, value) VALUES ('announce_channel', '42420') ON CONFLICT (key) DO UPDATE SET value = excluded.value").run();
 const post = (text) => call(m1, '/api/feed/post', { text, tag: 'highlight' });
 
 // ---------- flag off (shipped state): nothing goes to the channel ----------
-t('config ships with alertRoute off', JSON.parse((await import('node:fs')).readFileSync(new URL('../config.json', import.meta.url))).features.alertRoute === 'off');
+t('config has alertRoute at owner level (never public)', JSON.parse((await import('node:fs')).readFileSync(new URL('../config.json', import.meta.url))).features.alertRoute === 'owner');
 setFlags({ alertRoute: 'off' });
 await post('Worldie from the halfway line');
 t('flag off → a new post makes no Discord post', sent.length === 0);
