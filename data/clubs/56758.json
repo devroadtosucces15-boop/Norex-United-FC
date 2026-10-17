@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-17T07:10:49.536Z",
+ "fetchedAt": "2026-10-17T07:20:48.165Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -405,42 +405,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "Ferni_x10",
-   "gamesPlayed": "54",
-   "winRate": "77",
-   "goals": "5",
-   "assists": "12",
-   "cleanSheetsDef": "10",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "20",
-   "passesMade": "583",
-   "passSuccessRate": "82",
-   "ratingAve": "7.9",
-   "tacklesMade": "87",
-   "tackleSuccessRate": "52",
-   "proName": "Ferni",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "76",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "10",
-   "redCards": "1",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "2",
-   "prevGoals3": "0",
-   "prevGoals4": "1",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Treego2424",
    "gamesPlayed": "16",
    "winRate": "68",
@@ -766,7 +730,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 5,
+  "midfielder": 4,
   "goalkeeper": 0,
   "forward": 9,
   "defender": 5
@@ -863,23 +827,12 @@
   {
    "name": "JessiRGZ",
    "proPos": "25",
-   "gamesPlayed": "102",
-   "goals": "170",
-   "assists": "109",
-   "manOfTheMatch": "45",
+   "gamesPlayed": "103",
+   "goals": "173",
+   "assists": "112",
+   "manOfTheMatch": "46",
    "ratingAve": "8.6",
-   "prevGoals": "1",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "Ferni_x10",
-   "proPos": "25",
-   "gamesPlayed": "320",
-   "goals": "221",
-   "assists": "160",
-   "manOfTheMatch": "85",
-   "ratingAve": "8.0",
-   "prevGoals": "1",
+   "prevGoals": "3",
    "favoritePosition": "forward"
   },
   {
@@ -896,12 +849,12 @@
   {
    "name": "Danial_Dano",
    "proPos": "25",
-   "gamesPlayed": "245",
-   "goals": "310",
-   "assists": "128",
+   "gamesPlayed": "246",
+   "goals": "312",
+   "assists": "129",
    "manOfTheMatch": "60",
    "ratingAve": "8.2",
-   "prevGoals": "1",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
