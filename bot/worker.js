@@ -44,6 +44,7 @@ import { message, notice, header, cards, facts, text, sep, side, thumb, label, f
 import { it } from './icons.js';
 import { playerFaces } from './faces.js';
 import { zoneChoices } from './host.js';
+import { STREAM_COMMANDS, streamCommand, streamAlertsCron } from './streamalerts.js';
 import { WATCH_COMMANDS, WATCH_BUTTON, watchCommand, watchButton, watchlistCron } from './watchlist.js';
 import { DISCOVERY_COMMANDS, DISCOVERY_BUTTON, discoveryCommand, discoveryButton } from './discoveries.js';
 import { FUN_COMMANDS, FUN_BUTTON, funCommand, funButton, birthdayCheck } from './fun.js';
@@ -72,6 +73,7 @@ export default {
     }
     if (flagOn(env, { role: 'owner' }, 'reminders')) ctx.waitUntil(remindersCron(env, (file) => load(site, file, ctx)).catch((e) => console.log('reminders failed', e.message))); // E3 gentle nudges
     if (flagOn(env, { role: 'owner' }, 'memberLive')) ctx.waitUntil(memberLiveCron(env).catch((e) => console.log('member live check failed', e.message))); // 🔴 members' own streams
+    ctx.waitUntil(streamAlertsCron(env).catch((e) => console.log('stream alerts failed', e.message))); // /streamalerts sources (flag streamAlerts checked inside)
     if (flagOn(env, { role: 'owner' }, 'watchlist')) ctx.waitUntil(watchlistCron(env).catch((e) => console.log('watch list cron failed', e.message))); // creators' new videos, about hourly
     if (flagOn(env, { role: 'owner' }, 'fun')) ctx.waitUntil(birthdayCheck(env, postEmbed).catch((e) => console.log('birthday check failed', e.message))); // 🎂 one post a day
     if (flagOn(env, { role: 'owner' }, 'serverTools')) ctx.waitUntil(memberWatch(env).catch((e) => console.log('member watch failed', e.message))); // leave/join alerts + welcome posts
@@ -144,6 +146,7 @@ export default {
       if (!env.DB) return json({ type: 4, data: notice('The member database isn’t connected') });
       return json(await panelInteraction(i, env, await memberOf(i, who, env), site, (f) => load(site, f, ctx)));
     }
+    if (i.type === 2 && STREAM_COMMANDS.has(i.data.name)) return json(await streamCommand(i, env, ctx, who)); // /streamalerts (owner)
     if (i.type === 2 && WATCH_COMMANDS.has(i.data.name)) return json(await watchCommand(i, env, ctx, who)); // /watch /watchlist
     if (i.type === 3 && WATCH_BUTTON.test(i.data?.custom_id ?? '')) return json(await watchButton(i, env, who)); // 👍 Useful
     if (i.type === 2 && DISCOVERY_COMMANDS.has(i.data.name)) return json(await discoveryCommand(i, env, ctx, who)); // /share /discoveries

@@ -11,6 +11,7 @@ import { message, header, text, sep, footer, buttons } from './ui.js';
 import { it } from './icons.js';
 import { postEmbed } from './docs.js';
 import { postAlert } from './alertroute.js';
+import { streamAlertsOn } from './streamalerts.js';
 
 const PER_RUN = 8, UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
@@ -67,7 +68,7 @@ export async function memberLiveCron(env, now = Date.now(), fetcher = fetch) {
     await env.DB.prepare(`INSERT INTO member_live (user_id, platform, url, title, since, at, announced_at) VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (user_id) DO UPDATE SET platform = excluded.platform, url = excluded.url, title = excluded.title, at = excluded.at, since = ?, announced_at = ?`)
       .bind(m.user_id, found.platform, found.url, found.title ?? '', now, now, null, sameStream ? cur.since : now, sameStream ? cur.announced_at : null).run();
-    if (!(sameStream && cur.announced_at)) {
+    if (!streamAlertsOn(env) && !(sameStream && cur.announced_at)) { // with /streamalerts on, its sources post instead
       const panel = livePanel({ ...found, user_id: m.user_id, name: m.name });
       const r = channel && env.DISCORD_BOT_TOKEN ? await postEmbed(env, channel, '', panel).catch(() => null) : null;
       const alert = await postAlert(env, 'live', panel, { not: channel }).catch(() => null); // the alerts channel gets it too (flag alertRoute)

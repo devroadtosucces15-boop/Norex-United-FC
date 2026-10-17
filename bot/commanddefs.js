@@ -152,6 +152,22 @@ export const COMMANDS = [
     options: [{ type: STRING, name: 'topic', description: 'Only one topic', choices: ['builds', 'tactics', 'tips', 'meta', 'news'].map((v) => ({ name: v, value: v })) }],
   },
   {
+    name: 'streamalerts', description: 'Owner: stream and post alerts for the club channel or contributors', default_member_permissions: String(1 << 5), contexts: [0],
+    options: [
+      { type: SUB, name: 'add', description: 'Watch a channel – I post once when it goes live or uploads', options: [
+        { type: STRING, name: 'source', description: 'Whose channel', required: true, choices: [{ name: 'Main club channel', value: 'main' }, { name: 'Contributor (member channel)', value: 'contributor' }] },
+        { type: STRING, name: 'link', description: 'Paste the Twitch, YouTube or Kick channel link', required: true, max_length: 200 },
+        { type: CHANNEL, name: 'channel', description: 'Where to post (default: the Alerts channel in Staff Tools)', channel_types: [0, 5] },
+        { type: USER, name: 'member', description: 'The contributor (shown as credit, never pinged)' },
+        { type: STRING, name: 'name', description: 'How to show the name', max_length: 40 },
+        { type: STRING, name: 'what', description: 'What to announce (default: both)', choices: [{ name: 'Live streams and new posts', value: 'both' }, { name: 'Live streams only', value: 'live' }, { name: 'New videos and Shorts only (YouTube)', value: 'posts' }] },
+      ] },
+      { type: SUB, name: 'list', description: 'Everything being watched' },
+      { type: SUB, name: 'remove', description: 'Stop watching a source', options: [{ type: INTEGER, name: 'id', description: 'The number from /streamalerts list', required: true, min_value: 1 }] },
+      { type: SUB, name: 'test', description: 'Show me the alert card (only I see it)', options: [{ type: INTEGER, name: 'id', description: 'The number from /streamalerts list', required: true, min_value: 1 }] },
+    ],
+  },
+  {
     name: 'watchlist', description: 'Managers: the YouTube creators the watch list follows', default_member_permissions: String(1 << 28), contexts: [0],
     options: [
       { type: SUB, name: 'add', description: 'Follow a creator', options: [

@@ -10,6 +10,7 @@ import { message, header, text, sep, footer, buttons } from './ui.js';
 import { it } from './icons.js';
 import { postEmbed } from './docs.js';
 import { postAlert } from './alertroute.js';
+import { streamAlertsOn } from './streamalerts.js';
 import { notifyMembers } from './notify.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -99,9 +100,10 @@ export async function announceLive(env, v, now = Date.now()) {
   const channel = (await env.DB.prepare("SELECT value FROM meta WHERE key = 'announce_channel'").first())?.value;
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
   const card = livePost(v, site);
-  const r = channel ? await postEmbed(env, channel, '', card) : null;
-  const alert = await postAlert(env, 'live', card, { not: channel }); // the alerts channel gets it too (flag alertRoute)
-  if (!r?.ok && !alert?.ok) return false;
+  const viaSources = streamAlertsOn(env); // /streamalerts replaces these channel posts: one post per stream, in the channel chosen there
+  const r = !viaSources && channel ? await postEmbed(env, channel, '', card) : null;
+  const alert = viaSources ? null : await postAlert(env, 'live', card, { not: channel }); // the alerts channel gets it too (flag alertRoute)
+  if (!viaSources && !r?.ok && !alert?.ok) return false;
   await env.NOREX_KV.put('live_announced', JSON.stringify({ at: now, platform: v.platform }), { expirationTtl: 86400 });
   await notifyMembers(env, { type: 'live', title: '🔴 NOREX is live', body: v.title || 'Come and watch', link: 'watch.html', ref: 'live' }).catch(() => {}); // bell + banner; pop-up for members who set Live to "DM + site"
   return true;
