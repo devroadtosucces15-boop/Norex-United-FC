@@ -41,6 +41,7 @@ export function parseLink(input) {
 const who = (src) => (src.scope === 'main' ? 'NOREX' : src.label || 'A contributor');
 // The big picture: the stream's own preview while it is live, else the banner drawn for the site (scripts/cards.mjs).
 function preview(src, v, env, now) {
+  if (v.live !== false && v.preview) return `${v.preview}${v.preview.includes('?') ? '&' : '?'}t=${Math.floor(now / 60e3)}`; // the frame the platform gave us at pull time
   if (src.platform === 'twitch') return v.live === false ? bannerUrl(env, 'channel') : `https://static-cdn.jtvnw.net/previews-ttv/live_user_${src.handle}-1280x720.jpg?t=${Math.floor(now / 60e3)}`;
   if (src.platform === 'youtube' && v.url?.includes('watch?v=') && v.live !== false) return `https://i.ytimg.com/vi/${v.url.split('v=')[1]}/maxresdefault_live.jpg`;
   return bannerUrl(env, v.live === false ? 'channel' : 'onair');
@@ -50,9 +51,9 @@ export function livePanel(src, v, site, ephemeral = false, env = null, now = Dat
   return message({ accent: on ? 'win' : 'red', ephemeral, mentions: { parse: [] }, blocks: [
     header({ eyebrow: `NOREX UNITED · ${on ? (main ? 'Live' : 'Member live') : 'Channel'} · ${PLATFORM[src.platform]}`, title: on ? `${it('live')} ${who(src)} is live` : `${it('live')} ${who(src)} on ${PLATFORM[src.platform]}`, sub: on ? v.title || undefined : 'Not live right now', size: 3 }),
     cards(preview(src, v, env, now)),
-    facts([['Where', PLATFORM[src.platform]], ['Channel', src.handle.replace(/^channel\//, '')], ['Status', on ? '🟢 On air' : '⚪ Offline']]),
+    facts([['Where', PLATFORM[src.platform]], ['Channel', src.handle.replace(/^channel\//, '')], ['Status', on ? '🟢 On air' : '⚪ Offline'], on && v.game ? ['Playing', v.game] : null, on && v.viewers != null ? ['Viewers', `${v.viewers} when posted`] : null].filter(Boolean)),
     sep(),
-    footer(on ? (main ? 'Drop in, watch along and say hello in the chat' : 'A NOREX contributor · drop in and say hello') : 'Follow the channel to catch the next stream'),
+    footer(on ? (main ? 'Picture and viewers are a snapshot from when this was posted · drop in and say hello' : 'A NOREX contributor · snapshot from when this was posted') : 'Follow the channel to catch the next stream'),
     buttons([...(main && site ? [{ label: 'Watch on the site', url: `${site}watch.html` }] : []), { label: `Open ${PLATFORM[src.platform]}`, url: v.url || src.url }]),
   ] });
 }

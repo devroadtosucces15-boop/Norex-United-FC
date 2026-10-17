@@ -23,17 +23,37 @@ async function page(fetcher, url) {
   const r = await fetcher(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'en-GB,en;q=0.9', Cookie: 'CONSENT=YES+1; SOCS=CAI' }, redirect: 'follow' });
   return r.ok ? r.text() : '';
 }
+// Twitch's own public GraphQL endpoint (what twitch.tv itself calls): title, viewers, game and preview picture, no credentials.
+// The channel page alone is unreliable from a Worker (Twitch serves it differently there), so this is asked first.
+// → { title, viewers, game, preview } when live, null when offline, undefined when the answer can't be trusted (fall back to the page).
+const TWITCH_WEB_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
+export async function twitchGql(fetcher, login) {
+  try {
+    const r = await fetcher('https://gql.twitch.tv/gql', { method: 'POST', headers: { 'Client-ID': TWITCH_WEB_ID, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: `query{user(login:${JSON.stringify(String(login))}){stream{type title viewersCount game{name} previewImageURL(width:1280,height:720)}}}` }) });
+    if (!r.ok) return undefined;
+    const d = await r.json();
+    if (!d?.data) return undefined;
+    const s = d.data.user?.stream;
+    return s?.type === 'live' ? { title: String(s.title ?? '').slice(0, 140), viewers: Number(s.viewersCount) || 0, game: String(s.game?.name ?? '').slice(0, 60), preview: s.previewImageURL || null } : null;
+  } catch { return undefined; }
+}
 // One member: the first platform that is on air wins (Twitch, then YouTube, then Kick).
 export async function liveOf(profile, fetcher = fetch) {
   const tries = [];
-  if (profile.twitch) tries.push(page(fetcher, `https://www.twitch.tv/${profile.twitch}`).then(parseTwitch).then((r) => r.live && { platform: 'twitch', url: `https://www.twitch.tv/${profile.twitch}`, title: r.title }));
+  if (profile.twitch) {
+    const url = `https://www.twitch.tv/${profile.twitch}`;
+    tries.push(twitchGql(fetcher, profile.twitch).then((g) => (g === undefined
+      ? page(fetcher, url).then(parseTwitch).then((r) => r.live && { platform: 'twitch', url, title: r.title })
+      : g && { platform: 'twitch', url, ...g })));
+  }
   if (profile.youtube) {
     const base = `https://www.youtube.com/${profile.youtube}`;
     tries.push(page(fetcher, `${base}/live`).then(parseYouTube).then((r) => r.live && { platform: 'youtube', url: `https://www.youtube.com/watch?v=${r.videoId}`, title: r.title }));
   }
   if (profile.kick) {
     tries.push(fetcher(`https://kick.com/api/v2/channels/${profile.kick}`, { headers: { 'User-Agent': UA, Accept: 'application/json' } })
-      .then((r) => (r.ok ? r.json() : null)).then((d) => d?.livestream && { platform: 'kick', url: `https://kick.com/${profile.kick}`, title: String(d.livestream.session_title ?? '').slice(0, 140) }));
+      .then((r) => (r.ok ? r.json() : null)).then((d) => d?.livestream && { platform: 'kick', url: `https://kick.com/${profile.kick}`, title: String(d.livestream.session_title ?? '').slice(0, 140), viewers: Number(d.livestream.viewer_count) || undefined, game: d.livestream.categories?.[0]?.name || undefined, preview: d.livestream.thumbnail?.src || undefined }));
   }
   const found = (await Promise.allSettled(tries)).map((x) => (x.status === 'fulfilled' ? x.value : null)).filter(Boolean);
   const order = { twitch: 0, youtube: 1, kick: 2 };
