@@ -1,5 +1,5 @@
 {
-  "revision": "f3c10a305feb3f70b6d5ba821ee7f866ed8011dc",
+  "revision": "d9f2d30ec04d19d659edd3223fe2af4885d7d947",
   "files": 877,
   "imports": 666,
   "api_paths": 251,
@@ -12349,7 +12349,7 @@
     {
       "path": "tests/streamalerts.test.mjs",
       "layer": "tests",
-      "lines": 103,
+      "lines": 105,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
