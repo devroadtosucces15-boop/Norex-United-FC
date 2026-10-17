@@ -1,9 +1,9 @@
 {
-  "revision": "caafc3b4a05ea368ddcfd9bd89a892657af8838d",
-  "files": 874,
-  "imports": 650,
+  "revision": "f3c10a305feb3f70b6d5ba821ee7f866ed8011dc",
+  "files": 877,
+  "imports": 666,
   "api_paths": 251,
-  "tables": 318,
+  "tables": 321,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -735,7 +735,7 @@
     {
       "path": "bot/commanddefs.js",
       "layer": "bot",
-      "lines": 256,
+      "lines": 272,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -1715,13 +1715,14 @@
     {
       "path": "bot/live.js",
       "layer": "bot",
-      "lines": 115,
+      "lines": 117,
       "imports": [
         "./roles.js",
         "./ui.js",
         "./icons.js",
         "./docs.js",
         "./alertroute.js",
+        "./streamalerts.js",
         "./notify.js"
       ],
       "endpoints": [],
@@ -1874,14 +1875,15 @@
     {
       "path": "bot/memberlive.js",
       "layer": "bot",
-      "lines": 87,
+      "lines": 88,
       "imports": [
         "./roles.js",
         "./live.js",
         "./ui.js",
         "./icons.js",
         "./docs.js",
-        "./alertroute.js"
+        "./alertroute.js",
+        "./streamalerts.js"
       ],
       "endpoints": [
         "/api/live/members"
@@ -2828,6 +2830,18 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0056_stream_sources.sql",
+      "layer": "bot",
+      "lines": 30,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "stream_seen",
+        "stream_sources"
+      ],
+      "functions": []
+    },
+    {
       "path": "bot/migrations/0056_watchlist_channel.sql",
       "layer": "bot",
       "lines": 3,
@@ -3721,6 +3735,48 @@
       ]
     },
     {
+      "path": "bot/streamalerts.js",
+      "layer": "bot",
+      "lines": 164,
+      "imports": [
+        "./roles.js",
+        "./ui.js",
+        "./icons.js",
+        "./docs.js",
+        "./settings.js",
+        "./memberlive.js",
+        "./watchlist.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "SET",
+        "per",
+        "stream_seen",
+        "stream_sources",
+        "that",
+        "the"
+      ],
+      "functions": [
+        "all",
+        "checkLive",
+        "checkPosts",
+        "clean",
+        "isShort",
+        "livePanel",
+        "one",
+        "parseLink",
+        "run",
+        "say",
+        "siteOf",
+        "streamAlertsCron",
+        "streamAlertsOn",
+        "streamCommand",
+        "videoPanel",
+        "who",
+        "ytChannel"
+      ]
+    },
+    {
       "path": "bot/trials.js",
       "layer": "bot",
       "lines": 295,
@@ -3923,7 +3979,7 @@
     {
       "path": "bot/worker.js",
       "layer": "bot",
-      "lines": 598,
+      "lines": 601,
       "imports": [
         "./botcommands.js",
         "./members.js",
@@ -3960,6 +4016,7 @@
         "./icons.js",
         "./faces.js",
         "./host.js",
+        "./streamalerts.js",
         "./watchlist.js",
         "./discoveries.js",
         "./fun.js",
@@ -4014,7 +4071,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 133,
+      "lines": 134,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -12290,6 +12347,33 @@
       ]
     },
     {
+      "path": "tests/streamalerts.test.mjs",
+      "layer": "tests",
+      "lines": 103,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "./lib.mjs",
+        "../bot/ui.js",
+        "../bot/streamalerts.js",
+        "../bot/live.js",
+        "node:fs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "SET",
+        "meta",
+        "stream_sources"
+      ],
+      "functions": [
+        "as",
+        "entry",
+        "sa",
+        "send",
+        "setFlags"
+      ]
+    },
+    {
       "path": "tests/studio.test.mjs",
       "layer": "tests",
       "lines": 136,
@@ -15481,6 +15565,11 @@
     },
     {
       "source": "bot/live.js",
+      "target": "bot/streamalerts.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/live.js",
       "target": "bot/notify.js",
       "kind": "imports"
     },
@@ -15547,6 +15636,11 @@
     {
       "source": "bot/memberlive.js",
       "target": "bot/alertroute.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/streamalerts.js",
       "kind": "imports"
     },
     {
@@ -16085,6 +16179,41 @@
       "kind": "imports"
     },
     {
+      "source": "bot/streamalerts.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
+      "target": "bot/icons.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
+      "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
+      "target": "bot/settings.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
+      "target": "bot/memberlive.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
+      "target": "bot/watchlist.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/trials.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -16297,6 +16426,11 @@
     {
       "source": "bot/worker.js",
       "target": "bot/host.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/worker.js",
+      "target": "bot/streamalerts.js",
       "kind": "imports"
     },
     {
@@ -17967,6 +18101,36 @@
     {
       "source": "tests/statinsights.test.mjs",
       "target": "bot/statinsights.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/streamalerts.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/streamalerts.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/streamalerts.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/streamalerts.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/streamalerts.test.mjs",
+      "target": "bot/streamalerts.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/streamalerts.test.mjs",
+      "target": "bot/live.js",
       "kind": "imports"
     },
     {

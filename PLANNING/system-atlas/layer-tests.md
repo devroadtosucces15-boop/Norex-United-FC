@@ -92,16 +92,17 @@ flowchart LR
   n85["tests/squads.test.mjs"]
   n86["tests/stars.test.mjs"]
   n87["tests/statinsights.test.mjs"]
-  n88["tests/studio.test.mjs"]
-  n89["tests/submissions.test.mjs"]
-  n90["tests/tagline.test.mjs"]
-  n91["tests/trials.test.mjs"]
-  n92["tests/updates.test.mjs"]
-  n93["tests/voicerecap.test.mjs"]
-  n94["tests/watchlist.test.mjs"]
-  n95["tests/wave10.test.mjs"]
-  n96["tests/wave11.test.mjs"]
-  n97["tests/wave8.test.mjs"]
+  n88["tests/streamalerts.test.mjs"]
+  n89["tests/studio.test.mjs"]
+  n90["tests/submissions.test.mjs"]
+  n91["tests/tagline.test.mjs"]
+  n92["tests/trials.test.mjs"]
+  n93["tests/updates.test.mjs"]
+  n94["tests/voicerecap.test.mjs"]
+  n95["tests/watchlist.test.mjs"]
+  n96["tests/wave10.test.mjs"]
+  n97["tests/wave11.test.mjs"]
+  n98["tests/wave8.test.mjs"]
   n0 --> n46
   n0 --> n53
   n1 --> n46
@@ -286,4 +287,6 @@ flowchart LR
   n96 --> n53
   n97 --> n46
   n97 --> n53
+  n98 --> n46
+  n98 --> n53
 ```
