@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-17T20:40:46.999Z",
+ "fetchedAt": "2026-10-17T20:50:46.598Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -405,42 +405,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "PulviTheGoat",
-   "gamesPlayed": "11",
-   "winRate": "45",
-   "goals": "8",
-   "assists": "6",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "42",
-   "passesMade": "144",
-   "passSuccessRate": "75",
-   "ratingAve": "7.6",
-   "tacklesMade": "14",
-   "tackleSuccessRate": "27",
-   "proName": "Pulvi",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "174",
-   "proNationality": "95",
-   "proOverall": "77",
-   "proOverallStr": "77",
-   "manOfTheMatch": "3",
-   "redCards": "1",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "1",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "1",
-   "prevGoals8": "0",
-   "prevGoals9": "2",
-   "prevGoals10": "2",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Austin110486",
    "gamesPlayed": "65",
    "winRate": "61",
@@ -552,7 +516,7 @@
  "positionCount": {
   "midfielder": 3,
   "goalkeeper": 0,
-  "forward": 6,
+  "forward": 5,
   "defender": 4
  },
  "career": [
@@ -653,17 +617,6 @@
    "manOfTheMatch": "29",
    "ratingAve": "7.7",
    "prevGoals": "3",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "PulviTheGoat",
-   "proPos": "25",
-   "gamesPlayed": "93",
-   "goals": "50",
-   "assists": "44",
-   "manOfTheMatch": "11",
-   "ratingAve": "7.5",
-   "prevGoals": "1",
    "favoritePosition": "forward"
   },
   {
