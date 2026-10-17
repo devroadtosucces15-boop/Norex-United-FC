@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-17T08:20:47.180Z",
+ "fetchedAt": "2026-10-17T08:30:48.332Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -369,42 +369,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "JessiRGZ",
-   "gamesPlayed": "57",
-   "winRate": "80",
-   "goals": "94",
-   "assists": "60",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "52",
-   "passesMade": "626",
-   "passSuccessRate": "78",
-   "ratingAve": "8.5",
-   "tacklesMade": "40",
-   "tackleSuccessRate": "42",
-   "proName": "B. Reynolds",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "167",
-   "proNationality": "95",
-   "proOverall": "79",
-   "proOverallStr": "79",
-   "manOfTheMatch": "27",
-   "redCards": "0",
-   "prevGoals": "2",
-   "prevGoals1": "2",
-   "prevGoals2": "1",
-   "prevGoals3": "2",
-   "prevGoals4": "5",
-   "prevGoals5": "1",
-   "prevGoals6": "2",
-   "prevGoals7": "2",
-   "prevGoals8": "2",
-   "prevGoals9": "3",
-   "prevGoals10": "1",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Treego2424",
    "gamesPlayed": "16",
    "winRate": "68",
@@ -439,42 +403,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "Danial_Dano",
-   "gamesPlayed": "57",
-   "winRate": "77",
-   "goals": "27",
-   "assists": "20",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "57",
-   "passesMade": "602",
-   "passSuccessRate": "85",
-   "ratingAve": "7.9",
-   "tacklesMade": "79",
-   "tackleSuccessRate": "41",
-   "proName": "Dano",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "172",
-   "proNationality": "162",
-   "proOverall": "76",
-   "proOverallStr": "76",
-   "manOfTheMatch": "9",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "1",
-   "prevGoals6": "1",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "PATRICKSTARR11",
@@ -730,9 +658,9 @@
   }
  ],
  "positionCount": {
-  "midfielder": 4,
+  "midfielder": 3,
   "goalkeeper": 0,
-  "forward": 9,
+  "forward": 8,
   "defender": 5
  },
  "career": [
@@ -825,17 +753,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "JessiRGZ",
-   "proPos": "25",
-   "gamesPlayed": "106",
-   "goals": "183",
-   "assists": "114",
-   "manOfTheMatch": "48",
-   "ratingAve": "8.6",
-   "prevGoals": "3",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Treego2424",
    "proPos": "25",
    "gamesPlayed": "48",
@@ -845,17 +762,6 @@
    "ratingAve": "7.5",
    "prevGoals": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "Danial_Dano",
-   "proPos": "14",
-   "gamesPlayed": "249",
-   "goals": "318",
-   "assists": "135",
-   "manOfTheMatch": "61",
-   "ratingAve": "8.2",
-   "prevGoals": "1",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "PATRICKSTARR11",
