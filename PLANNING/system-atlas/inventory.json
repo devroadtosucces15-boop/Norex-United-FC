@@ -1,8 +1,8 @@
 {
-  "revision": "df3cd95301710fdaa0fa7d20cf09e80872058567",
-  "files": 871,
-  "imports": 637,
-  "api_paths": 250,
+  "revision": "49f8c7d609287155d1e020b40fb72a1a2af44793",
+  "files": 873,
+  "imports": 650,
+  "api_paths": 251,
   "tables": 317,
   "records": [
     {
@@ -154,6 +154,33 @@
         "spikeReport",
         "testImage",
         "testText"
+      ]
+    },
+    {
+      "path": "bot/alertroute.js",
+      "layer": "bot",
+      "lines": 71,
+      "imports": [
+        "./roles.js",
+        "./settings.js",
+        "./docs.js",
+        "./ui.js",
+        "./icons.js"
+      ],
+      "endpoints": [
+        "/api/bot/alerts/test"
+      ],
+      "tables": [
+        "server"
+      ],
+      "functions": [
+        "alertRoute",
+        "alertTarget",
+        "excerpt",
+        "fail",
+        "json",
+        "postAlert",
+        "postAlertCard"
       ]
     },
     {
@@ -1102,11 +1129,12 @@
     {
       "path": "bot/feed.js",
       "layer": "bot",
-      "lines": 284,
+      "lines": 286,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./docs.js",
+        "./alertroute.js",
         "./social.js",
         "./media.js",
         "./ui.js"
@@ -1687,12 +1715,13 @@
     {
       "path": "bot/live.js",
       "layer": "bot",
-      "lines": 113,
+      "lines": 115,
       "imports": [
         "./roles.js",
         "./ui.js",
         "./icons.js",
         "./docs.js",
+        "./alertroute.js",
         "./notify.js"
       ],
       "endpoints": [],
@@ -1845,13 +1874,14 @@
     {
       "path": "bot/memberlive.js",
       "layer": "bot",
-      "lines": 84,
+      "lines": 87,
       "imports": [
         "./roles.js",
         "./live.js",
         "./ui.js",
         "./icons.js",
-        "./docs.js"
+        "./docs.js",
+        "./alertroute.js"
       ],
       "endpoints": [
         "/api/live/members"
@@ -1879,7 +1909,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1176,
+      "lines": 1179,
       "imports": [
         "./faces.js",
         "./panel.js",
@@ -1918,6 +1948,7 @@
         "./profiles.js",
         "./discordroles.js",
         "./settings.js",
+        "./alertroute.js",
         "./botcommands.js",
         "./crawl.js",
         "./burners.js",
@@ -3493,7 +3524,7 @@
     {
       "path": "bot/settings.js",
       "layer": "bot",
-      "lines": 65,
+      "lines": 67,
       "imports": [
         "./roles.js",
         "./botcommands.js"
@@ -3968,7 +3999,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 132,
+      "lines": 133,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9877,6 +9908,33 @@
       "functions": []
     },
     {
+      "path": "tests/alertroute.test.mjs",
+      "layer": "tests",
+      "lines": 77,
+      "imports": [
+        "./mock.mjs",
+        "./lib.mjs",
+        "../bot/ui.js",
+        "../bot/live.js",
+        "node:fs"
+      ],
+      "endpoints": [
+        "/api/bot/alerts/test",
+        "/api/bot/settings",
+        "/api/feed/post"
+      ],
+      "tables": [
+        "SET",
+        "meta",
+        "the"
+      ],
+      "functions": [
+        "meta",
+        "post",
+        "setFlags"
+      ]
+    },
+    {
       "path": "tests/ask.test.mjs",
       "layer": "tests",
       "lines": 48,
@@ -14835,6 +14893,31 @@
       "kind": "imports"
     },
     {
+      "source": "bot/alertroute.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/alertroute.js",
+      "target": "bot/settings.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/alertroute.js",
+      "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/alertroute.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/alertroute.js",
+      "target": "bot/icons.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/awards.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -15161,6 +15244,11 @@
     },
     {
       "source": "bot/feed.js",
+      "target": "bot/alertroute.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/feed.js",
       "target": "bot/social.js",
       "kind": "imports"
     },
@@ -15371,6 +15459,11 @@
     },
     {
       "source": "bot/live.js",
+      "target": "bot/alertroute.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/live.js",
       "target": "bot/notify.js",
       "kind": "imports"
     },
@@ -15432,6 +15525,11 @@
     {
       "source": "bot/memberlive.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/alertroute.js",
       "kind": "imports"
     },
     {
@@ -15617,6 +15715,11 @@
     {
       "source": "bot/members.js",
       "target": "bot/settings.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/members.js",
+      "target": "bot/alertroute.js",
       "kind": "imports"
     },
     {
@@ -16412,6 +16515,26 @@
     {
       "source": "tests/aispike.test.mjs",
       "target": "bot/aispike.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/alertroute.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/alertroute.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/alertroute.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/alertroute.test.mjs",
+      "target": "bot/live.js",
       "kind": "imports"
     },
     {
