@@ -1,5 +1,6 @@
 // Watch list – Pro Clubs YouTube videos worth the squad's time, sorted by topic.
-//   managers  /watchlist add <channel id> <name> · remove · list      the creators the bot follows
+//   managers  /watchlist add <link> [channel] [name] · remove · list   the creators the bot follows. Paste any YouTube link (channel,
+//             @handle, or one of their videos) – no IDs to look up. `channel` picks where their new videos post (default: the shared announce channel).
 //   members   /watch [topic]                                          the latest videos, newest first
 //   cron      about once an hour: each creator's public RSS feed (no API key) → new videos stored, topic-sorted, and the new
 //             ones posted to the announce channel with "👍 Useful · n" and a Watch button
@@ -30,6 +31,42 @@ const upd = (m) => ({ type: 7, data: { components: m.components, allowed_mention
 const one = (env, sql, ...a) => env.DB.prepare(sql).bind(...a).first();
 const all = (env, sql, ...a) => env.DB.prepare(sql).bind(...a).all().then((r) => r.results ?? []);
 const watchUrl = (id) => `https://www.youtube.com/watch?v=${id}`;
+
+// ---------- setup by link ----------
+// Any of: channel link (/channel/UC…, /@handle, /c/x, /user/x), a video link (watch?v=, youtu.be/, shorts/), @handle, or a bare UC id.
+export function parseSource(input) {
+  const raw = String(input ?? '').trim().replace(/^<|>$/g, '');
+  if (/^UC[\w-]{22}$/.test(raw)) return { id: raw };
+  if (/^@[\w.-]{2,60}$/.test(raw)) return { page: `https://www.youtube.com/${raw}` };
+  let u; try { u = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`); } catch { return null; }
+  const host = u.hostname.replace(/^(www|m)\./, '');
+  if (host === 'youtu.be') { const v = u.pathname.split('/')[1]; return /^[\w-]{6,20}$/.test(v ?? '') ? { page: `https://www.youtube.com/watch?v=${v}` } : null; }
+  if (host !== 'youtube.com') return null;
+  const seg = u.pathname.split('/').filter(Boolean);
+  if (seg[0] === 'channel' && /^UC[\w-]{22}$/.test(seg[1] ?? '')) return { id: seg[1] };
+  if (seg[0]?.startsWith('@')) return { page: `https://www.youtube.com/${seg[0]}` };
+  if ((seg[0] === 'c' || seg[0] === 'user') && seg[1]) return { page: `https://www.youtube.com/${seg[0]}/${encodeURIComponent(seg[1])}` };
+  if (seg[0] === 'shorts' && seg[1]) return { page: `https://www.youtube.com/watch?v=${seg[1]}` };
+  if (seg[0] === 'watch' && /^[\w-]{6,20}$/.test(u.searchParams.get('v') ?? '')) return { page: `https://www.youtube.com/watch?v=${u.searchParams.get('v')}` };
+  return null;
+}
+// Link → { id, name } from the channel's public feed (its title is the creator's name). Null when it can't be found.
+export async function resolveSource(input, fetcher = fetch) {
+  const src = parseSource(input);
+  if (!src) return null;
+  const get = (url) => fetcher(url, { headers: { 'User-Agent': 'Mozilla/5.0 NorexUnitedBot/1.0', Cookie: 'CONSENT=YES+1' }, signal: AbortSignal.timeout(2000) }).catch(() => null);
+  let id = src.id;
+  if (!id) {
+    const r = await get(src.page);
+    const html = r?.ok ? await r.text() : '';
+    id = html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/)?.[1] ?? html.match(/"(?:channelId|externalId)":"(UC[\w-]{22})"/)?.[1];
+  }
+  if (!id) return null;
+  const f = await get(`https://www.youtube.com/feeds/videos.xml?channel_id=${id}`);
+  if (!f?.ok) return null; // not a real channel
+  const name = clean(decode((await f.text()).match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''), 60);
+  return { id, name };
+}
 
 export function topicOf(title) {
   for (const [topic, re] of RULES) if (re.test(title)) return topic;
@@ -81,23 +118,26 @@ export async function watchlistCron(env, now = Date.now(), fetcher = fetch) {
     if (!r?.ok) continue;
     const first = c.seen_at == null; // a creator just added: take the backlog silently, only recent uploads get posted
     for (const v of parseFeed(await r.text()).slice(0, 15)) {
-      const had = await one(env, 'SELECT 1 AS x FROM watch_videos WHERE id = ?', v.id);
-      if (had) continue;
       const fresh = v.published > now - POST_MAX_AGE;
-      await env.DB.prepare('INSERT INTO watch_videos (id, channel_id, channel_name, title, thumb, published, topic, tags, at, posted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      const ins = await env.DB.prepare('INSERT OR IGNORE INTO watch_videos (id, channel_id, channel_name, title, thumb, published, topic, tags, at, posted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         .bind(v.id, c.channel_id, c.name || v.channel, v.title, v.thumb, v.published, topicOf(v.title), JSON.stringify(tagsOf(v.title)), now, first && !fresh ? now : null).run();
-      stored++;
+      if (ins.meta?.changes) stored++;
     }
     await env.DB.prepare('UPDATE watch_creators SET seen_at = ? WHERE channel_id = ?').bind(now, c.channel_id).run();
   }
   let posted = 0;
-  const channel = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
-  if (channel && env.DISCORD_BOT_TOKEN) {
-    const fresh = await all(env, 'SELECT * FROM watch_videos WHERE posted_at IS NULL AND published > ? ORDER BY published LIMIT ?', now - POST_MAX_AGE, POST_CAP);
+  const shared = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
+  if (env.DISCORD_BOT_TOKEN) {
+    const fresh = await all(env, `SELECT v.*, c.post_channel FROM watch_videos v LEFT JOIN watch_creators c ON c.channel_id = v.channel_id
+      WHERE v.posted_at IS NULL AND v.published > ? ORDER BY v.published LIMIT ?`, now - POST_MAX_AGE, POST_CAP);
     for (const v of fresh) {
-      const r = await postEmbed(env, channel, '', videoPanel(v, 0)).catch(() => null);
-      if (!r?.ok) break;
-      await env.DB.prepare('UPDATE watch_videos SET posted_at = ? WHERE id = ?').bind(now, v.id).run();
+      const channel = v.post_channel || shared;
+      if (!channel) continue;
+      // Claim the video first: two overlapping checks can never post it twice. A failed send gives the claim back.
+      const claim = await env.DB.prepare('UPDATE watch_videos SET posted_at = ? WHERE id = ? AND posted_at IS NULL').bind(now, v.id).run();
+      if (!claim.meta?.changes) continue;
+      const r = await postEmbed(env, channel, '', videoPanel(v, 0), { remember: false }).catch(() => null);
+      if (!r?.ok) { await env.DB.prepare('UPDATE watch_videos SET posted_at = NULL WHERE id = ?').bind(v.id).run(); break; }
       posted++;
     }
   }
@@ -127,19 +167,21 @@ export async function watchCommand(i, env, ctx, who, now = Date.now()) {
     if (!can(who, 'watchlist.manage')) return say('Only managers can change the watch list', 'Ask a manager to add a creator.');
     const sub = i.data.options?.[0], o = Object.fromEntries((sub?.options ?? []).map((x) => [x.name, x.value]));
     if (sub?.name === 'add') {
-      const id = String(o.channel ?? '').trim().replace(/^.*\/channel\//, '').replace(/[/?#].*$/, '');
-      if (!/^UC[\w-]{22}$/.test(id)) return say('That isn’t a channel ID', 'It starts with UC and is 24 characters – on the channel page: About → Share channel → Copy channel ID.');
+      const found = await resolveSource(o.source);
+      if (!found) return say('I couldn’t find that channel', 'Paste a YouTube channel link, an @handle, or a link to one of their videos.');
       if ((await one(env, 'SELECT COUNT(*) AS n FROM watch_creators WHERE active = 1'))?.n >= MAX_CREATORS) return say('That’s 30 creators', 'Remove one first.');
-      const name = clean(o.name, 60) || id;
-      await env.DB.prepare('INSERT INTO watch_creators (channel_id, name, added_by, at, active) VALUES (?, ?, ?, ?, 1) ON CONFLICT (channel_id) DO UPDATE SET name = excluded.name, active = 1').bind(id, name, i.member?.user?.id ?? '', now).run();
-      return reply(notice(`Following ${name}`, 'Their latest videos appear within the hour; new uploads get posted in the announce channel.', { accent: 'win' }));
+      const name = clean(o.name, 60) || found.name || found.id;
+      const chan = /^\d{5,25}$/.test(String(o.channel ?? '')) ? String(o.channel) : null;
+      await env.DB.prepare('INSERT INTO watch_creators (channel_id, name, added_by, at, active, post_channel) VALUES (?, ?, ?, ?, 1, ?) ON CONFLICT (channel_id) DO UPDATE SET name = excluded.name, active = 1, post_channel = excluded.post_channel').bind(found.id, name, i.member?.user?.id ?? '', now, chan).run();
+      return reply(notice(`Following ${name}`, `Their latest videos appear within the hour; new uploads post once in ${chan ? `<#${chan}>` : 'the announce channel'}.`, { accent: 'win' }));
     }
     if (sub?.name === 'remove') {
-      const r = await env.DB.prepare('UPDATE watch_creators SET active = 0 WHERE channel_id = ? OR lower(name) = lower(?)').bind(String(o.channel ?? ''), String(o.channel ?? '')).run();
+      const key = String(o.channel ?? '').trim(), id = parseSource(key)?.id ?? key;
+      const r = await env.DB.prepare('UPDATE watch_creators SET active = 0 WHERE channel_id = ? OR lower(name) = lower(?)').bind(id, key).run();
       return r.meta?.changes ? say('Stopped following', 'Their videos stay on the list.') : say('Not found', 'Use the channel ID or the name shown in /watchlist list.');
     }
     const rows = await all(env, 'SELECT * FROM watch_creators WHERE active = 1 ORDER BY name');
-    return reply(message({ ephemeral: true, accent: 'steel', blocks: [header({ eyebrow: 'Staff · Watch list', title: `🎬 ${rows.length} creator${rows.length === 1 ? '' : 's'}`, size: 3 }), text(rows.map((r) => `**${r.name}** · \`${r.channel_id}\``).join('\n') || 'None yet – /watchlist add')] }));
+    return reply(message({ ephemeral: true, accent: 'steel', blocks: [header({ eyebrow: 'Staff · Watch list', title: `🎬 ${rows.length} creator${rows.length === 1 ? '' : 's'}`, size: 3 }), text(rows.map((r) => `**${r.name}** · ${r.post_channel ? `<#${r.post_channel}>` : 'announce channel'} · \`${r.channel_id}\``).join('\n') || 'None yet – /watchlist add')] }));
   } catch (e) {
     return say('Something went wrong', String(e.message ?? e).slice(0, 200));
   }

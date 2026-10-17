@@ -155,10 +155,11 @@ export const COMMANDS = [
     name: 'watchlist', description: 'Managers: the YouTube creators the watch list follows', default_member_permissions: String(1 << 28), contexts: [0],
     options: [
       { type: SUB, name: 'add', description: 'Follow a creator', options: [
-        { type: STRING, name: 'channel', description: 'Their channel ID (starts with UC…) or channel link', required: true, max_length: 120 },
-        { type: STRING, name: 'name', description: 'How to show their name', max_length: 60 },
+        { type: STRING, name: 'source', description: 'Paste their YouTube channel link, @handle, or a link to any of their videos', required: true, max_length: 200 },
+        { type: CHANNEL, name: 'channel', description: 'Where their new videos post (default: the announce channel)', channel_types: [0, 5] },
+        { type: STRING, name: 'name', description: 'How to show their name (default: their YouTube name)', max_length: 60 },
       ] },
-      { type: SUB, name: 'remove', description: 'Stop following a creator', options: [{ type: STRING, name: 'channel', description: 'Channel ID or the name shown in /watchlist list', required: true, max_length: 120 }] },
+      { type: SUB, name: 'remove', description: 'Stop following a creator', options: [{ type: STRING, name: 'channel', description: 'Their link, or the name shown in /watchlist list', required: true, max_length: 120 }] },
       { type: SUB, name: 'list', description: 'Who we follow' },
     ],
   },
