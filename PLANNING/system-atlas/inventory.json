@@ -1,5 +1,5 @@
 {
-  "revision": "d9f2d30ec04d19d659edd3223fe2af4885d7d947",
+  "revision": "a25b545ea2fd70998c4c8f68dea50e110d299c2d",
   "files": 877,
   "imports": 666,
   "api_paths": 251,
@@ -735,7 +735,7 @@
     {
       "path": "bot/commanddefs.js",
       "layer": "bot",
-      "lines": 272,
+      "lines": 273,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -3737,7 +3737,7 @@
     {
       "path": "bot/streamalerts.js",
       "layer": "bot",
-      "lines": 164,
+      "lines": 192,
       "imports": [
         "./roles.js",
         "./ui.js",
@@ -3753,8 +3753,7 @@
         "per",
         "stream_seen",
         "stream_sources",
-        "that",
-        "the"
+        "that"
       ],
       "functions": [
         "all",
@@ -3765,12 +3764,14 @@
         "livePanel",
         "one",
         "parseLink",
+        "preview",
         "run",
         "say",
         "siteOf",
         "streamAlertsCron",
         "streamAlertsOn",
         "streamCommand",
+        "streamPush",
         "videoPanel",
         "who",
         "ytChannel"
@@ -9384,7 +9385,7 @@
     {
       "path": "scripts/cards.mjs",
       "layer": "scripts",
-      "lines": 406,
+      "lines": 411,
       "imports": [
         "node:fs",
         "node:path",
@@ -12349,7 +12350,7 @@
     {
       "path": "tests/streamalerts.test.mjs",
       "layer": "tests",
-      "lines": 105,
+      "lines": 122,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
