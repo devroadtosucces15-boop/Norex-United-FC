@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-18T22:20:48.328Z",
+ "fetchedAt": "2026-10-18T22:30:48.487Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -547,49 +547,13 @@
    "prevGoals9": "1",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "indicud_1996",
-   "gamesPlayed": "5",
-   "winRate": "40",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "56",
-   "passSuccessRate": "78",
-   "ratingAve": "8.2",
-   "tacklesMade": "15",
-   "tackleSuccessRate": "36",
-   "proName": "miggy",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "186",
-   "proNationality": "83",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
   }
  ],
  "positionCount": {
   "midfielder": 4,
   "goalkeeper": 0,
   "forward": 5,
-  "defender": 5
+  "defender": 4
  },
  "career": [
   {
@@ -734,17 +698,6 @@
    "ratingAve": "7.1",
    "prevGoals": "1",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "indicud_1996",
-   "proPos": "5",
-   "gamesPlayed": "53",
-   "goals": "4",
-   "assists": "2",
-   "manOfTheMatch": "4",
-   "ratingAve": "7.0",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   }
  ],
  "leaderboard": {
