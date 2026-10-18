@@ -1,7 +1,7 @@
 {
  "id": "51769",
  "tier": "linked",
- "fetchedAt": "2026-10-18T02:30:46.223Z",
+ "fetchedAt": "2026-10-18T02:40:48.074Z",
  "info": {
   "name": "Legacy Athletic",
   "clubId": 51769,
@@ -837,7 +837,43 @@
    "prevGoals10": "0"
   },
   {
-   "name": "zitzoto",
+   "name": "gibernacolo",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
+  },
+  {
+   "name": "SheWillRejoice",
    "gamesPlayed": "0",
    "favoritePosition": "",
    "winRate": "0",
@@ -1126,6 +1162,17 @@
    "favoritePosition": "defender"
   },
   {
+   "name": "gibernacolo",
+   "proPos": "14",
+   "gamesPlayed": "49",
+   "goals": "31",
+   "assists": "35",
+   "manOfTheMatch": "8",
+   "ratingAve": "7.7",
+   "prevGoals": "0",
+   "favoritePosition": "midfielder"
+  },
+  {
    "name": "Colombian_Papi33",
    "proPos": "14",
    "gamesPlayed": "37",
@@ -1137,15 +1184,15 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "zitzoto",
-   "proPos": "25",
-   "gamesPlayed": "19",
-   "goals": "8",
-   "assists": "6",
+   "name": "SheWillRejoice",
+   "proPos": "14",
+   "gamesPlayed": "3",
+   "goals": "0",
+   "assists": "0",
    "manOfTheMatch": "0",
-   "ratingAve": "6.8",
+   "ratingAve": "6.4",
    "prevGoals": "0",
-   "favoritePosition": "forward"
+   "favoritePosition": "midfielder"
   },
   {
    "name": "Napszzz3",
