@@ -3,7 +3,7 @@
  "name": "vagi noli",
  "crest": "99160128",
  "trackedAt": "2026-10-10T00:08:15.917Z",
- "fetchedAt": "2026-10-18T03:20:48.324Z",
+ "fetchedAt": "2026-10-18T03:30:48.019Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "vagi noli",
@@ -89,42 +89,6 @@
  },
  "members": [
   {
-   "name": "J_cruz505",
-   "gamesPlayed": "4",
-   "winRate": "100",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "43",
-   "passSuccessRate": "81",
-   "ratingAve": "6.2",
-   "tacklesMade": "3",
-   "tackleSuccessRate": "30",
-   "proName": "Cruz",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "178",
-   "proNationality": "83",
-   "proOverall": "73",
-   "proOverallStr": "73",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "rezy33pizza",
    "gamesPlayed": "2",
    "winRate": "100",
@@ -199,20 +163,9 @@
  ],
  "career": [
   {
-   "name": "J_cruz505",
-   "proPos": "5",
-   "gamesPlayed": "32",
-   "goals": "0",
-   "assists": "0",
-   "manOfTheMatch": "1",
-   "ratingAve": "6.9",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "rezy33pizza",
    "proPos": "5",
-   "gamesPlayed": "37",
+   "gamesPlayed": "38",
    "goals": "3",
    "assists": "5",
    "manOfTheMatch": "1",
@@ -233,17 +186,9 @@
   }
  ],
  "roster": {
-  "J_cruz505": {
-   "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-18T03:20:48.324Z",
-   "active": true,
-   "gp": 4,
-   "pos": "midfielder",
-   "ovr": 73
-  },
   "rezy33pizza": {
    "first": "2026-10-10T00:08:15.917Z",
-   "last": "2026-10-18T03:20:48.324Z",
+   "last": "2026-10-18T03:30:48.019Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -251,11 +196,19 @@
   },
   "Rinconkelvin95": {
    "first": "2026-10-12T23:21:33.359Z",
-   "last": "2026-10-18T03:20:48.324Z",
+   "last": "2026-10-18T03:30:48.019Z",
    "active": true,
    "gp": 4,
    "pos": "goalkeeper",
    "ovr": 85
+  },
+  "J_cruz505": {
+   "first": "2026-10-12T23:21:33.359Z",
+   "last": "2026-10-18T03:20:48.324Z",
+   "active": false,
+   "gp": 4,
+   "pos": "midfielder",
+   "ovr": 73
   },
   "x_MrMike_x": {
    "first": "2026-10-10T00:08:15.917Z",
