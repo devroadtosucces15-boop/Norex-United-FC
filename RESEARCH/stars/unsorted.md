@@ -36,7 +36,7 @@
 | [public-apis/public-apis](https://github.com/public-apis/public-apis) | A collective list of free APIs | Python | 2026-10-17 |
 | [react/react](https://github.com/react/react) | The library for web and native user interfaces. | JavaScript | 2026-10-15 |
 | [storytold/photocraft](https://github.com/storytold/photocraft) | PhotoCraft: An open-source, photo editor written by scratch in pure Rust | Rust | 2026-10-18 |
-| [tester-army/e2e](https://github.com/tester-army/e2e) | Next generation e2e testing framework for web and mobile apps. | TypeScript | 2026-10-17 |
+| [tester-army/e2e](https://github.com/tester-army/e2e) | Next generation e2e testing framework for web and mobile apps. | TypeScript | 2026-10-18 |
 | [torvalds/linux](https://github.com/torvalds/linux) | Linux kernel source tree | C | 2026-10-18 |
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | The open agent skills tool - npx skills | TypeScript | 2026-10-09 |
 | [vinta/awesome-python](https://github.com/vinta/awesome-python) | The definitive list that answers "I want to do X in Python, which tool should I use?" | Python | 2026-10-17 |
