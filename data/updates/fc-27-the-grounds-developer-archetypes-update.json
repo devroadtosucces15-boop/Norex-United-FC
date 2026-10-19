@@ -1,0 +1,84 @@
+{
+ "slug": "fc-27-the-grounds-developer-archetypes-update",
+ "title": "EA SPORTS FC™ 27 | The Grounds Developer Archetypes Update",
+ "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/fc-27-the-grounds-developer-archetypes-update",
+ "published": "2026-10-19T11:00:00.000-04:00",
+ "summary": "Explore the latest Archetype and Attribute Points changes to The Grounds and Clubs in EA SPORTS FC™ 27. ",
+ "clubs": true,
+ "sections": [
+  {
+   "id": "s0",
+   "title": "Overview",
+   "cat": "clubs",
+   "subs": [],
+   "summary": "In our previous Developer Notes for The Grounds, we shared that we were actively investigating incorrect Attribute Point (AP) costs for certain upgrades. Now that we’ve had a chance to evaluate a couple weeks of live gameplay, we want to share an update on…",
+   "keys": [
+    "axp",
+    "archetype",
+    "playstyle"
+   ]
+  },
+  {
+   "id": "s1",
+   "title": "Why The Change?",
+   "cat": "clubs",
+   "subs": [],
+   "summary": "Our goal is to preserve the balance of the game, accentuate Archetype identity, and deliver the player experience we had in mind when we built these features. As part of our investigation, we found that certain Attributes were being classified incorrectly,…",
+   "keys": [
+    "archetype"
+   ]
+  },
+  {
+   "id": "s2",
+   "title": "Attribute Adjustments Breakdown",
+   "cat": "gameplay",
+   "subs": [
+    "GOALKEEPERS",
+    "Shot Stopper",
+    "Sweeper Keeper",
+    "DEFENDERS",
+    "Progressor",
+    "Boss",
+    "Marauder",
+    "MIDFIELDERS",
+    "Disruptor",
+    "Recycler",
+    "Maestro",
+    "Creator"
+   ],
+   "summary": "Here is a preview of the updated Attribute Points system: 3 Attributes increased in AP cost: Acceleration Short Passing GK Positioning 1 Attribute decreased in AP cost: GK Reflexes 5 Attributes increased in AP cost: Vision Ball Control Long Passing GK…",
+   "keys": []
+  }
+ ],
+ "hits": [
+  {
+   "id": "fc-27-the-grounds-developer-archetypes-update#0-axp",
+   "kind": "axp",
+   "label": "AXP",
+   "section": "Overview",
+   "quote": "To support your transition to the updated system, any Player who has previously created a Pro (and will therefore need to reallocate their Attribute Points) will receive 5,000 Club Coins and one 1.75x AXP Multiplier for 6 Matches."
+  },
+  {
+   "id": "fc-27-the-grounds-developer-archetypes-update#0-archetype",
+   "kind": "archetype",
+   "label": "Archetypes",
+   "section": "Overview",
+   "quote": "When we designed the Player Archetypes system as part of FC 27, our goal was to create progression routes that allowed players to build their Pros with distinct differences in both Attributes and PlayStyles to fit their unique tactical preferences."
+  },
+  {
+   "id": "fc-27-the-grounds-developer-archetypes-update#0-playstyle",
+   "kind": "playstyle",
+   "label": "PlayStyles",
+   "section": "Overview",
+   "quote": "When we designed the Player Archetypes system as part of FC 27, our goal was to create progression routes that allowed players to build their Pros with distinct differences in both Attributes and PlayStyles to fit their unique tactical preferences."
+  },
+  {
+   "id": "fc-27-the-grounds-developer-archetypes-update#1-archetype",
+   "kind": "archetype",
+   "label": "Archetypes",
+   "section": "Why The Change?",
+   "quote": "Our goal is to preserve the balance of the game, accentuate Archetype identity, and deliver the player experience we had in mind when we built these features."
+  }
+ ],
+ "fetched": "2026-10-19T16:17:30.862Z"
+}
