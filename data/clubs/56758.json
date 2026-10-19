@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-19T04:20:47.637Z",
+ "fetchedAt": "2026-10-19T04:30:48.508Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -369,42 +369,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "Mika-6996",
-   "gamesPlayed": "3",
-   "winRate": "66",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "18",
-   "passSuccessRate": "81",
-   "ratingAve": "7.1",
-   "tacklesMade": "4",
-   "tackleSuccessRate": "40",
-   "proName": "El Zbeer",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "190",
-   "proNationality": "111",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "PulviTheGoat",
    "gamesPlayed": "16",
    "winRate": "43",
@@ -553,7 +517,7 @@
   "midfielder": 4,
   "goalkeeper": 0,
   "forward": 5,
-  "defender": 4
+  "defender": 3
  },
  "career": [
   {
@@ -645,25 +609,14 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "Mika-6996",
-   "proPos": "25",
-   "gamesPlayed": "168",
-   "goals": "127",
-   "assists": "73",
-   "manOfTheMatch": "33",
-   "ratingAve": "7.8",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "PulviTheGoat",
    "proPos": "25",
-   "gamesPlayed": "106",
+   "gamesPlayed": "107",
    "goals": "64",
    "assists": "54",
    "manOfTheMatch": "13",
    "ratingAve": "7.5",
-   "prevGoals": "3",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
