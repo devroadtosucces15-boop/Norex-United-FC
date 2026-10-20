@@ -1,5 +1,5 @@
 {
-  "revision": "03514b205e5b44da92d05f27e82c04232cc6f759",
+  "revision": "a014beaba2de22e4111728498943a460cc6f1348",
   "files": 901,
   "imports": 678,
   "api_paths": 252,
@@ -3525,7 +3525,7 @@
     {
       "path": "bot/routing.js",
       "layer": "bot",
-      "lines": 139,
+      "lines": 140,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -3619,7 +3619,7 @@
     {
       "path": "bot/settings.js",
       "layer": "bot",
-      "lines": 71,
+      "lines": 72,
       "imports": [
         "./roles.js",
         "./botcommands.js",
@@ -3642,6 +3642,7 @@
         "getBotSettings",
         "json",
         "one",
+        "pickCh",
         "run",
         "saveBotSettings",
         "settingsKey"
@@ -10917,7 +10918,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 304,
+      "lines": 310,
       "imports": [
         "../bot/ui.js",
         "node:fs",
