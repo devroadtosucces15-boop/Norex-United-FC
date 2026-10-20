@@ -18,7 +18,7 @@
 | [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | DeepSeek Harness: Everything is a Plugin. | TypeScript | 2026-10-17 |
 | [devroadtosucces15-boop/Copyweb](https://github.com/devroadtosucces15-boop/Copyweb) | – | TypeScript | 2026-09-28 |
 | [DigitalPlatDev/FreeDomain](https://github.com/DigitalPlatDev/FreeDomain) | Free domain registration and practical DNS learning resources for everyone. | Markdown | 2026-08-12 |
-| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-19 |
+| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-20 |
 | [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | Learn how to design large-scale systems. Prep for the system design interview. Includes Anki flashcards. | Python | 2026-09-15 |
 | [DopplerHQ/awesome-interview-questions](https://github.com/DopplerHQ/awesome-interview-questions) | :octocat: A curated awesome list of lists of interview questions. Feel free to contribute! :mortar_board: | – | 2024-07-29 |
 | [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Give your agent CAD superpowers. | Python | 2026-10-20 |
@@ -35,7 +35,7 @@
 | [openclaw/openclaw](https://github.com/openclaw/openclaw) | The AI that really does things. Any OS. Any Platform. The lobster way. 🦞 | TypeScript | 2026-10-20 |
 | [ps5-linux/ps5-linux-tools](https://github.com/ps5-linux/ps5-linux-tools) | Linux tools for PS5 | C | 2026-07-04 |
 | [public-apis/public-apis](https://github.com/public-apis/public-apis) | A collective list of free APIs | Python | 2026-10-19 |
-| [react/react](https://github.com/react/react) | The library for web and native user interfaces. | JavaScript | 2026-10-19 |
+| [react/react](https://github.com/react/react) | The library for web and native user interfaces. | JavaScript | 2026-10-20 |
 | [storytold/photocraft](https://github.com/storytold/photocraft) | PhotoCraft: An open-source, photo editor written by scratch in pure Rust | Rust | 2026-10-20 |
 | [tester-army/e2e](https://github.com/tester-army/e2e) | Next generation e2e testing framework for web and mobile apps. | TypeScript | 2026-10-20 |
 | [torvalds/linux](https://github.com/torvalds/linux) | Linux kernel source tree | C | 2026-10-20 |
