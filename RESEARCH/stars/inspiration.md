@@ -5,5 +5,5 @@
 
 | Repo | Description | Language | Updated |
 |---|---|---|---|
-| [boykopovar/AnyPS5](https://github.com/boykopovar/AnyPS5) | Tool for automatic PS5 executables porting to Linux and Windows | C++ | 2026-10-19 |
-| [devroadtosucces15-boop/Norex-United-FC](https://github.com/devroadtosucces15-boop/Norex-United-FC) | – | JavaScript | 2026-10-19 |
+| [boykopovar/AnyPS5](https://github.com/boykopovar/AnyPS5) | Tool for automatic PS5 executables porting to Linux and Windows | C++ | 2026-10-20 |
+| [devroadtosucces15-boop/Norex-United-FC](https://github.com/devroadtosucces15-boop/Norex-United-FC) | – | JavaScript | 2026-10-20 |
