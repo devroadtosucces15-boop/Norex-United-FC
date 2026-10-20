@@ -304,6 +304,19 @@ await call(owner, '/api/bot/routes', { rules: [] });
 await call(owner, '/api/bot/settings', { resultChannel: '12345678901', pingRole: '22222', reminderChannel: '33333' });
 const keep = await call(owner, '/api/bot/settings', { reminderChannel: '44444' });
 t('settings: a partial save keeps the other channels and the plan', keep.d.reminderChannel === '44444' && keep.d.resultChannel === '12345678901' && keep.d.pingRole === '22222' && keep.d.plan === 'free');
-t('routing: every action belongs to a site feature (Control Center rows)', Object.values((await call(owner, '/api/bot/routes')).d.actions).every((a) => a.feature === 'events'));
+t('routing: every action belongs to a site feature (Control Center rows)', Object.values((await call(owner, '/api/bot/routes')).d.actions).every((a) => a.feature) && Object.entries((await call(owner, '/api/bot/routes')).d.actions).filter(([k]) => k.startsWith('event.')).every(([, a]) => a.feature === 'events'));
+
+// ----- Wave A actions + engine rules: silenced, channel-only actions -----
+t('routing: results/awards/highlight/insight/discovery actions exist with their feature', ['results.posted', 'awards.results', 'hotw.winner', 'insights.weekly', 'discoveries.approved'].every((k) => (table.actions[k]?.feature)));
+t('routing: match results are posted from outside the app – DMs and per-person tags are refused', (await call(owner, '/api/bot/routes', { rules: [{ action: 'results.posted', group: 'everyone', method: 'dm' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'results.posted', group: 'everyone', method: 'tag' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'results.posted', group: 'role', role: '55555', method: 'tag', channel: '70001' }, { action: 'results.posted', group: 'everyone', method: 'everyone' }] })).s === 200);
+const { routeNotification } = await import('../bot/routing.js');
+await call(owner, '/api/bot/routes', { rules: [{ action: 'awards.results', group: 'everyone', method: 'channel', channel: '70009', on: false }] });
+const silenced = await routeNotification(env, 'awards.results', { build: () => ({}) });
+t('routing: an action whose rules are all off is silenced (not back to the old behaviour)', silenced?.silenced === true && silenced.posts.length === 0 && (await routeNotification(env, 'hotw.winner', { build: () => ({}) })) === null);
+const rtmod = await import('../bot/routing.js');
+t('routing: the result poster reads the rules for match results', (await rtmod.publicRoutes(env, 'results.posted')).managed === false && (await rtmod.publicRoutes(env, 'awards.results')).managed === true);
+await call(owner, '/api/bot/routes', { rules: [] });
 
 done();

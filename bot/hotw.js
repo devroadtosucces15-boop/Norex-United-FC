@@ -10,6 +10,7 @@ import { can, flagOn, flags } from './roles.js';
 import { notify, safely } from './notify.js';
 import { weekOf } from './awards.js';
 import { postEmbed } from './docs.js';
+import { routeNotification, pinged } from './routing.js';
 import { message, header, text, footer, buttons } from './ui.js';
 
 const DAY = 86400e3, WEEK = 7 * DAY;
@@ -91,14 +92,22 @@ async function announce(env, w) {
   await safely(notify(env, [w.user_id], { type: 'award', nkey: 'award.hotw', vars: { week: weekNo(w.week), votes: `${w.votes} vote${w.votes === 1 ? '' : 's'}` }, icon: '🎬', title: `Your clip is the Highlight of week ${weekNo(w.week)}! 🏆`, body: `${w.votes} vote${w.votes === 1 ? '' : 's'} from the squad.`, link: `feed.html#p${w.post_id}` }));
   // Discord only once members can see it – while the flag is owner/managers the club shouldn't be told about it.
   const level = flags(env).hotw;
-  const channel = (await one(env, "SELECT value FROM meta WHERE key = 'awards_channel'"))?.value;
-  if (!['members', 'public'].includes(level) || !channel || !env.DISCORD_BOT_TOKEN) return;
-  const r = await postEmbed(env, channel, '', message({ accent: 'gold', blocks: [
+  if (!['members', 'public'].includes(level)) return;
+  const legacyChannel = (await one(env, "SELECT value FROM meta WHERE key = 'awards_channel'"))?.value;
+  const card = (o) => pinged(message({ accent: 'gold', blocks: [
     header({ eyebrow: 'NOREX UNITED · Highlight of the week', title: `🎬 ${w.name}`, sub: `Week ${weekNo(w.week)}` }),
     w.body ? text(excerpt(w.body.replace(CLIP, '').trim() || '🎬', 300)) : null,
     footer(`${w.votes} vote${w.votes === 1 ? '' : 's'} · ${w.entries} clip${w.entries === 1 ? '' : 's'} in the running`),
     buttons([w.video && { label: 'Watch clip', url: w.video }, { label: 'On the site', url: `${site}${level === 'public' ? 'index.html' : `feed.html#p${w.post_id}`}` }]),
-  ] }));
+  ] }), o);
+  // Owner's routing rules first (Control Center); with none: the awards channel, as before.
+  const routed = await safely(routeNotification(env, 'hotw.winner', {
+    notify: { type: 'award', icon: '🎬', title: `🎬 Highlight of the week: ${w.name}`, body: w.body ? excerpt(w.body.replace(CLIP, '').trim(), 140) : null, link: `feed.html#p${w.post_id}` },
+    channel: legacyChannel || undefined, build: card,
+  }));
+  if (routed) { if (routed.posts.some((p) => p.ok) || routed.silenced) await run(env, 'UPDATE hotw SET posted_at = ? WHERE week = ?', Date.now(), w.week); return; }
+  if (!legacyChannel || !env.DISCORD_BOT_TOKEN) return;
+  const r = await postEmbed(env, legacyChannel, '', card());
   if (r.ok) await run(env, 'UPDATE hotw SET posted_at = ? WHERE week = ?', Date.now(), w.week);
 }
 

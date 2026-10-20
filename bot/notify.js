@@ -42,6 +42,7 @@ export const TYPES = {
   idea: { icon: '💡', label: 'Replies to my suggestions', def: 'site' },
   event: { icon: '📅', label: 'New events, changes and session reports', def: 'dm' },
   award: { icon: '🏆', label: 'Weekly awards – results and my wins', def: 'site' },
+  club: { icon: '📰', label: 'Club news – weekly insight, new discoveries', def: 'site' }, // routing rules: insights.weekly, discoveries.approved
   feedback: { icon: '💌', label: 'Anonymous feedback from teammates', def: 'dm' },
   predict: { icon: '🔮', label: 'My prediction points', def: 'site' },
   game: { icon: '🎮', label: 'Game updates – new max level & rules', def: 'site' },

@@ -29,6 +29,7 @@
     ['👑 Staff and Discord', ['boardroom', 'managerNotes', 'roleSync', 'discordMatch', 'platformLink', 'liveBanner', 'homeWatch', 'liveAnnounce', 'alertRoute', 'streamAlerts', 'burners', 'ownerFab']],
   ];
   const FREE = { requests: 100000 };
+  const VIRT = { results: 'Match result posts' }; // alert features that are not a site switch
   const S = { tab: 'tools', lvl: '', open: new Set(),  flags: null, canEdit: false, activity: null, health: undefined, ping: null, filter: '', undo: [], busy: false,
     aud: { sub: 'log', q: '', type: '', n: 12, subs: {}, subType: 'feedback', reports: null }, err: {},
     ann: { title: '', body: '', audience: 'all', ack: false, preview: false }, docs: null, targets: undefined, dc: { doc: '', channel: '', role: '', preview: null },
@@ -85,7 +86,10 @@ ${groups.map(([t, it]) => `<h4 class="dk-h">${esc(t)}</h4><div class="br-tools">
     const groups = GROUPS.map(([t, ks]) => [t, ks.filter((k) => all.includes(k))]);
     groups.forEach(([, ks]) => ks.forEach((k) => used.add(k)));
     const rest = all.filter((k) => !used.has(k)); if (rest.length) groups.push(['⚙️ Everything else', rest]);
+    const virt = [...new Set(Object.values(RT?.state.routes?.actions ?? {}).map((a) => a.feature))].filter((f) => f && !all.includes(f)); // posts that have no switch of their own
+    if (virt.length) groups.push(['📣 Posts with no switch', virt]);
     const row = (k) => {
+      if (S.flags[k] === undefined) return `<div class="br-flag"><span class="br-name"><b>${esc(VIRT[k] || nice(k))}</b><code>${esc(k)}</code><span class="br-over">always on – no switch</span></span><span class="br-acts">${RT.has(k) ? `<button type="button" class="chip${RT.state.open.has(k) ? ' on' : ''}" data-rt-toggle="${esc(k)}">🔔 Alerts · ${RT.count(k) ? `${RT.count(k)} rule${RT.count(k) === 1 ? '' : 's'}` : 'built-in'}</button>` : ''}</span></div>${RT.has(k) && RT.state.open.has(k) ? RT.html(k) : ''}`;
       const v = S.flags[k], over = committed[k] !== undefined && committed[k] !== v, w = WHERE[k];
       return `<div class="br-flag" data-lvl="${esc(v)}"><span class="br-name"><b>${esc(nice(k))}</b><code>${esc(k)}</code>${over ? `<span class="br-over">live override · committed: ${esc(committed[k])}</span>` : ''}</span>
 <span class="br-seg" role="radiogroup" aria-label="${esc(k)}">${LEVELS.map((l) => `<button type="button" role="radio" aria-checked="${l === v}" class="${l === v ? 'on' : ''}" title="${esc(LVL_HELP[l])}" data-flag="${esc(k)}" data-level="${l}"${S.canEdit ? '' : ' disabled'}>${l[0].toUpperCase() + l.slice(1)}</button>`).join('')}</span>

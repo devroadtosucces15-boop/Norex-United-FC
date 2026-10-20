@@ -21,6 +21,7 @@
 // fingerprint goes to the JOBS queue (BE0) when it's bound, else writes inline – same graceful
 // degrade as the rest of BE0's platform pieces. Uses the Workers AI binding (`AI`, bot/wrangler.toml);
 // without it the writer just logs and skips, so the feature never fails the cron or a request.
+import { routeNotification, pinged } from './routing.js';
 import { atLeast, can } from './roles.js';
 import { TEXT_MODEL } from './aispike.js';
 import { message, header, text, sep, facts, footer, buttons } from './ui.js';
@@ -416,8 +417,13 @@ export async function statInsightWeekly(env, postEmbed, now = Date.now()) {
   if ((await one(env, "SELECT value FROM meta WHERE key = 'stat_insight_week'"))?.value === wk) return;
   const row = await one(env, "SELECT * FROM stat_insights WHERE key = 'club'");
   const channel = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
-  if (row && channel) {
-    await postEmbed(env, channel, '', insightPanel(row, 'Insight of the week'));
+  if (row) {
+    // the owner's routing rules (Control Center) first; with none, the shared announce channel as before
+    const routed = await routeNotification(env, 'insights.weekly', {
+      notify: { type: 'club', icon: '📈', title: `📈 Insight of the week: ${row.headline}`, body: row.body ? String(row.body).slice(0, 200) : null, link: 'stats.html' },
+      build: (o) => pinged(insightPanel(row, 'Insight of the week'), o),
+    }).catch((e) => { console.log('insight routing failed', e.message); return null; });
+    if (!routed && channel) await postEmbed(env, channel, '', insightPanel(row, 'Insight of the week'));
   }
   await env.DB.prepare("INSERT INTO meta (key, value) VALUES ('stat_insight_week', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(wk).run();
 }

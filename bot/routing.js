@@ -27,6 +27,12 @@ export const ACTIONS = {
   'event.reminder': { icon: '📅', label: 'Reminder 24 h / 2 h before', feature: 'events' },
   'event.starting': { icon: '⏰', label: 'Starting soon (minutes set in the Notification Center)', feature: 'events' },
   'event.report': { icon: '📋', label: 'Session report shared', feature: 'events' },
+  // channelOnly: posted from GitHub Actions (no database there), so no DMs and no tagging of individuals – a channel, a role or @everyone
+  'results.posted': { icon: '⚽', label: 'Match result posted', feature: 'results', channelOnly: true },
+  'awards.results': { icon: '🏆', label: 'Weekly awards: winners revealed', feature: 'awards' },
+  'hotw.winner': { icon: '🎬', label: 'Highlight of the week', feature: 'hotw' },
+  'insights.weekly': { icon: '📈', label: 'Insight of the week', feature: 'statInsights' },
+  'discoveries.approved': { icon: '🔎', label: 'Discovery approved by a manager', feature: 'discoveries' },
 };
 export const GROUPS = {
   everyone: 'Every member',
@@ -43,6 +49,15 @@ export const METHODS = {
   tag: 'Post + tag the group',
   everyone: 'Post + tag @everyone',
 };
+
+// A Discord message with a ping line above it (the routing engine's build() callback for any panel made with ui.js message()).
+export const pinged = (msg, { ping, mentions } = {}) => (ping ? { ...msg, components: [{ type: 10, content: ping }, ...msg.components], allowed_mentions: mentions ?? msg.allowed_mentions } : msg);
+
+// What an outside runner (the result poster in GitHub Actions) needs: are this action's rules managed, and where to post.
+export async function publicRoutes(env, action) {
+  const managed = (await loadRules(env)).filter((r) => r.action === action);
+  return { managed: managed.length > 0, targets: managed.filter((r) => r.on !== false).map((r) => ({ method: r.method, channel: r.channel || '', role: r.group === 'role' ? r.role : '' })) };
+}
 
 export async function loadRules(env) {
   const row = await one(env, "SELECT value FROM meta WHERE key = 'notify_routes'");
@@ -63,6 +78,7 @@ function cleanRules(list) {
     if (channel && !SNOWFLAKE.test(channel)) return { error: `${n}: the channel must be a Discord ID (right-click → Copy ID).` };
     if (r.group === 'role' && !SNOWFLAKE.test(role)) return { error: `${n}: pick the Discord role.` };
     if (r.group === 'role' && r.method === 'dm') return { error: `${n}: a Discord role can be tagged, not messaged. Use “tag the group” or pick a group of people.` };
+    if (ACTIONS[r.action].channelOnly && (r.method === 'dm' || (r.method === 'tag' && r.group !== 'role'))) return { error: `${n}: ${ACTIONS[r.action].label} is posted from outside the app, so it can only post in a channel, tag a Discord role, or tag @everyone.` };
     if (r.force && r.method !== 'dm') return { error: `${n}: “send even if muted” only applies to Discord DMs.` };
     rules.push({ action: r.action, group: r.group, ...(r.group === 'role' ? { role } : {}), method: r.method, ...(channel ? { channel } : {}), ...(r.force ? { force: true } : {}), on: r.on !== false });
   }
@@ -78,9 +94,10 @@ function cleanRules(list) {
 // → null when the action has no rules, else { notified, posts: [{ ok, id, channel } | { ok: false, error }], errors }
 export async function routeNotification(env, action, ctx) {
   if (!env.DB) return null;
-  const rules = (await loadRules(env)).filter((r) => r.action === action && r.on !== false);
-  if (!rules.length) return null;
-  const out = { notified: 0, posts: [], errors: [] };
+  const managed = (await loadRules(env)).filter((r) => r.action === action);
+  if (!managed.length) return null; // no rules at all: the caller keeps its built-in behaviour
+  const rules = managed.filter((r) => r.on !== false);
+  const out = { notified: 0, posts: [], errors: [], silenced: !rules.length }; // every rule switched off = the owner silenced it
   const cache = {};
   const people = (g) => (cache[g] ??= peopleOf(env, g, ctx));
   const settings = await getBotSettings(env);

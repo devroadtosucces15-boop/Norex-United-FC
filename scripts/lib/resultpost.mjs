@@ -83,19 +83,43 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
   const everyone = !!settings.pingRole && settings.pingRole === settings.guildId;
   const pingContent = everyone ? '@everyone' : settings.pingRole ? `<@&${settings.pingRole}>` : undefined;
   const allowedMentions = everyone ? { parse: ['everyone'] } : settings.pingRole ? { roles: [settings.pingRole] } : { parse: [] };
-  if (token && ['members', 'public'].includes(settings.flags?.discordMatch ?? config.features?.discordMatch)) { // live Boardroom switch first, committed config as the fallback
+  // One post of one result card into one channel (pictures ride along as attachments).
+  const send = (channel, { panel, files }, content, allowed) => {
+    const payload = panel(content, allowed);
+    let body, headers = { Authorization: `Bot ${token}` };
+    if (files.length) {
+      body = new FormData();
+      body.set('payload_json', JSON.stringify(payload));
+      files.forEach((f, k) => body.set(`files[${k}]`, new Blob([fs.readFileSync(f.path)], { type: 'image/png' }), f.name));
+    } else { body = JSON.stringify(payload); headers['Content-Type'] = 'application/json'; }
+    return fetch(`https://discord.com/api/v10/channels/${channel}/messages`, { method: 'POST', headers, body }).catch((e) => ({ ok: false, status: e.message }));
+  };
+  const botOn = token && ['members', 'public'].includes(settings.flags?.discordMatch ?? config.features?.discordMatch); // live Boardroom switch first, committed config as the fallback
+  const webhookChannel = () => fetch(hook).then((r) => (r.ok ? r.json() : null)).then((w) => w?.channel_id).catch(() => null);
+  // The owner's routing rules (Boardroom → Control Center → Match result posted): where each result goes and whom it tags.
+  // Rules exist = only those targets; every rule switched off = nothing is posted. No rules = the old behaviour below.
+  const rr = settings.resultRoutes;
+  if (rr?.managed) {
+    if (!rr.targets.length) return;
+    if (botOn) {
+      const fallback = settings.resultChannel || await webhookChannel();
+      for (const t of rr.targets) {
+        const channel = t.channel || fallback;
+        const content = t.method === 'everyone' ? '@everyone' : t.role ? `<@&${t.role}>` : undefined;
+        const allowed = t.method === 'everyone' ? { parse: ['everyone'] } : t.role ? { roles: [t.role] } : { parse: [] };
+        for (const item of rest) {
+          const r = channel ? await send(channel, item, content, allowed) : { ok: false, status: 'no channel' };
+          if (!r.ok) { console.warn(`Routed result post failed (${r.status}) in ${channel || 'no channel'} – the bot needs View Channel + Send Messages + Embed Links there.`); break; }
+        }
+      }
+      return;
+    }
+  }
+  if (botOn) {
     // P7.5: a configured result channel overrides the webhook's own channel (still needs the bot token to redirect).
-    const channel = settings.resultChannel || await fetch(hook).then((r) => (r.ok ? r.json() : null)).then((w) => w?.channel_id).catch(() => null);
+    const channel = settings.resultChannel || await webhookChannel();
     while (channel && rest.length) {
-      const { panel, files } = rest[0];
-      const payload = panel(pingContent, allowedMentions);
-      let body, headers = { Authorization: `Bot ${token}` };
-      if (files.length) { // pictures ride along as attachments
-        body = new FormData();
-        body.set('payload_json', JSON.stringify(payload));
-        files.forEach((f, k) => body.set(`files[${k}]`, new Blob([fs.readFileSync(f.path)], { type: 'image/png' }), f.name));
-      } else { body = JSON.stringify(payload); headers['Content-Type'] = 'application/json'; }
-      const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, { method: 'POST', headers, body }).catch((e) => ({ ok: false, status: e.message }));
+      const r = await send(channel, rest[0], pingContent, allowedMentions);
       if (!r.ok) { console.warn(`Bot post failed (${r.status}) – the bot needs View Channel + Send Messages + Embed Links there. Using the webhook.`); break; }
       rest = rest.slice(1);
     }

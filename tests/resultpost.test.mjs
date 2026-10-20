@@ -14,9 +14,11 @@ const m = { matchId: '1', timestamp: 1791600000, matchType: 'leagueMatch',
 const config = { siteUrl: 'https://x.test/', features: { discordMatch: 'members' }, hiddenPlayers: [] };
 
 const calls = [];
+let routedSettings = {};
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, init = {}) => {
   calls.push({ url: String(url), init });
+  if (String(url).includes('api.test/api/bot/settings/public')) return new Response(JSON.stringify(routedSettings), { status: 200 });
   if (String(url).includes('/webhooks/')) return new Response(JSON.stringify({ channel_id: 'chan-1' }), { status: 200 });
   return new Response('{}', { status: 200 });
 };
@@ -39,6 +41,27 @@ calls.length = 0;
 await postResults([m], { config, homeId: '100', drawn: null });
 const plain = calls.find((c) => c.url.endsWith('/channels/chan-1/messages'));
 t('without cards it is a plain JSON post with no pictures', typeof plain?.init.body === 'string' && !plain.init.body.includes('attachment://'));
+
+// ----- owner's routing rules for results (Control Center → Match result posted) -----
+process.env.DISCORD_CLIENT_SECRET = 'secret';
+const routedCfg = { ...config, members: { api: 'https://api.test' } };
+const base = { ok: true, autoPosts: { results: true }, flags: {}, resultChannel: '', pingRole: '', guildId: '9' };
+routedSettings = { ...base, resultRoutes: { managed: true, targets: [{ method: 'everyone', channel: '777', role: '' }, { method: 'tag', channel: '', role: '555' }, { method: 'channel', channel: '888', role: '' }] } };
+calls.length = 0;
+await postResults([m], { config: routedCfg, homeId: '100', drawn: null });
+const sent = calls.filter((c) => /\/channels\/[^/]+\/messages$/.test(c.url)).map((c) => ({ ch: c.url.match(/channels\/([^/]+)\//)[1], body: JSON.parse(c.init.body) }));
+t('routed: one post per rule, in each rule’s channel (a blank channel = the default one)', sent.map((x) => x.ch).join() === '777,chan-1,888');
+t('routed: @everyone on the first, the role tag on the second, no ping on the third', JSON.stringify(sent[0].body).includes('@everyone') && sent[0].body.allowed_mentions.parse.includes('everyone')
+  && sent[1].body.allowed_mentions.roles?.[0] === '555' && JSON.stringify(sent[1].body).includes('<@&555>') && !JSON.stringify(sent[2].body).includes('@everyone') && !JSON.stringify(sent[2].body).includes('<@&'));
+t('routed: the old webhook post is not also sent', !calls.some((c) => c.url.includes('/webhooks/1/abc') && c.init.method === 'POST'));
+routedSettings = { ...base, resultRoutes: { managed: true, targets: [] } };
+calls.length = 0;
+await postResults([m], { config: routedCfg, homeId: '100', drawn: null });
+t('routed: every rule switched off = nothing is posted at all', !calls.some((c) => /\/messages$/.test(c.url) || (c.url.includes('/webhooks/') && c.init.method === 'POST')));
+routedSettings = { ...base, resultRoutes: { managed: false, targets: [] } };
+calls.length = 0;
+await postResults([m], { config: routedCfg, homeId: '100', drawn: null });
+t('no rules: the old behaviour (webhook channel)', calls.some((c) => c.url.endsWith('/channels/chan-1/messages')));
 
 globalThis.fetch = realFetch;
 done();
