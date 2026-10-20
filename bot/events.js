@@ -29,6 +29,7 @@ import { message, header, text, sep, facts, footer, buttons, side, thumb, toLega
 import { facesOf } from './faces.js';
 import { awardPoints } from './points.js';
 import { getBotSettings } from './settings.js';
+import { routeNotification } from './routing.js';
 import { recommendRoute } from './lineuprec.js';
 import { hex } from './media.js';
 
@@ -268,6 +269,30 @@ export async function refreshEventPost(env, id) {
 }
 // People to tell about a change: everyone who said yes or maybe.
 const keen = async (env, id) => (await all(env, "SELECT user_id FROM event_rsvps WHERE event_id = ? AND status IN ('yes', 'maybe')", id)).map((r) => r.user_id);
+// The groups a notification rule (bot/routing.js) can aim at for one event.
+const eventGroups = (env, e) => ({
+  going: () => keen(env, e.id),
+  yes: async () => (await rsvpRows(env, e.id)).filter((r) => r.status === 'yes').map((r) => r.user_id),
+  unanswered: async () => {
+    const answered = new Set((await rsvpRows(env, e.id)).map((r) => r.user_id));
+    return (await all(env, 'SELECT id FROM users WHERE last_at > ?', Date.now() - 60 * DAY)).map((u) => u.id).filter((id) => !answered.has(id));
+  },
+  lineup: async () => Object.keys(parse(e.lineup, {})),
+});
+// Applies the owner's routing rules for one event action. null = no rules for it, so the caller keeps its built-in behaviour.
+const routeEvent = async (env, action, e, n, heading = '') => routeNotification(env, action, {
+  notify: n, channel: e.discord_channel || undefined, groups: eventGroups(env, e),
+  build: async (o) => eventPost(env, e, await rsvpRows(env, e.id), heading, o),
+});
+
+// Where a new event is announced: the channel the form picked, else the bot settings' reminder channel, else the channel
+// last posted to. Null (nothing to post to) when none is known.
+async function announceTarget(env, pick) {
+  const s = await getBotSettings(env);
+  const channel = pick?.channel || s.reminderChannel || (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
+  if (!channel) return null;
+  return { channel, role: pick?.channel ? pick.role : (pick?.role ?? s.pingRole) };
+}
 
 async function saveEvent(body, me, env, log) {
   if (!can(me, 'events.manage')) return fail('Managers only.', 403);
@@ -285,7 +310,11 @@ async function saveEvent(body, me, env, log) {
     out.id = existing.id;
     await log(env, me, 'event-edit', `${label(e)} · ${when(e)}`);
     if (existing.start !== e.start && existing.status === 'scheduled') {
-      out.notified = await safely(notify(env, await keen(env, existing.id), { type: 'event', nkey: 'event.timechange', vars: { event: label(e), when: when(e) }, icon: '🕒', title: `Time changed: ${label(e)} – now ${when(e)}`, link: 'members.html#schedule' })) ?? 0;
+      const n = { type: 'event', nkey: 'event.timechange', vars: { event: label(e), when: when(e) }, icon: '🕒', title: `Time changed: ${label(e)} – now ${when(e)}`, link: 'members.html#schedule' };
+      const row = await one(env, 'SELECT * FROM events WHERE id = ?', existing.id);
+      const routed = await safely(routeEvent(env, 'event.changed', row, n, '🕒 Time changed · '));
+      if (routed) { out.notified = routed.notified; out.discord = routed.posts[0]; }
+      else out.notified = await safely(notify(env, await keen(env, existing.id), n)) ?? 0;
     }
   } else {
     const repeat = Math.max(0, Math.min(8, Math.round(Number(body.repeat) || 0)));
@@ -300,12 +329,28 @@ async function saveEvent(body, me, env, log) {
     }
     out.id = ids[0]; out.created = ids.length;
     await log(env, me, 'event-new', `${label(e)} · ${when(e)}${repeat ? ` · weekly ×${repeat + 1}` : ''}`);
-    if (body.notify) {
-      out.notified = await safely(notifyMembers(env, { type: 'event', title: `New: ${label(e)} – ${when(e)}${repeat ? ` (weekly, ${repeat + 1} dates)` : ''}`, body: e.notes || 'Say if you can make it in the Squad Hub.', link: 'members.html#schedule' })) ?? 0;
-    }
-    if (body.discord?.channel && can(me, 'announce.discord')) {
-      out.discord = await postEmbed(env, body.discord.channel, body.discord.role, eventMessage(env, { ...e, id: ids[0], status: 'scheduled' }, [], repeat ? 'Weekly · ' : ''));
-      if (out.discord.ok) await run(env, 'UPDATE events SET discord_channel = ?, discord_msg = ? WHERE id = ?', String(body.discord.channel), out.discord.id ?? null, ids[0]);
+    // The owner's routing rules (Tools → Bot → Notification routing) decide who is told and where it is posted. With no rules for
+    // this action: announce by default – players told and the event posted to Discord straight away. A caller opts out with
+    // `notify: false` and `discord: false`; `discord: { channel, role }` picks a channel, otherwise the bot settings' reminder
+    // channel (or the last one used) and ping role are used.
+    const silent = body.notify === false && body.discord === false;
+    const created = { ...e, id: ids[0], status: 'scheduled' };
+    const n = { type: 'event', title: `New: ${label(e)} – ${when(e)}${repeat ? ` (weekly, ${repeat + 1} dates)` : ''}`, body: e.notes || 'Say if you can make it in the Squad Hub.', link: 'members.html#schedule' };
+    const routed = silent ? null : await safely(routeNotification(env, 'event.created', {
+      notify: n, groups: eventGroups(env, created), build: (o) => eventMessage(env, created, [], repeat ? 'Weekly · ' : '', o),
+    }));
+    if (routed) {
+      out.notified = routed.notified;
+      out.discord = routed.posts[0] ?? (routed.errors[0] ? { ok: false, error: routed.errors[0] } : undefined);
+      const first = routed.posts.find((p) => p.ok);
+      if (first) await run(env, 'UPDATE events SET discord_channel = ?, discord_msg = ? WHERE id = ?', String(first.channel), first.id ?? null, ids[0]);
+    } else {
+      if (body.notify !== false) out.notified = await safely(notifyMembers(env, n)) ?? 0;
+      const target = body.discord === false ? null : await announceTarget(env, body.discord);
+      if (target && can(me, 'announce.discord')) {
+        out.discord = await postEmbed(env, target.channel, target.role, eventMessage(env, created, [], repeat ? 'Weekly · ' : ''));
+        if (out.discord.ok) await run(env, 'UPDATE events SET discord_channel = ?, discord_msg = ? WHERE id = ?', String(target.channel), out.discord.id ?? null, ids[0]);
+      }
     }
   }
   return json({ ...out, ...(await listFor(env, me)) });
@@ -399,12 +444,12 @@ export async function sessionReport(env, id, loadSite) {
     attendance: { came: came.length, saidYes: yes.length, noShow: ev.rsvps.filter((x) => x.s === 'yes' && !came.includes(x.id)).map((x) => ({ id: x.id, n: x.n, a: x.a })), walkIns: ev.checkins.filter((x) => !yes.includes(x.id)).map((x) => ({ id: x.id, n: x.n, a: x.a })) },
   };
 }
-function reportEmbed(env, rep, origin) {
+function reportEmbed(env, rep, origin, { ping, mentions } = {}) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), e = rep.event, t = rep.team;
   const icon = RESULT_ICON;
   const mvp = rep.mvp ? `⭐ Player of the night: **${rep.mvp.n}** (${rep.mvp.avg} avg${rep.mvp.g ? ` · ${rep.mvp.g} G` : ''}${rep.mvp.a ? ` · ${rep.mvp.a} A` : ''})` : '';
   const graded = rep.players.filter((p) => p.grade).slice(0, 10).map((p) => `\`${p.grade.padEnd(2)}\` ${p.n} · ${p.avg}${p.trial ? ` · 🧪 tried ${p.trial.pos}${p.trial.diff != null ? ` (${p.trial.diff >= 0 ? '+' : ''}${p.trial.diff} vs usual)` : ''}` : ''}`).join('\n');
-  return message({ accent: t.games ? (t.w > t.l ? 'win' : t.w < t.l ? 'loss' : 'gold') : 'red', blocks: [
+  return message({ ping, mentions, accent: t.games ? (t.w > t.l ? 'win' : t.w < t.l ? 'loss' : 'gold') : 'red', blocks: [
     header({ eyebrow: 'NOREX UNITED · Match night', title: `📋 Session report · Grade ${t.grade ?? '–'}`, sub: `${label(e)} · <t:${Math.floor(e.start / 1000)}:f>` }),
     e.reportPoster && origin ? cards(`${origin}/media/${e.reportPoster}`) : null, // BE11 – client-rendered poster, if uploaded
     text(t.games ? `**${t.w}W ${t.d}D ${t.l}L** · ${t.gf}–${t.ga}` : 'No results logged for this night yet.'),
@@ -446,9 +491,18 @@ async function nightRoute(p, method, body, me, env, log, loadSite, url) {
   if (p === '/api/events/report/post') {
     const rep = await sessionReport(env, row.id, loadSite);
     const out = {};
-    if (body.channel) out.discord = await postEmbed(env, body.channel, body.role, reportEmbed(env, rep, url?.origin));
     const people = [...new Set([...rep.event.checkins.map((x) => x.id), ...rep.event.rsvps.filter((x) => x.s === 'yes').map((x) => x.id)])];
-    out.notified = await safely(notify(env, people, { type: 'event', icon: '📋', title: `Session report: ${label(row)} · Grade ${rep.team.grade ?? '–'}`, body: rep.team.games ? `${rep.team.w}W ${rep.team.d}D ${rep.team.l}L · ${rep.team.gf}–${rep.team.ga}${rep.mvp ? ` · ⭐ ${rep.mvp.n}` : ''}` : null, link: 'members.html#schedule' })) ?? 0;
+    const n = { type: 'event', icon: '📋', title: `Session report: ${label(row)} · Grade ${rep.team.grade ?? '–'}`, body: rep.team.games ? `${rep.team.w}W ${rep.team.d}D ${rep.team.l}L · ${rep.team.gf}–${rep.team.ga}${rep.mvp ? ` · ⭐ ${rep.mvp.n}` : ''}` : null, link: 'members.html#schedule' };
+    // a channel picked on the button wins; otherwise the owner's routing rules, otherwise the built-in (players told, no post)
+    const routed = body.channel ? null : await safely(routeNotification(env, 'event.report', {
+      notify: n, channel: row.discord_channel || undefined, groups: { ...eventGroups(env, row), yes: async () => people, going: async () => people },
+      build: (o) => reportEmbed(env, rep, url?.origin, o),
+    }));
+    if (routed) { out.notified = routed.notified; out.discord = routed.posts[0]; }
+    else {
+      if (body.channel) out.discord = await postEmbed(env, body.channel, body.role, reportEmbed(env, rep, url?.origin));
+      out.notified = await safely(notify(env, people, n)) ?? 0;
+    }
     await run(env, 'UPDATE events SET report_at = ? WHERE id = ?', Date.now(), row.id);
     await log(env, me, 'event-report', `${label(row)}${out.discord?.ok ? ' · Discord' : ''}`);
     return json({ ...out, ...(await listFor(env, me)) });
@@ -687,6 +741,8 @@ export async function thirtyMinutes(env, now, everyone) {
     const r = await run(env, 'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING', key, String(now));
     if (!r.meta?.changes) continue;
     const yes = (await rsvpRows(env, e.id)).filter((x) => x.status === 'yes');
+    const routed = await safely(routeEvent(env, 'event.starting', e, { type: 'event', nkey: 'event.start30', vars: { mins, event: label(e) }, icon: '⏰', title: `Starting in ${mins} minutes · ${label(e)}`, body: 'Get ready – the lobby is about to open.', link: `members.html#schedule-${e.id}`, ref: `event30:${e.id}` }, '⏰ '));
+    if (routed) { sent++; continue; }
     if (!yes.length) continue;
     const ids = yes.map((x) => x.user_id);
     await safely(notify(env, ids, { type: 'event', nkey: 'event.start30', vars: { mins, event: label(e) }, icon: '⏰', title: `Starting in ${mins} minutes · ${label(e)}`, body: 'You said you are in – get ready.', link: `members.html#schedule-${e.id}`, ref: `event30:${e.id}` }));
@@ -717,6 +773,8 @@ export async function eventReminders(env) {
     const quiet = (await all(env, 'SELECT id, role FROM users WHERE last_at > ?', now - 60 * DAY)).filter((u) => !answered.has(u.id) && flagOn(env, { role: u.role }, 'discordRsvp')).map((u) => u.id);
     const yes = rsvps.filter((r) => r.status === 'yes').length;
     const head = `${soon ? '⏰ Starting soon' : '📅 Tomorrow'} · ${label(e)}`;
+    const routed = await safely(routeEvent(env, 'event.reminder', e, { type: 'event', icon: soon ? '⏰' : '📅', title: `${head} – can you make it?`, body: `${yes} said yes so far. Answer ✅ ❔ ❌ in the Squad Hub.`, link: `members.html#schedule-${e.id}` }, soon ? '⏰ ' : '📅 '));
+    if (routed) { sent++; continue; }
     if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
       const pings = e.remind === 'mention' ? quiet.slice(0, 50) : [];
       const msg = await eventPost(env, e, rsvps, soon ? '⏰ ' : '📅 ', {
@@ -762,8 +820,10 @@ export async function eventsRoute(p, method, body, me, env, log, loadSite, url) 
     await run(env, "UPDATE events SET status = 'cancelled', cancel_reason = ?, edited_by = ?, edited_at = ? WHERE id = ?", reason, me.n, Date.now(), row.id);
     await log(env, me, 'event-cancel', `${label(row)} · ${when(row)}`);
     await refreshEventPost(env, row.id);
-    const notified = await safely(notify(env, await keen(env, row.id), { type: 'event', nkey: 'event.cancelled', vars: { event: label(row), when: when(row), reason }, icon: '🚫', title: `Cancelled: ${label(row)} – ${when(row)}`, body: reason, link: 'members.html#schedule' })) ?? 0;
-    return json({ notified, ...(await listFor(env, me)) });
+    const n = { type: 'event', nkey: 'event.cancelled', vars: { event: label(row), when: when(row), reason }, icon: '🚫', title: `Cancelled: ${label(row)} – ${when(row)}`, body: reason, link: 'members.html#schedule' };
+    const routed = await safely(routeEvent(env, 'event.cancelled', { ...row, status: 'cancelled' }, n));
+    const notified = routed ? routed.notified : await safely(notify(env, await keen(env, row.id), n)) ?? 0;
+    return json({ notified, ...(routed?.posts[0] ? { discord: routed.posts[0] } : {}), ...(await listFor(env, me)) });
   }
   return fail('Not found', 404);
 }

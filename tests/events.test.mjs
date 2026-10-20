@@ -230,4 +230,46 @@ const chText = JSON.stringify(lineupMsg);
 t('DM and channel post look different: DM is personal with the banner + gold stripe, the channel post groups the XI by line', /your position/i.test(dmText) && dmText.includes('Just for you') && dmText.includes('banner-matchnight') && !chText.includes('Just for you') && /DEFENCE/.test(chText) && /GK/.test(chText) && chText.includes('hub-matchnight.html'));
 const { cardJobs, lineupSlug } = await import('../scripts/cards.mjs');
 t('line-up post carries the drawn pitch for its shape (field view), and the build draws one per shape', JSON.stringify(lineupMsg).includes('cards/lineup-4-3-3.png') && cardJobs({ matches: [] }, []).filter((j) => j.key[0] === 'lineup').length === Object.keys((await import('../bot/events.js')).FORMATIONS).length && lineupSlug('4-3-3 (2)') === '4-3-3-2');
+// Announced by default: no notify/discord in the request -> players told + posted to the last-used channel; discord:false opts out.
+const annBefore = posts.length;
+const auto = await call(mgr, '/api/events', { ...base, date: tomorrow, time: '21:30' });
+t('create with no flags announces by default (players told + Discord post)', auto.s === 200 && auto.d.notified >= 1 && auto.d.discord?.ok && posts.length === annBefore + 1 && posts.at(-1).channel === '70001');
+const silentEv = await call(mgr, '/api/events', { ...base, date: tomorrow, time: '22:30', notify: false, discord: false });
+t('notify:false + discord:false stay silent', silentEv.s === 200 && !silentEv.d.notified && !silentEv.d.discord && posts.length === annBefore + 1);
+for (const id of [auto.d.id, silentEv.d.id]) await call(mgr, '/api/events/cancel', { id });
+
+// ----- notification routing table (bot/routing.js): action -> group -> method -> channel -----
+t('routing: managers cannot read or write the table', (await call(mgr, '/api/bot/routes')).s === 403 && (await call(mgr, '/api/bot/routes', { rules: [] })).s === 403);
+const table = (await call(owner, '/api/bot/routes')).d;
+t('routing: owner sees the actions, groups and methods', table.rules.length === 0 && table.actions['event.created'] && table.groups.role && table.methods.everyone);
+t('routing: a role cannot be DMed, bad ids and unknown picks are refused', (await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'role', role: '77777', method: 'dm' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'everyone', method: 'channel', channel: 'general' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'nope', group: 'everyone', method: 'channel' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'role', method: 'tag' }] })).s === 400);
+const saved = await call(owner, '/api/bot/routes', { rules: [
+  { action: 'event.created', group: 'managers', method: 'dm' },
+  { action: 'event.created', group: 'everyone', method: 'everyone', channel: '70002' },
+  { action: 'event.created', group: 'role', role: '77777', method: 'tag', channel: '70003' },
+  { action: 'event.created', group: 'everyone', method: 'channel', channel: '70004', on: false },
+] });
+t('routing: the table is saved', saved.s === 200 && saved.d.rules.length === 4 && saved.d.rules[3].on === false);
+const sentBefore = posts.length;
+const routedEv = await call(mgr, '/api/events', { ...base, title: 'Routed night', date: tomorrow, time: '19:15' });
+const routedPosts = posts.slice(sentBefore);
+t('routing: rules replace the defaults – posts only where the rules say', routedEv.s === 200 && routedPosts.map((p) => p.channel).join() === '70002,70003');
+t('routing: tag @everyone → ping line + parse everyone', routedPosts[0].allowed_mentions.parse.includes('everyone') && routedPosts[0].components[0].content === '@everyone');
+t('routing: tag a role → role mention only', routedPosts[1].components[0].content.startsWith('<@&77777>') && routedPosts[1].allowed_mentions.roles?.[0] === '77777' && !routedPosts[1].allowed_mentions.parse?.length);
+t('routing: DM rule reaches managers, a plain member gets nothing', (await call(owner, '/api/notify')).d.items.some((n) => /^New: Routed night/.test(n.title)) && !(await call(member, '/api/notify')).d.items.some((n) => /^New: Routed night/.test(n.title)));
+t('routing: the event remembers its first posted channel (so answer buttons stay live)', (await call(mgr, '/api/events')).d.events.find((e) => e.title === 'Routed night')?.posted === true);
+const tagged = await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'managers', method: 'tag', channel: '70005' }] });
+const b4 = posts.length;
+await call(mgr, '/api/events', { ...base, title: 'Tagged night', date: tomorrow, time: '19:45' });
+t('routing: tag a group → members mentioned by name', tagged.s === 200 && posts.length === b4 + 1 && posts.at(-1).channel === '70005' && /<@(111|600)>/.test(posts.at(-1).components[0].content) && posts.at(-1).allowed_mentions.users.length >= 1);
+const quietEv = await call(mgr, '/api/events', { ...base, title: 'Quiet night', date: tomorrow, time: '20:45', notify: false, discord: false });
+t('routing: the form’s opt-out beats the rules', quietEv.s === 200 && posts.length === b4 + 1);
+await call(owner, '/api/bot/routes', { rules: [] });
+const b5 = posts.length;
+await call(mgr, '/api/events', { ...base, title: 'Back to default', date: tomorrow, time: '21:15' });
+t('routing: clearing the table restores the built-in announce', posts.length === b5 + 1 && posts.at(-1).channel === '70001');
+
 done();

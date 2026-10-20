@@ -48,6 +48,7 @@ import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.
 import { syncMember } from './discordroles.js';
 import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
 import { alertRoute } from './alertroute.js';
+import { routingRoute } from './routing.js';
 import { botCommandsRoute } from './botcommands.js';
 import { crawlRoute } from './crawl.js';
 import { burnersRoute, burnersRelay, burnersAdminRoute } from './burners.js';
@@ -846,6 +847,8 @@ async function route(p, method, body, me, env, loadSite, url) {
   if (alr) return alr;
   const bst = await botSettingsRoute(p, method, body, me, env, log); // P7.5 bot personalisation
   if (bst) return bst;
+  const rte = await routingRoute(p, method, body, me, env, log); // notification routing table (owner)
+  if (rte) return rte;
   const bcm = await botCommandsRoute(p, method, body, me, env, log); // per-command bot control
   if (bcm) return bcm;
   const pts = await pointsRoute(p, method, body, me, env); // P11.3 point system

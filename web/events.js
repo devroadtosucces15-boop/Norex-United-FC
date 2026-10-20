@@ -217,7 +217,7 @@ ${targets?.ready ? `<label class="dx-check"><input type="checkbox" name="discord
         });
         if (v !== 'ok') return;
         try {
-          const r = await ctx.call('/api/events', { id: ev?.id, ...f, discord: f.discordOn ? { channel: f.channel, role: f.role } : undefined });
+          const r = await ctx.call('/api/events', { id: ev?.id, ...f, discord: f.discordOn ? { channel: f.channel, role: f.role } : false });
           S = r; paint();
           ctx.toast(ev ? `Saved${r.notified ? ` · ${r.notified} told about the new time` : ''}` : `Scheduled${r.created > 1 ? ` ${r.created} dates` : ''}${r.notified ? ` · ${r.notified} notified` : ''}`);
           if (r.discord && !r.discord.ok) ctx.toast(`Discord: ${r.discord.error}`, true);

@@ -37,6 +37,7 @@ ${f.id ? '' : `<div class="sc-presets" aria-label="Quick templates">${PRESETS.ma
 </div>
 <label class="sc-wide">Notes <small class="muted">(shown to players)</small><textarea name="notes" maxlength="1000" rows="2">${esc(f.notes)}</textarea></label>
 <label class="sc-check"><input type="checkbox" name="public"${f.public ? ' checked' : ''}> Show on the public site (next fixtures)</label>
+${f.id ? '' : '<label class="sc-check"><input type="checkbox" name="announce" checked> Tell players and post it to Discord now</label>'}
 <div class="sc-acts"><button class="btn" type="submit">${f.id ? '💾 Save changes' : '➕ Create match night'}</button><span class="muted small" data-msg></span></div></form>`;
   }
   function card(e, past) {
@@ -70,7 +71,8 @@ ${formHtml()}<div class="sc-list">${list.length ? list.map((e) => card(e, S.tab 
   async function submit(form) {
     const fd = new FormData(form), b = Object.fromEntries(fd.entries()), msg = form.querySelector('[data-msg]');
     const body = { id: S.form.id || undefined, type: b.type, title: b.title, date: b.date, time: b.time, duration: Number(b.duration) || 120, tz: b.tz || TZ, needs: b.players ? { players: Number(b.players) } : {}, remind: b.remind, notes: b.notes, public: fd.has('public') };
-    try { msg.textContent = 'Saving…'; const r = await call('/api/events', body); S.form = null; await reload(); toast(body.id ? 'Match night updated' : 'Match night created'); if (r.notified) toast(`${r.notified} players told`); }
+    if (!body.id && !fd.has('announce')) Object.assign(body, { notify: false, discord: false });
+    try { msg.textContent = 'Saving…'; const r = await call('/api/events', body); S.form = null; await reload(); toast(body.id ? 'Match night updated' : 'Match night created'); if (r.notified) toast(`${r.notified} players told`); if (r.discord && !r.discord.ok) toast(`Discord: ${r.discord.error}`, true); }
     catch (er) { msg.textContent = er.message; toast(er.message, true); }
   }
   async function act(fn) { try { await fn(); } catch (er) { toast(er.message, true); } }
