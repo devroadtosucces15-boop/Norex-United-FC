@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-20T22:40:47.712Z",
+ "fetchedAt": "2026-10-20T22:50:49.257Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,42 +80,6 @@
   "leagueAppearances": "276"
  },
  "members": [
-  {
-   "name": "Calvinho187",
-   "gamesPlayed": "11",
-   "winRate": "63",
-   "goals": "8",
-   "assists": "4",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "27",
-   "passesMade": "101",
-   "passSuccessRate": "84",
-   "ratingAve": "7.5",
-   "tacklesMade": "3",
-   "tackleSuccessRate": "5",
-   "proName": "Calvinho",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "195",
-   "proNationality": "72",
-   "proOverall": "84",
-   "proOverallStr": "84",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "1",
-   "prevGoals4": "1",
-   "prevGoals5": "0",
-   "prevGoals6": "1",
-   "prevGoals7": "1",
-   "prevGoals8": "0",
-   "prevGoals9": "1",
-   "prevGoals10": "1",
-   "favoritePosition": "forward"
-  },
   {
    "name": "twiinuziis",
    "gamesPlayed": "5",
@@ -480,21 +444,10 @@
  "positionCount": {
   "midfielder": 4,
   "goalkeeper": 0,
-  "forward": 5,
+  "forward": 4,
   "defender": 2
  },
  "career": [
-  {
-   "name": "Calvinho187",
-   "proPos": "25",
-   "gamesPlayed": "101",
-   "goals": "133",
-   "assists": "72",
-   "manOfTheMatch": "26",
-   "ratingAve": "8.1",
-   "prevGoals": "3",
-   "favoritePosition": "forward"
-  },
   {
    "name": "twiinuziis",
    "proPos": "25",
