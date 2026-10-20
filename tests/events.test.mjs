@@ -272,4 +272,32 @@ const b5 = posts.length;
 await call(mgr, '/api/events', { ...base, title: 'Back to default', date: tomorrow, time: '21:15' });
 t('routing: clearing the table restores the built-in announce', posts.length === b5 + 1 && posts.at(-1).channel === '70001');
 
+// ----- paid plan switch + forced DMs (bot/limits.js, notify() force) -----
+const { limitsFor } = await import('../bot/limits.js');
+const { deliverDMs } = await import('../bot/notify.js');
+t('plan: paid lifts the free-plan numbers', limitsFor('paid').dmPerRun > limitsFor('free').dmPerRun && limitsFor('paid').memberLivePerRun > limitsFor('free').memberLivePerRun && limitsFor('nonsense').dmPerRun === 25);
+t('plan: managers cannot change it, a bad value is refused, the owner can', (await call(mgr, '/api/bot/settings', { plan: 'paid' })).s === 403 && (await call(owner, '/api/bot/settings', { plan: 'gold' })).s === 400
+  && (await call(owner, '/api/bot/settings', { plan: 'paid' })).d.plan === 'paid' && (await call(owner, '/api/bot/settings')).d.plan === 'paid' && (await call(member, '/api/notify/count')).d.pollSec === 60);
+await call(owner, '/api/bot/settings', { plan: 'free' });
+t('forced DM: refused on a channel rule', (await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'everyone', method: 'channel', force: true }] })).s === 400);
+await call(member, '/api/notify/prefs', { prefs: { event: 'off' } });
+const frow = (uid, like) => sqlite.prepare('SELECT forced, dm FROM notifications WHERE user_id = ? AND title LIKE ?').get(uid, like);
+await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'everyone', method: 'dm' }] });
+await call(mgr, '/api/events', { ...base, title: 'Respectful night', date: tomorrow, time: '10:15', discord: false });
+t('without force a muted member is left alone', !frow('500', 'New: Respectful night%') && !!frow('501', 'New: Respectful night%'));
+await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'everyone', method: 'dm', force: true }] });
+await call(mgr, '/api/events', { ...base, title: 'Forced night 1', date: tomorrow, time: '10:30', discord: false });
+t('with force a muted member gets the DM, marked forced (urgent queue)', frow('500', 'New: Forced night 1%')?.forced === 1 && frow('500', 'New: Forced night 1%')?.dm === 'queued');
+sqlite.prepare("INSERT INTO notify_prefs (user_id, dm_failed_at, updated) VALUES ('501', ?, ?) ON CONFLICT (user_id) DO UPDATE SET dm_failed_at = excluded.dm_failed_at").run(Date.now(), Date.now());
+await call(mgr, '/api/events', { ...base, title: 'Forced night 2', date: tomorrow, time: '10:45', discord: false });
+t('closed DMs: bell only, not forced', frow('501', 'New: Forced night 2%')?.dm === null && frow('501', 'New: Forced night 2%')?.forced === 0);
+for (const k of [3, 4, 5, 6]) await call(mgr, '/api/events', { ...base, title: `Forced night ${k}`, date: tomorrow, time: `1${k}:00`.slice(-5), discord: false });
+t('forced DMs are capped at 5 a day per member', sqlite.prepare("SELECT COUNT(*) AS c FROM notifications WHERE user_id = '500' AND forced = 1").get().c === 5 && !frow('500', 'New: Forced night 6%'));
+sqlite.prepare("DELETE FROM notifications WHERE user_id = '500'").run();
+const ins = (title, forced) => sqlite.prepare("INSERT INTO notifications (user_id, type, title, at, dm, forced) VALUES ('500', 'event', ?, ?, 'queued', ?)").run(title, Date.now(), forced).lastInsertRowid;
+const plain = ins('plain first', 0), urgent = ins('urgent second', 1);
+await deliverDMs(env, 1);
+t('urgent DMs go first in the queue', sqlite.prepare('SELECT dm FROM notifications WHERE id = ?').get(urgent).dm === 'sent' && sqlite.prepare('SELECT dm FROM notifications WHERE id = ?').get(plain).dm === 'queued');
+await call(owner, '/api/bot/routes', { rules: [] });
+
 done();

@@ -6,6 +6,7 @@
 //                                  this before posting a match result so the channel/colour/emoji/toggle stay in sync.
 import { can, loadFlagOverrides } from './roles.js';
 import { getCommandSettings } from './botcommands.js';
+import { forgetLimits } from './limits.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -15,7 +16,7 @@ const CH = /^\d{5,25}$/; // a Discord channel/role snowflake
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 
 export const DEFAULT_SETTINGS = {
-  resultChannel: '', reminderChannel: '', pingRole: '', color: 'c8352c', emoji: '⚽',
+  resultChannel: '', reminderChannel: '', pingRole: '', color: 'c8352c', emoji: '⚽', plan: 'free', // plan: Cloudflare Worker plan – see bot/limits.js
   alertChannel: '1560827976348602429', // new site posts + live streams also post here (bot/alertroute.js, flag `alertRoute`)
   autoPosts: { results: true, reminders: true, awards: true, posts: true, live: true },
 };
@@ -53,8 +54,11 @@ export async function botSettingsRoute(p, method, body, me, env, log) {
   const emoji = clean(body.emoji, 8) || cur.emoji;
   const autoPosts = { ...cur.autoPosts };
   if (body.autoPosts && typeof body.autoPosts === 'object') for (const k of Object.keys(autoPosts)) if (k in body.autoPosts) autoPosts[k] = !!body.autoPosts[k];
-  const saved = await saveBotSettings(env, { resultChannel, reminderChannel, pingRole, alertChannel, color, emoji, autoPosts });
-  await log?.(env, me, 'bot-settings', 'Updated bot personalisation');
+  const plan = 'plan' in body ? body.plan : cur.plan;
+  if (!['free', 'paid'].includes(plan)) return fail('Plan must be free or paid.');
+  const saved = await saveBotSettings(env, { resultChannel, reminderChannel, pingRole, alertChannel, color, emoji, autoPosts, plan });
+  forgetLimits();
+  await log?.(env, me, 'bot-settings', `Updated bot personalisation${plan !== cur.plan ? ` · plan ${plan}` : ''}`);
   return json(saved);
 }
 

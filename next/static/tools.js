@@ -125,6 +125,7 @@ ${i.vars.length ? `<p class="muted small">Placeholders: ${i.vars.map((v) => `<co
 <label>Default reminder channel ID<input name="reminderChannel" value="${esc(s.reminderChannel)}" placeholder="Prefill for new events" pattern="\\d{5,25}" maxlength="25"></label>
 <label>Alerts channel ID<input name="alertChannel" value="${esc(s.alertChannel)}" placeholder="New posts and live streams also post here" pattern="\\d{5,25}" maxlength="25"><span class="muted small">Needs the <b>alertRoute</b> switch on (Boardroom → Switches). <button class="chip" type="button" data-b="alert-test">Send me a test DM</button></span></label>
 <label>Embed colour<input name="color" type="color" value="#${esc(s.color)}"></label><label>Emoji<input name="emoji" value="${esc(s.emoji)}" maxlength="8" placeholder="⚽"></label>
+<label>Cloudflare Worker plan<select name="plan">${sel([['free', 'Free – 25 DMs per run, live checks 8 per run, bell every 2 min'], ['paid', 'Paid – 100 DMs per run, live checks 30 per run, bell every 1 min']], s.plan || 'free')}</select></label>
 <div><b class="small">Auto-posts on</b>${AP.map(([k, l]) => `<label><input name="ap-${k}" type="checkbox"${s.autoPosts[k] ? ' checked' : ''}> ${l}</label>`).join('')}</div>
 <div class="dk-btns"><button class="btn" type="submit"${S.busy ? ' disabled' : ''}>💾 Save settings</button></div></form>
 ${routing()}
@@ -143,7 +144,7 @@ ${routing()}
 <td><select data-rf="action" aria-label="When this happens" style="width:100%">${sel(opts(R.actions), r.action)}</select></td>
 <td><select data-rf="group" aria-label="Who" style="width:100%">${sel(opts(R.groups), r.group)}</select>${r.group === 'role' ? `<select data-rf="role" aria-label="Discord role" style="width:100%;margin-top:6px"><option value="">Pick a role…</option>${roles.map((x) => `<option value="${esc(x.id)}"${x.id === r.role ? ' selected' : ''}>${esc(x.name.startsWith('@') ? x.name : '@' + x.name)}</option>`).join('')}</select>` : ''}</td>
 <td><select data-rf="method" aria-label="How" style="width:100%">${sel(opts(R.methods).filter(([k]) => !(r.group === 'role' && k === 'dm')), r.method)}</select></td>
-<td>${dm ? '<span class="muted small">Direct message</span>' : `<select data-rf="channel" aria-label="Channel" style="width:100%"><option value="">Default channel</option>${ch.map((c) => `<option value="${esc(c.id)}"${c.id === r.channel ? ' selected' : ''}>#${esc(c.name)}</option>`).join('')}${r.channel && !known ? `<option value="${esc(r.channel)}" selected>ID ${esc(r.channel)}</option>` : ''}</select><input data-rf="channelId" style="width:100%;margin-top:6px" inputmode="numeric" pattern="\\d{5,25}" maxlength="25" placeholder="or paste a channel ID" aria-label="Channel ID" value="">`}</td>
+<td>${dm ? `<label class="small" style="display:flex;gap:6px;align-items:flex-start"><input type="checkbox" data-rf="force" aria-label="Send even if muted"${r.force ? ' checked' : ''}> <span><b>Send even if muted</b><br><span class="muted">Overrides their alert settings. Max 5 a day each, skips closed DMs, goes first in the queue.</span></span></label>` : `<select data-rf="channel" aria-label="Channel" style="width:100%"><option value="">Default channel</option>${ch.map((c) => `<option value="${esc(c.id)}"${c.id === r.channel ? ' selected' : ''}>#${esc(c.name)}</option>`).join('')}${r.channel && !known ? `<option value="${esc(r.channel)}" selected>ID ${esc(r.channel)}</option>` : ''}</select><input data-rf="channelId" style="width:100%;margin-top:6px" inputmode="numeric" pattern="\\d{5,25}" maxlength="25" placeholder="or paste a channel ID" aria-label="Channel ID" value="">`}</td>
 <td><button class="chip danger" type="button" data-rt-del="${i}" aria-label="Remove rule ${i + 1}">✕</button></td></tr>`;
     }).join('');
     return `<h4 class="dk-h">🔀 Notification routing</h4><p class="muted small">One table for where alerts go. Each rule says <b>what happens</b> → <b>who</b> it is for → <b>how</b> they are told (Discord DM, a channel post, tagging the group, or tagging @everyone) → <b>where</b>. An action with no rules keeps its built-in behaviour; once it has rules, <b>only those rules</b> run for it. DMs follow each member’s own alert settings (Squad Hub → Alerts). Slash commands keep their own “Post to” below.</p>
@@ -154,7 +155,7 @@ ${S.rdraft.length ? `<div class="panel" style="overflow-x:auto"><table class="tb
     if (!S.rdraft) return;
     root.querySelectorAll('tr[data-rt]').forEach((tr) => {
       const g = (f) => tr.querySelector(`[data-rf="${f}"]`), r = S.rdraft[+tr.dataset.rt]; if (!r) return;
-      r.on = g('on').checked; r.action = g('action').value; r.group = g('group').value; r.method = g('method').value;
+      r.on = g('on').checked; r.force = r.method === 'dm' && !!g('force')?.checked; r.action = g('action').value; r.group = g('group').value; r.method = g('method').value;
       r.role = g('role')?.value ?? ''; if (r.group === 'role' && r.method === 'dm') r.method = 'tag';
       if (g('channel')) r.channel = g('channelId').value.trim() || g('channel').value; else r.channel = '';
     });
@@ -226,7 +227,7 @@ ${S.rdraft.length ? `<div class="panel" style="overflow-x:auto"><table class="tb
     else if (k.nReset) act(async () => { S.notif = await call('/api/admin/notif', { key: k.nReset, reset: true }); paint(); toast('Back to the default wording'); });
     else if (t.hasAttribute('data-rt-add')) { readRoutes(); S.rdraft.push(blankRule()); paint(); }
     else if (t.dataset.rtDel !== undefined) { readRoutes(); S.rdraft.splice(+t.dataset.rtDel, 1); paint(); }
-    else if (t.hasAttribute('data-rt-save')) act(async () => { readRoutes(); S.busy = true; paint(); S.routes = await call('/api/bot/routes', { rules: S.rdraft }); S.rdraft = S.routes.rules.map((r) => ({ ...r })); S.busy = false; paint(); toast('Notification routing saved'); });
+    else if (t.hasAttribute('data-rt-save')) act(async () => { readRoutes(); if (S.rdraft.some((r) => r.force) && !confirm('A rule is set to “Send even if muted”. It DMs people even if they turned that alert off (max 5 a day each). Save it?')) return; S.busy = true; paint(); S.routes = await call('/api/bot/routes', { rules: S.rdraft }); S.rdraft = S.routes.rules.map((r) => ({ ...r })); S.busy = false; paint(); toast('Notification routing saved'); });
     else if (k.b === 'save-cmds') act(async () => { S.busy = true; await call('/api/bot/commands', { commands: readCmds() }); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast('Command rules saved'); });
     else if (k.b === 'alert-test') act(async () => { const r = await call('/api/bot/alerts/test', { kind: 'posts' }); toast(r.active ? 'Test sent to your DMs' : 'Test sent to your DMs – alerts are still off (switch alertRoute)'); });
     else if (k.b === 'sync') act(async () => { S.busy = true; paint(); const r = await call('/api/bot/commands/sync', {}); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast(`Synced ${r.count} commands to Discord`); });
@@ -239,7 +240,7 @@ ${S.rdraft.length ? `<div class="panel" style="overflow-x:auto"><table class="tb
     else if (f.matches('[data-g-form]')) act(() => publish(S.form?.pendingId ? { pending: S.form.pendingId } : {}));
     else if (f.matches('[data-b-form]')) act(async () => {
       S.busy = true; paint();
-      S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), reminderChannel: f.reminderChannel.value.trim(), alertChannel: f.alertChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
+      S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), reminderChannel: f.reminderChannel.value.trim(), alertChannel: f.alertChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), plan: f.plan.value, autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
       S.busy = false; paint(); toast('Bot settings saved');
     });
     else if (f.matches('[data-n-form]')) act(async () => { S.busy = true; S.notif = await call('/api/admin/notif', readNotif(f)); S.busy = false; paint(); toast('Notification saved'); });

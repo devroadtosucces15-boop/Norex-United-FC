@@ -6,6 +6,7 @@
 // The club's own channels stay in bot/live.js (GET /api/live). Free and credential-free: public channel pages; Kick's public
 // channel endpoint. A check that fails counts as "not live" – nothing is posted on a failed fetch.
 import { flagOn } from './roles.js';
+import { limits } from './limits.js';
 import { parseTwitch, parseYouTube } from './live.js';
 import { message, header, text, sep, footer, buttons } from './ui.js';
 import { it } from './icons.js';
@@ -13,7 +14,7 @@ import { postEmbed } from './docs.js';
 import { postAlert } from './alertroute.js';
 import { streamAlertsOn } from './streamalerts.js';
 
-const PER_RUN = 8, UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
 const all = (env, sql, ...a) => env.DB.prepare(sql).bind(...a).all().then((r) => r.results ?? []);
@@ -75,7 +76,7 @@ export async function memberLiveCron(env, now = Date.now(), fetcher = fetch) {
     WHERE (p.twitch != '' OR p.youtube != '' OR p.kick != '') ORDER BY p.user_id`);
   if (!members.length) return { checked: 0, live: 0, posted: 0 };
   const start = cursor % members.length;
-  const batch = [...members.slice(start), ...members.slice(0, start)].slice(0, PER_RUN);
+  const batch = [...members.slice(start), ...members.slice(0, start)].slice(0, (await limits(env)).memberLivePerRun);
   if (start + batch.length !== cursor) await env.DB.prepare("INSERT INTO meta (key, value) VALUES ('memberlive_cursor', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").bind(String(start + batch.length)).run(); // skip the no-op write when everyone fits in one run
   const channel = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
   let live = 0, posted = 0;

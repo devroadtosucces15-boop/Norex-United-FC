@@ -1,6 +1,7 @@
 // Notification routing – the owner's one table for "when X happens, tell Y, this way".
 //   GET  /api/bot/routes   owner: { rules, actions, groups, methods }
-//   POST /api/bot/routes   owner: { rules: [{ action, group, role?, method, channel?, on? }] } – replaces the whole table
+//   POST /api/bot/routes   owner: { rules: [{ action, group, role?, method, channel?, force?, on? }] } – replaces the whole table
+//   force (DM rules only) = “send even if muted”: see notify() – flag, closed DMs and a daily cap still apply, and it goes first in the DM queue.
 // Each rule says: for this ACTION (new event, reminder, cancelled …) tell this GROUP (everyone, managers, who said yes …)
 // this WAY (Discord DM · post in a channel · post and tag the group · post and tag @everyone), optionally in a specific
 // channel. An action with no rules keeps its built-in behaviour; an action with rules uses only those, so the table is the
@@ -61,7 +62,8 @@ function cleanRules(list) {
     if (channel && !SNOWFLAKE.test(channel)) return { error: `${n}: the channel must be a Discord ID (right-click → Copy ID).` };
     if (r.group === 'role' && !SNOWFLAKE.test(role)) return { error: `${n}: pick the Discord role.` };
     if (r.group === 'role' && r.method === 'dm') return { error: `${n}: a Discord role can be tagged, not messaged. Use “tag the group” or pick a group of people.` };
-    rules.push({ action: r.action, group: r.group, ...(r.group === 'role' ? { role } : {}), method: r.method, ...(channel ? { channel } : {}), on: r.on !== false });
+    if (r.force && r.method !== 'dm') return { error: `${n}: “send even if muted” only applies to Discord DMs.` };
+    rules.push({ action: r.action, group: r.group, ...(r.group === 'role' ? { role } : {}), method: r.method, ...(channel ? { channel } : {}), ...(r.force ? { force: true } : {}), on: r.on !== false });
   }
   return { rules };
 }
@@ -85,7 +87,7 @@ export async function routeNotification(env, action, ctx) {
     try {
       if (r.method === 'dm') {
         const ids = await people(r.group);
-        if (ids.length && ctx.notify) out.notified += (await notify(env, ids, ctx.notify)) ?? 0;
+        if (ids.length && ctx.notify) out.notified += (await notify(env, ids, r.force ? { ...ctx.notify, force: true } : ctx.notify)) ?? 0;
         continue;
       }
       const channel = r.channel || ctx.channel || settings.reminderChannel

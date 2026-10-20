@@ -163,10 +163,11 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
   };
   // D1 usage: one tab polls for all of them. The tab that holds the short lease in localStorage asks the Worker and tells the
   // others over a BroadcastChannel; a hidden tab neither polls nor keeps the lease, so a visible one takes over.
-  const LEAD = 'norex.hdrlead', LAST = 'norex.hdrlast', ALERT_MS = 120e3, LEASE_MS = 150e3, tabId = Math.random().toString(36).slice(2);
+  const LEAD = 'norex.hdrlead', LAST = 'norex.hdrlast', LEASE_MS = 150e3, tabId = Math.random().toString(36).slice(2);
   const bc = 'BroadcastChannel' in window ? new BroadcastChannel('norex-hdr') : null;
   const who = () => String(A?.id ?? A?.name ?? '');
-  let shown = 0;
+  let shown = 0, alertMs = 120e3, alertTimer = null; // the server sets the rhythm (plan: 120 s free, 60 s paid)
+  const setAlertMs = (ms) => { if (ms === alertMs && alertTimer) return; alertMs = ms; clearInterval(alertTimer); alertTimer = setInterval(pollAlerts, alertMs); };
   const paintAlerts = (a) => {
     if (!a || !bell) return;
     bell.hidden = false; dot(bell, a.unread | 0);
@@ -208,6 +209,7 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
     let got = false;
     const count = A.call('/api/notify/count').then((c) => {
       out.unread = c.unread | 0; got = true; paintAlerts(out);
+      if (c.pollSec) setAlertMs(Math.min(300, Math.max(30, c.pollSec | 0)) * 1000);
       return c.unread > 0 ? fetchBanners() : null;
     }).catch(() => {});
     const chats = A.call('/api/chats').then((r) => { out.chats = (r.chats || []).reduce((n, c) => n + (c.unread || 0), 0); got = true; paintAlerts(out); }).catch(() => {});
@@ -228,7 +230,7 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
       bell.onclick = (e) => { e.preventDefault(); toggleDrop('alerts', bell); }; chat.onclick = (e) => { e.preventDefault(); toggleDrop('chats', chat); }; bell.setAttribute('aria-haspopup', 'dialog'); chat.setAttribute('aria-haspopup', 'dialog');
       const av = d.createElement('div'); av.className = 'hdr-av'; ac.onclick = () => { closeDrop(); toggleMenu(); }; av.append(ac, pill); box.append(bell, chat, av);
       if (viewAs() && realOwner()) { const ribbon = d.createElement('div'); ribbon.className = 'hdr-va'; ribbon.innerHTML = '👁️ Viewing the site as a <b>' + (viewAs() === 'guest' ? 'guest' : 'member') + '</b> <button type="button">Back to owner</button>'; ribbon.querySelector('button').onclick = () => setViewAs(''); d.body.insertBefore(ribbon, d.body.firstChild); }
-      poll(); pollAlerts(); timer = setInterval(poll, 120e3); setInterval(pollAlerts, ALERT_MS); d.addEventListener('visibilitychange', () => { if (!d.hidden) { poll(); pollAlerts(); } });
+      poll(); pollAlerts(); timer = setInterval(poll, 120e3); setAlertMs(alertMs); d.addEventListener('visibilitychange', () => { if (!d.hidden) { poll(); pollAlerts(); } });
     } else if (API) {
       const a = d.createElement('a'); a.className = 'btn ghost hdr-in'; a.href = A?.loginUrl ? A.loginUrl() : '#'; a.setAttribute('data-login', ''); a.textContent = 'Sign in'; box.appendChild(a);
     }

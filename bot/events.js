@@ -335,7 +335,8 @@ async function saveEvent(body, me, env, log) {
     // channel (or the last one used) and ping role are used.
     const silent = body.notify === false && body.discord === false;
     const created = { ...e, id: ids[0], status: 'scheduled' };
-    const n = { type: 'event', title: `New: ${label(e)} – ${when(e)}${repeat ? ` (weekly, ${repeat + 1} dates)` : ''}`, body: e.notes || 'Say if you can make it in the Squad Hub.', link: 'members.html#schedule' };
+    const whenTxt = `${when(e)}${repeat ? ` (weekly, ${repeat + 1} dates)` : ''}`, notes = e.notes || 'Say if you can make it in the Squad Hub.';
+    const n = { type: 'event', nkey: 'event.created', vars: { event: label(e), when: whenTxt, notes }, title: `New: ${label(e)} – ${whenTxt}`, body: notes, link: 'members.html#schedule' };
     const routed = silent ? null : await safely(routeNotification(env, 'event.created', {
       notify: n, groups: eventGroups(env, created), build: (o) => eventMessage(env, created, [], repeat ? 'Weekly · ' : '', o),
     }));
@@ -492,7 +493,8 @@ async function nightRoute(p, method, body, me, env, log, loadSite, url) {
     const rep = await sessionReport(env, row.id, loadSite);
     const out = {};
     const people = [...new Set([...rep.event.checkins.map((x) => x.id), ...rep.event.rsvps.filter((x) => x.s === 'yes').map((x) => x.id)])];
-    const n = { type: 'event', icon: '📋', title: `Session report: ${label(row)} · Grade ${rep.team.grade ?? '–'}`, body: rep.team.games ? `${rep.team.w}W ${rep.team.d}D ${rep.team.l}L · ${rep.team.gf}–${rep.team.ga}${rep.mvp ? ` · ⭐ ${rep.mvp.n}` : ''}` : null, link: 'members.html#schedule' };
+    const summary = rep.team.games ? `${rep.team.w}W ${rep.team.d}D ${rep.team.l}L · ${rep.team.gf}–${rep.team.ga}${rep.mvp ? ` · ⭐ ${rep.mvp.n}` : ''}` : null;
+    const n = { type: 'event', nkey: 'event.report', vars: { event: label(row), grade: rep.team.grade ?? '–', summary: summary ?? '' }, icon: '📋', title: `Session report: ${label(row)} · Grade ${rep.team.grade ?? '–'}`, body: summary, link: 'members.html#schedule' };
     // a channel picked on the button wins; otherwise the owner's routing rules, otherwise the built-in (players told, no post)
     const routed = body.channel ? null : await safely(routeNotification(env, 'event.report', {
       notify: n, channel: row.discord_channel || undefined, groups: { ...eventGroups(env, row), yes: async () => people, going: async () => people },

@@ -19,12 +19,15 @@ import { encryptPayload, safeEndpoint, sendPush } from './webpush.js';
 import { message, header, text, footer, buttons, cards, bannerUrl } from './ui.js';
 import { faceOf } from './faces.js';
 import { applyNotifConfig, notifCenterRoute } from './notifcenter.js';
+import { limits } from './limits.js';
 
 const DAY = 86400e3;
 const KEEP = 200; // notifications kept per member
 const REMIND_MAX = 3; // DM reminders for an unacknowledged announcement (one per day)
 const REQ_DAILY = 5; // requests per member per day
 const RED = 0xc8352c;
+const FORCE_DAILY_CAP = 5; // forced DMs (routing rule "send even if muted") one member can get per day
+const DM_CLOSED_FOR = 14 * DAY; // a member whose DMs bounced is not forced again for this long (bell only)
 
 // Notification types → settings rows. mode: dm = site + Discord DM · site = site only · off = muted.
 // Later roadmap items add their own row here (messages, reactions, events, awards, feedback …).
@@ -105,15 +108,19 @@ export async function mutedFor(env, ids, type) {
 let kick = false; // a DM was queued during this request → handleMembers sends it right after responding
 export const takeKick = () => { const k = kick; kick = false; return k; };
 
-// n = { type, title, body?, link?, icon?, ack?, ref? }. Recipients who can't see the feature yet (flag) are skipped,
+// n = { type, title, body?, link?, icon?, ack?, ref?, force? }. force = routing rule "send even if muted": DM regardless of the
+// member's settings, but never past the feature flag, never to closed DMs (bell only), at most FORCE_DAILY_CAP a day, urgent first in the queue.
+// Recipients who can't see the feature yet (flag) are skipped,
 // so nothing piles up or gets DMed while `notifications` is still owner-only.
 // ref names what the notification is about (e.g. 'rules:3' – P5.2), so acknowledging either side acknowledges both.
 export async function notify(env, ids, n) {
   ids = [...new Set((ids ?? []).filter(Boolean).map(String))].slice(0, 1000);
   if (!ids.length || !env.DB) return 0;
   if (n.nkey) { n = await applyNotifConfig(env, n); if (!n) return 0; } // Notification Center: owner's wording, route and on/off
-  const rows = await all(env, `SELECT u.id, u.role, p.prefs FROM users u LEFT JOIN notify_prefs p ON p.user_id = u.id WHERE u.id IN (${marks(ids.length)})`, ...ids);
+  const rows = await all(env, `SELECT u.id, u.role, p.prefs, p.dm_failed_at FROM users u LEFT JOIN notify_prefs p ON p.user_id = u.id WHERE u.id IN (${marks(ids.length)})`, ...ids);
   const at = Date.now();
+  const forcedSoFar = new Map();
+  if (n.force) for (const f of await all(env, `SELECT user_id, COUNT(*) AS c FROM notifications WHERE forced = 1 AND at > ? AND user_id IN (${marks(ids.length)}) GROUP BY user_id`, at - DAY, ...ids)) forcedSoFar.set(String(f.user_id), f.c);
   const stmts = [], told = [], pushTo = [];
   // The same alert twice within 15 minutes (a double tap on Post, two crons, a retry) lands once.
   const dup = n.type === 'test' ? new Set() : new Set((await all(env, `SELECT user_id FROM notifications WHERE title = ? AND at > ? AND user_id IN (${marks(ids.length)})`, clean(n.title, 140), at - 15 * 60e3, ...ids)).map((d) => String(d.user_id)));
@@ -121,14 +128,19 @@ export async function notify(env, ids, n) {
     if (dup.has(String(r.id))) continue;
     if (!flagOn(env, { role: r.role }, 'notifications')) continue;
     let mode = modeOf(parsePrefs(r.prefs), n.type);
-    if (mode === 'off' && n.locked) mode = TYPES[n.type]?.def ?? 'site'; // owner: members cannot mute this one
-    if (mode === 'off') continue;
-    if (n.route) mode = n.route; // owner-chosen route for those who have not muted it
+    const force = !!n.force && (forcedSoFar.get(String(r.id)) ?? 0) < FORCE_DAILY_CAP;
+    if (force) mode = r.dm_failed_at && at - r.dm_failed_at < DM_CLOSED_FOR ? 'site' : 'dm'; // closed DMs: bell only
+    else {
+      if (mode === 'off' && n.locked) mode = TYPES[n.type]?.def ?? 'site'; // owner: members cannot mute this one
+      if (mode === 'off') continue;
+      if (n.route) mode = n.route; // owner-chosen route for those who have not muted it
+    }
     const dm = mode === 'dm' ? 'queued' : null;
+    const forcedRow = force && dm ? 1 : 0;
     if (dm) kick = true;
     if (dm && flagOn(env, { role: r.role }, 'push')) pushTo.push(String(r.id)); // BE0: "dm" is the tier where a member asked to be told – push goes there too
-    stmts.push(env.DB.prepare('INSERT INTO notifications (user_id, type, icon, title, body, link, ack, at, dm, ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(r.id, n.type, n.icon ?? TYPES[n.type]?.icon ?? '🔔', clean(n.title, 140), n.body ? cleanText(n.body, 1500) : null, safeLink(n.link), n.ack ? 1 : 0, at, dm, n.ref ?? null));
+    stmts.push(env.DB.prepare('INSERT INTO notifications (user_id, type, icon, title, body, link, ack, at, dm, ref, forced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(r.id, n.type, n.icon ?? TYPES[n.type]?.icon ?? '🔔', clean(n.title, 140), n.body ? cleanText(n.body, 1500) : null, safeLink(n.link), n.ack ? 1 : 0, at, dm, n.ref ?? null, forcedRow));
     told.push(String(r.id));
   }
   for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
@@ -140,10 +152,9 @@ export async function notify(env, ids, n) {
 // BE0 Web Push: encrypted and sent to every browser the opted-in members subscribed. Best effort – a dead
 // endpoint (404/410) is forgotten; any other failure is only logged. Capped so one announcement can't exhaust
 // the Worker's subrequest budget.
-const PUSH_MAX = 40;
 async function sendWebPush(env, userIds, n) {
   if (!env.VAPID_PRIVATE_KEY || !env.VAPID_PUBLIC_KEY) return 0;
-  const subs = await all(env, `SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id IN (${marks(userIds.length)}) LIMIT ${PUSH_MAX}`, ...userIds);
+  const subs = await all(env, `SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id IN (${marks(userIds.length)}) LIMIT ${(await limits(env)).pushMax}`, ...userIds);
   const payload = JSON.stringify({
     title: clean(n.title, 140),
     body: n.body ? cleanText(n.body, 140) : '',
@@ -193,9 +204,10 @@ export function dmMessage(env, n, url, face = null) {
 }
 
 // Sends queued DMs (oldest first). Stops on Discord rate limits; the next run picks up the rest.
-export async function deliverDMs(env, limit = 25) {
+export async function deliverDMs(env, limit) {
+  limit ??= (await limits(env)).dmPerRun;
   const q = await all(env, `SELECT n.*, p.dm_channel FROM notifications n LEFT JOIN notify_prefs p ON p.user_id = n.user_id
-    WHERE n.dm = 'queued' ORDER BY n.id LIMIT ?`, limit);
+    WHERE n.dm = 'queued' ORDER BY n.forced DESC, n.id LIMIT ?`, limit); // forced (urgent) rows first
   if (!q.length) return { sent: 0, failed: 0 };
   const mark = (id, dm) => run(env, 'UPDATE notifications SET dm = ?, dm_at = ? WHERE id = ?', dm, Date.now(), id);
   if (!env.DISCORD_BOT_TOKEN) {
@@ -260,7 +272,7 @@ export async function counts(env, me) {
     one(env, 'SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL', me.u),
     one(env, 'SELECT id, icon, title FROM notifications WHERE user_id = ? AND ack = 1 AND ack_at IS NULL ORDER BY id LIMIT 1', me.u),
   ]);
-  return { unread: u.n, ack: a ? { id: a.id, icon: opt(a.icon), title: a.title } : null };
+  return { unread: u.n, ack: a ? { id: a.id, icon: opt(a.icon), title: a.title } : null, pollSec: (await limits(env)).headerPollSec };
 }
 async function state(env, me) {
   const [rows, p, c, devices] = await Promise.all([
