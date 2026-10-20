@@ -1,7 +1,7 @@
 {
-  "revision": "c120827a9ab1397a1d2c287cea2e342ce959e677",
-  "files": 899,
-  "imports": 671,
+  "revision": "03514b205e5b44da92d05f27e82c04232cc6f759",
+  "files": 901,
+  "imports": 678,
   "api_paths": 252,
   "tables": 322,
   "records": [
@@ -958,7 +958,7 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 830,
+      "lines": 832,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -1685,6 +1685,23 @@
       ]
     },
     {
+      "path": "bot/limits.js",
+      "layer": "bot",
+      "lines": 20,
+      "imports": [
+        "./settings.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "here"
+      ],
+      "functions": [
+        "forgetLimits",
+        "limits",
+        "limitsFor"
+      ]
+    },
+    {
       "path": "bot/lineuprec.js",
       "layer": "bot",
       "lines": 82,
@@ -1879,9 +1896,10 @@
     {
       "path": "bot/memberlive.js",
       "layer": "bot",
-      "lines": 108,
+      "lines": 109,
       "imports": [
         "./roles.js",
+        "./limits.js",
         "./live.js",
         "./ui.js",
         "./icons.js",
@@ -2860,6 +2878,17 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0057_forced_dm.sql",
+      "layer": "bot",
+      "lines": 4,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "notifications"
+      ],
+      "functions": []
+    },
+    {
       "path": "bot/monitor.js",
       "layer": "bot",
       "lines": 86,
@@ -2881,7 +2910,7 @@
     {
       "path": "bot/notifcenter.js",
       "layer": "bot",
-      "lines": 115,
+      "lines": 117,
       "imports": [
         "./roles.js"
       ],
@@ -2910,14 +2939,15 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 466,
+      "lines": 478,
       "imports": [
         "./roles.js",
         "./clubroom.js",
         "./webpush.js",
         "./ui.js",
         "./faces.js",
-        "./notifcenter.js"
+        "./notifcenter.js",
+        "./limits.js"
       ],
       "endpoints": [
         "/api/admin/notif",
@@ -3495,7 +3525,7 @@
     {
       "path": "bot/routing.js",
       "layer": "bot",
-      "lines": 137,
+      "lines": 139,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -3589,10 +3619,11 @@
     {
       "path": "bot/settings.js",
       "layer": "bot",
-      "lines": 67,
+      "lines": 71,
       "imports": [
         "./roles.js",
-        "./botcommands.js"
+        "./botcommands.js",
+        "./limits.js"
       ],
       "endpoints": [
         "/api/bot/settings"
@@ -3777,9 +3808,10 @@
     {
       "path": "bot/streamalerts.js",
       "layer": "bot",
-      "lines": 193,
+      "lines": 194,
       "imports": [
         "./roles.js",
+        "./limits.js",
         "./ui.js",
         "./icons.js",
         "./docs.js",
@@ -10885,7 +10917,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 276,
+      "lines": 304,
       "imports": [
         "../bot/ui.js",
         "node:fs",
@@ -10895,11 +10927,14 @@
         "node:fs",
         "../bot/notify.js",
         "../scripts/cards.mjs",
-        "../bot/events.js"
+        "../bot/events.js",
+        "../bot/limits.js",
+        "../bot/notify.js"
       ],
       "endpoints": [
         "/api/admin/overview",
         "/api/bot/routes",
+        "/api/bot/settings",
         "/api/events",
         "/api/events/calendar",
         "/api/events/cancel",
@@ -10910,11 +10945,14 @@
         "/api/events/report/post",
         "/api/events/rsvp",
         "/api/notify",
+        "/api/notify/count",
+        "/api/notify/prefs",
         "/api/profile"
       ],
       "tables": [
         "EA",
         "Rush",
+        "SET",
         "activity",
         "availability",
         "claims",
@@ -10933,6 +10971,8 @@
       ],
       "functions": [
         "PNG",
+        "frow",
+        "ins",
         "iso",
         "notesFor",
         "posterUp",
@@ -15765,6 +15805,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/limits.js",
+      "target": "bot/settings.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/lineuprec.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -15852,6 +15897,11 @@
     {
       "source": "bot/memberlive.js",
       "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/limits.js",
       "kind": "imports"
     },
     {
@@ -16185,6 +16235,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/notify.js",
+      "target": "bot/limits.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/panel.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -16395,6 +16450,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/settings.js",
+      "target": "bot/limits.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/social.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -16442,6 +16502,11 @@
     {
       "source": "bot/streamalerts.js",
       "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
+      "target": "bot/limits.js",
       "kind": "imports"
     },
     {
@@ -17432,6 +17497,16 @@
     {
       "source": "tests/events.test.mjs",
       "target": "bot/events.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/limits.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/notify.js",
       "kind": "imports"
     },
     {
