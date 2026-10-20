@@ -1,9 +1,9 @@
 {
-  "revision": "a014beaba2de22e4111728498943a460cc6f1348",
+  "revision": "c0aaf9866f7af6f3ecde941ed139b356a26d5ba1",
   "files": 901,
-  "imports": 678,
+  "imports": 685,
   "api_paths": 252,
-  "tables": 322,
+  "tables": 323,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -218,12 +218,13 @@
     {
       "path": "bot/awards.js",
       "layer": "bot",
-      "lines": 260,
+      "lines": 268,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./clubroom.js",
         "./docs.js",
+        "./routing.js",
         "./settings.js",
         "./ui.js"
       ],
@@ -274,7 +275,8 @@
         "state",
         "trophies",
         "weekOf",
-        "winnersOut"
+        "winnersOut",
+        "winnersPost"
       ]
     },
     {
@@ -800,12 +802,13 @@
     {
       "path": "bot/discoveries.js",
       "layer": "bot",
-      "lines": 163,
+      "lines": 172,
       "imports": [
         "./roles.js",
         "./ui.js",
         "./notify.js",
-        "./docs.js"
+        "./docs.js",
+        "./routing.js"
       ],
       "endpoints": [
         "/api/discoveries",
@@ -828,6 +831,7 @@
         "fail",
         "json",
         "one",
+        "panel",
         "queuePanel",
         "queueRows",
         "say",
@@ -1424,12 +1428,13 @@
     {
       "path": "bot/hotw.js",
       "layer": "bot",
-      "lines": 137,
+      "lines": 146,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./awards.js",
         "./docs.js",
+        "./routing.js",
         "./ui.js"
       ],
       "endpoints": [
@@ -1450,6 +1455,7 @@
       "functions": [
         "all",
         "announce",
+        "card",
         "clipOf",
         "closeHotw",
         "entries",
@@ -2939,7 +2945,7 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 478,
+      "lines": 479,
       "imports": [
         "./roles.js",
         "./clubroom.js",
@@ -3525,7 +3531,7 @@
     {
       "path": "bot/routing.js",
       "layer": "bot",
-      "lines": 140,
+      "lines": 157,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -3535,10 +3541,12 @@
         "/api/bot/routes"
       ],
       "tables": [
+        "GitHub",
         "SET",
         "for",
         "is",
         "meta",
+        "outside",
         "users"
       ],
       "functions": [
@@ -3550,7 +3558,9 @@
         "one",
         "people",
         "peopleOf",
+        "pinged",
         "post",
+        "publicRoutes",
         "routeNotification",
         "routingRoute"
       ]
@@ -3619,11 +3629,12 @@
     {
       "path": "bot/settings.js",
       "layer": "bot",
-      "lines": 72,
+      "lines": 73,
       "imports": [
         "./roles.js",
         "./botcommands.js",
-        "./limits.js"
+        "./limits.js",
+        "./routing.js"
       ],
       "endpoints": [
         "/api/bot/settings"
@@ -3738,8 +3749,9 @@
     {
       "path": "bot/statinsights.js",
       "layer": "bot",
-      "lines": 436,
+      "lines": 442,
       "imports": [
+        "./routing.js",
         "./roles.js",
         "./aispike.js",
         "./ui.js"
@@ -5138,7 +5150,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 615,
+      "lines": 568,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9908,7 +9920,7 @@
     {
       "path": "scripts/lib/resultpost.mjs",
       "layer": "scripts",
-      "lines": 111,
+      "lines": 135,
       "imports": [
         "node:fs",
         "node:path",
@@ -9919,13 +9931,16 @@
       ],
       "endpoints": [],
       "tables": [
+        "one",
         "the"
       ],
       "functions": [
         "list",
         "panel",
         "pic",
-        "postResults"
+        "postResults",
+        "send",
+        "webhookChannel"
       ]
     },
     {
@@ -10773,7 +10788,7 @@
     {
       "path": "tests/discoveries.test.mjs",
       "layer": "tests",
-      "lines": 97,
+      "lines": 108,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
@@ -10918,7 +10933,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 310,
+      "lines": 323,
       "imports": [
         "../bot/ui.js",
         "node:fs",
@@ -10930,7 +10945,9 @@
         "../scripts/cards.mjs",
         "../bot/events.js",
         "../bot/limits.js",
-        "../bot/notify.js"
+        "../bot/notify.js",
+        "../bot/routing.js",
+        "../bot/routing.js"
       ],
       "endpoints": [
         "/api/admin/overview",
@@ -10964,6 +10981,7 @@
         "members",
         "notifications",
         "notify_prefs",
+        "outside",
         "restores",
         "rush_matches",
         "rush_players",
@@ -12382,7 +12400,7 @@
     {
       "path": "tests/resultpost.test.mjs",
       "layer": "tests",
-      "lines": 45,
+      "lines": 68,
       "imports": [
         "node:fs",
         "node:os",
@@ -12582,7 +12600,7 @@
     {
       "path": "tests/statinsights.test.mjs",
       "layer": "tests",
-      "lines": 413,
+      "lines": 426,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
@@ -15317,6 +15335,11 @@
     },
     {
       "source": "bot/awards.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/awards.js",
       "target": "bot/settings.js",
       "kind": "imports"
     },
@@ -15508,6 +15531,11 @@
     {
       "source": "bot/discoveries.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/discoveries.js",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
@@ -15728,6 +15756,11 @@
     {
       "source": "bot/hotw.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/hotw.js",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
@@ -16456,6 +16489,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/settings.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/social.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -16483,6 +16521,11 @@
     {
       "source": "bot/squads.js",
       "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/statinsights.js",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
@@ -17508,6 +17551,16 @@
     {
       "source": "tests/events.test.mjs",
       "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
