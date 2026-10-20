@@ -2,7 +2,7 @@
 //   Submissions – GET /api/admin/submissions?type=&q=  (+ CSV export in the browser)
 //   Reports     – GET /api/admin/reports, POST /api/feed/delete|unreport, /api/feedback/hide, /api/chats/reports/:id {action: clear|remove}
 //   Game data   – GET /api/game/admin, POST /api/game/publish, /api/game/dismiss
-//   Bot         – GET|POST /api/bot/settings, GET|POST /api/bot/commands, POST /api/bot/commands/sync, GET|POST /api/bot/routes (notification routing)
+//   Bot         – GET|POST /api/bot/settings, GET|POST /api/bot/commands, POST /api/bot/commands/sync
 //   Awards      – GET /api/awards, POST /api/awards/category|category/remove|close|settings, GET /api/events/discord (channels)
 (() => {
   const d = document, root = d.getElementById('tlLive'); if (!root) return;
@@ -21,7 +21,7 @@
   const ROLE_OPTS = [['guest', 'Everyone'], ['member', 'Members'], ['claimed', 'Verified players'], ['manager', 'Managers'], ['owner', 'Owner only']];
   const REPLY_OPTS = [['default', 'As built'], ['private', 'Private (only them)'], ['public', 'Public']];
   const AP = [['results', '⚽ Match results'], ['reminders', '⏰ Event reminders'], ['awards', '🏆 Weekly awards'], ['posts', '📝 New site posts → alerts channel'], ['live', '🔴 Live streams → alerts channel']];
-  const S = { tab: 'subm', type: 'feedback', q: '', rows: null, reports: null, game: null, form: null, bot: null, cmds: null, awards: null, notif: null, routes: null, rdraft: null, dc: null, channels: null, ask: null, busy: false, err: {} };
+  const S = { tab: 'subm', type: 'feedback', q: '', rows: null, reports: null, game: null, form: null, bot: null, cmds: null, awards: null, notif: null, channels: null, ask: null, busy: false, err: {} };
   const bump = (v) => { const m = String(v || 'fc27').match(/^(.*?)(\d+)$/); return m && /-v$|-tu$|\.$/.test(m[1]) ? m[1] + (+m[2] + 1) : `${v}-v2`; };
   const sel = (list, cur) => list.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
   const failed = (k, what) => (S.err[k] ? empty('⚠️', `Could not load ${what}`, S.err[k]) : null);
@@ -122,43 +122,13 @@ ${i.vars.length ? `<p class="muted small">Placeholders: ${i.vars.map((v) => `<co
     return `<h4 class="dk-h" style="margin-top:0">🤖 Personalisation</h4><p class="muted small">Where the bot posts, who it pings and its look. Channel and role IDs come from Discord (Developer Mode on, right-click → Copy ID).</p>
 <form class="panel dk-nf" data-b-form><label>Result channel ID<input name="resultChannel" value="${esc(s.resultChannel)}" placeholder="Blank = the webhook's own channel" pattern="\\d{5,25}" maxlength="25"></label>
 <label>Reminder ping role ID<input name="pingRole" value="${esc(s.pingRole)}" placeholder="Optional – pinged on result posts" pattern="\\d{1,25}" maxlength="25"></label>
-<label>Default reminder channel ID<input name="reminderChannel" value="${esc(s.reminderChannel)}" placeholder="Prefill for new events" pattern="\\d{5,25}" maxlength="25"></label>
 <label>Alerts channel ID<input name="alertChannel" value="${esc(s.alertChannel)}" placeholder="New posts and live streams also post here" pattern="\\d{5,25}" maxlength="25"><span class="muted small">Needs the <b>alertRoute</b> switch on (Boardroom → Switches). <button class="chip" type="button" data-b="alert-test">Send me a test DM</button></span></label>
 <label>Embed colour<input name="color" type="color" value="#${esc(s.color)}"></label><label>Emoji<input name="emoji" value="${esc(s.emoji)}" maxlength="8" placeholder="⚽"></label>
 <label>Cloudflare Worker plan<select name="plan">${sel([['free', 'Free – 25 DMs per run, live checks 8 per run, bell every 2 min'], ['paid', 'Paid – 100 DMs per run, live checks 30 per run, bell every 1 min']], s.plan || 'free')}</select></label>
 <div><b class="small">Auto-posts on</b>${AP.map(([k, l]) => `<label><input name="ap-${k}" type="checkbox"${s.autoPosts[k] ? ' checked' : ''}> ${l}</label>`).join('')}</div>
 <div class="dk-btns"><button class="btn" type="submit"${S.busy ? ' disabled' : ''}>💾 Save settings</button></div></form>
-${routing()}
+<p class="panel muted small" style="padding:10px 12px">🔀 <b>Who gets which alert, and where it posts</b> now lives in <a href="staff-boardroom.html">Boardroom → Control Center</a>, next to each feature’s access switch.</p>
 <h4 class="dk-h">🎛️ Commands</h4><p class="muted small">Who can use each command, where, and where it posts. Owners always get through; managers ignore the channel limit. Rules apply the moment you save; <b>Sync</b> also hides staff-only commands from Discord's list.${S.cmds?.channelsError ? ` <b>Channel list unavailable:</b> ${esc(S.cmds.channelsError)}` : ''}</p>${cmds}`;
-  }
-  // ---------- Notification routing: one table – what happens → who → how → where ----------
-  const blankRule = () => ({ action: Object.keys(S.routes.actions)[0], group: 'everyone', method: 'channel', channel: '', on: true });
-  function routing() {
-    const f = failed('routes', 'the notification routing'); if (f) return `<h4 class="dk-h">🔀 Notification routing</h4>${f}`;
-    if (!S.routes) return `<h4 class="dk-h">🔀 Notification routing</h4>${skel}`;
-    const R = S.routes, ch = S.dc?.channels || [], roles = S.dc?.roles || [];
-    const opts = (o) => Object.entries(o).map(([k, v]) => [k, typeof v === 'string' ? v : `${v.icon} ${v.label}`]);
-    const rows = S.rdraft.map((r, i) => {
-      const dm = r.method === 'dm', known = ch.some((c) => c.id === r.channel);
-      return `<tr data-rt="${i}"><td><input type="checkbox" data-rf="on" aria-label="Rule ${i + 1} on"${r.on === false ? '' : ' checked'}></td>
-<td><select data-rf="action" aria-label="When this happens" style="width:100%">${sel(opts(R.actions), r.action)}</select></td>
-<td><select data-rf="group" aria-label="Who" style="width:100%">${sel(opts(R.groups), r.group)}</select>${r.group === 'role' ? `<select data-rf="role" aria-label="Discord role" style="width:100%;margin-top:6px"><option value="">Pick a role…</option>${roles.map((x) => `<option value="${esc(x.id)}"${x.id === r.role ? ' selected' : ''}>${esc(x.name.startsWith('@') ? x.name : '@' + x.name)}</option>`).join('')}</select>` : ''}</td>
-<td><select data-rf="method" aria-label="How" style="width:100%">${sel(opts(R.methods).filter(([k]) => !(r.group === 'role' && k === 'dm')), r.method)}</select></td>
-<td>${dm ? `<label class="small" style="display:flex;gap:6px;align-items:flex-start"><input type="checkbox" data-rf="force" aria-label="Send even if muted"${r.force ? ' checked' : ''}> <span><b>Send even if muted</b><br><span class="muted">Overrides their alert settings. Max 5 a day each, skips closed DMs, goes first in the queue.</span></span></label>` : `<select data-rf="channel" aria-label="Channel" style="width:100%"><option value="">Default channel</option>${ch.map((c) => `<option value="${esc(c.id)}"${c.id === r.channel ? ' selected' : ''}>#${esc(c.name)}</option>`).join('')}${r.channel && !known ? `<option value="${esc(r.channel)}" selected>ID ${esc(r.channel)}</option>` : ''}</select><input data-rf="channelId" style="width:100%;margin-top:6px" inputmode="numeric" pattern="\\d{5,25}" maxlength="25" placeholder="or paste a channel ID" aria-label="Channel ID" value="">`}</td>
-<td><button class="chip danger" type="button" data-rt-del="${i}" aria-label="Remove rule ${i + 1}">✕</button></td></tr>`;
-    }).join('');
-    return `<h4 class="dk-h">🔀 Notification routing</h4><p class="muted small">One table for where alerts go. Each rule says <b>what happens</b> → <b>who</b> it is for → <b>how</b> they are told (Discord DM, a channel post, tagging the group, or tagging @everyone) → <b>where</b>. An action with no rules keeps its built-in behaviour; once it has rules, <b>only those rules</b> run for it. DMs follow each member’s own alert settings (Squad Hub → Alerts). Slash commands keep their own “Post to” below.</p>
-${S.rdraft.length ? `<div class="panel" style="overflow-x:auto"><table class="tbl" style="table-layout:fixed;min-width:900px"><thead><tr><th style="width:44px">On</th><th style="width:22%">When this happens</th><th style="width:22%">Tell</th><th style="width:20%">How</th><th>Where</th><th style="width:44px"></th></tr></thead><tbody>${rows}</tbody></table></div>` : empty('🔀', 'No rules yet', 'Everything uses its built-in behaviour. Add a rule to take control of one action.')}
-<div class="dk-btns" style="justify-content:flex-start;margin-top:12px"><button class="chip" type="button" data-rt-add>➕ Add rule</button><button class="btn" type="button" data-rt-save${S.busy ? ' disabled' : ''}>💾 Save routing</button></div>`;
-  }
-  function readRoutes() {
-    if (!S.rdraft) return;
-    root.querySelectorAll('tr[data-rt]').forEach((tr) => {
-      const g = (f) => tr.querySelector(`[data-rf="${f}"]`), r = S.rdraft[+tr.dataset.rt]; if (!r) return;
-      r.on = g('on').checked; r.force = r.method === 'dm' && !!g('force')?.checked; r.action = g('action').value; r.group = g('group').value; r.method = g('method').value;
-      r.role = g('role')?.value ?? ''; if (r.group === 'role' && r.method === 'dm') r.method = 'tag';
-      if (g('channel')) r.channel = g('channelId').value.trim() || g('channel').value; else r.channel = '';
-    });
   }
   function readCmds() {
     const out = {};
@@ -198,8 +168,6 @@ ${S.rdraft.length ? `<div class="panel" style="overflow-x:auto"><table class="tb
     if (tab === 'bot') {
       if (!S.bot) S.bot = await guard('bot', () => call('/api/bot/settings'));
       if (!S.cmds) S.cmds = await guard('cmds', () => call('/api/bot/commands'));
-      if (!S.routes) { S.routes = await guard('routes', () => call('/api/bot/routes')); S.rdraft = S.routes ? S.routes.rules.map((r) => ({ ...r })) : null; }
-      if (!S.dc) S.dc = await call('/api/events/discord').catch(() => ({ ready: false }));
     }
     if (tab === 'notif' && !S.notif) S.notif = await guard('notif', () => call('/api/admin/notif'));
     if (tab === 'awards') {
@@ -225,9 +193,6 @@ ${S.rdraft.length ? `<div class="panel" style="overflow-x:auto"><table class="tb
       else if (k.g === 'dismiss') act(async () => { S.game = await call('/api/game/dismiss', { id: hit.id }); paint(); toast('Dismissed'); });
     } else if (k.nTest) act(async () => { await call('/api/admin/notif/test', { key: k.nTest }); toast('Test sent to you'); });
     else if (k.nReset) act(async () => { S.notif = await call('/api/admin/notif', { key: k.nReset, reset: true }); paint(); toast('Back to the default wording'); });
-    else if (t.hasAttribute('data-rt-add')) { readRoutes(); S.rdraft.push(blankRule()); paint(); }
-    else if (t.dataset.rtDel !== undefined) { readRoutes(); S.rdraft.splice(+t.dataset.rtDel, 1); paint(); }
-    else if (t.hasAttribute('data-rt-save')) act(async () => { readRoutes(); if (S.rdraft.some((r) => r.force) && !confirm('A rule is set to “Send even if muted”. It DMs people even if they turned that alert off (max 5 a day each). Save it?')) return; S.busy = true; paint(); S.routes = await call('/api/bot/routes', { rules: S.rdraft }); S.rdraft = S.routes.rules.map((r) => ({ ...r })); S.busy = false; paint(); toast('Notification routing saved'); });
     else if (k.b === 'save-cmds') act(async () => { S.busy = true; await call('/api/bot/commands', { commands: readCmds() }); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast('Command rules saved'); });
     else if (k.b === 'alert-test') act(async () => { const r = await call('/api/bot/alerts/test', { kind: 'posts' }); toast(r.active ? 'Test sent to your DMs' : 'Test sent to your DMs – alerts are still off (switch alertRoute)'); });
     else if (k.b === 'sync') act(async () => { S.busy = true; paint(); const r = await call('/api/bot/commands/sync', {}); S.cmds = await call('/api/bot/commands'); S.busy = false; paint(); toast(`Synced ${r.count} commands to Discord`); });
@@ -240,14 +205,13 @@ ${S.rdraft.length ? `<div class="panel" style="overflow-x:auto"><table class="tb
     else if (f.matches('[data-g-form]')) act(() => publish(S.form?.pendingId ? { pending: S.form.pendingId } : {}));
     else if (f.matches('[data-b-form]')) act(async () => {
       S.busy = true; paint();
-      S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), reminderChannel: f.reminderChannel.value.trim(), alertChannel: f.alertChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), plan: f.plan.value, autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
+      S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), alertChannel: f.alertChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), plan: f.plan.value, autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
       S.busy = false; paint(); toast('Bot settings saved');
     });
     else if (f.matches('[data-n-form]')) act(async () => { S.busy = true; S.notif = await call('/api/admin/notif', readNotif(f)); S.busy = false; paint(); toast('Notification saved'); });
     else if (f.matches('[data-aw-form]')) act(async () => { const el = f.elements; S.awards = await call('/api/awards/category', { name: el.namedItem('name').value, icon: el.namedItem('icon').value, grp: el.namedItem('grp').value }); paint(); toast('Award added to this week’s ballot'); });
   });
   root.addEventListener('change', (ev) => {
-    if (ev.target.closest('tr[data-rt]')) { readRoutes(); if (['group', 'method'].includes(ev.target.dataset.rf)) paint(); return; }
     if (ev.target.matches('[data-aw-ch]')) act(async () => { S.awards = await call('/api/awards/settings', { channel: ev.target.value }); paint(); toast(ev.target.value ? 'Results will be posted there' : 'No Discord post'); });
   });
   (async () => {

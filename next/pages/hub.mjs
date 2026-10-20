@@ -175,7 +175,7 @@ export function boardroom() {
   <div class="panel"><h3>Feature switches · ${flags.length}</h3><p class="muted small">Who can see each feature on the live site (from the club config). Sign in as the owner to change them.</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${flags.map(([k, v]) => `<span class="pill ${v === 'public' ? 'w' : v === 'owner' ? 's' : ''}">${esc(k)} · ${esc(v)}</span>`).join('')}</div></div></div>`;
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Staff · owner</div><h2>Boardroom</h2></div></header>${staffGate}<div data-for="owner" hidden>
   <div id="brLive" hidden data-committed="${esc(JSON.stringify(features))}"></div><div id="brLocal">${stub}</div></div></section></div>`;
-  return hubShell('staff-boardroom.html', 'Boardroom', body, { extraHead: '<script src="trophy.js" defer></script><script src="boardroom.js" defer></script>' });
+  return hubShell('staff-boardroom.html', 'Boardroom', body, { extraHead: '<script src="trophy.js" defer></script><script src="routing-ui.js" defer></script><script src="boardroom.js" defer></script>' });
 }
 export function artwork() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Staff · owner</div><h2>Artwork studio</h2></div></header>${staffGate}<div data-for="owner" hidden>

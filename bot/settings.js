@@ -47,7 +47,8 @@ export async function botSettingsRoute(p, method, body, me, env, log) {
   if (method !== 'POST') return fail('Not found', 404);
   const cur = await getBotSettings(env);
   const ch = (v) => (v === '' || v == null ? '' : CH.test(String(v)) ? String(v) : null);
-  const resultChannel = ch(body.resultChannel), reminderChannel = ch(body.reminderChannel), pingRole = ch(body.pingRole);
+  const pickCh = (k) => (k in body ? ch(body[k]) : cur[k]); // a field that is not in the request keeps its saved value
+  const resultChannel = pickCh('resultChannel'), reminderChannel = pickCh('reminderChannel'), pingRole = pickCh('pingRole');
   const alertChannel = 'alertChannel' in body ? ch(body.alertChannel) : cur.alertChannel;
   if (resultChannel === null || reminderChannel === null || pingRole === null || alertChannel === null) return fail('Channel/role IDs must be plain Discord IDs (right-click → Copy ID).');
   const color = /^#?[0-9a-fA-F]{6}$/.test(body.color ?? '') ? String(body.color).replace('#', '') : cur.color;

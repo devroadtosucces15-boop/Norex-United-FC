@@ -20,12 +20,13 @@ const TAG_MAX = 50; // people tagged by name in one post
 const DAY = 86400e3;
 
 export const ACTIONS = {
-  'event.created': { icon: '🗓️', label: 'New event created' },
-  'event.changed': { icon: '🕒', label: 'Event time changed' },
-  'event.cancelled': { icon: '🚫', label: 'Event cancelled' },
-  'event.reminder': { icon: '📅', label: 'Reminder 24 h / 2 h before' },
-  'event.starting': { icon: '⏰', label: 'Starting soon (minutes set in the Notification Center)' },
-  'event.report': { icon: '📋', label: 'Session report shared' },
+  // feature = the site switch (config.json → features) the Control Center row belongs to
+  'event.created': { icon: '🗓️', label: 'New event created', feature: 'events' },
+  'event.changed': { icon: '🕒', label: 'Event time changed', feature: 'events' },
+  'event.cancelled': { icon: '🚫', label: 'Event cancelled', feature: 'events' },
+  'event.reminder': { icon: '📅', label: 'Reminder 24 h / 2 h before', feature: 'events' },
+  'event.starting': { icon: '⏰', label: 'Starting soon (minutes set in the Notification Center)', feature: 'events' },
+  'event.report': { icon: '📋', label: 'Session report shared', feature: 'events' },
 };
 export const GROUPS = {
   everyone: 'Every member',

@@ -300,4 +300,10 @@ await deliverDMs(env, 1);
 t('urgent DMs go first in the queue', sqlite.prepare('SELECT dm FROM notifications WHERE id = ?').get(urgent).dm === 'sent' && sqlite.prepare('SELECT dm FROM notifications WHERE id = ?').get(plain).dm === 'queued');
 await call(owner, '/api/bot/routes', { rules: [] });
 
+// ----- Control Center: saving one setting must not wipe the others; routing actions know their feature -----
+await call(owner, '/api/bot/settings', { resultChannel: '12345678901', pingRole: '22222', reminderChannel: '33333' });
+const keep = await call(owner, '/api/bot/settings', { reminderChannel: '44444' });
+t('settings: a partial save keeps the other channels and the plan', keep.d.reminderChannel === '44444' && keep.d.resultChannel === '12345678901' && keep.d.pingRole === '22222' && keep.d.plan === 'free');
+t('routing: every action belongs to a site feature (Control Center rows)', Object.values((await call(owner, '/api/bot/routes')).d.actions).every((a) => a.feature === 'events'));
+
 done();
