@@ -1,9 +1,9 @@
 {
-  "revision": "d6c2b2e41681b1d6c927ceba628790aafe64a0bb",
-  "files": 877,
-  "imports": 666,
-  "api_paths": 251,
-  "tables": 321,
+  "revision": "c120827a9ab1397a1d2c287cea2e342ce959e677",
+  "files": 899,
+  "imports": 671,
+  "api_paths": 252,
+  "tables": 322,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -958,7 +958,7 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 770,
+      "lines": 830,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -970,6 +970,7 @@
         "./faces.js",
         "./points.js",
         "./settings.js",
+        "./routing.js",
         "./lineuprec.js",
         "./media.js"
       ],
@@ -1015,11 +1016,13 @@
         "POS_OF",
         "add",
         "all",
+        "announceTarget",
         "answerEvents",
         "avatarOf",
         "calendarMonth",
         "clean",
         "cleanText",
+        "eventGroups",
         "eventMessage",
         "eventPost",
         "eventReminders",
@@ -1064,6 +1067,7 @@
         "reportPosterRoute",
         "res",
         "round1",
+        "routeEvent",
         "rsvp",
         "rsvpButtons",
         "rsvpOut",
@@ -1913,7 +1917,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1179,
+      "lines": 1182,
       "imports": [
         "./faces.js",
         "./panel.js",
@@ -1953,6 +1957,7 @@
         "./discordroles.js",
         "./settings.js",
         "./alertroute.js",
+        "./routing.js",
         "./botcommands.js",
         "./crawl.js",
         "./burners.js",
@@ -3488,6 +3493,39 @@
       ]
     },
     {
+      "path": "bot/routing.js",
+      "layer": "bot",
+      "lines": 137,
+      "imports": [
+        "./roles.js",
+        "./notify.js",
+        "./settings.js"
+      ],
+      "endpoints": [
+        "/api/bot/routes"
+      ],
+      "tables": [
+        "SET",
+        "for",
+        "is",
+        "meta",
+        "users"
+      ],
+      "functions": [
+        "all",
+        "cleanRules",
+        "fail",
+        "json",
+        "loadRules",
+        "one",
+        "people",
+        "peopleOf",
+        "post",
+        "routeNotification",
+        "routingRoute"
+      ]
+    },
+    {
       "path": "bot/servertools.js",
       "layer": "bot",
       "lines": 393,
@@ -4102,7 +4140,7 @@
     {
       "path": "data/burners/1479556.json",
       "layer": "data",
-      "lines": 1093,
+      "lines": 952,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4354,7 +4392,7 @@
     {
       "path": "data/clubs/189496.json",
       "layer": "data",
-      "lines": 1085,
+      "lines": 1038,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4878,7 +4916,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 1038,
+      "lines": 1132,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5067,7 +5105,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1367,
+      "lines": 615,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6192,9 +6230,189 @@
       "functions": []
     },
     {
+      "path": "data/matches/109694871390078.json",
+      "layer": "data",
+      "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109752859920397.json",
+      "layer": "data",
+      "lines": 764,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/109780091010489.json",
       "layer": "data",
       "lines": 355,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109956159760457.json",
+      "layer": "data",
+      "lines": 688,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109978184350246.json",
+      "layer": "data",
+      "lines": 828,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112832765470467.json",
+      "layer": "data",
+      "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112838791380324.json",
+      "layer": "data",
+      "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112886830870442.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112898997880094.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112932893450393.json",
+      "layer": "data",
+      "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/113010744610376.json",
+      "layer": "data",
+      "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/113042507190290.json",
+      "layer": "data",
+      "lines": 320,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/113392040260248.json",
+      "layer": "data",
+      "lines": 801,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/113406092980165.json",
+      "layer": "data",
+      "lines": 871,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/115628629020132.json",
+      "layer": "data",
+      "lines": 458,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/115658963520487.json",
+      "layer": "data",
+      "lines": 390,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/115742087000142.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/115766492340456.json",
+      "layer": "data",
+      "lines": 392,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/116032222090044.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/116210471940459.json",
+      "layer": "data",
+      "lines": 283,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/116368038290159.json",
+      "layer": "data",
+      "lines": 246,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8851,7 +9069,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 36,
+      "lines": 72,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8944,6 +9162,17 @@
       "tables": [
         "players",
         "the"
+      ],
+      "functions": []
+    },
+    {
+      "path": "data/updates/fc-27-the-grounds-developer-archetypes-update.json",
+      "layer": "data",
+      "lines": 85,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "on"
       ],
       "functions": []
     },
@@ -10656,7 +10885,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 234,
+      "lines": 276,
       "imports": [
         "../bot/ui.js",
         "node:fs",
@@ -10670,6 +10899,7 @@
       ],
       "endpoints": [
         "/api/admin/overview",
+        "/api/bot/routes",
         "/api/events",
         "/api/events/calendar",
         "/api/events/cancel",
@@ -10691,9 +10921,11 @@
         "event_checkins",
         "event_rsvps",
         "events",
+        "is",
         "members",
         "notifications",
         "notify_prefs",
+        "restores",
         "rush_matches",
         "rush_players",
         "the",
@@ -15319,6 +15551,11 @@
     },
     {
       "source": "bot/events.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/events.js",
       "target": "bot/lineuprec.js",
       "kind": "imports"
     },
@@ -15839,6 +16076,11 @@
     },
     {
       "source": "bot/members.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/members.js",
       "target": "bot/botcommands.js",
       "kind": "imports"
     },
@@ -16110,6 +16352,21 @@
     {
       "source": "bot/reminders.js",
       "target": "bot/notifcenter.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/routing.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/routing.js",
+      "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/routing.js",
+      "target": "bot/settings.js",
       "kind": "imports"
     },
     {
