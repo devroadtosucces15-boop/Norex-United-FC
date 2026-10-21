@@ -440,8 +440,8 @@ async function load(site, file, ctx) {
   const cache = caches.default;
   let res = await cache.match(url);
   if (!res) {
-    res = await fetch(url, { cf: { cacheTtl: 300 } });
-    if (!res.ok) throw new Error('Could not reach the club site right now.');
+    res = await fetch(url, { cf: { cacheTtl: 300 }, signal: AbortSignal.timeout(8000) }).catch(() => null);
+    if (!res?.ok) throw new Error('Could not reach the club site right now (timed out) – try again in a moment.');
     res = new Response(res.body, res);
     res.headers.set('Cache-Control', 'max-age=300');
     ctx.waitUntil(cache.put(url, res.clone()));
