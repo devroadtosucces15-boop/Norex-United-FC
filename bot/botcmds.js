@@ -12,7 +12,7 @@
 //   /awards        this week's ballot + last week's winners                                            (flag `awards`)
 // Replies that are about "me" are ephemeral (flags 64) – only the person who asked sees them.
 import { can, flagOn } from './roles.js';
-import { answerEvents, EVENT_TYPES, eventPost } from './events.js';
+import { answerEvents, EVENT_TYPES, eventPost, rsvpRows, setCheckin } from './events.js';
 import { currentRole, log, submitRush, voteView, votesByMatch } from './members.js';
 import { state as awardsState } from './awards.js';
 import { CATEGORIES } from './points.js';
@@ -52,7 +52,7 @@ export async function memberOf(i, who, env) {
   return me;
 }
 const nextEvents = (env, n = 5) => all(env, "SELECT * FROM events WHERE status = 'scheduled' AND start + duration * 60000 > ? ORDER BY start LIMIT ?", Date.now(), n);
-const rsvpsOf = (env, id) => all(env, 'SELECT r.status, r.name, r.user_id, p.positions, p.rush_positions FROM event_rsvps r LEFT JOIN profiles p ON p.user_id = r.user_id WHERE r.event_id = ? ORDER BY r.at', id);
+const rsvpsOf = rsvpRows; // one query for everyone's answer, in the order they first answered (events.js)
 
 // ---------- P3.3 answer buttons ----------
 export async function eventButton(i, env, who) {
@@ -68,6 +68,20 @@ export async function eventButton(i, env, who) {
   const n = (await one(env, "SELECT COUNT(*) AS n FROM event_rsvps WHERE event_id = ? AND status = 'yes'", e.id)).n;
   await env.DB.prepare('INSERT INTO activity (at, user_id, name, avatar, type, detail) VALUES (?, ?, ?, ?, ?, ?)').bind(Date.now(), me.u, me.n, me.a, 'event-rsvp', `${status} · ${label(e)} · Discord`).run();
   return say(`${{ yes: '✅ You’re in', maybe: '❔ Marked as maybe', no: '❌ Marked as can’t make it' }[status]} for **${label(e)}** · ${ts(e.start)} (${ts(e.start, 'R')}). ${n} said yes so far – change it any time with the buttons or in the Squad Hub.`);
+}
+
+// ---------- "✅ Check in" button on the check-in post (norex:ci:<event id>) – the same check-in the Squad Hub writes ----------
+export async function checkinButton(i, env, who) {
+  if (!env.DB) return say('⚠️ The member database is not connected.');
+  if (!flagOn(env, who, 'events') || !flagOn(env, who, 'matchNight')) return say('🔒 Checking in on Discord is not switched on for you yet – use the Squad Hub.');
+  if (!can(who, 'events.checkin')) return say('🔒 Members of the NOREX server only.');
+  const e = await one(env, "SELECT * FROM events WHERE id = ? AND status = 'scheduled'", Number(i.data.custom_id.split(':')[2]));
+  if (!e) return say('⌛ This event is over or was cancelled.');
+  if (!(Date.now() > e.start - 3600e3 && Date.now() < e.start + e.duration * 60e3 + 7200e3)) return say('⌛ Check-in opens an hour before the start and closes two hours after the end.');
+  const me = await memberOf(i, who, env);
+  await setCheckin(env, me, e, true, null);
+  await env.DB.prepare('INSERT INTO activity (at, user_id, name, avatar, type, detail) VALUES (?, ?, ?, ?, ?, ?)').bind(Date.now(), me.u, me.n, me.a, 'event-checkin', `on · ${label(e)} · Discord`).run();
+  return say(`✅ You are checked in for **${label(e)}** · ${ts(e.start)} (${ts(e.start, 'R')}). Be lined up 10 minutes before the start.`);
 }
 
 // ---------- BE1 "✅ Learned it" button on a shared play ----------
