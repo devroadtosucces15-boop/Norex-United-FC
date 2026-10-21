@@ -37,6 +37,8 @@
       return !max || dd < 1 || dd > max ? { err: 'Birthday: that date doesn’t exist.' } : { v: `${String(mo).padStart(2, '0')}-${String(dd).padStart(2, '0')}` }; },
     // "07-14" → "14 Jul" (never a year or an age)
     fmtBirthday: (v) => { const m = String(v ?? '').match(/^(\d{2})-(\d{2})$/); return m && +m[1] >= 1 && +m[1] <= 12 ? `${+m[2]} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[1] - 1]}` : ''; },
+    // a saved channel → its public page (values are re-checked with the same rules as the profile form); '' when it is not valid
+    channelUrl: (platform, raw) => { const f = U[platform]; const c = f ? f(raw) : { err: 1 }; if (c.err || !c.v) return ''; return platform === 'twitch' ? `https://www.twitch.tv/${c.v}` : platform === 'kick' ? `https://kick.com/${c.v}` : `https://www.youtube.com/${c.v}`; },
   };
   w.NorexBotUtil = U;
 
@@ -129,15 +131,24 @@
   // ---------- 🎬 Related videos (builds, tactics …): <section data-related="builds" data-related-limit="3"> ----------
   const thumbOf = (v) => U.safeUrl(v.thumb);
   const relCard = (v) => `<a class="nxv-r panel" href="${esc(U.safeUrl(v.url))}" target="_blank" rel="noopener nofollow"><span class="nxv-th">${thumbOf(v) ? `<img src="${esc(thumbOf(v))}" alt="" loading="lazy" decoding="async" width="320" height="180">` : ''}<span class="nxv-play" aria-hidden="true">▶</span></span><span class="nxv-b"><b>${esc(v.title)}</b><small class="muted">${esc(v.channel || '')} · ${esc(U.ago(v.published))}</small></span></a>`;
-  d.querySelectorAll('[data-related]').forEach((sec) => flag('watchlist').then(async (on) => {
-    if (!on) return;
-    const topic = encodeURIComponent(sec.dataset.related), lim = Math.min(6, Math.max(1, +sec.dataset.relatedLimit || 3));
-    const list = await call(`/api/watchlist?related=${topic}&limit=${lim}`).catch(() => []);
-    const vids = (Array.isArray(list) ? list : []).filter((v) => U.safeUrl(v.url));
-    if (!vids.length) return;
-    sec.innerHTML = `<header><div><span class="ribbon">Related videos</span></div><a class="btn ghost" href="hub-watchlist.html">Open the Watch list</a></header><div class="nxv-rel">${vids.map(relCard).join('')}</div>`;
+  // <section data-related="builds" data-related-pos> follows the position on screen: builds.js fires `nx:position` and the block
+  // re-fetches /api/watchlist?related=<POS> (cached per key, newest answer wins, the old row stays until the new one is in).
+  const RC = new Map(); let curPos = String(w.NorexPos || '');
+  const fetchRel = (key, lim) => { const k = key + '|' + lim; if (!RC.has(k)) RC.set(k, call(`/api/watchlist?related=${encodeURIComponent(key)}&limit=${lim}`).then((l) => (Array.isArray(l) ? l : []).filter((v) => U.safeUrl(v.url))).catch(() => { RC.delete(k); return []; })); return RC.get(k); };
+  const paintRel = (sec, vids, pos) => {
+    if (!vids.length) { sec.hidden = true; sec.innerHTML = ''; return; }
+    sec.innerHTML = `<header><div><span class="ribbon">Related videos</span>${pos ? `<span class="chip on nxv-pos" aria-label="Position ${esc(pos)}">${esc(pos)}</span>` : ''}</div><a class="btn ghost" href="hub-watchlist.html">Open the Watch list</a></header><div class="nxv-rel">${vids.map(relCard).join('')}</div>`;
     sec.hidden = false;
-  }));
+  };
+  const relSections = [...d.querySelectorAll('[data-related]')];
+  const loadRel = async (sec, pos) => {
+    const lim = Math.min(6, Math.max(1, +sec.dataset.relatedLimit || 3)), seq = (sec._seq = (sec._seq || 0) + 1);
+    let vids = pos ? await fetchRel(pos, lim) : [], used = pos;
+    if (!vids.length) { vids = await fetchRel(sec.dataset.related, lim); used = ''; } // nothing for this position: the page's topic instead
+    if (seq === sec._seq) paintRel(sec, vids, used);
+  };
+  relSections.forEach((sec) => flag('watchlist').then((on) => { if (!on) return; sec._on = true; loadRel(sec, 'relatedPos' in sec.dataset ? curPos : ''); }));
+  d.addEventListener('nx:position', (e) => { curPos = String(e.detail?.pos || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); relSections.forEach((sec) => { if (sec._on && 'relatedPos' in sec.dataset) loadRel(sec, curPos); }); });
 
   w.NorexBot = { U, flag, call, post, toast, faces: { load, scan }, gates, PL };
   gates(); scan();

@@ -6,8 +6,8 @@
 // "Useful" is optimistic: the count and button change at once, the server's answer replaces them, a failure rolls them back.
 (() => {
   const d = document, B = window.NorexBot, U = B?.U;
-  const wl = d.querySelector('[data-watchlist]'), dc = d.querySelector('[data-discoveries]'), hw = d.querySelector('[data-disc-widget]');
-  if (!B || (!wl && !dc && !hw)) return;
+  const wl = d.querySelector('[data-watchlist]'), dc = d.querySelector('[data-discoveries]'), hw = d.querySelector('[data-disc-widget]'), ms = d.querySelector('[data-mystreams]');
+  if (!B || (!wl && !dc && !hw && !ms)) return;
   const { esc } = U;
   const empty = (icon, title, text, extra = '') => `<div class="panel sq-empty"><span>${icon}</span><div><b>${title}</b><p class="muted small">${text}</p>${extra}</div></div>`;
   const failBox = (what, e) => empty('📡', `Could not load ${what}`, esc(e?.message || 'The club server did not answer.'), '<button type="button" class="btn ghost" data-retry>↻ Try again</button>');
@@ -94,5 +94,24 @@
       try { const l = await B.call('/api/discoveries'); items = (Array.isArray(l) ? l : []).slice(0, 3); } catch { return; }
       if (!items.length) return;
       row.innerHTML = items.map((x) => dCard(x, true)).join(''); hw.hidden = false; });
+  }
+  // ---------- My Locker: "My streams" – my linked Twitch / YouTube / Kick and whether I am live (flag memberLive) ----------
+  //   profile channels come from the My profile form (mylocker.js fires `nx:profile`), live state from GET /api/live/members
+  if (ms) {
+    const row = ms.querySelector('[data-ms-row]'), me = window.NorexAuth?.session?.u; let prof = null, live = [], timer = 0, on = false, checked = false;
+    const draw = () => {
+      if (!on || !prof) return;
+      const have = ['twitch', 'youtube', 'kick'].map((p) => [p, prof[p], U.channelUrl(p, prof[p])]).filter(([, , u]) => u);
+      ms.hidden = false;
+      if (!have.length) { row.innerHTML = empty('📺', 'No channels linked yet', 'Add your Twitch, YouTube or Kick in My profile and the bot will tell the club when you go live.', '<a class="btn ghost" href="#lk-me" data-ms-add>Add my channels</a>'); return; }
+      const mine = live.filter((x) => String(x.user) === String(me));
+      row.innerHTML = have.map(([p, v, url]) => { const [label, cls, ico] = B.PL[p], l = mine.find((x) => x.platform === p), name = U[p](v).v;
+        return `<article class="panel nxs${l ? ' live' : ''}"><div class="nxs-h"><span class="nxl-pl ${cls}">${ico}${label}</span>${l ? '<span class="nxs-on"><i class="nxl-dot" aria-hidden="true"></i>Live now</span>' : `<span class="nxs-off">${checked ? 'Offline' : 'Checking…'}</span>`}</div>
+<a class="nxs-n" href="${esc(url)}" target="_blank" rel="noopener nofollow">${esc(name)} ↗</a>
+<p class="small ${l ? '' : 'muted'}">${l ? `${esc(l.title || 'On air')} · <span data-since="${+l.since || ''}">${l.since ? 'Live ' + esc(U.onAir(l.since)) : 'just now'}</span>` : checked ? 'Not streaming right now. The club is told the moment you start.' : 'Checking whether you are on air…'}</p></article>`; }).join('');
+    };
+    const poll = async () => { if (!on || (d.hidden && checked)) return; try { const l = await B.call('/api/live/members'); live = (Array.isArray(l) ? l : []).filter((x) => x && U.safeUrl(x.url)); checked = true; } catch { checked = true; } draw(); };
+    d.addEventListener('nx:profile', (e) => { prof = e.detail || {}; draw(); poll(); });
+    B.flag('memberLive').then((f) => { on = f; if (!f) return; draw(); poll(); timer = setInterval(poll, 60e3); d.addEventListener('visibilitychange', poll); });
   }
 })();
