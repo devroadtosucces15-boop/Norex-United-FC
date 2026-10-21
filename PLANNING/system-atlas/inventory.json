@@ -1,8 +1,8 @@
 {
-  "revision": "5578163cd729d43233bb7f0aa5bf2960208259da",
-  "files": 912,
-  "imports": 706,
-  "api_paths": 253,
+  "revision": "f37a0a93047a51be8a095e5eac1b2ec0dd326612",
+  "files": 913,
+  "imports": 717,
+  "api_paths": 254,
   "tables": 327,
   "records": [
     {
@@ -159,11 +159,12 @@
     {
       "path": "bot/alertroute.js",
       "layer": "bot",
-      "lines": 71,
+      "lines": 76,
       "imports": [
         "./roles.js",
         "./settings.js",
         "./docs.js",
+        "./routing.js",
         "./ui.js",
         "./icons.js"
       ],
@@ -1749,12 +1750,13 @@
     {
       "path": "bot/live.js",
       "layer": "bot",
-      "lines": 117,
+      "lines": 121,
       "imports": [
         "./roles.js",
         "./ui.js",
         "./icons.js",
         "./docs.js",
+        "./routing.js",
         "./alertroute.js",
         "./streamalerts.js",
         "./notify.js"
@@ -1909,7 +1911,7 @@
     {
       "path": "bot/memberlive.js",
       "layer": "bot",
-      "lines": 109,
+      "lines": 113,
       "imports": [
         "./roles.js",
         "./limits.js",
@@ -1917,6 +1919,7 @@
         "./ui.js",
         "./icons.js",
         "./docs.js",
+        "./routing.js",
         "./alertroute.js",
         "./streamalerts.js"
       ],
@@ -2937,7 +2940,7 @@
     {
       "path": "bot/notifcenter.js",
       "layer": "bot",
-      "lines": 117,
+      "lines": 187,
       "imports": [
         "./roles.js"
       ],
@@ -2948,6 +2951,7 @@
       "tables": [
         "SET",
         "meta",
+        "on",
         "the"
       ],
       "functions": [
@@ -3552,22 +3556,28 @@
     {
       "path": "bot/routing.js",
       "layer": "bot",
-      "lines": 157,
+      "lines": 227,
       "imports": [
         "./roles.js",
         "./notify.js",
-        "./settings.js"
+        "./settings.js",
+        "./events.js",
+        "./ui.js"
       ],
       "endpoints": [
-        "/api/bot/routes"
+        "/api/bot/routes",
+        "/api/bot/routes/test"
       ],
       "tables": [
         "GitHub",
         "SET",
+        "a",
         "for",
         "is",
         "meta",
         "outside",
+        "server",
+        "the",
         "users"
       ],
       "functions": [
@@ -3583,17 +3593,21 @@
         "post",
         "publicRoutes",
         "routeNotification",
-        "routingRoute"
+        "routeOr",
+        "routingRoute",
+        "sampleFor",
+        "testRule"
       ]
     },
     {
       "path": "bot/servertools.js",
       "layer": "bot",
-      "lines": 393,
+      "lines": 395,
       "imports": [
         "./roles.js",
         "./ui.js",
-        "./faces.js"
+        "./faces.js",
+        "./routing.js"
       ],
       "endpoints": [],
       "tables": [
@@ -3844,13 +3858,14 @@
     {
       "path": "bot/streamalerts.js",
       "layer": "bot",
-      "lines": 194,
+      "lines": 198,
       "imports": [
         "./roles.js",
         "./limits.js",
         "./ui.js",
         "./icons.js",
         "./docs.js",
+        "./routing.js",
         "./settings.js",
         "./memberlive.js",
         "./watchlist.js"
@@ -4023,11 +4038,12 @@
     {
       "path": "bot/watchlist.js",
       "layer": "bot",
-      "lines": 238,
+      "lines": 240,
       "imports": [
         "./roles.js",
         "./ui.js",
-        "./docs.js"
+        "./docs.js",
+        "./routing.js"
       ],
       "endpoints": [
         "/api/watchlist"
@@ -5173,7 +5189,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 521,
+      "lines": 474,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6499,6 +6515,15 @@
       "path": "data/matches/122738438280369.json",
       "layer": "data",
       "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/122778394150040.json",
+      "layer": "data",
+      "lines": 725,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9182,7 +9207,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 65,
+      "lines": 72,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -11111,7 +11136,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 323,
+      "lines": 349,
       "imports": [
         "../bot/ui.js",
         "node:fs",
@@ -11125,11 +11150,13 @@
         "../bot/limits.js",
         "../bot/notify.js",
         "../bot/routing.js",
+        "../bot/routing.js",
         "../bot/routing.js"
       ],
       "endpoints": [
         "/api/admin/overview",
         "/api/bot/routes",
+        "/api/bot/routes/test",
         "/api/bot/settings",
         "/api/events",
         "/api/events/calendar",
@@ -12033,7 +12060,6 @@
         "/api/awards/category",
         "/api/awards/category/remove",
         "/api/awards/close",
-        "/api/awards/settings",
         "/api/awards/vote",
         "/api/badges",
         "/api/badges/remove",
@@ -12163,12 +12189,15 @@
     {
       "path": "tests/notifcenter.test.mjs",
       "layer": "tests",
-      "lines": 81,
+      "lines": 103,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
         "../bot/notify.js",
         "../bot/reminders.js",
+        "../bot/notifcenter.js",
+        "node:fs",
+        "../bot/notifcenter.js",
         "../bot/notifcenter.js"
       ],
       "endpoints": [
@@ -15539,6 +15568,11 @@
     },
     {
       "source": "bot/alertroute.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/alertroute.js",
       "target": "bot/ui.js",
       "kind": "imports"
     },
@@ -16114,6 +16148,11 @@
     },
     {
       "source": "bot/live.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/live.js",
       "target": "bot/alertroute.js",
       "kind": "imports"
     },
@@ -16190,6 +16229,11 @@
     {
       "source": "bot/memberlive.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
@@ -16693,6 +16737,16 @@
       "kind": "imports"
     },
     {
+      "source": "bot/routing.js",
+      "target": "bot/events.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/routing.js",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/servertools.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -16705,6 +16759,11 @@
     {
       "source": "bot/servertools.js",
       "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/servertools.js",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
@@ -16809,6 +16868,11 @@
     },
     {
       "source": "bot/streamalerts.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
       "target": "bot/settings.js",
       "kind": "imports"
     },
@@ -16860,6 +16924,11 @@
     {
       "source": "bot/watchlist.js",
       "target": "bot/docs.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/watchlist.js",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
@@ -17843,6 +17912,11 @@
       "kind": "imports"
     },
     {
+      "source": "tests/events.test.mjs",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
       "source": "tests/extradata.test.mjs",
       "target": "tests/lib.mjs",
       "kind": "imports"
@@ -18385,6 +18459,16 @@
     {
       "source": "tests/notifcenter.test.mjs",
       "target": "bot/reminders.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/notifcenter.test.mjs",
+      "target": "bot/notifcenter.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/notifcenter.test.mjs",
+      "target": "bot/notifcenter.js",
       "kind": "imports"
     },
     {
