@@ -50,7 +50,7 @@ export function hero(p) { return `<div class="pc pc-hero" data-k="${esc(p.k)}"><
 export const sbt = (v, l, cls = '', sub = '') => `<div class="sbt ${cls}"><b data-count="${v}">${v}</b><span>${l}</span>${sub ? `<em>${sub}</em>` : ''}</div>`;
 export const pillRes = (r) => `<span class="pill ${r.toLowerCase()}">${r === 'W' ? 'WIN' : r === 'L' ? 'LOSS' : 'DRAW'}</span>`;
 // Bot features (BOT-SITE #1, #2): both stay hidden until botfeat.js sees the member's flag (memberLive / watchlist) and real data
-export const liveStrip = '<section class="sec nxl" data-live-strip hidden aria-label="Live now"><header><div><span class="ribbon">Live now</span></div><p class="muted small" data-live-n></p></header><div class="nxl-row" role="list" data-live-row></div></section>';
+export const liveStrip = '<section class="sec nxl" id="live" data-live-strip hidden aria-label="Live now"><header><div><span class="ribbon">Live now</span></div><p class="muted small" data-live-n></p></header><div class="nxl-row" role="list" data-live-row></div></section>';
 export const relatedBlock = (topic, byPosition = false) => `<div class="wrap"><section class="sec nxrel" data-related="${topic}"${byPosition ? ' data-related-pos' : ''} hidden></section></div>`;
 export const sample = (t = 'SAMPLE') => `<span class="sample">${t}</span>`;
 

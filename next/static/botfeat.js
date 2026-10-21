@@ -106,27 +106,31 @@
 <span class="nxl-t"><b>${esc(x.name)}</b><span class="nxl-ttl">${esc(x.title || (x.club ? 'The club stream' : 'On air now'))}</span>
 <span class="nxl-m"><span class="nxl-pl ${cls}">${ico}${pl}</span><span class="nxl-s" data-since="${x.since || ''}">${x.since ? 'Live ' + esc(U.onAir(x.since)) : 'Live now'}</span></span></span></a>`;
   };
+  // One poll feeds everything that shows who is on air: the strips (Home, Hub) and the "N live" chip in the header. Both stay off until memberLive is open.
+  //   NorexBot.live = { items, n } and every change fires `nx:live` on the document.
   const strips = [...d.querySelectorAll('[data-live-strip]')];
-  if (strips.length) {
-    let items = [], timer = 0;
-    const draw = () => strips.forEach((s) => {
+  let items = [], timer = 0;
+  const publish = () => { w.NorexBot.live = { items, n: items.length }; d.dispatchEvent(new CustomEvent('nx:live', { detail: w.NorexBot.live })); };
+  const draw = () => {
+    strips.forEach((s) => {
       s.hidden = !items.length; if (!items.length) return;
       const row = s.querySelector('[data-live-row]'), n = s.querySelector('[data-live-n]');
       if (n) n.textContent = `${items.length} streaming`;
       row.innerHTML = items.map(liveItem).join('');
       load(items.filter((x) => !x.club).map((x) => x.user)).then((m) => row.querySelectorAll('img[data-uid]').forEach((i) => swap(i, m.get(i.dataset.uid)))); // always the best face here
     });
-    const poll = async () => {
-      if (d.hidden) return;
-      const [mem, club] = await Promise.all([call('/api/live/members').catch(() => []), call('/api/live').catch(() => null)]);
-      items = [];
-      if (club?.live) items.push({ club: true, name: 'NOREX UNITED', platform: club.platform, title: club.title || '', since: club.since || 0 });
-      for (const x of Array.isArray(mem) ? mem : []) if (x && x.user && U.safeUrl(x.url)) items.push(x);
-      draw();
-    };
-    const go = () => { poll(); clearInterval(timer); timer = setInterval(poll, 60e3); };
-    flag('memberLive').then((on) => { if (!on) return; go(); d.addEventListener('visibilitychange', () => { if (!d.hidden) go(); }); setInterval(() => d.querySelectorAll('[data-since]').forEach((el) => { if (el.dataset.since) el.textContent = 'Live ' + U.onAir(+el.dataset.since); }), 30e3); });
-  }
+    publish();
+  };
+  const poll = async () => {
+    if (d.hidden) return;
+    const [mem, club] = await Promise.all([call('/api/live/members').catch(() => []), call('/api/live').catch(() => null)]);
+    items = [];
+    if (club?.live) items.push({ club: true, name: 'NOREX UNITED', platform: club.platform, title: club.title || '', since: club.since || 0 });
+    for (const x of Array.isArray(mem) ? mem : []) if (x && x.user && U.safeUrl(x.url)) items.push(x);
+    draw();
+  };
+  const go = () => { poll(); clearInterval(timer); timer = setInterval(poll, 60e3); };
+  flag('memberLive').then((on) => { if (!on) return; go(); d.addEventListener('visibilitychange', () => { if (!d.hidden) go(); }); setInterval(() => d.querySelectorAll('[data-since]').forEach((el) => { if (el.dataset.since) el.textContent = 'Live ' + U.onAir(+el.dataset.since); }), 30e3); });
 
   // ---------- 🎬 Related videos (builds, tactics …): <section data-related="builds" data-related-limit="3"> ----------
   const thumbOf = (v) => U.safeUrl(v.thumb);
@@ -150,6 +154,6 @@
   relSections.forEach((sec) => flag('watchlist').then((on) => { if (!on) return; sec._on = true; loadRel(sec, 'relatedPos' in sec.dataset ? curPos : ''); }));
   d.addEventListener('nx:position', (e) => { curPos = String(e.detail?.pos || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); relSections.forEach((sec) => { if (sec._on && 'relatedPos' in sec.dataset) loadRel(sec, curPos); }); });
 
-  w.NorexBot = { U, flag, call, post, toast, faces: { load, scan }, gates, PL };
+  w.NorexBot = { live: { items: [], n: 0 }, U, flag, call, post, toast, faces: { load, scan }, gates, PL };
   gates(); scan();
 })();

@@ -87,3 +87,9 @@ img[data-face=card]{object-fit:cover;object-position:50% 16%}
 
 /* QA fix: motion.css adds margin-top:22px to every `.panel + .panel`, which doubled the row gap in these grids (22px gap + 22px margin = 44px). The grid gap is the only spacing. */
 :is(.nxs-row,.nxl-row,.nxv-grid,.nxv-rel,.nxd-row,#dc-feed)>.panel+.panel{margin-top:0}
+
+/* round 3: the header "N live" chip jumps to #live, so the strip must clear the sticky two-row header on phones */
+[data-live-strip]{scroll-margin-top:150px}
+/* round 3 QA: the topic filter is a row of buttons – 44px tall on phones like every other tap target */
+#wl-topics .chip{min-height:44px;display:inline-flex;align-items:center}
+.nxd-f .btn,.nxv-f .btn{min-height:44px}

@@ -62,7 +62,13 @@ Until then the web side can build against the shapes below with sample data.
    "approvedBy": { "id": "…", "name": "Kruger" }, "at": 1791600000, "useful": 12, "mine": false }]
 
 // GET /api/manager/queue (managers) – built in PR #22
-{ "claims": 1, "cards": 0, "rush": 2, "requests": 0, "ideas": 3, "at": 1791600000000 } // only the queues this person may decide
+{ "claims": 1, "cards": 0, "rush": 2, "requests": 0, "ideas": 3, "at": 1791600000000, // only the queues this person may decide
+  "oldest": { "kind": "rush", "at": 1791400000000, "title": "…" } } // OPTIONAL (web side reads it, round 3): the longest-waiting item; kind = a key above with a count > 0, at = ms
+
+// GET /api/music/rooms (web side's proposal for #5, Music page shell reads it; until it exists the page shows SAMPLE rooms)
+[{ "id": "lounge", "name": "Club lounge", "paused": false, "listeners": 5,
+   "nowPlaying": { "title": "…", "artist": "…", "thumb": "https://…", "duration": 214, "startedAt": 1791600000 } /* or null */,
+   "queue": [{ "id": "q1", "title": "…", "artist": "…", "duration": 187, "by": { "id": "…", "name": "Mike" } }] }]
 
 // GET /api/music/rooms (flag `music`) – web side's proposal for the music bot to serve; length/position in seconds, at = server ms
 [{ "id": "room1", "name": "Match Night", "channel": "Match night lounge", "listeners": 7, "paused": false, "volume": 60, "loop": "off|track|queue", "at": 1791600000000,
