@@ -57,8 +57,8 @@ ${rep ? '<section><h4>Report an issue</h4><button type="button" class="chip" dat
         const a = e.target.closest('[data-as]'); if (a) { try { const v = a.dataset.as; if (v) { localStorage.setItem('norex.viewas', v); localStorage.setItem('norex.viewas.t', String(Date.now())); } else { localStorage.removeItem('norex.viewas'); localStorage.removeItem('norex.viewas.t'); } } catch {} return location.reload(); }
         if (e.target.closest('[data-panel]')) { // one tap: /panel is on the clipboard and Discord opens; the manager approvals appear where you paste it
           const N = w.NorexOwnerFab, say = (m, kind) => w.NorexMotion?.toast?.(m, { kind, icon: '💬' });
-          (navigator.clipboard ? navigator.clipboard.writeText(N.PANEL_CMD) : Promise.reject()).then(() => say('Copied /panel. Paste it in any Discord channel and press Enter.', 'ok'), () => say('Type /panel in any Discord channel.', 'warn'));
-          w.open(N.DISCORD, '_blank', 'noopener'); return;
+          const go2 = () => w.open(N.DISCORD, '_blank', 'noopener'); // after the copy, so the new tab cannot steal focus from the clipboard write
+          (navigator.clipboard ? navigator.clipboard.writeText(N.PANEL_CMD) : Promise.reject()).then(() => say('Copied /panel. Paste it in any Discord channel and press Enter.', 'ok'), () => say('Type /panel in any Discord channel.', 'warn')).then(go2); return;
         }
         if (e.target.closest('[data-report]')) { close(); setTimeout(() => d.querySelector('.nxr-fab')?.click(), 260); }
       });
