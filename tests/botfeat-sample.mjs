@@ -2,6 +2,12 @@
 // so local previews and tests seed the mock D1 with these. Every visible title says SAMPLE so it can never be mistaken for real content.
 import { sqlite, login, call, mockDiscord, r2objects, mockMusic } from './mock.mjs';
 
+// SAMPLE playlists for a member profile (GET /api/music/playlists?u=…).
+export const playlistsSample = () => [
+  { id: 'sample-p1', name: 'SAMPLE · Match day', count: 4, tracks: [{ title: 'SAMPLE · Pre-match hype', artist: 'SAMPLE Artist', duration: 187 }, { title: 'SAMPLE · Walk-out theme', artist: 'SAMPLE Orchestra', duration: 158 }] },
+  { id: 'sample-p2', name: 'SAMPLE · Late grind', count: 1, tracks: [{ title: 'SAMPLE · Late night warm-up', artist: 'SAMPLE Artist', duration: 214 }] },
+];
+
 // SAMPLE rooms for the Music page shell (GET /api/music/rooms – the draft shape in PLANNING/BOT-SITE.md). Same titles as the page's own fallback.
 export const musicRoomsSample = () => {
   const t = Math.floor(Date.now() / 1000);
@@ -41,7 +47,7 @@ export async function seedBotSample() {
   // a shipped Card Studio card for Jez: bytes in the mock R2, the row published
   r2objects.set('card/5a31e000000000000000000000000000.png', { buf: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'), type: 'image/png', uploaded: new Date() });
   sqlite.prepare("INSERT OR REPLACE INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, result_key, created_at, published) VALUES ('333', '2026-10', 1, 1, 'p', 'done', 'card/5a31e000000000000000000000000000.png', ?, 1)").run(now);
-  mockMusic.rooms = musicRoomsSample();
+  mockMusic.rooms = musicRoomsSample(); mockMusic.playlists = playlistsSample();
   Object.assign(mockDiscord, { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [] });
   return { tok, ids };
 }

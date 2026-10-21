@@ -109,8 +109,9 @@ await KV.put('activity', JSON.stringify([{ at: Date.now() - 6e5, u: '222', n: 'M
 
 // ---------- helpers ----------
 // The music bot's GET /api/music/rooms is not on the Worker yet (BOT-SITE #5). Tests and the local preview set `mockMusic.rooms` to answer it with SAMPLE rooms.
-export const mockMusic = { rooms: null };
-export const W = (path, init = {}) => mockMusic.rooms && path.split('?')[0] === '/api/music/rooms' ? Promise.resolve(Response.json(mockMusic.rooms)) : worker.fetch(new Request('http://localhost:8788' + path, init), env, { waitUntil() {} });
+export const mockMusic = { rooms: null, playlists: null };
+// GET /api/music/playlists answers once `mockMusic.playlists` is seeded; unseeded it 404s, like the Worker today, so the profile falls back to SAMPLE.
+export const W = (path, init = {}) => mockMusic.rooms && path.split('?')[0] === '/api/music/rooms' ? Promise.resolve(Response.json(mockMusic.rooms)) : mockMusic.playlists && path.split('?')[0] === '/api/music/playlists' ? Promise.resolve(Response.json(mockMusic.playlists)) : worker.fetch(new Request('http://localhost:8788' + path, init), env, { waitUntil() {} });
 
 // Full OAuth round trip as a Discord user with the given server roles → session token (or the error).
 export async function login(id, roles = [], name = 'User ' + id) {
