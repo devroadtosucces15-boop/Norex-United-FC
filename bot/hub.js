@@ -30,7 +30,7 @@ async function liveWave(env, to, from) {
 
 // Queued as a bell/DM so a wave still reaches someone who isn't in the Hub right now.
 export async function handleHubWaveJob(env, to, from) {
-  await safely(notify(env, [to], { type: 'wave', title: `${from.n} waved at you 👋`, link: 'hub.html' }));
+  await safely(notify(env, [to], { nkey: 'wave.received', type: 'wave', title: `${from.n} waved at you 👋`, link: 'hub.html' }));
 }
 
 // WebSocket upgrade – called from members.js with the session already unsealed from `?t=` (browsers can't

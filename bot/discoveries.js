@@ -58,7 +58,7 @@ async function share(i, env, now) {
   if (waiting >= MAX_WAITING) return say('You have three waiting already', 'Give the managers a moment to look at those first.');
   const name = clean(i.member?.nick || i.member?.user?.global_name || i.member?.user?.username || 'A member', 40);
   const res = await env.DB.prepare('INSERT INTO discoveries (user_id, name, title, body, link, status, at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(me, name, title, body, link || null, 'pending', now).run();
-  await safely(notifyManagers(env, { icon: '🔎', title: `New discovery to approve: ${title}`, body: `From ${name}`, link: 'members.html#manager' }, me));
+  await safely(notifyManagers(env, { nkey: 'discovery.pending', icon: '🔎', title: `New discovery to approve: ${title}`, body: `From ${name}`, link: 'members.html#manager' }, me));
   return reply(notice('Sent to the managers', `“${title}” will show up here and on the site once a manager approves it.`, { accent: 'win' }));
 }
 
@@ -84,7 +84,7 @@ async function decide(i, env, who, id, approve, now) {
     const panel = (o) => pinged(discoveryPanel({ ...row, approved_by: me }, 0, env), o);
     // the owner's routing rules (Control Center) first; with none, the shared announce channel as before
     const routed = await safely(routeNotification(env, 'discoveries.approved', {
-      notify: { type: 'club', icon: '🔎', title: `New discovery: ${row.title}`, body: String(row.body ?? '').slice(0, 200), link: 'members.html#discoveries' }, build: panel,
+      notify: { nkey: 'discovery.new', type: 'club', icon: '🔎', title: `New discovery: ${row.title}`, body: String(row.body ?? '').slice(0, 200), link: 'members.html#discoveries' }, build: panel,
     }));
     let posted = routed ? routed.posts.find((p) => p.ok) : null;
     if (!routed) {
@@ -94,8 +94,8 @@ async function decide(i, env, who, id, approve, now) {
     if (posted?.ok) await env.DB.prepare('UPDATE discoveries SET discord_at = ? WHERE id = ?').bind(now, id).run();
   }
   await safely(notify(env, [row.user_id], approve
-    ? { type: 'idea', icon: '🔎', title: `Your discovery is live: ${row.title}`, body: 'Thanks for sharing it with the squad.', link: 'members.html#discoveries' }
-    : { type: 'idea', icon: '🔎', title: `Your discovery wasn’t used: ${row.title}`, body: 'A manager decided not to share this one. Keep them coming.', link: 'members.html#discoveries' }));
+    ? { nkey: 'discovery.decision', type: 'idea', icon: '🔎', title: `Your discovery is live: ${row.title}`, body: 'Thanks for sharing it with the squad.', link: 'members.html#discoveries' }
+    : { nkey: 'discovery.decision', type: 'idea', icon: '🔎', title: `Your discovery wasn’t used: ${row.title}`, body: 'A manager decided not to share this one. Keep them coming.', link: 'members.html#discoveries' }));
   return upd(await queuePanel(env));
 }
 

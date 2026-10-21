@@ -7,6 +7,7 @@
 import { can, flagOn } from './roles.js';
 import { getBotSettings } from './settings.js';
 import { postEmbed } from './docs.js';
+import { routeNotification, pinged } from './routing.js';
 import { message, header, text, sep, footer, buttons } from './ui.js';
 import { it } from './icons.js';
 
@@ -39,6 +40,10 @@ export async function alertTarget(env, kind) {
 // Posts `card` to the alerts channel. `not` = a channel this event already went to (no double post). Never throws.
 export async function postAlert(env, kind, card, { not } = {}) {
   try {
+    if (kind === 'posts' && env.DB && env.DISCORD_BOT_TOKEN) { // Control Center rules for "New post on the club feed" replace the alerts channel
+      const res = await routeNotification(env, 'feed.newpost', { build: (o) => pinged(card, o) });
+      if (res) return res.silenced ? null : res.posts.find((p) => p.ok) ?? null;
+    }
     const channel = await alertTarget(env, kind);
     if (!channel || channel === String(not ?? '')) return null;
     return await postEmbed(env, channel, '', card, { remember: false });

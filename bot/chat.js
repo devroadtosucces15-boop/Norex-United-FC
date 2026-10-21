@@ -172,7 +172,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
         ...rows.map((r2) => env.DB.prepare('INSERT INTO chat_members (chat_id, user_id, name, avatar, joined_at, read_at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, r2.id, r2.name, r2.avatar, at, 0)),
       ]);
       await log(env, me, 'chat-create', `${emoji} ${name} · ${rows.length + 1} members`);
-      await safely(notify(env, memberIds, { type: 'message', icon: emoji, title: `${me.n} added you to ${emoji} ${name}`, link: `messages.html#c${id}` }));
+      await safely(notify(env, memberIds, { nkey: 'chat.added', type: 'message', icon: emoji, title: `${me.n} added you to ${emoji} ${name}`, link: `messages.html#c${id}` }));
       const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
       const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
       return json({ chat: chatOut(chat, members, null, 0, me) });
@@ -241,7 +241,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     await run(env, `UPDATE chats SET ${Object.keys(patch).map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, ...Object.values(patch), id);
     await log(env, me, 'chat-settings', `${patch.emoji || acc.chat.emoji || '💬'} ${patch.name || acc.chat.name}`);
     const others = await all(env, 'SELECT user_id FROM chat_members WHERE chat_id = ? AND user_id != ?', id, me.u);
-    if (others.length) await safely(notify(env, others.map((o) => o.user_id), { type: 'message', icon: patch.emoji || acc.chat.emoji || '💬', title: `${me.n} updated ${patch.name || acc.chat.name}`, link: `messages.html#c${id}` }));
+    if (others.length) await safely(notify(env, others.map((o) => o.user_id), { nkey: 'chat.updated', type: 'message', icon: patch.emoji || acc.chat.emoji || '💬', title: `${me.n} updated ${patch.name || acc.chat.name}`, link: `messages.html#c${id}` }));
     const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
     const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
     await pushRoom(env, id, { t: 'chat' });
@@ -266,7 +266,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     const at = Date.now();
     await env.DB.batch(rows.map((r) => env.DB.prepare('INSERT INTO chat_members (chat_id, user_id, name, avatar, joined_at, read_at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, r.id, r.name, r.avatar, at, 0)));
     await log(env, me, 'chat-add-members', `${acc.chat.emoji || '💬'} ${acc.chat.name} · +${rows.map((r) => r.name).join(', ')}`);
-    await safely(notify(env, rows.map((r) => r.id), { type: 'message', icon: acc.chat.emoji || '💬', title: `${me.n} added you to ${acc.chat.emoji || '💬'} ${acc.chat.name}`, link: `messages.html#c${id}` }));
+    await safely(notify(env, rows.map((r) => r.id), { nkey: 'chat.added', type: 'message', icon: acc.chat.emoji || '💬', title: `${me.n} added you to ${acc.chat.emoji || '💬'} ${acc.chat.name}`, link: `messages.html#c${id}` }));
     const chat = await one(env, 'SELECT * FROM chats WHERE id = ?', id);
     const members = await all(env, 'SELECT * FROM chat_members WHERE chat_id = ?', id);
     await pushRoom(env, id, { t: 'chat' });
@@ -320,7 +320,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     const others = await all(env, 'SELECT user_id FROM chat_members WHERE chat_id = ? AND user_id != ?', id, me.u);
     if (others.length) {
       const title = acc.chat.kind === 'dm' ? `${me.n} messaged you` : `${me.n} in ${acc.chat.emoji || '💬'} ${acc.chat.name}`;
-      await safely(notify(env, others.map((o) => o.user_id), { type: 'message', title, body: excerpt(text, 140), link: `messages.html#c${id}` }));
+      await safely(notify(env, others.map((o) => o.user_id), { nkey: 'chat.message', type: 'message', title, body: excerpt(text, 140), link: `messages.html#c${id}` }));
     }
     const message = msgOut({ id: r.meta.last_row_id, chat_id: id, user_id: me.u, name: me.n, avatar: me.a, text, at });
     await pushRoom(env, id, { t: 'msg', message });
@@ -349,7 +349,7 @@ export async function chatRoute(p, method, body, me, env, log, url) {
     const reason = clean(body.reason, 200) || 'No reason given';
     await run(env, 'UPDATE chat_messages SET reported_at = ?, reported_by = ?, reported_reason = ? WHERE id = ?', Date.now(), me.u, reason, mid);
     await log(env, me, 'message-report', `#${mid}: ${reason}`);
-    await safely(notifyManagers(env, { icon: '🚩', title: `${me.n} reported a message`, body: `“${excerpt(msg.text, 100)}” – ${reason}`, link: 'members.html#manager' }, me.u));
+    await safely(notifyManagers(env, { nkey: 'chat.reported', icon: '🚩', title: `${me.n} reported a message`, body: `“${excerpt(msg.text, 100)}” – ${reason}`, link: 'members.html#manager' }, me.u));
     return json({ ok: true });
   }
   return fail('Not found', 404);

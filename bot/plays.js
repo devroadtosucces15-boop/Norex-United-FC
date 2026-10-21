@@ -239,7 +239,7 @@ async function assignTo(env, me, id, userIds) {
   for (const uid of fresh) await run(env, 'INSERT INTO play_assign (play_id, user_id, assigned_by, assigned_at) VALUES (?, ?, ?, ?)', id, uid, me.u, now);
   if (fresh.length) {
     const title = (await one(env, 'SELECT title FROM plays WHERE id = ?', id))?.title ?? 'a play';
-    await safely(notify(env, fresh, { type: 'play', icon: '📋', title: `New play to learn: ${title}`, link: `tactics.html#play${id}` }));
+    await safely(notify(env, fresh, { nkey: 'play.new', type: 'play', icon: '📋', title: `New play to learn: ${title}`, link: `tactics.html#play${id}` }));
   }
   return fresh;
 }

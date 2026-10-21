@@ -10,6 +10,7 @@
 import { can, flagOn } from './roles.js';
 import { message, notice, reply, header, text, sep, footer, buttons, cards } from './ui.js';
 import { postEmbed } from './docs.js';
+import { routeOr, pinged, publicRoutes } from './routing.js';
 
 export const WATCH_COMMANDS = new Set(['watchlist', 'watch']);
 export const WATCH_BUTTON = /^norex:wl:/;
@@ -132,11 +133,12 @@ export async function watchlistCron(env, now = Date.now(), fetcher = fetch) {
       WHERE v.posted_at IS NULL AND v.published > ? ORDER BY v.published LIMIT ?`, now - POST_MAX_AGE, POST_CAP);
     for (const v of fresh) {
       const channel = v.post_channel || shared;
-      if (!channel) continue;
+      if (!channel && !(await publicRoutes(env, 'creator.video')).managed) continue;
       // Claim the video first: two overlapping checks can never post it twice. A failed send gives the claim back.
       const claim = await env.DB.prepare('UPDATE watch_videos SET posted_at = ? WHERE id = ? AND posted_at IS NULL').bind(now, v.id).run();
       if (!claim.meta?.changes) continue;
-      const r = await postEmbed(env, channel, '', videoPanel(v, 0), { remember: false }).catch(() => null);
+      const panel = videoPanel(v, 0);
+      const r = await routeOr(env, 'creator.video', { build: (o) => pinged(panel, o), channel }, () => postEmbed(env, channel, '', panel, { remember: false })).catch(() => null);
       if (!r?.ok) { await env.DB.prepare('UPDATE watch_videos SET posted_at = NULL WHERE id = ?').bind(v.id).run(); break; }
       posted++;
     }

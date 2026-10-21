@@ -82,7 +82,7 @@ async function save(body, me, env, log) {
     let told = 0;
     for (const [i, s] of data.squads.entries()) for (const uid of s.ids) {
       const mates = s.ids.filter((x) => x !== uid).map((x) => cands.get(x).n).join(', ');
-      told += (await safely(notify(env, [uid], { type: 'event', icon: '🤝', title: `Rush: you’re in Squad ${i + 1} as ${s.roles[uid] === 'FLEX' ? 'flex' : s.roles[uid]}`, body: `With ${mates} · chemistry ${s.chemistry}/100 – ${title}`, link: 'members.html#squads' }))) ?? 0;
+      told += (await safely(notify(env, [uid], { nkey: 'squads.assigned', type: 'event', icon: '🤝', title: `Rush: you’re in Squad ${i + 1} as ${s.roles[uid] === 'FLEX' ? 'flex' : s.roles[uid]}`, body: `With ${mates} · chemistry ${s.chemistry}/100 – ${title}`, link: 'members.html#squads' }))) ?? 0;
     }
     out.notified = told;
     if (body.channel && can(me, 'announce.discord')) {

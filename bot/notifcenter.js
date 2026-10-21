@@ -25,6 +25,76 @@ export const REGISTRY = [
     timing: { from: { label: 'Earliest hour to send (UTC)', def: 9, min: 0, max: 23 }, to: { label: 'Latest hour to send (UTC)', def: 21, min: 1, max: 24 } } },
   { key: 'remind.nudge', group: 'Reminders', label: 'After-match “send a teammate praise” nudge', title: 'Got a minute after the match?', body: 'Send a teammate praise or a tip – you can keep it anonymous. It makes the whole squad better.', vars: [] },
 ];
+// Every other notification the app sends to people. No wording templates (the text comes from the place that sends it): the owner
+// controls whether it is sent, how (site bell only, bell + Discord DM, off), and whether members may mute it. feature = the site
+// switch it belongs to (config.json → features) – the Control Center shows it on that row; who = who receives it.
+export const ALERTS = [
+  { key: "announce.founder", feature: "announcements", who: "member", label: "A message from the founder" },
+  { key: "announce.sent", feature: "announcements", who: "member", label: "Announcement from the managers" },
+  { key: "awards.reveal", feature: "awards", who: "member", label: "The week’s awards are in" },
+  { key: "badge.achievement", feature: "badges", who: "member", label: "You earned an achievement" },
+  { key: "badge.given", feature: "badges", who: "member", label: "A teammate gave you a badge" },
+  { key: "badge.medal", feature: "badges", who: "member", label: "A medal was awarded to you" },
+  { key: "card.allowance", feature: "cardStudio", who: "managers", label: "Card waiting for the AI allowance" },
+  { key: "card.approved", feature: "cardStudio", who: "member", label: "Your card request was approved" },
+  { key: "card.failed.member", feature: "cardStudio", who: "member", label: "Your card could not be made" },
+  { key: "card.failed.staff", feature: "cardStudio", who: "managers", label: "A card failed to generate" },
+  { key: "card.ready", feature: "cardStudio", who: "member", label: "Your artwork is ready" },
+  { key: "card.request.new", feature: "cardStudio", who: "managers", label: "New card request" },
+  { key: "card.review", feature: "cardStudio", who: "managers", label: "Card artwork awaiting review" },
+  { key: "claim.auto", feature: "claims", who: "managers", label: "A claim was auto-approved" },
+  { key: "claim.decision", feature: "claims", who: "member", label: "Decision on your player claim" },
+  { key: "claim.matched", feature: "claims", who: "member", label: "Your player claim was matched" },
+  { key: "claim.new", feature: "claims", who: "managers", label: "A new player claim" },
+  { key: "discovery.new", feature: "discoveries", who: "everyone", label: "A new discovery was shared" },
+  { key: "insights.weekly", feature: "statInsights", who: "everyone", label: "Insight of the week" },
+  { key: "event.reminder", feature: "events", who: "everyone", label: "Event reminder (24 h / 2 h before)" },
+  { key: "discovery.decision", feature: "discoveries", who: "member", label: "Your discovery was approved or not used" },
+  { key: "discovery.pending", feature: "discoveries", who: "managers", label: "A discovery is waiting for approval" },
+  { key: "rules.reminder", feature: "docs", who: "member", label: "Reminder to acknowledge the club rules" },
+  { key: "rules.updated", feature: "docs", who: "member", label: "Club rules updated – please acknowledge" },
+  { key: "event.lineup.me", feature: "events", who: "member", label: "You are starting – your position" },
+  { key: "event.short", feature: "events", who: "member", label: "We are short on your position" },
+  { key: "feed.comment", feature: "feed", who: "member", label: "Someone commented on your post" },
+  { key: "feed.reaction", feature: "feed", who: "member", label: "Someone reacted to your post" },
+  { key: "feed.removed", feature: "feed", who: "member", label: "A manager removed your feed post" },
+  { key: "feed.reply", feature: "feed", who: "member", label: "Someone replied to your comment" },
+  { key: "feed.reported", feature: "feed", who: "managers", label: "A feed post was reported" },
+  { key: "storage.cleared", feature: "feed", who: "owner", label: "Media storage clean-up report" },
+  { key: "feedback.caution.explain", feature: "feedback", who: "managers", label: "Caution: a player explained their reaction" },
+  { key: "feedback.caution.react", feature: "feedback", who: "managers", label: "Caution: a player disagrees with feedback" },
+  { key: "feedback.new", feature: "feedback", who: "member", label: "You received anonymous feedback" },
+  { key: "feedback.reaction", feature: "feedback", who: "member", label: "A teammate reacted to your feedback" },
+  { key: "feedback.reported", feature: "feedback", who: "managers", label: "Anonymous feedback was reported" },
+  { key: "game.update", feature: "gameRules", who: "member", label: "Game update (new max level or rules)" },
+  { key: "wave.received", feature: "hub", who: "member", label: "A teammate waved at you" },
+  { key: "insights.reminder", feature: "insights", who: "managers", label: "Club Intelligence reminder" },
+  { key: "live.club", feature: "liveAnnounce", who: "member", label: "The club went live" },
+  { key: "mention.received", feature: "mentions", who: "member", label: "Someone mentioned you" },
+  { key: "chat.added", feature: "messages", who: "member", label: "You were added to a chat" },
+  { key: "chat.message", feature: "messages", who: "member", label: "New direct or group message" },
+  { key: "chat.reported", feature: "messages", who: "managers", label: "A chat message was reported" },
+  { key: "chat.updated", feature: "messages", who: "member", label: "A chat you are in was changed" },
+  { key: "moderation.automute", feature: "moderation", who: "member", label: "You were auto-muted" },
+  { key: "moderation.autowarn", feature: "moderation", who: "member", label: "You got an automatic warning" },
+  { key: "moderation.mute", feature: "moderation", who: "member", label: "You were muted" },
+  { key: "moderation.warning", feature: "moderation", who: "member", label: "You received a warning" },
+  { key: "predict.points", feature: "predictions", who: "member", label: "Your prediction points" },
+  { key: "rush.confirm", feature: "rushLog", who: "managers", label: "A Rush result needs confirming" },
+  { key: "rush.result", feature: "rushLog", who: "member", label: "Your Rush result was confirmed or not" },
+  { key: "squads.assigned", feature: "rushSquads", who: "member", label: "You were placed in a Rush squad" },
+  { key: "idea.new", feature: "suggestions", who: "managers", label: "A new suggestion was posted" },
+  { key: "idea.reply", feature: "suggestions", who: "member", label: "A reply to your suggestion" },
+  { key: "play.new", feature: "tactics", who: "member", label: "A new play was assigned to you" },
+  { key: "trial.new", feature: "trials", who: "managers", label: "A new trial application" },
+  { key: "trial.stage.player", feature: "trials", who: "member", label: "Your trial moved to a new stage" },
+  { key: "trial.stage.staff", feature: "trials", who: "managers", label: "A trial moved stage (Dugout board)" },
+  { key: "trial.tip.new", feature: "trials", who: "managers", label: "A new scouting tip" },
+  { key: "trial.tip.status", feature: "trials", who: "member", label: "Update on your scouting tip" },
+];
+const FEATURE_OF = { 'event.': 'events', 'award.won': 'awards', 'award.hotw': 'hotw', 'remind.': 'reminders' };
+for (const r of REGISTRY) r.feature = Object.entries(FEATURE_OF).find(([p]) => r.key.startsWith(p))?.[1] ?? r.feature;
+for (const a of ALERTS) REGISTRY.push({ key: a.key, group: a.feature, label: a.label, title: '', body: '', vars: [], wording: false, feature: a.feature, who: a.who });
 const BY_KEY = new Map(REGISTRY.map((r) => [r.key, r]));
 const clean = (s, max) => String(s ?? '').replace(/\r/g, '').replace(/[\u0000-\u0009\u000b-\u001f<>]/g, ' ').trim().slice(0, max);
 
@@ -78,7 +148,7 @@ export async function notifCenterRoute(p, method, body, me, env, log, notify) {
     // Only ever the owner: the recipient is the signed-in user, never taken from the request.
     const cfg = (await getNotifConfig(env))[r.key];
     const vars = sample(r);
-    const out = await notify(env, [me.u], { type: 'test', icon: '🔔', title: `[Test] ${render(cfg?.title || r.title, vars)}`.slice(0, 140), body: render(cfg?.body || r.body, vars) || null, link: 'members.html#alerts' });
+    const out = await notify(env, [me.u], { type: 'test', icon: '🔔', title: `[Test] ${render(cfg?.title || r.title, vars) || r.label}`.slice(0, 140), body: render(cfg?.body || r.body, vars) || (r.wording === false ? 'This is a test of this alert. Nobody else received it.' : null), link: 'members.html#alerts' });
     return json({ ok: true, sentTo: 'you', sent: out });
   }
   if (p !== '/api/admin/notif') return fail('Not found', 404);

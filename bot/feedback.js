@@ -93,7 +93,7 @@ export async function feedbackRoute(p, method, body, me, env, log) {
       return fail(`That’s ${PER_DAY} today – you can send more ${new Date(today.first + DAY).toUTCString().slice(17, 22)} UTC.`, 429);
     }
     // No message text in the bell / DM: a message managers hide later must not already sit in someone's Discord DMs.
-    await safely(notify(env, [to.id], { type: 'feedback', icon: KINDS[body.kind][0], title: `New anonymous ${KINDS[body.kind][1].toLowerCase()} from a teammate – open the Squad Hub to read it`, link: 'members.html#feedback', ref: `feedback:${ins.meta.last_row_id}` }));
+    await safely(notify(env, [to.id], { nkey: 'feedback.new', type: 'feedback', icon: KINDS[body.kind][0], title: `New anonymous ${KINDS[body.kind][1].toLowerCase()} from a teammate – open the Squad Hub to read it`, link: 'members.html#feedback', ref: `feedback:${ins.meta.last_row_id}` }));
     await log(env, me, 'feedback-send', `${KINDS[body.kind][1]} → ${to.name}`);
     return json(await state(env, me));
   }
@@ -105,9 +105,9 @@ export async function feedbackRoute(p, method, body, me, env, log) {
     if (f.reaction === reaction) return json(await state(env, me));
     await run(env, 'UPDATE feedback SET reaction = ?, reacted_at = ?, read_at = COALESCE(read_at, ?) WHERE id = ?', reaction, Date.now(), Date.now(), f.id);
     if (GOOD.includes(reaction)) { // only good news travels back to the sender – and never who reacted beyond the fact
-      await safely(notify(env, [f.from_id], { type: 'feedback', icon: REACTIONS[reaction][0], title: `${f.to_name ?? 'Your teammate'} reacted ${REACTIONS[reaction][0]} to your ${(KINDS[f.kind]?.[1] ?? 'feedback').toLowerCase()}`, link: 'members.html#feedback', ref: `feedback-react:${f.id}` }));
+      await safely(notify(env, [f.from_id], { nkey: 'feedback.reaction', type: 'feedback', icon: REACTIONS[reaction][0], title: `${f.to_name ?? 'Your teammate'} reacted ${REACTIONS[reaction][0]} to your ${(KINDS[f.kind]?.[1] ?? 'feedback').toLowerCase()}`, link: 'members.html#feedback', ref: `feedback-react:${f.id}` }));
     } else { // ❌ / 😕: managers get a secondary, clearly marked caution
-      await safely(notifyManagers(env, { type: 'caution', icon: '⚠️', title: `Caution: ${f.to_name ?? 'a player'} ${reaction === 'disagree' ? 'disagrees with' : 'is confused by'} feedback`, body: `${f.anon ? 'Anonymous' : f.from_name ?? 'A teammate'} → ${f.to_name ?? 'a player'}: “${f.body.slice(0, 80)}”`, link: 'members.html#feedback', ref: `feedback-caution:${f.id}` }, me.u));
+      await safely(notifyManagers(env, { nkey: 'feedback.caution.react', type: 'caution', icon: '⚠️', title: `Caution: ${f.to_name ?? 'a player'} ${reaction === 'disagree' ? 'disagrees with' : 'is confused by'} feedback`, body: `${f.anon ? 'Anonymous' : f.from_name ?? 'A teammate'} → ${f.to_name ?? 'a player'}: “${f.body.slice(0, 80)}”`, link: 'members.html#feedback', ref: `feedback-caution:${f.id}` }, me.u));
     }
     await log(env, me, 'feedback-react', `#${f.id} ${reaction}`);
     return json(await state(env, me));
@@ -120,7 +120,7 @@ export async function feedbackRoute(p, method, body, me, env, log) {
     if (reply.length < 5) return fail('Write a little more so the managers understand.');
     if (unclean(reply)) return fail('Keep it clean – rephrase without the bad language.', 422);
     await run(env, 'UPDATE feedback SET reply = ?, reply_at = ? WHERE id = ?', reply, Date.now(), f.id);
-    await safely(notifyManagers(env, { type: 'caution', icon: '⚠️', title: `Caution: ${f.to_name ?? 'a player'} explained their ${f.reaction === 'disagree' ? '❌' : '😕'}`, body: reply.slice(0, 100), link: 'members.html#feedback', ref: `feedback-caution:${f.id}` }, me.u));
+    await safely(notifyManagers(env, { nkey: 'feedback.caution.explain', type: 'caution', icon: '⚠️', title: `Caution: ${f.to_name ?? 'a player'} explained their ${f.reaction === 'disagree' ? '❌' : '😕'}`, body: reply.slice(0, 100), link: 'members.html#feedback', ref: `feedback-caution:${f.id}` }, me.u));
     await log(env, me, 'feedback-why', `#${f.id}`);
     return json(await state(env, me));
   }
@@ -134,7 +134,7 @@ export async function feedbackRoute(p, method, body, me, env, log) {
     if (f.reported_at) return fail('Already reported – the managers are on it.', 409);
     const reason = cleanText(body.reason, 200) || 'No reason given';
     await run(env, 'UPDATE feedback SET report = ?, reported_at = ? WHERE id = ?', reason, Date.now(), f.id);
-    await safely(notifyManagers(env, { type: 'queue', icon: '🚩', title: 'Anonymous feedback reported', body: `${f.to_name ?? 'A member'}: “${reason.slice(0, 80)}”`, link: 'members.html#feedback' }));
+    await safely(notifyManagers(env, { nkey: 'feedback.reported', type: 'queue', icon: '🚩', title: 'Anonymous feedback reported', body: `${f.to_name ?? 'A member'}: “${reason.slice(0, 80)}”`, link: 'members.html#feedback' }));
     await log(env, me, 'feedback-report', `#${f.id}`);
     return json(await state(env, me));
   }

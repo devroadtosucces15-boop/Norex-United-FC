@@ -11,6 +11,7 @@ import { parseTwitch, parseYouTube } from './live.js';
 import { message, header, text, sep, footer, buttons } from './ui.js';
 import { it } from './icons.js';
 import { postEmbed } from './docs.js';
+import { routeOr, pinged } from './routing.js';
 import { postAlert } from './alertroute.js';
 import { streamAlertsOn } from './streamalerts.js';
 
@@ -91,9 +92,12 @@ export async function memberLiveCron(env, now = Date.now(), fetcher = fetch) {
       .bind(m.user_id, found.platform, found.url, found.title ?? '', now, now, null, sameStream ? cur.since : now, sameStream ? cur.announced_at : null).run();
     if (!streamAlertsOn(env) && !(sameStream && cur.announced_at)) { // with /streamalerts on, its sources post instead
       const panel = livePanel({ ...found, user_id: m.user_id, name: m.name });
-      const r = channel && env.DISCORD_BOT_TOKEN ? await postEmbed(env, channel, '', panel).catch(() => null) : null;
-      const alert = await postAlert(env, 'live', panel, { not: channel }).catch(() => null); // the alerts channel gets it too (flag alertRoute)
-      if (r?.ok || alert?.ok) { await env.DB.prepare('UPDATE member_live SET announced_at = ? WHERE user_id = ?').bind(now, m.user_id).run(); posted++; }
+      const r = await routeOr(env, 'live.member', { build: (o) => pinged(panel, o), channel }, async () => {
+        const posted = channel && env.DISCORD_BOT_TOKEN ? await postEmbed(env, channel, '', panel).catch(() => null) : null;
+        const alert = await postAlert(env, 'live', panel, { not: channel }).catch(() => null); // the alerts channel gets it too (flag alertRoute)
+        return posted?.ok ? posted : alert;
+      });
+      if (r?.ok) { await env.DB.prepare('UPDATE member_live SET announced_at = ? WHERE user_id = ?').bind(now, m.user_id).run(); posted++; }
     }
   }
   return { checked: batch.length, live, posted };

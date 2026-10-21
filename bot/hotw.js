@@ -102,7 +102,7 @@ async function announce(env, w) {
   ] }), o);
   // Owner's routing rules first (Control Center); with none: the awards channel, as before.
   const routed = await safely(routeNotification(env, 'hotw.winner', {
-    notify: { type: 'award', icon: '🎬', title: `🎬 Highlight of the week: ${w.name}`, body: w.body ? excerpt(w.body.replace(CLIP, '').trim(), 140) : null, link: `feed.html#p${w.post_id}` },
+    notify: { nkey: 'award.hotw', type: 'award', icon: '🎬', title: `🎬 Highlight of the week: ${w.name}`, body: w.body ? excerpt(w.body.replace(CLIP, '').trim(), 140) : null, link: `feed.html#p${w.post_id}` },
     channel: legacyChannel || undefined, build: card,
   }));
   if (routed) { if (routed.posts.some((p) => p.ok) || routed.silenced) await run(env, 'UPDATE hotw SET posted_at = ? WHERE week = ?', Date.now(), w.week); return; }

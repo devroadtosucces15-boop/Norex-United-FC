@@ -81,7 +81,7 @@ export async function scoreDue(env, loadSite = (f) => siteJson(env, f)) {
     const title = ev.title || EVENT_TYPES[ev.type]?.[1] || 'Match night';
     for (const n of [3, 2, 1, 0]) {
       const ids = pts.filter(([, x]) => x === n).map(([u]) => u);
-      if (ids.length) await safely(notify(env, ids, { type: 'predict', icon: n === 3 ? '🎯' : '🔮', title: `${title}: ${r.gf}–${r.ga}${r.opp ? ` vs ${r.opp}` : ''} · you scored ${n} point${n === 1 ? '' : 's'}${n === 3 ? ' – exact!' : ''}`, link: 'members.html#predict' }));
+      if (ids.length) await safely(notify(env, ids, { nkey: 'predict.points', type: 'predict', icon: n === 3 ? '🎯' : '🔮', title: `${title}: ${r.gf}–${r.ga}${r.opp ? ` vs ${r.opp}` : ''} · you scored ${n} point${n === 1 ? '' : 's'}${n === 3 ? ' – exact!' : ''}`, link: 'members.html#predict' }));
     }
   }
   return { scored };

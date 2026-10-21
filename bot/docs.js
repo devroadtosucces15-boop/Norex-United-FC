@@ -62,7 +62,7 @@ async function bumpRules(env, me, title) {
   await run(env, "INSERT INTO meta (key, value) VALUES ('rules_at', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", String(Date.now()));
   // The person who changed the rules has obviously read them.
   await run(env, 'INSERT OR IGNORE INTO doc_acks (user_id, version, name, avatar, at) VALUES (?, ?, ?, ?, ?)', me.u, v, me.n, me.a ?? null, Date.now());
-  await safely(notifyMembers(env, { type: 'announce', icon: '📜', title: 'Club rules updated – please read and acknowledge', body: `Changed: ${title}`, link: 'docs.html#rules', ack: true, ref: `rules:${v}` }));
+  await safely(notifyMembers(env, { nkey: 'rules.updated', type: 'announce', icon: '📜', title: 'Club rules updated – please read and acknowledge', body: `Changed: ${title}`, link: 'docs.html#rules', ack: true, ref: `rules:${v}` }));
   return v;
 }
 
@@ -117,7 +117,7 @@ async function saveDoc(body, me, env, log) {
   if (area === 'rules' && body.ack && (changed || !row)) out.rulesVersion = await bumpRules(env, me, title);
   if (hold) out.held = true;
   if (area === 'announce' && body.notify && !hold) {
-    out.notified = await safely(notifyMembers(env, { type: 'announce', title, body: plain(text).slice(0, 600) || null, link: `docs.html#d-${id}`, ack: !!body.ack })) ?? 0;
+    out.notified = await safely(notifyMembers(env, { nkey: 'announce.sent', type: 'announce', title, body: plain(text).slice(0, 600) || null, link: `docs.html#d-${id}`, ack: !!body.ack })) ?? 0;
   }
   if (body.discord?.channel && !hold) out.discord = await postDoc(env, me, id, body.discord, log);
   return json({ ...out, ...(await docsList(env, me)) });
@@ -243,7 +243,7 @@ async function docsRoute(p, method, body, me, env, log, url) {
     await run(env, "UPDATE docs SET pinned = 1 WHERE removed_at IS NULL AND area = 'announce' AND title = 'A message from the founder'");
     const founder = await one(env, "SELECT id, body FROM docs WHERE removed_at IS NULL AND area = 'announce' AND title = 'A message from the founder'");
     const version = await bumpRules(env, me, 'Club philosophy, rules and expectations');
-    if (founder) await safely(notifyMembers(env, { type: 'announce', title: 'A message from the founder', body: plain(founder.body).slice(0, 600) || null, link: `docs.html#d-${founder.id}`, ack: false }));
+    if (founder) await safely(notifyMembers(env, { nkey: 'announce.founder', type: 'announce', title: 'A message from the founder', body: plain(founder.body).slice(0, 600) || null, link: `docs.html#d-${founder.id}`, ack: false }));
     await log(env, me, 'docs-release', `rules version ${version}`);
     return json({ released: true, version, ...(await docsList(env, me)) });
   }
@@ -277,7 +277,7 @@ async function docsRoute(p, method, body, me, env, log, url) {
     if (Date.now() - last < DAY / 2) return fail('A reminder already went out in the last 12 hours.', 429);
     const a = await ackList(env);
     if (!a.version) return fail('There are no rules to acknowledge yet.', 409);
-    const sent = a.missing.length ? await notify(env, a.missing.map((m) => m.id), { type: 'announce', icon: '📜', title: 'Reminder: please read and acknowledge the club rules', link: 'docs.html#rules', ack: true, ref: `rules:${a.version}` }) : 0;
+    const sent = a.missing.length ? await notify(env, a.missing.map((m) => m.id), { nkey: 'rules.reminder', type: 'announce', icon: '📜', title: 'Reminder: please read and acknowledge the club rules', link: 'docs.html#rules', ack: true, ref: `rules:${a.version}` }) : 0;
     await run(env, "INSERT INTO meta (key, value) VALUES ('rules_remind_at', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", String(Date.now()));
     await log(env, me, 'rules-remind', `${sent} members`);
     return json({ ...a, sent });
@@ -365,7 +365,7 @@ async function suggestionsRoute(p, method, body, me, env, log) {
     if (today.n >= SUG_DAILY) return fail(`That’s ${SUG_DAILY} ideas today – keep the rest for tomorrow.`, 429);
     if (await one(env, "SELECT id FROM suggestions WHERE lower(title) = lower(?) AND removed_at IS NULL AND status IN ('open', 'planned')", title)) return fail('That idea is already on the board – vote it up instead.', 409);
     await run(env, 'INSERT INTO suggestions (title, body, anon, by_id, by_name, by_avatar, at) VALUES (?, ?, ?, ?, ?, ?, ?)', title, text || null, body.anon ? 1 : 0, me.u, me.n, me.a ?? null, Date.now());
-    await safely(notifyManagers(env, { icon: '💡', title: `New suggestion: ${title}`, body: `${body.anon ? 'Anonymous to members – you can see the author in the list.' : `From ${me.n}`}${text ? `\n“${text.slice(0, 300)}”` : ''}`, link: 'members.html#ideas' }, me.u));
+    await safely(notifyManagers(env, { nkey: 'idea.new', icon: '💡', title: `New suggestion: ${title}`, body: `${body.anon ? 'Anonymous to members – you can see the author in the list.' : `From ${me.n}`}${text ? `\n“${text.slice(0, 300)}”` : ''}`, link: 'members.html#ideas' }, me.u));
     await log(env, me, 'suggest', title);
     return json(await suggestions(env, me));
   }
@@ -387,7 +387,7 @@ async function suggestionsRoute(p, method, body, me, env, log) {
     await log(env, me, 'suggest-status', `${row.title} → ${body.status}`);
     if (row.by_id !== me.u && (body.status !== row.status || reply !== row.reply)) {
       const label = { open: '💭 Open again', planned: '🗓️ Planned', done: '✅ Done', declined: '🚫 Not for now' }[body.status];
-      await safely(notify(env, [row.by_id], { type: 'idea', title: `Your idea “${row.title.slice(0, 60)}”: ${label}`, body: reply ? `${me.n}: ${reply}` : null, link: 'members.html#ideas' }));
+      await safely(notify(env, [row.by_id], { nkey: 'idea.reply', type: 'idea', title: `Your idea “${row.title.slice(0, 60)}”: ${label}`, body: reply ? `${me.n}: ${reply}` : null, link: 'members.html#ideas' }));
     }
     return json(await suggestions(env, me));
   }

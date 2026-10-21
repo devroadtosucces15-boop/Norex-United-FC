@@ -14,17 +14,21 @@
   const pick = (o) => Object.entries(o).map(([k, v]) => [k, typeof v === 'string' ? v : `${v.icon} ${v.label}`]);
 
   function create({ call, toast, paint }) {
-    const R = { routes: null, rdraft: null, dc: null, err: null, busy: false, open: new Set(), defaultChannel: '' };
+    const R = { notif: null, routes: null, rdraft: null, dc: null, err: null, busy: false, open: new Set(), defaultChannel: '' };
     const feat = (r) => R.routes?.actions?.[r.action]?.feature;
     const actionsOf = (f) => Object.entries(R.routes?.actions ?? {}).filter(([, a]) => a.feature === f).map(([k]) => k);
 
     async function load() {
       try { R.routes = await call('/api/bot/routes'); R.rdraft = R.routes.rules.map((r) => ({ ...r })); R.err = null; } catch (e) { R.err = e.message; }
+      try { R.notif = await call('/api/admin/notif'); } catch { R.notif = null; }
       try { R.dc = await call('/api/events/discord'); } catch { R.dc = { ready: false }; }
       try { R.defaultChannel = (await call('/api/bot/settings')).reminderChannel || ''; } catch { /* owner only */ }
     }
-    const has = (f) => actionsOf(f).length > 0;
+    const keysOf = (f) => (R.notif?.items ?? []).filter((i) => i.feature === f);
+    const features = () => [...new Set([...Object.values(R.routes?.actions ?? {}).map((a) => a.feature), ...(R.notif?.items ?? []).map((i) => i.feature)])].filter(Boolean);
+    const has = (f) => actionsOf(f).length > 0 || keysOf(f).length > 0;
     const count = (f) => (R.rdraft ?? []).filter((r) => feat(r) === f && r.on !== false).length;
+    const kcount = (f) => keysOf(f).length;
 
     function readRows() {
       document.querySelectorAll('tr[data-rt]').forEach((tr) => {
@@ -43,18 +47,35 @@
 <td><select data-rf="action" aria-label="When this happens" style="width:100%">${sel(acts, r.action)}</select></td>
 <td><select data-rf="group" aria-label="Who" style="width:100%">${sel(pick(R.routes.groups), r.group)}</select>${r.group === 'role' ? `<select data-rf="role" aria-label="Discord role" style="width:100%;margin-top:6px"><option value="">Pick a role…</option>${roles.map((x) => `<option value="${esc(x.id)}"${x.id === r.role ? ' selected' : ''}>${esc(x.name.startsWith('@') ? x.name : '@' + x.name)}</option>`).join('')}</select>` : ''}</td>
 <td><select data-rf="method" aria-label="How" style="width:100%">${sel(pick(R.routes.methods).filter(([k]) => !(r.group === 'role' && k === 'dm')), r.method)}</select></td>
-<td>${dm ? `<label class="small" style="display:flex;gap:6px;align-items:flex-start"><input type="checkbox" data-rf="force" aria-label="Send even if muted"${r.force ? ' checked' : ''}> <span><b>Send even if muted</b><br><span class="muted">Overrides their alert settings. Max 5 a day each, skips closed DMs, goes first in the queue.</span></span></label>`
+<td>${r.method === 'web' ? '<span class="muted small">Shows in the site bell only – no Discord message.</span>' : dm ? `<label class="small" style="display:flex;gap:6px;align-items:flex-start"><input type="checkbox" data-rf="force" aria-label="Send even if muted"${r.force ? ' checked' : ''}> <span><b>Send even if muted</b><br><span class="muted">Overrides their alert settings. Max 5 a day each, skips closed DMs, goes first in the queue.</span></span></label>`
         : `<select data-rf="channel" aria-label="Channel" style="width:100%"><option value="">Default channel</option>${ch.map((c) => `<option value="${esc(c.id)}"${c.id === r.channel ? ' selected' : ''}>#${esc(c.name)}</option>`).join('')}${r.channel && !known ? `<option value="${esc(r.channel)}" selected>ID ${esc(r.channel)}</option>` : ''}</select><input data-rf="channelId" style="width:100%;margin-top:6px" inputmode="numeric" pattern="\\d{5,25}" maxlength="25" placeholder="or paste a channel ID" aria-label="Channel ID" value="">`}</td>
-<td><button class="chip danger" type="button" data-rt-del="${i}" aria-label="Remove rule">✕</button></td></tr>`;
+<td style="white-space:nowrap"><button class="chip" type="button" data-rt-test="${i}" title="Send this rule’s message to you only">🧪 Test</button> <button class="chip danger" type="button" data-rt-del="${i}" aria-label="Remove rule">✕</button></td></tr>`;
+    }
+
+    const ROUTE_LABEL = { default: 'As built (member decides)', dm: 'Bell + Discord DM', site: 'Bell only', off: 'Off' };
+    function keysHtml(f) {
+      const ks = keysOf(f); if (!ks.length) return '';
+      const rows = ks.map((i) => { const c = i.saved || {}; return `<tr data-nk="${esc(i.key)}"><td><b>${esc(i.label || i.title)}</b><div class="muted small">${esc(i.who || '')}</div></td>
+<td><input type="checkbox" data-nf="enabled" aria-label="Send"${c.enabled === false ? '' : ' checked'}></td>
+<td><select data-nf="route" aria-label="How" style="width:100%">${sel(Object.entries(ROUTE_LABEL), c.route || 'default')}</select></td>
+<td><input type="checkbox" data-nf="locked" aria-label="Members cannot mute"${c.locked ? ' checked' : ''}></td>
+<td><button class="chip" type="button" data-nk-test="${esc(i.key)}" title="Send this to you only">🧪 Test</button></td></tr>`; }).join('');
+      return `<div class="br-alerts" style="grid-column:1 / -1;margin:6px 0 14px;padding:12px;border:1px solid var(--line, rgba(255,255,255,.1));border-radius:10px">
+<p class="muted small" style="margin:0 0 8px"><b>Personal alerts</b> – what each person gets about this feature. Changes save as you make them. Wording and timing: Staff Tools → Notifications.</p>
+<div style="overflow-x:auto"><table class="tbl" style="table-layout:fixed;min-width:760px"><thead><tr><th>Alert</th><th style="width:56px">Send</th><th style="width:26%">How</th><th style="width:96px">Can’t mute</th><th style="width:100px"></th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
     }
 
     function html(f) {
+      return rulesHtml(f) + keysHtml(f);
+    }
+    function rulesHtml(f) {
+      if (!actionsOf(f).length) return '';
       if (R.err) return `<p class="muted small">Could not load the alert rules: ${esc(R.err)}</p>`;
       if (!R.routes) return '<div class="dg-skel"><i></i></div>';
       const rows = R.rdraft.map((r, i) => (feat(r) === f ? rowHtml(r, i, f) : '')).join('');
       return `<div class="br-alerts" style="grid-column:1 / -1;margin:6px 0 14px;padding:12px;border:1px solid var(--line, rgba(255,255,255,.1));border-radius:10px">
 <p class="muted small" style="margin:0 0 8px">Who is told when something happens to this feature, and how. With no rules it keeps its built-in behaviour; once it has rules, only these run.</p>
-${rows ? `<div style="overflow-x:auto"><table class="tbl" style="table-layout:fixed;min-width:900px"><thead><tr><th style="width:44px">On</th><th style="width:22%">When this happens</th><th style="width:22%">Tell</th><th style="width:20%">How</th><th>Where</th><th style="width:44px"></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted small">No rules yet – built-in behaviour.</p>'}
+${rows ? `<div style="overflow-x:auto"><table class="tbl" style="table-layout:fixed;min-width:900px"><thead><tr><th style="width:44px">On</th><th style="width:22%">When this happens</th><th style="width:22%">Tell</th><th style="width:20%">How</th><th>Where</th><th style="width:128px"></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted small">No rules yet – built-in behaviour.</p>'}
 <div class="dk-btns" style="justify-content:flex-start;margin-top:10px"><button class="chip" type="button" data-rt-add="${esc(f)}">➕ Add rule</button><button class="btn" type="button" data-rt-save${R.busy ? ' disabled' : ''}>💾 Save alert rules</button></div></div>`;
     }
 
@@ -68,7 +89,13 @@ ${rows ? `<div style="overflow-x:auto"><table class="tbl" style="table-layout:fi
     function click(ev) {
       const t = ev.target.closest('button'); if (!t) return false;
       if (t.dataset.rtToggle !== undefined) { R.open.has(t.dataset.rtToggle) ? R.open.delete(t.dataset.rtToggle) : R.open.add(t.dataset.rtToggle); paint(); return true; }
+      if (t.dataset.nkTest !== undefined) { t.disabled = true; call('/api/admin/notif/test', { key: t.dataset.nkTest }).then(() => toast('🧪 Test sent to you only.')).catch((e) => toast(e.message, true)).finally(() => { t.disabled = false; }); return true; }
       if (t.dataset.rtAdd !== undefined) { readRows(); const f = t.dataset.rtAdd; R.rdraft.push({ action: actionsOf(f)[0], group: 'everyone', method: 'channel', channel: '', on: true }); paint(); return true; }
+      if (t.dataset.rtTest !== undefined) {
+        readRows(); const rule = R.rdraft[+t.dataset.rtTest]; t.disabled = true;
+        call('/api/bot/routes/test', { rule }).then((r) => toast(`🧪 Test sent to ${r.sentTo}. Only you got it.`)).catch((e) => toast(e.message, true)).finally(() => { t.disabled = false; });
+        return true;
+      }
       if (t.dataset.rtDel !== undefined) { readRows(); R.rdraft.splice(+t.dataset.rtDel, 1); paint(); return true; }
       if (t.hasAttribute('data-rt-save')) {
         readRows();
@@ -82,10 +109,16 @@ ${rows ? `<div style="overflow-x:auto"><table class="tbl" style="table-layout:fi
     function change(ev) {
       const t = ev.target;
       if (t.matches?.('[data-rt-default]')) { call('/api/bot/settings', { reminderChannel: t.value }).then((s) => { R.defaultChannel = s.reminderChannel || ''; toast(t.value ? 'Default channel saved' : 'Default channel cleared'); }).catch((e) => toast(e.message, true)); return true; }
+      const nk = t.closest?.('tr[data-nk]');
+      if (nk && t.dataset.nf) {
+        const key = nk.dataset.nk, body = { key }; body[t.dataset.nf] = t.type === 'checkbox' ? t.checked : t.value;
+        call('/api/admin/notif', body).then((r) => { R.notif = { ...R.notif, items: r.items }; toast('Saved'); }).catch((e) => toast(e.message, true));
+        return true;
+      }
       if (t.closest?.('tr[data-rt]')) { readRows(); if (['group', 'method'].includes(t.dataset.rf)) paint(); return true; }
       return false;
     }
-    return { load, has, count, html, defaultsHtml, click, change, state: R };
+    return { load, has, count, kcount, features, html, defaultsHtml, click, change, state: R };
   }
   window.NorexRouting = { create };
 })();

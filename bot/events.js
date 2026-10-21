@@ -738,7 +738,7 @@ async function lineupRoute(p, method, body, me, env, log) {
     for (const r of await all(env, 'SELECT user_id, name FROM event_rsvps WHERE event_id = ?', row.id)) if (!names.has(r.user_id)) names.set(r.user_id, r.name);
     // Everyone told their own position (one notification each – the text differs).
     let told = 0;
-    if (wantDm) for (const uid of ids) told += (await safely(notify(env, [uid], { type: 'event', icon: '🧩', title: `You’re starting at ${POS_OF(lineup[uid])} – ${label(row)} · ${when(row)}`, body: formation ? `Formation ${formation}. Check the Play Style for your position.` : null, link: 'hub-matchnight.html', ref: `lineup:${row.id}:${Date.now()}` }))) ?? 0;
+    if (wantDm) for (const uid of ids) told += (await safely(notify(env, [uid], { type: 'event', nkey: 'event.lineup.me', icon: '🧩', title: `You’re starting at ${POS_OF(lineup[uid])} – ${label(row)} · ${when(row)}`, body: formation ? `Formation ${formation}. Check the Play Style for your position.` : null, link: 'hub-matchnight.html', ref: `lineup:${row.id}:${Date.now()}` }))) ?? 0;
     out.notified = told;
     if (channel && can(me, 'announce.discord')) {
       const muted = body.tag ? await mutedFor(env, ids, 'event') : new Set();
@@ -790,7 +790,7 @@ async function nudgeRoute(body, me, env, log) {
   const rows = await all(env, `SELECT p.user_id, p.${col} AS pos FROM profiles p JOIN users u ON u.id = p.user_id WHERE u.last_at > ?`, Date.now() - 120 * DAY);
   const ids = rows.filter((r) => !answered.has(r.user_id) && parse(r.pos, []).includes(position)).map((r) => r.user_id);
   if (!ids.length) return fail('Nobody to nudge – everyone who plays there has answered, or nobody has that position set.', 409);
-  const notified = await safely(notify(env, ids, { type: 'event', icon: '📣', title: `Can you make it? ${label(row)} – short on ${position}`, body: when(row), link: 'members.html#schedule' })) ?? 0;
+  const notified = await safely(notify(env, ids, { type: 'event', nkey: 'event.short', icon: '📣', title: `Can you make it? ${label(row)} – short on ${position}`, body: when(row), link: 'members.html#schedule' })) ?? 0;
   await log(env, me, 'event-nudge', `${label(row)} · ${position} · ${notified} nudged`);
   return json({ notified, ...(await listFor(env, me)) });
 }
@@ -844,7 +844,7 @@ export async function eventReminders(env) {
     const quiet = (await all(env, 'SELECT id, role FROM users WHERE last_at > ?', now - 60 * DAY)).filter((u) => !answered.has(u.id) && flagOn(env, { role: u.role }, 'discordRsvp')).map((u) => u.id);
     const yes = rsvps.filter((r) => r.status === 'yes').length;
     const head = `${soon ? '⏰ Starting soon' : '📅 Tomorrow'} · ${label(e)}`;
-    const routed = await safely(routeEvent(env, 'event.reminder', e, { type: 'event', icon: soon ? '⏰' : '📅', title: `${head} – can you make it?`, body: `${yes} said yes so far. Answer ✅ ❔ ❌ in the Squad Hub.`, link: `members.html#schedule-${e.id}` }, soon ? '⏰ ' : '📅 '));
+    const routed = await safely(routeEvent(env, 'event.reminder', e, { nkey: 'event.reminder', type: 'event', icon: soon ? '⏰' : '📅', title: `${head} – can you make it?`, body: `${yes} said yes so far. Answer ✅ ❔ ❌ in the Squad Hub.`, link: `members.html#schedule-${e.id}` }, soon ? '⏰ ' : '📅 '));
     if (routed) { sent++; continue; }
     if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
       const pings = e.remind === 'mention' ? quiet.slice(0, 50) : [];

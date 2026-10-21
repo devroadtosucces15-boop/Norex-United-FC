@@ -529,8 +529,8 @@ async function autoApprove(env, uid, loadSite) {
     const pos = (await loadSite('players').catch(() => [])).find((x) => x.k === c.player)?.pos;
     await safely(syncMember(env, uid, true, pos));
   }
-  await safely(notify(env, [uid], { type: 'claim', title: `✅ ${c.player_name} is yours – matched your ${how} account`, body: 'You now have the verified badge on your player page.', link: `players/${c.player}.html` }));
-  await safely(notifyManagers(env, { icon: '🪪', title: `Claim auto-approved: ${c.name} → ${c.player_name}`, body: `Their Discord-verified ${hit === 'psn' ? 'PSN' : 'Xbox'} name matches the EA player name.`, link: 'members.html#manager' }));
+  await safely(notify(env, [uid], { nkey: 'claim.matched', type: 'claim', title: `✅ ${c.player_name} is yours – matched your ${how} account`, body: 'You now have the verified badge on your player page.', link: `players/${c.player}.html` }));
+  await safely(notifyManagers(env, { nkey: 'claim.auto', icon: '🪪', title: `Claim auto-approved: ${c.name} → ${c.player_name}`, body: `Their Discord-verified ${hit === 'psn' ? 'PSN' : 'Xbox'} name matches the EA player name.`, link: 'members.html#manager' }));
   return how;
 }
 
@@ -686,7 +686,7 @@ async function route(p, method, body, me, env, loadSite, url) {
     }
     await log(env, me, 'claim', pl.n);
     const auto = flagOn(env, me, 'platformLink') ? await safely(autoApprove(env, me.u, loadSite)) : null; // P2.4
-    if (!auto) await safely(notifyManagers(env, { icon: '🪪', title: `New player claim: ${me.n} → ${pl.n}`, link: 'members.html#manager' }, me.u));
+    if (!auto) await safely(notifyManagers(env, { nkey: 'claim.new', icon: '🪪', title: `New player claim: ${me.n} → ${pl.n}`, link: 'members.html#manager' }, me.u));
     return json({ claim: await getClaim(env, me.u), ...(auto ? { auto } : {}) });
   }
 
@@ -884,7 +884,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       const warnings = [...parseWarnings(u.warnings), { at: Date.now(), by: me.n, reason }];
       await run(env, 'UPDATE users SET warnings = ? WHERE id = ?', JSON.stringify(warnings), uid);
       await log(env, me, 'warn', `${u.name}: ${reason}`);
-      await safely(notify(env, [uid], { type: 'moderation', icon: '⚠️', title: 'You received a warning from the managers', body: reason, link: 'members.html#me' }));
+      await safely(notify(env, [uid], { nkey: 'moderation.warning', type: 'moderation', icon: '⚠️', title: 'You received a warning from the managers', body: reason, link: 'members.html#me' }));
       return json({ ok: true, warnings });
     }
     if (p === '/api/admin/mute' && method === 'POST') { // P8.3
@@ -896,7 +896,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       const until = hours ? Date.now() + hours * 3600e3 : null;
       await run(env, 'UPDATE users SET muted_until = ? WHERE id = ?', until, uid);
       await log(env, me, until ? 'mute' : 'unmute', until ? `${u.name} · ${hours}h` : u.name);
-      if (until) await safely(notify(env, [uid], { type: 'moderation', icon: '🔇', title: 'You’ve been muted by the managers', body: `You can't post, comment or message until ${new Date(until).toUTCString().slice(5, 22)} UTC.`, link: 'members.html#me' }));
+      if (until) await safely(notify(env, [uid], { nkey: 'moderation.mute', type: 'moderation', icon: '🔇', title: 'You’ve been muted by the managers', body: `You can't post, comment or message until ${new Date(until).toUTCString().slice(5, 22)} UTC.`, link: 'members.html#me' }));
       return json({ ok: true, mutedUntil: until ?? undefined });
     }
     if (p === '/api/admin/claims' && method === 'POST') {
@@ -925,7 +925,7 @@ async function route(p, method, body, me, env, loadSite, url) {
       if (c.user_id !== me.u) {
         const title = { approved: `✅ Your claim for ${c.player_name} was approved`, rejected: `❌ Your claim for ${c.player_name} was not approved`, unlinked: `↩️ You were unlinked from ${c.player_name}` }[status];
         const text = status === 'approved' ? 'You now have the verified badge on your player page.' : 'Ask a manager on Discord if this looks wrong – you can send a new claim from the Squad Hub.';
-        await safely(notify(env, [c.user_id], { type: 'claim', title, body: text, link: status === 'approved' ? `players/${c.player}.html` : 'members.html#me' }));
+        await safely(notify(env, [c.user_id], { nkey: 'claim.decision', type: 'claim', title, body: text, link: status === 'approved' ? `players/${c.player}.html` : 'members.html#me' }));
       }
       return json({ claims: await getClaims(env) });
     }
@@ -1128,7 +1128,7 @@ async function rushRoute(p, method, body, me, env, loadSite) {
       .bind(id, i, x.player, x.name, x.pos, x.goals, x.assists, x.rating, x.motm)));
     await log(env, me, confirm ? 'rush-logged' : 'rush-submit', `${m.gf}–${m.ga} vs ${m.opponent} · ${m.date}`);
     if (confirm) await rebuildRush(env);
-    else await safely(notifyManagers(env, { icon: '⚡', title: `Rush result to confirm: ${m.gf}–${m.ga} vs ${m.opponent}`, body: `Logged by ${me.n} · ${m.date}`, link: 'members.html#manager' }, me.u));
+    else await safely(notifyManagers(env, { nkey: 'rush.confirm', icon: '⚡', title: `Rush result to confirm: ${m.gf}–${m.ga} vs ${m.opponent}`, body: `Logged by ${me.n} · ${m.date}`, link: 'members.html#manager' }, me.u));
     return json({ id, status: confirm ? 'confirmed' : 'pending', ...await rushQueue(env, me) });
   }
 
@@ -1156,7 +1156,7 @@ async function rushRoute(p, method, body, me, env, loadSite) {
     if (next === 'confirmed' || r.status === 'confirmed') await rebuildRush(env);
     if (r.by_id !== me.u) {
       const title = { confirmed: `✅ Rush result confirmed: ${r.gf}–${r.ga} vs ${r.opponent}`, rejected: `❌ Rush result not confirmed: ${r.gf}–${r.ga} vs ${r.opponent}`, removed: `🗑 Rush result removed: ${r.gf}–${r.ga} vs ${r.opponent}` }[next];
-      await safely(notify(env, [r.by_id], { type: 'rush', title, body: `${r.date} · by ${me.n}`, link: 'members.html#rush' }));
+      await safely(notify(env, [r.by_id], { nkey: 'rush.result', type: 'rush', title, body: `${r.date} · by ${me.n}`, link: 'members.html#rush' }));
     }
     return json(await rushQueue(env, me));
   }

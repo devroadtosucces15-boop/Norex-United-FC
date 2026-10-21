@@ -177,7 +177,7 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     await run(env, 'UPDATE posts SET removed = 1, removed_by = ?, removed_at = ?, pinned = 0 WHERE id = ?', me.n, Date.now(), id);
     await dropMedia(env, await postMediaKeys(env, id), 2); // photos/clips of a removed post leave storage straight away
     await run(env, 'DELETE FROM notifications WHERE ref IN (?, ?)', `feed:${id}`, `feed-react:${id}`);
-    if (!mine) await safely(notify(env, [r.user_id], { type: 'feed', icon: '🛡️', title: 'A manager removed one of your feed posts', body: `“${excerpt(r.body || 'photo/clip')}” – ask a manager on Discord if you think this was a mistake.`, link: 'feed.html' }));
+    if (!mine) await safely(notify(env, [r.user_id], { nkey: 'feed.removed', type: 'feed', icon: '🛡️', title: 'A manager removed one of your feed posts', body: `“${excerpt(r.body || 'photo/clip')}” – ask a manager on Discord if you think this was a mistake.`, link: 'feed.html' }));
     await log(env, me, mine ? 'post-delete' : 'post-remove', `#${id} ${excerpt(r.body, 60)}`);
     return json({ ok: true, id });
   }
@@ -189,7 +189,7 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     if (!add.meta?.changes) await run(env, 'DELETE FROM post_reactions WHERE post_id = ? AND user_id = ? AND emoji = ?', id, me.u, body.emoji);
     // One unread "reacted" bell note per post at a time – not one per click.
     else if (r.user_id !== me.u && !(await one(env, 'SELECT 1 FROM notifications WHERE user_id = ? AND ref = ? AND read_at IS NULL', r.user_id, `feed-react:${id}`))) {
-      await safely(notify(env, [r.user_id], { type: 'feed', icon: body.emoji, title: `${me.n} reacted ${body.emoji} to your post`, link: `feed.html#p${id}`, ref: `feed-react:${id}` }));
+      await safely(notify(env, [r.user_id], { nkey: 'feed.reaction', type: 'feed', icon: body.emoji, title: `${me.n} reacted ${body.emoji} to your post`, link: `feed.html#p${id}`, ref: `feed-react:${id}` }));
     }
     const post = await onePost(env, me, id);
     return json({ id, reacts: post.reacts, who: post.who, mine: post.mine });
@@ -215,8 +215,8 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     if (!ins.meta?.changes) return fail(`That’s ${COMMENTS_DAY} comments today – take a breather.`, 429);
     const n = { type: 'feed', icon: '💬', body: excerpt(text, 120), link: `feed.html#p${id}`, ref: `feed:${id}` };
     const replyTo = parent?.replyTo && parent.replyTo !== me.u ? parent.replyTo : null;
-    if (replyTo) await safely(notify(env, [replyTo], { ...n, icon: '↩️', title: `${me.n} replied to your comment` }));
-    if (post.user_id !== me.u && post.user_id !== replyTo) await safely(notify(env, [post.user_id], { ...n, title: `${me.n} commented on your post` }));
+    if (replyTo) await safely(notify(env, [replyTo], { nkey: 'feed.reply', ...n, icon: '↩️', title: `${me.n} replied to your comment` }));
+    if (post.user_id !== me.u && post.user_id !== replyTo) await safely(notify(env, [post.user_id], { nkey: 'feed.comment', ...n, title: `${me.n} commented on your post` }));
     await notifyMentions(env, me, { text, flag: 'feed', where: 'in a comment', link: n.link, ref: n.ref, skip: [post.user_id, replyTo] }); // P6.5
     return json({ post: await onePost(env, me, id) });
   }
@@ -255,7 +255,7 @@ export async function feedRoute(p, method, body, me, env, log, url) {
     if (r.reported_at) return fail('Already reported – the managers are on it.', 409);
     const reason = cleanText(body.reason, 200) || 'No reason given';
     await run(env, 'UPDATE posts SET reported_at = ?, reported_by = ?, reported_reason = ? WHERE id = ?', Date.now(), me.u, reason, id);
-    await safely(notifyManagers(env, { type: 'queue', icon: '🚩', title: `${me.n} reported a feed post`, body: `“${excerpt(r.body || 'photo/clip', 100)}” – ${reason}`, link: `feed.html#p${id}` }, me.u));
+    await safely(notifyManagers(env, { nkey: 'feed.reported', type: 'queue', icon: '🚩', title: `${me.n} reported a feed post`, body: `“${excerpt(r.body || 'photo/clip', 100)}” – ${reason}`, link: `feed.html#p${id}` }, me.u));
     await log(env, me, 'post-report', `#${id}: ${reason}`);
     return json({ post: await onePost(env, me, id) });
   }

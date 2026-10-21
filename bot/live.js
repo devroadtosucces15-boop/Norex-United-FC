@@ -9,6 +9,7 @@ import { flagOn } from './roles.js';
 import { message, header, text, sep, footer, buttons } from './ui.js';
 import { it } from './icons.js';
 import { postEmbed } from './docs.js';
+import { routeOr, pinged } from './routing.js';
 import { postAlert } from './alertroute.js';
 import { streamAlertsOn } from './streamalerts.js';
 import { notifyMembers } from './notify.js';
@@ -101,11 +102,14 @@ export async function announceLive(env, v, now = Date.now()) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
   const card = livePost(v, site);
   const viaSources = streamAlertsOn(env); // /streamalerts replaces these channel posts: one post per stream, in the channel chosen there
-  const r = !viaSources && channel ? await postEmbed(env, channel, '', card) : null;
-  const alert = viaSources ? null : await postAlert(env, 'live', card, { not: channel }); // the alerts channel gets it too (flag alertRoute)
-  if (!viaSources && !r?.ok && !alert?.ok) return false;
+  const r = viaSources ? null : await routeOr(env, 'live.club', { build: (o) => pinged(card, o), channel, notify: { nkey: 'live.club', type: 'live', title: '🔴 NOREX is live', body: v.title || 'Come and watch', link: 'watch.html', ref: 'live' } }, async () => {
+    const posted = channel ? await postEmbed(env, channel, '', card) : null;
+    const alert = await postAlert(env, 'live', card, { not: channel }); // the alerts channel gets it too (flag alertRoute)
+    return posted?.ok ? posted : alert;
+  });
+  if (!viaSources && !r?.ok) return false;
   await env.NOREX_KV.put('live_announced', JSON.stringify({ at: now, platform: v.platform }), { expirationTtl: 86400 });
-  await notifyMembers(env, { type: 'live', title: '🔴 NOREX is live', body: v.title || 'Come and watch', link: 'watch.html', ref: 'live' }).catch(() => {}); // bell + banner; pop-up for members who set Live to "DM + site"
+  await notifyMembers(env, { nkey: 'live.club', type: 'live', title: '🔴 NOREX is live', body: v.title || 'Come and watch', link: 'watch.html', ref: 'live' }).catch(() => {}); // bell + banner; pop-up for members who set Live to "DM + site"
   return true;
 }
 

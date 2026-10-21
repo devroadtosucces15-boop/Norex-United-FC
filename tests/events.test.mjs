@@ -26,7 +26,7 @@ t('assets shipped', ['events.js', 'events.css'].every((f) => fs.existsSync(ROOT 
 
 // ----- fake Discord -----
 env.DISCORD_BOT_TOKEN = 'bot';
-const posts = [];
+const posts = [], dmPosts = [];
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, init = {}) => {
   const u = String(url);
@@ -35,7 +35,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (u.endsWith('/users/@me/channels')) return Response.json({ id: 'dm' });
   const m = u.match(/\/channels\/(\w+)\/messages$/);
   if (m && m[1] !== 'dm') { posts.push({ channel: m[1], ...JSON.parse(init.body) }); return Response.json({ id: `m${posts.length}` }); }
-  if (m) return Response.json({ id: 'dm-msg' });
+  if (m) { dmPosts.push(JSON.parse(init.body)); return Response.json({ id: 'dm-msg' }); }
   return realFetch(url, init);
 };
 
@@ -317,6 +317,33 @@ const silenced = await routeNotification(env, 'awards.results', { build: () => (
 t('routing: an action whose rules are all off is silenced (not back to the old behaviour)', silenced?.silenced === true && silenced.posts.length === 0 && (await routeNotification(env, 'hotw.winner', { build: () => ({}) })) === null);
 const rtmod = await import('../bot/routing.js');
 t('routing: the result poster reads the rules for match results', (await rtmod.publicRoutes(env, 'results.posted')).managed === false && (await rtmod.publicRoutes(env, 'awards.results')).managed === true);
+await call(owner, '/api/bot/routes', { rules: [] });
+
+// ----- Test button + web method + routeOr -----
+const rt0 = posts.length, dm0 = dmPosts.length;
+const tChan = await call(owner, '/api/bot/routes/test', { rule: { action: 'event.created', group: 'everyone', method: 'everyone', channel: '70002' } });
+t('route test: a channel/@everyone rule is previewed in the owner’s DMs only, pings off, nothing posted', tChan.s === 200 && posts.length === rt0 && dmPosts.length === dm0 + 1
+  && dmPosts.at(-1).allowed_mentions.parse.length === 0 && /TEST/.test(JSON.stringify(dmPosts.at(-1))));
+const tWeb = await call(owner, '/api/bot/routes/test', { rule: { action: 'awards.results', group: 'everyone', method: 'web' } });
+t('route test: web → the owner’s bell, no Discord message, nobody else', tWeb.s === 200 && dmPosts.length === dm0 + 1
+  && (await call(owner, '/api/notify')).d.items.some((n) => /\[Test\] Weekly awards/.test(n.title)) && !(await call(member, '/api/notify')).d.items.some((n) => /\[Test\]/.test(n.title)));
+const tDm = await call(owner, '/api/bot/routes/test', { rule: { action: 'hotw.winner', group: 'managers', method: 'dm' } });
+t('route test: dm → the owner’s bell + Discord DM even if muted', tDm.s === 200 && dmPosts.length === dm0 + 2 && posts.length === rt0);
+t('route test: owner only, bad rules refused', (await call(mgr, '/api/bot/routes/test', { rule: { action: 'hotw.winner', group: 'everyone', method: 'web' } })).s === 403
+  && (await call(owner, '/api/bot/routes/test', { rule: { action: 'nope', group: 'everyone', method: 'web' } })).s === 400
+  && (await call(owner, '/api/bot/routes/test', { rule: { action: 'results.posted', group: 'everyone', method: 'dm' } })).s === 400);
+const { routeOr } = await import('../bot/routing.js');
+let legacyRan = 0;
+const viaLegacy = await routeOr(env, 'live.club', { build: () => ({ components: [] }), channel: '70001' }, async () => { legacyRan++; return { ok: true, id: 'old' }; });
+t('routeOr: no rules → the old behaviour runs', legacyRan === 1 && viaLegacy.id === 'old');
+await call(owner, '/api/bot/routes', { rules: [{ action: 'live.club', group: 'everyone', method: 'channel', channel: '70008' }] });
+const b6 = posts.length;
+const viaRule = await routeOr(env, 'live.club', { build: (o) => ({ components: [], allowed_mentions: { parse: [] } }), channel: '70001' }, async () => { legacyRan++; return { ok: true }; });
+t('routeOr: rules decide, the old channel is not used', legacyRan === 1 && viaRule.ok && posts.length === b6 + 1 && posts.at(-1).channel === '70008');
+await call(owner, '/api/bot/routes', { rules: [{ action: 'live.club', group: 'everyone', method: 'channel', on: false }] });
+const viaOff = await routeOr(env, 'live.club', { build: () => ({ components: [] }), channel: '70001' }, async () => { legacyRan++; return { ok: true }; });
+t('routeOr: every rule off = silenced, nothing posted', viaOff.silenced === true && legacyRan === 1 && posts.length === b6 + 1);
+t('routing: live, feed, welcome/leave actions know their feature', ['live.club', 'live.member', 'live.stream', 'creator.video', 'feed.newpost', 'member.welcome', 'member.leave'].every((k) => (rtmod.ACTIONS[k] ?? {}).feature));
 await call(owner, '/api/bot/routes', { rules: [] });
 
 done();

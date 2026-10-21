@@ -70,7 +70,7 @@ async function giveBadge(env, me, body, log) {
   await run(env, 'INSERT INTO badges (to_id, from_id, from_name, from_avatar, kind, text, at) VALUES (?, ?, ?, ?, ?, ?, ?)', to, me.u, me.n, me.a ?? null, kind, text, Date.now());
   const label = text ?? BADGE[kind].name;
   await log(env, me, 'badge', `${label} → ${target.name}`);
-  await safely(notify(env, [to], { type: 'badge', icon: BADGE[kind].icon, title: `${me.n} gave you a badge: ${label}`, link: `member.html?u=${to}` }));
+  await safely(notify(env, [to], { nkey: 'badge.given', type: 'badge', icon: BADGE[kind].icon, title: `${me.n} gave you a badge: ${label}`, link: `member.html?u=${to}` }));
   return json(await badgesOf(env, to, me));
 }
 
@@ -268,7 +268,7 @@ export async function syncAchievements(env, loadSite) {
   for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
   for (const [uid, ids] of news) {
     const a = ACH[ids[0]];
-    await safely(notify(env, [uid], { type: 'badge', icon: a.icon, title: ids.length > 1 ? `${ids.length} achievements unlocked – ${a.name} and more` : `Achievement unlocked: ${a.name}`, body: ids.length > 1 ? null : a.desc, link: 'members.html#stats' }));
+    await safely(notify(env, [uid], { nkey: 'badge.achievement', type: 'badge', icon: a.icon, title: ids.length > 1 ? `${ids.length} achievements unlocked – ${a.name} and more` : `Achievement unlocked: ${a.name}`, body: ids.length > 1 ? null : a.desc, link: 'members.html#stats' }));
   }
   return { facts, have };
 }
@@ -360,7 +360,7 @@ async function medalsAdmin(p, method, body, me, env, loadSite, log) {
     if (!u) return fail('Member not found', 404);
     if (op === 'award') {
       const r = await run(env, 'INSERT OR IGNORE INTO achievements (user_id, id, at, seen) VALUES (?, ?, ?, 0)', to, id, Date.now());
-      if (r.meta?.changes) await safely(notify(env, [to], { type: 'badge', icon: a.icon, title: `Medal awarded: ${a.name}`, body: a.desc || null, link: 'members.html#stats' }));
+      if (r.meta?.changes) await safely(notify(env, [to], { nkey: 'badge.medal', type: 'badge', icon: a.icon, title: `Medal awarded: ${a.name}`, body: a.desc || null, link: 'members.html#stats' }));
     } else await run(env, 'DELETE FROM achievements WHERE user_id = ? AND id = ?', to, id);
     await log(env, me, op === 'award' ? 'medal-award' : 'medal-revoke', `${a.name} · ${u.name}`);
     return view();

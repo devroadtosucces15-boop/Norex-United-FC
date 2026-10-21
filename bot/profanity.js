@@ -75,12 +75,12 @@ async function strike(env, uid, keyword, ref) {
   if (!u) return;
   if (u.profanity_strikes === MUTE_AT) {
     await env.DB.prepare('UPDATE users SET muted_until = ? WHERE id = ?').bind(Date.now() + MUTE_HOURS * 3600e3, uid).run();
-    await safely(notify(env, [uid], { type: 'moderation', icon: '🔇', title: 'Auto-muted: repeated flagged messages', body: `AutoMod caught ${u.profanity_strikes} messages from you – muted ${MUTE_HOURS}h.`, link: 'members.html#me' }));
+    await safely(notify(env, [uid], { nkey: 'moderation.automute', type: 'moderation', icon: '🔇', title: 'Auto-muted: repeated flagged messages', body: `AutoMod caught ${u.profanity_strikes} messages from you – muted ${MUTE_HOURS}h.`, link: 'members.html#me' }));
   } else if (u.profanity_strikes === WARN_AT) {
     let warnings; try { warnings = JSON.parse(u.warnings || '[]'); } catch { warnings = []; }
     warnings.push({ at: Date.now(), by: 'AutoMod', reason: `${WARN_AT} flagged messages (auto)` });
     await env.DB.prepare('UPDATE users SET warnings = ? WHERE id = ?').bind(JSON.stringify(warnings), uid).run();
-    await safely(notify(env, [uid], { type: 'moderation', icon: '⚠️', title: 'Auto-warning: repeated flagged messages', body: `AutoMod caught ${WARN_AT} messages from you – please keep it clean.`, link: 'members.html#me' }));
+    await safely(notify(env, [uid], { nkey: 'moderation.autowarn', type: 'moderation', icon: '⚠️', title: 'Auto-warning: repeated flagged messages', body: `AutoMod caught ${WARN_AT} messages from you – please keep it clean.`, link: 'members.html#me' }));
   }
 }
 

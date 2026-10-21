@@ -98,7 +98,7 @@ export async function applyRoute(request, env, me, loadSite, log) {
   if (await openDupe(env, t.ea)) return fail('We already have an open application for this EA ID. A manager will be in touch on Discord.', 409);
   await insertTrial(env, t, 'form', 'applied', null, ip);
   await log(env, { u: null, n: t.ea, a: null }, 'trial-apply', `${t.positions.join('/')} · ${t.platform}`);
-  await safely(notifyManagers(env, { icon: '👑', title: `New trial application: ${t.ea} (${t.positions.join('/')} · ${t.platform})`, body: t.discord ? `Discord: ${t.discord}` : null, link: 'members.html#manager' }));
+  await safely(notifyManagers(env, { nkey: 'trial.new', icon: '👑', title: `New trial application: ${t.ea} (${t.positions.join('/')} · ${t.platform})`, body: t.discord ? `Discord: ${t.discord}` : null, link: 'members.html#manager' }));
   return json({ ok: true });
 }
 
@@ -111,8 +111,8 @@ export async function notifyStage(env, r, status, me) {
   const title = `Trial update: ${r.ea_id} ${word}`;
   const player = r.player ? await one(env, "SELECT user_id FROM claims WHERE player = ? AND status = 'approved'", r.player) : null;
   return Promise.all([
-    player ? safely(notify(env, [player.user_id], { type: 'trialstage', title, body: `Updated by ${me.n}.`, link: 'members.html#alerts' })) : null,
-    safely(notifyManagers(env, { type: 'trialstage', icon: '🏟️', title: `Dugout: ${title}`, body: `Updated by ${me.n}.`, link: 'members.html#manager' }, me.u)),
+    player ? safely(notify(env, [player.user_id], { nkey: 'trial.stage.player', type: 'trialstage', title, body: `Updated by ${me.n}.`, link: 'members.html#alerts' })) : null,
+    safely(notifyManagers(env, { nkey: 'trial.stage.staff', type: 'trialstage', icon: '🏟️', title: `Dugout: ${title}`, body: `Updated by ${me.n}.`, link: 'members.html#manager' }, me.u)),
   ]);
 }
 
@@ -171,7 +171,7 @@ async function trialsRoute(p, method, body, me, env, loadSite, log) {
       const scoutWord = { applied: 'is on the trial list', trialling: 'is now on trial ⚽', signed: 'signed for NOREX ✍️', released: 'was released after the trial', declined: 'was declined' }[body.status];
       tell = () => Promise.all([
         r.source === 'scout' && r.by_id && r.by_id !== me.u && scoutWord
-          ? safely(notify(env, [r.by_id], { type: 'trial', title: `Your tip ${r.ea_id} ${scoutWord}`, body: `Thanks for scouting! Updated by ${me.n}.`, link: 'members.html#scout' }))
+          ? safely(notify(env, [r.by_id], { nkey: 'trial.tip.status', type: 'trial', title: `Your tip ${r.ea_id} ${scoutWord}`, body: `Thanks for scouting! Updated by ${me.n}.`, link: 'members.html#scout' }))
           : null,
         notifyStage(env, r, body.status, me), // BE4 – opt-in DMs (trialstage)
       ]);
@@ -227,7 +227,7 @@ async function scoutRoute(p, method, body, me, env, loadSite, log) {
   if (dupe) return fail(`${t.ea} is already on the managers' list (${dupe.status}).`, 409);
   await insertTrial(env, t, 'scout', 'recommended', me);
   await log(env, me, 'scout', `${t.ea} · ${t.positions.join('/')}`);
-  await safely(notifyManagers(env, { icon: '🔭', title: `New scouting tip: ${t.ea} (${t.positions.join('/')})`, body: `Recommended by ${me.n}: “${t.note}”`, link: 'members.html#manager' }, me.u));
+  await safely(notifyManagers(env, { nkey: 'trial.tip.new', icon: '🔭', title: `New scouting tip: ${t.ea} (${t.positions.join('/')})`, body: `Recommended by ${me.n}: “${t.note}”`, link: 'members.html#manager' }, me.u));
   return json(await mine());
 }
 

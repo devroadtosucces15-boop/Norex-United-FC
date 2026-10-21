@@ -144,7 +144,7 @@ export async function cardRequestUpload(request, me, env, url, log, loadSite) {
   }
   if (existing) await Promise.all([dropPhoto(env, existing.photo_key), dropPhoto(env, existing.result_key), dropPhoto(env, existing.portrait_key)]);
   await log(env, me, 'card-request', avatarEnabled ? `${bg.name} + ${pose.name}` : 'Standardized portrait');
-  await safely(notifyManagers(env, { icon: '🪪', title: 'New card request', body: avatarEnabled ? `${me.n || 'A member'} asked for a ${bg.name} / ${pose.name} card.` : `${me.n || 'A member'} asked for a standardized website portrait.`, link: 'members.html#cards', ref: `card:${me.u}:${month}` }, me.u));
+  await safely(notifyManagers(env, { nkey: 'card.request.new', icon: '🪪', title: 'New card request', body: avatarEnabled ? `${me.n || 'A member'} asked for a ${bg.name} / ${pose.name} card.` : `${me.n || 'A member'} asked for a standardized website portrait.`, link: 'members.html#cards', ref: `card:${me.u}:${month}` }, me.u));
   return json(await mine(env, me));
 }
 
@@ -285,8 +285,8 @@ export async function cardsRoute(p, method, body, me, env, log) {
     const who = await one(env, 'SELECT name FROM users WHERE id = ?', r.user_id);
     await log(env, me, `card-request-${status}`, `${who?.name ?? r.user_id} ${r.month}`);
     await safely(notify(env, [r.user_id], status === 'approved'
-      ? { type: 'card', icon: '✅', title: 'Your card request was approved', body: 'A manager approved your photo. Your card is next in line.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }
-      : { type: 'card', icon: '❌', title: 'Your card request was not approved', body: `${note} You can send a new photo – it does not use up your month.`, link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
+      ? { nkey: 'card.approved', type: 'card', icon: '✅', title: 'Your card request was approved', body: 'A manager approved your photo. Your card is next in line.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }
+      : { nkey: 'card.approved', type: 'card', icon: '❌', title: 'Your card request was not approved', body: `${note} You can send a new photo – it does not use up your month.`, link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
     return json({ ok: true, status });
   }
 
@@ -331,7 +331,7 @@ export async function cardsRoute(p, method, body, me, env, log) {
       const updated = await run(env, "UPDATE card_requests SET published = 1 WHERE id = ? AND status = 'done' AND published = 0", r.id);
       if (!updated.meta?.changes) return fail('Already reviewed.', 409);
       // Retain uploaded photos privately for owner inspection and download.
-      if (!r.user_id.startsWith('player:')) await safely(notify(env, [r.user_id], { type: 'card', icon: '🏁', title: 'Your NOREX artwork is ready', body: 'Manager-approved artwork is ready to download.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
+      if (!r.user_id.startsWith('player:')) await safely(notify(env, [r.user_id], { nkey: 'card.ready', type: 'card', icon: '🏁', title: 'Your NOREX artwork is ready', body: 'Manager-approved artwork is ready to download.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
     } else {
       if (typeof body.notes === 'string') { const notes = clean(body.notes, NOTES_MAX); await run(env, 'UPDATE card_requests SET ai_notes = ?, ai_notes_manual = ? WHERE id = ?', notes, notes ? 1 : 0, r.id); }
       const updated = await run(env, "UPDATE card_requests SET status = 'approved', published = 0, attempts = 0, started_at = NULL, result_key = NULL, portrait_key = NULL WHERE id = ? AND status = 'done' AND published = 0", r.id);
@@ -482,7 +482,7 @@ async function generateOne(env, r, now) {
     }
     const res = await run(env, "UPDATE card_requests SET status = 'done', published = 0, result_key = ?, portrait_key = ?, started_at = NULL WHERE id = ? AND status = 'generating'", resultKey, portraitKey, r.id);
     if (!res.meta?.changes) { await dropPhoto(env, resultKey); await dropPhoto(env, portraitKey); return 'skipped'; }
-    await safely(notifyManagers(env, { icon: '🎨', title: 'Card artwork awaiting review', body: `Request #${r.id} is ready for final approval.`, link: 'members.html#cards', ref: `cardreview:${r.id}` }));
+    await safely(notifyManagers(env, { nkey: 'card.review', icon: '🎨', title: 'Card artwork awaiting review', body: `Request #${r.id} is ready for final approval.`, link: 'members.html#cards', ref: `cardreview:${r.id}` }));
     return 'done';
   } catch (e) {
     console.log('card generation failed', r.id, attempt, e.message);
@@ -491,14 +491,14 @@ async function generateOne(env, r, now) {
     if (quotaHit(e)) { // not the card's fault: park it (attempt refunded) until the daily allowance resets, then retry on its own
       const resume = (Math.floor(now / DAY) + 1) * DAY - RETRY_AFTER + 60e3;
       await run(env, "UPDATE card_requests SET status = 'approved', attempts = MAX(attempts - 1, 0), started_at = ? WHERE id = ? AND status = 'generating'", resume, r.id);
-      await safely(notifyManagers(env, { icon: '⏳', title: 'Card artwork is waiting for the AI allowance', body: `Request #${r.id} will be made automatically after the daily free AI limit resets (00:00 UTC).`, link: 'members.html#cards', ref: `cardquota:${new Date(now).toISOString().slice(0, 10)}` }));
+      await safely(notifyManagers(env, { nkey: 'card.allowance', icon: '⏳', title: 'Card artwork is waiting for the AI allowance', body: `Request #${r.id} will be made automatically after the daily free AI limit resets (00:00 UTC).`, link: 'members.html#cards', ref: `cardquota:${new Date(now).toISOString().slice(0, 10)}` }));
       return 'waiting';
     }
     const final = attempt >= MAX_ATTEMPTS;
     await run(env, "UPDATE card_requests SET status = ?, started_at = ? WHERE id = ? AND status = 'generating'", final ? 'failed' : 'approved', now, r.id);
     if (final) {
-      await safely(notify(env, [r.user_id], { type: 'card', icon: '⚠️', title: 'Your card could not be made', body: 'It did not work after 3 tries. A manager has been told and will retry.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
-      await safely(notifyManagers(env, { icon: '⚠️', title: 'A card failed to generate', body: `Card request #${r.id} (${r.month}) failed 3 times: ${clean(e.message, 120)}`, link: 'members.html#cards', ref: `cardfail:${r.id}` }));
+      await safely(notify(env, [r.user_id], { nkey: 'card.failed.member', type: 'card', icon: '⚠️', title: 'Your card could not be made', body: 'It did not work after 3 tries. A manager has been told and will retry.', link: 'members.html#cards', ref: `card:${r.user_id}:${r.month}` }));
+      await safely(notifyManagers(env, { nkey: 'card.failed.staff', icon: '⚠️', title: 'A card failed to generate', body: `Card request #${r.id} (${r.month}) failed 3 times: ${clean(e.message, 120)}`, link: 'members.html#cards', ref: `cardfail:${r.id}` }));
     }
     return final ? 'failed' : 'retry';
   }

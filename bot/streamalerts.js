@@ -11,6 +11,7 @@ import { limits } from './limits.js';
 import { message, notice, reply, header, text, sep, facts, footer, buttons, cards, bannerUrl } from './ui.js';
 import { it } from './icons.js';
 import { postEmbed } from './docs.js';
+import { routeOr, pinged } from './routing.js';
 import { getBotSettings } from './settings.js';
 import { liveOf } from './memberlive.js';
 import { parseFeed } from './watchlist.js';
@@ -87,7 +88,8 @@ async function checkLive(env, src, now, fetcher, out) {
   const recent = src.live_announced_at && now - src.live_announced_at < BLIP_GAP; // a stream that blips off and on is not a new one
   const claim = await run(env, `UPDATE stream_sources SET live = 1${recent ? '' : ', live_announced_at = ?'} WHERE id = ? AND live = 0`, ...(recent ? [] : [now]), src.id);
   if (!claim.meta?.changes || recent) return;
-  const r = await postEmbed(env, src.channel_id, '', livePanel(src, found, siteOf(env), false, env, now), { remember: false });
+  const panel = livePanel(src, found, siteOf(env), false, env, now);
+  const r = await routeOr(env, 'live.stream', { build: (o) => pinged(panel, o), channel: src.channel_id }, () => postEmbed(env, src.channel_id, '', panel, { remember: false }));
   if (r?.ok) out.live++;
   else await run(env, 'UPDATE stream_sources SET live = 0, live_announced_at = ? WHERE id = ?', src.live_announced_at ?? null, src.id); // retry next run
 }
@@ -105,7 +107,8 @@ async function checkPosts(env, src, now, fetcher, out) {
     if (!seeding && (!fresh || posted >= POST_CAP)) { if (!fresh) await run(env, 'INSERT OR IGNORE INTO stream_seen (source_id, item_id, at) VALUES (?, ?, ?)', src.id, v.id, now); continue; }
     const claim = await run(env, 'INSERT OR IGNORE INTO stream_seen (source_id, item_id, at) VALUES (?, ?, ?)', src.id, v.id, now);
     if (!claim.meta?.changes || seeding) continue; // already announced (or just remembered on the first read)
-    const r = await postEmbed(env, src.channel_id, '', videoPanel(src, { ...v, short: await isShort(v.id, fetcher) }), { remember: false });
+    const panel = videoPanel(src, { ...v, short: await isShort(v.id, fetcher) });
+    const r = await routeOr(env, 'live.stream', { build: (o) => pinged(panel, o), channel: src.channel_id }, () => postEmbed(env, src.channel_id, '', panel, { remember: false }));
     if (r?.ok) { posted++; out.posts++; } else await run(env, 'DELETE FROM stream_seen WHERE source_id = ? AND item_id = ?', src.id, v.id); // retry next run
   }
   if (seeding) await run(env, 'UPDATE stream_sources SET seeded_at = ? WHERE id = ?', now, src.id);
@@ -131,7 +134,8 @@ export async function streamAlertsCron(env, now = Date.now(), fetcher = fetch) {
 export async function streamPush(env, src, now = Date.now(), fetcher = fetch) {
   const found = await liveOf({ [src.platform]: src.handle }, fetcher).catch(() => null);
   if (found) await run(env, 'UPDATE stream_sources SET live = 1, live_announced_at = ? WHERE id = ?', now, src.id);
-  const r = await postEmbed(env, src.channel_id, '', livePanel(src, found ?? { live: false, url: src.url }, siteOf(env), false, env, now), { remember: false });
+  const panel = livePanel(src, found ?? { live: false, url: src.url }, siteOf(env), false, env, now); // a manual push: always goes to the source's own channel
+  const r = await postEmbed(env, src.channel_id, '', panel, { remember: false });
   return { live: !!found, ok: !!r?.ok, error: r?.error };
 }
 

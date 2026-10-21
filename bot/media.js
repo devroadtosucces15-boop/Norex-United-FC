@@ -271,7 +271,7 @@ export async function mediaCron(env, now = Date.now()) {
   await setMeta(env, 'media_guard', guard);
   if (dropped.length) {
     const owners = await all(env, "SELECT id FROM users WHERE role = 'owner'");
-    await safely(notify(env, owners.map((o) => o.id), {
+    await safely(notify(env, owners.map((o) => o.id), { nkey: 'storage.cleared',
       type: 'storage', icon: '💾', title: `Storage guard cleared ${dropped.length} old feed file${dropped.length === 1 ? '' : 's'}`,
       body: `Media storage hit ${mb(before)} (limit ${mb(GUARD_HIGH)}), so the oldest photos and clips were deleted – ${mb(before - bytes)} freed, now ${mb(bytes)} of the free ${mb(FREE)}. Their posts show “clip expired”.`,
       link: 'feed.html#storage',

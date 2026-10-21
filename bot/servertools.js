@@ -11,6 +11,7 @@
 import { can, flagOn } from './roles.js';
 import { message, notice, reply, header, text, facts, footer, side, button, buttons, IS_V2 } from './ui.js';
 import { facesOf } from './faces.js';
+import { routeOr, pinged, publicRoutes } from './routing.js';
 
 const API = 'https://discord.com/api/v10';
 const MIN = 60e3, HOUR = 36e5, DAY = 864e5;
@@ -118,7 +119,8 @@ const upsert = (env, r) => env.DB.prepare('INSERT INTO guild_members (user_id, n
 export async function memberWatch(env, now = Date.now()) {
   if (!env.DB || !env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) return null;
   const st = await getToolSettings(env);
-  if (!st.leaveChannel && !st.welcomeChannel) return null;
+  const ruled = { leave: (await publicRoutes(env, 'member.leave')).managed, welcome: (await publicRoutes(env, 'member.welcome')).managed }; // rules in the Control Center replace the two channel boxes
+  if (!st.leaveChannel && !st.welcomeChannel && !ruled.leave && !ruled.welcome) return null;
   const list = (await listMembers(env)).filter((m) => m.user && !m.user.bot).map(row);
   const { results: known } = await env.DB.prepare('SELECT * FROM guild_members').all();
   if (!known.length) {
@@ -132,11 +134,11 @@ export async function memberWatch(env, now = Date.now()) {
   const left = known.filter((k) => !cur.has(k.user_id));
   const changed = list.filter((r) => { const k = old.get(r.user_id); return !k || k.name !== r.name || k.avatar !== r.avatar || k.roles !== r.roles || k.joined_at !== r.joined_at; });
   await batch(env, [...changed.map((r) => upsert(env, r)), ...left.map((k) => env.DB.prepare('DELETE FROM guild_members WHERE user_id = ?').bind(k.user_id))]);
-  if (joined.length || left.length) await postMemberChanges(env, st, joined, left, now);
+  if (joined.length || left.length) await postMemberChanges(env, st, joined, left, now, ruled);
   return { joined, left };
 }
 
-async function postMemberChanges(env, st, joined, left, now) {
+async function postMemberChanges(env, st, joined, left, now, ruled = {}) {
   const roles = await discord(env, 'GET', `/guilds/${env.DISCORD_GUILD_ID}/roles`).catch(() => []);
   const roleName = new Map(roles.map((r) => [r.id, r.name]));
   const gamertag = (uid) => env.DB.prepare("SELECT player_name FROM claims WHERE user_id = ? AND status = 'approved'").bind(uid).first('player_name');
@@ -169,8 +171,8 @@ async function postMemberChanges(env, st, joined, left, now) {
       ] }));
     }
   }
-  if (st.leaveChannel) for (const m of posts) await post(env, st.leaveChannel, m).catch((e) => console.log('leave log post failed', e.message));
-  if (st.welcomeChannel) for (const r of joined.slice(0, POST_CAP)) await post(env, st.welcomeChannel, welcomeMessage(env, st, r)).catch((e) => console.log('welcome post failed', e.message));
+  if (st.leaveChannel || ruled.leave) for (const m of posts) await routeOr(env, 'member.leave', { build: (o) => pinged(m, o), channel: st.leaveChannel }, () => post(env, st.leaveChannel, m)).catch((e) => console.log('leave log post failed', e.message));
+  if (st.welcomeChannel || ruled.welcome) for (const r of joined.slice(0, POST_CAP)) { const w = welcomeMessage(env, st, r); await routeOr(env, 'member.welcome', { build: (o) => pinged(w, o), channel: st.welcomeChannel }, () => post(env, st.welcomeChannel, w)).catch((e) => console.log('welcome post failed', e.message)); }
 }
 
 export function welcomeMessage(env, st, r) {

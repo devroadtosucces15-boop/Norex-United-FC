@@ -18,7 +18,7 @@ const save = (b) => call(owner, '/api/admin/notif', b);
 t('managers and members are refused', (await call(mgr, '/api/admin/notif')).s === 403 && (await call(mem, '/api/admin/notif')).s === 403 && (await call(mem, '/api/admin/notif', { key: 'award.won', enabled: false })).s === 403);
 t('manager cannot test-send either', (await call(mgr, '/api/admin/notif/test', { key: 'award.won' })).s === 403);
 const list = (await call(owner, '/api/admin/notif')).d;
-t('owner sees the registry with defaults', list.items.length >= 8 && list.items.every((i) => i.title && i.group));
+t('owner sees the registry with defaults', list.items.length >= 8 && list.items.every((i) => (i.title || i.wording === false) && i.group));
 
 const send = (ids, extra = {}) => notify(env, ids, { type: 'award', nkey: 'award.won', vars: { awards: '⭐ MOTM', week: '42' }, title: 'You won ⭐ MOTM – week 42', ...extra });
 await send(['500']);
@@ -77,4 +77,26 @@ const k = rows('502').length;
 sqlite.prepare("UPDATE notify_prefs SET prefs = ? WHERE user_id = '502'").run(JSON.stringify({ award: 'off' }));
 await send(['502'], { title: 'q' });
 t('a route does not override a member mute unless locked', rows('502').length === k);
+// ----- coverage: every notification the code builds has a key, so the Control Center can switch it, route it and test it -----
+{
+  const fs = await import('node:fs');
+  const dir = new URL('../bot/', import.meta.url);
+  const bare = [];
+  for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.js') && !['notify.js', 'routing.js'].includes(n))) {
+    fs.readFileSync(new URL(f, dir), 'utf8').split('\n').forEach((line, i) => {
+      if (/\{ type: '[a-z]+'/.test(line) && /title:/.test(line) && /icon:|link:/.test(line) && !/nkey/.test(line) && !/type: 'test'/.test(line)) bare.push(`${f}:${i + 1}`);
+    });
+  }
+  t('every notification the bot builds carries an nkey' + (bare.length ? ` (missing: ${bare.join(', ')})` : ''), bare.length === 0);
+  const { ALERTS } = await import('../bot/notifcenter.js');
+  const keys = new Set(ALERTS.map((a) => a.key));
+  const used = new Set();
+  for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.js'))) for (const m of fs.readFileSync(new URL(f, dir), 'utf8').matchAll(/nkey: '([\w.]+)'/g)) used.add(m[1]);
+  const { REGISTRY } = await import('../bot/notifcenter.js');
+  const known = new Set(REGISTRY.map((r) => r.key));
+  const unknown = [...used].filter((k) => !known.has(k));
+  t('every nkey used in the code is in the registry' + (unknown.length ? ` (unknown: ${unknown.join(', ')})` : ''), unknown.length === 0);
+  t('every registry alert belongs to a feature', REGISTRY.every((r) => r.feature));
+}
+
 done();

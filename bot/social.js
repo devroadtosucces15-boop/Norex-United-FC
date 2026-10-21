@@ -68,7 +68,7 @@ export async function notifyMentions(env, me, { text, before = '', flag, where, 
   if (!tags.length) return [];
   const rows = await all(env, `SELECT id, role FROM users WHERE lower(tag) IN (${marks(tags.length)})`, ...tags);
   const ids = rows.filter((r) => r.id !== me.u && !skip.includes(r.id) && (!flag || flagOn(env, { role: r.role }, flag))).map((r) => r.id);
-  if (ids.length) await safely(notify(env, ids, { type: 'mention', icon: '📣', title: `${me.n} mentioned you ${where}`, body: excerpt(text, 160), link, ref }));
+  if (ids.length) await safely(notify(env, ids, { nkey: 'mention.received', type: 'mention', icon: '📣', title: `${me.n} mentioned you ${where}`, body: excerpt(text, 160), link, ref }));
   return ids;
 }
 
@@ -128,7 +128,7 @@ export async function socialRoute(p, method, body, me, env, log, url) {
     if (!add.meta?.changes) await run(env, 'DELETE FROM reactions WHERE kind = ? AND ref = ? AND user_id = ? AND emoji = ?', body.kind, id, me.u, body.emoji);
     // One unread bell note per thing at a time, like feed posts.
     else if (t.user_id !== me.u && !(await one(env, 'SELECT 1 FROM notifications WHERE user_id = ? AND ref = ? AND read_at IS NULL', t.user_id, `${body.kind}-react:${id}`))) {
-      await safely(notify(env, [t.user_id], { type: 'feed', icon: body.emoji, title: `${me.n} reacted ${body.emoji} to your ${k.what}`, link: k.link(t), ref: `${body.kind}-react:${id}` }));
+      await safely(notify(env, [t.user_id], { nkey: 'feed.reaction', type: 'feed', icon: body.emoji, title: `${me.n} reacted ${body.emoji} to your ${k.what}`, link: k.link(t), ref: `${body.kind}-react:${id}` }));
     }
     const r = (await reactionsFor(env, body.kind, [id], me))[id] ?? { reacts: {}, who: {}, mine: [] };
     return json({ kind: body.kind, id, ...r });

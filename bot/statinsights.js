@@ -420,7 +420,7 @@ export async function statInsightWeekly(env, postEmbed, now = Date.now()) {
   if (row) {
     // the owner's routing rules (Control Center) first; with none, the shared announce channel as before
     const routed = await routeNotification(env, 'insights.weekly', {
-      notify: { type: 'club', icon: '📈', title: `📈 Insight of the week: ${row.headline}`, body: row.body ? String(row.body).slice(0, 200) : null, link: 'stats.html' },
+      notify: { nkey: 'insights.weekly', type: 'club', icon: '📈', title: `📈 Insight of the week: ${row.headline}`, body: row.body ? String(row.body).slice(0, 200) : null, link: 'stats.html' },
       build: (o) => pinged(insightPanel(row, 'Insight of the week'), o),
     }).catch((e) => { console.log('insight routing failed', e.message); return null; });
     if (!routed && channel) await postEmbed(env, channel, '', insightPanel(row, 'Insight of the week'));

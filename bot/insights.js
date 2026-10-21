@@ -452,7 +452,7 @@ export async function intelRoute(p, method, body, me, env, loadSite, log) {
     const report = await getMeta(env, 'insights');
     const r = report?.recs.find((x) => x.id === String(body.id ?? ''));
     if (!r) return fail('That recommendation is no longer current – refresh the report.', 404);
-    const notified = await safely(notifyManagers(env, { icon: '🧠', title: 'Club Intelligence reminder', body: r.text, link: 'members.html#manager' }, me.u)) ?? 0;
+    const notified = await safely(notifyManagers(env, { nkey: 'insights.reminder', icon: '🧠', title: 'Club Intelligence reminder', body: r.text, link: 'members.html#manager' }, me.u)) ?? 0;
     await log(env, me, 'intel-remind', r.text.replace(/\*\*/g, '').slice(0, 140));
     return json({ notified });
   }

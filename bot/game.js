@@ -148,11 +148,11 @@ async function tellMembers(env, loadSite, prev, next) {
     const upgrade = breaking
       ? `⚠️ ${breaking} of your builds ${breaking === 1 ? 'needs' : 'need'} attention (archetype or points changed)${breaking < n ? ` · ${n} total on an older version` : ''} – upgrade to the new MAX in one click.`
       : `⬆ ${n} of your builds ${n === 1 ? 'is' : 'are'} on an older version – upgrade to the new MAX in one click.`;
-    sent += await notify(env, [uid], { type: 'game', icon: '🎮', title, body: `${lines}${lines ? '\n' : ''}${per}\n${upgrade}`, link: 'builder.html?upgrade=1' });
+    sent += await notify(env, [uid], { nkey: 'game.update', type: 'game', icon: '🎮', title, body: `${lines}${lines ? '\n' : ''}${per}\n${upgrade}`, link: 'builder.html?upgrade=1' });
   }
   const builders = new Set(rows.map((r) => r.user_id));
   const users = (await env.DB.prepare('SELECT id FROM users WHERE last_at > ?').bind(Date.now() - 180 * 86400e3).all()).results.map((u) => u.id).filter((id) => !builders.has(id));
-  sent += await notify(env, users, { type: 'game', icon: '🎮', title, body: lines || null, link: 'builder.html' });
+  sent += await notify(env, users, { nkey: 'game.update', type: 'game', icon: '🎮', title, body: lines || null, link: 'builder.html' });
   return sent;
 }
 

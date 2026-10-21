@@ -154,7 +154,7 @@ async function announce(env, loadSite) {
       const mine = winners.filter((w) => w.k === c.player).map((w) => `${w.icon} ${w.name}`);
       await safely(notify(env, [c.user_id], { type: 'award', nkey: 'award.won', vars: { awards: mine.join(', '), week: wk.week.split('-W')[1] }, icon: '🏆', title: `You won ${mine.join(', ')} – week ${wk.week.split('-W')[1]}`, link: 'members.html#awards' }));
     }
-    const announce = { type: 'award', title: `🏆 The week ${wk.week.split('-W')[1]} awards are in – watch the reveal`, link: 'members.html#awards' };
+    const announce = { type: 'award', nkey: 'awards.reveal', title: `🏆 The week ${wk.week.split('-W')[1]} awards are in – watch the reveal`, link: 'members.html#awards' };
     const legacyChannel = (await one(env, "SELECT value FROM meta WHERE key = 'awards_channel'"))?.value;
     const settings = await getBotSettings(env); // P7.5 – "which auto-posts are on" + embed colour
     const winnersPost = async (o) => {
