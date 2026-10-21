@@ -18,17 +18,17 @@
 | [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | DeepSeek Harness: Everything is a Plugin. | TypeScript | 2026-10-17 |
 | [devroadtosucces15-boop/Copyweb](https://github.com/devroadtosucces15-boop/Copyweb) | – | TypeScript | 2026-09-28 |
 | [DigitalPlatDev/FreeDomain](https://github.com/DigitalPlatDev/FreeDomain) | Free domain registration and practical DNS learning resources for everyone. | Markdown | 2026-08-12 |
-| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-20 |
+| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-21 |
 | [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | Learn how to design large-scale systems. Prep for the system design interview. Includes Anki flashcards. | Python | 2026-09-15 |
 | [DopplerHQ/awesome-interview-questions](https://github.com/DopplerHQ/awesome-interview-questions) | :octocat: A curated awesome list of lists of interview questions. Feel free to contribute! :mortar_board: | – | 2024-07-29 |
 | [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Give your agent CAD superpowers. | Python | 2026-10-20 |
 | [freeCodeCamp/freeCodeCamp](https://github.com/freeCodeCamp/freeCodeCamp) | freeCodeCamp.org's open-source codebase and curriculum. Learn math, programming, and computer science for free. | TypeScript | 2026-10-21 |
 | [FunkeyFlo/ps5-mqtt](https://github.com/FunkeyFlo/ps5-mqtt) | Integrate your PlayStation 5 with Home Assistant | TypeScript | 2026-10-16 |
 | [itsPLK/ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader) | An automated payload loader for exploited PS5 consoles | JavaScript | 2026-10-08 |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | Skills for Real Engineers. Straight from my .agents directory. | Shell | 2026-10-19 |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | Skills for Real Engineers. Straight from my .agents directory. | Shell | 2026-10-21 |
 | [morluto/rea](https://github.com/morluto/rea) | Reverse engineer anything with agents, from app behavior down to native binaries. | TypeScript | 2026-10-21 |
 | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | A single CLAUDE.md file to improve Claude Code behavior, derived from Andrej Karpathy's observations on LLM coding pitfalls. | – | 2026-04-20 |
-| [NandhaKishorM/laya](https://github.com/NandhaKishorM/laya) | Non-autoregressive System 1 decision engine. Typed choice, score and yes/no decisions over any text in a single forward pass, in 100+ languages, with a router that picks the right checkpoint per request. | Python | 2026-10-19 |
+| [NandhaKishorM/laya](https://github.com/NandhaKishorM/laya) | Non-autoregressive System 1 decision engine. Typed choice, score and yes/no decisions over any text in a single forward pass, in 100+ languages, with a router that picks the right checkpoint per request. | Python | 2026-10-21 |
 | [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) | The agent that grows with you | Python | 2026-10-21 |
 | [obra/superpowers](https://github.com/obra/superpowers) | An agentic skills framework & software development methodology that works. | Shell | 2026-10-21 |
 | [Ohjurot/DualSense-Windows](https://github.com/Ohjurot/DualSense-Windows) | Windows API for the PS5 DualSense controller | C++ | 2025-03-10 |
@@ -42,4 +42,4 @@
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | The open agent skills tool - npx skills | TypeScript | 2026-10-19 |
 | [vinta/awesome-python](https://github.com/vinta/awesome-python) | The definitive list that answers "I want to do X in Python, which tool should I use?" | Python | 2026-10-21 |
 | [VoltAgent/awesome-openclaw-skills](https://github.com/VoltAgent/awesome-openclaw-skills) | The awesome collection of OpenClaw skills. 5,400+ skills filtered and categorized from the official OpenClaw Skills Registry.🦞 | – | 2026-10-19 |
-| [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) | A feature-rich command-line audio/video downloader | Python | 2026-10-10 |
+| [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) | A feature-rich command-line audio/video downloader | Python | 2026-10-21 |
