@@ -1,9 +1,9 @@
 {
-  "revision": "c0aaf9866f7af6f3ecde941ed139b356a26d5ba1",
-  "files": 901,
-  "imports": 685,
+  "revision": "d1471a5105c3d9af7fc419c9e006225d82916eb7",
+  "files": 906,
+  "imports": 690,
   "api_paths": 252,
-  "tables": 323,
+  "tables": 324,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -351,7 +351,7 @@
     {
       "path": "bot/botcmds.js",
       "layer": "bot",
-      "lines": 300,
+      "lines": 314,
       "imports": [
         "./roles.js",
         "./events.js",
@@ -392,6 +392,7 @@
         "all",
         "brand",
         "c",
+        "checkinButton",
         "done",
         "eventButton",
         "flag",
@@ -406,7 +407,6 @@
         "playButton",
         "pos",
         "rows",
-        "rsvpsOf",
         "say",
         "ts"
       ]
@@ -962,7 +962,7 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 832,
+      "lines": 901,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -1001,6 +1001,7 @@
         "a",
         "availability",
         "claims",
+        "event_answer_log",
         "event_checkins",
         "event_rsvps",
         "events",
@@ -1024,6 +1025,7 @@
         "answerEvents",
         "avatarOf",
         "calendarMonth",
+        "checkinMessage",
         "clean",
         "cleanText",
         "eventGroups",
@@ -1035,6 +1037,7 @@
         "hasLineup",
         "json",
         "keen",
+        "kickoffNotes",
         "label",
         "lineupEmbed",
         "lineupRoom",
@@ -1048,6 +1051,7 @@
         "marks",
         "nameOf",
         "nightRoute",
+        "note",
         "nudgeRoute",
         "offsetAt",
         "one",
@@ -1066,12 +1070,14 @@
         "readEvent",
         "readLineup",
         "readyCheck",
+        "refreshCheckinPost",
         "refreshEventPost",
         "reportEmbed",
         "reportPosterRoute",
         "res",
         "round1",
         "routeEvent",
+        "row",
         "rsvp",
         "rsvpButtons",
         "rsvpOut",
@@ -1079,6 +1085,7 @@
         "run",
         "saveEvent",
         "sessionReport",
+        "setCheckin",
         "teamGrade",
         "thirtyMinutes",
         "usuallyOn",
@@ -2895,6 +2902,19 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0058_event_answers.sql",
+      "layer": "bot",
+      "lines": 19,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "event_answer_log",
+        "event_rsvps",
+        "events"
+      ],
+      "functions": []
+    },
+    {
       "path": "bot/monitor.js",
       "layer": "bot",
       "lines": 86,
@@ -4066,7 +4086,7 @@
     {
       "path": "bot/worker.js",
       "layer": "bot",
-      "lines": 601,
+      "lines": 604,
       "imports": [
         "./botcommands.js",
         "./members.js",
@@ -4961,7 +4981,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 1132,
+      "lines": 1038,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5150,7 +5170,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 568,
+      "lines": 521,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6458,6 +6478,33 @@
       "path": "data/matches/116368038290159.json",
       "layer": "data",
       "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/122600441230252.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/122784214310345.json",
+      "layer": "data",
+      "lines": 836,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/122824046150025.json",
+      "layer": "data",
+      "lines": 684,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9114,7 +9161,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 72,
+      "lines": 65,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -10660,6 +10707,40 @@
         "kws",
         "setFlags",
         "wsReq"
+      ]
+    },
+    {
+      "path": "tests/checkin.test.mjs",
+      "layer": "tests",
+      "lines": 105,
+      "imports": [
+        "./mock.mjs",
+        "../bot/worker.js",
+        "../bot/ui.js",
+        "../bot/events.js",
+        "./lib.mjs"
+      ],
+      "endpoints": [
+        "/api/events",
+        "/api/events/lineup",
+        "/api/events/rsvp"
+      ],
+      "tables": [
+        "event_answer_log",
+        "event_checkins",
+        "event_rsvps",
+        "events"
+      ],
+      "functions": [
+        "btnsOf",
+        "button",
+        "inMin",
+        "order",
+        "send",
+        "setFlags",
+        "txt",
+        "walk",
+        "who"
       ]
     },
     {
@@ -17301,6 +17382,31 @@
     {
       "source": "tests/chat.test.mjs",
       "target": "bot/chatroom.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/checkin.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/checkin.test.mjs",
+      "target": "bot/worker.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/checkin.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/checkin.test.mjs",
+      "target": "bot/events.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/checkin.test.mjs",
+      "target": "tests/lib.mjs",
       "kind": "imports"
     },
     {
