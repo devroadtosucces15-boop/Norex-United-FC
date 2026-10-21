@@ -1,9 +1,9 @@
 {
-  "revision": "d1471a5105c3d9af7fc419c9e006225d82916eb7",
-  "files": 906,
-  "imports": 690,
+  "revision": "5a04fbfaea384ae535a77fd6f389e733885e0afb",
+  "files": 910,
+  "imports": 697,
   "api_paths": 252,
-  "tables": 324,
+  "tables": 326,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -4178,7 +4178,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 134,
+      "lines": 135,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6487,6 +6487,24 @@
       "path": "data/matches/122600441230252.json",
       "layer": "data",
       "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/122738438280369.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/122782275990483.json",
+      "layer": "data",
+      "lines": 764,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9709,19 +9727,25 @@
     {
       "path": "scripts/cards.mjs",
       "layer": "scripts",
-      "lines": 411,
+      "lines": 483,
       "imports": [
         "node:fs",
         "node:path",
         "node:crypto",
         "node:url",
         "../bot/events.js",
+        "./lib.mjs",
+        "./lib/matchreview.mjs",
         "./lib/chrome.mjs"
       ],
       "endpoints": [],
-      "tables": [],
+      "tables": [
+        "scripts",
+        "where"
+      ],
       "functions": [
         "COMPARE_ROWS",
+        "RV",
         "SHIELD",
         "X",
         "band",
@@ -9737,6 +9761,7 @@
         "fontFaces",
         "get",
         "hash",
+        "head",
         "inlineCrests",
         "lineupCard",
         "lineupSlug",
@@ -9749,8 +9774,14 @@
         "ratingGraph",
         "read",
         "resultsCard",
+        "review",
+        "reviewCard",
+        "ring",
+        "row",
+        "rvIcon",
         "scoreCard",
         "setIn",
+        "shapeDiagram",
         "side",
         "sum",
         "tableCard",
@@ -9965,9 +9996,35 @@
       ]
     },
     {
+      "path": "scripts/lib/matchreview.mjs",
+      "layer": "scripts",
+      "lines": 136,
+      "imports": [
+        "node:fs",
+        "node:path"
+      ],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "best",
+        "buildReview",
+        "isFullMatch",
+        "lineOf",
+        "list",
+        "loadHistory",
+        "mean",
+        "n",
+        "pct",
+        "stats",
+        "sum",
+        "up5",
+        "why"
+      ]
+    },
+    {
       "path": "scripts/lib/resultpost.mjs",
       "layer": "scripts",
-      "lines": 135,
+      "lines": 149,
       "imports": [
         "node:fs",
         "node:path",
@@ -9986,7 +10043,9 @@
         "panel",
         "pic",
         "postResults",
+        "reviewPanel",
         "send",
+        "sendReview",
         "webhookChannel"
       ]
     },
@@ -11645,6 +11704,34 @@
         "viewLocker",
         "vote",
         "ws"
+      ]
+    },
+    {
+      "path": "tests/matchreview.test.mjs",
+      "layer": "tests",
+      "lines": 81,
+      "imports": [
+        "node:fs",
+        "node:os",
+        "node:path",
+        "../scripts/lib/matchreview.mjs",
+        "../scripts/cards.mjs",
+        "../scripts/lib/resultpost.mjs",
+        "../bot/ui.js",
+        "./lib.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "8",
+        "that",
+        "the",
+        "where"
+      ],
+      "functions": [
+        "P",
+        "match",
+        "posts",
+        "run"
       ]
     },
     {
@@ -16996,6 +17083,16 @@
     },
     {
       "source": "scripts/cards.mjs",
+      "target": "scripts/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/cards.mjs",
+      "target": "scripts/lib/matchreview.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/cards.mjs",
       "target": "scripts/lib/chrome.mjs",
       "kind": "imports"
     },
@@ -18012,6 +18109,31 @@
     {
       "source": "tests/locker.test.mjs",
       "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchreview.test.mjs",
+      "target": "scripts/lib/matchreview.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchreview.test.mjs",
+      "target": "scripts/cards.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchreview.test.mjs",
+      "target": "scripts/lib/resultpost.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchreview.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchreview.test.mjs",
+      "target": "tests/lib.mjs",
       "kind": "imports"
     },
     {

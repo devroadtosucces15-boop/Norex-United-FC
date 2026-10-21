@@ -23,21 +23,22 @@ flowchart LR
   n16["scripts/leaders-page.mjs"]
   n17["scripts/lib.mjs"]
   n18["scripts/lib/chrome.mjs"]
-  n19["scripts/lib/resultpost.mjs"]
-  n20["scripts/lib/stars.mjs"]
-  n21["scripts/link-inbox.mjs"]
-  n22["scripts/media.mjs"]
-  n23["scripts/messages-page.mjs"]
-  n24["scripts/post-results.mjs"]
-  n25["scripts/probuilds-page.mjs"]
-  n26["scripts/rankings.mjs"]
-  n27["scripts/serve-atlas-private.py"]
-  n28["scripts/serve.mjs"]
-  n29["scripts/stars-sync.mjs"]
-  n30["scripts/tactics-page.mjs"]
-  n31["scripts/test-atlas-local.py"]
-  n32["scripts/updates-page.mjs"]
-  n33["scripts/updates.mjs"]
+  n19["scripts/lib/matchreview.mjs"]
+  n20["scripts/lib/resultpost.mjs"]
+  n21["scripts/lib/stars.mjs"]
+  n22["scripts/link-inbox.mjs"]
+  n23["scripts/media.mjs"]
+  n24["scripts/messages-page.mjs"]
+  n25["scripts/post-results.mjs"]
+  n26["scripts/probuilds-page.mjs"]
+  n27["scripts/rankings.mjs"]
+  n28["scripts/serve-atlas-private.py"]
+  n29["scripts/serve.mjs"]
+  n30["scripts/stars-sync.mjs"]
+  n31["scripts/tactics-page.mjs"]
+  n32["scripts/test-atlas-local.py"]
+  n33["scripts/updates-page.mjs"]
+  n34["scripts/updates.mjs"]
   n5 --> n6
   n5 --> n7
   n5 --> n9
@@ -46,21 +47,23 @@ flowchart LR
   n5 --> n14
   n5 --> n16
   n5 --> n17
-  n5 --> n23
-  n5 --> n25
+  n5 --> n24
   n5 --> n26
-  n5 --> n30
-  n5 --> n32
+  n5 --> n27
+  n5 --> n31
+  n5 --> n33
+  n8 --> n17
   n8 --> n18
+  n8 --> n19
   n13 --> n17
-  n13 --> n19
-  n19 --> n17
-  n21 --> n20
-  n22 --> n17
-  n24 --> n17
-  n24 --> n19
-  n28 --> n17
-  n29 --> n20
-  n32 --> n17
+  n13 --> n20
+  n20 --> n17
+  n22 --> n21
+  n23 --> n17
+  n25 --> n17
+  n25 --> n20
+  n29 --> n17
+  n30 --> n21
   n33 --> n17
+  n34 --> n17
 ```
