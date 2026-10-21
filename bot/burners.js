@@ -31,6 +31,9 @@ const IS_V2 = 1 << 15;
 const DEFER = () => json({ type: 5, data: { flags: IS_V2 | 64 } });
 const panel = (blocks) => message({ ephemeral: true, accent: 'steel', blocks });
 const plain = (content) => panel([text(content)]);
+// A deferred reply that never gets edited leaves Discord on "thinking…" forever, so every lookup is capped and always answers.
+const within = (p, ms = 8000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`timed out after ${ms / 1000}s – try again in a moment`)), ms))]);
+const PATCH_TIMEOUT = 6000;
 const edit = (m) => ({ components: m.components, allowed_mentions: { parse: [] } });
 const BEAR = (eyebrow, title, lines, foot, menu) => panel([header({ eyebrow: `Staff · ${eyebrow}`, title, size: 3 }), text(lines), footer(foot), menu]);
 
@@ -154,7 +157,7 @@ export async function burnersRelay(request, env) {
   await env.DB.prepare('DELETE FROM ea_relay WHERE ref = ?').bind(row.ref).run();
   const body = hits == null ? plain('⚠️ EA did not answer – try again in a minute.') : await pickerBody(env, shapeHits(hits, row.q), row.q);
   const res = await fetch(`https://discord.com/api/v10/webhooks/${row.app_id}/${row.token}/messages/@original`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit(body)),
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(PATCH_TIMEOUT), body: JSON.stringify(edit(body)),
   });
   return json({ ok: res.ok });
 }
@@ -310,12 +313,12 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
   // `recent`, or `search` with no name: dropdown of the clubs NOREX just played.
   if (sub?.name === 'recent' || (sub?.name === 'search' && !q)) {
     ctx.waitUntil((async () => {
-      const body = await (async () => {
+      const body = await within((async () => {
         if (sub.name === 'recent') { const linked = await linkedClubs(loadSite); if (linked.length) return linkedBody(env, linked); }
         return recentBody(env, await recentOpponents(env.HOME_CLUB_ID || HOME_CLUB, loadSite));
-      })().catch((e) => plain(`⚠️ Could not load the club list: ${e.message}`));
+      })()).catch((e) => plain(`⚠️ Could not load the club list: ${e.message}`));
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit(body)),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(PATCH_TIMEOUT), body: JSON.stringify(edit(body)),
       }).catch((e) => console.log('burner reply failed', e.message));
     })());
     return DEFER();
@@ -326,10 +329,10 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
   ctx.waitUntil((async () => {
     let body;
     try {
-      const results = await searchClubs(q, loadSite);
-      if (!results.length && !/^\d{1,12}$/.test(q) && await relayAsk(env, q, i)) {
+      const results = await within(searchClubs(q, loadSite));
+      if (!results.length && !/^\d{1,12}$/.test(q) && await within(relayAsk(env, q, i))) {
         await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit(plain(`🔎 Asking EA for **${q}** through GitHub – this takes about a minute, the answer replaces this message.`))),
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(PATCH_TIMEOUT), body: JSON.stringify(edit(plain(`🔎 Asking EA for **${q}** through GitHub – this takes about a minute, the answer replaces this message.`))),
         }).catch(() => {});
         return;
       }
@@ -345,7 +348,7 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
       body = plain(`⚠️ Could not reach EA: ${e.message}`);
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit(body)),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(PATCH_TIMEOUT), body: JSON.stringify(edit(body)),
     }).catch((e) => console.log('burner reply failed', e.message));
   })());
   return DEFER();
