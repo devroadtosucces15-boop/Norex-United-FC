@@ -12,6 +12,7 @@ import { can, flagOn } from './roles.js';
 import { notify, notifyMembers, safely } from './notify.js';
 import { broadcastRoom } from './clubroom.js';
 import { postEmbed } from './docs.js';
+import { routeNotification, pinged } from './routing.js';
 import { getBotSettings } from './settings.js';
 import { message, header, text, sep, facts, footer, buttons } from './ui.js';
 
@@ -153,22 +154,29 @@ async function announce(env, loadSite) {
       const mine = winners.filter((w) => w.k === c.player).map((w) => `${w.icon} ${w.name}`);
       await safely(notify(env, [c.user_id], { type: 'award', nkey: 'award.won', vars: { awards: mine.join(', '), week: wk.week.split('-W')[1] }, icon: '🏆', title: `You won ${mine.join(', ')} – week ${wk.week.split('-W')[1]}`, link: 'members.html#awards' }));
     }
-    await safely(notifyMembers(env, { type: 'award', title: `🏆 The week ${wk.week.split('-W')[1]} awards are in – watch the reveal`, link: 'members.html#awards' }));
-    const channel = (await one(env, "SELECT value FROM meta WHERE key = 'awards_channel'"))?.value;
+    const announce = { type: 'award', title: `🏆 The week ${wk.week.split('-W')[1]} awards are in – watch the reveal`, link: 'members.html#awards' };
+    const legacyChannel = (await one(env, "SELECT value FROM meta WHERE key = 'awards_channel'"))?.value;
     const settings = await getBotSettings(env); // P7.5 – "which auto-posts are on" + embed colour
-    if (channel && env.DISCORD_BOT_TOKEN && settings.autoPosts.awards) {
+    const winnersPost = async (o) => {
       const site = String(env.SITE_URL || '').replace(/\/?$/, '/');
       const byAward = new Map();
       for (const w of winners) (byAward.get(w.award) ?? byAward.set(w.award, { ...w, names: [] }).get(w.award)).names.push(`[${w.n}](${site}players/${encodeURIComponent(w.k)}.html)`);
       const potm = winnersOut(await all(env, "SELECT * FROM award_winners WHERE period = ? AND award = 'potm' AND player != ''", `M${wk.month}`), cats);
-      await postEmbed(env, channel, '', message({ accent: 'gold', blocks: [
+      return pinged(message({ accent: 'gold', blocks: [
         header({ eyebrow: 'NOREX UNITED · Weekly awards', title: `🏆 Week ${wk.week.split('-W')[1]} winners`, sub: 'Voted by the squad' }),
         text([...byAward.values()].map((a) => `${a.icon} **${a.name}** — ${a.names.join(', ')}${a.stat ? '' : ` (${a.value} vote${a.value === 1 ? '' : 's'})`}`).join('\n')),
         potm.length && wk.month < weekOf(Date.now()).month ? sep() : null,
         potm.length && wk.month < weekOf(Date.now()).month ? facts([[`👑 Player of the Month · ${wk.month}`, potm.map((p) => p.n).join(', ')]]) : null,
         footer('Vote for this week in the Squad Hub'),
         buttons([{ label: 'Awards', url: `${site}members.html#awards` }]),
-      ] }));
+      ] }), o);
+    };
+    // The owner's routing rules (Boardroom → Control Center) decide who is told and where; with none, the old behaviour: every member
+    // gets the bell, and the post goes to the awards channel when the "awards" auto-post is on.
+    const routed = await safely(routeNotification(env, 'awards.results', { notify: announce, channel: legacyChannel || undefined, build: winnersPost }));
+    if (!routed) {
+      await safely(notifyMembers(env, announce));
+      if (legacyChannel && env.DISCORD_BOT_TOKEN && settings.autoPosts.awards) await postEmbed(env, legacyChannel, '', await winnersPost());
     }
   }
 }

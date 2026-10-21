@@ -122,11 +122,12 @@ ${i.vars.length ? `<p class="muted small">Placeholders: ${i.vars.map((v) => `<co
     return `<h4 class="dk-h" style="margin-top:0">🤖 Personalisation</h4><p class="muted small">Where the bot posts, who it pings and its look. Channel and role IDs come from Discord (Developer Mode on, right-click → Copy ID).</p>
 <form class="panel dk-nf" data-b-form><label>Result channel ID<input name="resultChannel" value="${esc(s.resultChannel)}" placeholder="Blank = the webhook's own channel" pattern="\\d{5,25}" maxlength="25"></label>
 <label>Reminder ping role ID<input name="pingRole" value="${esc(s.pingRole)}" placeholder="Optional – pinged on result posts" pattern="\\d{1,25}" maxlength="25"></label>
-<label>Default reminder channel ID<input name="reminderChannel" value="${esc(s.reminderChannel)}" placeholder="Prefill for new events" pattern="\\d{5,25}" maxlength="25"></label>
 <label>Alerts channel ID<input name="alertChannel" value="${esc(s.alertChannel)}" placeholder="New posts and live streams also post here" pattern="\\d{5,25}" maxlength="25"><span class="muted small">Needs the <b>alertRoute</b> switch on (Boardroom → Switches). <button class="chip" type="button" data-b="alert-test">Send me a test DM</button></span></label>
 <label>Embed colour<input name="color" type="color" value="#${esc(s.color)}"></label><label>Emoji<input name="emoji" value="${esc(s.emoji)}" maxlength="8" placeholder="⚽"></label>
+<label>Cloudflare Worker plan<select name="plan">${sel([['free', 'Free – 25 DMs per run, live checks 8 per run, bell every 2 min'], ['paid', 'Paid – 100 DMs per run, live checks 30 per run, bell every 1 min']], s.plan || 'free')}</select></label>
 <div><b class="small">Auto-posts on</b>${AP.map(([k, l]) => `<label><input name="ap-${k}" type="checkbox"${s.autoPosts[k] ? ' checked' : ''}> ${l}</label>`).join('')}</div>
 <div class="dk-btns"><button class="btn" type="submit"${S.busy ? ' disabled' : ''}>💾 Save settings</button></div></form>
+<p class="panel muted small" style="padding:10px 12px">🔀 <b>Who gets which alert, and where it posts</b> now lives in <a href="staff-boardroom.html">Boardroom → Control Center</a>, next to each feature’s access switch.</p>
 <h4 class="dk-h">🎛️ Commands</h4><p class="muted small">Who can use each command, where, and where it posts. Owners always get through; managers ignore the channel limit. Rules apply the moment you save; <b>Sync</b> also hides staff-only commands from Discord's list.${S.cmds?.channelsError ? ` <b>Channel list unavailable:</b> ${esc(S.cmds.channelsError)}` : ''}</p>${cmds}`;
   }
   function readCmds() {
@@ -204,7 +205,7 @@ ${i.vars.length ? `<p class="muted small">Placeholders: ${i.vars.map((v) => `<co
     else if (f.matches('[data-g-form]')) act(() => publish(S.form?.pendingId ? { pending: S.form.pendingId } : {}));
     else if (f.matches('[data-b-form]')) act(async () => {
       S.busy = true; paint();
-      S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), reminderChannel: f.reminderChannel.value.trim(), alertChannel: f.alertChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
+      S.bot = await call('/api/bot/settings', { resultChannel: f.resultChannel.value.trim(), pingRole: f.pingRole.value.trim(), alertChannel: f.alertChannel.value.trim(), color: f.color.value.replace('#', ''), emoji: f.emoji.value.trim(), plan: f.plan.value, autoPosts: Object.fromEntries(AP.map(([k]) => [k, f[`ap-${k}`].checked])) });
       S.busy = false; paint(); toast('Bot settings saved');
     });
     else if (f.matches('[data-n-form]')) act(async () => { S.busy = true; S.notif = await call('/api/admin/notif', readNotif(f)); S.busy = false; paint(); toast('Notification saved'); });

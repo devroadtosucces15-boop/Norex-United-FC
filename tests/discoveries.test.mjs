@@ -73,6 +73,17 @@ await tt('reject: kept but never shown', async () => {
   return r.d.type === 7 && sqlite.prepare('SELECT status FROM discoveries WHERE id = 2').get().status === 'rejected' && posts.length === 1;
 });
 await tt('deciding twice just shows the list again', async () => (await press(MGR, 'norex:dc:ok:1')).d.type === 7 && posts.length === 1);
+// the owner's routing rules (Control Center → Discovery approved) replace the announce-channel post
+await tt('routing: approving posts where the rule says (tagging a role), not in the announce channel, and the discovery is marked posted', async () => {
+  sqlite.prepare("INSERT INTO meta (key, value) VALUES ('notify_routes', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value").run(JSON.stringify([{ action: 'discoveries.approved', group: 'role', role: '31337', method: 'tag', channel: '51515', on: true }]));
+  const before = posts.length;
+  const r = await press(MGR, 'norex:dc:ok:3');
+  const p = posts.at(-1);
+  const ok = r.d.type === 7 && posts.length === before + 1 && p.channel === '51515' && /<@&31337>/.test(JSON.stringify(p)) && p.allowed_mentions.roles[0] === '31337' && sqlite.prepare('SELECT discord_at FROM discoveries WHERE id = 3').get().discord_at > 0;
+  sqlite.prepare("DELETE FROM meta WHERE key = 'notify_routes'").run();
+  sqlite.prepare("UPDATE discoveries SET status = 'pending', approved_by = NULL, decided_at = NULL, discord_at = NULL WHERE id = 3").run(); posts.pop(); // put things back for the tests below
+  return ok;
+});
 
 // ---------- Useful ----------
 await tt('useful: toggles, count in the button, edited in place', async () => {

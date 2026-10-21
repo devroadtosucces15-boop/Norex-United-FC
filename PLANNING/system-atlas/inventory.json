@@ -1,9 +1,9 @@
 {
-  "revision": "d6c2b2e41681b1d6c927ceba628790aafe64a0bb",
-  "files": 877,
-  "imports": 666,
-  "api_paths": 251,
-  "tables": 321,
+  "revision": "c0aaf9866f7af6f3ecde941ed139b356a26d5ba1",
+  "files": 901,
+  "imports": 685,
+  "api_paths": 252,
+  "tables": 323,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -218,12 +218,13 @@
     {
       "path": "bot/awards.js",
       "layer": "bot",
-      "lines": 260,
+      "lines": 268,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./clubroom.js",
         "./docs.js",
+        "./routing.js",
         "./settings.js",
         "./ui.js"
       ],
@@ -274,7 +275,8 @@
         "state",
         "trophies",
         "weekOf",
-        "winnersOut"
+        "winnersOut",
+        "winnersPost"
       ]
     },
     {
@@ -800,12 +802,13 @@
     {
       "path": "bot/discoveries.js",
       "layer": "bot",
-      "lines": 163,
+      "lines": 172,
       "imports": [
         "./roles.js",
         "./ui.js",
         "./notify.js",
-        "./docs.js"
+        "./docs.js",
+        "./routing.js"
       ],
       "endpoints": [
         "/api/discoveries",
@@ -828,6 +831,7 @@
         "fail",
         "json",
         "one",
+        "panel",
         "queuePanel",
         "queueRows",
         "say",
@@ -958,7 +962,7 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 770,
+      "lines": 832,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -970,6 +974,7 @@
         "./faces.js",
         "./points.js",
         "./settings.js",
+        "./routing.js",
         "./lineuprec.js",
         "./media.js"
       ],
@@ -1015,11 +1020,13 @@
         "POS_OF",
         "add",
         "all",
+        "announceTarget",
         "answerEvents",
         "avatarOf",
         "calendarMonth",
         "clean",
         "cleanText",
+        "eventGroups",
         "eventMessage",
         "eventPost",
         "eventReminders",
@@ -1064,6 +1071,7 @@
         "reportPosterRoute",
         "res",
         "round1",
+        "routeEvent",
         "rsvp",
         "rsvpButtons",
         "rsvpOut",
@@ -1420,12 +1428,13 @@
     {
       "path": "bot/hotw.js",
       "layer": "bot",
-      "lines": 137,
+      "lines": 146,
       "imports": [
         "./roles.js",
         "./notify.js",
         "./awards.js",
         "./docs.js",
+        "./routing.js",
         "./ui.js"
       ],
       "endpoints": [
@@ -1446,6 +1455,7 @@
       "functions": [
         "all",
         "announce",
+        "card",
         "clipOf",
         "closeHotw",
         "entries",
@@ -1681,6 +1691,23 @@
       ]
     },
     {
+      "path": "bot/limits.js",
+      "layer": "bot",
+      "lines": 20,
+      "imports": [
+        "./settings.js"
+      ],
+      "endpoints": [],
+      "tables": [
+        "here"
+      ],
+      "functions": [
+        "forgetLimits",
+        "limits",
+        "limitsFor"
+      ]
+    },
+    {
       "path": "bot/lineuprec.js",
       "layer": "bot",
       "lines": 82,
@@ -1875,9 +1902,10 @@
     {
       "path": "bot/memberlive.js",
       "layer": "bot",
-      "lines": 108,
+      "lines": 109,
       "imports": [
         "./roles.js",
+        "./limits.js",
         "./live.js",
         "./ui.js",
         "./icons.js",
@@ -1913,7 +1941,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1179,
+      "lines": 1182,
       "imports": [
         "./faces.js",
         "./panel.js",
@@ -1953,6 +1981,7 @@
         "./discordroles.js",
         "./settings.js",
         "./alertroute.js",
+        "./routing.js",
         "./botcommands.js",
         "./crawl.js",
         "./burners.js",
@@ -2855,6 +2884,17 @@
       "functions": []
     },
     {
+      "path": "bot/migrations/0057_forced_dm.sql",
+      "layer": "bot",
+      "lines": 4,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "notifications"
+      ],
+      "functions": []
+    },
+    {
       "path": "bot/monitor.js",
       "layer": "bot",
       "lines": 86,
@@ -2876,7 +2916,7 @@
     {
       "path": "bot/notifcenter.js",
       "layer": "bot",
-      "lines": 115,
+      "lines": 117,
       "imports": [
         "./roles.js"
       ],
@@ -2905,14 +2945,15 @@
     {
       "path": "bot/notify.js",
       "layer": "bot",
-      "lines": 466,
+      "lines": 479,
       "imports": [
         "./roles.js",
         "./clubroom.js",
         "./webpush.js",
         "./ui.js",
         "./faces.js",
-        "./notifcenter.js"
+        "./notifcenter.js",
+        "./limits.js"
       ],
       "endpoints": [
         "/api/admin/notif",
@@ -3488,6 +3529,43 @@
       ]
     },
     {
+      "path": "bot/routing.js",
+      "layer": "bot",
+      "lines": 157,
+      "imports": [
+        "./roles.js",
+        "./notify.js",
+        "./settings.js"
+      ],
+      "endpoints": [
+        "/api/bot/routes"
+      ],
+      "tables": [
+        "GitHub",
+        "SET",
+        "for",
+        "is",
+        "meta",
+        "outside",
+        "users"
+      ],
+      "functions": [
+        "all",
+        "cleanRules",
+        "fail",
+        "json",
+        "loadRules",
+        "one",
+        "people",
+        "peopleOf",
+        "pinged",
+        "post",
+        "publicRoutes",
+        "routeNotification",
+        "routingRoute"
+      ]
+    },
+    {
       "path": "bot/servertools.js",
       "layer": "bot",
       "lines": 393,
@@ -3551,10 +3629,12 @@
     {
       "path": "bot/settings.js",
       "layer": "bot",
-      "lines": 67,
+      "lines": 73,
       "imports": [
         "./roles.js",
-        "./botcommands.js"
+        "./botcommands.js",
+        "./limits.js",
+        "./routing.js"
       ],
       "endpoints": [
         "/api/bot/settings"
@@ -3573,6 +3653,7 @@
         "getBotSettings",
         "json",
         "one",
+        "pickCh",
         "run",
         "saveBotSettings",
         "settingsKey"
@@ -3668,8 +3749,9 @@
     {
       "path": "bot/statinsights.js",
       "layer": "bot",
-      "lines": 436,
+      "lines": 442,
       "imports": [
+        "./routing.js",
         "./roles.js",
         "./aispike.js",
         "./ui.js"
@@ -3739,9 +3821,10 @@
     {
       "path": "bot/streamalerts.js",
       "layer": "bot",
-      "lines": 193,
+      "lines": 194,
       "imports": [
         "./roles.js",
+        "./limits.js",
         "./ui.js",
         "./icons.js",
         "./docs.js",
@@ -4102,7 +4185,7 @@
     {
       "path": "data/burners/1479556.json",
       "layer": "data",
-      "lines": 1093,
+      "lines": 952,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4354,7 +4437,7 @@
     {
       "path": "data/clubs/189496.json",
       "layer": "data",
-      "lines": 1085,
+      "lines": 1038,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4878,7 +4961,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 1038,
+      "lines": 1132,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5067,7 +5150,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1367,
+      "lines": 568,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6192,9 +6275,189 @@
       "functions": []
     },
     {
+      "path": "data/matches/109694871390078.json",
+      "layer": "data",
+      "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109752859920397.json",
+      "layer": "data",
+      "lines": 764,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/109780091010489.json",
       "layer": "data",
       "lines": 355,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109956159760457.json",
+      "layer": "data",
+      "lines": 688,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/109978184350246.json",
+      "layer": "data",
+      "lines": 828,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112832765470467.json",
+      "layer": "data",
+      "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112838791380324.json",
+      "layer": "data",
+      "lines": 246,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112886830870442.json",
+      "layer": "data",
+      "lines": 727,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112898997880094.json",
+      "layer": "data",
+      "lines": 690,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/112932893450393.json",
+      "layer": "data",
+      "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/113010744610376.json",
+      "layer": "data",
+      "lines": 616,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/113042507190290.json",
+      "layer": "data",
+      "lines": 320,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/113392040260248.json",
+      "layer": "data",
+      "lines": 801,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/113406092980165.json",
+      "layer": "data",
+      "lines": 871,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/115628629020132.json",
+      "layer": "data",
+      "lines": 458,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/115658963520487.json",
+      "layer": "data",
+      "lines": 390,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/115742087000142.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/115766492340456.json",
+      "layer": "data",
+      "lines": 392,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/116032222090044.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/116210471940459.json",
+      "layer": "data",
+      "lines": 283,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/116368038290159.json",
+      "layer": "data",
+      "lines": 246,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8851,7 +9114,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 36,
+      "lines": 72,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -8944,6 +9207,17 @@
       "tables": [
         "players",
         "the"
+      ],
+      "functions": []
+    },
+    {
+      "path": "data/updates/fc-27-the-grounds-developer-archetypes-update.json",
+      "layer": "data",
+      "lines": 85,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "on"
       ],
       "functions": []
     },
@@ -9646,7 +9920,7 @@
     {
       "path": "scripts/lib/resultpost.mjs",
       "layer": "scripts",
-      "lines": 111,
+      "lines": 135,
       "imports": [
         "node:fs",
         "node:path",
@@ -9657,13 +9931,16 @@
       ],
       "endpoints": [],
       "tables": [
+        "one",
         "the"
       ],
       "functions": [
         "list",
         "panel",
         "pic",
-        "postResults"
+        "postResults",
+        "send",
+        "webhookChannel"
       ]
     },
     {
@@ -10511,7 +10788,7 @@
     {
       "path": "tests/discoveries.test.mjs",
       "layer": "tests",
-      "lines": 97,
+      "lines": 108,
       "imports": [
         "./mock.mjs",
         "../bot/worker.js",
@@ -10656,7 +10933,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 234,
+      "lines": 323,
       "imports": [
         "../bot/ui.js",
         "node:fs",
@@ -10666,10 +10943,16 @@
         "node:fs",
         "../bot/notify.js",
         "../scripts/cards.mjs",
-        "../bot/events.js"
+        "../bot/events.js",
+        "../bot/limits.js",
+        "../bot/notify.js",
+        "../bot/routing.js",
+        "../bot/routing.js"
       ],
       "endpoints": [
         "/api/admin/overview",
+        "/api/bot/routes",
+        "/api/bot/settings",
         "/api/events",
         "/api/events/calendar",
         "/api/events/cancel",
@@ -10680,20 +10963,26 @@
         "/api/events/report/post",
         "/api/events/rsvp",
         "/api/notify",
+        "/api/notify/count",
+        "/api/notify/prefs",
         "/api/profile"
       ],
       "tables": [
         "EA",
         "Rush",
+        "SET",
         "activity",
         "availability",
         "claims",
         "event_checkins",
         "event_rsvps",
         "events",
+        "is",
         "members",
         "notifications",
         "notify_prefs",
+        "outside",
+        "restores",
         "rush_matches",
         "rush_players",
         "the",
@@ -10701,6 +10990,8 @@
       ],
       "functions": [
         "PNG",
+        "frow",
+        "ins",
         "iso",
         "notesFor",
         "posterUp",
@@ -12109,7 +12400,7 @@
     {
       "path": "tests/resultpost.test.mjs",
       "layer": "tests",
-      "lines": 45,
+      "lines": 68,
       "imports": [
         "node:fs",
         "node:os",
@@ -12309,7 +12600,7 @@
     {
       "path": "tests/statinsights.test.mjs",
       "layer": "tests",
-      "lines": 413,
+      "lines": 426,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
@@ -15044,6 +15335,11 @@
     },
     {
       "source": "bot/awards.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/awards.js",
       "target": "bot/settings.js",
       "kind": "imports"
     },
@@ -15238,6 +15534,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/discoveries.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/docs.js",
       "target": "bot/ui.js",
       "kind": "imports"
@@ -15315,6 +15616,11 @@
     {
       "source": "bot/events.js",
       "target": "bot/settings.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/events.js",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
@@ -15454,6 +15760,11 @@
     },
     {
       "source": "bot/hotw.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/hotw.js",
       "target": "bot/ui.js",
       "kind": "imports"
     },
@@ -15525,6 +15836,11 @@
     {
       "source": "bot/issues.js",
       "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/limits.js",
+      "target": "bot/settings.js",
       "kind": "imports"
     },
     {
@@ -15615,6 +15931,11 @@
     {
       "source": "bot/memberlive.js",
       "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/memberlive.js",
+      "target": "bot/limits.js",
       "kind": "imports"
     },
     {
@@ -15839,6 +16160,11 @@
     },
     {
       "source": "bot/members.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/members.js",
       "target": "bot/botcommands.js",
       "kind": "imports"
     },
@@ -15940,6 +16266,11 @@
     {
       "source": "bot/notify.js",
       "target": "bot/notifcenter.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/notify.js",
+      "target": "bot/limits.js",
       "kind": "imports"
     },
     {
@@ -16113,6 +16444,21 @@
       "kind": "imports"
     },
     {
+      "source": "bot/routing.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/routing.js",
+      "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/routing.js",
+      "target": "bot/settings.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/servertools.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -16135,6 +16481,16 @@
     {
       "source": "bot/settings.js",
       "target": "bot/botcommands.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/settings.js",
+      "target": "bot/limits.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/settings.js",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {
@@ -16169,6 +16525,11 @@
     },
     {
       "source": "bot/statinsights.js",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/statinsights.js",
       "target": "bot/roles.js",
       "kind": "imports"
     },
@@ -16185,6 +16546,11 @@
     {
       "source": "bot/streamalerts.js",
       "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/streamalerts.js",
+      "target": "bot/limits.js",
       "kind": "imports"
     },
     {
@@ -17175,6 +17541,26 @@
     {
       "source": "tests/events.test.mjs",
       "target": "bot/events.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/limits.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/notify.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/routing.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/events.test.mjs",
+      "target": "bot/routing.js",
       "kind": "imports"
     },
     {

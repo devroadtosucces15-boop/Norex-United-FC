@@ -230,4 +230,93 @@ const chText = JSON.stringify(lineupMsg);
 t('DM and channel post look different: DM is personal with the banner + gold stripe, the channel post groups the XI by line', /your position/i.test(dmText) && dmText.includes('Just for you') && dmText.includes('banner-matchnight') && !chText.includes('Just for you') && /DEFENCE/.test(chText) && /GK/.test(chText) && chText.includes('hub-matchnight.html'));
 const { cardJobs, lineupSlug } = await import('../scripts/cards.mjs');
 t('line-up post carries the drawn pitch for its shape (field view), and the build draws one per shape', JSON.stringify(lineupMsg).includes('cards/lineup-4-3-3.png') && cardJobs({ matches: [] }, []).filter((j) => j.key[0] === 'lineup').length === Object.keys((await import('../bot/events.js')).FORMATIONS).length && lineupSlug('4-3-3 (2)') === '4-3-3-2');
+// Announced by default: no notify/discord in the request -> players told + posted to the last-used channel; discord:false opts out.
+const annBefore = posts.length;
+const auto = await call(mgr, '/api/events', { ...base, date: tomorrow, time: '21:30' });
+t('create with no flags announces by default (players told + Discord post)', auto.s === 200 && auto.d.notified >= 1 && auto.d.discord?.ok && posts.length === annBefore + 1 && posts.at(-1).channel === '70001');
+const silentEv = await call(mgr, '/api/events', { ...base, date: tomorrow, time: '22:30', notify: false, discord: false });
+t('notify:false + discord:false stay silent', silentEv.s === 200 && !silentEv.d.notified && !silentEv.d.discord && posts.length === annBefore + 1);
+for (const id of [auto.d.id, silentEv.d.id]) await call(mgr, '/api/events/cancel', { id });
+
+// ----- notification routing table (bot/routing.js): action -> group -> method -> channel -----
+t('routing: managers cannot read or write the table', (await call(mgr, '/api/bot/routes')).s === 403 && (await call(mgr, '/api/bot/routes', { rules: [] })).s === 403);
+const table = (await call(owner, '/api/bot/routes')).d;
+t('routing: owner sees the actions, groups and methods', table.rules.length === 0 && table.actions['event.created'] && table.groups.role && table.methods.everyone);
+t('routing: a role cannot be DMed, bad ids and unknown picks are refused', (await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'role', role: '77777', method: 'dm' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'everyone', method: 'channel', channel: 'general' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'nope', group: 'everyone', method: 'channel' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'role', method: 'tag' }] })).s === 400);
+const saved = await call(owner, '/api/bot/routes', { rules: [
+  { action: 'event.created', group: 'managers', method: 'dm' },
+  { action: 'event.created', group: 'everyone', method: 'everyone', channel: '70002' },
+  { action: 'event.created', group: 'role', role: '77777', method: 'tag', channel: '70003' },
+  { action: 'event.created', group: 'everyone', method: 'channel', channel: '70004', on: false },
+] });
+t('routing: the table is saved', saved.s === 200 && saved.d.rules.length === 4 && saved.d.rules[3].on === false);
+const sentBefore = posts.length;
+const routedEv = await call(mgr, '/api/events', { ...base, title: 'Routed night', date: tomorrow, time: '19:15' });
+const routedPosts = posts.slice(sentBefore);
+t('routing: rules replace the defaults – posts only where the rules say', routedEv.s === 200 && routedPosts.map((p) => p.channel).join() === '70002,70003');
+t('routing: tag @everyone → ping line + parse everyone', routedPosts[0].allowed_mentions.parse.includes('everyone') && routedPosts[0].components[0].content === '@everyone');
+t('routing: tag a role → role mention only', routedPosts[1].components[0].content.startsWith('<@&77777>') && routedPosts[1].allowed_mentions.roles?.[0] === '77777' && !routedPosts[1].allowed_mentions.parse?.length);
+t('routing: DM rule reaches managers, a plain member gets nothing', (await call(owner, '/api/notify')).d.items.some((n) => /^New: Routed night/.test(n.title)) && !(await call(member, '/api/notify')).d.items.some((n) => /^New: Routed night/.test(n.title)));
+t('routing: the event remembers its first posted channel (so answer buttons stay live)', (await call(mgr, '/api/events')).d.events.find((e) => e.title === 'Routed night')?.posted === true);
+const tagged = await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'managers', method: 'tag', channel: '70005' }] });
+const b4 = posts.length;
+await call(mgr, '/api/events', { ...base, title: 'Tagged night', date: tomorrow, time: '19:45' });
+t('routing: tag a group → members mentioned by name', tagged.s === 200 && posts.length === b4 + 1 && posts.at(-1).channel === '70005' && /<@(111|600)>/.test(posts.at(-1).components[0].content) && posts.at(-1).allowed_mentions.users.length >= 1);
+const quietEv = await call(mgr, '/api/events', { ...base, title: 'Quiet night', date: tomorrow, time: '20:45', notify: false, discord: false });
+t('routing: the form’s opt-out beats the rules', quietEv.s === 200 && posts.length === b4 + 1);
+await call(owner, '/api/bot/routes', { rules: [] });
+const b5 = posts.length;
+await call(mgr, '/api/events', { ...base, title: 'Back to default', date: tomorrow, time: '21:15' });
+t('routing: clearing the table restores the built-in announce', posts.length === b5 + 1 && posts.at(-1).channel === '70001');
+
+// ----- paid plan switch + forced DMs (bot/limits.js, notify() force) -----
+const { limitsFor } = await import('../bot/limits.js');
+const { deliverDMs } = await import('../bot/notify.js');
+t('plan: paid lifts the free-plan numbers', limitsFor('paid').dmPerRun > limitsFor('free').dmPerRun && limitsFor('paid').memberLivePerRun > limitsFor('free').memberLivePerRun && limitsFor('nonsense').dmPerRun === 25);
+t('plan: managers cannot change it, a bad value is refused, the owner can', (await call(mgr, '/api/bot/settings', { plan: 'paid' })).s === 403 && (await call(owner, '/api/bot/settings', { plan: 'gold' })).s === 400
+  && (await call(owner, '/api/bot/settings', { plan: 'paid' })).d.plan === 'paid' && (await call(owner, '/api/bot/settings')).d.plan === 'paid' && (await call(member, '/api/notify/count')).d.pollSec === 60);
+await call(owner, '/api/bot/settings', { plan: 'free' });
+t('forced DM: refused on a channel rule', (await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'everyone', method: 'channel', force: true }] })).s === 400);
+await call(member, '/api/notify/prefs', { prefs: { event: 'off' } });
+const frow = (uid, like) => sqlite.prepare('SELECT forced, dm FROM notifications WHERE user_id = ? AND title LIKE ?').get(uid, like);
+await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'everyone', method: 'dm' }] });
+await call(mgr, '/api/events', { ...base, title: 'Respectful night', date: tomorrow, time: '10:15', discord: false });
+t('without force a muted member is left alone', !frow('500', 'New: Respectful night%') && !!frow('501', 'New: Respectful night%'));
+await call(owner, '/api/bot/routes', { rules: [{ action: 'event.created', group: 'everyone', method: 'dm', force: true }] });
+await call(mgr, '/api/events', { ...base, title: 'Forced night 1', date: tomorrow, time: '10:30', discord: false });
+t('with force a muted member gets the DM, marked forced (urgent queue)', frow('500', 'New: Forced night 1%')?.forced === 1 && frow('500', 'New: Forced night 1%')?.dm === 'queued');
+sqlite.prepare("INSERT INTO notify_prefs (user_id, dm_failed_at, updated) VALUES ('501', ?, ?) ON CONFLICT (user_id) DO UPDATE SET dm_failed_at = excluded.dm_failed_at").run(Date.now(), Date.now());
+await call(mgr, '/api/events', { ...base, title: 'Forced night 2', date: tomorrow, time: '10:45', discord: false });
+t('closed DMs: bell only, not forced', frow('501', 'New: Forced night 2%')?.dm === null && frow('501', 'New: Forced night 2%')?.forced === 0);
+for (const k of [3, 4, 5, 6]) await call(mgr, '/api/events', { ...base, title: `Forced night ${k}`, date: tomorrow, time: `1${k}:00`.slice(-5), discord: false });
+t('forced DMs are capped at 5 a day per member', sqlite.prepare("SELECT COUNT(*) AS c FROM notifications WHERE user_id = '500' AND forced = 1").get().c === 5 && !frow('500', 'New: Forced night 6%'));
+sqlite.prepare("DELETE FROM notifications WHERE user_id = '500'").run();
+const ins = (title, forced) => sqlite.prepare("INSERT INTO notifications (user_id, type, title, at, dm, forced) VALUES ('500', 'event', ?, ?, 'queued', ?)").run(title, Date.now(), forced).lastInsertRowid;
+const plain = ins('plain first', 0), urgent = ins('urgent second', 1);
+await deliverDMs(env, 1);
+t('urgent DMs go first in the queue', sqlite.prepare('SELECT dm FROM notifications WHERE id = ?').get(urgent).dm === 'sent' && sqlite.prepare('SELECT dm FROM notifications WHERE id = ?').get(plain).dm === 'queued');
+await call(owner, '/api/bot/routes', { rules: [] });
+
+// ----- Control Center: saving one setting must not wipe the others; routing actions know their feature -----
+await call(owner, '/api/bot/settings', { resultChannel: '12345678901', pingRole: '22222', reminderChannel: '33333' });
+const keep = await call(owner, '/api/bot/settings', { reminderChannel: '44444' });
+t('settings: a partial save keeps the other channels and the plan', keep.d.reminderChannel === '44444' && keep.d.resultChannel === '12345678901' && keep.d.pingRole === '22222' && keep.d.plan === 'free');
+t('routing: every action belongs to a site feature (Control Center rows)', Object.values((await call(owner, '/api/bot/routes')).d.actions).every((a) => a.feature) && Object.entries((await call(owner, '/api/bot/routes')).d.actions).filter(([k]) => k.startsWith('event.')).every(([, a]) => a.feature === 'events'));
+
+// ----- Wave A actions + engine rules: silenced, channel-only actions -----
+t('routing: results/awards/highlight/insight/discovery actions exist with their feature', ['results.posted', 'awards.results', 'hotw.winner', 'insights.weekly', 'discoveries.approved'].every((k) => (table.actions[k]?.feature)));
+t('routing: match results are posted from outside the app – DMs and per-person tags are refused', (await call(owner, '/api/bot/routes', { rules: [{ action: 'results.posted', group: 'everyone', method: 'dm' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'results.posted', group: 'everyone', method: 'tag' }] })).s === 400
+  && (await call(owner, '/api/bot/routes', { rules: [{ action: 'results.posted', group: 'role', role: '55555', method: 'tag', channel: '70001' }, { action: 'results.posted', group: 'everyone', method: 'everyone' }] })).s === 200);
+const { routeNotification } = await import('../bot/routing.js');
+await call(owner, '/api/bot/routes', { rules: [{ action: 'awards.results', group: 'everyone', method: 'channel', channel: '70009', on: false }] });
+const silenced = await routeNotification(env, 'awards.results', { build: () => ({}) });
+t('routing: an action whose rules are all off is silenced (not back to the old behaviour)', silenced?.silenced === true && silenced.posts.length === 0 && (await routeNotification(env, 'hotw.winner', { build: () => ({}) })) === null);
+const rtmod = await import('../bot/routing.js');
+t('routing: the result poster reads the rules for match results', (await rtmod.publicRoutes(env, 'results.posted')).managed === false && (await rtmod.publicRoutes(env, 'awards.results')).managed === true);
+await call(owner, '/api/bot/routes', { rules: [] });
+
 done();

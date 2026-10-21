@@ -7,6 +7,7 @@
 // become the shared announce channel. With the flag on, the old live posts in bot/live.js and bot/memberlive.js stop.
 // Twitch and Kick posts (clips) need API access we do not have: live works on all three, posts on YouTube only.
 import { can, flagOn } from './roles.js';
+import { limits } from './limits.js';
 import { message, notice, reply, header, text, sep, facts, footer, buttons, cards, bannerUrl } from './ui.js';
 import { it } from './icons.js';
 import { postEmbed } from './docs.js';
@@ -16,7 +17,7 @@ import { parseFeed } from './watchlist.js';
 
 export const STREAM_COMMANDS = new Set(['streamalerts']);
 export const streamAlertsOn = (env) => flagOn(env, { role: 'owner' }, 'streamAlerts');
-const PER_RUN = 10, MAX_SOURCES = 40, BLIP_GAP = 3 * 3600e3, POST_MAX_AGE = 3 * 864e5, POST_CAP = 3;
+const MAX_SOURCES = 40, BLIP_GAP = 3 * 3600e3, POST_MAX_AGE = 3 * 864e5, POST_CAP = 3;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const PLATFORM = { twitch: 'Twitch', youtube: 'YouTube', kick: 'Kick' };
 const say = (title, body) => reply(notice(title, body));
@@ -113,7 +114,7 @@ async function checkPosts(env, src, now, fetcher, out) {
 export async function streamAlertsCron(env, now = Date.now(), fetcher = fetch) {
   const out = { checked: 0, live: 0, posts: 0 };
   if (!env.DB || !env.DISCORD_BOT_TOKEN || !streamAlertsOn(env)) return out;
-  const rows = await all(env, 'SELECT * FROM stream_sources WHERE active = 1 ORDER BY checked_at LIMIT ?', PER_RUN);
+  const rows = await all(env, 'SELECT * FROM stream_sources WHERE active = 1 ORDER BY checked_at LIMIT ?', (await limits(env)).streamPerRun);
   for (const src of rows) {
     await run(env, 'UPDATE stream_sources SET checked_at = ? WHERE id = ?', now, src.id);
     out.checked++;

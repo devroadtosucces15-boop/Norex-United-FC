@@ -9,6 +9,7 @@ import { can, flagOn } from './roles.js';
 import { message, notice, reply, header, text, sep, footer, buttons, cards, bannerUrl } from './ui.js';
 import { notify, notifyManagers, safely } from './notify.js';
 import { postEmbed } from './docs.js';
+import { routeNotification, pinged } from './routing.js';
 
 export const DISCOVERY_COMMANDS = new Set(['share', 'discoveries']);
 export const DISCOVERY_BUTTON = /^norex:dc:/;
@@ -80,8 +81,16 @@ async function decide(i, env, who, id, approve, now) {
   const me = i.member?.user?.id ?? i.user?.id;
   await env.DB.prepare('UPDATE discoveries SET status = ?, approved_by = ?, decided_at = ? WHERE id = ?').bind(approve ? 'approved' : 'rejected', me, now, id).run();
   if (approve) {
-    const channel = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
-    const posted = channel ? await postEmbed(env, channel, '', discoveryPanel({ ...row, approved_by: me }, 0, env)).catch(() => null) : null;
+    const panel = (o) => pinged(discoveryPanel({ ...row, approved_by: me }, 0, env), o);
+    // the owner's routing rules (Control Center) first; with none, the shared announce channel as before
+    const routed = await safely(routeNotification(env, 'discoveries.approved', {
+      notify: { type: 'club', icon: '🔎', title: `New discovery: ${row.title}`, body: String(row.body ?? '').slice(0, 200), link: 'members.html#discoveries' }, build: panel,
+    }));
+    let posted = routed ? routed.posts.find((p) => p.ok) : null;
+    if (!routed) {
+      const channel = (await one(env, "SELECT value FROM meta WHERE key = 'announce_channel'"))?.value;
+      posted = channel ? await postEmbed(env, channel, '', panel()).catch(() => null) : null;
+    }
     if (posted?.ok) await env.DB.prepare('UPDATE discoveries SET discord_at = ? WHERE id = ?').bind(now, id).run();
   }
   await safely(notify(env, [row.user_id], approve

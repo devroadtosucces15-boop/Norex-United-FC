@@ -6,6 +6,8 @@
 //                                  this before posting a match result so the channel/colour/emoji/toggle stay in sync.
 import { can, loadFlagOverrides } from './roles.js';
 import { getCommandSettings } from './botcommands.js';
+import { forgetLimits } from './limits.js';
+import { publicRoutes } from './routing.js';
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
 const fail = (msg, status = 400) => json({ error: msg }, status);
@@ -15,7 +17,7 @@ const CH = /^\d{5,25}$/; // a Discord channel/role snowflake
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 
 export const DEFAULT_SETTINGS = {
-  resultChannel: '', reminderChannel: '', pingRole: '', color: 'c8352c', emoji: '⚽',
+  resultChannel: '', reminderChannel: '', pingRole: '', color: 'c8352c', emoji: '⚽', plan: 'free', // plan: Cloudflare Worker plan – see bot/limits.js
   alertChannel: '1560827976348602429', // new site posts + live streams also post here (bot/alertroute.js, flag `alertRoute`)
   autoPosts: { results: true, reminders: true, awards: true, posts: true, live: true },
 };
@@ -46,15 +48,19 @@ export async function botSettingsRoute(p, method, body, me, env, log) {
   if (method !== 'POST') return fail('Not found', 404);
   const cur = await getBotSettings(env);
   const ch = (v) => (v === '' || v == null ? '' : CH.test(String(v)) ? String(v) : null);
-  const resultChannel = ch(body.resultChannel), reminderChannel = ch(body.reminderChannel), pingRole = ch(body.pingRole);
+  const pickCh = (k) => (k in body ? ch(body[k]) : cur[k]); // a field that is not in the request keeps its saved value
+  const resultChannel = pickCh('resultChannel'), reminderChannel = pickCh('reminderChannel'), pingRole = pickCh('pingRole');
   const alertChannel = 'alertChannel' in body ? ch(body.alertChannel) : cur.alertChannel;
   if (resultChannel === null || reminderChannel === null || pingRole === null || alertChannel === null) return fail('Channel/role IDs must be plain Discord IDs (right-click → Copy ID).');
   const color = /^#?[0-9a-fA-F]{6}$/.test(body.color ?? '') ? String(body.color).replace('#', '') : cur.color;
   const emoji = clean(body.emoji, 8) || cur.emoji;
   const autoPosts = { ...cur.autoPosts };
   if (body.autoPosts && typeof body.autoPosts === 'object') for (const k of Object.keys(autoPosts)) if (k in body.autoPosts) autoPosts[k] = !!body.autoPosts[k];
-  const saved = await saveBotSettings(env, { resultChannel, reminderChannel, pingRole, alertChannel, color, emoji, autoPosts });
-  await log?.(env, me, 'bot-settings', 'Updated bot personalisation');
+  const plan = 'plan' in body ? body.plan : cur.plan;
+  if (!['free', 'paid'].includes(plan)) return fail('Plan must be free or paid.');
+  const saved = await saveBotSettings(env, { resultChannel, reminderChannel, pingRole, alertChannel, color, emoji, autoPosts, plan });
+  forgetLimits();
+  await log?.(env, me, 'bot-settings', `Updated bot personalisation${plan !== cur.plan ? ` · plan ${plan}` : ''}`);
   return json(saved);
 }
 
@@ -62,5 +68,5 @@ export async function botSettingsRoute(p, method, body, me, env, log) {
 export async function botSettingsPublicRoute(request, env) {
   if (!env.DISCORD_CLIENT_SECRET || request.headers.get('X-Norex-Key') !== await settingsKey(env.DISCORD_CLIENT_SECRET)) return fail('Forbidden', 403);
   // flags = the Boardroom's live switches (fetch.mjs honours them for the result post); guildId lets it tell "@everyone" from a real role
-  return json({ ...(await getBotSettings(env)), flags: await loadFlagOverrides(env), guildId: env.DISCORD_GUILD_ID || '', commands: await getCommandSettings(env) });
+  return json({ ...(await getBotSettings(env)), flags: await loadFlagOverrides(env), guildId: env.DISCORD_GUILD_ID || '', commands: await getCommandSettings(env), resultRoutes: await publicRoutes(env, 'results.posted') });
 }

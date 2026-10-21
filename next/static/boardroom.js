@@ -29,11 +29,13 @@
     ['👑 Staff and Discord', ['boardroom', 'managerNotes', 'roleSync', 'discordMatch', 'platformLink', 'liveBanner', 'homeWatch', 'liveAnnounce', 'alertRoute', 'streamAlerts', 'burners', 'ownerFab']],
   ];
   const FREE = { requests: 100000 };
-  const S = { tab: 'tools', open: new Set(),  flags: null, canEdit: false, activity: null, health: undefined, ping: null, filter: '', undo: [], busy: false,
+  const VIRT = { results: 'Match result posts' }; // alert features that are not a site switch
+  const S = { tab: 'tools', lvl: '', open: new Set(),  flags: null, canEdit: false, activity: null, health: undefined, ping: null, filter: '', undo: [], busy: false,
     aud: { sub: 'log', q: '', type: '', n: 12, subs: {}, subType: 'feedback', reports: null }, err: {},
     ann: { title: '', body: '', audience: 'all', ack: false, preview: false }, docs: null, targets: undefined, dc: { doc: '', channel: '', role: '', preview: null },
     hof: null, hofForm: { kind: 'legend', player: '', name: '', title: '', text: '' },
     med: null, medQ: '', medTier: '', medForm: null, bak: { busy: false, last: null } };
+  const RT = window.NorexRouting?.create({ call, toast, paint: () => paint() }); // alert rules per feature (routing-ui.js)
   const TR = (o) => (window.NorexTrophy ? window.NorexTrophy.svg(o) : `<span class="br-emo">${esc(o.icon || '🏆')}</span>`);
   const empty = (icon, title, text) => `<div class="panel sq-empty"><span>${icon}</span><div><b>${esc(title)}</b><p class="muted small">${esc(text || '')}</p></div></div>`;
   const skel = '<div class="dg-skel"><i></i></div>';
@@ -84,15 +86,20 @@ ${groups.map(([t, it]) => `<h4 class="dk-h">${esc(t)}</h4><div class="br-tools">
     const groups = GROUPS.map(([t, ks]) => [t, ks.filter((k) => all.includes(k))]);
     groups.forEach(([, ks]) => ks.forEach((k) => used.add(k)));
     const rest = all.filter((k) => !used.has(k)); if (rest.length) groups.push(['⚙️ Everything else', rest]);
+    const virt = [...new Set(Object.values(RT?.state.routes?.actions ?? {}).map((a) => a.feature))].filter((f) => f && !all.includes(f)); // posts that have no switch of their own
+    if (virt.length) groups.push(['📣 Posts with no switch', virt]);
     const row = (k) => {
+      if (S.flags[k] === undefined) return `<div class="br-flag"><span class="br-name"><b>${esc(VIRT[k] || nice(k))}</b><code>${esc(k)}</code><span class="br-over">always on – no switch</span></span><span class="br-acts">${RT.has(k) ? `<button type="button" class="chip${RT.state.open.has(k) ? ' on' : ''}" data-rt-toggle="${esc(k)}">🔔 Alerts · ${RT.count(k) ? `${RT.count(k)} rule${RT.count(k) === 1 ? '' : 's'}` : 'built-in'}</button>` : ''}</span></div>${RT.has(k) && RT.state.open.has(k) ? RT.html(k) : ''}`;
       const v = S.flags[k], over = committed[k] !== undefined && committed[k] !== v, w = WHERE[k];
       return `<div class="br-flag" data-lvl="${esc(v)}"><span class="br-name"><b>${esc(nice(k))}</b><code>${esc(k)}</code>${over ? `<span class="br-over">live override · committed: ${esc(committed[k])}</span>` : ''}</span>
 <span class="br-seg" role="radiogroup" aria-label="${esc(k)}">${LEVELS.map((l) => `<button type="button" role="radio" aria-checked="${l === v}" class="${l === v ? 'on' : ''}" title="${esc(LVL_HELP[l])}" data-flag="${esc(k)}" data-level="${l}"${S.canEdit ? '' : ' disabled'}>${l[0].toUpperCase() + l.slice(1)}</button>`).join('')}</span>
-<span class="br-acts">${w ? `<a class="chip" href="${esc(go(...w))}">↗ Go to</a><button type="button" class="chip" data-show="${esc(k)}">👁 Show me</button>` : ''}${over && S.canEdit ? `<button type="button" class="chip" data-reset="${esc(k)}">↺ Back to committed</button>` : ''}</span></div>`;
+<span class="br-acts">${RT?.has(k) ? `<button type="button" class="chip${RT.state.open.has(k) ? ' on' : ''}" data-rt-toggle="${esc(k)}">🔔 Alerts · ${RT.count(k) ? `${RT.count(k)} rule${RT.count(k) === 1 ? '' : 's'}` : 'built-in'}</button>` : ''}${w ? `<a class="chip" href="${esc(go(...w))}">↗ Go to</a><button type="button" class="chip" data-show="${esc(k)}">👁 Show me</button>` : ''}${over && S.canEdit ? `<button type="button" class="chip" data-reset="${esc(k)}">↺ Back to committed</button>` : ''}</span></div>${RT?.has(k) && RT.state.open.has(k) ? RT.html(k) : ''}`;
     };
-    const html = groups.map(([t, ks]) => { const hit = ks.filter((k) => !q || k.toLowerCase().includes(q) || nice(k).toLowerCase().includes(q)); if (!hit.length) return ''; const on = ks.filter((k) => S.flags[k] !== 'off').length; return `<details class="br-grp" data-g="${esc(t)}"${q || S.open.has(t) ? ' open' : ''}><summary><span>${esc(t)}</span><small>${hit.length} switch${hit.length === 1 ? '' : 'es'} · ${on} on</small></summary><div class="br-flags">${hit.map(row).join('')}</div></details>`; }).join('');
+    const html = groups.map(([t, ks]) => { const hit = ks.filter((k) => (!q || k.toLowerCase().includes(q) || nice(k).toLowerCase().includes(q)) && (!S.lvl || S.flags[k] === S.lvl)); if (!hit.length) return ''; const on = ks.filter((k) => S.flags[k] !== 'off').length; return `<details class="br-grp" data-g="${esc(t)}"${q || S.open.has(t) ? ' open' : ''}><summary><span>${esc(t)}</span><small>${hit.length} switch${hit.length === 1 ? '' : 'es'} · ${on} on</small></summary><div class="br-flags">${hit.map(row).join('')}</div></details>`; }).join('');
     const nOver = all.filter((k) => committed[k] !== undefined && committed[k] !== S.flags[k]).length;
-    return `<div class="br-bar"><input type="search" class="br-in" data-filter placeholder="Find a feature…" value="${esc(S.filter)}" aria-label="Find a feature"><span class="muted small">${all.length} switches · ${nOver} live override${nOver === 1 ? '' : 's'}</span><button type="button" class="chip" data-undo${S.undo.length ? '' : ' disabled'}>↶ Undo${S.undo.length ? ` (${esc(S.undo[S.undo.length - 1].name)})` : ''}</button></div>
+    const tally = Object.fromEntries(LEVELS.map((l) => [l, all.filter((k) => S.flags[k] === l).length]));
+    const stats = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:0 0 12px">${[['', 'All features', all.length], ...LEVELS.map((l) => [l, l[0].toUpperCase() + l.slice(1), tally[l]])].map(([l, n, c]) => `<button type="button" class="panel${S.lvl === l ? ' on' : ''}" data-lvlf="${l}" style="text-align:left;padding:10px 12px;cursor:pointer;${S.lvl === l ? 'outline:2px solid var(--red,#c8352c);' : ''}" aria-pressed="${S.lvl === l}"><b style="font-size:22px;display:block">${c}</b><small class="muted">${esc(n)}</small></button>`).join('')}</div>`;
+    return `${stats}${RT ? `<div class="panel" style="padding:10px 12px;margin:0 0 12px">${RT.defaultsHtml()}</div>` : ''}<div class="br-bar"><input type="search" class="br-in" data-filter placeholder="Find a feature…" value="${esc(S.filter)}" aria-label="Find a feature"><span class="muted small">${all.length} switches · ${nOver} live override${nOver === 1 ? '' : 's'}</span><button type="button" class="chip" data-undo${S.undo.length ? '' : ' disabled'}>↶ Undo${S.undo.length ? ` (${esc(S.undo[S.undo.length - 1].name)})` : ''}</button></div>
 ${S.canEdit ? '' : '<p class="muted small">Only the owner can change switches; you can see them.</p>'}
 ${html || '<p class="muted small">No switch matches.</p>'}
 <p class="muted small">A change is live on the next page load, with no deploy. “Committed” is the level saved in the club config. New features start at Owner.</p>`;
@@ -303,7 +310,7 @@ ${form}${aw}<div class="br-meds">${hit.map(medCard).join('') || '<p class="muted
   }
 
   // ---------- frame ----------
-  const TABS = [['tools', '🧰 Tools'], ['switches', '🎛️ Switches'], ['health', '🩺 Health'], ['audit', '🛡️ Audit'], ['announce', '📣 Announce'], ['hof', '🏛️ Hall of Fame'], ['medals', '🏅 Medals'], ['backup', '💾 Backup']];
+  const TABS = [['tools', '🧰 Tools'], ['switches', '🎛️ Control Center'], ['health', '🩺 Health'], ['audit', '🛡️ Audit'], ['announce', '📣 Announce'], ['hof', '🏛️ Hall of Fame'], ['medals', '🏅 Medals'], ['backup', '💾 Backup']];
   function paint() {
     if (!root.isConnected) return;
     const keep = d.activeElement?.matches?.('input[data-filter],input[data-aq],input[data-medq]') ? (d.activeElement.dataset.filter !== undefined ? 'data-filter' : d.activeElement.dataset.aq !== undefined ? 'data-aq' : 'data-medq') : null;
@@ -314,7 +321,9 @@ ${form}${aw}<div class="br-meds">${hit.map(medCard).join('') || '<p class="muted
 
   root.addEventListener('click', (ev) => {
     const t = ev.target.closest('button'); if (!t) return; const k = t.dataset;
-    if (k.show) showMe(k.show);
+    if (RT?.click(ev)) return;
+    if (k.lvlf !== undefined) { S.lvl = S.lvl === k.lvlf ? '' : k.lvlf; paint(); }
+    else if (k.show) showMe(k.show);
     else if (k.tab) openTab(k.tab);
     else if (k.flag) act(() => setFlag(k.flag, k.level));
     else if (k.reset) act(async () => { if (!confirm(`Drop the live override for “${nice(k.reset)}” and go back to the committed level (${committed[k.reset]})?`)) return; S.flags = (await call('/api/admin/flags/reset', { name: k.reset })).flags; toast(`${nice(k.reset)}: back to committed`); paint(); });
@@ -357,6 +366,7 @@ ${form}${aw}<div class="br-meds">${hit.map(medCard).join('') || '<p class="muted
   });
   root.addEventListener('change', (ev) => {
     const t = ev.target;
+    if (RT?.change(ev)) return;
     if (t.matches('[data-atype]')) { S.aud.type = t.value; S.aud.n = 12; paint(); }
     else if (t.matches('[data-stype]')) { S.aud.subType = t.value; if (S.aud.subs[t.value] === undefined) loadSubs(t.value); else paint(); }
     else if (t.matches('[data-medtier]')) { S.medTier = t.value; paint(); }
@@ -383,7 +393,7 @@ ${form}${aw}<div class="br-meds">${hit.map(medCard).join('') || '<p class="muted
   });
 
   const load = async () => {
-    try { const ov = await call('/api/admin/overview'); S.flags = ov.flags || null; S.canEdit = !!ov.canEditFlags; S.activity = ov.activity || []; if (!ov.flags) S.err.flags = 'Switches are only shown to the owner.'; }
+    try { const ov = await call('/api/admin/overview'); S.flags = ov.flags || null; S.canEdit = !!ov.canEditFlags; S.activity = ov.activity || []; if (!ov.flags) S.err.flags = 'Switches are only shown to the owner.'; else RT?.load().then(paint); }
     catch (er) { S.err.flags = er.message; S.err.activity = er.message; }
     paint();
   };

@@ -13,6 +13,8 @@ const KEY = 'notif_center';
 
 // Phase 1: events, reminders, awards. vars = the {placeholders} the wording may use. timing = numeric knobs the code reads.
 export const REGISTRY = [
+  { key: 'event.created', group: 'Events', label: 'New session scheduled', title: 'New: {event} – {when}', body: '{notes}', vars: ['event', 'when', 'notes'] },
+  { key: 'event.report', group: 'Events', label: 'Session report shared', title: 'Session report: {event} · Grade {grade}', body: '{summary}', vars: ['event', 'grade', 'summary'] },
   { key: 'event.start30', group: 'Events', label: '“Starting soon” alert to everyone who said yes', title: 'Starting in {mins} minutes · {event}', body: 'You said you are in – get ready.', vars: ['mins', 'event'], timing: { mins: { label: 'Minutes before the session', def: 30, min: 5, max: 120 } } },
   { key: 'event.nudge', group: 'Events', label: '24h / 2h nudge to members who have not answered', title: '{head} – can you make it?', body: '{yes} said yes so far. Answer ✅ ❔ ❌ in the Squad Hub or on the Discord post.', vars: ['head', 'yes'] },
   { key: 'event.timechange', group: 'Events', label: 'Session time changed', title: 'Time changed: {event} – now {when}', body: '', vars: ['event', 'when'] },

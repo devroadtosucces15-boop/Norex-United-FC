@@ -169,6 +169,19 @@ posted = null;
 await statInsightWeekly(env, fakePostEmbed, new Date('2026-10-06T10:00:00Z').getTime()); // a Tuesday
 t('no post on a non-Monday', posted === null);
 
+// the owner's routing rules replace the announce-channel post (Control Center → Insight of the week)
+posted = null;
+const routedPosts = [];
+const prevFetch = globalThis.fetch;
+globalThis.fetch = async (url, init = {}) => { const m = String(url).match(/channels\/(\w+)\/messages$/); if (m) { routedPosts.push({ channel: m[1], body: JSON.parse(init.body) }); return Response.json({ id: 'r1' }); } return prevFetch(url, init); };
+env.DISCORD_BOT_TOKEN = 'bot';
+await DB.exec(`INSERT INTO meta (key, value) VALUES ('notify_routes', '${JSON.stringify([{ action: 'insights.weekly', group: 'everyone', method: 'everyone', channel: '999', on: true }])}') ON CONFLICT (key) DO UPDATE SET value = excluded.value`);
+await DB.exec("DELETE FROM meta WHERE key = 'stat_insight_week'");
+await statInsightWeekly(env, fakePostEmbed, monday10am);
+t('routing: a rule for the weekly insight posts there, tagging @everyone, instead of the announce channel', posted === null && routedPosts.length === 1 && routedPosts[0].channel === '999' && routedPosts[0].body.allowed_mentions.parse.includes('everyone') && /insight of the week/i.test(plainText(routedPosts[0].body)));
+await DB.exec("DELETE FROM meta WHERE key IN ('notify_routes', 'stat_insight_week')");
+globalThis.fetch = prevFetch;
+
 // ---------- /insight Discord embed (read-only, same tier gate as the site) ----------
 const { discordInsightEmbed } = await import('../bot/statinsights.js');
 await DB.exec('DELETE FROM stat_insights');

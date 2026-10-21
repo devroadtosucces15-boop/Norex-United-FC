@@ -1,7 +1,7 @@
 {
  "id": "51769",
  "tier": "linked",
- "fetchedAt": "2026-10-20T20:50:51.502Z",
+ "fetchedAt": "2026-10-21T04:00:47.997Z",
  "info": {
   "name": "Legacy Athletic",
   "clubId": 51769,
@@ -441,42 +441,6 @@
    "favoritePosition": "goalkeeper"
   },
   {
-   "name": "WowElton-",
-   "gamesPlayed": "4",
-   "winRate": "100",
-   "goals": "0",
-   "assists": "2",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "62",
-   "passSuccessRate": "89",
-   "ratingAve": "8.5",
-   "tacklesMade": "6",
-   "tackleSuccessRate": "33",
-   "proName": "L. Foster",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "189",
-   "proNationality": "14",
-   "proOverall": "79",
-   "proOverallStr": "79",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "TubbyToni",
    "gamesPlayed": "92",
    "winRate": "47",
@@ -835,49 +799,13 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0"
-  },
-  {
-   "name": "krxlloo",
-   "gamesPlayed": "0",
-   "favoritePosition": "",
-   "winRate": "0",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "0",
-   "passSuccessRate": "0",
-   "ratingAve": "0.0",
-   "tacklesMade": "0",
-   "tackleSuccessRate": "0",
-   "proName": "",
-   "proPos": "",
-   "proStyle": "",
-   "proHeight": "",
-   "proNationality": "",
-   "proOverall": "0",
-   "proOverallStr": "",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0"
   }
  ],
  "positionCount": {
   "midfielder": 5,
   "goalkeeper": 1,
   "forward": 7,
-  "defender": 2
+  "defender": 1
  },
  "career": [
   {
@@ -960,12 +888,12 @@
   {
    "name": "typhoxn",
    "proPos": "25",
-   "gamesPlayed": "47",
-   "goals": "80",
+   "gamesPlayed": "48",
+   "goals": "81",
    "assists": "59",
    "manOfTheMatch": "17",
    "ratingAve": "9.1",
-   "prevGoals": "3",
+   "prevGoals": "1",
    "favoritePosition": "forward"
   },
   {
@@ -982,9 +910,9 @@
   {
    "name": "OutcastNick",
    "proPos": "25",
-   "gamesPlayed": "85",
-   "goals": "77",
-   "assists": "71",
+   "gamesPlayed": "87",
+   "goals": "79",
+   "assists": "72",
    "manOfTheMatch": "13",
    "ratingAve": "8.0",
    "prevGoals": "2",
@@ -1024,17 +952,6 @@
    "favoritePosition": "goalkeeper"
   },
   {
-   "name": "WowElton-",
-   "proPos": "5",
-   "gamesPlayed": "4",
-   "goals": "0",
-   "assists": "2",
-   "manOfTheMatch": "1",
-   "ratingAve": "8.5",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "TubbyToni",
    "proPos": "5",
    "gamesPlayed": "102",
@@ -1048,7 +965,7 @@
   {
    "name": "Neymarxq7",
    "proPos": "0",
-   "gamesPlayed": "18",
+   "gamesPlayed": "20",
    "goals": "5",
    "assists": "4",
    "manOfTheMatch": "0",
@@ -1080,14 +997,14 @@
   },
   {
    "name": "Slug17-_-",
-   "proPos": "14",
-   "gamesPlayed": "206",
-   "goals": "169",
+   "proPos": "5",
+   "gamesPlayed": "209",
+   "goals": "170",
    "assists": "150",
    "manOfTheMatch": "44",
    "ratingAve": "8.1",
    "prevGoals": "0",
-   "favoritePosition": "midfielder"
+   "favoritePosition": "defender"
   },
   {
    "name": "feliixinho",
@@ -1110,17 +1027,6 @@
    "ratingAve": "7.8",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "krxlloo",
-   "proPos": "5",
-   "gamesPlayed": "58",
-   "goals": "37",
-   "assists": "6",
-   "manOfTheMatch": "10",
-   "ratingAve": "6.8",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   }
  ],
  "leaderboard": {
