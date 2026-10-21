@@ -26,7 +26,7 @@
     ['👤 Players and stats', ['myStats', 'badges', 'profiles', 'leaders', 'hallOfFame', 'scouting', 'trials', 'statInsights', 'insightWidget', 'insights']],
     ['🛠️ Builds and tactics', ['builder', 'proBuilds', 'tactics', 'gameRules', 'playStyle']],
     ['💬 Community', ['notifications', 'push', 'reminders', 'suggestions', 'feedbackRoom', 'docs', 'requests', 'hub', 'hubLive', 'awards', 'predictions', 'memberLive', 'watchlist', 'discoveries', 'fun', 'facesSite', 'music']],
-    ['👑 Staff and Discord', ['boardroom', 'managerNotes', 'roleSync', 'discordMatch', 'matchReview', 'platformLink', 'liveBanner', 'homeWatch', 'liveAnnounce', 'alertRoute', 'streamAlerts', 'burners', 'ownerFab']],
+    ['👑 Staff and Discord', ['boardroom', 'managerNotes', 'roleSync', 'discordMatch', 'matchReview', 'matchPicture', 'platformLink', 'liveBanner', 'homeWatch', 'liveAnnounce', 'alertRoute', 'streamAlerts', 'burners', 'ownerFab']],
   ];
   const FREE = { requests: 100000 };
   const VIRT = { results: 'Match result posts' }; // alert features that are not a site switch
@@ -44,7 +44,7 @@
 
   // ---------- where each switch lives (page + the heading to scroll to) and the places the owner works from ----------
   const WHERE = {
-    events: ['hub-matchnight.html', 'Match night'], matchNight: ['hub-matchnight.html', 'Match night'], discordRsvp: ['hub-matchnight.html', 'Match night'], discordMatch: ['hub-matchnight.html', 'Match night'], matchReview: ['hub-matchnight.html', 'Match night'], rushLog: ['rush.html', ''], lockerRoom: ['hub.html', ''], locker: ['hub.html', ''], dugout: ['staff-dugout.html', ''],
+    events: ['hub-matchnight.html', 'Match night'], matchNight: ['hub-matchnight.html', 'Match night'], discordRsvp: ['hub-matchnight.html', 'Match night'], discordMatch: ['hub-matchnight.html', 'Match night'], matchReview: ['hub-matchnight.html', 'Match night'], matchPicture: ['hub-matchnight.html', 'Match night'], rushLog: ['rush.html', ''], lockerRoom: ['hub.html', ''], locker: ['hub.html', ''], dugout: ['staff-dugout.html', ''],
     myStats: ['hub.html', ''], badges: ['hub.html', 'Medals'], profiles: ['players.html', ''], leaders: ['leaders.html', ''], hallOfFame: ['halloffame.html', ''], scouting: ['scouting.html', ''], trials: ['join.html', ''], statInsights: ['stats.html', ''], insightWidget: ['stats.html', ''], aiInsights: ['stats.html', ''], insights: ['staff-insights.html', ''],
     builder: ['builds.html', ''], proBuilds: ['builds.html', ''], tactics: ['tactics.html', ''], gameRules: ['updates.html', ''], playStyle: ['playstyle.html', ''], nxStudio: ['studio.html', ''],
     notifications: ['hub.html', 'Alerts'], push: ['hub.html', 'Alerts'], suggestions: ['hub-clubhouse.html', ''], docs: ['hub-handbook.html', ''], requests: ['join.html', ''], hub: ['hub-clubhouse.html', ''], hubLive: ['hub-clubhouse.html', ''], hubGold: ['hub-clubhouse.html', ''], awards: ['hub-squad.html', ''], predictions: ['hub-squad.html', ''], points: ['hub-squad.html', ''], feed: ['news.html', ''], hotw: ['hub-squad.html', ''], mentions: ['hub-clubhouse.html', ''], messages: ['hub-clubhouse.html', ''], presence: ['hub-clubhouse.html', ''], starRatings: ['hub-matchnight.html', ''], feedback: ['hub.html', ''], recommendations: ['hub-squad.html', ''], ask: ['stats.html', ''], scoutReport: ['scout.html', ''], rushSquads: ['rush.html', ''],

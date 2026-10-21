@@ -18,6 +18,7 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
   const settings = await loadBotSettings(config); // P7.5 – result channel override, ping role, emoji, on/off
   if (!settings.autoPosts.results) return;
   const site = config.siteUrl?.replace(/\/?$/, '/') ?? '';
+  const matchPictureOn = ['members', 'public'].includes(settings.flags?.matchPicture ?? config.features?.matchPicture);
   const crestCdn = 'https://eafc24.content.easports.com/fifa/fltOnlineAssets/24B23FDE-7835-41C2-87A2-F453DFDB2E82/2024/fcweb/crests/256x256/l';
   const hide = new Set([...(config.hiddenPlayers || []), ...hidden].map((h) => String(h).toLowerCase()));
   const items = matches
@@ -45,8 +46,12 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
         files.push({ name: `${kind}-${m.matchId}.png`, path: path.join(drawn.dir, file) });
         return { url: `attachment://${kind}-${m.matchId}.png`, alt };
       };
-      const scoreImg = pic('score', `${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`);
-      const fieldImg = pic('field', 'Our players on the pitch with their match ratings');
+      // The merged match picture (flag matchPicture) replaces the score card and the field view with one picture.
+      const mergedFile = matchPictureOn ? drawn?.manifest?.match?.[m.matchId]?.picture : null;
+      const mergedOk = mergedFile && fs.existsSync(path.join(drawn.dir, mergedFile));
+      const mergedImg = mergedOk ? pic('picture', `${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? opp.name ?? oppId}: scoreboard, goals and assists, man of the match, team stats, rating by line and the field view with every player's rating`) : null;
+      const scoreImg = mergedImg ? null : pic('score', `${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`);
+      const fieldImg = mergedImg ? null : pic('field', 'Our players on the pitch with their match ratings');
       // Message 2: the match review picture, posted right after the result (flag matchReview; skipped when the picture was not drawn).
       const reviewFiles = [];
       const reviewFile = drawn?.manifest?.match?.[m.matchId]?.review;
@@ -56,7 +61,18 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
         cards(reviewImg),
         footer('Written from the match numbers'),
       ] });
-      const panel = (ping, mentions) => message({ accent: resultAccent(res), ping, mentions, blocks: [
+      // Title without the score (it is in the picture), the one picture, then the "Show my match" menu and buttons.
+      const mergedPanel = (ping, mentions) => message({ accent: resultAccent(res), ping, mentions, blocks: [
+        header({
+          eyebrow: `${clubName} · Match centre · ${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}`,
+          title: `${settings.emoji ? `${settings.emoji} ` : ''}${clubName} vs ${opp.details?.name ?? opp.name ?? oppId}`,
+          sub: `<t:${m.timestamp}:f> · ${{ W: 'Win', D: 'Draw', L: 'Defeat' }[res]}`,
+          thumb: res === 'L' && oppCrest ? `${crestCdn}${oppCrest}.png` : site ? `${site}assets/crest.png` : undefined,
+        }),
+        cards(mergedImg),
+        ...components,
+      ] });
+      const panel = (ping, mentions) => (mergedImg ? mergedPanel(ping, mentions) : message({ accent: resultAccent(res), ping, mentions, blocks: [
         header({
           eyebrow: `${clubName} · Match centre · ${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}`,
           title: `${settings.emoji ? `${settings.emoji} ` : ''}${clubName} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
@@ -69,7 +85,7 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
         cards(fieldImg),
         footer(fieldImg ? 'Gold = man of the match · green 7+ · orange 6–6.9 · red under 6 · pick your name below to see your own match' : 'Pick your name below to see your own match'),
         ...components,
-      ] });
+      ] }));
       return { components, files, panel, review: reviewImg ? { panel: reviewPanel, files: reviewFiles } : null, embed: {
         title: `${settings.emoji ? `${settings.emoji} ` : ''}${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
         url,
