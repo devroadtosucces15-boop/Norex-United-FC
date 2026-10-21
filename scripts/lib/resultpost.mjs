@@ -47,6 +47,15 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
       };
       const scoreImg = pic('score', `${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`);
       const fieldImg = pic('field', 'Our players on the pitch with their match ratings');
+      // Message 2: the match review picture, posted right after the result (flag matchReview; skipped when the picture was not drawn).
+      const reviewFiles = [];
+      const reviewFile = drawn?.manifest?.match?.[m.matchId]?.review;
+      const reviewImg = reviewFile && fs.existsSync(path.join(drawn.dir, reviewFile)) ? (reviewFiles.push({ name: `review-${m.matchId}.png`, path: path.join(drawn.dir, reviewFile) }), { url: `attachment://review-${m.matchId}.png`, alt: 'Match review: what went well, what to work on, next match targets and recommendations for the squad' }) : null;
+      const reviewPanel = () => message({ accent: 'steel', blocks: [
+        header({ eyebrow: `${clubName} · Match review`, title: `${clubName} vs ${opp.details?.name ?? opp.name ?? oppId}`, sub: `Insights and recommendations · <t:${m.timestamp}:f>`, thumb: site ? `${site}assets/crest.png` : undefined }),
+        cards(reviewImg),
+        footer('Written from the match numbers'),
+      ] });
       const panel = (ping, mentions) => message({ accent: resultAccent(res), ping, mentions, blocks: [
         header({
           eyebrow: `${clubName} · Match centre · ${m.matchType === 'playoffMatch' ? 'Playoff' : 'League'}`,
@@ -61,7 +70,7 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
         footer(fieldImg ? 'Gold = man of the match · green 7+ · orange 6–6.9 · red under 6 · pick your name below to see your own match' : 'Pick your name below to see your own match'),
         ...components,
       ] });
-      return { components, files, panel, embed: {
+      return { components, files, panel, review: reviewImg ? { panel: reviewPanel, files: reviewFiles } : null, embed: {
         title: `${settings.emoji ? `${settings.emoji} ` : ''}${us.details?.name ?? 'NOREX'} ${us.goals}–${opp.goals} ${opp.details?.name ?? oppId}`,
         url,
         color: { W: 0x22c55e, D: 0xeab308, L: 0xef4444 }[res],
@@ -94,6 +103,9 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
     } else { body = JSON.stringify(payload); headers['Content-Type'] = 'application/json'; }
     return fetch(`https://discord.com/api/v10/channels/${channel}/messages`, { method: 'POST', headers, body }).catch((e) => ({ ok: false, status: e.message }));
   };
+  const reviewOn = ['members', 'public'].includes(settings.flags?.matchReview ?? config.features?.matchReview);
+  // The review goes right after its result, in the same channel and without the ping.
+  const sendReview = async (channel, item) => { if (reviewOn && item.review) await send(channel, item.review, undefined, { parse: [] }); };
   const botOn = token && ['members', 'public'].includes(settings.flags?.discordMatch ?? config.features?.discordMatch); // live Boardroom switch first, committed config as the fallback
   const webhookChannel = () => fetch(hook).then((r) => (r.ok ? r.json() : null)).then((w) => w?.channel_id).catch(() => null);
   // The owner's routing rules (Boardroom → Control Center → Match result posted): where each result goes and whom it tags.
@@ -110,6 +122,7 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
         for (const item of rest) {
           const r = channel ? await send(channel, item, content, allowed) : { ok: false, status: 'no channel' };
           if (!r.ok) { console.warn(`Routed result post failed (${r.status}) in ${channel || 'no channel'} – the bot needs View Channel + Send Messages + Embed Links there.`); break; }
+          await sendReview(channel, item);
         }
       }
       return;
@@ -121,6 +134,7 @@ export async function postResults(matches, { config, homeId, hidden = [], drawn 
     while (channel && rest.length) {
       const r = await send(channel, rest[0], pingContent, allowedMentions);
       if (!r.ok) { console.warn(`Bot post failed (${r.status}) – the bot needs View Channel + Send Messages + Embed Links there. Using the webhook.`); break; }
+      await sendReview(channel, rest[0]);
       rest = rest.slice(1);
     }
   }

@@ -10,6 +10,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { FORMATIONS, POS_OF } from '../bot/events.js';
+import { loadConfig } from './lib.mjs';
+import { buildReview, loadHistory } from './lib/matchreview.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const TEMPLATE_VERSION = 4; // bump to redraw every card after a template change
@@ -279,6 +281,65 @@ ${ms.map((m) => `<div class="row"><span class="pill ${m.res}" style="text-align:
 </div><div class="brand">norex united</div>`);
 }
 
+
+// ---------- match review (message 2 of a result): one picture, one plain pattern for every row ----------
+// Neutral palette: white headings, icon tiles, rows that all follow the same shape. Colour only on small status marks – gold stays for
+// special callouts (man of the match), so nothing here uses it. Model comes from scripts/lib/matchreview.mjs.
+const RV = (d) => (c = '#fff', s = 26) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}">${d.replaceAll('$', c)}</svg>`;
+export const REVIEW_ICON = {
+  team: RV('<circle cx="8" cy="8" r="3.2" fill="$"/><circle cx="17" cy="9" r="2.6" fill="$" opacity=".7"/><path d="M2 20c0-4 3-6 6-6s6 2 6 6zM14 20c0-3 2-5 4.5-5S23 17 23 20z" fill="$"/>'),
+  glove: RV('<path d="M7 21v-6.5L4.6 11a1.6 1.6 0 0 1 2.5-2L9 11V4.6a1.4 1.4 0 0 1 2.8 0V10h.4V3.6a1.4 1.4 0 0 1 2.8 0V10h.4V4.8a1.4 1.4 0 0 1 2.8 0V15c0 3-2 6-5 6z" fill="none" stroke="$" stroke-width="1.8" stroke-linejoin="round"/>'),
+  shield: RV('<path d="M12 2.5l8 2.8v6.2c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V5.3z" fill="none" stroke="$" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="$" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+  flow: RV('<path d="M4 8h13M13 4l4 4-4 4M20 16H7M11 12l-4 4 4 4" fill="none" stroke="$" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+  goal: RV('<circle cx="12" cy="12" r="10" fill="none" stroke="$" stroke-width="2"/><path d="M12 7l4 3-1.5 4.5h-5L8 10z" fill="$"/>'),
+  assist: RV('<circle cx="12" cy="12" r="9" fill="none" stroke="$" stroke-width="2"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="$" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="$"/>'),
+  chip: RV('<rect x="6" y="6" width="12" height="12" rx="2.5" fill="none" stroke="$" stroke-width="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" stroke="$" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="$"/>'),
+  check: RV('<path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="$" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'),
+  swap: RV('<path d="M4 9h14M14 5l4 4-4 4M20 16H6M10 12l-4 4 4 4" fill="none" stroke="$" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
+  me: RV('<circle cx="12" cy="8" r="4" fill="$"/><path d="M4 21c0-5 4-8 8-8s8 3 8 8z" fill="$"/>'),
+};
+const rvIcon = (k, c, s) => (REVIEW_ICON[k] ?? REVIEW_ICON.team)(c, s);
+function shapeDiagram(model, w = 600, h = 250) {
+  const cols = [['GK', 0.1], ['DEF', 0.33], ['MID', 0.58], ['FWD', 0.84]], rad = 20;
+  const LATS = { 1: [.5], 2: [.34, .66], 5: [.09, .29, .5, .71, .91] };
+  let out = `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><rect width="${w}" height="${h}" rx="22" fill="#10301f"/><rect x="2" y="2" width="${w - 4}" height="${h - 4}" rx="20" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2"/><line x1="${w / 2}" y1="6" x2="${w / 2}" y2="${h - 6}" stroke="rgba(255,255,255,.16)" stroke-width="2"/><circle cx="${w / 2}" cy="${h / 2}" r="${h * 0.16}" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="2"/>`;
+  for (const [g, fx] of cols) {
+    const ps = model.shape.players.filter((p) => p.g === g).sort((a, b) => b.r - a.r);
+    const lat = LATS[ps.length] ?? ps.map((_, j) => .1 + .8 * j / Math.max(1, ps.length - 1));
+    ps.forEach((_, j) => { const x = w * fx + (ps.length >= 5 ? (j % 2 ? 0.032 : -0.032) * w : 0), y = h * (0.12 + 0.76 * lat[j]); out += `<circle cx="${x}" cy="${y}" r="${rad}" fill="#0b0f16" stroke="#9fb0cf" stroke-width="3.5"/>`; });
+    out += `<text x="${w * fx}" y="${h - 10}" text-anchor="middle" font-family="Inter" font-weight="800" font-size="19" letter-spacing="3" fill="rgba(255,255,255,.7)">${g} ${ps.length}</text>`;
+  }
+  if (model.shape.ai > 0) out += `<circle cx="${w * 0.955}" cy="${h * 0.5}" r="25" fill="none" stroke="#9fb0cf" stroke-width="3" stroke-dasharray="7 6"/><text x="${w * 0.955}" y="${h * 0.5 + 8}" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="22" fill="#9fb0cf">AI</text>`;
+  return `${out}</svg>`;
+}
+export function reviewCard(model, club) {
+  const head = (icon, t) => `<div class="sh"><span class="si">${rvIcon(icon, '#fff', 26)}</span><b class="osw">${esc(t)}</b></div>`;
+  const row = (r, label) => `<div class="rw"><span class="ri">${rvIcon(r.icon, '#fff', 26)}</span><div><b>${esc(r.lead ?? r.t)}</b><p>${label ? `<i>${label}</i>` : ''}${esc(r.text ?? r.tr)}</p>${r.why ? `<p class="wy">${esc(r.why)}</p>` : ''}</div></div>`;
+  const ring = (t) => { const frac = t.lower ? Math.min(1, t.b / Math.max(1, t.a)) : Math.min(1, t.a / Math.max(1, t.b)); return `<svg viewBox="0 0 100 100" width="88" height="88"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="11"/><circle cx="50" cy="50" r="40" fill="none" stroke="#e0493f" stroke-width="11" stroke-linecap="round" stroke-dasharray="${frac * 251.3} 251.3" transform="rotate(-90 50 50)"/><text x="50" y="61" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="29" fill="#fff">${t.a}${t.u}</text></svg>`; };
+  const next = model.next.map((t) => `<div class="nx">${ring(t)}<span>${esc(t.k)}</span><b class="osw">${t.lower ? 'Under' : 'Target'} ${t.b}${t.u}</b></div>`).join('');
+  const sh = model.shape;
+  return page(`
+body:before{background:radial-gradient(900px 340px at 50% -12%,rgba(200,53,44,.26),transparent 65%),linear-gradient(180deg,#0d121b,#080b11)}
+.top{padding:26px 40px 6px;border-top:8px solid var(--red)}.top .eyebrow{font-size:19px;display:block}
+.big{font:700 70px/1.05 Oswald;letter-spacing:.03em;margin-top:4px;display:block;text-transform:uppercase}
+.sub{font:600 25px/1.3 Inter;color:var(--soft);margin-top:2px}
+.sec{margin:22px 40px 0}.two{display:grid;grid-template-columns:1fr 1fr;gap:36px;margin:0 40px}.two .sec{margin:22px 0 0}
+.sh{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--line);padding-bottom:9px;margin-bottom:4px}.sh b{font:600 31px/1 Oswald;letter-spacing:.08em}.si{display:inline-flex;width:40px;height:40px;border-radius:11px;background:var(--red);align-items:center;justify-content:center}
+.lu{display:grid;grid-template-columns:600px 1fr;gap:28px;align-items:center;margin-top:12px}.lf{display:grid;gap:4px}.lf b{font:700 76px/1 Oswald;letter-spacing:.04em}.lf span{font:700 26px/1.2 Inter;color:#e1e8f5}.lf em{font:500 21px/1.3 Inter;color:var(--mute);font-style:normal;margin-top:6px}
+.rw{display:grid;grid-template-columns:46px 1fr;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);align-items:start}.rw:last-child{border-bottom:0}
+.ri{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid var(--line);display:grid;place-items:center}
+.rw b{font:800 25px/1.2 Inter;color:#fff;display:block}.rw p{font:500 22px/1.3 Inter;color:#cfd8e8;margin-top:3px}.rw p.wy{font-size:20px;color:var(--mute)}.rw i{font:800 17px Inter;letter-spacing:.16em;text-transform:uppercase;font-style:normal;color:var(--red2);margin-right:10px}
+.nxh{margin-top:18px}.nxs{display:grid;grid-template-columns:repeat(3,1fr);margin-top:10px}.nx{display:grid;justify-items:center;gap:2px;text-align:center}.nx span{font:700 20px Inter;color:#cfd8e8}.nx b{font:600 24px/1 Oswald;letter-spacing:.04em}
+.last{padding-bottom:34px}.rg{display:grid;grid-template-columns:1fr 1fr;gap:0 36px}`,
+  `<div class="top"><div class="eyebrow">${esc(club?.name ?? 'NOREX UNITED')} · Match review · vs ${esc(model.opp)}</div><div class="big">${esc(model.title)}</div><div class="sub">${esc(model.sub)}</div></div>
+<div class="sec">${head('me', 'How we lined up')}<div class="lu"><div>${shapeDiagram(model)}</div><div class="lf"><b class="osw">${esc(sh.label)}</b><span>${sh.humans} player${sh.humans === 1 ? '' : 's'}${sh.ai ? ` and ${sh.ai} AI slot${sh.ai === 1 ? '' : 's'}` : ''}</span><em>Shape from where the players lined up. EA does not record which slot the AI took.</em></div></div></div>
+<div class="two">
+  <div class="sec">${head('check', 'What went well')}${model.good.map((g) => row(g)).join('')}</div>
+  <div class="sec">${head('assist', 'What to work on')}${model.work.map((g) => row(g)).join('')}${next ? `<div class="nxh">${head('goal', 'Next match')}<div class="nxs">${next}</div></div>` : ''}</div>
+</div>
+${model.recs.length ? `<div class="sec last">${head('swap', 'Recommendations for the squad')}<div class="rg">${model.recs.map((r) => row(r, 'Try')).join('')}</div></div>` : '<div style="height:34px"></div>'}`);
+}
+
 // ---------- what gets drawn, and the manifest the bot reads ----------
 const hash = (x) => crypto.createHash('sha1').update(JSON.stringify([TEMPLATE_VERSION, x])).digest('hex').slice(0, 10);
 
@@ -324,9 +385,13 @@ export function lineupCard(formation) {
 ${markers}</svg>`);
 }
 
-export function cardJobs(club, players, { matches = 10 } = {}) {
+// review: (matchId) → the match review model (scripts/lib/matchreview.mjs) or null; given only by the real build, for the newest few matches.
+const REVIEW_MATCHES = 3;
+export function cardJobs(club, players, { matches = 10, review = null } = {}) {
   const jobs = [];
-  for (const m of (club.matches ?? []).slice(0, matches)) {
+  for (const [i, m] of (club.matches ?? []).slice(0, matches).entries()) {
+    const model = review && i < REVIEW_MATCHES ? review(m.id) : null;
+    if (model) jobs.push({ key: ['match', m.id, 'review'], file: `review-${m.id}-${hash([model, club.name])}.png`, html: () => reviewCard(model, club) });
     jobs.push({ key: ['match', m.id, 'score'], file: `score-${m.id}-${hash([m, club.name, club.crest])}.png`, html: () => scoreCard(m, club) });
     if (m.ps?.length) jobs.push({ key: ['match', m.id, 'field'], file: `field-${m.id}-${hash(m.ps)}.png`, html: () => fieldCard(m) });
     if (m.ps?.length) jobs.push({ key: ['match', m.id, 'box'], file: `box-${m.id}-${hash([m.ps, m.gf, m.ga, m.opp])}.png`, html: () => boxScoreCard(m, club) });
@@ -384,7 +449,14 @@ async function main() {
   const publicClub = { ...club }; // the manifest keeps real URLs; only the drawn copy gets inlined crests
   const drawClub = structuredClone(club);
   await inlineCrests(drawClub, siteDir);
-  const jobs = cardJobs(drawClub, players);
+  const config = loadConfig(), homeId = String(config.homeClubId), hide = new Set((config.hiddenPlayers ?? []).map((h) => String(h).toLowerCase()));
+  const rawDir = path.join(ROOT, 'data/matches');
+  const review = (id) => {
+    const f = path.join(rawDir, `${id}.json`);
+    if (!fs.existsSync(f)) return null;
+    try { const raw = JSON.parse(fs.readFileSync(f, 'utf8')); return buildReview(raw, homeId, { history: loadHistory(rawDir, homeId, +raw.timestamp), hide }); } catch { return null; }
+  };
+  const jobs = cardJobs(drawClub, players, { review });
   const { launchChrome } = await import('./lib/chrome.mjs');
   const chrome = await launchChrome();
   const manifest = { v: TEMPLATE_VERSION, at: Date.now(), base: `${(publicClub.url || '').replace(/\/?$/, '/')}cards/` };
