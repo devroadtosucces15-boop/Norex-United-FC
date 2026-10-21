@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-21T02:20:47.744Z",
+ "fetchedAt": "2026-10-21T02:30:46.632Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -114,42 +114,6 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "shon_day",
-   "gamesPlayed": "52",
-   "winRate": "63",
-   "goals": "20",
-   "assists": "19",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "58",
-   "passesMade": "599",
-   "passSuccessRate": "78",
-   "ratingAve": "7.5",
-   "tacklesMade": "65",
-   "tackleSuccessRate": "27",
-   "proName": "shon",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "95",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "1",
-   "prevGoals8": "1",
-   "prevGoals9": "0",
-   "prevGoals10": "1",
    "favoritePosition": "forward"
   },
   {
@@ -444,7 +408,7 @@
  "positionCount": {
   "midfielder": 4,
   "goalkeeper": 0,
-  "forward": 4,
+  "forward": 3,
   "defender": 2
  },
  "career": [
@@ -456,17 +420,6 @@
    "assists": "13",
    "manOfTheMatch": "3",
    "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "shon_day",
-   "proPos": "25",
-   "gamesPlayed": "168",
-   "goals": "95",
-   "assists": "93",
-   "manOfTheMatch": "16",
-   "ratingAve": "7.6",
    "prevGoals": "0",
    "favoritePosition": "forward"
   },
@@ -495,7 +448,7 @@
   {
    "name": "V-_MALDINI4-_XI",
    "proPos": "5",
-   "gamesPlayed": "30",
+   "gamesPlayed": "31",
    "goals": "1",
    "assists": "1",
    "manOfTheMatch": "1",
