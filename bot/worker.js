@@ -19,7 +19,7 @@ import { eventReminders } from './events.js';
 import { closeDue } from './awards.js';
 import { hotwDue } from './hotw.js';
 import { scoreDue } from './predict.js';
-import { eventButton, playButton, memberCommand, memberOf, MEMBER_COMMANDS } from './botcmds.js';
+import { eventButton, checkinButton, playButton, memberCommand, memberOf, MEMBER_COMMANDS } from './botcmds.js';
 import { panelInteraction, PANEL_ID } from './panel.js';
 import { insightsCron, insightsNow, reportMessages } from './insights.js';
 import { matchComponents, matchInteraction } from './matchcard.js';
@@ -166,6 +166,9 @@ export default {
     if (i.type === 3 && /^norex:bn:/.test(i.data?.custom_id ?? '')) return burnerPick(i, env, ctx, who, (f) => load(site, f, ctx)); // …its pickers
     if (i.type === 3 && /^norex:ev:\d+:\w+$/.test(i.data?.custom_id ?? '')) { // P3.3 ✅ ❔ ❌ on event posts
       try { return json(await eventButton(i, env, who)); } catch (e) { return json(privateNote(`⚠️ ${e.message}`)); }
+    }
+    if (i.type === 3 && /^norex:ci:\d+$/.test(i.data?.custom_id ?? '')) { // ✅ Check in on the check-in post
+      try { return json(await checkinButton(i, env, who)); } catch (e) { return json(privateNote(`⚠️ ${e.message}`)); }
     }
     if (i.type === 3 && /^norex:play:\d+:learned$/.test(i.data?.custom_id ?? '')) { // BE1 ✅ Learned it on a shared play
       try { return json(await playButton(i, env, who)); } catch (e) { return json(privateNote(`⚠️ ${e.message}`)); }
