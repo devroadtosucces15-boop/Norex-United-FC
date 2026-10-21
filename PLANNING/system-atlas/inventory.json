@@ -1,9 +1,9 @@
 {
-  "revision": "5a04fbfaea384ae535a77fd6f389e733885e0afb",
-  "files": 910,
-  "imports": 697,
-  "api_paths": 252,
-  "tables": 326,
+  "revision": "5578163cd729d43233bb7f0aa5bf2960208259da",
+  "files": 912,
+  "imports": 706,
+  "api_paths": 253,
+  "tables": 327,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -1948,7 +1948,7 @@
     {
       "path": "bot/members.js",
       "layer": "bot",
-      "lines": 1182,
+      "lines": 1183,
       "imports": [
         "./faces.js",
         "./panel.js",
@@ -2020,6 +2020,7 @@
         "/api/availability",
         "/api/avatarcard",
         "/api/awards/player",
+        "/api/bot/faces",
         "/api/bot/settings/public",
         "/api/burners/relay",
         "/api/burners/tracked",
@@ -3649,12 +3650,13 @@
     {
       "path": "bot/settings.js",
       "layer": "bot",
-      "lines": 73,
+      "lines": 84,
       "imports": [
         "./roles.js",
         "./botcommands.js",
         "./limits.js",
-        "./routing.js"
+        "./routing.js",
+        "./faces.js"
       ],
       "endpoints": [
         "/api/bot/settings"
@@ -3665,6 +3667,7 @@
         "meta"
       ],
       "functions": [
+        "botFacesRoute",
         "botSettingsPublicRoute",
         "botSettingsRoute",
         "ch",
@@ -4178,7 +4181,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 135,
+      "lines": 136,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9727,7 +9730,7 @@
     {
       "path": "scripts/cards.mjs",
       "layer": "scripts",
-      "lines": 483,
+      "lines": 598,
       "imports": [
         "node:fs",
         "node:path",
@@ -9736,42 +9739,56 @@
         "../bot/events.js",
         "./lib.mjs",
         "./lib/matchreview.mjs",
+        "./lib/matchpicture.mjs",
         "./lib/chrome.mjs"
       ],
       "endpoints": [],
       "tables": [
+        "memory",
         "scripts",
+        "the",
         "where"
       ],
       "functions": [
         "COMPARE_ROWS",
+        "GENERIC_BUST",
+        "MEDAL",
         "RV",
         "SHIELD",
         "X",
+        "avatar",
         "band",
         "boxScoreCard",
         "cardJobs",
         "clubCard",
         "compareCard",
         "crest",
+        "crow",
+        "donut",
         "esc",
         "fieldCard",
         "fieldSlots",
         "font",
         "fontFaces",
+        "frac",
         "get",
         "hash",
         "head",
+        "initials",
         "inlineCrests",
+        "lab",
         "lineupCard",
         "lineupSlug",
         "local",
         "main",
+        "matchPicture",
         "page",
         "pc",
+        "picture",
         "playerCard",
         "r1",
         "ratingGraph",
+        "rawOf",
         "read",
         "resultsCard",
         "review",
@@ -9996,6 +10013,26 @@
       ]
     },
     {
+      "path": "scripts/lib/matchpicture.mjs",
+      "layer": "scripts",
+      "lines": 69,
+      "imports": [
+        "node:crypto"
+      ],
+      "endpoints": [],
+      "tables": [
+        "the"
+      ],
+      "functions": [
+        "buildMatchPicture",
+        "fetchPlayerFaces",
+        "mean",
+        "n",
+        "pct",
+        "sum"
+      ]
+    },
+    {
       "path": "scripts/lib/matchreview.mjs",
       "layer": "scripts",
       "lines": 136,
@@ -10024,7 +10061,7 @@
     {
       "path": "scripts/lib/resultpost.mjs",
       "layer": "scripts",
-      "lines": 149,
+      "lines": 165,
       "imports": [
         "node:fs",
         "node:path",
@@ -10040,6 +10077,7 @@
       ],
       "functions": [
         "list",
+        "mergedPanel",
         "panel",
         "pic",
         "postResults",
@@ -11704,6 +11742,34 @@
         "viewLocker",
         "vote",
         "ws"
+      ]
+    },
+    {
+      "path": "tests/matchpicture.test.mjs",
+      "layer": "tests",
+      "lines": 79,
+      "imports": [
+        "node:fs",
+        "node:os",
+        "node:path",
+        "node:crypto",
+        "../scripts/lib/matchpicture.mjs",
+        "../scripts/cards.mjs",
+        "../scripts/lib/resultpost.mjs",
+        "../bot/ui.js",
+        "./mock.mjs",
+        "../bot/settings.js",
+        "./lib.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "claims",
+        "users"
+      ],
+      "functions": [
+        "P",
+        "match",
+        "run"
       ]
     },
     {
@@ -16662,6 +16728,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/settings.js",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/social.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -17089,6 +17160,11 @@
     {
       "source": "scripts/cards.mjs",
       "target": "scripts/lib/matchreview.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/cards.mjs",
+      "target": "scripts/lib/matchpicture.mjs",
       "kind": "imports"
     },
     {
@@ -18109,6 +18185,41 @@
     {
       "source": "tests/locker.test.mjs",
       "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchpicture.test.mjs",
+      "target": "scripts/lib/matchpicture.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchpicture.test.mjs",
+      "target": "scripts/cards.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchpicture.test.mjs",
+      "target": "scripts/lib/resultpost.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchpicture.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchpicture.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchpicture.test.mjs",
+      "target": "bot/settings.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchpicture.test.mjs",
+      "target": "tests/lib.mjs",
       "kind": "imports"
     },
     {
