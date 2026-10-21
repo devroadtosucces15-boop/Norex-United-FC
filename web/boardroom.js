@@ -11,7 +11,7 @@
   const LEVELS = ['off', 'owner', 'managers', 'members', 'public'];
   const LABEL = {
     events: ['🗓️', 'Match nights and schedule'], myStats: ['📊', 'My stats dashboard'], badges: ['🏅', 'Badges and achievements'], notifications: ['🔔', 'Alerts and Discord DMs'],
-    discordMatch: ['💬', 'Show my match in Discord'], matchReview: ['📋', 'Match review message'], proBuilds: ['🧬', 'Pro Builds'], builder: ['🧩', 'Builder'], roleSync: ['🔁', 'Discord role sync'], rushLog: ['⚡', 'Rush log'],
+    discordMatch: ['💬', 'Show my match in Discord'], matchReview: ['📋', 'Match review message'], matchPicture: ['🖼️', 'One merged match picture'], proBuilds: ['🧬', 'Pro Builds'], builder: ['🧩', 'Builder'], roleSync: ['🔁', 'Discord role sync'], rushLog: ['⚡', 'Rush log'],
     scouting: ['🔭', 'Scouting'], leaders: ['🥇', 'Leaders page'], profiles: ['👤', 'Player profiles'], managerNotes: ['📝', 'Manager notes'], hallOfFame: ['🏛️', 'Hall of Fame'],
     trials: ['🧭', 'Trials page'], liveBanner: ['🔴', 'Live banner'], gameRules: ['🎮', 'Game rules'], requests: ['📨', 'Club & privacy requests'], playStyle: ['🎯', 'Play style'],
     docs: ['📄', 'Club docs'], suggestions: ['💡', 'Suggestion box'], matchNight: ['🌙', 'Match night mode'], platformLink: ['🔗', 'Platform links'], discordRsvp: ['✅', 'RSVP from Discord'],

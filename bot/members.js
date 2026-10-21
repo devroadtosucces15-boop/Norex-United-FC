@@ -46,7 +46,7 @@ import { playsRoute, studioSocket } from './plays.js';
 import { playMediaRoute, playMediaUpload } from './playmedia.js';
 import { memberCard, profileOut, profileSummary, saveProfile } from './profiles.js';
 import { syncMember } from './discordroles.js';
-import { botSettingsPublicRoute, botSettingsRoute } from './settings.js';
+import { botSettingsPublicRoute, botSettingsRoute, botFacesRoute } from './settings.js';
 import { alertRoute } from './alertroute.js';
 import { routingRoute } from './routing.js';
 import { botCommandsRoute } from './botcommands.js';
@@ -447,6 +447,7 @@ async function handleMembersUncached(request, env, ctx, loadSite) {
       return cors(env, await publicRequestRoute(request, env, me, loadSite, log));
     }
     if (url.pathname === '/api/bot/settings/public') return cors(env, await botSettingsPublicRoute(request, env)); // P7.5 – fetch.mjs reads before posting
+    if (url.pathname === '/api/bot/faces') return cors(env, await botFacesRoute(request, env)); // faces for the match picture, drawn in the Action
     if (url.pathname === '/api/crawl') return cors(env, await crawlRoute(request, env)); // P9.1 – fetch.mjs's resumable club-ID crawl checkpoint
     if (url.pathname === '/api/burners/relay') return cors(env, await burnersRelay(request, env)); // EA relay answer from the Actions job
     if (url.pathname === '/api/burners/tracked') return cors(env, await burnersRoute(request, env)); // burner tracker – fetch.mjs reads the clubs to follow
