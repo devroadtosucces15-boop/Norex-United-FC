@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-22T21:00:53.403Z",
+ "fetchedAt": "2026-10-22T21:10:49.269Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -182,6 +182,42 @@
    "prevGoals4": "0",
    "prevGoals5": "0",
    "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
+  },
+  {
+   "name": "CaptainFluffyCat",
+   "gamesPlayed": "48",
+   "winRate": "50",
+   "goals": "24",
+   "assists": "16",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "43",
+   "passesMade": "462",
+   "passSuccessRate": "73",
+   "ratingAve": "7.0",
+   "tacklesMade": "73",
+   "tackleSuccessRate": "19",
+   "proName": "Piolin",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "184",
+   "proNationality": "95",
+   "proOverall": "69",
+   "proOverallStr": "69",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "1",
+   "prevGoals3": "1",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "1",
    "prevGoals7": "0",
    "prevGoals8": "0",
    "prevGoals9": "0",
@@ -445,7 +481,7 @@
   "midfielder": 3,
   "goalkeeper": 0,
   "forward": 3,
-  "defender": 2
+  "defender": 3
  },
  "career": [
   {
@@ -491,6 +527,17 @@
    "ratingAve": "7.2",
    "prevGoals": "0",
    "favoritePosition": "defender"
+  },
+  {
+   "name": "CaptainFluffyCat",
+   "proPos": "25",
+   "gamesPlayed": "207",
+   "goals": "165",
+   "assists": "84",
+   "manOfTheMatch": "44",
+   "ratingAve": "7.5",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "Treego2424",
