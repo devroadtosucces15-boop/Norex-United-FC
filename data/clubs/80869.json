@@ -1,7 +1,7 @@
 {
  "id": "80869",
  "tier": "home",
- "fetchedAt": "2026-10-22T06:50:47.574Z",
+ "fetchedAt": "2026-10-22T07:00:48.611Z",
  "info": {
   "name": "NOREX UNITED FC",
   "clubId": 80869,
@@ -36,8 +36,8 @@
  },
  "overall": {
   "clubId": "80869",
-  "bestDivision": "1",
-  "bestFinishGroup": "4",
+  "bestDivision": null,
+  "bestFinishGroup": null,
   "finishesInDivision1Group1": "0",
   "finishesInDivision2Group1": "0",
   "finishesInDivision3Group1": "0",
@@ -1955,12 +1955,12 @@
   {
    "name": "G3org3_Busch33",
    "proPos": "14",
-   "gamesPlayed": "73",
-   "goals": "31",
+   "gamesPlayed": "74",
+   "goals": "33",
    "assists": "30",
-   "manOfTheMatch": "7",
-   "ratingAve": "7.5",
-   "prevGoals": "0",
+   "manOfTheMatch": "8",
+   "ratingAve": "7.6",
+   "prevGoals": "2",
    "favoritePosition": "midfielder"
   },
   {
