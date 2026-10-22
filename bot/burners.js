@@ -319,7 +319,7 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
       })()).catch((e) => plain(`⚠️ Could not load the club list: ${e.message}`));
       await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(PATCH_TIMEOUT), body: JSON.stringify(edit(body)),
-      }).catch((e) => console.log('burner reply failed', e.message));
+      }).then(async (r) => { if (!r.ok) console.log('burner reply rejected', r.status, (await r.text()).slice(0, 400)); }).catch((e) => console.log('burner reply failed', e.message));
     })());
     return DEFER();
   }
@@ -349,7 +349,7 @@ export function burnerCommand(i, env, ctx, user, site, loadSite) {
     }
     await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(PATCH_TIMEOUT), body: JSON.stringify(edit(body)),
-    }).catch((e) => console.log('burner reply failed', e.message));
+    }).then(async (r) => { if (!r.ok) console.log('burner reply rejected', r.status, (await r.text()).slice(0, 400)); }).catch((e) => console.log('burner reply failed', e.message));
   })());
   return DEFER();
 }
