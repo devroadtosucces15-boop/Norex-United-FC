@@ -348,7 +348,7 @@ function avatarCardCommand(i, env, ctx, who, origin) {
 const DEFER_PANEL = (priv) => ({ type: 5, data: { flags: (1 << 15) | (priv ? 64 : 0) } });
 // A deferred command's finished answer as a panel: steel when it's a warning, club red otherwise.
 const noteMsg = (content) => message({ accent: /^(⚠|🔒|❌)/u.test(content) ? 'steel' : 'red', blocks: [text(String(content).replace(/^(⚠️|🔒|❌)\s*/u, ''))] });
-const panelEdit = (m) => ({ components: m.components, allowed_mentions: m.allowed_mentions ?? { parse: [] } });
+const panelEdit = (m) => ({ flags: 1 << 15, components: m.components, allowed_mentions: m.allowed_mentions ?? { parse: [] } });
 
 // ---------- /insight (public, flag `statInsights`): BE9's stored stat insight as an embed – read-only, no writer call ----------
 async function insightCommand(i, env, ctx, site, who) {

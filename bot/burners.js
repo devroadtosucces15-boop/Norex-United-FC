@@ -34,7 +34,7 @@ const plain = (content) => panel([text(content)]);
 // A deferred reply that never gets edited leaves Discord on "thinking…" forever, so every lookup is capped and always answers.
 const within = (p, ms = 8000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`timed out after ${ms / 1000}s – try again in a moment`)), ms))]);
 const PATCH_TIMEOUT = 6000;
-const edit = (m) => ({ components: m.components, allowed_mentions: { parse: [] } });
+const edit = (m) => ({ flags: IS_V2, components: m.components, allowed_mentions: { parse: [] } });
 const BEAR = (eyebrow, title, lines, foot, menu) => panel([header({ eyebrow: `Staff · ${eyebrow}`, title, size: 3 }), text(lines), footer(foot), menu]);
 
 export async function burnersKey(secret) {
