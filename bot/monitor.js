@@ -16,14 +16,21 @@ async function siteCheck(env) {
   }
 }
 
-async function dbCheck(env) {
+// Cloudflare D1 now and then answers one query with "D1_ERROR: internal error" and is fine a second later, so a
+// single failure is retried (3 tries, short backoff) before it counts as an outage.
+export async function dbCheck(env, { tries = 3, waitMs = 1500 } = {}) {
   if (!env.DB) return null;
-  try {
-    await env.DB.prepare('SELECT 1').first();
-    return null;
-  } catch (e) {
-    return `Member database unreachable: ${e.message}`;
+  let last;
+  for (let i = 0; i < tries; i++) {
+    if (i) await new Promise((r) => setTimeout(r, waitMs * i));
+    try {
+      await env.DB.prepare('SELECT 1').first();
+      return null;
+    } catch (e) {
+      last = e;
+    }
   }
+  return `Member database unreachable: ${last.message}`;
 }
 
 // Pure decision: given the last stored state and this run's problems, returns null (nothing changed) or the
