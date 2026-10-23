@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-23T18:10:50.299Z",
+ "fetchedAt": "2026-10-23T18:20:52.488Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -255,6 +255,42 @@
    "prevGoals5": "0",
    "prevGoals6": "2",
    "prevGoals7": "1",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "Ynanntanos",
+   "gamesPlayed": "1",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "19",
+   "passSuccessRate": "82",
+   "ratingAve": "6.8",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "A. LOKI",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "175",
+   "proNationality": "108",
+   "proOverall": "80",
+   "proOverallStr": "80",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0",
@@ -516,7 +552,7 @@
  "positionCount": {
   "midfielder": 3,
   "goalkeeper": 0,
-  "forward": 5,
+  "forward": 6,
   "defender": 2
  },
  "career": [
@@ -584,6 +620,17 @@
    "manOfTheMatch": "5",
    "ratingAve": "7.5",
    "prevGoals": "0",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "Ynanntanos",
+   "proPos": "25",
+   "gamesPlayed": "463",
+   "goals": "867",
+   "assists": "267",
+   "manOfTheMatch": "131",
+   "ratingAve": "8.3",
+   "prevGoals": "3",
    "favoritePosition": "forward"
   },
   {
