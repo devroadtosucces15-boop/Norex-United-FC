@@ -11,6 +11,7 @@
 //   POST /api/events/lineup          managers: quick lineup { id, lineup: { <discord id>: 'CB' } }
 //   POST /api/events/plays           managers: { id, plays: [playId…] } – pin up to 4 published plays for that night (board 08)
 //   GET  /api/events/:id/lineup/ws   managers: live Dugout – a nudge on room 'lineup:<id>' when the line-up, a yes/no or a check-in changes
+//   GET  /api/events/roster-test?id= owner: draws the roster picture now and says why it failed (bot/rosterpic.js)
 //   GET  /api/events/report?id=      members: session report – results that night (League from EA, confirmed Rush),
 //                                    team + player grades A+–F, position trials vs season average, attendance
 //   POST /api/events/report/post     managers: share the report (notify who came, optional Discord post)
@@ -32,6 +33,7 @@ import { getBotSettings } from './settings.js';
 import { routeNotification } from './routing.js';
 import { recommendRoute } from './lineuprec.js';
 import { hex } from './media.js';
+import { rosterBlock, rosterOn, rosterModel, drawRoster } from './rosterpic.js';
 
 const REMIND = ['dm', 'mention', 'off'];
 
@@ -216,7 +218,7 @@ const rsvpButtons = (env) => (flags(env).discordRsvp ?? 'off') !== 'off';
 // The match-night post (design system, bot/ui.js) – shared by /schedule, /nextevent, /availability, the post a manager
 // sends from the Squad Hub, its live refresh and the 24 h / 2 h reminders. opts: ping (line above the panel), mentions,
 // who (list everyone's answer, for /availability).
-export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, mentions, who = false, faces = null } = {}) {
+export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, mentions, who = false, faces = null, roster = null } = {}) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), unix = Math.floor(e.start / 1000);
   const needs = typeof e.needs === 'string' ? parse(e.needs, {}) : e.needs ?? {};
   const yes = rsvps.filter((r) => r.status === 'yes'), names = (st) => rsvps.filter((r) => r.status === st).map((r) => r.name);
@@ -234,9 +236,10 @@ export function eventMessage(env, e, rsvps = [], heading = '', { ping = null, me
     sep(),
     facts([['Answers', `✅ ${yes.length} · ❔ ${names('maybe').length} · ❌ ${names('no').length}`]]),
     // who's in: one row each with their face on the right (card if shipped, else Discord picture – bot/faces.js)
-    faces ? yes.slice(0, FACE_ROWS).map((r) => side(`\`${String(rsvps.indexOf(r) + 1).padStart(2)}\` ✅ **${r.name}**${posOf(r) ? ` · ${posOf(r)}` : ''}`, thumb(faces.get(String(r.user_id))))) : null,
-    faces && yes.length > FACE_ROWS ? text(`+ ${list(names('yes').slice(FACE_ROWS))}`) : !faces && yes.length ? facts([['In', list(names('yes'))]]) : null,
-    who ? facts([[`❔ Maybe (${names('maybe').length})`, list(names('maybe'))], [`❌ Out (${names('no').length})`, list(names('no'))]]) : null,
+    roster,   // the drawn roster (bot/rosterpic.js) stands in for the face rows and the name list
+    !roster && faces ? yes.slice(0, FACE_ROWS).map((r) => side(`\`${String(rsvps.indexOf(r) + 1).padStart(2)}\` ✅ **${r.name}**${posOf(r) ? ` · ${posOf(r)}` : ''}`, thumb(faces.get(String(r.user_id))))) : null,
+    roster ? null : faces && yes.length > FACE_ROWS ? text(`+ ${list(names('yes').slice(FACE_ROWS))}`) : !faces && yes.length ? facts([['In', list(names('yes'))]]) : null,
+    who && !roster ? facts([[`❔ Maybe (${names('maybe').length})`, list(names('maybe'))], [`❌ Out (${names('no').length})`, list(names('no'))]]) : null,
     still ? facts([['🧩 Still needed', still]]) : null,
     footer(done ? 'This event is closed' : 'Tap a button to answer · only you see the confirmation'),
     buttons([
@@ -250,8 +253,11 @@ const FACE_ROWS = 6;
 // eventMessage plus everyone's face – what every caller uses unless it's building a post with no answers yet.
 export async function eventPost(env, e, rsvps = [], heading = '', opts = {}) {
   const yes = rsvps.filter((r) => r.status === 'yes').slice(0, FACE_ROWS).map((r) => r.user_id);
-  return eventMessage(env, e, rsvps, heading, { ...opts, faces: await facesOf(env, yes) });
+  const posOf = (r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] ?? '';
+  const roster = await rosterBlock(env, e.id, rsvps, await checkinsOf(env, e.id), { posOf, title: 'Who is playing', sub: label(e) });
+  return eventMessage(env, e, rsvps, heading, { ...opts, roster, faces: roster ? null : await facesOf(env, yes) });
 }
+const checkinsOf = (env, id) => all(env, 'SELECT * FROM event_checkins WHERE event_id = ? ORDER BY at', id);
 // Everyone's answer, in the order they FIRST answered (r.at moves on every change, r.first_at does not).
 export const rsvpRows = (env, id) => all(env, 'SELECT r.status, r.name, r.user_id, r.first_at, r.at, p.positions, p.rush_positions FROM event_rsvps r LEFT JOIN profiles p ON p.user_id = r.user_id WHERE r.event_id = ? ORDER BY COALESCE(r.first_at, r.at), r.user_id', id);
 // Keeps the Discord post's counts in step with the site. Never throws.
@@ -490,6 +496,17 @@ async function nightRoute(p, method, body, me, env, log, loadSite, url) {
     const rep = await sessionReport(env, Number(url?.searchParams.get('id')) || 0, loadSite);
     return rep ? json(rep) : fail('That event no longer exists.', 404);
   }
+  // Owner check for the drawn roster: draws this event's roster now and says why it failed if it did (flag-independent).
+  if (p === '/api/events/roster-test' && method === 'GET') {
+    if (!can(me, 'settings.bot')) return fail('Owner only.', 403);
+    const id = Number(url?.searchParams.get('id')) || 0, e = await one(env, 'SELECT * FROM events WHERE id = ?', id);
+    if (!e) return fail('That event no longer exists.', 404);
+    if (!env.IMAGES?.input || !env.MEDIA) return json({ ok: false, error: 'The Images binding or media storage is not connected.' });
+    const mode = url.searchParams.get('mode') === 'checkin' ? 'checkin' : 'rsvp';
+    const posOf = (r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] ?? '';
+    const res = await drawRoster(env, id, rosterModel(await rsvpRows(env, id), await checkinsOf(env, id), { mode, posOf }), { title: mode === 'checkin' ? 'Check-in' : 'Who is playing', sub: label(e) });
+    return json({ ok: !!res.url, flag: rosterOn(env), ...res });
+  }
   if (method !== 'POST') return fail('Not found', 404);
   const row = await one(env, 'SELECT * FROM events WHERE id = ?', Number(body.id) || 0);
   if (!row || row.status !== 'scheduled') return fail('That event is not on.', 404);
@@ -559,7 +576,7 @@ export const kickoffNotes = (e) => [
 
 // The "Check in now" post (30 minutes before by default): who has checked in, who has not, and the Check in button.
 // Players are numbered in the order they FIRST answered.
-export function checkinMessage(env, e, rsvps = [], checkins = [], { ping = null, mentions } = {}) {
+export function checkinMessage(env, e, rsvps = [], checkins = [], { ping = null, mentions, roster = null } = {}) {
   const site = String(env.SITE_URL || '').replace(/\/?$/, '/'), unix = Math.floor(e.start / 1000);
   const on = new Set(checkins.map((c) => c.user_id)), done = e.status === 'cancelled' || e.start + e.duration * MIN < Date.now();
   const keen = rsvps.filter((r) => r.status !== 'no');
@@ -572,20 +589,27 @@ export function checkinMessage(env, e, rsvps = [], checkins = [], { ping = null,
     header({ eyebrow: 'NOREX UNITED · CHECK-IN', title: `⏰ Check in now · ${label(e)}`.slice(0, 200), sub: `<t:${unix}:F> · <t:${unix}:R>` }),
     sep(),
     facts([['Checked in', `✅ ${here.length}`], ['Not yet', `${wait.length}`]]),
-    text(`-# **CHECKED IN**\n${list(here)}`),
-    wait.length ? text(`-# **NOT CHECKED IN – NOT CONSIDERED UNTIL THEY DO**\n${list(wait)}`) : null,
+    roster,   // the drawn roster replaces the two name lists
+    !roster ? text(`-# **CHECKED IN**\n${list(here)}`) : null,
+    !roster && wait.length ? text(`-# **NOT CHECKED IN – NOT CONSIDERED UNTIL THEY DO**\n${list(wait)}`) : null,
     sep(),
     text(kickoffNotes(e)),
     footer(done ? 'This event is closed' : 'Only players who check in are considered for the lineup'),
     buttons([...(done ? [] : [{ label: 'Check in', emoji: '✅', style: 'ok', id: `norex:ci:${e.id}` }]), { label: 'Match night', url: `${site}hub-matchnight.html` }]),
   ] });
 }
+// checkinMessage with the drawn roster (when the flag is on and the draw works).
+export async function checkinPost(env, e, rsvps, checkins, opts = {}) {
+  const posOf = (r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] ?? '';
+  const roster = await rosterBlock(env, e.id, rsvps, checkins, { mode: 'checkin', posOf, title: 'Check-in', sub: label(e) });
+  return checkinMessage(env, e, rsvps, checkins, { ...opts, roster });
+}
 // Keeps that post live as people check in or out. Never throws.
 export async function refreshCheckinPost(env, id) {
   try {
     const e = await one(env, 'SELECT * FROM events WHERE id = ?', id);
     if (!e?.checkin_msg || !e.discord_channel || !env.DISCORD_BOT_TOKEN) return;
-    const msg = checkinMessage(env, e, await rsvpRows(env, id), await all(env, 'SELECT * FROM event_checkins WHERE event_id = ? ORDER BY at', id));
+    const msg = await checkinPost(env, e, await rsvpRows(env, id), await checkinsOf(env, id));
     await fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages/${e.checkin_msg}`, {
       method: 'PATCH', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ components: msg.components, flags: msg.flags }),
     });
@@ -817,7 +841,7 @@ export async function thirtyMinutes(env, now, everyone) {
     await safely(notify(env, ids, { type: 'event', nkey: 'event.start30', vars: { mins, event: label(e) }, icon: '⏰', title: `Starting in ${mins} minutes · ${label(e)}`, body: 'You said you are in – get ready.', link: `members.html#schedule-${e.id}`, ref: `event30:${e.id}` }));
     if (everyone && e.discord_channel && env.DISCORD_BOT_TOKEN) {
       const tags = answers.filter((x) => x.status !== 'no').map((x) => x.user_id).slice(0, 50); // everyone who said yes or maybe needs to check in
-      const msg = checkinMessage(env, e, answers, await all(env, 'SELECT * FROM event_checkins WHERE event_id = ? ORDER BY at', e.id), { ping: `**⏰ Starting in ${mins} minutes · ${label(e)} – check in now**\n${tags.map((id) => `<@${id}>`).join(' ')}`, mentions: { users: tags } });
+      const msg = await checkinPost(env, e, answers, await checkinsOf(env, e.id), { ping: `**⏰ Starting in ${mins} minutes · ${label(e)} – check in now**\n${tags.map((id) => `<@${id}>`).join(' ')}`, mentions: { users: tags } });
       const res = await safely(fetch(`https://discord.com/api/v10/channels/${e.discord_channel}/messages`, { method: 'POST', headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(msg) }));
       const posted = res?.ok ? await res.json().catch(() => null) : null;
       if (posted?.id) await run(env, 'UPDATE events SET checkin_msg = ? WHERE id = ?', posted.id, e.id);
