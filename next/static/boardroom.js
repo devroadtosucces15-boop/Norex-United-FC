@@ -403,5 +403,6 @@ ${form}${aw}<div class="br-meds">${hit.map(medCard).join('') || '<p class="muted
     if (A.role !== 'owner') return;
     d.getElementById('brLocal')?.setAttribute('hidden', ''); root.hidden = false; paint();
     load();
+    const h0 = location.hash.slice(1); if (h0 && TABS.some(([k]) => k === h0)) openTab(h0); // the owner button deep-links to #switches, #health, #announce
   })();
 })();

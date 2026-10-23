@@ -6,7 +6,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c]);
   const wrap = () => d.querySelector('.bar .wrap');
   const slug = (s) => encodeURIComponent(String(s));
-  let box = null, pal = null, panel = null, pill = null, bell = null, chat = null, state = { online: 0, people: [], recent: [], ok: false }, timer = 0;
+  let box = null, pal = null, panel = null, pill = null, live = null, bell = null, chat = null, state = { online: 0, people: [], recent: [], ok: false }, timer = 0;
 
   // ---------- search palette ----------
   const SETTINGS = [
@@ -216,6 +216,16 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
     Promise.all([count, chats]).then(() => { if (got) share(out); }); // a failed fetch keeps the last known number
   };
 
+  // ---------- 🔴 "N live" chip (flag memberLive; botfeat.js polls and fires nx:live). Hidden when nobody is on air; links to the strip. ----------
+  const paintLive = () => {
+    if (!live) return;
+    const n = Math.max(0, (window.NorexBot?.live?.n) | 0), on = n > 0 && !!A?.token && (A.features || []).includes('memberLive');
+    live.hidden = !on; if (!on) return;
+    live.querySelector('b').textContent = String(n); live.setAttribute('aria-label', `${n} live now. See who is streaming`); live.title = n === 1 ? '1 live now' : `${n} live now`;
+    live.href = d.querySelector('[data-live-strip]') ? '#live' : 'index.html#live';
+  };
+  d.addEventListener('nx:live', paintLive);
+
   // ---------- mount ----------
   const mount = () => {
     const w = wrap(); if (!w || d.getElementById('hdrR')) return;
@@ -225,10 +235,11 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
       const ac = d.createElement('button'); ac.type = 'button'; ac.className = 'ac'; ac.setAttribute('aria-haspopup', 'dialog'); ac.setAttribute('aria-expanded', 'false'); ac.setAttribute('aria-label', `Account: ${A.name || 'Member'}`);
       ac.innerHTML = `<span class="pav">${A.avatar ? `<img src="${esc(A.avatar)}" alt="" width="34" height="34">` : esc((A.name || 'M')[0].toUpperCase())}</span><span class="acn">${esc(A.name || 'Member')}</span>`;
       pill = d.createElement('button'); pill.type = 'button'; pill.className = 'hdr-on hdr-badge'; pill.hidden = true; pill.title = 'Who is active'; pill.setAttribute('aria-haspopup', 'dialog'); pill.setAttribute('aria-expanded', 'false'); pill.innerHTML = '<i aria-hidden="true"></i><b>0</b>'; pill.onclick = (e) => { e.stopPropagation(); toggleDrop('active', pill); };
+      live = d.createElement('a'); live.className = 'hdr-lv'; live.hidden = true; live.href = 'index.html#live'; live.innerHTML = '<i aria-hidden="true"></i><b>0</b><span>live</span>';
       bell = d.createElement('a'); bell.className = 'hdr-i hdr-bell'; bell.href = 'hub.html#lk-alerts'; bell.hidden = true; bell.setAttribute('aria-label', 'Alerts'); bell.title = 'Alerts'; bell.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><i class="hdr-n" hidden></i>';
       chat = d.createElement('a'); chat.className = 'hdr-i hdr-chat'; chat.href = 'hub-clubhouse.html#ch-chat'; chat.hidden = true; chat.setAttribute('aria-label', 'Clubhouse feed and messages'); chat.title = 'Clubhouse feed & messages'; chat.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12Z"/></svg><i class="hdr-n" hidden></i>';
       bell.onclick = (e) => { e.preventDefault(); toggleDrop('alerts', bell); }; chat.onclick = (e) => { e.preventDefault(); toggleDrop('chats', chat); }; bell.setAttribute('aria-haspopup', 'dialog'); chat.setAttribute('aria-haspopup', 'dialog');
-      const av = d.createElement('div'); av.className = 'hdr-av'; ac.onclick = () => { closeDrop(); toggleMenu(); }; av.append(ac, pill); box.append(bell, chat, av);
+      const av = d.createElement('div'); av.className = 'hdr-av'; ac.onclick = () => { closeDrop(); toggleMenu(); }; av.append(ac, pill); box.append(live, bell, chat, av); paintLive(); (A.ready || Promise.resolve()).then(paintLive);
       if (viewAs() && realOwner()) { const ribbon = d.createElement('div'); ribbon.className = 'hdr-va'; ribbon.innerHTML = '👁️ Viewing the site as a <b>' + (viewAs() === 'guest' ? 'guest' : 'member') + '</b> <button type="button">Back to owner</button>'; ribbon.querySelector('button').onclick = () => setViewAs(''); d.body.insertBefore(ribbon, d.body.firstChild); }
       poll(); pollAlerts(); timer = setInterval(poll, 120e3); setAlertMs(alertMs); d.addEventListener('visibilitychange', () => { if (!d.hidden) { poll(); pollAlerts(); } });
     } else if (API) {
