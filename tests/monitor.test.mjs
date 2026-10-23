@@ -1,7 +1,7 @@
 // 24/7 uptime monitor (P11.2): pure state-change logic, then the cron wired to fake fetch + real mock D1/KV.
 import { env, KV } from './mock.mjs';
 import { t, done } from './lib.mjs';
-import { diff, checkUptime } from '../bot/monitor.js';
+import { diff, checkUptime, dbCheck } from '../bot/monitor.js';
 
 t('all clear, no prior state → no alert', diff(null, []) === null);
 t('all clear, was clear → no alert', diff({ down: false, problems: [] }, []) === null);
@@ -32,4 +32,10 @@ await checkUptime(env);
 const state = await KV.get('monitor', 'json');
 t('cron: site failing → down stored with the problem', state.down && state.problems[0].includes('HTTP 500'));
 globalThis.fetch = realFetch;
+
+// A one-off D1 internal error is retried and never counts as an outage; a persistent one still does.
+let calls = 0;
+const flaky = (failures) => ({ DB: { prepare: () => ({ first: async () => { if (calls++ < failures) throw new Error('D1_ERROR: internal error'); return { 1: 1 }; } }) } });
+t('dbCheck: one transient D1 error → healthy after retry', (calls = 0, await dbCheck(flaky(1), { waitMs: 1 })) === null && calls === 2);
+t('dbCheck: persistent D1 error → reported after 3 tries', (calls = 0, await dbCheck(flaky(99), { waitMs: 1 })).includes('internal error') && calls === 3);
 done();
