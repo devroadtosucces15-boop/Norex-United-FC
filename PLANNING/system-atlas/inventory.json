@@ -1,8 +1,8 @@
 {
-  "revision": "70cc5a05a7517c791905212adf6b472c78060c24",
-  "files": 921,
-  "imports": 717,
-  "api_paths": 254,
+  "revision": "d3d9553f5e38ed4ea657a3e472c04875a86a765f",
+  "files": 924,
+  "imports": 726,
+  "api_paths": 255,
   "tables": 327,
   "records": [
     {
@@ -964,7 +964,7 @@
     {
       "path": "bot/events.js",
       "layer": "bot",
-      "lines": 901,
+      "lines": 925,
       "imports": [
         "./roles.js",
         "./notify.js",
@@ -978,7 +978,8 @@
         "./settings.js",
         "./routing.js",
         "./lineuprec.js",
-        "./media.js"
+        "./media.js",
+        "./rosterpic.js"
       ],
       "endpoints": [
         "/api/events",
@@ -993,6 +994,7 @@
         "/api/events/recommend",
         "/api/events/report",
         "/api/events/report/post",
+        "/api/events/roster-test",
         "/api/events/rsvp",
         "/api/events/templates",
         "/api/events/templates/delete"
@@ -1028,6 +1030,8 @@
         "avatarOf",
         "calendarMonth",
         "checkinMessage",
+        "checkinPost",
+        "checkinsOf",
         "clean",
         "cleanText",
         "eventGroups",
@@ -3555,6 +3559,34 @@
       ]
     },
     {
+      "path": "bot/rosterpic.js",
+      "layer": "bot",
+      "lines": 119,
+      "imports": [
+        "./roles.js",
+        "./faces.js",
+        "./ui.js"
+      ],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "b64",
+        "by",
+        "drawRoster",
+        "esc",
+        "face",
+        "faceData",
+        "initials",
+        "one",
+        "plain",
+        "rosterBlock",
+        "rosterModel",
+        "rosterOn",
+        "rosterSvg",
+        "sha"
+      ]
+    },
+    {
       "path": "bot/routing.js",
       "layer": "bot",
       "lines": 227,
@@ -4198,7 +4230,7 @@
     {
       "path": "config.json",
       "layer": "config.json",
-      "lines": 136,
+      "lines": 137,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4241,9 +4273,18 @@
       "functions": []
     },
     {
+      "path": "data/burners/1820409.json",
+      "layer": "data",
+      "lines": 451,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/burners/index.json",
       "layer": "data",
-      "lines": 9,
+      "lines": 10,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5001,7 +5042,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 944,
+      "lines": 897,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -12752,6 +12793,25 @@
       "functions": []
     },
     {
+      "path": "tests/rosterpic.test.mjs",
+      "layer": "tests",
+      "lines": 79,
+      "imports": [
+        "./mock.mjs",
+        "../bot/rosterpic.js",
+        "../bot/events.js",
+        "../bot/ui.js",
+        "./lib.mjs"
+      ],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "media",
+        "posOf",
+        "setFlag"
+      ]
+    },
+    {
       "path": "tests/run.mjs",
       "layer": "tests",
       "lines": 64,
@@ -15975,6 +16035,11 @@
       "kind": "imports"
     },
     {
+      "source": "bot/events.js",
+      "target": "bot/rosterpic.js",
+      "kind": "imports"
+    },
+    {
       "source": "bot/exportcontent.js",
       "target": "bot/roles.js",
       "kind": "imports"
@@ -16792,6 +16857,21 @@
     {
       "source": "bot/reminders.js",
       "target": "bot/notifcenter.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/rosterpic.js",
+      "target": "bot/roles.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/rosterpic.js",
+      "target": "bot/faces.js",
+      "kind": "imports"
+    },
+    {
+      "source": "bot/rosterpic.js",
+      "target": "bot/ui.js",
       "kind": "imports"
     },
     {
@@ -18851,6 +18931,31 @@
     },
     {
       "source": "tests/resultpost.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/rosterpic.test.mjs",
+      "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/rosterpic.test.mjs",
+      "target": "bot/rosterpic.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/rosterpic.test.mjs",
+      "target": "bot/events.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/rosterpic.test.mjs",
+      "target": "bot/ui.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/rosterpic.test.mjs",
       "target": "tests/lib.mjs",
       "kind": "imports"
     },

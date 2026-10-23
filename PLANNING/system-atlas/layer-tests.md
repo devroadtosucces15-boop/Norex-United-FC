@@ -87,25 +87,26 @@ flowchart LR
   n80["tests/redirects.test.mjs"]
   n81["tests/reminders.test.mjs"]
   n82["tests/resultpost.test.mjs"]
-  n83["tests/run.mjs"]
-  n84["tests/rush.test.mjs"]
-  n85["tests/servertools.test.mjs"]
-  n86["tests/site.test.mjs"]
-  n87["tests/social.test.mjs"]
-  n88["tests/squads.test.mjs"]
-  n89["tests/stars.test.mjs"]
-  n90["tests/statinsights.test.mjs"]
-  n91["tests/streamalerts.test.mjs"]
-  n92["tests/studio.test.mjs"]
-  n93["tests/submissions.test.mjs"]
-  n94["tests/tagline.test.mjs"]
-  n95["tests/trials.test.mjs"]
-  n96["tests/updates.test.mjs"]
-  n97["tests/voicerecap.test.mjs"]
-  n98["tests/watchlist.test.mjs"]
-  n99["tests/wave10.test.mjs"]
-  n100["tests/wave11.test.mjs"]
-  n101["tests/wave8.test.mjs"]
+  n83["tests/rosterpic.test.mjs"]
+  n84["tests/run.mjs"]
+  n85["tests/rush.test.mjs"]
+  n86["tests/servertools.test.mjs"]
+  n87["tests/site.test.mjs"]
+  n88["tests/social.test.mjs"]
+  n89["tests/squads.test.mjs"]
+  n90["tests/stars.test.mjs"]
+  n91["tests/statinsights.test.mjs"]
+  n92["tests/streamalerts.test.mjs"]
+  n93["tests/studio.test.mjs"]
+  n94["tests/submissions.test.mjs"]
+  n95["tests/tagline.test.mjs"]
+  n96["tests/trials.test.mjs"]
+  n97["tests/updates.test.mjs"]
+  n98["tests/voicerecap.test.mjs"]
+  n99["tests/watchlist.test.mjs"]
+  n100["tests/wave10.test.mjs"]
+  n101["tests/wave11.test.mjs"]
+  n102["tests/wave8.test.mjs"]
   n0 --> n47
   n0 --> n56
   n1 --> n47
@@ -262,8 +263,8 @@ flowchart LR
   n81 --> n47
   n81 --> n56
   n82 --> n47
-  n84 --> n47
-  n84 --> n56
+  n83 --> n47
+  n83 --> n56
   n85 --> n47
   n85 --> n56
   n86 --> n47
@@ -273,8 +274,8 @@ flowchart LR
   n88 --> n47
   n88 --> n56
   n89 --> n47
+  n89 --> n56
   n90 --> n47
-  n90 --> n56
   n91 --> n47
   n91 --> n56
   n92 --> n47
@@ -297,4 +298,6 @@ flowchart LR
   n100 --> n56
   n101 --> n47
   n101 --> n56
+  n102 --> n47
+  n102 --> n56
 ```
