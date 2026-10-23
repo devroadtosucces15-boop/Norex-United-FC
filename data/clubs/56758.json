@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-23T18:20:52.488Z",
+ "fetchedAt": "2026-10-23T18:30:48.643Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -297,6 +297,42 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "PulviTheGoat",
+   "gamesPlayed": "16",
+   "winRate": "43",
+   "goals": "15",
+   "assists": "12",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "45",
+   "passesMade": "214",
+   "passSuccessRate": "73",
+   "ratingAve": "7.9",
+   "tacklesMade": "17",
+   "tackleSuccessRate": "25",
+   "proName": "Pulvi",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "174",
+   "proNationality": "95",
+   "proOverall": "79",
+   "proOverallStr": "79",
+   "manOfTheMatch": "4",
+   "redCards": "2",
+   "prevGoals": "3",
+   "prevGoals1": "3",
+   "prevGoals2": "1",
+   "prevGoals3": "3",
+   "prevGoals4": "1",
+   "prevGoals5": "1",
+   "prevGoals6": "1",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "1",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "MetroidGrime13",
    "gamesPlayed": "1",
    "winRate": "0",
@@ -441,6 +477,42 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "CatchMyDrift3",
+   "gamesPlayed": "12",
+   "winRate": "41",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "93",
+   "passSuccessRate": "80",
+   "ratingAve": "6.5",
+   "tacklesMade": "8",
+   "tackleSuccessRate": "13",
+   "proName": "C. Drift",
+   "proPos": "14",
+   "proStyle": "0",
+   "proHeight": "184",
+   "proNationality": "95",
+   "proOverall": "78",
+   "proOverallStr": "78",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "midfielder"
+  },
+  {
    "name": "ogbrayannx",
    "gamesPlayed": "3",
    "winRate": "0",
@@ -550,9 +622,9 @@
   }
  ],
  "positionCount": {
-  "midfielder": 3,
+  "midfielder": 4,
   "goalkeeper": 0,
-  "forward": 6,
+  "forward": 7,
   "defender": 2
  },
  "career": [
@@ -634,6 +706,17 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "PulviTheGoat",
+   "proPos": "25",
+   "gamesPlayed": "148",
+   "goals": "92",
+   "assists": "65",
+   "manOfTheMatch": "18",
+   "ratingAve": "7.5",
+   "prevGoals": "1",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "MetroidGrime13",
    "proPos": "25",
    "gamesPlayed": "2",
@@ -686,6 +769,17 @@
    "manOfTheMatch": "14",
    "ratingAve": "7.1",
    "prevGoals": "1",
+   "favoritePosition": "midfielder"
+  },
+  {
+   "name": "CatchMyDrift3",
+   "proPos": "14",
+   "gamesPlayed": "42",
+   "goals": "0",
+   "assists": "0",
+   "manOfTheMatch": "3",
+   "ratingAve": "6.9",
+   "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
   {
