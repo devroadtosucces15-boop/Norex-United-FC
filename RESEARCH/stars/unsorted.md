@@ -15,10 +15,10 @@
 | [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) | A skill to stop your coding agent from burying the answer. ADHD-friendly output. | Python | 2026-10-19 |
 | [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) | A coding-agent skill for multi-phase security audits with independently verified, machine-readable findings | JavaScript | 2026-09-14 |
 | [codecrafters-io/build-your-own-x](https://github.com/codecrafters-io/build-your-own-x) | Master programming by recreating your favorite technologies from scratch. | Markdown | 2026-07-14 |
-| [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | DeepSeek Harness: Everything is a Plugin. | TypeScript | 2026-10-17 |
+| [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | DeepSeek Harness: Everything is a Plugin. | TypeScript | 2026-10-23 |
 | [devroadtosucces15-boop/Copyweb](https://github.com/devroadtosucces15-boop/Copyweb) | – | TypeScript | 2026-09-28 |
 | [DigitalPlatDev/FreeDomain](https://github.com/DigitalPlatDev/FreeDomain) | Free domain registration and practical DNS learning resources for everyone. | Markdown | 2026-08-12 |
-| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-22 |
+| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-23 |
 | [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | Learn how to design large-scale systems. Prep for the system design interview. Includes Anki flashcards. | Python | 2026-09-15 |
 | [DopplerHQ/awesome-interview-questions](https://github.com/DopplerHQ/awesome-interview-questions) | :octocat: A curated awesome list of lists of interview questions. Feel free to contribute! :mortar_board: | – | 2024-07-29 |
 | [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Give your agent CAD superpowers. | Python | 2026-10-23 |
@@ -28,7 +28,7 @@
 | [mattpocock/skills](https://github.com/mattpocock/skills) | Skills for Real Engineers. Straight from my .agents directory. | Shell | 2026-10-22 |
 | [morluto/rea](https://github.com/morluto/rea) | Reverse engineer anything with agents, from app behavior down to native binaries. | TypeScript | 2026-10-23 |
 | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | A single CLAUDE.md file to improve Claude Code behavior, derived from Andrej Karpathy's observations on LLM coding pitfalls. | – | 2026-04-20 |
-| [NandhaKishorM/laya](https://github.com/NandhaKishorM/laya) | Non-autoregressive System 1 decision engine. Typed choice, score and yes/no decisions over any text in a single forward pass, in 100+ languages, with a router that picks the right checkpoint per request. | Python | 2026-10-21 |
+| [NandhaKishorM/laya](https://github.com/NandhaKishorM/laya) | Non-autoregressive System 1 decision engine. Typed choice, score and yes/no decisions over any text in a single forward pass, in 100+ languages, with a router that picks the right checkpoint per request. | Python | 2026-10-23 |
 | [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) | The agent that grows with you | Python | 2026-10-23 |
 | [obra/superpowers](https://github.com/obra/superpowers) | An agentic skills framework & software development methodology that works. | Shell | 2026-10-23 |
 | [Ohjurot/DualSense-Windows](https://github.com/Ohjurot/DualSense-Windows) | Windows API for the PS5 DualSense controller | C++ | 2025-03-10 |
