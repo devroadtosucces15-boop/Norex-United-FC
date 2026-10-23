@@ -1,7 +1,7 @@
 {
  "id": "80869",
  "tier": "home",
- "fetchedAt": "2026-10-23T05:40:47.435Z",
+ "fetchedAt": "2026-10-23T05:50:47.997Z",
  "info": {
   "name": "NOREX UNITED FC",
   "clubId": 80869,
@@ -801,42 +801,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "Slug17-_-",
-   "gamesPlayed": "66",
-   "winRate": "84",
-   "goals": "28",
-   "assists": "55",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "41",
-   "passesMade": "1106",
-   "passSuccessRate": "76",
-   "ratingAve": "8.0",
-   "tacklesMade": "85",
-   "tackleSuccessRate": "25",
-   "proName": "B. Slug",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "183",
-   "proNationality": "83",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "6",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "1",
-   "prevGoals7": "1",
-   "prevGoals8": "0",
-   "prevGoals9": "2",
-   "prevGoals10": "1",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "Itzponchordz_",
    "gamesPlayed": "54",
    "winRate": "85",
@@ -1558,7 +1522,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 7,
+  "midfielder": 6,
   "goalkeeper": 2,
   "forward": 6,
   "defender": 8
@@ -1589,12 +1553,12 @@
   {
    "name": "M_O_o_S_E__25",
    "proPos": "14",
-   "gamesPlayed": "40",
+   "gamesPlayed": "41",
    "goals": "19",
    "assists": "18",
    "manOfTheMatch": "4",
    "ratingAve": "7.4",
-   "prevGoals": "1",
+   "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
   {
@@ -1908,9 +1872,9 @@
   {
    "name": "G3org3_Busch33",
    "proPos": "25",
-   "gamesPlayed": "81",
+   "gamesPlayed": "82",
    "goals": "34",
-   "assists": "31",
+   "assists": "32",
    "manOfTheMatch": "8",
    "ratingAve": "7.5",
    "prevGoals": "0",
@@ -1919,10 +1883,10 @@
   {
    "name": "Alysalsa_",
    "proPos": "14",
-   "gamesPlayed": "182",
-   "goals": "192",
-   "assists": "141",
-   "manOfTheMatch": "52",
+   "gamesPlayed": "183",
+   "goals": "195",
+   "assists": "142",
+   "manOfTheMatch": "53",
    "ratingAve": "8.3",
    "prevGoals": "3",
    "favoritePosition": "midfielder"
@@ -1968,17 +1932,6 @@
    "assists": "2",
    "manOfTheMatch": "0",
    "ratingAve": "7.9",
-   "prevGoals": "1",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Slug17-_-",
-   "proPos": "14",
-   "gamesPlayed": "237",
-   "goals": "210",
-   "assists": "198",
-   "manOfTheMatch": "52",
-   "ratingAve": "8.1",
    "prevGoals": "1",
    "favoritePosition": "midfielder"
   },
