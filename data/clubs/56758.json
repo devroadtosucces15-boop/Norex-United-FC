@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-23T20:33:29.387Z",
+ "fetchedAt": "2026-10-23T20:40:47.338Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -477,42 +477,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "umershirazi",
-   "gamesPlayed": "8",
-   "winRate": "50",
-   "goals": "3",
-   "assists": "4",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "50",
-   "passesMade": "97",
-   "passSuccessRate": "70",
-   "ratingAve": "7.0",
-   "tacklesMade": "11",
-   "tackleSuccessRate": "28",
-   "proName": "M. Sensei",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "14",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "3",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "ShaunTk3",
    "gamesPlayed": "5",
    "winRate": "80",
@@ -766,7 +730,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 6,
+  "midfielder": 5,
   "goalkeeper": 0,
   "forward": 7,
   "defender": 3
@@ -914,17 +878,6 @@
    "ratingAve": "7.1",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "umershirazi",
-   "proPos": "14",
-   "gamesPlayed": "238",
-   "goals": "70",
-   "assists": "115",
-   "manOfTheMatch": "20",
-   "ratingAve": "7.3",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "ShaunTk3",
