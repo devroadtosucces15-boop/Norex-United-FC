@@ -254,7 +254,7 @@ const FACE_ROWS = 6;
 export async function eventPost(env, e, rsvps = [], heading = '', opts = {}) {
   const yes = rsvps.filter((r) => r.status === 'yes').slice(0, FACE_ROWS).map((r) => r.user_id);
   const posOf = (r) => parse(e.type === 'rush' ? r.rush_positions : r.positions, [])[0] ?? '';
-  const roster = await rosterBlock(env, e.id, rsvps, await checkinsOf(env, e.id), { posOf, title: 'Who is playing', sub: label(e) });
+  const roster = await rosterBlock(env, e.id, rsvps, () => checkinsOf(env, e.id), { posOf, title: 'Who is playing', sub: label(e) });
   return eventMessage(env, e, rsvps, heading, { ...opts, roster, faces: roster ? null : await facesOf(env, yes) });
 }
 const checkinsOf = (env, id) => all(env, 'SELECT * FROM event_checkins WHERE event_id = ? ORDER BY at', id);

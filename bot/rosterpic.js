@@ -107,7 +107,9 @@ export async function drawRoster(env, eventId, model, opts = {}) {
 
 // The picture as a post block, or null (flag off, nothing to show, or the draw failed → the post keeps its text rows).
 export async function rosterBlock(env, eventId, rsvps, checkins, { mode = 'rsvp', posOf, title, sub } = {}) {
-  if (!rosterOn(env) || !(rsvps.length || checkins.length)) return null;
+  if (!rosterOn(env)) return null;   // checkins may be a function, so a post with the flag off costs no extra read
+  if (typeof checkins === 'function') checkins = await checkins();
+  if (!(rsvps.length || checkins.length)) return null;
   const model = rosterModel(rsvps, checkins, { mode, posOf });
   const res = await drawRoster(env, eventId, model, { title, sub });
   if (!res.url) { console.log('roster picture failed:', res.error); return null; }
