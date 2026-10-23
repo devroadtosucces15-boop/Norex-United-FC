@@ -1,6 +1,6 @@
 {
-  "revision": "d3d9553f5e38ed4ea657a3e472c04875a86a765f",
-  "files": 924,
+  "revision": "d41ff92f50e79a016ba7aa48fea72ebadf595d80",
+  "files": 933,
   "imports": 726,
   "api_paths": 255,
   "tables": 327,
@@ -2926,7 +2926,7 @@
     {
       "path": "bot/monitor.js",
       "layer": "bot",
-      "lines": 86,
+      "lines": 93,
       "imports": [
         "./ui.js"
       ],
@@ -5042,7 +5042,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 897,
+      "lines": 944,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5231,7 +5231,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 615,
+      "lines": 662,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5647,7 +5647,7 @@
     {
       "path": "data/clubs/80869.json",
       "layer": "data",
-      "lines": 2025,
+      "lines": 1978,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6665,6 +6665,87 @@
       "path": "data/matches/128618443080288.json",
       "layer": "data",
       "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/128982996610286.json",
+      "layer": "data",
+      "lines": 431,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/129468329440363.json",
+      "layer": "data",
+      "lines": 320,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/129474276460118.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/129492008980308.json",
+      "layer": "data",
+      "lines": 320,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/129534145000173.json",
+      "layer": "data",
+      "lines": 614,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/129562032740337.json",
+      "layer": "data",
+      "lines": 394,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/129566040370336.json",
+      "layer": "data",
+      "lines": 505,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/129568077550097.json",
+      "layer": "data",
+      "lines": 468,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/129670068600058.json",
+      "layer": "data",
+      "lines": 357,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -12095,7 +12176,7 @@
     {
       "path": "tests/monitor.test.mjs",
       "layer": "tests",
-      "lines": 36,
+      "lines": 42,
       "imports": [
         "./mock.mjs",
         "./lib.mjs",
@@ -12103,7 +12184,9 @@
       ],
       "endpoints": [],
       "tables": [],
-      "functions": []
+      "functions": [
+        "flaky"
+      ]
     },
     {
       "path": "tests/next-quality.test.mjs",
