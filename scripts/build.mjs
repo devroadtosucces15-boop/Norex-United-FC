@@ -13,6 +13,7 @@ import { buildMessages } from './messages-page.mjs';
 import { buildTactics } from './tactics-page.mjs';
 import { advancedSection, buildHallOfFame, buildLeaders, leagueMatches } from './leaders-page.mjs';
 import { buildRankings } from './rankings.mjs';
+import { decodeEvents } from './lib/events.mjs';
 import { buildBurners, burnersFeed, loadBurners } from './burners-page.mjs';
 
 const OUT = process.env.NOREX_OUT || path.join(ROOT, 'site');
@@ -164,6 +165,7 @@ function appOf(m, clubId, oppId, p) {
     shots: num(p.shots), passes: num(p.passesmade), passAtt: num(p.passattempts),
     tackles: num(p.tacklesmade), tackleAtt: num(p.tackleattempts), saves: num(p.saves), red: num(p.redcards),
     dribbles: evNum(p.dribbles), sa: evNum(p.secondassists),
+    ev: p.evraw ? decodeEvents(p.evraw) : null, // all decoded EA event counters (scripts/lib/events.mjs), null for games archived before they were kept
   };
 }
 for (const [clubId, c] of clubs) {
@@ -824,7 +826,8 @@ ${a.length ? card('Position map', `${pitchMap(pitchGroups(a))}<p class="muted sm
 ${Object.keys(pl.clubStats).length ? section('By club', table('byclub', ['Club', 'Pos', '#OVR', '#GP', '#Goals', '#Assists', '#Rating', '#MOTM', '#Win %', '#Pass %', '#Tackle %'], Object.entries(pl.clubStats).map(([cid, cs]) =>
     `<tr>${td(`${crest(cid, 22, base)} ${clubLink(cid, base)}`)}${td(posOf(cs) || '—')}${td(esc(cs.proOverall ?? '–'), true)}${td(cs.gamesPlayed, true)}${td(cs.goals, true)}${td(cs.assists, true)}${td(ratingPill(num(cs.ratingAve)), true, cs.ratingAve)}${td(cs.manOfTheMatch, true)}${td(cs.winRate + '%', true, cs.winRate)}${td(cs.passSuccessRate + '%', true, cs.passSuccessRate)}${td(cs.tackleSuccessRate + '%', true, cs.tackleSuccessRate)}</tr>`))) : ''}
 ${a.length ? section('Match log', `<section class="stats">${counter('Apps', a.length)}${counter('Record', 0, { text: `${w}-${d}-${l}` })}${counter('Goals', tot('goals'))}${counter('Assists', tot('assists'))}${counter('Avg rating', avg(a.map((x) => x.rating)), { dec: 1 })}${counter('MOTM', tot('mom'))}${counter('Pass %', pct(tot('passes'), tot('passAtt')), { suffix: '%' })}${counter('Tackle %', pct(tot('tackles'), tot('tackleAtt')), { suffix: '%' })}${evStats(a)}</section>
-${logTable('log', a, base)}${evNote(a)}`, { sub: `${a.length} archived` }) : ''}`;
+${logTable('log', a, base)}${evNote(a)}`, { sub: `${a.length} archived` }) : ''}
+${intelSection(a)}`;
   }
 }
 // P1.8: dribbles + second assists – totals and per 90 over the apps that have them, with a "since" note.
@@ -833,6 +836,42 @@ function evStats(a) {
   if (!e.length) return '';
   const drb = sum(e, (x) => x.dribbles);
   return `${counter('Dribbles', drb)}${counter('Dribbles/game', drb / e.length, { dec: 1 })}${counter('2nd assists', sum(e, (x) => x.sa))}`;
+}
+// Match intelligence: passing, possession, defending and positioning from every decoded EA event counter.
+// Only over the apps that carry them; rates are per game (EA's own totals stay in the log above).
+function intelSection(a) {
+  const e = a.filter((x) => x.ev);
+  if (!e.length) return '';
+  const t = (k) => sum(e, (x) => x.ev[k]);
+  const g = (k) => t(k) / e.length;
+  const pct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
+  const completed = t('passesCompleted'), failed = t('passesFailed');
+  const meter = (label, n, text, tip) => `<li data-tip="${esc(tip)}"><span>${esc(label)}</span><div class="meter"><i style="--w:${Math.max(0, Math.min(100, n))}%"></i></div><b>${text}</b></li>`;
+  const passing = [
+    meter('Pass accuracy', pct(completed, completed + failed), `${pct(completed, completed + failed)}%`, 'Completed passes / all passes, from EA match events'),
+    meter('Forward passes', pct(t('passesCompletedForward'), completed), `${pct(t('passesCompletedForward'), completed)}%`, 'Share of completed passes played forward'),
+    meter('Long + cross', pct(t('passesCompletedLong') + t('passesCompletedCross'), completed), `${pct(t('passesCompletedLong') + t('passesCompletedCross'), completed)}%`, 'Share of completed passes that were long or crosses'),
+    meter('Through balls / game', Math.min(100, g('throughPasses') * 50), r1(g('throughPasses')), 'Successful through balls per game'),
+  ];
+  const won = t('possessionWonDefensiveThird') + t('possessionWonMiddleThird') + t('possessionWonAttackingThird');
+  const lost = t('possessionLostDefensiveThird') + t('possessionLostMiddleThird') + t('possessionLostAttackingThird');
+  const ball = [
+    meter('Won, defensive third', pct(t('possessionWonDefensiveThird'), won), r1(g('possessionWonDefensiveThird')), 'Possession won per game in your own third (bar = share of all wins)'),
+    meter('Won, middle third', pct(t('possessionWonMiddleThird'), won), r1(g('possessionWonMiddleThird')), 'Possession won per game in the middle third'),
+    meter('Won, attacking third', pct(t('possessionWonAttackingThird'), won), r1(g('possessionWonAttackingThird')), 'Possession won per game high up the pitch'),
+    meter('Lost / won', Math.min(100, pct(lost, won + lost)), `${r1(g('possessionLostDefensiveThird') + g('possessionLostMiddleThird') + g('possessionLostAttackingThird'))} lost`, 'Possession lost per game (bar = share of all turnovers)'),
+  ];
+  const oop = t('outOfPosition'), inP = t('inPosition');
+  const tackles = t('tacklesWon') + t('tacklesLost');
+  const defend = [
+    meter('Tackles won', pct(t('tacklesWon'), tackles), `${r1(g('tacklesWon'))}/game`, 'Tackles won per game (bar = win rate)'),
+    meter('Interceptions / game', Math.min(100, g('interceptions') * 20), r1(g('interceptions')), 'Interceptions per game'),
+    meter('Aerial duels won', Math.min(100, (g('aerialDuelsWonAttacking') + g('aerialDuelsWonDefending')) * 25), r1(g('aerialDuelsWonAttacking') + g('aerialDuelsWonDefending')), 'Aerial duels won per game, attacking and defending'),
+    meter('Positioning', pct(inP, inP + oop), `${r1(g('outOfPosition'))} out/game`, 'Share of positioning feedback that was praise; out of position per game shown'),
+  ];
+  const list = (rows) => `<ul class="dna">${rows.join('')}</ul>`;
+  return section('Match intelligence', `<div class="grid2">${card('Passing', list(passing))}${card('Possession', list(ball))}${card('Defending and positioning', list(defend))}</div>
+<p class="muted small">🧠 Decoded from EA's match events over ${e.length} game${e.length === 1 ? '' : 's'}. The id table is community research (EA FC Pro Clubs API research project), not EA documentation.</p>`, { sub: `${e.length} game${e.length === 1 ? "" : "s"} with event data` });
 }
 const evNote = (a) => (a.some((x) => x.dribbles != null) ? `<p class="muted small">🏃 Dribbles and 2nd assists (the pass before the assist) come from EA's match events – only in games archived since ${esc(EV_SINCE)}.</p>` : '');
 // P7.3: EA exposes no pitch coordinates, so this is a role/involvement map, not a real heat map – bubble size = share
