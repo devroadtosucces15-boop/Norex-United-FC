@@ -20,10 +20,10 @@
 | [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | DeepSeek Harness: Everything is a Plugin. | TypeScript | 2026-10-23 |
 | [devroadtosucces15-boop/Copyweb](https://github.com/devroadtosucces15-boop/Copyweb) | – | TypeScript | 2026-09-28 |
 | [DigitalPlatDev/FreeDomain](https://github.com/DigitalPlatDev/FreeDomain) | Free domain registration and practical DNS learning resources for everyone. | Markdown | 2026-08-12 |
-| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-23 |
+| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-24 |
 | [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | Learn how to design large-scale systems. Prep for the system design interview. Includes Anki flashcards. | Python | 2026-09-15 |
 | [DopplerHQ/awesome-interview-questions](https://github.com/DopplerHQ/awesome-interview-questions) | :octocat: A curated awesome list of lists of interview questions. Feel free to contribute! :mortar_board: | – | 2024-07-29 |
-| [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Give your agent CAD superpowers. | Python | 2026-10-23 |
+| [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Give your agent CAD superpowers. | Python | 2026-10-24 |
 | [freeCodeCamp/freeCodeCamp](https://github.com/freeCodeCamp/freeCodeCamp) | freeCodeCamp.org's open-source codebase and curriculum. Learn math, programming, and computer science for free. | TypeScript | 2026-10-24 |
 | [FunkeyFlo/ps5-mqtt](https://github.com/FunkeyFlo/ps5-mqtt) | Integrate your PlayStation 5 with Home Assistant | TypeScript | 2026-10-16 |
 | [itsPLK/ps5-webkit-autoloader](https://github.com/itsPLK/ps5-webkit-autoloader) | An automated payload loader for exploited PS5 consoles | JavaScript | 2026-10-08 |
