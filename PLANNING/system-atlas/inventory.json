@@ -1,7 +1,7 @@
 {
-  "revision": "4a2d05013d283c33a9e0cbc4e93edfa741786a56",
+  "revision": "ca6d1a3b0967d3f8868a31d8de9fda3a15b2e271",
   "files": 940,
-  "imports": 731,
+  "imports": 732,
   "api_paths": 255,
   "tables": 329,
   "records": [
@@ -4518,7 +4518,7 @@
     {
       "path": "data/clubs/189496.json",
       "layer": "data",
-      "lines": 1038,
+      "lines": 1041,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4826,7 +4826,7 @@
     {
       "path": "data/clubs/426400.json",
       "layer": "data",
-      "lines": 427,
+      "lines": 430,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5042,7 +5042,7 @@
     {
       "path": "data/clubs/51769.json",
       "layer": "data",
-      "lines": 944,
+      "lines": 947,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5231,7 +5231,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 897,
+      "lines": 806,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5647,7 +5647,7 @@
     {
       "path": "data/clubs/80869.json",
       "layer": "data",
-      "lines": 1978,
+      "lines": 2000,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9438,7 +9438,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 36,
+      "lines": 65,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9768,7 +9768,7 @@
     {
       "path": "scripts/build.mjs",
       "layer": "scripts",
-      "lines": 1359,
+      "lines": 1398,
       "imports": [
         "node:fs",
         "node:path",
@@ -9784,6 +9784,7 @@
         "./tactics-page.mjs",
         "./leaders-page.mjs",
         "./rankings.mjs",
+        "./lib/events.mjs",
         "./burners-page.mjs"
       ],
       "endpoints": [],
@@ -9797,6 +9798,7 @@
         "archived",
         "every",
         "id",
+        "is",
         "not",
         "now",
         "on",
@@ -9853,12 +9855,14 @@
         "friendly",
         "friendlyBody",
         "futCard",
+        "g",
         "groupOf",
         "grpNav",
         "hasEv",
         "haveCount",
         "hex",
         "hubBar",
+        "intelSection",
         "layout",
         "leaders",
         "leadersPodium",
@@ -9873,6 +9877,7 @@
         "matchReel",
         "matchTable",
         "megaCol",
+        "meter",
         "min3",
         "modes",
         "name",
@@ -9919,6 +9924,7 @@
         "strip",
         "subTabs",
         "sum",
+        "t",
         "tabBar",
         "table",
         "tacticsTable",
@@ -11382,8 +11388,13 @@
     {
       "path": "tests/eventdecode.test.mjs",
       "layer": "tests",
-      "lines": 29,
+      "lines": 62,
       "imports": [
+        "node:fs",
+        "node:os",
+        "node:path",
+        "node:child_process",
+        "node:url",
         "./lib.mjs",
         "../scripts/lib/events.mjs",
         "../scripts/lib/schema.mjs"
@@ -11393,7 +11404,11 @@
         "every",
         "has"
       ],
-      "functions": []
+      "functions": [
+        "build",
+        "pg",
+        "write"
+      ]
     },
     {
       "path": "tests/events-ui.test.mjs",
@@ -17525,6 +17540,11 @@
     {
       "source": "scripts/build.mjs",
       "target": "scripts/rankings.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/build.mjs",
+      "target": "scripts/lib/events.mjs",
       "kind": "imports"
     },
     {
