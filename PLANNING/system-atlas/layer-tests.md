@@ -31,273 +31,275 @@ flowchart LR
   n24["tests/docs.test.mjs"]
   n25["tests/drilldown.test.mjs"]
   n26["tests/dugout.test.mjs"]
-  n27["tests/events-ui.test.mjs"]
-  n28["tests/events.test.mjs"]
-  n29["tests/extradata.test.mjs"]
-  n30["tests/faces-api.test.mjs"]
-  n31["tests/feed.test.mjs"]
-  n32["tests/feedbackroom.test.mjs"]
-  n33["tests/flags.test.mjs"]
-  n34["tests/fun.test.mjs"]
-  n35["tests/game.test.mjs"]
-  n36["tests/honours.test.mjs"]
-  n37["tests/host.test.mjs"]
-  n38["tests/hub.test.mjs"]
-  n39["tests/hublive.test.mjs"]
-  n40["tests/hype.test.mjs"]
-  n41["tests/insights.test.mjs"]
-  n42["tests/insightwidget.test.mjs"]
-  n43["tests/intel.test.mjs"]
-  n44["tests/issues.test.mjs"]
-  n45["tests/issuesrec.test.mjs"]
-  n46["tests/issuessync.test.mjs"]
-  n47["tests/lib.mjs"]
-  n48["tests/lineuprec.test.mjs"]
-  n49["tests/live.test.mjs"]
-  n50["tests/locker.test.mjs"]
-  n51["tests/matchpicture.test.mjs"]
-  n52["tests/matchreview.test.mjs"]
-  n53["tests/media.test.mjs"]
-  n54["tests/memberlive.test.mjs"]
-  n55["tests/members.test.mjs"]
-  n56["tests/mock.mjs"]
-  n57["tests/moderation.test.mjs"]
-  n58["tests/monitor.test.mjs"]
-  n59["tests/next-quality.test.mjs"]
-  n60["tests/next-runtime.test.mjs"]
-  n61["tests/next.test.mjs"]
-  n62["tests/notifcenter.test.mjs"]
-  n63["tests/notify.test.mjs"]
-  n64["tests/packs.test.mjs"]
-  n65["tests/panel.test.mjs"]
-  n66["tests/phonefix.test.mjs"]
-  n67["tests/playmedia.test.mjs"]
-  n68["tests/plays.test.mjs"]
-  n69["tests/points.test.mjs"]
-  n70["tests/polish.test.mjs"]
-  n71["tests/prefs.test.mjs"]
-  n72["tests/probuilds.test.mjs"]
-  n73["tests/profanity.test.mjs"]
-  n74["tests/profiles.test.mjs"]
-  n75["tests/push.test.mjs"]
-  n76["tests/pwa.test.mjs"]
-  n77["tests/quickcommands.test.mjs"]
-  n78["tests/rankings.test.mjs"]
-  n79["tests/recorder.test.mjs"]
-  n80["tests/redirects.test.mjs"]
-  n81["tests/reminders.test.mjs"]
-  n82["tests/resultpost.test.mjs"]
-  n83["tests/rosterpic.test.mjs"]
-  n84["tests/run.mjs"]
-  n85["tests/rush.test.mjs"]
-  n86["tests/servertools.test.mjs"]
-  n87["tests/site.test.mjs"]
-  n88["tests/social.test.mjs"]
-  n89["tests/squads.test.mjs"]
-  n90["tests/stars.test.mjs"]
-  n91["tests/statinsights.test.mjs"]
-  n92["tests/streamalerts.test.mjs"]
-  n93["tests/studio.test.mjs"]
-  n94["tests/submissions.test.mjs"]
-  n95["tests/tagline.test.mjs"]
-  n96["tests/trials.test.mjs"]
-  n97["tests/updates.test.mjs"]
-  n98["tests/voicerecap.test.mjs"]
-  n99["tests/watchlist.test.mjs"]
-  n100["tests/wave10.test.mjs"]
-  n101["tests/wave11.test.mjs"]
-  n102["tests/wave8.test.mjs"]
-  n0 --> n47
-  n0 --> n56
-  n1 --> n47
-  n1 --> n56
-  n2 --> n47
-  n2 --> n56
-  n3 --> n47
-  n4 --> n47
-  n4 --> n56
-  n5 --> n47
-  n5 --> n56
-  n6 --> n47
-  n6 --> n56
-  n7 --> n47
-  n7 --> n56
-  n8 --> n47
-  n8 --> n56
-  n9 --> n47
-  n9 --> n56
-  n10 --> n56
-  n11 --> n47
-  n11 --> n56
-  n12 --> n47
-  n12 --> n56
-  n13 --> n47
-  n13 --> n56
-  n14 --> n47
-  n14 --> n56
-  n15 --> n47
-  n15 --> n56
-  n16 --> n47
-  n16 --> n56
-  n17 --> n47
-  n17 --> n56
-  n18 --> n47
-  n18 --> n56
-  n19 --> n47
-  n19 --> n56
-  n20 --> n47
-  n20 --> n56
-  n21 --> n47
-  n21 --> n56
-  n22 --> n47
-  n22 --> n56
-  n23 --> n47
-  n23 --> n56
-  n24 --> n47
-  n24 --> n56
-  n25 --> n47
-  n25 --> n56
-  n26 --> n47
-  n26 --> n56
-  n27 --> n47
-  n27 --> n56
-  n28 --> n47
-  n28 --> n56
-  n29 --> n47
-  n30 --> n47
-  n30 --> n56
-  n31 --> n47
-  n31 --> n56
-  n32 --> n47
-  n32 --> n56
-  n33 --> n47
-  n33 --> n56
-  n34 --> n47
-  n34 --> n56
-  n35 --> n47
-  n35 --> n56
-  n36 --> n47
-  n36 --> n56
-  n37 --> n47
-  n37 --> n56
-  n38 --> n47
-  n38 --> n56
-  n39 --> n47
-  n39 --> n56
-  n40 --> n47
-  n40 --> n56
-  n41 --> n47
-  n41 --> n56
-  n42 --> n47
-  n42 --> n56
-  n43 --> n47
-  n43 --> n56
-  n44 --> n47
-  n44 --> n56
-  n45 --> n47
-  n45 --> n56
-  n46 --> n47
-  n46 --> n56
-  n48 --> n47
-  n48 --> n56
-  n49 --> n47
-  n49 --> n56
-  n50 --> n47
-  n50 --> n56
-  n51 --> n47
-  n51 --> n56
-  n52 --> n47
-  n53 --> n47
-  n53 --> n56
-  n54 --> n47
-  n54 --> n56
-  n55 --> n47
-  n55 --> n56
-  n57 --> n47
-  n57 --> n56
-  n58 --> n47
-  n58 --> n56
-  n59 --> n47
-  n59 --> n56
-  n60 --> n47
-  n60 --> n56
-  n61 --> n10
-  n61 --> n47
-  n61 --> n56
-  n62 --> n47
-  n62 --> n56
-  n63 --> n47
-  n63 --> n56
-  n64 --> n47
-  n64 --> n56
-  n65 --> n47
-  n65 --> n56
-  n66 --> n47
-  n66 --> n56
-  n67 --> n47
-  n67 --> n56
-  n68 --> n47
-  n68 --> n56
-  n69 --> n47
-  n69 --> n56
-  n70 --> n47
-  n70 --> n56
-  n71 --> n47
-  n71 --> n56
-  n72 --> n47
-  n72 --> n56
-  n73 --> n47
-  n73 --> n56
-  n74 --> n47
-  n74 --> n56
-  n75 --> n47
-  n75 --> n56
-  n76 --> n47
-  n76 --> n56
-  n77 --> n47
-  n77 --> n56
-  n78 --> n47
-  n79 --> n47
-  n79 --> n56
-  n80 --> n47
-  n81 --> n47
-  n81 --> n56
-  n82 --> n47
-  n83 --> n47
-  n83 --> n56
-  n85 --> n47
-  n85 --> n56
-  n86 --> n47
-  n86 --> n56
-  n87 --> n47
-  n87 --> n56
-  n88 --> n47
-  n88 --> n56
-  n89 --> n47
-  n89 --> n56
-  n90 --> n47
-  n91 --> n47
-  n91 --> n56
-  n92 --> n47
-  n92 --> n56
-  n93 --> n47
-  n93 --> n56
-  n94 --> n47
-  n94 --> n56
-  n95 --> n47
-  n95 --> n56
-  n96 --> n47
-  n96 --> n56
-  n97 --> n47
-  n97 --> n56
-  n98 --> n47
-  n98 --> n56
-  n99 --> n47
-  n99 --> n56
-  n100 --> n47
-  n100 --> n56
-  n101 --> n47
-  n101 --> n56
-  n102 --> n47
-  n102 --> n56
+  n27["tests/eventdecode.test.mjs"]
+  n28["tests/events-ui.test.mjs"]
+  n29["tests/events.test.mjs"]
+  n30["tests/extradata.test.mjs"]
+  n31["tests/faces-api.test.mjs"]
+  n32["tests/feed.test.mjs"]
+  n33["tests/feedbackroom.test.mjs"]
+  n34["tests/flags.test.mjs"]
+  n35["tests/fun.test.mjs"]
+  n36["tests/game.test.mjs"]
+  n37["tests/honours.test.mjs"]
+  n38["tests/host.test.mjs"]
+  n39["tests/hub.test.mjs"]
+  n40["tests/hublive.test.mjs"]
+  n41["tests/hype.test.mjs"]
+  n42["tests/insights.test.mjs"]
+  n43["tests/insightwidget.test.mjs"]
+  n44["tests/intel.test.mjs"]
+  n45["tests/issues.test.mjs"]
+  n46["tests/issuesrec.test.mjs"]
+  n47["tests/issuessync.test.mjs"]
+  n48["tests/lib.mjs"]
+  n49["tests/lineuprec.test.mjs"]
+  n50["tests/live.test.mjs"]
+  n51["tests/locker.test.mjs"]
+  n52["tests/matchpicture.test.mjs"]
+  n53["tests/matchreview.test.mjs"]
+  n54["tests/media.test.mjs"]
+  n55["tests/memberlive.test.mjs"]
+  n56["tests/members.test.mjs"]
+  n57["tests/mock.mjs"]
+  n58["tests/moderation.test.mjs"]
+  n59["tests/monitor.test.mjs"]
+  n60["tests/next-quality.test.mjs"]
+  n61["tests/next-runtime.test.mjs"]
+  n62["tests/next.test.mjs"]
+  n63["tests/notifcenter.test.mjs"]
+  n64["tests/notify.test.mjs"]
+  n65["tests/packs.test.mjs"]
+  n66["tests/panel.test.mjs"]
+  n67["tests/phonefix.test.mjs"]
+  n68["tests/playmedia.test.mjs"]
+  n69["tests/plays.test.mjs"]
+  n70["tests/points.test.mjs"]
+  n71["tests/polish.test.mjs"]
+  n72["tests/prefs.test.mjs"]
+  n73["tests/probuilds.test.mjs"]
+  n74["tests/profanity.test.mjs"]
+  n75["tests/profiles.test.mjs"]
+  n76["tests/push.test.mjs"]
+  n77["tests/pwa.test.mjs"]
+  n78["tests/quickcommands.test.mjs"]
+  n79["tests/rankings.test.mjs"]
+  n80["tests/recorder.test.mjs"]
+  n81["tests/redirects.test.mjs"]
+  n82["tests/reminders.test.mjs"]
+  n83["tests/resultpost.test.mjs"]
+  n84["tests/rosterpic.test.mjs"]
+  n85["tests/run.mjs"]
+  n86["tests/rush.test.mjs"]
+  n87["tests/servertools.test.mjs"]
+  n88["tests/site.test.mjs"]
+  n89["tests/social.test.mjs"]
+  n90["tests/squads.test.mjs"]
+  n91["tests/stars.test.mjs"]
+  n92["tests/statinsights.test.mjs"]
+  n93["tests/streamalerts.test.mjs"]
+  n94["tests/studio.test.mjs"]
+  n95["tests/submissions.test.mjs"]
+  n96["tests/tagline.test.mjs"]
+  n97["tests/trials.test.mjs"]
+  n98["tests/updates.test.mjs"]
+  n99["tests/voicerecap.test.mjs"]
+  n100["tests/watchlist.test.mjs"]
+  n101["tests/wave10.test.mjs"]
+  n102["tests/wave11.test.mjs"]
+  n103["tests/wave8.test.mjs"]
+  n0 --> n48
+  n0 --> n57
+  n1 --> n48
+  n1 --> n57
+  n2 --> n48
+  n2 --> n57
+  n3 --> n48
+  n4 --> n48
+  n4 --> n57
+  n5 --> n48
+  n5 --> n57
+  n6 --> n48
+  n6 --> n57
+  n7 --> n48
+  n7 --> n57
+  n8 --> n48
+  n8 --> n57
+  n9 --> n48
+  n9 --> n57
+  n10 --> n57
+  n11 --> n48
+  n11 --> n57
+  n12 --> n48
+  n12 --> n57
+  n13 --> n48
+  n13 --> n57
+  n14 --> n48
+  n14 --> n57
+  n15 --> n48
+  n15 --> n57
+  n16 --> n48
+  n16 --> n57
+  n17 --> n48
+  n17 --> n57
+  n18 --> n48
+  n18 --> n57
+  n19 --> n48
+  n19 --> n57
+  n20 --> n48
+  n20 --> n57
+  n21 --> n48
+  n21 --> n57
+  n22 --> n48
+  n22 --> n57
+  n23 --> n48
+  n23 --> n57
+  n24 --> n48
+  n24 --> n57
+  n25 --> n48
+  n25 --> n57
+  n26 --> n48
+  n26 --> n57
+  n27 --> n48
+  n28 --> n48
+  n28 --> n57
+  n29 --> n48
+  n29 --> n57
+  n30 --> n48
+  n31 --> n48
+  n31 --> n57
+  n32 --> n48
+  n32 --> n57
+  n33 --> n48
+  n33 --> n57
+  n34 --> n48
+  n34 --> n57
+  n35 --> n48
+  n35 --> n57
+  n36 --> n48
+  n36 --> n57
+  n37 --> n48
+  n37 --> n57
+  n38 --> n48
+  n38 --> n57
+  n39 --> n48
+  n39 --> n57
+  n40 --> n48
+  n40 --> n57
+  n41 --> n48
+  n41 --> n57
+  n42 --> n48
+  n42 --> n57
+  n43 --> n48
+  n43 --> n57
+  n44 --> n48
+  n44 --> n57
+  n45 --> n48
+  n45 --> n57
+  n46 --> n48
+  n46 --> n57
+  n47 --> n48
+  n47 --> n57
+  n49 --> n48
+  n49 --> n57
+  n50 --> n48
+  n50 --> n57
+  n51 --> n48
+  n51 --> n57
+  n52 --> n48
+  n52 --> n57
+  n53 --> n48
+  n54 --> n48
+  n54 --> n57
+  n55 --> n48
+  n55 --> n57
+  n56 --> n48
+  n56 --> n57
+  n58 --> n48
+  n58 --> n57
+  n59 --> n48
+  n59 --> n57
+  n60 --> n48
+  n60 --> n57
+  n61 --> n48
+  n61 --> n57
+  n62 --> n10
+  n62 --> n48
+  n62 --> n57
+  n63 --> n48
+  n63 --> n57
+  n64 --> n48
+  n64 --> n57
+  n65 --> n48
+  n65 --> n57
+  n66 --> n48
+  n66 --> n57
+  n67 --> n48
+  n67 --> n57
+  n68 --> n48
+  n68 --> n57
+  n69 --> n48
+  n69 --> n57
+  n70 --> n48
+  n70 --> n57
+  n71 --> n48
+  n71 --> n57
+  n72 --> n48
+  n72 --> n57
+  n73 --> n48
+  n73 --> n57
+  n74 --> n48
+  n74 --> n57
+  n75 --> n48
+  n75 --> n57
+  n76 --> n48
+  n76 --> n57
+  n77 --> n48
+  n77 --> n57
+  n78 --> n48
+  n78 --> n57
+  n79 --> n48
+  n80 --> n48
+  n80 --> n57
+  n81 --> n48
+  n82 --> n48
+  n82 --> n57
+  n83 --> n48
+  n84 --> n48
+  n84 --> n57
+  n86 --> n48
+  n86 --> n57
+  n87 --> n48
+  n87 --> n57
+  n88 --> n48
+  n88 --> n57
+  n89 --> n48
+  n89 --> n57
+  n90 --> n48
+  n90 --> n57
+  n91 --> n48
+  n92 --> n48
+  n92 --> n57
+  n93 --> n48
+  n93 --> n57
+  n94 --> n48
+  n94 --> n57
+  n95 --> n48
+  n95 --> n57
+  n96 --> n48
+  n96 --> n57
+  n97 --> n48
+  n97 --> n57
+  n98 --> n48
+  n98 --> n57
+  n99 --> n48
+  n99 --> n57
+  n100 --> n48
+  n100 --> n57
+  n101 --> n48
+  n101 --> n57
+  n102 --> n48
+  n102 --> n57
+  n103 --> n48
+  n103 --> n57
 ```

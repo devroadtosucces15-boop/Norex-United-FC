@@ -1,9 +1,9 @@
 {
-  "revision": "d41ff92f50e79a016ba7aa48fea72ebadf595d80",
-  "files": 933,
-  "imports": 726,
+  "revision": "4a2d05013d283c33a9e0cbc4e93edfa741786a56",
+  "files": 940,
+  "imports": 731,
   "api_paths": 255,
-  "tables": 327,
+  "tables": 329,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -4239,7 +4239,7 @@
     {
       "path": "data/burners/1355341.json",
       "layer": "data",
-      "lines": 344,
+      "lines": 300,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5231,7 +5231,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 662,
+      "lines": 897,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6746,6 +6746,42 @@
       "path": "data/matches/129670068600058.json",
       "layer": "data",
       "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/131374850770190.json",
+      "layer": "data",
+      "lines": 351,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/131476260350011.json",
+      "layer": "data",
+      "lines": 357,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/131676402470243.json",
+      "layer": "data",
+      "lines": 394,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/131712012560023.json",
+      "layer": "data",
+      "lines": 394,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9402,7 +9438,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 72,
+      "lines": 36,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -10105,13 +10141,15 @@
     {
       "path": "scripts/fetch.mjs",
       "layer": "scripts",
-      "lines": 411,
+      "lines": 430,
       "imports": [
         "node:fs",
         "node:path",
         "./lib.mjs",
         "../bot/burnerstats.js",
-        "./lib/resultpost.mjs"
+        "./lib/resultpost.mjs",
+        "./lib/events.mjs",
+        "./lib/schema.mjs"
       ],
       "endpoints": [],
       "tables": [
@@ -10233,6 +10271,24 @@
       ]
     },
     {
+      "path": "scripts/lib/events.mjs",
+      "layer": "scripts",
+      "lines": 75,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "is",
+        "named"
+      ],
+      "functions": [
+        "decodeEvents",
+        "g",
+        "max0",
+        "parseAggregate",
+        "rawEvents"
+      ]
+    },
+    {
       "path": "scripts/lib/matchpicture.mjs",
       "layer": "scripts",
       "lines": 69,
@@ -10305,6 +10361,19 @@
         "send",
         "sendReview",
         "webhookChannel"
+      ]
+    },
+    {
+      "path": "scripts/lib/schema.mjs",
+      "layer": "scripts",
+      "lines": 33,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": [
+        "missingKeys",
+        "platformProblem",
+        "sample"
       ]
     },
     {
@@ -11311,6 +11380,22 @@
       ]
     },
     {
+      "path": "tests/eventdecode.test.mjs",
+      "layer": "tests",
+      "lines": 29,
+      "imports": [
+        "./lib.mjs",
+        "../scripts/lib/events.mjs",
+        "../scripts/lib/schema.mjs"
+      ],
+      "endpoints": [],
+      "tables": [
+        "every",
+        "has"
+      ],
+      "functions": []
+    },
+    {
       "path": "tests/events-ui.test.mjs",
       "layer": "tests",
       "lines": 42,
@@ -11331,7 +11416,7 @@
     {
       "path": "tests/events.test.mjs",
       "layer": "tests",
-      "lines": 349,
+      "lines": 351,
       "imports": [
         "../bot/ui.js",
         "node:fs",
@@ -17503,6 +17588,16 @@
       "kind": "imports"
     },
     {
+      "source": "scripts/fetch.mjs",
+      "target": "scripts/lib/events.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "scripts/fetch.mjs",
+      "target": "scripts/lib/schema.mjs",
+      "kind": "imports"
+    },
+    {
       "source": "scripts/lib/resultpost.mjs",
       "target": "scripts/lib.mjs",
       "kind": "imports"
@@ -18080,6 +18175,21 @@
     {
       "source": "tests/dugout.test.mjs",
       "target": "bot/clubroom.js",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/eventdecode.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/eventdecode.test.mjs",
+      "target": "scripts/lib/events.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/eventdecode.test.mjs",
+      "target": "scripts/lib/schema.mjs",
       "kind": "imports"
     },
     {
