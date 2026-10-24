@@ -18,6 +18,8 @@ import path from 'node:path';
 import { DATA, readJson, writeJson, loadConfig, loadOverrides, loadBotSettings, loadBurners, loadCrawlCursor, saveCrawlSlice, num, sleep, eventCounts } from './lib.mjs';
 import { MAX_BURNERS, burnerStats, mergeMatches, reportMessage, slimBurnerMatch, updateRoster } from '../bot/burnerstats.js';
 import { postResults } from './lib/resultpost.mjs';
+import { rawEvents } from './lib/events.mjs';
+import { missingKeys, platformProblem } from './lib/schema.mjs';
 
 const API = 'https://proclubs.ea.com/api/fc/';
 const HEADERS = {
@@ -39,6 +41,9 @@ state.scanned ??= {};
 const now = new Date().toISOString();
 let requests = 0;
 let blocked = 0;
+const drift = {}; // endpoint -> missing keys, reported once per run (scripts/lib/schema.mjs)
+const platformIssue = platformProblem(platform);
+if (platformIssue) console.warn(`Config: ${platformIssue}`);
 
 async function api(endpoint, params) {
   const qs = new URLSearchParams({ platform, ...params });
@@ -50,7 +55,12 @@ async function api(endpoint, params) {
       const res = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(20000) });
       if (res.ok) {
         const text = await res.text();
-        return text ? JSON.parse(text) : null;
+        const body = text ? JSON.parse(text) : null;
+        if (!(endpoint in drift)) {
+          const gone = missingKeys(endpoint, body);
+          if (gone.length) { drift[endpoint] = gone; console.warn(`  schema drift: ${endpoint} no longer returns ${gone.join(', ')}`); }
+        }
+        return body;
       }
       if (res.status === 403) blocked++;
       if (res.status === 404) return null;
@@ -85,7 +95,9 @@ function slimMatch(m, matchType) {
     for (const [pid, p] of Object.entries(list)) {
       const { match_event_aggregate_0, match_event_aggregate_1, match_event_aggregate_2,
         match_event_aggregate_3, vproattr, vprohackreason, ...keep } = p;
-      players[clubId][pid] = { ...keep, ...eventCounts(match_event_aggregate_0) };
+      // dribbles/secondassists kept for older readers; evraw = every non-zero counter of all four buckets, decoded by scripts/lib/events.mjs
+      const evraw = rawEvents(p);
+      players[clubId][pid] = { ...keep, ...eventCounts(match_event_aggregate_0), ...(evraw ? { evraw } : {}) };
     }
   }
   const clubs = {};
@@ -125,7 +137,14 @@ async function fetchClub(id) {
   if (full && clubInfo?.name) {
     const hits = (await api('allTimeLeaderboard/search', { clubName: clubInfo.name })) || [];
     const hit = hits.find((h) => String(h.clubId) === id);
-    if (hit) record.leaderboard = { currentDivision: hit.currentDivision, bestDivision: hit.bestDivision, points: hit.points };
+    if (hit) record.leaderboard = { currentDivision: hit.currentDivision, bestDivision: hit.bestDivision, points: hit.points, promotions: hit.promotions, relegations: hit.relegations, reputationtier: hit.reputationtier };
+    if (id === homeId) {
+      // Home club only (two extra requests per run): running-season totals and playoff achievements (EA returns [] until a club has some).
+      const season = ((await api('currentSeasonLeaderboard/search', { clubName: clubInfo.name }).catch(() => null)) || []).find((h) => String(h.clubId) === id);
+      if (season) record.season = { currentDivision: season.currentDivision, points: season.points, gamesPlayed: season.gamesPlayed, wins: season.wins, ties: season.ties, losses: season.losses, goals: season.goals, goalsAgainst: season.goalsAgainst, cleanSheets: season.cleanSheets };
+      const playoffs = await api('club/playoffAchievements', { clubId: id }).catch(() => null);
+      if (Array.isArray(playoffs) && playoffs.length) record.playoffAchievements = playoffs;
+    }
   }
   writeJson(path.join(DATA, 'clubs', `${id}.json`), record);
 
@@ -396,7 +415,7 @@ async function main() {
   await fetchBurners().then(postBurnerReports).catch((e) => console.warn(`Burner tracker skipped: ${e.message}`)); // never fails the run
   writeJson(stateFile, state);
   // One heartbeat per day keeps GitHub from pausing the schedule on quiet weeks.
-  writeJson(path.join(DATA, 'meta.json'), { lastSuccessfulDay: now.slice(0, 10), platform });
+  writeJson(path.join(DATA, 'meta.json'), { schemaDrift: Object.keys(drift).length ? drift : undefined, lastSuccessfulDay: now.slice(0, 10), platform });
 
   const tiers = Object.values(state.clubs).reduce((a, c) => ((a[c.tier] = (a[c.tier] ?? 0) + 1), a), {});
   console.log(`Done: ${requests} requests, ${newHomeMatches.length} new home matches, clubs:`, tiers);

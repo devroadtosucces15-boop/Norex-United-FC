@@ -48,3 +48,11 @@ Everything club-specific lives in `config.json`:
   Squad and career totals still catch up.
 - There's no player-lookup endpoint, so a player's other clubs are found by scanning club squads.
 - Data comes from EA's public Pro Clubs web API. This project isn't affiliated with or endorsed by EA.
+
+## EA event counters
+`scripts/lib/events.mjs` decodes EA's undocumented per-player `match_event_aggregate_0..3` counters (passes by direction/length,
+possession won/lost by third, tackles, shots in/out of the box, positioning feedback). Every archived player row keeps the raw
+non-zero counters as `evraw` (`"215:21,216:5,…"`), so ids decoded later also work on old matches. The id table is community
+observation, not EA documentation; credit to the EA FC Pro Clubs API research project and the fc-clubs-api docs
+(https://1erkandogan.github.io/fc27-clubs-api/match-events/). `scripts/lib/schema.mjs` flags endpoint shape drift
+(`data/meta.json` `schemaDrift`) and a bad `platform` (use `common-gen5` or `nx`; EA rejects `common-gen4`).
