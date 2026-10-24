@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-24T04:20:47.586Z",
+ "fetchedAt": "2026-10-24T04:30:48.640Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -333,42 +333,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "PulviTheGoat",
-   "gamesPlayed": "20",
-   "winRate": "40",
-   "goals": "17",
-   "assists": "16",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "39",
-   "passesMade": "258",
-   "passSuccessRate": "73",
-   "ratingAve": "7.8",
-   "tacklesMade": "21",
-   "tackleSuccessRate": "26",
-   "proName": "Pulvi",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "169",
-   "proNationality": "95",
-   "proOverall": "85",
-   "proOverallStr": "85",
-   "manOfTheMatch": "5",
-   "redCards": "2",
-   "prevGoals": "3",
-   "prevGoals1": "3",
-   "prevGoals2": "1",
-   "prevGoals3": "5",
-   "prevGoals4": "1",
-   "prevGoals5": "1",
-   "prevGoals6": "1",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "1",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "MetroidGrime13",
    "gamesPlayed": "1",
    "winRate": "0",
@@ -660,7 +624,7 @@
  "positionCount": {
   "midfielder": 4,
   "goalkeeper": 0,
-  "forward": 6,
+  "forward": 5,
   "defender": 3
  },
  "career": [
@@ -761,17 +725,6 @@
    "manOfTheMatch": "56",
    "ratingAve": "7.6",
    "prevGoals": "3",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "PulviTheGoat",
-   "proPos": "25",
-   "gamesPlayed": "152",
-   "goals": "94",
-   "assists": "69",
-   "manOfTheMatch": "19",
-   "ratingAve": "7.5",
-   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
