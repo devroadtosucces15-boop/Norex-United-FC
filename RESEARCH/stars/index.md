@@ -8,4 +8,4 @@ Synced from GitHub star lists every 6 h (`stars-sync.yml`). Links added through 
 | [🚀 My stack](my-stack.md) | 23 |
 | [Me](me.md) | 2 |
 | [✨ Inspiration](inspiration.md) | 2 |
-| [Unsorted stars](unsorted.md) | 36 |
+| [Unsorted stars](unsorted.md) | 38 |
