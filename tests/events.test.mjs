@@ -85,8 +85,10 @@ t('public strip: next public events, no answers leaked', guestStrip.events.lengt
 // ----- BE11 calendar month view -----
 const monthStr = new Date(evs[0].start).toISOString().slice(0, 7);
 const cal = await call(member, `/api/events/calendar?month=${monthStr}`);
+// e2 can start in the next month near a month end, so look it up in its own month
+const cal2 = (await call(member, `/api/events/calendar?month=${new Date(evs[1].start).toISOString().slice(0, 7)}`)).d;
 t('calendar: one call gets the month\'s events + my answer + type colours', cal.s === 200
-  && cal.d.events.some((e) => e.id === e1 && e.mine === 'yes') && cal.d.events.some((e) => e.id === e2 && e.mine === null)
+  && cal.d.events.some((e) => e.id === e1 && e.mine === 'yes') && cal2.events.some((e) => e.id === e2 && e.mine === null)
   && cal.d.types.league.colour === '#c8352c' && cal.d.types.league.emoji === '🏆');
 t('calendar: bad month refused', (await call(member, '/api/events/calendar?month=2026-13')).s === 400
   && (await call(member, '/api/events/calendar')).s === 400);
