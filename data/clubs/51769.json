@@ -1,7 +1,7 @@
 {
  "id": "51769",
  "tier": "linked",
- "fetchedAt": "2026-10-24T01:30:50.230Z",
+ "fetchedAt": "2026-10-24T01:40:03.735Z",
  "info": {
   "name": "Legacy Athletic",
   "clubId": 51769,
@@ -938,6 +938,9 @@
  "leaderboard": {
   "currentDivision": "4",
   "bestDivision": "1",
-  "points": "114"
+  "points": "114",
+  "promotions": "5",
+  "relegations": "1",
+  "reputationtier": "2"
  }
 }
