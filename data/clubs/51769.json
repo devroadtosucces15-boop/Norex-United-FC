@@ -1,7 +1,7 @@
 {
  "id": "51769",
  "tier": "linked",
- "fetchedAt": "2026-10-25T00:50:47.504Z",
+ "fetchedAt": "2026-10-25T01:00:47.043Z",
  "info": {
   "name": "Legacy Athletic",
   "clubId": 51769,
@@ -621,42 +621,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "feliixinho",
-   "gamesPlayed": "19",
-   "winRate": "57",
-   "goals": "4",
-   "assists": "4",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "30",
-   "passesMade": "227",
-   "passSuccessRate": "84",
-   "ratingAve": "6.9",
-   "tacklesMade": "18",
-   "tackleSuccessRate": "40",
-   "proName": "lastingmilk",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "180",
-   "proNationality": "54",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "1",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "1",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "themerinator12",
    "gamesPlayed": "0",
    "favoritePosition": "",
@@ -730,7 +694,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 6,
+  "midfielder": 5,
   "goalkeeper": 0,
   "forward": 6,
   "defender": 4
@@ -915,24 +879,13 @@
   {
    "name": "Slug17-_-",
    "proPos": "5",
-   "gamesPlayed": "290",
-   "goals": "288",
-   "assists": "294",
-   "manOfTheMatch": "73",
+   "gamesPlayed": "291",
+   "goals": "291",
+   "assists": "296",
+   "manOfTheMatch": "74",
    "ratingAve": "8.3",
-   "prevGoals": "1",
+   "prevGoals": "3",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "feliixinho",
-   "proPos": "0",
-   "gamesPlayed": "107",
-   "goals": "55",
-   "assists": "31",
-   "manOfTheMatch": "8",
-   "ratingAve": "7.2",
-   "prevGoals": "0",
-   "favoritePosition": "goalkeeper"
   }
  ],
  "leaderboard": {
