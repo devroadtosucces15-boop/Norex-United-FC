@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-25T00:30:48.111Z",
+ "fetchedAt": "2026-10-25T00:40:50.933Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -331,42 +331,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "temp-290352",
-   "gamesPlayed": "2",
-   "winRate": "50",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "23",
-   "passSuccessRate": "76",
-   "ratingAve": "9.0",
-   "tacklesMade": "3",
-   "tackleSuccessRate": "37",
-   "proName": "B. Sean",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "192",
-   "proNationality": "14",
-   "proOverall": "84",
-   "proOverallStr": "84",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "CaptainFluffyCat",
@@ -841,7 +805,7 @@
   "midfielder": 5,
   "goalkeeper": 0,
   "forward": 9,
-  "defender": 4
+  "defender": 3
  },
  "career": [
   {
@@ -931,17 +895,6 @@
    "ratingAve": "7.8",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "temp-290352",
-   "proPos": "5",
-   "gamesPlayed": "78",
-   "goals": "9",
-   "assists": "27",
-   "manOfTheMatch": "8",
-   "ratingAve": "7.7",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   },
   {
    "name": "CaptainFluffyCat",
