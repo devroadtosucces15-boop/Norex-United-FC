@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-26T03:52:49.965Z",
+ "fetchedAt": "2026-10-26T04:00:46.972Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -513,42 +513,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "Elbladiii",
-   "gamesPlayed": "8",
-   "winRate": "50",
-   "goals": "1",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "16",
-   "passesMade": "83",
-   "passSuccessRate": "80",
-   "ratingAve": "7.5",
-   "tacklesMade": "9",
-   "tackleSuccessRate": "47",
-   "proName": "El Bladiii",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "188",
-   "proNationality": "83",
-   "proOverall": "85",
-   "proOverallStr": "85",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "1",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "YRN_Bryan13",
    "gamesPlayed": "0",
    "favoritePosition": "",
@@ -625,7 +589,7 @@
   "midfielder": 4,
   "goalkeeper": 0,
   "forward": 7,
-  "defender": 2
+  "defender": 1
  },
  "career": [
   {
@@ -781,17 +745,6 @@
    "ratingAve": "7.1",
    "prevGoals": "1",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "Elbladiii",
-   "proPos": "5",
-   "gamesPlayed": "230",
-   "goals": "48",
-   "assists": "44",
-   "manOfTheMatch": "9",
-   "ratingAve": "7.0",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   }
  ],
  "leaderboard": {
