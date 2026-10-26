@@ -1,0 +1,85 @@
+{
+ "slug": "update-v1-1-pitch-notes",
+ "title": "EA SPORTS FC™ 27 | Title Update v1.1 Pitch Notes",
+ "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/update-v1-1-pitch-notes",
+ "published": "2026-10-26T00:00:00.000-07:00",
+ "summary": "EA SPORTS FC™ 27 Title Update v1.1 includes Career Mode updates, faster FUT packs, SBC filters, and fixes across The Grounds and Clubs.",
+ "clubs": true,
+ "sections": [
+  {
+   "id": "s0",
+   "title": "Overview",
+   "cat": "general",
+   "subs": [],
+   "summary": "Welcome to the EA SPORTS FC™ 27 Title Update v1.1 Pitch Notes. As we head toward the release of Title Update v1.1 on 27 October, we want to highlight how much we’ve loved seeing you take on new challenges in Career, complete Sets in FUT Gallery, build your…",
+   "keys": []
+  },
+  {
+   "id": "s1",
+   "title": "Career",
+   "cat": "career",
+   "subs": [
+    "Team Management UI Improvements",
+    "New Settings and Customisation",
+    "Player Career: New Rivalry Objectives",
+    "Manager Career: Transfer and Negotiation Improvements",
+    "General Career Changes"
+   ],
+   "summary": "As we mentioned in our Career Mode Developer Launch Update, we heard your feedback around the Team Management UI and were planning to make visual updates. To address this, we have overhauled the Team Management layout across multiple modes for cleaner…",
+   "keys": []
+  },
+  {
+   "id": "s2",
+   "title": "Football Ultimate Team™",
+   "cat": "fut",
+   "subs": [
+    "Updated Pack Opening Duration",
+    "Streamlined SBC Improvements",
+    "FUT Bug Fixes"
+   ],
+   "summary": "Based on community feedback from the FC 27 Closed Beta, we have shortened the reveal animation sequence for most higher OVR items. Check out the comparison video below to see the updated timing.",
+   "keys": []
+  },
+  {
+   "id": "s3",
+   "title": "Gameplay",
+   "cat": "gameplay",
+   "subs": [
+    "Gameplay Bug Fixes"
+   ],
+   "summary": "In line with our approach to early gameplay updates, Title Update v1.1 contains no gameplay balance or tuning changes. Later this week we will release another set of Gameplay Developer Notes, containing some observations from the first month of live play in…",
+   "keys": []
+  },
+  {
+   "id": "s4",
+   "title": "The Grounds",
+   "cat": "clubs",
+   "subs": [
+    "The Grounds Bug Fixes"
+   ],
+   "summary": "Thank you to everyone who participated in our recent Q&A sessions. We received hundreds of messages filled with valuable feedback, bug reports, and suggestions from the community.",
+   "keys": [
+    "levelCap",
+    "archetype"
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "id": "update-v1-1-pitch-notes#4-levelCap",
+   "kind": "levelCap",
+   "label": "Level cap",
+   "section": "The Grounds",
+   "quote": "Corrected an issue where a player’s match rating would incorrectly display as 0 if their Archetype was at the maximum level.",
+   "value": null
+  },
+  {
+   "id": "update-v1-1-pitch-notes#4-archetype",
+   "kind": "archetype",
+   "label": "Archetypes",
+   "section": "The Grounds",
+   "quote": "Corrected an issue where a player’s match rating would incorrectly display as 0 if their Archetype was at the maximum level."
+  }
+ ],
+ "fetched": "2026-10-26T16:05:16.612Z"
+}
