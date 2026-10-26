@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-26T05:30:50.249Z",
+ "fetchedAt": "2026-10-26T05:40:52.978Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -171,42 +171,6 @@
    "proStyle": "0",
    "proHeight": "182",
    "proNationality": "70",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Alen7ozil",
-   "gamesPlayed": "5",
-   "winRate": "80",
-   "goals": "0",
-   "assists": "1",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "67",
-   "passSuccessRate": "79",
-   "ratingAve": "7.1",
-   "tacklesMade": "2",
-   "tackleSuccessRate": "18",
-   "proName": "M. Ozil",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "171",
-   "proNationality": "14",
    "proOverall": "82",
    "proOverallStr": "82",
    "manOfTheMatch": "0",
@@ -586,7 +550,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 4,
+  "midfielder": 3,
   "goalkeeper": 0,
   "forward": 7,
   "defender": 1
@@ -623,17 +587,6 @@
    "manOfTheMatch": "0",
    "ratingAve": "6.8",
    "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Alen7ozil",
-   "proPos": "14",
-   "gamesPlayed": "45",
-   "goals": "13",
-   "assists": "21",
-   "manOfTheMatch": "1",
-   "ratingAve": "7.3",
-   "prevGoals": "1",
    "favoritePosition": "midfielder"
   },
   {
