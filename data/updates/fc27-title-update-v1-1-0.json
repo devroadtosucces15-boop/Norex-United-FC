@@ -1,0 +1,96 @@
+{
+ "slug": "fc27-title-update-v1-1-0",
+ "title": "EA SPORTS FC™ 27 | Title Update v1.1.0",
+ "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/fc27-title-update-v1-1-0",
+ "published": "2026-10-27T11:30:00.000Z",
+ "summary": "Find out the latest EA SPORTS FC™ 27 Update details in the Title Update v1.1.0 Notes.",
+ "clubs": true,
+ "sections": [
+  {
+   "id": "s0",
+   "title": "Overview",
+   "cat": "general",
+   "subs": [],
+   "summary": "EA SPORTS FC 27 version 1.1.0 is now live and includes the updates below. There are no gameplay balance and tuning changes in this update.",
+   "keys": []
+  },
+  {
+   "id": "s1",
+   "title": "Gameplay",
+   "cat": "gameplay",
+   "subs": [],
+   "summary": "Addressed the following issues: In some cases, players could become stuck during the game opening tutorial. [PC Only] If using a mouse and keyboard and playing as a Goal Keeper, the mouse could become unresponsive if moved too far outside of the penalty box.",
+   "keys": []
+  },
+  {
+   "id": "s2",
+   "title": "Ultimate Team",
+   "cat": "fut",
+   "subs": [],
+   "summary": "Made the following changes: Streamlined SBCs filters will save previously applied filters when completing multiple Streamlined SBCs in the same session. Reduced the duration of the pack opening sequence.",
+   "keys": []
+  },
+  {
+   "id": "s3",
+   "title": "The Grounds",
+   "cat": "clubs",
+   "subs": [],
+   "summary": "Addressed the following issues: Addressed instances of matches partially resetting after a player joins an ongoing match after initially failing to Hot Join. Expired Live Events could be seen in the View Live Events and Rush Stadium Menus. [PC ONLY] Key…",
+   "keys": [
+    "archetype",
+    "playstyle",
+    "amps",
+    "rush"
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "Career Mode",
+   "cat": "career",
+   "subs": [],
+   "summary": "Made the following changes: Two new objective types have been added to Player Career Rivalries. Consistency Rivalries: Avoid being the first to fail an Objective.",
+   "keys": []
+  },
+  {
+   "id": "s5",
+   "title": "General, Audio, and Visual",
+   "cat": "general",
+   "subs": [
+    "Share your Feedback"
+   ],
+   "summary": "Made the following changes: Added a Claim All button in the objective screens. Updated some kits, text, cinematics, cameras, audio, commentary, placeholder images, artwork, hair, overlays, trophies, TIFOs, starheads, particles, stadiums, lighting, ad boards,…",
+   "keys": []
+  }
+ ],
+ "hits": [
+  {
+   "id": "fc27-title-update-v1-1-0#3-archetype",
+   "kind": "archetype",
+   "label": "Archetypes",
+   "section": "The Grounds",
+   "quote": "When reaching the maximum Archetype Level, the Archetype Level would display incorrectly."
+  },
+  {
+   "id": "fc27-title-update-v1-1-0#3-playstyle",
+   "kind": "playstyle",
+   "label": "PlayStyles",
+   "section": "The Grounds",
+   "quote": "After selecting a PlayStyle players would be brought to the Attributes tab instead of staying in the PlayStyle tab."
+  },
+  {
+   "id": "fc27-title-update-v1-1-0#3-amps",
+   "kind": "amps",
+   "label": "Amps",
+   "section": "The Grounds",
+   "quote": "In some cases, players could become stuck in the FC Hub after purchasing an Amp from the Clubs Store."
+  },
+  {
+   "id": "fc27-title-update-v1-1-0#3-rush",
+   "kind": "rush",
+   "label": "Rush",
+   "section": "The Grounds",
+   "quote": "Expired Live Events could be seen in the View Live Events and Rush Stadium Menus. [PC ONLY] Key bindings could not be modified when playing on Keyboard Only."
+  }
+ ],
+ "fetched": "2026-10-27T16:05:02.015Z"
+}
