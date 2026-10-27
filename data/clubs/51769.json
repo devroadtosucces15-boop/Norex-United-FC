@@ -1,7 +1,7 @@
 {
  "id": "51769",
  "tier": "linked",
- "fetchedAt": "2026-10-27T02:50:49.053Z",
+ "fetchedAt": "2026-10-27T03:00:48.809Z",
  "info": {
   "name": "Legacy Athletic",
   "clubId": 51769,
@@ -115,42 +115,6 @@
    "prevGoals9": "5",
    "prevGoals10": "5",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "GazeCHT828",
-   "gamesPlayed": "7",
-   "winRate": "85",
-   "goals": "0",
-   "assists": "2",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "84",
-   "passSuccessRate": "72",
-   "ratingAve": "7.2",
-   "tacklesMade": "8",
-   "tackleSuccessRate": "32",
-   "proName": "Akuma",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "70",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "Jouchi3",
@@ -802,7 +766,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 6,
+  "midfielder": 5,
   "goalkeeper": 0,
   "forward": 8,
   "defender": 5
@@ -811,12 +775,12 @@
   {
    "name": "ajay710",
    "proPos": "14",
-   "gamesPlayed": "222",
+   "gamesPlayed": "223",
    "goals": "195",
-   "assists": "142",
+   "assists": "143",
    "manOfTheMatch": "30",
    "ratingAve": "7.9",
-   "prevGoals": "1",
+   "prevGoals": "0",
    "favoritePosition": "midfielder"
   },
   {
@@ -829,17 +793,6 @@
    "ratingAve": "8.4",
    "prevGoals": "1",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "GazeCHT828",
-   "proPos": "14",
-   "gamesPlayed": "263",
-   "goals": "302",
-   "assists": "130",
-   "manOfTheMatch": "60",
-   "ratingAve": "7.6",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "Jouchi3",
@@ -855,12 +808,12 @@
   {
    "name": "MoTaTa_8",
    "proPos": "5",
-   "gamesPlayed": "127",
-   "goals": "119",
+   "gamesPlayed": "128",
+   "goals": "120",
    "assists": "140",
    "manOfTheMatch": "36",
    "ratingAve": "8.4",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "defender"
   },
   {
@@ -910,12 +863,12 @@
   {
    "name": "typhoxn",
    "proPos": "25",
-   "gamesPlayed": "72",
-   "goals": "136",
-   "assists": "89",
-   "manOfTheMatch": "28",
+   "gamesPlayed": "73",
+   "goals": "137",
+   "assists": "90",
+   "manOfTheMatch": "29",
    "ratingAve": "9.2",
-   "prevGoals": "3",
+   "prevGoals": "1",
    "favoritePosition": "forward"
   },
   {
@@ -998,12 +951,12 @@
   {
    "name": "xDongechu",
    "proPos": "5",
-   "gamesPlayed": "98",
-   "goals": "34",
-   "assists": "48",
+   "gamesPlayed": "99",
+   "goals": "35",
+   "assists": "49",
    "manOfTheMatch": "8",
    "ratingAve": "7.6",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "defender"
   },
   {
