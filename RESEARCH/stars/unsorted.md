@@ -40,7 +40,7 @@
 | [react/react](https://github.com/react/react) | The library for web and native user interfaces. | JavaScript | 2026-10-27 |
 | [storytold/photocraft](https://github.com/storytold/photocraft) | PhotoCraft: An open-source, photo editor written by scratch in pure Rust | Rust | 2026-10-27 |
 | [tester-army/e2e](https://github.com/tester-army/e2e) | Next generation e2e testing framework for web and mobile apps. | TypeScript | 2026-10-27 |
-| [torvalds/linux](https://github.com/torvalds/linux) | Linux kernel source tree | C | 2026-10-26 |
+| [torvalds/linux](https://github.com/torvalds/linux) | Linux kernel source tree | C | 2026-10-27 |
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | The open agent skills tool - npx skills | TypeScript | 2026-10-27 |
 | [vinta/awesome-python](https://github.com/vinta/awesome-python) | The definitive list that answers "I want to do X in Python, which tool should I use?" | Python | 2026-10-27 |
 | [VoltAgent/awesome-openclaw-skills](https://github.com/VoltAgent/awesome-openclaw-skills) | The awesome collection of OpenClaw skills. 5,400+ skills filtered and categorized from the official OpenClaw Skills Registry.🦞 | – | 2026-10-19 |
