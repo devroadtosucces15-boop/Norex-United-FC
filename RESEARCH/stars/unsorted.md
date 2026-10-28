@@ -10,7 +10,7 @@
 | [1erkandogan/fc27-clubs-api](https://github.com/1erkandogan/fc27-clubs-api) | EA FC27 Clubs API experiment, including friendly matches | Python | 2026-10-03 |
 | [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | Production-grade engineering skills for AI coding agents. | JavaScript | 2026-10-13 |
 | [affaan-m/ECC](https://github.com/affaan-m/ECC) | The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond. | JavaScript | 2026-10-26 |
-| [alex-jordan547/proclubs-sdk](https://github.com/alex-jordan547/proclubs-sdk) | Unofficial EA FC Pro Clubs API SDK for TypeScript and Node.js. Club stats, player rosters, rankings and recent matches. | TypeScript | 2026-10-23 |
+| [alex-jordan547/proclubs-sdk](https://github.com/alex-jordan547/proclubs-sdk) | Unofficial EA FC Pro Clubs API SDK for TypeScript and Node.js. Club stats, player rosters, rankings and recent matches. | TypeScript | 2026-10-28 |
 | [anomalyco/opencode](https://github.com/anomalyco/opencode) | The open source coding agent. | TypeScript | 2026-10-28 |
 | [AssetRipper/AssetRipper](https://github.com/AssetRipper/AssetRipper) | GUI application to analyze game files | C# | 2026-10-25 |
 | [awesome-selfhosted/awesome-selfhosted](https://github.com/awesome-selfhosted/awesome-selfhosted) | A list of Free Software network services and web applications which can be hosted on your own servers | – | 2026-10-27 |
@@ -20,7 +20,7 @@
 | [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | DeepSeek Harness: Everything is a Plugin. | TypeScript | 2026-10-28 |
 | [devroadtosucces15-boop/Copyweb](https://github.com/devroadtosucces15-boop/Copyweb) | – | TypeScript | 2026-09-28 |
 | [DigitalPlatDev/FreeDomain](https://github.com/DigitalPlatDev/FreeDomain) | Free domain registration and practical DNS learning resources for everyone. | Markdown | 2026-08-12 |
-| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-27 |
+| [dkhamsing/open-source-ios-apps](https://github.com/dkhamsing/open-source-ios-apps) | :iphone: Collaborative List of Open-Source iOS Apps | – | 2026-10-28 |
 | [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | Learn how to design large-scale systems. Prep for the system design interview. Includes Anki flashcards. | Python | 2026-09-15 |
 | [DopplerHQ/awesome-interview-questions](https://github.com/DopplerHQ/awesome-interview-questions) | :octocat: A curated awesome list of lists of interview questions. Feel free to contribute! :mortar_board: | – | 2024-07-29 |
 | [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) | Design physical products with AI | Python | 2026-10-28 |
