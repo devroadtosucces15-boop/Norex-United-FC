@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-28T23:30:48.143Z",
+ "fetchedAt": "2026-10-28T23:40:50.178Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -189,6 +189,42 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "OGTheGucci",
+   "gamesPlayed": "5",
+   "winRate": "80",
+   "goals": "8",
+   "assists": "5",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "50",
+   "passesMade": "83",
+   "passSuccessRate": "82",
+   "ratingAve": "8.7",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "Gucci",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "195",
+   "proNationality": "95",
+   "proOverall": "81",
+   "proOverallStr": "81",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "1",
+   "prevGoals1": "1",
+   "prevGoals2": "3",
+   "prevGoals3": "1",
+   "prevGoals4": "1",
+   "prevGoals5": "2",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "CaptainFluffyCat",
    "gamesPlayed": "51",
    "winRate": "47",
@@ -223,6 +259,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "ToNyWhITe4u",
+   "gamesPlayed": "4",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "48",
+   "passSuccessRate": "64",
+   "ratingAve": "6.8",
+   "tacklesMade": "3",
+   "tackleSuccessRate": "17",
+   "proName": "R9",
+   "proPos": "14",
+   "proStyle": "0",
+   "proHeight": "178",
+   "proNationality": "76",
+   "proOverall": "75",
+   "proOverallStr": "75",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "Treego2424",
@@ -514,9 +586,9 @@
   }
  ],
  "positionCount": {
-  "midfielder": 2,
+  "midfielder": 3,
   "goalkeeper": 0,
-  "forward": 8,
+  "forward": 9,
   "defender": 1
  },
  "career": [
@@ -554,6 +626,17 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "OGTheGucci",
+   "proPos": "25",
+   "gamesPlayed": "188",
+   "goals": "256",
+   "assists": "86",
+   "manOfTheMatch": "57",
+   "ratingAve": "8.0",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "CaptainFluffyCat",
    "proPos": "25",
    "gamesPlayed": "237",
@@ -563,6 +646,17 @@
    "ratingAve": "7.5",
    "prevGoals": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "ToNyWhITe4u",
+   "proPos": "14",
+   "gamesPlayed": "218",
+   "goals": "15",
+   "assists": "52",
+   "manOfTheMatch": "12",
+   "ratingAve": "7.1",
+   "prevGoals": "0",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "YRN_Bryan13",
