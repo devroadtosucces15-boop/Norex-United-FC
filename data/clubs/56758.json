@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-29T23:00:52.339Z",
+ "fetchedAt": "2026-10-29T23:10:47.182Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -151,6 +151,42 @@
    "prevGoals9": "1",
    "prevGoals10": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "AGGRESSOR-CB",
+   "gamesPlayed": "6",
+   "winRate": "83",
+   "goals": "0",
+   "assists": "1",
+   "cleanSheetsDef": "2",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "48",
+   "passSuccessRate": "72",
+   "ratingAve": "7.7",
+   "tacklesMade": "7",
+   "tackleSuccessRate": "50",
+   "proName": "Don Vito",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "196",
+   "proNationality": "45",
+   "proOverall": "82",
+   "proOverallStr": "82",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "twiinuziis",
@@ -585,6 +621,42 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "Miggs24",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
+  },
+  {
    "name": "YRN_Bryan13",
    "gamesPlayed": "0",
    "favoritePosition": "",
@@ -625,7 +697,7 @@
   "midfielder": 3,
   "goalkeeper": 0,
   "forward": 8,
-  "defender": 3
+  "defender": 4
  },
  "career": [
   {
@@ -640,6 +712,17 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "Miggs24",
+   "proPos": "5",
+   "gamesPlayed": "41",
+   "goals": "11",
+   "assists": "14",
+   "manOfTheMatch": "9",
+   "ratingAve": "7.4",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "REFROD30",
    "proPos": "25",
    "gamesPlayed": "329",
@@ -649,6 +732,17 @@
    "ratingAve": "8.3",
    "prevGoals": "2",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "AGGRESSOR-CB",
+   "proPos": "5",
+   "gamesPlayed": "20",
+   "goals": "0",
+   "assists": "2",
+   "manOfTheMatch": "0",
+   "ratingAve": "7.4",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "twiinuziis",
@@ -664,7 +758,7 @@
   {
    "name": "efelix_24",
    "proPos": "5",
-   "gamesPlayed": "181",
+   "gamesPlayed": "182",
    "goals": "5",
    "assists": "13",
    "manOfTheMatch": "11",
