@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-29T05:10:47.488Z",
+ "fetchedAt": "2026-10-29T05:20:49.270Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -477,42 +477,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "ItachiQ60s_228",
-   "gamesPlayed": "16",
-   "winRate": "75",
-   "goals": "16",
-   "assists": "5",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "59",
-   "passesMade": "153",
-   "passSuccessRate": "75",
-   "ratingAve": "7.7",
-   "tacklesMade": "16",
-   "tackleSuccessRate": "36",
-   "proName": "Itachi",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "169",
-   "proNationality": "144",
-   "proOverall": "86",
-   "proOverallStr": "86",
-   "manOfTheMatch": "4",
-   "redCards": "0",
-   "prevGoals": "4",
-   "prevGoals1": "4",
-   "prevGoals2": "3",
-   "prevGoals3": "2",
-   "prevGoals4": "3",
-   "prevGoals5": "3",
-   "prevGoals6": "1",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "YRN_Bryan13",
    "gamesPlayed": "0",
    "favoritePosition": "",
@@ -552,7 +516,7 @@
  "positionCount": {
   "midfielder": 2,
   "goalkeeper": 0,
-  "forward": 9,
+  "forward": 8,
   "defender": 1
  },
  "career": [
@@ -603,12 +567,12 @@
   {
    "name": "CaptainFluffyCat",
    "proPos": "25",
-   "gamesPlayed": "237",
-   "goals": "185",
+   "gamesPlayed": "238",
+   "goals": "187",
    "assists": "107",
    "manOfTheMatch": "48",
    "ratingAve": "7.5",
-   "prevGoals": "0",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
@@ -685,17 +649,6 @@
    "assists": "177",
    "manOfTheMatch": "15",
    "ratingAve": "7.1",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "ItachiQ60s_228",
-   "proPos": "25",
-   "gamesPlayed": "356",
-   "goals": "382",
-   "assists": "212",
-   "manOfTheMatch": "86",
-   "ratingAve": "7.8",
    "prevGoals": "0",
    "favoritePosition": "forward"
   }
