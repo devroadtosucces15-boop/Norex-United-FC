@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-29T16:30:49.653Z",
+ "fetchedAt": "2026-10-29T16:40:48.401Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -151,6 +151,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "efelix_24",
+   "gamesPlayed": "19",
+   "winRate": "78",
+   "goals": "0",
+   "assists": "1",
+   "cleanSheetsDef": "3",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "222",
+   "passSuccessRate": "85",
+   "ratingAve": "7.1",
+   "tacklesMade": "22",
+   "tackleSuccessRate": "38",
+   "proName": "FELIX",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "181",
+   "proNationality": "95",
+   "proOverall": "80",
+   "proOverallStr": "80",
+   "manOfTheMatch": "1",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "Elferny01",
@@ -481,7 +517,7 @@
   "midfielder": 2,
   "goalkeeper": 0,
   "forward": 7,
-  "defender": 1
+  "defender": 2
  },
  "career": [
   {
@@ -505,6 +541,17 @@
    "ratingAve": "7.4",
    "prevGoals": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "efelix_24",
+   "proPos": "5",
+   "gamesPlayed": "180",
+   "goals": "5",
+   "assists": "13",
+   "manOfTheMatch": "11",
+   "ratingAve": "7.5",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "Elferny01",
