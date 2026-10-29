@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-29T21:30:47.682Z",
+ "fetchedAt": "2026-10-29T21:40:48.601Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -295,42 +295,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "ToNyWhITe4u",
-   "gamesPlayed": "8",
-   "winRate": "12",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "92",
-   "passSuccessRate": "69",
-   "ratingAve": "6.6",
-   "tacklesMade": "6",
-   "tackleSuccessRate": "23",
-   "proName": "R9",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "181",
-   "proNationality": "76",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "cooban_ice",
@@ -658,7 +622,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 4,
+  "midfielder": 3,
   "goalkeeper": 0,
   "forward": 8,
   "defender": 3
@@ -722,24 +686,13 @@
   {
    "name": "CaptainFluffyCat",
    "proPos": "25",
-   "gamesPlayed": "249",
+   "gamesPlayed": "250",
    "goals": "191",
    "assists": "113",
    "manOfTheMatch": "49",
    "ratingAve": "7.4",
-   "prevGoals": "1",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "ToNyWhITe4u",
-   "proPos": "14",
-   "gamesPlayed": "222",
-   "goals": "15",
-   "assists": "52",
-   "manOfTheMatch": "12",
-   "ratingAve": "7.1",
    "prevGoals": "0",
-   "favoritePosition": "midfielder"
+   "favoritePosition": "forward"
   },
   {
    "name": "cooban_ice",
