@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-29T18:50:54.317Z",
+ "fetchedAt": "2026-10-29T19:00:55.044Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -115,6 +115,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "R3PTILI4N",
+   "gamesPlayed": "14",
+   "winRate": "64",
+   "goals": "0",
+   "assists": "2",
+   "cleanSheetsDef": "4",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "173",
+   "passSuccessRate": "78",
+   "ratingAve": "7.8",
+   "tacklesMade": "17",
+   "tackleSuccessRate": "51",
+   "proName": "REPTILIAN",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "188",
+   "proNationality": "21",
+   "proOverall": "82",
+   "proOverallStr": "82",
+   "manOfTheMatch": "4",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "twiinuziis",
@@ -625,7 +661,7 @@
   "midfielder": 4,
   "goalkeeper": 0,
   "forward": 7,
-  "defender": 3
+  "defender": 4
  },
  "career": [
   {
@@ -638,6 +674,17 @@
    "ratingAve": "7.8",
    "prevGoals": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "R3PTILI4N",
+   "proPos": "5",
+   "gamesPlayed": "240",
+   "goals": "19",
+   "assists": "44",
+   "manOfTheMatch": "38",
+   "ratingAve": "7.8",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "twiinuziis",
