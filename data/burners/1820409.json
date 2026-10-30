@@ -3,7 +3,7 @@
  "name": "KuLhoZ",
  "crest": "99160516",
  "trackedAt": "2026-10-22T23:06:49.189Z",
- "fetchedAt": "2026-10-30T02:30:47.020Z",
+ "fetchedAt": "2026-10-30T02:40:47.406Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "KuLhoZ",
@@ -89,42 +89,6 @@
  },
  "members": [
   {
-   "name": "Ringerr",
-   "gamesPlayed": "2",
-   "winRate": "100",
-   "goals": "1",
-   "assists": "3",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "25",
-   "passesMade": "55",
-   "passSuccessRate": "80",
-   "ratingAve": "9.3",
-   "tacklesMade": "4",
-   "tackleSuccessRate": "44",
-   "proName": "Beana",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "182",
-   "proNationality": "83",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "1",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "x_MrMike_x",
    "gamesPlayed": "2",
    "winRate": "100",
@@ -199,17 +163,6 @@
  ],
  "career": [
   {
-   "name": "Ringerr",
-   "proPos": "14",
-   "gamesPlayed": "82",
-   "goals": "48",
-   "assists": "58",
-   "manOfTheMatch": "21",
-   "ratingAve": "8.3",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "x_MrMike_x",
    "proPos": "5",
    "gamesPlayed": "87",
@@ -233,17 +186,9 @@
   }
  ],
  "roster": {
-  "Ringerr": {
-   "first": "2026-10-22T23:06:49.189Z",
-   "last": "2026-10-30T02:30:47.020Z",
-   "active": true,
-   "gp": 2,
-   "pos": "midfielder",
-   "ovr": 80
-  },
   "x_MrMike_x": {
    "first": "2026-10-22T23:06:49.189Z",
-   "last": "2026-10-30T02:30:47.020Z",
+   "last": "2026-10-30T02:40:47.406Z",
    "active": true,
    "gp": 2,
    "pos": "forward",
@@ -251,11 +196,19 @@
   },
   "NUTT1E18": {
    "first": "2026-10-22T23:06:49.189Z",
-   "last": "2026-10-30T02:30:47.020Z",
+   "last": "2026-10-30T02:40:47.406Z",
    "active": true,
    "gp": 1,
    "pos": "forward",
    "ovr": 82
+  },
+  "Ringerr": {
+   "first": "2026-10-22T23:06:49.189Z",
+   "last": "2026-10-30T02:30:47.020Z",
+   "active": false,
+   "gp": 2,
+   "pos": "midfielder",
+   "ovr": 80
   }
  },
  "matches": [
