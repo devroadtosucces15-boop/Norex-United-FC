@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-30T23:40:47.291Z",
+ "fetchedAt": "2026-10-30T23:50:47.151Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -115,42 +115,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "REFROD30",
-   "gamesPlayed": "24",
-   "winRate": "70",
-   "goals": "18",
-   "assists": "16",
-   "cleanSheetsDef": "2",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "94",
-   "passesMade": "405",
-   "passSuccessRate": "82",
-   "ratingAve": "8.1",
-   "tacklesMade": "19",
-   "tackleSuccessRate": "22",
-   "proName": "REFROD",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "168",
-   "proNationality": "83",
-   "proOverall": "84",
-   "proOverallStr": "84",
-   "manOfTheMatch": "4",
-   "redCards": "0",
-   "prevGoals": "3",
-   "prevGoals1": "3",
-   "prevGoals2": "0",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "1",
-   "prevGoals7": "2",
-   "prevGoals8": "2",
-   "prevGoals9": "2",
-   "prevGoals10": "3",
-   "favoritePosition": "forward"
   },
   {
    "name": "AGGRESSOR-CB",
@@ -624,7 +588,7 @@
  "positionCount": {
   "midfielder": 3,
   "goalkeeper": 0,
-  "forward": 7,
+  "forward": 6,
   "defender": 3
  },
  "career": [
@@ -649,17 +613,6 @@
    "ratingAve": "7.4",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "REFROD30",
-   "proPos": "25",
-   "gamesPlayed": "341",
-   "goals": "392",
-   "assists": "296",
-   "manOfTheMatch": "84",
-   "ratingAve": "8.3",
-   "prevGoals": "1",
-   "favoritePosition": "forward"
   },
   {
    "name": "AGGRESSOR-CB",
