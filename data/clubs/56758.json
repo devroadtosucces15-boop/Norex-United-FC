@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-30T03:40:47.176Z",
+ "fetchedAt": "2026-10-30T03:50:47.038Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -585,42 +585,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "Edoski_707",
-   "gamesPlayed": "11",
-   "winRate": "100",
-   "goals": "7",
-   "assists": "11",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "31",
-   "passesMade": "185",
-   "passSuccessRate": "78",
-   "ratingAve": "8.3",
-   "tacklesMade": "16",
-   "tackleSuccessRate": "69",
-   "proName": "EDO",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "178",
-   "proNationality": "133",
-   "proOverall": "78",
-   "proOverallStr": "78",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "2",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "1",
-   "prevGoals6": "1",
-   "prevGoals7": "1",
-   "prevGoals8": "1",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "CatchMyDrift3",
    "gamesPlayed": "14",
    "winRate": "35",
@@ -802,7 +766,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 3,
+  "midfielder": 2,
   "goalkeeper": 0,
   "forward": 10,
   "defender": 4
@@ -994,17 +958,6 @@
    "ratingAve": "7.1",
    "prevGoals": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "Edoski_707",
-   "proPos": "14",
-   "gamesPlayed": "361",
-   "goals": "332",
-   "assists": "256",
-   "manOfTheMatch": "128",
-   "ratingAve": "8.4",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "CatchMyDrift3",
