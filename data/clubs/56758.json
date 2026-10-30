@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-30T01:30:48.273Z",
+ "fetchedAt": "2026-10-30T01:40:46.485Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -513,42 +513,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "risky_alpha3",
-   "gamesPlayed": "13",
-   "winRate": "84",
-   "goals": "2",
-   "assists": "6",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "40",
-   "passesMade": "197",
-   "passSuccessRate": "80",
-   "ratingAve": "7.4",
-   "tacklesMade": "17",
-   "tackleSuccessRate": "26",
-   "proName": "Pollo",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "14",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "1",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "MetroidGrime13",
    "gamesPlayed": "1",
    "winRate": "0",
@@ -874,7 +838,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 5,
+  "midfielder": 4,
   "goalkeeper": 0,
   "forward": 10,
   "defender": 4
@@ -1044,17 +1008,6 @@
    "ratingAve": "7.1",
    "prevGoals": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "risky_alpha3",
-   "proPos": "14",
-   "gamesPlayed": "41",
-   "goals": "6",
-   "assists": "14",
-   "manOfTheMatch": "7",
-   "ratingAve": "7.7",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "MetroidGrime13",
