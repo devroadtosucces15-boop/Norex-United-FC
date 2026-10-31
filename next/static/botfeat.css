@@ -38,6 +38,7 @@
 .nxv-r{padding:0;display:flex;flex-direction:column;color:inherit;text-decoration:none}
 .nxv-r .nxv-b{padding:12px 14px 14px;gap:4px}.nxv-r .nxv-b b{font:600 15px/1.3 Inter;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .nxrel{margin-bottom:8px}
+.nxrel header>div{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.nxv-pos{cursor:default;pointer-events:none}
 @media(max-width:640px){.nxv-grid{grid-template-columns:minmax(0,1fr)}.nxv-rel{grid-template-columns:minmax(0,1fr)}}
 
 /* 🔎 Discoveries */
@@ -55,6 +56,19 @@
 .nxd-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:var(--nx-gap)}
 @media(max-width:640px){.nxd{padding:16px}.nxd-ok{display:none}}
 
+/* 📺 My streams (My Locker) */
+.nxs-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--nx-gap)}
+.nxs{display:grid;gap:10px;padding:18px 20px;align-content:start}
+.nxs.live{border-color:rgba(200,53,44,.55);box-shadow:0 0 0 1px rgba(200,53,44,.25) inset}
+.nxs-h{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.nxs-on{display:inline-flex;align-items:center;gap:8px;font:600 12px Oswald;letter-spacing:.14em;text-transform:uppercase;color:var(--red2)}
+.nxs-on .nxl-dot{position:static}
+.nxs-off{font:600 12px Oswald;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.nxs-n{font:600 20px Oswald;letter-spacing:.04em;color:inherit;overflow-wrap:anywhere;min-height:44px;display:flex;align-items:center}
+.nxs-n:hover{color:var(--g2)}
+.nxs p{margin:0;overflow-wrap:anywhere}
+@media(max-width:640px){.nxs-row{grid-template-columns:minmax(0,1fr)}}
+
 /* page notices (flag off) */
 .nx-off{max-width:620px;margin:var(--nx-gap) auto}
 
@@ -70,3 +84,12 @@
 
 /* faces everywhere: a Card Studio picture is a portrait, show the face end */
 img[data-face=card]{object-fit:cover;object-position:50% 16%}
+
+/* QA fix: motion.css adds margin-top:22px to every `.panel + .panel`, which doubled the row gap in these grids (22px gap + 22px margin = 44px). The grid gap is the only spacing. */
+:is(.nxs-row,.nxl-row,.nxv-grid,.nxv-rel,.nxd-row,#dc-feed)>.panel+.panel{margin-top:0}
+
+/* round 3: the header "N live" chip jumps to #live, so the strip must clear the sticky two-row header on phones */
+[data-live-strip]{scroll-margin-top:150px}
+/* round 3 QA: the topic filter is a row of buttons – 44px tall on phones like every other tap target */
+#wl-topics .chip{min-height:44px;display:inline-flex;align-items:center}
+.nxd-f .btn,.nxv-f .btn{min-height:44px}

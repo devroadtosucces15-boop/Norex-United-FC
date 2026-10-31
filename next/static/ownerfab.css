@@ -21,3 +21,7 @@
 .of-seg{display:flex;gap:8px;flex-wrap:wrap}
 @media(prefers-reduced-motion:reduce){.of-ring:after,.of-badge{animation:none}.of-fab,.of-row{transition:none}}
 html[data-motion="calm"] .of-ring:after,html[data-motion="off"] .of-ring:after{animation:none}
+
+/* waiting-longest line and the /panel row */
+.of-old.late .num{color:var(--red2,#e0493f)}
+.of-pn{width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit;background:none}
