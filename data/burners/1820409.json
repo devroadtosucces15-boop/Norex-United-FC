@@ -3,7 +3,7 @@
  "name": "KuLhoZ",
  "crest": "99160516",
  "trackedAt": "2026-10-22T23:06:49.189Z",
- "fetchedAt": "2026-10-31T22:00:47.642Z",
+ "fetchedAt": "2026-10-31T22:10:48.562Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "KuLhoZ",
@@ -89,42 +89,6 @@
  },
  "members": [
   {
-   "name": "x_MrMike_x",
-   "gamesPlayed": "5",
-   "winRate": "60",
-   "goals": "10",
-   "assists": "7",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "50",
-   "passesMade": "86",
-   "passSuccessRate": "75",
-   "ratingAve": "8.2",
-   "tacklesMade": "6",
-   "tackleSuccessRate": "35",
-   "proName": "MR MIKE",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "164",
-   "proNationality": "54",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "3",
-   "prevGoals1": "3",
-   "prevGoals2": "1",
-   "prevGoals3": "3",
-   "prevGoals4": "0",
-   "prevGoals5": "3",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "NUTT1E18",
    "gamesPlayed": "1",
    "winRate": "100",
@@ -163,17 +127,6 @@
  ],
  "career": [
   {
-   "name": "x_MrMike_x",
-   "proPos": "25",
-   "gamesPlayed": "94",
-   "goals": "50",
-   "assists": "36",
-   "manOfTheMatch": "11",
-   "ratingAve": "7.6",
-   "prevGoals": "3",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "NUTT1E18",
    "proPos": "25",
    "gamesPlayed": "1",
@@ -186,21 +139,21 @@
   }
  ],
  "roster": {
-  "x_MrMike_x": {
-   "first": "2026-10-22T23:06:49.189Z",
-   "last": "2026-10-31T22:00:47.642Z",
-   "active": true,
-   "gp": 5,
-   "pos": "forward",
-   "ovr": 83
-  },
   "NUTT1E18": {
    "first": "2026-10-22T23:06:49.189Z",
-   "last": "2026-10-31T22:00:47.642Z",
+   "last": "2026-10-31T22:10:48.562Z",
    "active": true,
    "gp": 1,
    "pos": "forward",
    "ovr": 82
+  },
+  "x_MrMike_x": {
+   "first": "2026-10-22T23:06:49.189Z",
+   "last": "2026-10-31T22:00:47.642Z",
+   "active": false,
+   "gp": 5,
+   "pos": "forward",
+   "ovr": 83
   },
   "JEZB_11": {
    "first": "2026-10-31T11:30:49.658Z",
