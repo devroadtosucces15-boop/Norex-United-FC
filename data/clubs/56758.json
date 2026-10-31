@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-31T06:40:47.087Z",
+ "fetchedAt": "2026-10-31T06:50:50.190Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -403,6 +403,42 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0"
+  },
+  {
+   "name": "TTV_Walkinmaniac",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
   }
  ],
  "positionCount": {
@@ -459,13 +495,24 @@
   {
    "name": "Elferny01",
    "proPos": "14",
-   "gamesPlayed": "99",
-   "goals": "49",
-   "assists": "67",
+   "gamesPlayed": "100",
+   "goals": "50",
+   "assists": "69",
    "manOfTheMatch": "8",
    "ratingAve": "7.8",
-   "prevGoals": "2",
+   "prevGoals": "1",
    "favoritePosition": "midfielder"
+  },
+  {
+   "name": "TTV_Walkinmaniac",
+   "proPos": "25",
+   "gamesPlayed": "28",
+   "goals": "20",
+   "assists": "14",
+   "manOfTheMatch": "4",
+   "ratingAve": "7.6",
+   "prevGoals": "0",
+   "favoritePosition": "forward"
   },
   {
    "name": "cooban_ice",
@@ -492,12 +539,12 @@
   {
    "name": "Austin110486",
    "proPos": "5",
-   "gamesPlayed": "85",
-   "goals": "3",
-   "assists": "10",
+   "gamesPlayed": "86",
+   "goals": "4",
+   "assists": "11",
    "manOfTheMatch": "5",
    "ratingAve": "7.1",
-   "prevGoals": "0",
+   "prevGoals": "1",
    "favoritePosition": "defender"
   },
   {
