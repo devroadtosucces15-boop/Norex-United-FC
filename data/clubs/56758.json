@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-31T18:20:48.510Z",
+ "fetchedAt": "2026-10-31T18:30:47.876Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -151,42 +151,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "FlyingRaijinBR",
-   "gamesPlayed": "7",
-   "winRate": "71",
-   "goals": "8",
-   "assists": "3",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "61",
-   "passesMade": "64",
-   "passSuccessRate": "83",
-   "ratingAve": "7.4",
-   "tacklesMade": "4",
-   "tackleSuccessRate": "57",
-   "proName": "Neymar Jr",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "176",
-   "proNationality": "54",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "2",
-   "prevGoals1": "2",
-   "prevGoals2": "3",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "2",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "efelix_24",
@@ -660,7 +624,7 @@
  "positionCount": {
   "midfielder": 6,
   "goalkeeper": 0,
-  "forward": 6,
+  "forward": 5,
   "defender": 3
  },
  "career": [
@@ -685,17 +649,6 @@
    "ratingAve": "7.5",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "FlyingRaijinBR",
-   "proPos": "25",
-   "gamesPlayed": "108",
-   "goals": "81",
-   "assists": "67",
-   "manOfTheMatch": "10",
-   "ratingAve": "7.6",
-   "prevGoals": "2",
-   "favoritePosition": "forward"
   },
   {
    "name": "efelix_24",
