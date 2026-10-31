@@ -3,7 +3,7 @@
  "name": "KuLhoZ",
  "crest": "99160516",
  "trackedAt": "2026-10-22T23:06:49.189Z",
- "fetchedAt": "2026-10-31T15:00:49.162Z",
+ "fetchedAt": "2026-10-31T15:10:55.065Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "KuLhoZ",
@@ -125,42 +125,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "JEZB_11",
-   "gamesPlayed": "3",
-   "winRate": "33",
-   "goals": "3",
-   "assists": "7",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "100",
-   "passesMade": "82",
-   "passSuccessRate": "69",
-   "ratingAve": "9.9",
-   "tacklesMade": "15",
-   "tackleSuccessRate": "48",
-   "proName": "J. Jezb",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "162",
-   "proNationality": "56",
-   "proOverall": "82",
-   "proOverallStr": "82",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "2",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "NUTT1E18",
    "gamesPlayed": "1",
    "winRate": "100",
@@ -210,17 +174,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "JEZB_11",
-   "proPos": "14",
-   "gamesPlayed": "401",
-   "goals": "253",
-   "assists": "446",
-   "manOfTheMatch": "61",
-   "ratingAve": "8.1",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
-  {
    "name": "NUTT1E18",
    "proPos": "25",
    "gamesPlayed": "1",
@@ -235,26 +188,26 @@
  "roster": {
   "x_MrMike_x": {
    "first": "2026-10-22T23:06:49.189Z",
-   "last": "2026-10-31T15:00:49.162Z",
+   "last": "2026-10-31T15:10:55.065Z",
    "active": true,
    "gp": 5,
    "pos": "forward",
    "ovr": 83
   },
-  "JEZB_11": {
-   "first": "2026-10-31T11:30:49.658Z",
-   "last": "2026-10-31T15:00:49.162Z",
-   "active": true,
-   "gp": 3,
-   "pos": "midfielder",
-   "ovr": 82
-  },
   "NUTT1E18": {
    "first": "2026-10-22T23:06:49.189Z",
-   "last": "2026-10-31T15:00:49.162Z",
+   "last": "2026-10-31T15:10:55.065Z",
    "active": true,
    "gp": 1,
    "pos": "forward",
+   "ovr": 82
+  },
+  "JEZB_11": {
+   "first": "2026-10-31T11:30:49.658Z",
+   "last": "2026-10-31T15:00:49.162Z",
+   "active": false,
+   "gp": 3,
+   "pos": "midfielder",
    "ovr": 82
   },
   "Ringerr": {
