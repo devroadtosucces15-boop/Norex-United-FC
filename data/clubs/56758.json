@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-10-31T09:00:49.825Z",
+ "fetchedAt": "2026-10-31T09:10:48.560Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -115,42 +115,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "ASLweezy81",
-   "gamesPlayed": "20",
-   "winRate": "50",
-   "goals": "2",
-   "assists": "2",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "22",
-   "passesMade": "241",
-   "passSuccessRate": "82",
-   "ratingAve": "7.5",
-   "tacklesMade": "27",
-   "tackleSuccessRate": "24",
-   "proName": "D. Wilson",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "95",
-   "proOverall": "73",
-   "proOverallStr": "73",
-   "manOfTheMatch": "1",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "1",
-   "prevGoals3": "1",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "AGGRESSOR-CB",
@@ -552,7 +516,7 @@
  "positionCount": {
   "midfielder": 5,
   "goalkeeper": 0,
-  "forward": 4,
+  "forward": 3,
   "defender": 3
  },
  "career": [
@@ -566,17 +530,6 @@
    "ratingAve": "7.4",
    "prevGoals": "0",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "ASLweezy81",
-   "proPos": "14",
-   "gamesPlayed": "165",
-   "goals": "43",
-   "assists": "49",
-   "manOfTheMatch": "18",
-   "ratingAve": "7.6",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "AGGRESSOR-CB",
