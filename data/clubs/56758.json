@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-01T03:10:47.280Z",
+ "fetchedAt": "2026-11-01T03:20:49.177Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,42 +80,6 @@
   "leagueAppearances": "351"
  },
  "members": [
-  {
-   "name": "Cane7",
-   "gamesPlayed": "33",
-   "winRate": "75",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "3",
-   "cleanSheetsGK": "1",
-   "shotSuccessRate": "0",
-   "passesMade": "408",
-   "passSuccessRate": "85",
-   "ratingAve": "7.5",
-   "tacklesMade": "50",
-   "tackleSuccessRate": "33",
-   "proName": "CANE",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "186",
-   "proNationality": "56",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
   {
    "name": "AGGRESSOR-CB",
    "gamesPlayed": "9",
@@ -622,23 +586,12 @@
   }
  ],
  "positionCount": {
-  "midfielder": 6,
+  "midfielder": 5,
   "goalkeeper": 0,
   "forward": 5,
   "defender": 3
  },
  "career": [
-  {
-   "name": "Cane7",
-   "proPos": "5",
-   "gamesPlayed": "287",
-   "goals": "11",
-   "assists": "14",
-   "manOfTheMatch": "27",
-   "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
-  },
   {
    "name": "AGGRESSOR-CB",
    "proPos": "5",
@@ -763,7 +716,7 @@
   {
    "name": "Fort_Montana",
    "proPos": "5",
-   "gamesPlayed": "328",
+   "gamesPlayed": "329",
    "goals": "12",
    "assists": "19",
    "manOfTheMatch": "19",
