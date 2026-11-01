@@ -1,7 +1,7 @@
 {
  "id": "51769",
  "tier": "linked",
- "fetchedAt": "2026-11-01T04:10:49.548Z",
+ "fetchedAt": "2026-11-01T04:20:48.779Z",
  "info": {
   "name": "Legacy Athletic",
   "clubId": 51769,
@@ -187,42 +187,6 @@
    "prevGoals9": "4",
    "prevGoals10": "2",
    "favoritePosition": "defender"
-  },
-  {
-   "name": "karimsel95",
-   "gamesPlayed": "6",
-   "winRate": "66",
-   "goals": "1",
-   "assists": "8",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "14",
-   "passesMade": "87",
-   "passSuccessRate": "70",
-   "ratingAve": "8.0",
-   "tacklesMade": "12",
-   "tackleSuccessRate": "44",
-   "proName": "Moulax",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "175",
-   "proNationality": "70",
-   "proOverall": "83",
-   "proOverallStr": "83",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "1",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "gooner11724",
@@ -802,7 +766,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 5,
+  "midfielder": 4,
   "goalkeeper": 0,
   "forward": 8,
   "defender": 5
@@ -851,17 +815,6 @@
    "ratingAve": "8.3",
    "prevGoals": "1",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "karimsel95",
-   "proPos": "14",
-   "gamesPlayed": "17",
-   "goals": "7",
-   "assists": "21",
-   "manOfTheMatch": "3",
-   "ratingAve": "8.0",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   },
   {
    "name": "Itzyoungdan",

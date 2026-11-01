@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-01T04:10:49.548Z",
+ "fetchedAt": "2026-11-01T04:20:48.779Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -297,42 +297,6 @@
    "favoritePosition": "defender"
   },
   {
-   "name": "Jorge15chivas",
-   "gamesPlayed": "41",
-   "winRate": "60",
-   "goals": "60",
-   "assists": "27",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "61",
-   "passesMade": "554",
-   "passSuccessRate": "80",
-   "ratingAve": "7.9",
-   "tacklesMade": "29",
-   "tackleSuccessRate": "13",
-   "proName": "MESSI",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "174",
-   "proNationality": "14",
-   "proOverall": "85",
-   "proOverallStr": "85",
-   "manOfTheMatch": "9",
-   "redCards": "1",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "3",
-   "prevGoals3": "1",
-   "prevGoals4": "3",
-   "prevGoals5": "1",
-   "prevGoals6": "1",
-   "prevGoals7": "1",
-   "prevGoals8": "1",
-   "prevGoals9": "0",
-   "prevGoals10": "3",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Treego2424",
    "gamesPlayed": "18",
    "winRate": "66",
@@ -588,7 +552,7 @@
  "positionCount": {
   "midfielder": 5,
   "goalkeeper": 0,
-  "forward": 5,
+  "forward": 4,
   "defender": 3
  },
  "career": [
@@ -670,17 +634,6 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "Jorge15chivas",
-   "proPos": "25",
-   "gamesPlayed": "283",
-   "goals": "501",
-   "assists": "109",
-   "manOfTheMatch": "80",
-   "ratingAve": "7.9",
-   "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Treego2424",
    "proPos": "25",
    "gamesPlayed": "50",
@@ -716,7 +669,7 @@
   {
    "name": "Fort_Montana",
    "proPos": "5",
-   "gamesPlayed": "330",
+   "gamesPlayed": "331",
    "goals": "12",
    "assists": "19",
    "manOfTheMatch": "19",
