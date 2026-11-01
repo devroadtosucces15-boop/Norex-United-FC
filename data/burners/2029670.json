@@ -3,7 +3,7 @@
  "name": "U NASHY",
  "crest": "99160519",
  "trackedAt": "2026-10-31T23:20:47.648Z",
- "fetchedAt": "2026-11-01T00:30:58.316Z",
+ "fetchedAt": "2026-11-01T00:40:51.046Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "U NASHY",
@@ -161,42 +161,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "JEZB_11",
-   "gamesPlayed": "8",
-   "winRate": "87",
-   "goals": "7",
-   "assists": "5",
-   "cleanSheetsDef": "1",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "50",
-   "passesMade": "157",
-   "passSuccessRate": "77",
-   "ratingAve": "8.5",
-   "tacklesMade": "10",
-   "tackleSuccessRate": "23",
-   "proName": "J. Jezb",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "162",
-   "proNationality": "56",
-   "proOverall": "80",
-   "proOverallStr": "80",
-   "manOfTheMatch": "3",
-   "redCards": "0",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "2",
-   "prevGoals8": "4",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Alysalsa_",
    "gamesPlayed": "5",
    "winRate": "80",
@@ -257,17 +221,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "JEZB_11",
-   "proPos": "25",
-   "gamesPlayed": "420",
-   "goals": "276",
-   "assists": "470",
-   "manOfTheMatch": "67",
-   "ratingAve": "8.2",
-   "prevGoals": "1",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Alysalsa_",
    "proPos": "25",
    "gamesPlayed": "249",
@@ -282,7 +235,7 @@
  "roster": {
   "IM_Trash_Broski": {
    "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-11-01T00:30:58.316Z",
+   "last": "2026-11-01T00:40:51.046Z",
    "active": true,
    "gp": 6,
    "pos": "midfielder",
@@ -290,27 +243,27 @@
   },
   "x_MrMike_x": {
    "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-11-01T00:30:58.316Z",
+   "last": "2026-11-01T00:40:51.046Z",
    "active": true,
    "gp": 5,
    "pos": "forward",
    "ovr": 84
   },
-  "JEZB_11": {
-   "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-11-01T00:30:58.316Z",
-   "active": true,
-   "gp": 8,
-   "pos": "forward",
-   "ovr": 80
-  },
   "Alysalsa_": {
    "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-11-01T00:30:58.316Z",
+   "last": "2026-11-01T00:40:51.046Z",
    "active": true,
    "gp": 5,
    "pos": "forward",
    "ovr": 82
+  },
+  "JEZB_11": {
+   "first": "2026-10-31T23:20:47.648Z",
+   "last": "2026-11-01T00:30:58.316Z",
+   "active": false,
+   "gp": 8,
+   "pos": "forward",
+   "ovr": 80
   },
   "Itzponchordz_": {
    "first": "2026-10-31T23:20:47.648Z",
