@@ -1,7 +1,7 @@
 {
  "id": "80869",
  "tier": "home",
- "fetchedAt": "2026-11-01T02:30:50.234Z",
+ "fetchedAt": "2026-11-01T02:40:51.522Z",
  "info": {
   "name": "NOREX UNITED FC",
   "clubId": 80869,
@@ -360,6 +360,42 @@
    "prevGoals2": "2",
    "prevGoals3": "3",
    "prevGoals4": "1",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "OutcastNick",
+   "gamesPlayed": "11",
+   "winRate": "100",
+   "goals": "5",
+   "assists": "4",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "45",
+   "passesMade": "97",
+   "passSuccessRate": "79",
+   "ratingAve": "6.8",
+   "tacklesMade": "9",
+   "tackleSuccessRate": "56",
+   "proName": "",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "170",
+   "proNationality": "83",
+   "proOverall": "80",
+   "proOverallStr": "80",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "1",
+   "prevGoals1": "1",
+   "prevGoals2": "2",
+   "prevGoals3": "0",
+   "prevGoals4": "2",
    "prevGoals5": "0",
    "prevGoals6": "0",
    "prevGoals7": "0",
@@ -1380,7 +1416,7 @@
  "positionCount": {
   "midfielder": 5,
   "goalkeeper": 2,
-  "forward": 5,
+  "forward": 6,
   "defender": 7
  },
  "career": [
@@ -1528,6 +1564,17 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "OutcastNick",
+   "proPos": "25",
+   "gamesPlayed": "116",
+   "goals": "101",
+   "assists": "93",
+   "manOfTheMatch": "19",
+   "ratingAve": "7.9",
+   "prevGoals": "2",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "MX-420-",
    "proPos": "14",
    "gamesPlayed": "1",
@@ -1573,14 +1620,14 @@
   },
   {
    "name": "miranda2omeezy",
-   "proPos": "14",
-   "gamesPlayed": "110",
+   "proPos": "5",
+   "gamesPlayed": "111",
    "goals": "20",
    "assists": "22",
    "manOfTheMatch": "11",
    "ratingAve": "7.4",
    "prevGoals": "0",
-   "favoritePosition": "midfielder"
+   "favoritePosition": "defender"
   },
   {
    "name": "IM_Trash_Broski",
@@ -1684,8 +1731,8 @@
   {
    "name": "Billy_McBurney30",
    "proPos": "25",
-   "gamesPlayed": "189",
-   "goals": "135",
+   "gamesPlayed": "190",
+   "goals": "137",
    "assists": "87",
    "manOfTheMatch": "34",
    "ratingAve": "7.5",
