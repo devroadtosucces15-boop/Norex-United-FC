@@ -1,7 +1,7 @@
 {
  "id": "80869",
  "tier": "home",
- "fetchedAt": "2026-10-31T23:50:49.034Z",
+ "fetchedAt": "2026-11-01T00:00:50.511Z",
  "info": {
   "name": "NOREX UNITED FC",
   "clubId": 80869,
@@ -295,42 +295,6 @@
    "prevGoals9": "0",
    "prevGoals10": "1",
    "favoritePosition": ""
-  },
-  {
-   "name": "Itzyoungdan",
-   "gamesPlayed": "51",
-   "winRate": "84",
-   "goals": "32",
-   "assists": "21",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "54",
-   "passesMade": "845",
-   "passSuccessRate": "86",
-   "ratingAve": "7.8",
-   "tacklesMade": "32",
-   "tackleSuccessRate": "28",
-   "proName": "",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "168",
-   "proNationality": "0",
-   "proOverall": "79",
-   "proOverallStr": "79",
-   "manOfTheMatch": "5",
-   "redCards": "4",
-   "prevGoals": "1",
-   "prevGoals1": "1",
-   "prevGoals2": "1",
-   "prevGoals3": "2",
-   "prevGoals4": "1",
-   "prevGoals5": "0",
-   "prevGoals6": "1",
-   "prevGoals7": "1",
-   "prevGoals8": "2",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
   },
   {
    "name": "oKaede-",
@@ -1416,7 +1380,7 @@
  "positionCount": {
   "midfielder": 5,
   "goalkeeper": 2,
-  "forward": 6,
+  "forward": 5,
   "defender": 7
  },
  "career": [
@@ -1529,17 +1493,6 @@
    "ratingAve": "7.5",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "Itzyoungdan",
-   "proPos": "25",
-   "gamesPlayed": "202",
-   "goals": "242",
-   "assists": "174",
-   "manOfTheMatch": "44",
-   "ratingAve": "8.4",
-   "prevGoals": "4",
-   "favoritePosition": "forward"
   },
   {
    "name": "oKaede-",

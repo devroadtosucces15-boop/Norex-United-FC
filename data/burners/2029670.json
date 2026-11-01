@@ -3,7 +3,7 @@
  "name": "U NASHY",
  "crest": "99160519",
  "trackedAt": "2026-10-31T23:20:47.648Z",
- "fetchedAt": "2026-10-31T23:50:49.034Z",
+ "fetchedAt": "2026-11-01T00:00:50.511Z",
  "channel": "1490083056546091058",
  "info": {
   "name": "U NASHY",
@@ -267,42 +267,6 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "itzAldinha27",
-   "gamesPlayed": "2",
-   "winRate": "100",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "15",
-   "passSuccessRate": "93",
-   "ratingAve": "6.7",
-   "tacklesMade": "0",
-   "tackleSuccessRate": "0",
-   "proName": "Aldinha",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "196",
-   "proNationality": "83",
-   "proOverall": "78",
-   "proOverallStr": "78",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
   }
  ],
  "career": [
@@ -360,23 +324,12 @@
    "ratingAve": "7.5",
    "prevGoals": "2",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "itzAldinha27",
-   "proPos": "5",
-   "gamesPlayed": "327",
-   "goals": "128",
-   "assists": "146",
-   "manOfTheMatch": "38",
-   "ratingAve": "8.1",
-   "prevGoals": "0",
-   "favoritePosition": "defender"
   }
  ],
  "roster": {
   "IM_Trash_Broski": {
    "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-10-31T23:50:49.034Z",
+   "last": "2026-11-01T00:00:50.511Z",
    "active": true,
    "gp": 6,
    "pos": "midfielder",
@@ -384,7 +337,7 @@
   },
   "x_MrMike_x": {
    "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-10-31T23:50:49.034Z",
+   "last": "2026-11-01T00:00:50.511Z",
    "active": true,
    "gp": 4,
    "pos": "forward",
@@ -392,7 +345,7 @@
   },
   "JEZB_11": {
    "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-10-31T23:50:49.034Z",
+   "last": "2026-11-01T00:00:50.511Z",
    "active": true,
    "gp": 6,
    "pos": "midfielder",
@@ -400,7 +353,7 @@
   },
   "Alysalsa_": {
    "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-10-31T23:50:49.034Z",
+   "last": "2026-11-01T00:00:50.511Z",
    "active": true,
    "gp": 3,
    "pos": "defender",
@@ -408,7 +361,7 @@
   },
   "Itzponchordz_": {
    "first": "2026-10-31T23:20:47.648Z",
-   "last": "2026-10-31T23:50:49.034Z",
+   "last": "2026-11-01T00:00:50.511Z",
    "active": true,
    "gp": 5,
    "pos": "forward",
@@ -417,7 +370,7 @@
   "itzAldinha27": {
    "first": "2026-10-31T23:20:47.648Z",
    "last": "2026-10-31T23:50:49.034Z",
-   "active": true,
+   "active": false,
    "gp": 2,
    "pos": "defender",
    "ovr": 78
