@@ -1,11 +1,11 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-03T22:10:51.370Z",
+ "fetchedAt": "2026-11-03T22:20:48.215Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
-  "regionId": 1465209650,
+  "regionId": 5723475,
   "teamId": 1032,
   "customKit": {
    "stadName": "BAY AREA 510",
@@ -333,42 +333,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "Treego2424",
-   "gamesPlayed": "23",
-   "winRate": "69",
-   "goals": "25",
-   "assists": "16",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "55",
-   "passesMade": "263",
-   "passSuccessRate": "77",
-   "ratingAve": "8.0",
-   "tacklesMade": "20",
-   "tackleSuccessRate": "20",
-   "proName": "Treezy",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "185",
-   "proNationality": "83",
-   "proOverall": "85",
-   "proOverallStr": "85",
-   "manOfTheMatch": "4",
-   "redCards": "0",
-   "prevGoals": "3",
-   "prevGoals1": "3",
-   "prevGoals2": "2",
-   "prevGoals3": "1",
-   "prevGoals4": "2",
-   "prevGoals5": "2",
-   "prevGoals6": "4",
-   "prevGoals7": "3",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "risky_alpha3",
    "gamesPlayed": "23",
    "winRate": "82",
@@ -624,7 +588,7 @@
  "positionCount": {
   "midfielder": 7,
   "goalkeeper": 0,
-  "forward": 5,
+  "forward": 4,
   "defender": 2
  },
  "career": [
@@ -714,17 +678,6 @@
    "manOfTheMatch": "4",
    "ratingAve": "7.4",
    "prevGoals": "0",
-   "favoritePosition": "forward"
-  },
-  {
-   "name": "Treego2424",
-   "proPos": "25",
-   "gamesPlayed": "58",
-   "goals": "54",
-   "assists": "32",
-   "manOfTheMatch": "8",
-   "ratingAve": "7.7",
-   "prevGoals": "3",
    "favoritePosition": "forward"
   },
   {
