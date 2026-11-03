@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-03T19:21:08.434Z",
+ "fetchedAt": "2026-11-03T19:31:07.702Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -549,27 +549,27 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "CatchMyDrift3",
-   "gamesPlayed": "16",
-   "winRate": "37",
-   "goals": "0",
+   "name": "Elbladiii",
+   "gamesPlayed": "8",
+   "winRate": "50",
+   "goals": "1",
    "assists": "0",
    "cleanSheetsDef": "0",
    "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "101",
+   "shotSuccessRate": "16",
+   "passesMade": "83",
    "passSuccessRate": "80",
-   "ratingAve": "6.5",
-   "tacklesMade": "10",
-   "tackleSuccessRate": "15",
-   "proName": "C. Drift",
-   "proPos": "14",
+   "ratingAve": "7.5",
+   "tacklesMade": "9",
+   "tackleSuccessRate": "47",
+   "proName": "El Bladiii",
+   "proPos": "5",
    "proStyle": "0",
-   "proHeight": "184",
-   "proNationality": "95",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "0",
+   "proHeight": "188",
+   "proNationality": "83",
+   "proOverall": "85",
+   "proOverallStr": "85",
+   "manOfTheMatch": "1",
    "redCards": "0",
    "prevGoals": "0",
    "prevGoals1": "0",
@@ -577,12 +577,12 @@
    "prevGoals3": "0",
    "prevGoals4": "0",
    "prevGoals5": "0",
-   "prevGoals6": "0",
+   "prevGoals6": "1",
    "prevGoals7": "0",
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0",
-   "favoritePosition": "midfielder"
+   "favoritePosition": "defender"
   },
   {
    "name": "coolieboy1990",
@@ -622,10 +622,10 @@
   }
  ],
  "positionCount": {
-  "midfielder": 7,
+  "midfielder": 6,
   "goalkeeper": 0,
   "forward": 5,
-  "defender": 2
+  "defender": 3
  },
  "career": [
   {
@@ -783,13 +783,13 @@
    "favoritePosition": "midfielder"
   },
   {
-   "name": "CatchMyDrift3",
+   "name": "Elbladiii",
    "proPos": "14",
-   "gamesPlayed": "58",
-   "goals": "0",
-   "assists": "1",
-   "manOfTheMatch": "3",
-   "ratingAve": "6.8",
+   "gamesPlayed": "301",
+   "goals": "61",
+   "assists": "56",
+   "manOfTheMatch": "11",
+   "ratingAve": "7.1",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
   }
