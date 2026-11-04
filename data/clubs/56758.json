@@ -1,11 +1,11 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-04T23:00:48.977Z",
+ "fetchedAt": "2026-11-04T23:10:50.883Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
-  "regionId": 1163219762,
+  "regionId": 5723475,
   "teamId": 1032,
   "customKit": {
    "stadName": "BAY AREA 510",
@@ -80,42 +80,6 @@
   "leagueAppearances": "389"
  },
  "members": [
-  {
-   "name": "Cane7",
-   "gamesPlayed": "41",
-   "winRate": "73",
-   "goals": "0",
-   "assists": "1",
-   "cleanSheetsDef": "3",
-   "cleanSheetsGK": "1",
-   "shotSuccessRate": "0",
-   "passesMade": "506",
-   "passSuccessRate": "84",
-   "ratingAve": "7.5",
-   "tacklesMade": "68",
-   "tackleSuccessRate": "33",
-   "proName": "CANE",
-   "proPos": "14",
-   "proStyle": "0",
-   "proHeight": "182",
-   "proNationality": "56",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "2",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "midfielder"
-  },
   {
    "name": "XxTecunUman_X",
    "gamesPlayed": "38",
@@ -622,23 +586,12 @@
   }
  ],
  "positionCount": {
-  "midfielder": 8,
+  "midfielder": 7,
   "goalkeeper": 0,
   "forward": 4,
   "defender": 2
  },
  "career": [
-  {
-   "name": "Cane7",
-   "proPos": "14",
-   "gamesPlayed": "299",
-   "goals": "11",
-   "assists": "15",
-   "manOfTheMatch": "28",
-   "ratingAve": "7.4",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
   {
    "name": "XxTecunUman_X",
    "proPos": "14",
