@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-05T20:00:51.429Z",
+ "fetchedAt": "2026-11-05T20:10:55.764Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -259,6 +259,42 @@
    "prevGoals9": "0",
    "prevGoals10": "0",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "KINGRXZA",
+   "gamesPlayed": "10",
+   "winRate": "50",
+   "goals": "16",
+   "assists": "8",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "43",
+   "passesMade": "166",
+   "passSuccessRate": "80",
+   "ratingAve": "8.1",
+   "tacklesMade": "11",
+   "tackleSuccessRate": "28",
+   "proName": "REZA",
+   "proPos": "14",
+   "proStyle": "0",
+   "proHeight": "188",
+   "proNationality": "177",
+   "proOverall": "77",
+   "proOverallStr": "77",
+   "manOfTheMatch": "5",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "1",
+   "prevGoals3": "0",
+   "prevGoals4": "2",
+   "prevGoals5": "0",
+   "prevGoals6": "3",
+   "prevGoals7": "3",
+   "prevGoals8": "0",
+   "prevGoals9": "1",
+   "prevGoals10": "6",
+   "favoritePosition": "midfielder"
   },
   {
    "name": "TTV_Walkinmaniac",
@@ -694,7 +730,7 @@
   }
  ],
  "positionCount": {
-  "midfielder": 7,
+  "midfielder": 8,
   "goalkeeper": 0,
   "forward": 6,
   "defender": 2
@@ -753,6 +789,17 @@
    "manOfTheMatch": "15",
    "ratingAve": "7.9",
    "prevGoals": "1",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "KINGRXZA",
+   "proPos": "25",
+   "gamesPlayed": "488",
+   "goals": "449",
+   "assists": "381",
+   "manOfTheMatch": "126",
+   "ratingAve": "8.0",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
