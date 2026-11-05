@@ -365,7 +365,7 @@
   "51769": {
    "tier": "linked",
    "firstSeen": "2026-09-29T11:31:10.703Z",
-   "lastFetched": "2026-11-05T13:50:48.748Z",
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "741879",
@@ -582,7 +582,7 @@
   "56758": {
    "tier": "linked",
    "firstSeen": "2026-09-30T04:53:34.259Z",
-   "lastFetched": "2026-11-05T13:50:48.748Z",
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "418301",
@@ -884,7 +884,7 @@
   "80869": {
    "tier": "home",
    "firstSeen": "2026-09-28T01:09:15.486Z",
-   "lastFetched": "2026-11-05T13:50:48.748Z",
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 0,
    "name": "NOREX UNITED FC"
@@ -1097,7 +1097,7 @@
   "189496": {
    "tier": "linked",
    "firstSeen": "2026-09-28T01:13:37.021Z",
-   "lastFetched": "2026-11-05T13:50:48.748Z",
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "61188",
@@ -1478,7 +1478,7 @@
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
    "lastFetched": null,
-   "fails": 2,
+   "fails": 3,
    "depth": 1,
    "discoveredVia": "189496"
   },
@@ -1796,7 +1796,7 @@
   "426400": {
    "tier": "manual",
    "firstSeen": "2026-10-10T10:18:21.377Z",
-   "lastFetched": "2026-11-05T13:50:48.748Z",
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 0,
    "name": "splashbros"
@@ -2146,7 +2146,7 @@
   "573532": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "426400",
@@ -2179,7 +2179,7 @@
   "584518": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "189496",
@@ -2385,18 +2385,20 @@
   "669292": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "51769"
+   "discoveredVia": "51769",
+   "name": "TheBigSteppas"
   },
   "689875": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "189496"
+   "discoveredVia": "189496",
+   "name": "New Light FC"
   },
   "697589": {
    "tier": "discovered",
@@ -2471,7 +2473,7 @@
   "730390": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "56758",
@@ -2537,10 +2539,11 @@
   "764135": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "56758"
+   "discoveredVia": "56758",
+   "name": "Key Bumps FC"
   },
   "764940": {
    "tier": "discovered",
@@ -2864,7 +2867,7 @@
   "950478": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "51769",
@@ -2950,7 +2953,7 @@
   "984557": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "189496",
@@ -3154,7 +3157,7 @@
   "1136846": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "189496",
@@ -3327,10 +3330,11 @@
   "1285017": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "51769"
+   "discoveredVia": "51769",
+   "name": "FBA Clique"
   },
   "1301529": {
    "tier": "discovered",
@@ -3351,7 +3355,7 @@
   "1336646": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T14:00:49.211Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "56758",
