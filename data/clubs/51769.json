@@ -1,7 +1,7 @@
 {
  "id": "51769",
  "tier": "linked",
- "fetchedAt": "2026-11-05T02:00:48.592Z",
+ "fetchedAt": "2026-11-05T02:10:47.629Z",
  "info": {
   "name": "Legacy Athletic",
   "clubId": 51769,
@@ -727,6 +727,42 @@
    "prevGoals8": "0",
    "prevGoals9": "0",
    "prevGoals10": "0"
+  },
+  {
+   "name": "oYoy0",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
   }
  ],
  "positionCount": {
@@ -933,6 +969,17 @@
    "ratingAve": "8.4",
    "prevGoals": "1",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "oYoy0",
+   "proPos": "5",
+   "gamesPlayed": "77",
+   "goals": "35",
+   "assists": "20",
+   "manOfTheMatch": "12",
+   "ratingAve": "7.8",
+   "prevGoals": "2",
+   "favoritePosition": "defender"
   }
  ],
  "leaderboard": {
