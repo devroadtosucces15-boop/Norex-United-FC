@@ -365,7 +365,7 @@
   "51769": {
    "tier": "linked",
    "firstSeen": "2026-09-29T11:31:10.703Z",
-   "lastFetched": "2026-11-05T13:40:50.490Z",
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "741879",
@@ -582,7 +582,7 @@
   "56758": {
    "tier": "linked",
    "firstSeen": "2026-09-30T04:53:34.259Z",
-   "lastFetched": "2026-11-05T13:40:50.490Z",
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "418301",
@@ -884,7 +884,7 @@
   "80869": {
    "tier": "home",
    "firstSeen": "2026-09-28T01:09:15.486Z",
-   "lastFetched": "2026-11-05T13:40:50.490Z",
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 0,
    "name": "NOREX UNITED FC"
@@ -1097,7 +1097,7 @@
   "189496": {
    "tier": "linked",
    "firstSeen": "2026-09-28T01:13:37.021Z",
-   "lastFetched": "2026-11-05T13:40:50.490Z",
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "61188",
@@ -1478,7 +1478,7 @@
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
    "lastFetched": null,
-   "fails": 1,
+   "fails": 2,
    "depth": 1,
    "discoveredVia": "189496"
   },
@@ -1796,7 +1796,7 @@
   "426400": {
    "tier": "manual",
    "firstSeen": "2026-10-10T10:18:21.377Z",
-   "lastFetched": "2026-11-05T13:40:50.490Z",
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 0,
    "name": "splashbros"
@@ -1863,7 +1863,7 @@
   "443426": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "189496",
@@ -1897,7 +1897,7 @@
   "471681": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "426400",
@@ -1906,7 +1906,7 @@
   "474440": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "426400",
@@ -1932,7 +1932,7 @@
   "480975": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "426400",
@@ -1950,10 +1950,11 @@
   "481995": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "426400"
+   "discoveredVia": "426400",
+   "name": "Smizz Gang"
   },
   "482940": {
    "tier": "discovered",
@@ -1991,7 +1992,7 @@
   "486879": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "189496",
@@ -2025,10 +2026,11 @@
   "491211": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "51769"
+   "discoveredVia": "51769",
+   "name": "The Things FC"
   },
   "504745": {
    "tier": "discovered",
@@ -2057,7 +2059,7 @@
   "520315": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
    "discoveredVia": "51769",
@@ -2091,18 +2093,20 @@
   "529760": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "426400"
+   "discoveredVia": "426400",
+   "name": "Funyons fc"
   },
   "534027": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "56758"
+   "discoveredVia": "56758",
+   "name": "rangerzzz"
   },
   "534522": {
    "tier": "discovered",
@@ -2116,10 +2120,11 @@
   "535418": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
-   "lastFetched": null,
+   "lastFetched": "2026-11-05T13:50:48.748Z",
    "fails": 0,
    "depth": 1,
-   "discoveredVia": "51769"
+   "discoveredVia": "51769",
+   "name": "FC BUNDI"
   },
   "538489": {
    "tier": "discovered",
