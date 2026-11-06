@@ -1,0 +1,7 @@
+/* Smooth-scroll layer (Lenis + GSAP ScrollTrigger). Loaded only on pages that opt in. */
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+.lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
+.lenis.lenis-stopped{overflow:clip}
+.sm-bar{position:fixed;z-index:9995;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#c8352c,#efcf7a);transform-origin:0 50%;transform:scaleX(0);pointer-events:none}
+.sm-on .ab-card .ab-i{display:inline-block;will-change:transform}
