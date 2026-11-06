@@ -5,6 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { ROOT, call, login } from './mock.mjs';
 import { t, done } from './lib.mjs';
+import { players as roster } from '../next/lib/data.mjs';
+// The club can be a small test roster for a while; roster checks scale to the real size (capped at the normal squad).
+const SQUAD = Math.min(30, roster.length);
 
 const out = fs.mkdtempSync(path.join(os.tmpdir(), 'nx-'));
 execFileSync(process.execPath, ['next/build.mjs', '--out', out, '--preview'], { cwd: ROOT, stdio: 'pipe' });
@@ -13,7 +16,7 @@ const read = (f, repo) => fs.readFileSync(repo ? path.join(ROOT, '.github/workfl
 const need = ['index', 'watch', 'squad', 'halloffame', 'join', 'results', 'fixtures', 'opponents', 'stats', 'leaders', 'players', 'tactics', 'playstyle', 'studio', 'builds', 'updates', 'hub', 'staff-dugout'];
 
 t('preview: every main page is built', need.every((n) => html.includes(n + '.html')));
-t('preview: one profile page per player and a page per match', html.filter((f) => f.startsWith('player-')).length >= 30 && html.filter((f) => f.startsWith('match-')).length >= 30);
+t('preview: one profile page per player and a page per match', html.filter((f) => f.startsWith('player-')).length >= SQUAD && html.filter((f) => f.startsWith('match-')).length >= 30);
 t('preview: hidden from search engines', html.every((f) => !/^(index|tactics|hub)\.html$/.test(f) || read(f).includes('noindex,nofollow')));
 t('preview: labelled as a preview', read('index.html').includes('prevrib'));
 t('preview: no template leftovers or undefined text', html.every((f) => { const s = read(f).replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, ''); return !/\bundefined\b|\bNaN\b|\[object Object\]|\$\{/.test(s); }));
@@ -264,7 +267,7 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   const feats = Object.keys(JSON.parse(fs.readFileSync(path.join(ROOT, 'config.json'), 'utf8')).features), where = br.slice(br.indexOf('const WHERE = {'), br.indexOf('const go = '));
   const pages4 = [...new Set([...where.matchAll(/\['([a-zA-Z-]+\.html)'/g)].map((m) => m[1]))];
   t('#35 squad: one card stack replaces the deck and the flip cards (swipe = next, tap = flip, profile button on the back)', (sq.match(/data-w="stack"/g) || []).length === 1 && !sq.includes('data-w="deck"') && !sq.includes('class="flipwrap"') && sq.includes('class="sk"') && sq.includes('Full profile') && sq.includes('Swipe sideways'));
-  t('#35 squad stack: the stack holds every player, pointer drag moves one card per frame and vertical scroll is left to the page', (sq.match(/class="sk"/g) || []).length >= 30 && wj.includes("addEventListener('pointerdown'") && wj.includes('requestAnimationFrame(paint)') && wc.includes('touch-action:pan-y') && wc.includes('prefers-reduced-motion'));
+  t('#35 squad stack: the stack holds every player, pointer drag moves one card per frame and vertical scroll is left to the page', (sq.match(/class="sk"/g) || []).length >= SQUAD && wj.includes("addEventListener('pointerdown'") && wj.includes('requestAnimationFrame(paint)') && wc.includes('touch-action:pan-y') && wc.includes('prefers-reduced-motion'));
   t('#35 squad stack: arrow keys, Enter to flip and 44px prev/next buttons', wj.includes("'ArrowRight'") && wj.includes("'Enter'") && /\.stk-bar button\{min-width:44px;min-height:44px/.test(wc));
   t('#36 hall of fame: six gold-edged record cards, holder portraits dimmed to black and white, crest for club records, emoji and wording unchanged', (hf.match(/class="panel reveal trophy rec/g) || []).length === 6 && (hf.match(/class="rec-art"/g) || []).length === 3 && (hf.match(/class="rec-crest"/g) || []).length === 3 && st4.includes('grayscale(1)') && st4.includes('repeating-linear-gradient(115deg') && ['👑', '🅰️', '🏅', '🔥', '🏆', '⬆️', 'All-time scorer', 'Biggest win'].every((k) => hf.includes(k)));
   t('#45 tactics: 3D broadcast is an orbit camera (full turn, tilt kept above the pitch, buttons for touch), markers counter-rotate upright', pj.includes('function orbit(') && pj.includes('RX = [8, 78]') && pj.includes('data-o="rz-"') && pj.includes('data-o="reset"') && mc4.includes('rotateZ(var(--rz,0deg))') && mc4.includes('rotateZ(var(--nrz,0deg)) rotateX(var(--nrx,-46deg))') && mc4.includes('transform-style:preserve-3d'));
@@ -358,7 +361,7 @@ t('hub: Staff tab in the Hub menu shows only for staff', read('hub.html').includ
   t('hub key: glow, rising glitter and a lock, bounce + key-up + lock on tap, then the Hub opens (straight away in Casual)', ['kglow', 'ksp s5', 'class="kl"'].every((x) => ui2.includes(x)) && /\.tabbar \.key\.go \.kk\{transform:translateY/.test(mcss) && mj3.includes("closest('.tabbar .key')") && mj3.includes("mode !== 'full'"));
   t('tab bar: tiles centred with equal room above and below', /\.tabbar a:not\(\.key\)\{display:flex!important;flex-direction:column/.test(mcss));
   const home = read('index.html');
-  t('home: five most active players (by games) under the hero, tilt + glow, linking to profiles', (home.match(/class="act5-i tilt"/g) || []).length === 5 && home.includes('Most active') && /\.act5-i \.pc-card\{filter:none\}/.test(fs.readFileSync(path.join(ROOT, 'next/static/style.css'), 'utf8')));
+  t('home: five most active players (by games) under the hero, tilt + glow, linking to profiles', (home.match(/class="act5-i tilt"/g) || []).length === Math.min(5, roster.length) && home.includes('Most active') && /\.act5-i \.pc-card\{filter:none\}/.test(fs.readFileSync(path.join(ROOT, 'next/static/style.css'), 'utf8')));
 }
 fs.rmSync(out, { recursive: true, force: true });
 t('squad wheel and reel cards use a flat floor shadow, not a per-frame filter (wheel was ~20 fps on phones)', /\.wx \.cover \.ci \.pc-card,\.wx \.reel \.pc-card[^{]*\{filter:none\}/.test(fs.readFileSync(ROOT + 'next/static/widgets.css', 'utf8')));
