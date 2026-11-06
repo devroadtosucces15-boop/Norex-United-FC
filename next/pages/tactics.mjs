@@ -115,7 +115,7 @@ export function studio() {
   <div class="reveal"><ol class="txsteps rv-g"><li><b>1 · Set up</b><small class="muted">Pick League or Rush and a formation. Our usual XI fills the League slots.</small></li><li><b>2 · Capture</b><small class="muted">Drag players to the start, press ＋ Capture, move them, capture again.</small></li><li><b>3 · Play</b><small class="muted">Press ▶ Play to watch the run. Use it to explain a corner or a press on Match Night.</small></li></ol></div>
   <div id="board" style="margin-top:22px"></div>
   <p class="muted small">Drag any marker: it stays inside the lines. Capture a keyframe, move the players, capture again, then press play to see the movement. ${sample('SAMPLE BOARD')} Plays are saved in this browser only in the preview.</p></section></div>`;
-  return shell({ group: 'tactics', page: 'studio.html', title: 'Studio', body, extraHead: '<script src="pitch.js" defer></script><link rel="stylesheet" href="tactics.css">', data: { formations: formations.formations, xi: xiKeys } });
+  return shell({ group: 'tactics', page: 'studio.html', title: 'Studio', body, extraHead: '<script src="pitch.js" defer></script><link rel="stylesheet" href="tactics.css">', data: { formations: formations.formations, xi: xiKeys } }).replace('</body>', '<script src="pitch3d.js" defer></script></body>');
 }
 
 // ---------- PLAYBOOK (B1, members: the live /api/plays, read-only first) ----------

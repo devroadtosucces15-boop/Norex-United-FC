@@ -35,7 +35,7 @@
     const intro = (root, parts) => { const q = (sel) => gsap.utils.toArray(sel, root); const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: () => H.classList.remove('sm-intro') });
       parts(tl, q); return tl; };
     window.NorexOpenFX = (el) => { if (!el || !window.gsap) return;
-      intro(el, (tl, q) => { tl.fromTo(el, { opacity: 0, y: 26, scale: 0.985, transformPerspective: 900, rotateX: 4 }, { opacity: 1, y: 0, scale: 1, rotateX: 0, duration: 0.7, clearProps: 'transform,opacity' }); const kids = q('.st-bar, .st-tools, .st-side, .st-pitch, .st-pane, [class^="st-"]').slice(0, 14); if (kids.length) tl.fromTo(kids, { opacity: 0, y: 14 }, { opacity: 1, y: 0, stagger: 0.04, duration: 0.45, clearProps: 'transform,opacity' }, 0.2); }); };
+      intro(el, (tl, q) => { tl.fromTo(el, { opacity: 0, y: 26, scale: 0.985, transformPerspective: 900, rotateX: 4 }, { opacity: 1, y: 0, scale: 1, rotateX: 0, duration: 0.7, clearProps: 'transform,opacity' }); }); };
     if (studioPage) {
       intro(document, (tl, q) => {
         tl.set('.sec > header, .sec > .chips, .txsteps li, #board', { opacity: 0 })
