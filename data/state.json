@@ -357,7 +357,7 @@
   "51769": {
    "tier": "linked",
    "firstSeen": "2026-09-29T11:31:10.703Z",
-   "lastFetched": "2026-11-06T09:04:43.300Z",
+   "lastFetched": "2026-11-06T09:10:49.481Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "741879",
@@ -550,7 +550,7 @@
   "56758": {
    "tier": "linked",
    "firstSeen": "2026-09-30T04:53:34.259Z",
-   "lastFetched": "2026-11-06T09:04:43.300Z",
+   "lastFetched": "2026-11-06T09:10:49.481Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "418301",
@@ -683,6 +683,14 @@
    "discoveredVia": "51769",
    "name": "Boyz RUnion"
   },
+  "61363": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "491952"
+  },
   "61457": {
    "tier": "discovered",
    "firstSeen": "2026-10-01T08:50:47.756Z",
@@ -771,6 +779,14 @@
    "depth": 1,
    "discoveredVia": "80869",
    "name": "SlurpingBBC"
+  },
+  "66274": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "488565"
   },
   "67777": {
    "tier": "discovered",
@@ -871,7 +887,7 @@
   "80869": {
    "tier": "home",
    "firstSeen": "2026-09-28T01:09:15.486Z",
-   "lastFetched": "2026-11-06T09:04:43.300Z",
+   "lastFetched": "2026-11-06T09:10:49.481Z",
    "fails": 0,
    "depth": 0,
    "name": "NOREX UNITED FC"
@@ -1039,7 +1055,7 @@
   "189496": {
    "tier": "linked",
    "firstSeen": "2026-09-28T01:13:37.021Z",
-   "lastFetched": "2026-11-06T09:04:43.300Z",
+   "lastFetched": "2026-11-06T09:10:49.481Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "61188",
@@ -1186,6 +1202,14 @@
    "fails": 0,
    "depth": 24,
    "discoveredVia": "315221"
+  },
+  "222670": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "487270"
   },
   "223630": {
    "tier": "discovered",
@@ -1493,7 +1517,7 @@
   "426400": {
    "tier": "manual",
    "firstSeen": "2026-10-10T10:18:21.377Z",
-   "lastFetched": "2026-11-06T09:04:43.300Z",
+   "lastFetched": "2026-11-06T09:10:49.481Z",
    "fails": 0,
    "depth": 0,
    "name": "splashbros"
@@ -1567,14 +1591,6 @@
    "depth": 24,
    "discoveredVia": "55024"
   },
-  "468373": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T06:48:20.532Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "759532"
-  },
   "469039": {
    "tier": "discovered",
    "firstSeen": "2026-11-06T08:50:48.881Z",
@@ -1600,14 +1616,6 @@
    "depth": 1,
    "discoveredVia": "426400",
    "name": "Miggy"
-  },
-  "474496": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T07:50:46.607Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "1918408"
   },
   "478772": {
    "tier": "discovered",
@@ -1663,14 +1671,6 @@
    "discoveredVia": "189496",
    "name": "FC  Mud"
   },
-  "487270": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T07:30:48.242Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "1499319"
-  },
   "488385": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T01:09:15.486Z",
@@ -1680,14 +1680,6 @@
    "discoveredVia": "80869",
    "name": "801 FC"
   },
-  "488565": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T05:20:47.952Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "61184"
-  },
   "491211": {
    "tier": "discovered",
    "firstSeen": "2026-11-05T13:30:47.370Z",
@@ -1696,22 +1688,6 @@
    "depth": 1,
    "discoveredVia": "51769",
    "name": "The Things FC"
-  },
-  "491952": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T07:50:46.607Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "1821501"
-  },
-  "492697": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T05:55:02.465Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "227695"
   },
   "510742": {
    "tier": "discovered",
@@ -1740,14 +1716,6 @@
    "discoveredVia": "51769",
    "name": "floydforemens"
   },
-  "525616": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T06:48:20.532Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "734634"
-  },
   "526337": {
    "tier": "discovered",
    "firstSeen": "2026-11-06T08:20:55.164Z",
@@ -1755,14 +1723,6 @@
    "fails": 0,
    "depth": 24,
    "discoveredVia": "72750"
-  },
-  "526536": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T07:20:50.115Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "1289850"
   },
   "527662": {
    "tier": "discovered",
@@ -1817,14 +1777,6 @@
    "depth": 1,
    "discoveredVia": "56758",
    "name": "Pussah"
-  },
-  "570442": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-06T05:20:47.952Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 23,
-   "discoveredVia": "65783"
   },
   "572318": {
    "tier": "discovered",
@@ -1891,7 +1843,7 @@
    "tier": "discovered",
    "firstSeen": "2026-10-05T06:39:37.276Z",
    "lastFetched": null,
-   "fails": 35,
+   "fails": 36,
    "depth": 21,
    "discoveredVia": "775300"
   },
@@ -2055,6 +2007,14 @@
    "depth": 1,
    "discoveredVia": "56758",
    "name": "QUE BOLA ASERE"
+  },
+  "638840": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "526536"
   },
   "640432": {
    "tier": "discovered",
@@ -2519,6 +2479,14 @@
    "discoveredVia": "56758",
    "name": "CF Draco"
   },
+  "991746": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "525616"
+  },
   "991907": {
    "tier": "discovered",
    "firstSeen": "2026-11-06T07:10:49.612Z",
@@ -2837,7 +2805,7 @@
    "tier": "discovered",
    "firstSeen": "2026-10-04T00:30:35.853Z",
    "lastFetched": null,
-   "fails": 27,
+   "fails": 28,
    "depth": 21,
    "discoveredVia": "44988"
   },
@@ -2890,6 +2858,14 @@
    "depth": 1,
    "discoveredVia": "56758",
    "name": "Neo Egotist FC"
+  },
+  "1342539": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "474496"
   },
   "1344791": {
    "tier": "discovered",
@@ -3068,6 +3044,14 @@
    "depth": 23,
    "discoveredVia": "1957216"
   },
+  "1572336": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "492697"
+  },
   "1591730": {
    "tier": "discovered",
    "firstSeen": "2026-11-06T06:48:20.532Z",
@@ -3091,6 +3075,22 @@
    "fails": 0,
    "depth": 23,
    "discoveredVia": "637348"
+  },
+  "1600022": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "570442"
+  },
+  "1610295": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-06T09:10:49.481Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 24,
+   "discoveredVia": "468373"
   },
   "1643509": {
    "tier": "discovered",
@@ -3404,7 +3404,7 @@
    "tier": "discovered",
    "firstSeen": "2026-11-05T23:10:47.724Z",
    "lastFetched": null,
-   "fails": 56,
+   "fails": 57,
    "depth": 16,
    "discoveredVia": "772784"
   },
@@ -7926,6 +7926,7 @@
   "466543": "2026-09-29",
   "466741": "2026-09-28",
   "468217": "2026-09-30",
+  "468373": "2026-11-06",
   "468859": "2026-09-30",
   "469167": "2026-09-30",
   "470136": "2026-10-04",
@@ -7942,6 +7943,7 @@
   "473141": "2026-09-29",
   "473519": "2026-09-30",
   "474357": "2026-09-30",
+  "474496": "2026-11-06",
   "474906": "2026-10-01",
   "475207": "2026-09-29",
   "475278": "2026-11-05",
@@ -8084,6 +8086,7 @@
   "487180": "2026-09-28",
   "487216": "2026-10-01",
   "487227": "2026-09-29",
+  "487270": "2026-11-06",
   "487294": "2026-10-01",
   "487351": "2026-09-29",
   "487384": "2026-11-06",
@@ -8135,6 +8138,7 @@
   "488527": "2026-09-30",
   "488542": "2026-09-28",
   "488564": "2026-09-29",
+  "488565": "2026-11-06",
   "488668": "2026-09-29",
   "488669": "2026-09-28",
   "488673": "2026-09-29",
@@ -8256,6 +8260,7 @@
   "491820": "2026-09-28",
   "491896": "2026-09-29",
   "491938": "2026-09-29",
+  "491952": "2026-11-06",
   "492079": "2026-09-30",
   "492109": "2026-10-01",
   "492144": "2026-10-02",
@@ -8269,6 +8274,7 @@
   "492569": "2026-09-28",
   "492577": "2026-10-01",
   "492626": "2026-10-04",
+  "492697": "2026-11-06",
   "493013": "2026-09-30",
   "493046": "2026-10-02",
   "493351": "2026-09-28",
@@ -8341,6 +8347,7 @@
   "524459": "2026-11-06",
   "524829": "2026-09-28",
   "525138": "2026-09-28",
+  "525616": "2026-11-06",
   "525707": "2026-10-01",
   "525735": "2026-09-28",
   "525737": "2026-10-04",
@@ -8348,6 +8355,7 @@
   "526088": "2026-09-28",
   "526253": "2026-09-28",
   "526438": "2026-10-01",
+  "526536": "2026-11-06",
   "526605": "2026-10-02",
   "526742": "2026-11-06",
   "526788": "2026-10-02",
@@ -8635,6 +8643,7 @@
   "570270": "2026-11-05",
   "570324": "2026-09-28",
   "570330": "2026-10-03",
+  "570442": "2026-11-06",
   "570552": "2026-09-29",
   "570694": "2026-10-01",
   "570888": "2026-09-28",
