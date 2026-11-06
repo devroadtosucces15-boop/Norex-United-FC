@@ -33,14 +33,19 @@ export const teamTotals = (L) => { const s = (k) => L.reduce((a, l) => a + l[k],
 
 // ---- players ----
 const careerBy = new Map((club.career ?? []).map((c) => [c.name, c]));
-export const players = (club.members ?? []).map((m) => {
+// Former members (left or removed) stay on the site with the stats they had when last seen: data/alumni.json.
+const alumni = J(path.join(root, 'data/alumni.json'), {});
+const current = new Set((club.members ?? []).map((m) => m.name));
+for (const [name, a] of Object.entries(alumni)) if (!current.has(name) && a?.career) careerBy.set(name, a.career);
+const memberRows = [...(club.members ?? []), ...Object.entries(alumni).filter(([n]) => !current.has(n)).map(([, a]) => ({ ...a.member, former: true, lastSeen: a.lastSeen }))];
+export const players = memberRows.map((m) => {
   const c = careerBy.get(m.name) ?? {};
   const mine = matches.flatMap((x) => x.lines.filter((l) => l.n === m.name));
   const lc = {}; mine.forEach((l) => (lc[l.line] = (lc[l.line] || 0) + 1)); const dom = Object.entries(lc).sort((a, b) => b[1] - a[1])[0];
   const line = dom && dom[1] >= 3 ? dom[0] : (LINE[m.favoritePosition] ?? 'MID');
   const ar = Object.entries(arch.get(m.name) ?? {}).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
   const slugN = String(m.name).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '') || 'x'; // same slug as scripts/build.mjs
-  return { k: m.name, n: m.name, id: pidBy.get(String(m.name).toLowerCase()) ?? `n-${slugN}`, line, ovr: num(m.proOverall) || null, h: num(m.proHeight) || null,
+  return { former: !!m.former, lastSeen: m.lastSeen ?? null, k: m.name, n: m.name, id: pidBy.get(String(m.name).toLowerCase()) ?? `n-${slugN}`, line, ovr: num(m.proOverall) || null, h: num(m.proHeight) || null,
     gp: num(m.gamesPlayed), goals: num(m.goals), assists: num(m.assists), rating: num(m.ratingAve), mom: num(m.manOfTheMatch), win: num(m.winRate), cs: num(m.cleanSheetsDef) + num(m.cleanSheetsGK),
     pass: num(m.passSuccessRate), tackles: num(m.tacklesMade), tackleRate: num(m.tackleSuccessRate), red: num(m.redCards),
     cgp: num(c.gamesPlayed), cgoals: num(c.goals), cassists: num(c.assists), cmom: num(c.manOfTheMatch), crating: num(c.ratingAve),
