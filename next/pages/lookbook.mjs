@@ -115,5 +115,5 @@ ${sections.join('')}
 <div id="rail" class="navx rail">${nav.map(([i, t]) => `<a href="#${i}" data-s="${i}"><i></i><span>${t}</span></a>`).join('')}<u id="rbar"></u></div>
 <div id="tov" aria-hidden="true"></div>
 <div class="tray" id="tray"><span id="traytxt">☆ 0 picked</span><a class="btn gold" href="#picks">See my list</a></div>
-<script>window.LB=${JSON.stringify(LB)};</script><script src="pitch.js"></script><script src="lookbook.js"></script></body></html>`);
+<script>window.LB=${JSON.stringify(LB)};</script><script src="pitch.js"></script><script src="lookbook.js"></script><link rel="stylesheet" href="smooth.css"><script src="vendor-lenis.min.js" defer></script><script src="smooth.js" defer></script></body></html>`);
 }

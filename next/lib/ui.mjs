@@ -14,8 +14,8 @@ const LIVE = !!process.env.NEXT_PREVIEW; // the Worker API is wired in (preview 
 const PUBLIC = !!process.env.NEXT_PUBLIC; // the swapped-in main site: indexable, no PREVIEW ribbon
 const PREVIEW = LIVE && !PUBLIC;
 const SITE_URL = (cfg.siteUrl || '').replace(/\/?$/, '/');
-// pages that keep native scrolling (fixed-viewport tools)
-const SMOOTH_OFF = new Set(['studio.html']);
+// pages that keep native scrolling (none; a page can still opt out with <html data-nosmooth>)
+const SMOOTH_OFF = new Set();
 export function shell(o) { return dress(shellRaw(o)); }
 function shellRaw({ group = '', page = '', title, body, extraHead = '', bodyClass = '', data = {} }) {
   const nav = MAP.map((g) => `<div class="g"><a href="${g.href}" class="${g.k === group ? 'on' : ''}" data-g="${g.k}">${g.l}</a><div class="drop">${g.subs.map(([h, l, d]) => `<a href="${h}">${l}<small>${d}</small></a>`).join('')}</div></div>`).join('');

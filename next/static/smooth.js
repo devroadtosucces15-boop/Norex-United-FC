@@ -10,6 +10,8 @@
   const lenis = new Lenis({ duration: 1.1, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel: true, anchors: true, prevent: nested });
   window.NorexLenis = lenis;
   H.classList.add('sm-on');
+  const studioPage = (window.NOREX && NOREX.page) === 'studio.html';
+  if (studioPage) { H.classList.add('sm-intro'); setTimeout(() => H.classList.remove('sm-intro'), 3000); } // failsafe: never leave the Studio hidden
   const bar = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'sm-bar' }));
   lenis.on('scroll', ({ progress }) => { bar.style.transform = `scaleX(${progress || 0})`; });
   // hand scrolling back to the browser while a menu, sheet or dialog has locked the page
@@ -29,8 +31,26 @@
     let t = 0; const refresh = () => { clearTimeout(t); t = setTimeout(() => ScrollTrigger.refresh(), 250); };
     addEventListener('norex:revealed', refresh); addEventListener('resize', refresh);
     window.NorexGSAP = true;
+    // Opening animation: the Studio page itself and the editor that opens inside the Playbook
+    const intro = (root, parts) => { const q = (sel) => gsap.utils.toArray(sel, root); const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: () => H.classList.remove('sm-intro') });
+      parts(tl, q); return tl; };
+    window.NorexOpenFX = (el) => { if (!el || !window.gsap) return;
+      intro(el, (tl, q) => { tl.fromTo(el, { opacity: 0, y: 26, scale: 0.985, transformPerspective: 900, rotateX: 4 }, { opacity: 1, y: 0, scale: 1, rotateX: 0, duration: 0.7, clearProps: 'transform,opacity' }); const kids = q('.st-bar, .st-tools, .st-side, .st-pitch, .st-pane, [class^="st-"]').slice(0, 14); if (kids.length) tl.fromTo(kids, { opacity: 0, y: 14 }, { opacity: 1, y: 0, stagger: 0.04, duration: 0.45, clearProps: 'transform,opacity' }, 0.2); }); };
+    if (studioPage) {
+      intro(document, (tl, q) => {
+        tl.set('.sec > header, .sec > .chips, .txsteps li, #board', { opacity: 0 })
+          .call(() => H.classList.remove('sm-intro'))
+          .fromTo('.sec > header .eyebrow', { y: 18, opacity: 0, letterSpacing: '.35em' }, { y: 0, opacity: 1, letterSpacing: '', duration: 0.6, clearProps: 'all' })
+          .fromTo('.sec > header h2', { y: 40, opacity: 0, clipPath: 'inset(0 0 100% 0)' }, { y: 0, opacity: 1, clipPath: 'inset(0 0 0% 0)', duration: 0.7, clearProps: 'all' }, '<0.08')
+          .to('.sec > header', { opacity: 1, duration: 0.01 }, '<')
+          .fromTo('.sec > .chips', { y: 16, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.07, duration: 0.45, clearProps: 'all' }, '-=0.35')
+          .fromTo('.txsteps li', { y: 22, opacity: 0, rotateX: -18, transformPerspective: 700 }, { y: 0, opacity: 1, rotateX: 0, stagger: 0.09, duration: 0.55, clearProps: 'all' }, '-=0.25')
+          .fromTo('#board', { y: 50, opacity: 0, scale: 0.95, rotateX: 7, transformPerspective: 1100, transformOrigin: '50% 100%' }, { y: 0, opacity: 1, scale: 1, rotateX: 0, duration: 0.9, ease: 'expo.out', clearProps: 'all' }, '-=0.3');
+      });
+    }
   };
   const boot = () => js('vendor-gsap.min.js').then(() => js('vendor-scrolltrigger.min.js')).then(effects).catch(() => {});
   const go = () => (window.requestIdleCallback ? requestIdleCallback(boot, { timeout: 2500 }) : setTimeout(boot, 800));
-  document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
+  if (studioPage) boot(); // the Studio's opening animation needs GSAP right away
+  else document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
 })();
