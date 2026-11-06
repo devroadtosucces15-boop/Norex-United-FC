@@ -32,6 +32,16 @@ const HEADERS = {
 };
 const FULL_TIERS = new Set(['home', 'manual', 'linked']);
 
+// data/alumni.json holds each past member's last-seen stats (name -> { member, career, lastSeen }). Anyone in the previous
+// fetch who is gone now is saved there; current members are refreshed so a later departure keeps their latest numbers.
+function keepAlumni(clubFile, record) {
+  const file = path.join(DATA, 'alumni.json');
+  let alumni = {}; try { alumni = JSON.parse(fs.readFileSync(file, 'utf8')); } catch {}
+  const car = new Map((record.career ?? []).map((x) => [x.name, x]));
+  for (const m of record.members) alumni[m.name] = { member: m, career: car.get(m.name) ?? alumni[m.name]?.career ?? null, lastSeen: record.fetchedAt };
+  writeJson(file, alumni);
+}
+
 const config = loadConfig();
 const platform = config.platform;
 const homeId = String(config.homeClubId);
@@ -146,6 +156,7 @@ async function fetchClub(id) {
       if (Array.isArray(playoffs) && playoffs.length) record.playoffAchievements = playoffs;
     }
   }
+  if (id === homeId && record.members.length) keepAlumni(path.join(DATA, 'clubs', `${id}.json`), record); // players who leave stay in the site's history
   writeJson(path.join(DATA, 'clubs', `${id}.json`), record);
 
   const opponents = new Set();

@@ -450,7 +450,7 @@ ${vs.length ? `<ul class="st-vers">${vs.map((v) => { const k = 'v' + v.version; 
       o.el.removeAttribute('aria-busy'); const me = S; M ? M.land(o.el, html(), () => { if (S !== me) return; if (S.users !== null) swap('st-pub', pubHtml()); if (S.media !== null) swap('st-media', mediaHtml()); paintLive(); }) : paint(); // the squad list, recordings and socket can beat the page landing
       o.el.addEventListener('click', click); o.el.addEventListener('input', input); o.el.addEventListener('change', change); o.el.addEventListener('pointerdown', down);
       d.addEventListener('keydown', key); addEventListener('beforeunload', unload);
-      loadSquad(); loadMedia(); openLive();
+      loadSquad(); loadMedia(); openLive(); window.NorexOpenFX?.(o.el);
     },
   };
 })();

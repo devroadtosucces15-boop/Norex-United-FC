@@ -1,0 +1,10 @@
+/* Opt-in 3D crest (Three.js). The flat crest shows until the visitor switches 3D on (footer button "3D crest"). */
+.c3{position:relative;display:grid;place-items:center;min-height:320px;padding:22px;overflow:hidden;text-align:center}
+.c3 .c3-img{width:min(220px,60vw);aspect-ratio:892/1289;display:block;object-fit:contain;filter:drop-shadow(0 18px 30px rgba(0,0,0,.55))}
+.c3.c3-foot{margin:40px auto 0;max-width:1240px;min-height:240px;background:none;border:0;box-shadow:none}
+.c3.c3-foot .c3-img{width:150px}
+.c3-cv{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y;pointer-events:auto}
+.c3-host{position:relative}
+.c3-on>img,.c3-on .c3-img{opacity:0}
+.c3-note{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:12px;color:var(--mute);pointer-events:none}
+.ftb[aria-pressed=true]{border-color:rgba(239,207,122,.7);color:#efcf7a}
