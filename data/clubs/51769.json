@@ -1,7 +1,7 @@
 {
  "id": "51769",
  "tier": "linked",
- "fetchedAt": "2026-11-07T17:05:00.574Z",
+ "fetchedAt": "2026-11-07T17:10:49.641Z",
  "info": {
   "name": "Legacy Athletic",
   "clubId": 51769,
@@ -405,6 +405,42 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "xBallingCat43",
+   "gamesPlayed": "66",
+   "winRate": "57",
+   "goals": "118",
+   "assists": "69",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "53",
+   "passesMade": "1352",
+   "passSuccessRate": "79",
+   "ratingAve": "8.5",
+   "tacklesMade": "107",
+   "tackleSuccessRate": "32",
+   "proName": "Pritchard",
+   "proPos": "25",
+   "proStyle": "0",
+   "proHeight": "195",
+   "proNationality": "181",
+   "proOverall": "83",
+   "proOverallStr": "83",
+   "manOfTheMatch": "20",
+   "redCards": "1",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "6",
+   "prevGoals3": "2",
+   "prevGoals4": "3",
+   "prevGoals5": "2",
+   "prevGoals6": "2",
+   "prevGoals7": "3",
+   "prevGoals8": "4",
+   "prevGoals9": "3",
+   "prevGoals10": "3",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "Zoqvyr",
    "gamesPlayed": "183",
    "winRate": "49",
@@ -732,7 +768,7 @@
  "positionCount": {
   "midfielder": 4,
   "goalkeeper": 0,
-  "forward": 8,
+  "forward": 9,
   "defender": 4
  },
  "career": [
@@ -844,6 +880,17 @@
    "manOfTheMatch": "19",
    "ratingAve": "7.9",
    "prevGoals": "0",
+   "favoritePosition": "forward"
+  },
+  {
+   "name": "xBallingCat43",
+   "proPos": "25",
+   "gamesPlayed": "71",
+   "goals": "135",
+   "assists": "75",
+   "manOfTheMatch": "23",
+   "ratingAve": "8.6",
+   "prevGoals": "3",
    "favoritePosition": "forward"
   },
   {
