@@ -141,7 +141,7 @@ export function builds() {
   <div data-pane="p" hidden><div id="bxp" class="sq-mount"></div></div>
   <div data-pane="m" hidden><div id="bxm" class="sq-mount"></div></div>
   <div data-pane="a" hidden>${arch}</div></div>
-  <noscript><p class="muted">The builder needs JavaScript.</p></noscript></section></div>${relatedBlock('builds')}`;
+  <noscript><p class="muted">The builder needs JavaScript.</p></noscript></section></div>${relatedBlock('builds', true)}`;
   return shell({ group: 'tactics', page: 'builds.html', title: 'Builds', body, extraHead: '<script src="build-math.js" defer></script><script src="builds.js" defer></script>' });
 }
 

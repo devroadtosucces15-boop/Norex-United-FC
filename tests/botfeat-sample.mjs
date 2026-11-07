@@ -1,6 +1,18 @@
 // SAMPLE data for the bot-feature pages (watch list, discoveries, member live, fun stats, faces). The bot gives no sample rows,
 // so local previews and tests seed the mock D1 with these. Every visible title says SAMPLE so it can never be mistaken for real content.
-import { sqlite, login, call, mockDiscord, r2objects } from './mock.mjs';
+import { sqlite, login, call, mockDiscord, r2objects, mockMusic } from './mock.mjs';
+
+// SAMPLE rooms for the Music page shell (GET /api/music/rooms – the draft shape in PLANNING/BOT-SITE.md). Same titles as the page's own fallback.
+export const musicRoomsSample = () => {
+  const t = Math.floor(Date.now() / 1000);
+  return [
+    { id: 'sample-lounge', name: 'SAMPLE · Club lounge', paused: false, listeners: 5, nowPlaying: { title: 'SAMPLE · Late night warm-up', artist: 'SAMPLE Artist', thumb: '', duration: 214, startedAt: t - 96 },
+      queue: [{ id: 'q1', title: 'SAMPLE · Pre-match hype', artist: 'SAMPLE Artist', duration: 187, by: { id: '222', name: 'Mike' } }, { id: 'q2', title: 'SAMPLE · Full-time anthem', artist: 'SAMPLE Choir', duration: 203, by: { id: '444', name: 'Kruger' } }] },
+    { id: 'sample-quiet', name: 'SAMPLE · Quiet room', paused: false, listeners: 0, nowPlaying: null, queue: [] },
+  ];
+};
+// SAMPLE answer for GET /api/manager/queue with the optional `oldest` field the owner button reads (not on the Worker yet).
+export const queueSample = () => ({ claims: 1, cards: 0, rush: 2, requests: 0, ideas: 3, at: Date.now(), oldest: { kind: 'rush', at: Date.now() - 3 * 864e5, title: 'SAMPLE · Rush result from Tuesday' } });
 
 export async function seedBotSample() {
   const now = Date.now(), ids = { owner: '111', mike: '222', jez: '333', kruger: '444' };
@@ -29,6 +41,7 @@ export async function seedBotSample() {
   // a shipped Card Studio card for Jez: bytes in the mock R2, the row published
   r2objects.set('card/5a31e000000000000000000000000000.png', { buf: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'), type: 'image/png', uploaded: new Date() });
   sqlite.prepare("INSERT OR REPLACE INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, result_key, created_at, published) VALUES ('333', '2026-10', 1, 1, 'p', 'done', 'card/5a31e000000000000000000000000000.png', ?, 1)").run(now);
+  mockMusic.rooms = musicRoomsSample();
   Object.assign(mockDiscord, { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [] });
   return { tok, ids };
 }

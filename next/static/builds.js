@@ -31,6 +31,8 @@
   let useAt = null, useDraft = null, cmp = { open: false, key: '', link: '', all: false, extra: null }, comDraft = '';
   const staff = () => signed() && (A.role === 'manager' || A.role === 'owner'); // shows the manager buttons; the Worker checks the real permission
   const F = { sort: 'hot', mode: 'all', line: '', q: '' };
+  // tells the Related videos block which position is on screen (botfeat.js re-fetches /api/watchlist?related=<POS>)
+  let lastPos = ''; const setPos = (p) => { if (p && p !== lastPos) { lastPos = window.NorexPos = p; document.dispatchEvent(new CustomEvent('nx:position', { detail: { pos: p } })); } };
 
   // ---------- helpers on the dataset ----------
   const archOf = (id) => (g.archetypes || []).find((a) => a.id === id);
@@ -192,7 +194,7 @@ ${masteries.length ? `<div class="bx-mast"><b>🏅 Masteries</b>${masteries.map(
 </aside>`;
   }
   function builderHtml() {
-    const ev = X.evaluate(g, b), st = ev.status;
+    const ev = X.evaluate(g, b), st = ev.status; setPos(ev.fit[0]?.[0]);
     return `${migHtml(ev)}${st.preview ? `<div class="panel bx-note"><b>🧪 Placeholder numbers</b> <span class="muted small">${[!st.base && 'base attributes', !st.ap && 'points per level', !st.costs && 'point costs'].filter(Boolean).join(', ')} for this archetype are not entered from the game yet, so the builder uses placeholders.</span></div>` : ''}
 <div class="panel bx-pick">${(g.archetypeGroups || []).map((grp) => `<div class="bx-pg"><small class="muted">${ICON[grp.id] ?? ''} ${esc(grp.name)}</small><div class="chips">${(g.archetypes || []).filter((a) => a.group === grp.id).map((a) => `<button type="button" class="chip${a.id === ev.arch.id ? ' on' : ''}" data-arch="${esc(a.id)}" aria-pressed="${a.id === ev.arch.id}">${esc(a.name)}</button>`).join('')}</div></div>`).join('')}</div>
 <div class="bx-main">${sideHtml(ev)}<div class="bx-left"><div class="bx-grps">${(g.attributeGroups || []).map((grp) => grpHtml(ev, grp)).join('')}</div>${xtHtml(ev)}</div></div>${cmp.open ? cmpPanel() : ''}`;
@@ -472,7 +474,7 @@ ${signed() ? '' : '<p class="tiny muted">🔐 Sign in to compare with your saved
     if (el.matches('[data-bxtitle]')) { titleDraft = el.value; return; }
     if (el.matches('[data-bxcmpb]')) { cmp.key = el.value; draw(); $('[data-bxcmplink]', bxb)?.focus(); return; }
     if (el.matches('[data-bxcmplink], [data-bxcmpall]')) { if (el.type === 'checkbox') cmp.all = el.checked; else cmp.link = el.value; $('[data-bxcmpout]', bxb).innerHTML = cmpOut(); return; }
-    if (el.closest('[data-bxpost]')) { const fd = new FormData(el.form); postDraft = { position: fd.get('position'), mode: fd.get('mode') || 'league', description: fd.get('description') || '', clip: fd.get('clip') || '', tags: fd.get('tags') || '' }; return; }
+    if (el.closest('[data-bxpost]')) { const fd = new FormData(el.form); setPos(fd.get('position')); postDraft = { position: fd.get('position'), mode: fd.get('mode') || 'league', description: fd.get('description') || '', clip: fd.get('clip') || '', tags: fd.get('tags') || '' }; return; }
     if (el.matches('[data-level], [data-body]') && !dragging) { push(); dragging = true; }
     if (el.matches('[data-body]')) { b = { ...b, [el.dataset.body]: +el.value }; $(`[data-bv="${el.dataset.body}"]`, bxb).textContent = el.value; setHash(); return; }
     if (!el.matches('[data-level]')) return;
@@ -543,7 +545,7 @@ ${list.length ? `<p class="tiny muted">${list.length} build${list.length === 1 ?
   function paintDetail() {
     if (!detail) return;
     if (detail.err) { bxp.innerHTML = `<a class="bx-back" href="#pro">← All pro builds</a>${failBox('this build', detail.err, 'detail')}`; return; }
-    const x = detail.build, [mi, ml] = MODES[x.mode] || ['', ''], cs = detail.comments, v = x.myVote || 0;
+    const x = detail.build, [mi, ml] = MODES[x.mode] || ['', ''], cs = detail.comments, v = x.myVote || 0; setPos(x.position);
     const vb = (n, ic, label) => `<button type="button" class="bx-vb${v === n ? ' on' : ''}" data-bxvote="${n}" aria-pressed="${v === n}" aria-label="${label}"${x.mine ? ' disabled title="You can’t vote on your own build"' : ''}>${ic}</button>`;
     const staffBox = staff() ? `<div class="bx-staff"><div class="eyebrow">🧢 Managers</div>${x.featured
       ? `<div class="bx-row-acts"><span class="small">⭐ Club recommended · <b>${esc(x.featured)}</b></span><button type="button" class="btn ghost sm" data-bxunfeat${busy ? ' disabled' : ''}>Remove ⭐</button></div>`
