@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-07T19:30:46.882Z",
+ "fetchedAt": "2026-11-07T19:40:48.877Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -549,6 +549,42 @@
    "favoritePosition": "midfielder"
   },
   {
+   "name": "Austin110486",
+   "gamesPlayed": "69",
+   "winRate": "57",
+   "goals": "3",
+   "assists": "9",
+   "cleanSheetsDef": "6",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "33",
+   "passesMade": "665",
+   "passSuccessRate": "80",
+   "ratingAve": "7.2",
+   "tacklesMade": "107",
+   "tackleSuccessRate": "65",
+   "proName": "m. casado",
+   "proPos": "5",
+   "proStyle": "0",
+   "proHeight": "178",
+   "proNationality": "14",
+   "proOverall": "76",
+   "proOverallStr": "76",
+   "manOfTheMatch": "3",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "1",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "defender"
+  },
+  {
    "name": "MAYOROFCALI_510",
    "gamesPlayed": "428",
    "winRate": "58",
@@ -765,6 +801,42 @@
    "prevGoals10": "0"
   },
   {
+   "name": "X-NEYMAR-X7",
+   "gamesPlayed": "0",
+   "favoritePosition": "",
+   "winRate": "0",
+   "goals": "0",
+   "assists": "0",
+   "cleanSheetsDef": "0",
+   "cleanSheetsGK": "0",
+   "shotSuccessRate": "0",
+   "passesMade": "0",
+   "passSuccessRate": "0",
+   "ratingAve": "0.0",
+   "tacklesMade": "0",
+   "tackleSuccessRate": "0",
+   "proName": "",
+   "proPos": "",
+   "proStyle": "",
+   "proHeight": "",
+   "proNationality": "",
+   "proOverall": "0",
+   "proOverallStr": "",
+   "manOfTheMatch": "0",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0"
+  },
+  {
    "name": "Colayegua77",
    "gamesPlayed": "0",
    "favoritePosition": "",
@@ -841,7 +913,7 @@
   "midfielder": 5,
   "goalkeeper": 0,
   "forward": 7,
-  "defender": 4
+  "defender": 5
  },
  "career": [
   {
@@ -988,6 +1060,17 @@
    "favoritePosition": "forward"
   },
   {
+   "name": "X-NEYMAR-X7",
+   "proPos": "25",
+   "gamesPlayed": "372",
+   "goals": "430",
+   "assists": "388",
+   "manOfTheMatch": "102",
+   "ratingAve": "8.2",
+   "prevGoals": "4",
+   "favoritePosition": "forward"
+  },
+  {
    "name": "cooban_ice",
    "proPos": "5",
    "gamesPlayed": "383",
@@ -1030,6 +1113,17 @@
    "ratingAve": "8.0",
    "prevGoals": "3",
    "favoritePosition": "forward"
+  },
+  {
+   "name": "Austin110486",
+   "proPos": "5",
+   "gamesPlayed": "104",
+   "goals": "4",
+   "assists": "11",
+   "manOfTheMatch": "6",
+   "ratingAve": "7.1",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
   },
   {
    "name": "MAYOROFCALI_510",
