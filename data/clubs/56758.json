@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-07T06:25:27.524Z",
+ "fetchedAt": "2026-11-07T06:30:48.271Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -441,42 +441,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "PulviTheGoat",
-   "gamesPlayed": "50",
-   "winRate": "56",
-   "goals": "60",
-   "assists": "47",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "50",
-   "passesMade": "652",
-   "passSuccessRate": "76",
-   "ratingAve": "8.2",
-   "tacklesMade": "67",
-   "tackleSuccessRate": "33",
-   "proName": "Pulvi",
-   "proPos": "25",
-   "proStyle": "0",
-   "proHeight": "170",
-   "proNationality": "95",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "13",
-   "redCards": "2",
-   "prevGoals": "3",
-   "prevGoals1": "3",
-   "prevGoals2": "1",
-   "prevGoals3": "6",
-   "prevGoals4": "1",
-   "prevGoals5": "2",
-   "prevGoals6": "2",
-   "prevGoals7": "0",
-   "prevGoals8": "1",
-   "prevGoals9": "1",
-   "prevGoals10": "2",
-   "favoritePosition": "forward"
-  },
-  {
    "name": "Trini_Sinz",
    "gamesPlayed": "12",
    "winRate": "33",
@@ -732,7 +696,7 @@
  "positionCount": {
   "midfielder": 4,
   "goalkeeper": 0,
-  "forward": 7,
+  "forward": 6,
   "defender": 4
  },
  "career": [
@@ -878,17 +842,6 @@
    "ratingAve": "7.7",
    "prevGoals": "0",
    "favoritePosition": "midfielder"
-  },
-  {
-   "name": "PulviTheGoat",
-   "proPos": "25",
-   "gamesPlayed": "255",
-   "goals": "226",
-   "assists": "140",
-   "manOfTheMatch": "40",
-   "ratingAve": "7.8",
-   "prevGoals": "3",
-   "favoritePosition": "forward"
   },
   {
    "name": "Trini_Sinz",
