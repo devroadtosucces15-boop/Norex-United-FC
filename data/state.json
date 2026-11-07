@@ -333,7 +333,7 @@
   "51769": {
    "tier": "linked",
    "firstSeen": "2026-09-29T11:31:10.703Z",
-   "lastFetched": "2026-11-07T19:00:50.898Z",
+   "lastFetched": "2026-11-07T19:10:47.910Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "741879",
@@ -543,7 +543,7 @@
   "56758": {
    "tier": "linked",
    "firstSeen": "2026-09-30T04:53:34.259Z",
-   "lastFetched": "2026-11-07T19:00:50.898Z",
+   "lastFetched": "2026-11-07T19:10:47.910Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "418301",
@@ -837,6 +837,14 @@
    "discoveredVia": "80869",
    "name": "Bombasticboys"
   },
+  "79612": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-07T19:10:47.910Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 34,
+   "discoveredVia": "754284"
+  },
   "79762": {
    "tier": "discovered",
    "firstSeen": "2026-10-01T09:20:44.568Z",
@@ -849,7 +857,7 @@
   "80869": {
    "tier": "home",
    "firstSeen": "2026-09-28T01:09:15.486Z",
-   "lastFetched": "2026-11-07T19:00:50.898Z",
+   "lastFetched": "2026-11-07T19:10:47.910Z",
    "fails": 0,
    "depth": 0,
    "name": "NOREX UNITED FC"
@@ -913,14 +921,6 @@
    "depth": 1,
    "discoveredVia": "51769",
    "name": "Horry Mory"
-  },
-  "137480": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-07T19:00:50.898Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 3,
-   "discoveredVia": "214462"
   },
   "147507": {
    "tier": "discovered",
@@ -1066,7 +1066,7 @@
   "189496": {
    "tier": "linked",
    "firstSeen": "2026-09-28T01:13:37.021Z",
-   "lastFetched": "2026-11-07T19:00:50.898Z",
+   "lastFetched": "2026-11-07T19:10:47.910Z",
    "fails": 0,
    "depth": 2,
    "discoveredVia": "61188",
@@ -1383,6 +1383,14 @@
    "discoveredVia": "56758",
    "name": "DIABLOS ROJOS"
   },
+  "339036": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-07T19:10:47.910Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 34,
+   "discoveredVia": "774526"
+  },
   "339235": {
    "tier": "discovered",
    "firstSeen": "2026-11-07T17:20:49.198Z",
@@ -1489,7 +1497,7 @@
   "426400": {
    "tier": "manual",
    "firstSeen": "2026-10-10T10:18:21.377Z",
-   "lastFetched": "2026-11-07T19:00:50.898Z",
+   "lastFetched": "2026-11-07T19:10:47.910Z",
    "fails": 0,
    "depth": 0,
    "name": "splashbros"
@@ -1823,7 +1831,7 @@
    "tier": "discovered",
    "firstSeen": "2026-10-05T06:39:37.276Z",
    "lastFetched": null,
-   "fails": 244,
+   "fails": 245,
    "depth": 21,
    "discoveredVia": "775300"
   },
@@ -1995,14 +2003,6 @@
    "discoveredVia": "56758",
    "name": "TBD United"
   },
-  "704159": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-07T16:50:47.934Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 33,
-   "discoveredVia": "1997688"
-  },
   "704685": {
    "tier": "discovered",
    "firstSeen": "2026-09-28T05:41:05.094Z",
@@ -2048,14 +2048,6 @@
    "discoveredVia": "51769",
    "name": "S2EZ2"
   },
-  "723070": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-07T17:10:49.641Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 33,
-   "discoveredVia": "2116458"
-  },
   "729933": {
    "tier": "discovered",
    "firstSeen": "2026-10-02T01:40:58.389Z",
@@ -2083,13 +2075,13 @@
    "discoveredVia": "56758",
    "name": "BK Crown"
   },
-  "754284": {
+  "758301": {
    "tier": "discovered",
-   "firstSeen": "2026-11-07T16:40:49.161Z",
+   "firstSeen": "2026-11-07T19:10:47.910Z",
    "lastFetched": null,
    "fails": 0,
-   "depth": 33,
-   "discoveredVia": "1782182"
+   "depth": 34,
+   "discoveredVia": "704159"
   },
   "763048": {
    "tier": "discovered",
@@ -2135,29 +2127,13 @@
    "depth": 34,
    "discoveredVia": "639652"
   },
-  "771897": {
+  "788279": {
    "tier": "discovered",
-   "firstSeen": "2026-11-07T15:20:48.487Z",
+   "firstSeen": "2026-11-07T19:10:47.910Z",
    "lastFetched": null,
    "fails": 0,
-   "depth": 33,
-   "discoveredVia": "766062"
-  },
-  "774086": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-07T16:50:47.934Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 33,
-   "discoveredVia": "1977310"
-  },
-  "774526": {
-   "tier": "discovered",
-   "firstSeen": "2026-11-07T14:20:49.154Z",
-   "lastFetched": null,
-   "fails": 0,
-   "depth": 33,
-   "discoveredVia": "79482"
+   "depth": 34,
+   "discoveredVia": "774086"
   },
   "809501": {
    "tier": "discovered",
@@ -2724,11 +2700,19 @@
    "depth": 33,
    "discoveredVia": "191112"
   },
+  "1243057": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-07T19:10:47.910Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 1,
+   "discoveredVia": "51769"
+  },
   "1243692": {
    "tier": "discovered",
    "firstSeen": "2026-10-04T00:30:35.853Z",
    "lastFetched": null,
-   "fails": 236,
+   "fails": 237,
    "depth": 21,
    "discoveredVia": "44988"
   },
@@ -2845,6 +2829,14 @@
    "fails": 0,
    "depth": 33,
    "discoveredVia": "1150257"
+  },
+  "1442613": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-07T19:10:47.910Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 34,
+   "discoveredVia": "771897"
   },
   "1468449": {
    "tier": "discovered",
@@ -3131,6 +3123,14 @@
    "depth": 33,
    "discoveredVia": "633033"
   },
+  "1886396": {
+   "tier": "discovered",
+   "firstSeen": "2026-11-07T19:10:47.910Z",
+   "lastFetched": null,
+   "fails": 0,
+   "depth": 34,
+   "discoveredVia": "723070"
+  },
   "1891851": {
    "tier": "discovered",
    "firstSeen": "2026-11-07T16:30:46.839Z",
@@ -3338,7 +3338,7 @@
    "tier": "discovered",
    "firstSeen": "2026-11-05T23:10:47.724Z",
    "lastFetched": null,
-   "fails": 265,
+   "fails": 266,
    "depth": 16,
    "discoveredVia": "772784"
   },
@@ -3370,7 +3370,7 @@
    "tier": "discovered",
    "firstSeen": "2026-11-06T09:20:50.312Z",
    "lastFetched": null,
-   "fails": 180,
+   "fails": 181,
    "depth": 24,
    "discoveredVia": "612330"
   },
@@ -3402,7 +3402,7 @@
    "tier": "discovered",
    "firstSeen": "2026-11-07T11:44:36.566Z",
    "lastFetched": null,
-   "fails": 13,
+   "fails": 14,
    "depth": 32,
    "discoveredVia": "192754"
   },
@@ -5764,6 +5764,7 @@
   "136828": "2026-09-29",
   "137013": "2026-10-02",
   "137278": "2026-11-06",
+  "137480": "2026-11-07",
   "137834": "2026-11-06",
   "137901": "2026-11-06",
   "138285": "2026-09-28",
@@ -10136,6 +10137,7 @@
   "701469": "2026-09-30",
   "701656": "2026-09-28",
   "702176": "2026-11-06",
+  "704159": "2026-11-07",
   "704767": "2026-11-06",
   "705329": "2026-11-06",
   "705762": "2026-09-30",
@@ -10187,6 +10189,7 @@
   "722777": "2026-10-01",
   "722834": "2026-11-06",
   "722867": "2026-09-29",
+  "723070": "2026-11-07",
   "723109": "2026-10-03",
   "723287": "2026-09-29",
   "723392": "2026-11-06",
@@ -10329,6 +10332,7 @@
   "754159": "2026-10-01",
   "754172": "2026-09-28",
   "754214": "2026-10-05",
+  "754284": "2026-11-07",
   "754292": "2026-10-03",
   "754351": "2026-10-03",
   "754381": "2026-09-28",
@@ -10523,6 +10527,7 @@
   "771843": "2026-09-30",
   "771857": "2026-09-28",
   "771873": "2026-10-01",
+  "771897": "2026-11-07",
   "771984": "2026-11-07",
   "772057": "2026-10-02",
   "772156": "2026-10-01",
@@ -10565,6 +10570,7 @@
   "773761": "2026-10-05",
   "773901": "2026-10-03",
   "774069": "2026-11-06",
+  "774086": "2026-11-07",
   "774238": "2026-11-07",
   "774265": "2026-09-28",
   "774314": "2026-09-30",
@@ -10573,6 +10579,7 @@
   "774405": "2026-11-06",
   "774499": "2026-09-30",
   "774508": "2026-09-29",
+  "774526": "2026-11-07",
   "774580": "2026-10-05",
   "774600": "2026-09-28",
   "774634": "2026-11-07",
