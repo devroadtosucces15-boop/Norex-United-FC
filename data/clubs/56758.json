@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-08T03:20:49.428Z",
+ "fetchedAt": "2026-11-08T03:30:49.152Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -549,42 +549,6 @@
    "favoritePosition": "forward"
   },
   {
-   "name": "CatchMyDrift3",
-   "gamesPlayed": "22",
-   "winRate": "40",
-   "goals": "0",
-   "assists": "0",
-   "cleanSheetsDef": "0",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "156",
-   "passSuccessRate": "81",
-   "ratingAve": "6.5",
-   "tacklesMade": "15",
-   "tackleSuccessRate": "18",
-   "proName": "C. Drift",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "186",
-   "proNationality": "95",
-   "proOverall": "75",
-   "proOverallStr": "75",
-   "manOfTheMatch": "0",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
-  {
    "name": "Martyr-DK",
    "gamesPlayed": "0",
    "favoritePosition": "",
@@ -733,7 +697,7 @@
   "midfielder": 3,
   "goalkeeper": 0,
   "forward": 6,
-  "defender": 5
+  "defender": 4
  },
  "career": [
   {
@@ -922,17 +886,6 @@
    "ratingAve": "7.7",
    "prevGoals": "0",
    "favoritePosition": "forward"
-  },
-  {
-   "name": "CatchMyDrift3",
-   "proPos": "14",
-   "gamesPlayed": "67",
-   "goals": "0",
-   "assists": "1",
-   "manOfTheMatch": "3",
-   "ratingAve": "6.7",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
   }
  ],
  "leaderboard": {
