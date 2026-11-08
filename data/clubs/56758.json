@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-08T23:40:46.776Z",
+ "fetchedAt": "2026-11-08T23:50:46.833Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,42 +80,6 @@
   "leagueAppearances": "419"
  },
  "members": [
-  {
-   "name": "R3PTILI4N",
-   "gamesPlayed": "27",
-   "winRate": "74",
-   "goals": "0",
-   "assists": "4",
-   "cleanSheetsDef": "7",
-   "cleanSheetsGK": "0",
-   "shotSuccessRate": "0",
-   "passesMade": "288",
-   "passSuccessRate": "78",
-   "ratingAve": "7.9",
-   "tacklesMade": "28",
-   "tackleSuccessRate": "50",
-   "proName": "REPTILIAN",
-   "proPos": "5",
-   "proStyle": "0",
-   "proHeight": "182",
-   "proNationality": "21",
-   "proOverall": "81",
-   "proOverallStr": "81",
-   "manOfTheMatch": "5",
-   "redCards": "0",
-   "prevGoals": "0",
-   "prevGoals1": "0",
-   "prevGoals2": "0",
-   "prevGoals3": "0",
-   "prevGoals4": "0",
-   "prevGoals5": "0",
-   "prevGoals6": "0",
-   "prevGoals7": "0",
-   "prevGoals8": "0",
-   "prevGoals9": "0",
-   "prevGoals10": "0",
-   "favoritePosition": "defender"
-  },
   {
    "name": "XxTecunUman_X",
    "gamesPlayed": "60",
@@ -661,20 +625,9 @@
   "midfielder": 3,
   "goalkeeper": 0,
   "forward": 7,
-  "defender": 4
+  "defender": 3
  },
  "career": [
-  {
-   "name": "R3PTILI4N",
-   "proPos": "14",
-   "gamesPlayed": "332",
-   "goals": "42",
-   "assists": "76",
-   "manOfTheMatch": "46",
-   "ratingAve": "7.8",
-   "prevGoals": "0",
-   "favoritePosition": "midfielder"
-  },
   {
    "name": "XxTecunUman_X",
    "proPos": "25",
@@ -766,12 +719,12 @@
   {
    "name": "BOOMKD_",
    "proPos": "25",
-   "gamesPlayed": "352",
-   "goals": "474",
+   "gamesPlayed": "353",
+   "goals": "476",
    "assists": "410",
    "manOfTheMatch": "19",
    "ratingAve": "7.1",
-   "prevGoals": "1",
+   "prevGoals": "2",
    "favoritePosition": "forward"
   },
   {
