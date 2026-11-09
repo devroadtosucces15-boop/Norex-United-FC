@@ -1,7 +1,7 @@
 {
  "id": "56758",
  "tier": "linked",
- "fetchedAt": "2026-11-09T23:00:50.231Z",
+ "fetchedAt": "2026-11-09T23:15:46.326Z",
  "info": {
   "name": "SUPER SWEATY",
   "clubId": 56758,
@@ -80,6 +80,42 @@
   "leagueAppearances": "426"
  },
  "members": [
+  {
+   "name": "Cane7",
+   "gamesPlayed": "41",
+   "winRate": "73",
+   "goals": "0",
+   "assists": "1",
+   "cleanSheetsDef": "3",
+   "cleanSheetsGK": "1",
+   "shotSuccessRate": "0",
+   "passesMade": "506",
+   "passSuccessRate": "84",
+   "ratingAve": "7.5",
+   "tacklesMade": "68",
+   "tackleSuccessRate": "33",
+   "proName": "CANE",
+   "proPos": "14",
+   "proStyle": "0",
+   "proHeight": "182",
+   "proNationality": "56",
+   "proOverall": "81",
+   "proOverallStr": "81",
+   "manOfTheMatch": "2",
+   "redCards": "0",
+   "prevGoals": "0",
+   "prevGoals1": "0",
+   "prevGoals2": "0",
+   "prevGoals3": "0",
+   "prevGoals4": "0",
+   "prevGoals5": "0",
+   "prevGoals6": "0",
+   "prevGoals7": "0",
+   "prevGoals8": "0",
+   "prevGoals9": "0",
+   "prevGoals10": "0",
+   "favoritePosition": "midfielder"
+  },
   {
    "name": "ASLweezy81",
    "gamesPlayed": "24",
@@ -946,12 +982,23 @@
   }
  ],
  "positionCount": {
-  "midfielder": 6,
+  "midfielder": 7,
   "goalkeeper": 0,
   "forward": 9,
   "defender": 4
  },
  "career": [
+  {
+   "name": "Cane7",
+   "proPos": "5",
+   "gamesPlayed": "329",
+   "goals": "11",
+   "assists": "16",
+   "manOfTheMatch": "28",
+   "ratingAve": "7.4",
+   "prevGoals": "0",
+   "favoritePosition": "defender"
+  },
   {
    "name": "ASLweezy81",
    "proPos": "5",
@@ -1065,7 +1112,7 @@
   {
    "name": "ToNyWhITe4u",
    "proPos": "25",
-   "gamesPlayed": "283",
+   "gamesPlayed": "284",
    "goals": "20",
    "assists": "64",
    "manOfTheMatch": "19",
@@ -1120,12 +1167,12 @@
   {
    "name": "Trini_Sinz",
    "proPos": "25",
-   "gamesPlayed": "445",
+   "gamesPlayed": "446",
    "goals": "449",
    "assists": "223",
    "manOfTheMatch": "119",
    "ratingAve": "8.0",
-   "prevGoals": "1",
+   "prevGoals": "0",
    "favoritePosition": "forward"
   },
   {
