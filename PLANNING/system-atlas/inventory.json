@@ -1,6 +1,6 @@
 {
-  "revision": "53736f9272cee38a1f15fb651c3341eb5480c7c0",
-  "files": 1213,
+  "revision": "a57e4814696ef1d7d483c9b7ebb816c5414a0a90",
+  "files": 1262,
   "imports": 732,
   "api_paths": 255,
   "tables": 330,
@@ -96,12 +96,13 @@
     {
       "path": ".github/workflows/update.yml",
       "layer": ".github",
-      "lines": 141,
+      "lines": 148,
       "imports": [],
       "endpoints": [],
       "tables": [
         "EA",
         "failed",
+        "next",
         "site",
         "the",
         "when"
@@ -4239,7 +4240,7 @@
     {
       "path": "data/alumni.json",
       "layer": "data",
-      "lines": 1,
+      "lines": 2253,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4266,7 +4267,7 @@
     {
       "path": "data/burners/1479556.json",
       "layer": "data",
-      "lines": 952,
+      "lines": 908,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4518,6 +4519,24 @@
       "functions": []
     },
     {
+      "path": "data/clubs/1242004.json",
+      "layer": "data",
+      "lines": 328,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/1243057.json",
+      "layer": "data",
+      "lines": 422,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/12784.json",
       "layer": "data",
       "lines": 657,
@@ -4671,6 +4690,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/178037.json",
+      "layer": "data",
+      "lines": 422,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/178509.json",
       "layer": "data",
       "lines": 281,
@@ -4716,6 +4744,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/1889248.json",
+      "layer": "data",
+      "lines": 281,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/1893713.json",
       "layer": "data",
       "lines": 187,
@@ -4727,7 +4764,7 @@
     {
       "path": "data/clubs/189496.json",
       "layer": "data",
-      "lines": 994,
+      "lines": 947,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4779,6 +4816,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/203900.json",
+      "layer": "data",
+      "lines": 281,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/204654.json",
       "layer": "data",
       "lines": 986,
@@ -4800,6 +4846,15 @@
       "path": "data/clubs/2083911.json",
       "layer": "data",
       "lines": 563,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/210420.json",
+      "layer": "data",
+      "lines": 657,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4878,6 +4933,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/226809.json",
+      "layer": "data",
+      "lines": 328,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/228940.json",
       "layer": "data",
       "lines": 422,
@@ -4890,6 +4954,15 @@
       "path": "data/clubs/236911.json",
       "layer": "data",
       "lines": 328,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/237686.json",
+      "layer": "data",
+      "lines": 563,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -4991,6 +5064,15 @@
       "path": "data/clubs/29811.json",
       "layer": "data",
       "lines": 1503,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/303836.json",
+      "layer": "data",
+      "lines": 563,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5636,6 +5718,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/55513.json",
+      "layer": "data",
+      "lines": 1127,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/55556.json",
       "layer": "data",
       "lines": 234,
@@ -5737,7 +5828,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1041,
+      "lines": 806,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6077,6 +6168,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/64930.json",
+      "layer": "data",
+      "lines": 657,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/662435.json",
       "layer": "data",
       "lines": 657,
@@ -6098,6 +6198,15 @@
       "path": "data/clubs/67777.json",
       "layer": "data",
       "lines": 939,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/678173.json",
+      "layer": "data",
+      "lines": 657,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6179,6 +6288,24 @@
       "path": "data/clubs/713157.json",
       "layer": "data",
       "lines": 328,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/715701.json",
+      "layer": "data",
+      "lines": 610,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/722439.json",
+      "layer": "data",
+      "lines": 422,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6268,6 +6395,24 @@
       "functions": []
     },
     {
+      "path": "data/clubs/768649.json",
+      "layer": "data",
+      "lines": 516,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/776274.json",
+      "layer": "data",
+      "lines": 281,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/79550.json",
       "layer": "data",
       "lines": 563,
@@ -6307,6 +6452,24 @@
       "path": "data/clubs/818876.json",
       "layer": "data",
       "lines": 234,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/836507.json",
+      "layer": "data",
+      "lines": 187,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/854139.json",
+      "layer": "data",
+      "lines": 375,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9233,6 +9396,285 @@
       "functions": []
     },
     {
+      "path": "data/matches/172652991600242.json",
+      "layer": "data",
+      "lines": 402,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/172898868660380.json",
+      "layer": "data",
+      "lines": 399,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/172996593090458.json",
+      "layer": "data",
+      "lines": 402,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/173076402180467.json",
+      "layer": "data",
+      "lines": 250,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/173098067550494.json",
+      "layer": "data",
+      "lines": 402,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/173232282940376.json",
+      "layer": "data",
+      "lines": 250,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174146831040334.json",
+      "layer": "data",
+      "lines": 402,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174256779800442.json",
+      "layer": "data",
+      "lines": 326,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174256835420220.json",
+      "layer": "data",
+      "lines": 396,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174334758320143.json",
+      "layer": "data",
+      "lines": 326,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174344457650120.json",
+      "layer": "data",
+      "lines": 554,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174360815360143.json",
+      "layer": "data",
+      "lines": 554,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174392138840466.json",
+      "layer": "data",
+      "lines": 402,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174450880370398.json",
+      "layer": "data",
+      "lines": 437,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174488432950154.json",
+      "layer": "data",
+      "lines": 364,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174524351940175.json",
+      "layer": "data",
+      "lines": 361,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174572680780486.json",
+      "layer": "data",
+      "lines": 326,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174648118280023.json",
+      "layer": "data",
+      "lines": 437,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174648478320403.json",
+      "layer": "data",
+      "lines": 437,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174654823520177.json",
+      "layer": "data",
+      "lines": 364,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174658230610335.json",
+      "layer": "data",
+      "lines": 288,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174662341610287.json",
+      "layer": "data",
+      "lines": 627,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174680204350285.json",
+      "layer": "data",
+      "lines": 627,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174688690300330.json",
+      "layer": "data",
+      "lines": 326,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174746311660212.json",
+      "layer": "data",
+      "lines": 364,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174778567800190.json",
+      "layer": "data",
+      "lines": 326,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174802525000323.json",
+      "layer": "data",
+      "lines": 396,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174822589120235.json",
+      "layer": "data",
+      "lines": 326,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174840639680497.json",
+      "layer": "data",
+      "lines": 288,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174866123350363.json",
+      "layer": "data",
+      "lines": 326,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/174934026750465.json",
+      "layer": "data",
+      "lines": 434,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/21882919950232.json",
       "layer": "data",
       "lines": 658,
@@ -11901,7 +12343,7 @@
     {
       "path": "data/state.json",
       "layer": "data",
-      "lines": 11683,
+      "lines": 13675,
       "imports": [],
       "endpoints": [],
       "tables": [
