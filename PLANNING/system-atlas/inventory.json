@@ -1,9 +1,9 @@
 {
-  "revision": "a57e4814696ef1d7d483c9b7ebb816c5414a0a90",
-  "files": 1262,
-  "imports": 732,
-  "api_paths": 255,
-  "tables": 330,
+  "revision": "35283539afea2d2b315cc8a36613ffa8a255708e",
+  "files": 1267,
+  "imports": 733,
+  "api_paths": 258,
+  "tables": 331,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -4582,6 +4582,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/135300.json",
+      "layer": "data",
+      "lines": 281,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/1471258.json",
       "layer": "data",
       "lines": 563,
@@ -5026,6 +5035,15 @@
       "path": "data/clubs/28739.json",
       "layer": "data",
       "lines": 751,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/287783.json",
+      "layer": "data",
+      "lines": 704,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5828,7 +5846,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 806,
+      "lines": 1088,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9675,6 +9693,24 @@
       "functions": []
     },
     {
+      "path": "data/matches/179164814480338.json",
+      "layer": "data",
+      "lines": 440,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/179428296080472.json",
+      "layer": "data",
+      "lines": 516,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/21882919950232.json",
       "layer": "data",
       "lines": 658,
@@ -12343,7 +12379,7 @@
     {
       "path": "data/state.json",
       "layer": "data",
-      "lines": 13675,
+      "lines": 13918,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -12592,6 +12628,21 @@
       "endpoints": [],
       "tables": [
         "the",
+        "v1"
+      ],
+      "functions": []
+    },
+    {
+      "path": "data/updates/update-v1-2-pitch-notes.json",
+      "layer": "data",
+      "lines": 92,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "an",
+        "behind",
+        "once",
+        "our",
         "v1"
       ],
       "functions": []
@@ -13812,7 +13863,7 @@
     {
       "path": "tests/botfeat-sample.mjs",
       "layer": "tests",
-      "lines": 35,
+      "lines": 49,
       "imports": [
         "./mock.mjs"
       ],
@@ -13831,6 +13882,8 @@
         "watch_videos"
       ],
       "functions": [
+        "musicRoomsSample",
+        "playlistsSample",
         "seedBotSample"
       ]
     },
@@ -15136,22 +15189,30 @@
     {
       "path": "tests/mock.mjs",
       "layer": "tests",
-      "lines": 139,
+      "lines": 157,
       "imports": [
         "node:fs",
         "node:url",
         "node:sqlite",
         "../bot/worker.js"
       ],
-      "endpoints": [],
+      "endpoints": [
+        "/api/music/",
+        "/api/music/playlists",
+        "/api/music/rooms",
+        "/api/music/search"
+      ],
       "tables": [
         "D1"
       ],
       "functions": [
+        "MM",
         "W",
         "b64",
         "call",
         "login",
+        "musicApi",
+        "raw",
         "seal",
         "setAiReply",
         "siteJson",
@@ -15240,7 +15301,7 @@
     {
       "path": "tests/next.test.mjs",
       "layer": "tests",
-      "lines": 379,
+      "lines": 405,
       "imports": [
         "node:child_process",
         "node:fs",
@@ -15250,7 +15311,8 @@
         "./lib.mjs",
         "../next/lib/data.mjs",
         "../bot/faces.js",
-        "./botfeat-sample.mjs"
+        "./botfeat-sample.mjs",
+        "./mock.mjs"
       ],
       "endpoints": [
         "/api/achievements",
@@ -21720,6 +21782,11 @@
     {
       "source": "tests/next.test.mjs",
       "target": "tests/botfeat-sample.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/next.test.mjs",
+      "target": "tests/mock.mjs",
       "kind": "imports"
     },
     {
