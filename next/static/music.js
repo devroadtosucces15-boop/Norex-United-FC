@@ -26,7 +26,8 @@
   const { esc, safeUrl, imgUrl } = B.U, A = w.NorexAuth;
   const grid = root.querySelector('#mu-rooms'), state = root.querySelector('[data-mu-state]'), sampleBtn = root.querySelector('[data-mu-sample]');
   const canControl = () => ['owner', 'manager'].includes(A?.role) && !A?.viewAs;
-  let rooms = [], sample = false, timer = 0, tick = 0, busy = new Set();
+  let rooms = [], sample = false, timer = 0, tick = 0, busy = new Set(), srch = {}, sseq = 0, stimer = 0;
+  const MM = w.NorexMusicModel;
 
   const empty = (icon, title, text, extra = '') => `<div class="panel sq-empty"><span>${icon}</span><div><b>${esc(title)}</b><p class="muted small">${text}</p>${extra}</div></div>`;
   const ctl = (id, action, label, extra = '', cls = 'chip') => `<button type="button" class="${cls}" data-act="${action}" data-room="${esc(id)}" ${extra}>${label}</button>`;
@@ -42,6 +43,7 @@ ${n ? `<div class="nxm-now"><span class="nxm-art">${art ? `<img src="${esc(art)}
 ${ctrl ? `<div class="chips nxm-c">${n ? (r.paused ? ctl(r.id, 'resume', '▶ Play') : ctl(r.id, 'pause', '⏸ Pause')) + ctl(r.id, 'skip', '⏭ Skip') : ''}${n || q.length ? ctl(r.id, 'loop', `🔁 Loop: ${esc(r.loop || 'off')}`) : ''}${q.length ? ctl(r.id, 'clear', '🧹 Clear queue') : ''}
 <label class="nxm-vol"><span aria-hidden="true">🔊</span><input type="range" min="0" max="100" step="5" value="${+r.volume || 0}" data-vol="${esc(r.id)}" aria-label="Volume"><b class="num">${+r.volume || 0}</b></label></div>` : ''}
 <form class="nxm-add" data-add="${esc(r.id)}"><input name="q" type="text" maxlength="200" placeholder="Song name or link" aria-label="Add a song to ${esc(r.name)}" autocomplete="off"><button class="btn" type="submit">＋ Add</button></form>
+${srch[r.id]?.length ? `<ul class="nxm-sr" aria-label="Search results">${srch[r.id].map((x, i) => `<li><button type="button" class="nxm-pick" data-pick="${i}" data-room="${esc(r.id)}"><b>${esc(x.title)}</b><small class="muted">${esc(x.artist || '')}</small><span class="muted tiny">${x.length ? fmt(x.length) : ''}</span><span aria-hidden="true">＋</span></button></li>`).join('')}</ul>` : ''}
 ${q.length ? `<ol class="nxm-q">${q.slice(0, 8).map((x, i) => `<li><span class="num">${i + 1}</span><span class="nxm-qt"><b>${esc(x.title)}</b><small class="muted">${esc(x.artist || '')}${x.by ? ' · added by ' + esc(x.by) : ''}</small></span><span class="muted tiny">${fmt(x.length)}</span>${ctrl ? `<button type="button" class="chip" data-act="remove" data-room="${esc(r.id)}" data-item="${esc(x.id)}" aria-label="Remove ${esc(x.title)}">✕</button>` : ''}</li>`).join('')}</ol>${q.length > 8 ? `<p class="muted tiny">…and ${q.length - 8} more</p>` : ''}` : ''}
 </article>`;
   };
@@ -54,7 +56,7 @@ ${q.length ? `<ol class="nxm-q">${q.slice(0, 8).map((x, i) => `<li><span class="
   const offline = (e) => { rooms = []; grid.setAttribute('aria-busy', 'false');
     grid.innerHTML = empty('🔌', e?.status === 404 || /not available|not found|404/i.test(e?.message || '') ? 'Norex DJ isn’t connected to the site yet' : 'Could not reach the music rooms', B.U.esc(e?.message || 'The club server did not answer.'), '<button type="button" class="btn ghost" data-retry>↻ Try again</button>'); state.textContent = ''; };
   const load = async () => {
-    if (sample || d.hidden) return;
+    if (sample || d.hidden || (d.activeElement && d.activeElement.name === 'q' && grid.contains(d.activeElement))) return;
     try { const l = await B.call('/api/music/rooms'); rooms = Array.isArray(l) ? l : []; paint(); } catch (e) { offline(e); }
   };
   const merge = (room) => { if (!room?.id) return; const i = rooms.findIndex((x) => x.id === room.id); if (i > -1) rooms[i] = room; else rooms.push(room); };
@@ -65,7 +67,7 @@ ${q.length ? `<ol class="nxm-q">${q.slice(0, 8).map((x, i) => `<li><span class="
     else if (a === 'volume') r.volume = Math.max(0, Math.min(100, +body.level || 0)); else if (a === 'loop') r.loop = { off: 'track', track: 'queue', queue: 'off' }[r.loop] || 'off';
     else if (a === 'remove') r.queue = r.queue.filter((x) => x.id !== body.item);
     else if (a === 'skip') { const nx = r.queue.shift(); r.now = nx ? { ...nx, thumb: '', url: '', position: 0 } : null; }
-    else if (a === 'add') { const t = 'SAMPLE · ' + String(body.query).slice(0, 60); const it = { id: 'a' + Date.now(), title: t, artist: 'Norex DJ', length: 180, by: A?.name || 'You' }; if (r.now) r.queue.push(it); else { r.now = { ...it, thumb: '', url: '', position: 0 }; r.paused = false; } }
+    else if (a === 'add') { const t = /^SAMPLE/.test(body.query) ? String(body.query).slice(0, 60) : 'SAMPLE · ' + String(body.query).slice(0, 60); const it = { id: 'a' + Date.now(), title: t, artist: 'Norex DJ', length: 180, by: A?.name || 'You' }; if (r.now) r.queue.push(it); else { r.now = { ...it, thumb: '', url: '', position: 0 }; r.paused = false; } }
     return r; };
   const send = async (id, body) => {
     const key = id + body.action; if (busy.has(key)) return; busy.add(key);
@@ -77,12 +79,21 @@ ${q.length ? `<ol class="nxm-q">${q.slice(0, 8).map((x, i) => `<li><span class="
   };
   grid.addEventListener('click', (e) => {
     if (e.target.closest('[data-retry]')) return load();
+    const pk = e.target.closest('[data-pick]'); if (pk) { const t = (srch[pk.dataset.room] || [])[+pk.dataset.pick]; srch = {}; sseq++; if (t) send(pk.dataset.room, { action: 'add', item: t.id, query: t.title }); return; }
     const b = e.target.closest('[data-act]'); if (!b) return;
     send(b.dataset.room, { action: b.dataset.act, ...(b.dataset.item ? { item: b.dataset.item } : {}) });
   });
+  const find = async (id, q) => { const n = ++sseq;
+    try { const rows = sample ? (MM?.catalog || []).filter((x) => (x.title + ' ' + x.artist).toLowerCase().includes(q.toLowerCase())) : await B.call('/api/music/search?q=' + encodeURIComponent(q));
+      if (n !== sseq) return; srch = { [id]: MM ? MM.normTracks(rows) : [] };
+    } catch (e) { if (n !== sseq) return; srch = {}; }
+    const el = grid.querySelector(`.nxm[data-room="${CSS.escape(id)}"] .nxm-add input`), v = el?.value, had = d.activeElement === el; paint();
+    const nx = grid.querySelector(`.nxm[data-room="${CSS.escape(id)}"] .nxm-add input`); if (nx && had) { nx.value = v; nx.focus(); } };
+  grid.addEventListener('input', (e) => { const f = e.target.closest('[data-add] input'); if (!f || !MM) return; clearTimeout(stimer); const q = f.value.trim(), id = f.form.dataset.add;
+    if (q.length < 2) { sseq++; if (srch[id]) { srch = {}; paint(); } return; } stimer = setTimeout(() => find(id, q), 350); });
   grid.addEventListener('change', (e) => { const v = e.target.closest('[data-vol]'); if (v) send(v.dataset.vol, { action: 'volume', level: +v.value }); });
   grid.addEventListener('input', (e) => { const v = e.target.closest('[data-vol]'); if (v) v.parentElement.querySelector('b').textContent = v.value; });
-  grid.addEventListener('submit', (e) => { const f = e.target.closest('[data-add]'); if (!f) return; e.preventDefault(); const q = f.q.value.trim(); if (!q) return; f.q.value = ''; send(f.dataset.add, { action: 'add', query: q }); });
+  grid.addEventListener('submit', (e) => { const f = e.target.closest('[data-add]'); if (!f) return; e.preventDefault(); const q = f.q.value.trim(); if (!q) return; f.q.value = ''; srch = {}; sseq++; send(f.dataset.add, { action: 'add', query: q }); });
   sampleBtn.addEventListener('click', () => { sample = !sample; if (sample) { rooms = sampleRooms(); paint(); } else { grid.innerHTML = ''; grid.setAttribute('aria-busy', 'true'); load(); } });
 
   // the bars and clocks move every second without a request

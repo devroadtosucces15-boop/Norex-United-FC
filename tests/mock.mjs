@@ -108,7 +108,25 @@ if (m0?.ps?.[1]) await KV.put(`vote:${m0.id}:333`, m0.ps[1].k, { metadata: { p: 
 await KV.put('activity', JSON.stringify([{ at: Date.now() - 6e5, u: '222', n: 'Mike', a: A2, type: 'claim', detail: 'x_MrMike_x' }]));
 
 // ---------- helpers ----------
-export const W = (path, init = {}) => worker.fetch(new Request('http://localhost:8788' + path, init), env, { waitUntil() {} });
+export const mockMusic = { rooms: null, playlists: null, fail: false };
+const MM = (() => { const win = {}; new Function('window', fs.readFileSync(ROOT + 'next/static/musicmodel.js', 'utf8'))(win); return win.NorexMusicModel; })();
+export const musicApi = async (path, init) => {
+  const [p, q = ''] = path.split('?'), j = (x, status = 200) => Response.json(x, { status });
+  if (mockMusic.fail) return j({ error: 'The music bot is not reachable.' }, 502);
+  if (p === '/api/music/rooms') return j(mockMusic.rooms);
+  if (p === '/api/music/playlists') return mockMusic.playlists ? j(mockMusic.playlists) : null;
+  if (p === '/api/music/search') { const t = (new URLSearchParams(q).get('q') || '').toLowerCase(); return j(MM.catalog.filter((x) => (x.title + ' ' + x.artist).toLowerCase().includes(t))); }
+  const m = p.match(/^\/api\/music\/rooms\/([^/]+)\/control$/);
+  if (m && init.method === 'POST') {
+    const i = mockMusic.rooms.findIndex((r) => r.id === decodeURIComponent(m[1])); if (i < 0) return j({ error: 'No such room.' }, 404);
+    const b = JSON.parse(init.body || '{}'), track = b.action === 'add' ? MM.catalog.find((x) => x.id === b.item) : null;
+    if (b.action === 'add' && !track) return j({ error: 'Unknown song.' }, 400);
+    return j((mockMusic.rooms[i] = MM.apply(MM.norm([mockMusic.rooms[i]])[0], { ...b, track }, Date.now(), 'Zub (owner)')));
+  }
+  return null;
+};
+const raw = (path, init) => worker.fetch(new Request('http://localhost:8788' + path, init), env, { waitUntil() {} });
+export const W = (path, init = {}) => mockMusic.rooms && path.startsWith('/api/music/') ? musicApi(path, init).then((r) => r || raw(path, init)) : raw(path, init);
 
 // Full OAuth round trip as a Discord user with the given server roles → session token (or the error).
 export async function login(id, roles = [], name = 'User ' + id) {

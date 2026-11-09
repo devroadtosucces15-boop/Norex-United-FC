@@ -1,6 +1,19 @@
 // SAMPLE data for the bot-feature pages (watch list, discoveries, member live, fun stats, faces). The bot gives no sample rows,
 // so local previews and tests seed the mock D1 with these. Every visible title says SAMPLE so it can never be mistaken for real content.
-import { sqlite, login, call, mockDiscord, r2objects } from './mock.mjs';
+import { sqlite, login, call, mockDiscord, r2objects, mockMusic } from './mock.mjs';
+
+export const musicRoomsSample = () => {
+  const now = Date.now();
+  return [
+    { id: 'sample-lounge', name: 'SAMPLE · Club lounge', channel: 'Club lounge', paused: false, listeners: 5, volume: 60, loop: 'off', at: now, now: { id: 'n1', title: 'SAMPLE · Late night warm-up', artist: 'SAMPLE Artist', length: 214, position: 96 }, queue: [{ id: 'q1', title: 'SAMPLE · Pre-match hype', artist: 'SAMPLE Artist', length: 187, by: 'Mike' }, { id: 'q2', title: 'SAMPLE · Walk-out theme', artist: 'SAMPLE Orchestra', length: 158, by: 'Kruger' }] },
+    { id: 'sample-match', name: 'SAMPLE · Match night', channel: 'Match night', paused: true, listeners: 0, volume: 40, loop: 'off', at: now, now: { id: 'n2', title: 'SAMPLE · Full-time anthem', artist: 'SAMPLE Choir', length: 203, position: 40 }, queue: [] },
+    { id: 'sample-quiet', name: 'SAMPLE · Quiet room', channel: 'Spare', paused: false, listeners: 0, volume: 50, loop: 'off', at: now, now: null, queue: [] },
+  ];
+};
+export const playlistsSample = () => [
+  { id: 'sample-p1', name: 'SAMPLE · Match day', count: 4, tracks: [{ title: 'SAMPLE · Pre-match hype', artist: 'SAMPLE Artist', length: 187 }, { title: 'SAMPLE · Walk-out theme', artist: 'SAMPLE Orchestra', length: 158 }] },
+  { id: 'sample-p2', name: 'SAMPLE · Late grind', count: 1, tracks: [{ title: 'SAMPLE · Late night warm-up', artist: 'SAMPLE Artist', length: 214 }] },
+];
 
 export async function seedBotSample() {
   const now = Date.now(), ids = { owner: '111', mike: '222', jez: '333', kruger: '444' };
@@ -29,6 +42,7 @@ export async function seedBotSample() {
   // a shipped Card Studio card for Jez: bytes in the mock R2, the row published
   r2objects.set('card/5a31e000000000000000000000000000.png', { buf: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'), type: 'image/png', uploaded: new Date() });
   sqlite.prepare("INSERT OR REPLACE INTO card_requests (user_id, month, bg_id, pose_id, photo_key, status, result_key, created_at, published) VALUES ('333', '2026-10', 1, 1, 'p', 'done', 'card/5a31e000000000000000000000000000.png', ?, 1)").run(now);
+  mockMusic.rooms = musicRoomsSample(); mockMusic.playlists = playlistsSample();
   Object.assign(mockDiscord, { id: '111', username: 'boss', global_name: 'Зуб_Ноrex 👑', roles: [] });
   return { tok, ids };
 }

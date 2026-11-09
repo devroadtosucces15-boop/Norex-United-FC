@@ -62,7 +62,7 @@ export function music() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Norex DJ</div><h2>Music</h2></div><p>What is playing in the club’s voice rooms right now. Add a song, skip, pause or turn it down from here.</p></header></section></div>${gate('hub-music.html')}
   <div class="wrap" data-for="member owner" hidden data-music>${flagOff('Music', 'data-mu-off')}
    <div data-mu-on hidden><div class="nxm-bar chips"><span class="muted small" data-mu-state aria-live="polite"></span><button type="button" class="chip" data-mu-sample>🧪 Preview with sample rooms</button></div><div class="nxm-rooms" id="mu-rooms" aria-live="polite" aria-busy="true"></div></div></div>`;
-  return hubShell('hub-music.html', 'Music', body, { extraHead: '<link rel="stylesheet" href="music.css"><script src="music.js" defer></script>' });
+  return hubShell('hub-music.html', 'Music', body, { extraHead: '<link rel="stylesheet" href="music.css"><script src="musicmodel.js" defer></script><script src="music.js" defer></script>' });
 }
 export function discoveries() {
   const body = `<div class="wrap"><section class="sec" style="margin-top:30px"><header><div><div class="eyebrow">Members</div><h2>Discoveries</h2></div><p>Tricks, videos and patch details teammates found. Post yours in Discord with /share. A manager checks it, then it lands here.</p></header></section></div>${gate('hub-discoveries.html')}
