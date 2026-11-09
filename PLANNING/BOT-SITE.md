@@ -37,7 +37,7 @@ Until then the web side can build against the shapes below with sample data.
 | # | Feature | Bot side builds | Web side builds | Status |
 |---|---|---|---|---|
 | 1 | **Stream links + live alerts** | `kick` and `birthday` profile fields, live checks every 10 min, Discord "🔴 X is live" posts, `GET /api/live` | Twitch / YouTube / Kick + birthday inputs on the profile edit form; a "Live now" strip (Hub / home) | Web side built behind flags `memberLive` / `fun` (2026-10-15) |
-| 2 | **Watch list** (Pro Clubs YouTube videos sorted by topic) | creator list, upload checks, AI topic sorting, `GET /api/watchlist`, `POST /api/watchlist/:id/useful`, Discord video alerts | Watch list page with topic filters; a "Related videos" block on build, tactics and position pages | Web side built behind flag `watchlist` (position pages: not yet) |
+| 2 | **Watch list** (Pro Clubs YouTube videos sorted by topic) | creator list, upload checks, AI topic sorting, `GET /api/watchlist`, `POST /api/watchlist/:id/useful`, Discord video alerts | Watch list page with topic filters; a "Related videos" block on build, tactics and position pages | Web side built behind flag `watchlist`; related videos follow the position on Builds (round 2) |
 | 3 | **Discoveries** (member FYI posts approved by managers) | `/share` in Discord, manager approve/reject, `GET /api/discoveries`, `POST /api/discoveries/:id/useful` | Discoveries feed page (and a Hub widget) | Web side built behind flag `discoveries` |
 | 4 | **Fun stats on profiles** | jail count, trivia points, birthdays in `GET /api/member` | badges / counters on the member profile page | Web side built (shows when `fun` is open) |
 | 5 | **Music** (Norex DJ) | the music bot (Oracle server), room state, controls, playlist import, `GET /api/music/rooms`, a live room socket, `GET/POST /api/music/playlists` | Music page (live player: queue, search, skip, volume) and a playlist section on profiles | Web side: music page built behind flag `music` (owner), against the draft below, with a sample-rooms preview. Bot side: no HTTP routes yet (the DJ only talks to Discord and Lavalink) |
@@ -62,7 +62,13 @@ Until then the web side can build against the shapes below with sample data.
    "approvedBy": { "id": "…", "name": "Kruger" }, "at": 1791600000, "useful": 12, "mine": false }]
 
 // GET /api/manager/queue (managers) – built in PR #22
-{ "claims": 1, "cards": 0, "rush": 2, "requests": 0, "ideas": 3, "at": 1791600000000 } // only the queues this person may decide
+{ "claims": 1, "cards": 0, "rush": 2, "requests": 0, "ideas": 3, "at": 1791600000000, // only the queues this person may decide
+  "oldest": { "kind": "rush", "at": 1791400000000, "title": "…" } } // OPTIONAL (web side reads it, round 3): the longest-waiting item; kind = a key above with a count > 0, at = ms
+
+// GET /api/music/rooms (web side's proposal for #5, Music page shell reads it; until it exists the page shows SAMPLE rooms)
+[{ "id": "lounge", "name": "Club lounge", "paused": false, "listeners": 5,
+   "nowPlaying": { "title": "…", "artist": "…", "thumb": "https://…", "duration": 214, "startedAt": 1791600000 } /* or null */,
+   "queue": [{ "id": "q1", "title": "…", "artist": "…", "duration": 187, "by": { "id": "…", "name": "Mike" } }] }]
 
 // GET /api/music/rooms (flag `music`) – web side's proposal for the music bot to serve; length/position in seconds, at = server ms
 [{ "id": "room1", "name": "Match Night", "channel": "Match night lounge", "listeners": 7, "paused": false, "volume": 60, "loop": "off|track|queue", "at": 1791600000000,

@@ -108,7 +108,9 @@ if (m0?.ps?.[1]) await KV.put(`vote:${m0.id}:333`, m0.ps[1].k, { metadata: { p: 
 await KV.put('activity', JSON.stringify([{ at: Date.now() - 6e5, u: '222', n: 'Mike', a: A2, type: 'claim', detail: 'x_MrMike_x' }]));
 
 // ---------- helpers ----------
-export const W = (path, init = {}) => worker.fetch(new Request('http://localhost:8788' + path, init), env, { waitUntil() {} });
+// The music bot's GET /api/music/rooms is not on the Worker yet (BOT-SITE #5). Tests and the local preview set `mockMusic.rooms` to answer it with SAMPLE rooms.
+export const mockMusic = { rooms: null };
+export const W = (path, init = {}) => mockMusic.rooms && path.split('?')[0] === '/api/music/rooms' ? Promise.resolve(Response.json(mockMusic.rooms)) : worker.fetch(new Request('http://localhost:8788' + path, init), env, { waitUntil() {} });
 
 // Full OAuth round trip as a Discord user with the given server roles → session token (or the error).
 export async function login(id, roles = [], name = 'User ' + id) {

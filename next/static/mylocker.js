@@ -77,7 +77,7 @@ ${flagOn('badges') ? `<fieldset class="panel pf-f pf-wide"><legend>🏷️ My ta
   const touched = () => { const pv = $('#pf-prev', meEl); if (pv) pv.innerHTML = prevHtml(); const bar = $('#pf-bar', meEl), c = changed(); if (!bar) return;
     const was = !bar.hidden; bar.innerHTML = barHtml(); bar.hidden = !c.length; if (c.length && !was) M?.pulse(bar); };
   const paintMe = () => { meEl.innerHTML = meHtml(); sumLine(); touched(); };
-  const startMe = (profile) => { P0 = pick(profile); P = pick(profile); verified = profile?.verified || {}; P0.updated = profile?.updated || 0; grid = (P.playTimes || [0, 0, 0, 0, 0, 0, 0]).slice(); put(meEl, meHtml(), () => { sumLine(); touched(); }); };
+  const startMe = (profile) => { d.dispatchEvent(new CustomEvent('nx:profile', { detail: { twitch: profile?.twitch || '', youtube: profile?.youtube || '', kick: profile?.kick || '' } })); P0 = pick(profile); P = pick(profile); verified = profile?.verified || {}; P0.updated = profile?.updated || 0; grid = (P.playTimes || [0, 0, 0, 0, 0, 0, 0]).slice(); put(meEl, meHtml(), () => { sumLine(); touched(); }); };
 
   // painting the week grid: the first cell decides on/off, then every cell the pointer crosses follows
   let paint = null;
