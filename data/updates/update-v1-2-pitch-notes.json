@@ -1,0 +1,91 @@
+{
+ "slug": "update-v1-2-pitch-notes",
+ "title": "EA SPORTS FC™ 27 | Title Update v1.2.0 Pitch Notes",
+ "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/update-v1-2-pitch-notes",
+ "published": "2026-11-09T16:00:00.000Z",
+ "summary": "EA SPORTS FC™ 27 Title Update v1.2.0 includes our first set of Gameplay adjustments, Career UI updates, & fixes across The Grounds & FUT. ",
+ "clubs": true,
+ "sections": [
+  {
+   "id": "s0",
+   "title": "Overview",
+   "cat": "general",
+   "subs": [],
+   "summary": "Welcome back to our latest Pitch Notes for Title Update v1.2.0, which begins rolling out on 10 November across PlayStation, Xbox, PC, and Nintendo Switch. With this update, we’ll be delivering our first set of gameplay adjustments in FC 27, alongside updates…",
+   "keys": []
+  },
+  {
+   "id": "s1",
+   "title": "GAMEPLAY",
+   "cat": "gameplay",
+   "subs": [
+    "95 Depth",
+    "Positioning Improvements",
+    "Kick-Off Defensive Improvements",
+    "Loose Ball Switching Improvements",
+    "Authentic Gameplay",
+    "Monitoring Tactical Diversity",
+    "Gameplay Bug Fixes"
+   ],
+   "summary": "Firstly, a huge thank you to everyone who took part in our Live Discord Q&A with the Gameplay Team on 30 October. It was a great way to connect directly with you all and dive deeper into our thinking behind some upcoming changes.",
+   "keys": []
+  },
+  {
+   "id": "s2",
+   "title": "CAREER",
+   "cat": "career",
+   "subs": [
+    "UI Improvements & New Settings",
+    "Career Mode Bug Fixes & Updates"
+   ],
+   "summary": "Building directly upon our previous Title Update, we’ve continued our set of improvements to Career Mode UI and expanded settings to give you greater control over your Career. You now have expanded customisation options for Player Energy Recovery, allowing…",
+   "keys": []
+  },
+  {
+   "id": "s3",
+   "title": "FOOTBALL ULTIMATE TEAM™",
+   "cat": "fut",
+   "subs": [],
+   "summary": "Our team is actively working on future feature updates for Football Ultimate Team™, and you can keep an eye out for our upcoming FUT Developer Notes, where we will talk you through some exciting changes and what to expect down the road. In the meantime, for…",
+   "keys": []
+  },
+  {
+   "id": "s4",
+   "title": "THE GROUNDS",
+   "cat": "clubs",
+   "subs": [
+    "The Grounds Bug Fixes & Updates"
+   ],
+   "summary": "Title Update v1.2.0 also brings a solid pass of bug fixes and quality-of-life updates across The Grounds. Resolved an issue where goalkeepers could take too long to pass the ball when requested from behind.",
+   "keys": [
+    "rush"
+   ]
+  },
+  {
+   "id": "s5",
+   "title": "GENERAL UPDATES",
+   "cat": "general",
+   "subs": [],
+   "summary": "In Title Update v1.2.0, we’ve expanded our player portrait database by adding 80+ newly updated and scanned player portraits including Antonee Robinson, Oscar Bobb, Mikkel Damsgaard, Yankuba Minteh, and more. This builds upon the 160+ portraits introduced in…",
+   "keys": []
+  },
+  {
+   "id": "s6",
+   "title": "SHARE YOUR FEEDBACK",
+   "cat": "general",
+   "subs": [],
+   "summary": "As always, your feedback helps shape the ongoing development of EA SPORTS FC™. We’d love to hear your thoughts on this latest update once it lands in your hands.",
+   "keys": []
+  }
+ ],
+ "hits": [
+  {
+   "id": "update-v1-2-pitch-notes#4-rush",
+   "kind": "rush",
+   "label": "Rush",
+   "section": "THE GROUNDS",
+   "quote": "Resolved a matchmaking issue where queueing as a goalkeeper in Drop-In or Rush could place the user into an outfield role."
+  }
+ ],
+ "fetched": "2026-11-09T20:01:32.383Z"
+}
