@@ -1,23 +1,17 @@
-// Phoenix Fire 3D crest: a real relief mesh modelled in Blender from the cut-out badge (crest-mesh.bin) + the badge texture.
+// Phoenix Fire 3D crest: the supplied crest art as a flat image with layered thickness, tilted by pointer / scroll.
 // Shared by the home hero (auto, lazy) and the About page's 3D toggle (crest3d.js). Three.js is only fetched when it is needed.
 (() => {
   const loadThree = () => window.THREE ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'vendor-three.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
-  let meshP = null;
-  const loadMesh = () => meshP || (meshP = fetch('crest-mesh.bin').then((r) => r.arrayBuffer()).then((b) => { const n = new Uint32Array(b, 0, 2), vc = n[0], tc = n[1]; let o = 8;
-    const pos = new Float32Array(b, o, vc * 3); o += vc * 12; const uv = new Float32Array(b, o, vc * 2); o += vc * 8; const idx = new Uint32Array(b, o, tc * 3); return { pos, uv, idx }; }));
+  // Single flat plane (no stacked copies) for the About-page 3D toggle.
   async function build(T, W = 2.2) {
-    const { pos, uv, idx } = await loadMesh();
-    const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('uv', new T.BufferAttribute(uv, 2)); g.setIndex(new T.BufferAttribute(idx, 1)); g.computeVertexNormals();
-    const tex = await new Promise((ok) => new T.TextureLoader().load('crest3d-tex.png', ok)); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
-    const m = new T.MeshStandardMaterial({ map: tex, metalness: .42, roughness: .36, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: .32, alphaTest: .5, side: T.DoubleSide });
-    const mesh = new T.Mesh(g, m); mesh.scale.setScalar(W);
-    const grp = new T.Group(); grp.add(mesh);
-    const key = new T.DirectionalLight(0xfff0d0, 2.4); key.position.set(2.5, 3, 4); const rim = new T.PointLight(0xff7a18, 18, 12); rim.position.set(-3, -1, 2.5); const top = new T.PointLight(0xf3c95c, 9, 12); top.position.set(2, 3.5, 1.5);
-    grp.add(key, rim, top, new T.AmbientLight(0xffe2b8, .85));
-    return { group: grp, dispose: () => { g.dispose(); m.dispose(); tex.dispose(); } };
+    const tex = await new Promise((ok) => new T.TextureLoader().load('crest3d-tex.png', ok)); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 8;
+    const Hh = W * 935 / 887, geo = new T.PlaneGeometry(W, Hh), N = 0, grp = new T.Group(), mats = [];
+    for (let i = N; i >= 0; i--) { const m = new T.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: .5, side: T.DoubleSide, color: i ? new T.Color().setHSL(.1, .55, .1 + .02 * (N - i)) : 0xffffff }); mats.push(m); const p = new T.Mesh(geo, m); p.position.z = -i * .016 * (W / 2.6); grp.add(p); }
+    return { group: grp, dispose: () => { geo.dispose(); mats.forEach((m) => m.dispose()); tex.dispose(); } };
   }
   window.PhoenixCrest3D = { loadThree, build };
   // ---- home hero: swap the flat crest for the live 3D one (pointer tilt, scroll spin, idle sway) ----
+  return; // home hero keeps the flat crest with the site's own tilt, exactly like Norex
   const wrap = document.querySelector('.crestwrap'); if (!wrap) return;
   const H = document.documentElement; const calm = () => H.dataset.motion === 'calm' || H.dataset.motion === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (calm() || /[?&]still/.test(location.search)) return;
