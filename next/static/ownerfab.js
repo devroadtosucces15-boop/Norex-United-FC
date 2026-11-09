@@ -10,7 +10,13 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   // pure: the numbers the badge and the sheet show (unknown keys and non-numbers are ignored)
   const tally = (q) => { const rows = QUEUE.filter(([k]) => Number.isFinite(+q?.[k])).map(([k, i, l, h]) => ({ k, icon: i, label: l, href: h, n: Math.max(0, Math.floor(+q[k])) })); return { rows, total: rows.reduce((a, r) => a + r.n, 0) }; };
-  w.NorexOwnerFab = { tally };
+  const waited = (ms) => { const m = Math.floor(Math.max(0, ms) / 6e4), h = Math.floor(m / 60), dd = Math.floor(h / 24); return m < 2 ? 'just now' : h < 1 ? `${m} min` : dd < 1 ? `${h} h` : `${dd} d`; };
+  const oldest = (q, now = Date.now()) => {
+    const o = q && q.oldest, row = o && QUEUE.find(([k]) => k === o.kind), at = o && +o.at;
+    if (!row || !(at > 0) || at > now + 6e4 || !tally(q).rows.find((r) => r.k === o.kind)?.n) return null;
+    return { k: row[0], i: row[1], l: row[2], h: row[3], title: String(o.title || '').slice(0, 80), age: waited(now - at), late: now - at > 48 * 36e5 };
+  };
+  w.NorexOwnerFab = { tally, oldest, waited };
   if (!A || !API || !A.token || A.role !== 'owner') return;
   const CREST = '<svg viewBox="0 0 48 48" width="26" height="26" aria-hidden="true" focusable="false"><defs><linearGradient id="ofg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2bd"/><stop offset=".5" stop-color="#efcf7a"/><stop offset="1" stop-color="#b8852a"/></linearGradient></defs><path d="M24 3 41 9v14c0 11-7 18-17 22C14 41 7 34 7 23V9z" fill="url(#ofg)" stroke="#6b4a10" stroke-width="1.4"/><path d="M14 27 13 16l6 5 5-9 5 9 6-5-1 11z" fill="#1a1405"/><rect x="14" y="29" width="20" height="3" rx="1.5" fill="#1a1405"/></svg>';
   const go = () => Promise.resolve(A.ready).then(() => {
@@ -27,8 +33,8 @@
     };
     const viewAs = () => A.viewAs || '';
     const body = () => {
-      const t = tally(q), el = sheet.querySelector('.of-body'), rep = d.querySelector('.nxr-fab');
-      el.innerHTML = `<section><h4>Waiting for you</h4>${q === null ? '<p class="muted small">Could not load the queue.</p>' : t.total ? `<ul class="of-list">${t.rows.filter((r) => r.n).map((r) => `<li><a class="of-row" href="${esc(r.href)}"><span aria-hidden="true">${r.icon}</span><b>${esc(r.label)}</b><em class="num">${r.n}</em></a></li>`).join('')}</ul>` : '<p class="muted small">All clear. Nothing is waiting for a decision. 🎉</p>'}</section>
+      const t = tally(q), el = sheet.querySelector('.of-body'), rep = d.querySelector('.nxr-fab'), old = oldest(q);
+      el.innerHTML = `<section><h4>Waiting for you</h4>${q === null ? '<p class="muted small">Could not load the queue.</p>' : t.total ? `<ul class="of-list">${t.rows.filter((r) => r.n).map((r) => `<li><a class="of-row" href="${esc(r.href)}"><span aria-hidden="true">${r.icon}</span><b>${esc(r.label)}</b><em class="num">${r.n}</em></a></li>`).join('')}</ul>${old ? `<a class="ofab-old${old.late ? ' late' : ''}" href="${esc(old.h)}"><span aria-hidden="true">⏳</span><span class="ofab-ot"><small>Waiting longest</small><b>${old.i} ${esc(old.title || old.l)}</b></span><em class="num">${esc(old.age)}</em></a>` : ''}` : '<p class="muted small">All clear. Nothing is waiting for a decision. 🎉</p>'}</section>
 ${held ? `<section><h4>Club docs</h4><a class="of-row of-gold" href="staff-content.html"><span aria-hidden="true">🚀</span><b>Club docs are on hold</b><em>Release ›</em></a><p class="muted tiny">The release button is in Content › Club docs. Nothing reaches members until you press it.</p></section>` : ''}
 <section><h4>Staff rooms</h4><ul class="of-list">${LINKS.map(([h, i, l, s]) => `<li><a class="of-row" href="${h}"><span aria-hidden="true">${i}</span><span class="of-t"><b>${l}</b><small class="muted">${s}</small></span></a></li>`).join('')}</ul></section>
 <section><h4>Preview as</h4><div class="of-seg" role="group" aria-label="Preview the site as">${[['', 'Owner'], ['member', 'Member'], ['guest', 'Guest']].map(([v, l]) => `<button type="button" class="chip${viewAs() === v ? ' on' : ''}" aria-pressed="${viewAs() === v}" data-as="${v}">${l}</button>`).join('')}</div><p class="muted tiny">Display only. The server still treats you as the owner. Switches back by itself after a while.</p></section>

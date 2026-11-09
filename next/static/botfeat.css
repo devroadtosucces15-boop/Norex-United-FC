@@ -85,3 +85,6 @@
 /* faces everywhere: a Card Studio picture is a portrait, show the face end */
 img[data-face=card]{object-fit:cover;object-position:50% 16%}
 :is(.nxs-row,.nxl-row,.nxv-grid,.nxv-rel,.nxd-row,#dc-feed)>.panel+.panel{margin-top:0}
+[data-live-strip]{scroll-margin-top:150px}
+#wl-topics .chip{min-height:44px;display:inline-flex;align-items:center}
+.nxd-f .btn,.nxv-f .btn{min-height:44px}
