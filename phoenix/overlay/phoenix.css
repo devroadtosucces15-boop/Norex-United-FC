@@ -1,0 +1,46 @@
+/* PHOENIX FIRE mock theme: loaded last. Black marble, ember orange, burnished gold, brushed silver (taken from the badge). */
+:root{--red:#e8741a;--red2:#ff9a2e;--redg:rgba(232,116,26,.38);
+ --g1:#fff3cf;--g2:#f3c95c;--g3:#cf9a2a;--g4:#8d6212;
+ --s1:#f4f6f8;--s2:#c9ced6;--s3:#8c939e;--silver:linear-gradient(135deg,var(--s1),var(--s2) 38%,var(--s3) 72%,#d9dde3);
+ --ember:linear-gradient(135deg,#ffd27a,#ff9a2e 45%,#e8541a 80%,#a8330c)}
+body:before{background:
+ radial-gradient(1000px 560px at 82% -10%,rgba(255,138,30,.26),transparent 62%),
+ radial-gradient(760px 520px at 4% 46%,rgba(232,84,26,.12),transparent 62%),
+ radial-gradient(900px 500px at 55% 118%,rgba(243,201,92,.10),transparent 60%),
+ linear-gradient(180deg,#0e0a06,#050302)}
+/* marble cracks: faint ember veins */
+body:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+ background:
+  linear-gradient(115deg,transparent 0 46%,rgba(255,150,50,.07) 46.2%,transparent 46.6% 100%),
+  linear-gradient(62deg,transparent 0 71%,rgba(255,170,60,.06) 71.2%,transparent 71.6% 100%),
+  linear-gradient(160deg,transparent 0 22%,rgba(255,150,50,.05) 22.2%,transparent 22.5% 100%)}
+.bar{background:linear-gradient(180deg,rgba(10,7,5,.95),rgba(10,7,5,.84));border-bottom:1px solid rgba(243,201,92,.18)}
+.lg{letter-spacing:.08em}.lg img{width:44px;filter:drop-shadow(0 4px 14px rgba(255,140,30,.55))}
+.lg b{background:var(--ember);-webkit-background-clip:text;background-clip:text;color:transparent}
+.eyebrow{color:#ffbf80}
+.pf-stars{color:var(--g2);letter-spacing:.35em;margin-right:12px;text-shadow:0 0 14px rgba(243,201,92,.6)}
+h1 em{font-style:normal;background:var(--ember);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 22px rgba(255,120,20,.35))}
+.btn{background:var(--ember);color:#1a0d02;box-shadow:0 8px 26px rgba(232,116,26,.32)}
+.btn.ghost{background:rgba(255,255,255,.04);color:var(--text);box-shadow:none;border:1px solid rgba(243,201,92,.28)}
+.btn.ghost:hover{border-color:var(--g2);background:rgba(243,201,92,.08)}
+.panel{background:linear-gradient(180deg,rgba(32,22,14,.82),rgba(18,12,8,.9));border-color:rgba(243,201,92,.12)}
+.crestwrap .halo{background:radial-gradient(circle,rgba(255,140,30,.45),rgba(243,201,92,.12) 45%,transparent 70%)!important}
+.crestwrap img{filter:drop-shadow(0 18px 50px rgba(255,120,20,.45))}
+.ft{border-top:1px solid rgba(243,201,92,.18)}
+::selection{background:rgba(232,116,26,.5);color:#fff}
+/* live 3D crest in the hero: sits over the flat crest, which fades out once the 3D one is running */
+.crestwrap{position:relative}.crestwrap .pf3d{position:absolute;inset:-8% -12%;width:124%!important;height:116%!important;pointer-events:none;z-index:2}
+.crestwrap.is3d>img{opacity:0;transition:opacity .6s}
+
+/* --- Phoenix-only design touches (small, on purpose) --- */
+/* 1. section ribbons become a swallow-tail banner like the one under the crest */
+.sec>header .ribbon{position:relative;padding-left:22px;padding-right:26px;background:linear-gradient(180deg,rgba(255,154,46,.16),rgba(168,51,12,.10));border:0;
+ clip-path:polygon(0 0,100% 0,calc(100% - 11px) 50%,100% 100%,0 100%,11px 50%);box-shadow:none}
+.sec>header .ribbon:after{content:"";position:absolute;left:12px;right:16px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,#f3c95c,transparent)}
+/* 2. a thin silver-and-gold rule with a star between big sections */
+.sec+.sec:before{content:"★";display:block;text-align:center;font-size:11px;line-height:1;color:#f3c95c;opacity:.75;margin:6px 0 26px;
+ background:linear-gradient(90deg,transparent,rgba(201,206,214,.28) 30%,rgba(243,201,92,.45) 50%,rgba(201,206,214,.28) 70%,transparent) center/100% 1px no-repeat}
+/* 3. embers rising behind the home hero (canvas is added by phoenix-fx.js) */
+.pf-embers{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.hero{position:relative}.hero>*{position:relative;z-index:1}.hero>.pf-embers{position:absolute;z-index:0}
+body.still .pf-embers,body[data-motion="calm"] .pf-embers{display:none}
