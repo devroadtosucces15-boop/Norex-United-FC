@@ -15,6 +15,16 @@
   const mem = (() => { try { return JSON.parse(L.get('pf.mem') || '{}'); } catch { return {}; } })(); const save = () => L.set('pf.mem', JSON.stringify(mem));
   const json = (b, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
   const pick = (f, m, u) => { const r = f[role + ':'], k = (x) => `${role}:${m} ${x}`; return f[k(u.pathname + u.search)] ?? f[k(u.pathname)] ?? (() => { const pre = k(u.pathname) + '?'; const hit = Object.keys(f).find((x) => x.startsWith(pre)); return hit ? f[hit] : undefined; })() ?? (role === 'guest' ? undefined : f[`owner:${m} ${u.pathname}`] ?? f[`member:${m} ${u.pathname}`]); };
+  // Live sockets (chat room, Dugout lineup) have no server in the preview: hand the page a socket that closes quietly, so no
+  // connection error is logged and the pages fall back to their own polling / "not live" state.
+  const RealWS = window.WebSocket;
+  if (RealWS) {
+    const Quiet = function (url) { const s = { url: String(url), readyState: 0, onopen: null, onmessage: null, onclose: null, onerror: null, send() {}, close() { s.readyState = 3; }, addEventListener(t, f) { s['on' + t] = f; }, removeEventListener() {} };
+      setTimeout(() => { s.readyState = 3; try { s.onclose && s.onclose({ code: 1006, wasClean: false }); } catch {} }, 60); return s; };
+    Quiet.CONNECTING = 0; Quiet.OPEN = 1; Quiet.CLOSING = 2; Quiet.CLOSED = 3;
+    window.WebSocket = function (url, proto) { return String(url).startsWith('wss://phoenix.mock') || String(url).startsWith('ws://phoenix.mock') ? new Quiet(url) : new RealWS(url, proto); };
+    Object.assign(window.WebSocket, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 }); window.WebSocket.prototype = RealWS.prototype;
+  }
   window.fetch = async (input, init = {}) => {
     const url = typeof input === 'string' ? input : input?.url || String(input);
     if (!url.startsWith(API)) return real(input, init);
@@ -24,6 +34,7 @@
     if (u.pathname === '/api/me' && b) { // who am I: the toolbar's player becomes my approved card
       const key = L.get('norex.me'); b = JSON.parse(JSON.stringify(b)); const mb = f['member:GET /api/me']; if (!b.claim && mb && mb.claim) { b.claim = { ...mb.claim, n: (b.user && b.user.n) || mb.claim.n }; b.profile = b.profile || mb.profile; } if (key && b.claim) b.claim = { ...b.claim, status: 'approved', player: key };
     }
+    if (b !== undefined && u.pathname === '/api/admin/submissions' && u.searchParams.get('q')) { const q = u.searchParams.get('q').toLowerCase(); b = { ...b, rows: (b.rows || []).filter((r) => JSON.stringify(r).toLowerCase().includes(q)) }; }
     if (b !== undefined) return json(b);
     return m === 'GET' ? json({ error: 'Nothing recorded for this in the preview.' }, 404) : json({ ok: true, preview: true });
   };
