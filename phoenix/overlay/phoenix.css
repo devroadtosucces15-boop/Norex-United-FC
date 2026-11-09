@@ -77,10 +77,26 @@ body[data-motion="calm"] .lg img,body[data-motion="off"] .lg img,body.still .lg 
 
 /* --- Dock tabs: forged gold-to-ember icons in place of the emoji (crest shield, ball, rising bars, tactics board) --- */
 .tabbar a[data-g] .tbi{font-size:0!important;width:27px;height:27px;margin:0 auto 2px;overflow:hidden;text-indent:-9em;white-space:nowrap;opacity:.82;
- background:linear-gradient(135deg,#fff3cf,#f3c95c 45%,#e8741a);-webkit-mask:var(--pfi) center/contain no-repeat;mask:var(--pfi) center/contain no-repeat;
+ --pf2:#f3c95c;--pf3:#e8741a;background:linear-gradient(135deg,#fff3cf,var(--pf2) 50%,var(--pf3));-webkit-mask:var(--pfi) center/contain no-repeat;mask:var(--pfi) center/contain no-repeat;
  filter:drop-shadow(0 3px 5px rgba(0,0,0,.55));transition:opacity .25s ease,filter .25s ease,transform .3s cubic-bezier(.34,1.56,.64,1)}
-.tabbar a[data-g].on .tbi{opacity:1;transform:translateY(-1px) scale(1.08);filter:drop-shadow(0 0 7px rgba(255,160,50,.8)) drop-shadow(0 3px 5px rgba(0,0,0,.5))}
+.tabbar a[data-g].on .tbi{--pf2:var(--tc,#f3c95c);--pf3:var(--tc,#e8741a);opacity:1;transform:translateY(-1px) scale(1.08);filter:drop-shadow(0 0 7px var(--tc,#ff9a2e)) drop-shadow(0 3px 5px rgba(0,0,0,.5))}
 .tabbar a[data-g=club] .tbi{--pfi:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill-rule='evenodd' d='M16 2l11 4v9c0 7-4.500 12-11 15C9.500 27 5 22 5 15V6zM16 8.500c-1.300 1.700-2.100 3.900-1.700 6.300-.7-.2-1.200-.9-1.400-2-.9.900-1.600 2-1.600 3.700a4.700 4.700 0 0 0 9.400 0c0-3.700-2.800-5.300-4.700-8z'/></svg>")}
-.tabbar a[data-g=matches] .tbi{--pfi:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill-rule='evenodd' d='M16 2a14 14 0 1 1 0 28 14 14 0 0 1 0-28zm0 2.400a11.600 11.600 0 1 0 0 23.200 11.600 11.600 0 0 0 0-23.200z'/><path d='M16 10.600l5.100 3.700-1.950 6h-6.300l-1.950-6z'/><path fill='none' stroke='black' stroke-width='1.700' stroke-linecap='round' d='M16 10.600V4.800M21.100 14.300l5.600-1.900M19.150 20.300l3.500 4.800M12.850 20.300l-3.500 4.800M10.900 14.300l-5.600-1.900'/></svg>")}
+.tabbar a[data-g=matches] .tbi{--pfi:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill-rule='evenodd' d='M16 2a14 14 0 1 1 0 28 14 14 0 0 1 0-28zm0 2.200a11.800 11.800 0 1 0 0 23.600 11.800 11.800 0 0 0 0-23.600z'/><path d='M16 10.8L20.9 14.4L19.1 20.2L12.9 20.2L11.1 14.4zM16 6.700L11.800 3.700A13 13 0 0 1 20.200 3.700zM24.800 13.100L26.400 8.200A13 13 0 0 1 29 16.200zM21.500 23.500L26.600 23.500A13 13 0 0 1 19.800 28.400zM10.500 23.500L12.200 28.400A13 13 0 0 1 5.400 23.500zM7.200 13.100L3 16.200A13 13 0 0 1 5.600 8.200z'/><path fill='none' stroke='black' stroke-width='1.500' stroke-linecap='round' d='M16 10.800L16 6.700M20.900 14.400L24.800 13.100M19.100 20.200L21.500 23.500M12.900 20.200L10.500 23.500M11.100 14.400L7.200 13.100'/></svg>")}
 .tabbar a[data-g=stats] .tbi{--pfi:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M4 20.500a1.500 1.500 0 0 1 1.500-1.500h3a1.500 1.500 0 0 1 1.500 1.500V29H4zM13 15.500a1.500 1.500 0 0 1 1.500-1.500h3a1.500 1.500 0 0 1 1.500 1.500V29h-6zM22 10.500A1.500 1.500 0 0 1 23.500 9h3a1.500 1.500 0 0 1 1.500 1.500V29h-6z'/><path fill='none' stroke='black' stroke-width='1.800' stroke-linecap='round' stroke-linejoin='round' d='M4.500 13.500l7-5 4 2.500 8-7.500M19.500 3.200h4.200v4.200'/></svg>")}
 .tabbar a[data-g=tactics] .tbi{--pfi:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path fill-rule='evenodd' d='M6 3h20a3 3 0 0 1 3 3v20a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zm0 2.200a.8.8 0 0 0-.8.800v20c0 .440.360.800.800.800h20a.8.8 0 0 0 .8-.8V6a.8.8 0 0 0-.8-.8z'/><circle cx='10.500' cy='21.500' r='3' fill='none' stroke='black' stroke-width='1.800'/><path fill='none' stroke='black' stroke-width='1.800' stroke-linecap='round' stroke-linejoin='round' d='M19 8l5 5M24 8l-5 5M13.500 19c1.500-3.500 3.500-5.500 7-6.500M8 8.500h5M8 12h3'/></svg>")}
+/* active tab: live svg (phoenix-fx.js) tinted with the section colour, with a one-off entrance per icon */
+.tabbar a[data-g] .tbi.pfl{background:none;-webkit-mask:none;mask:none;text-indent:0;overflow:visible}
+.tbi.pfl svg{display:block;width:100%;height:100%;overflow:visible}
+.pfl .pb,.pfl .pflame{transform-box:fill-box;transform-origin:50% 100%}.pfl .pball,.pfl .ppop{transform-box:fill-box;transform-origin:50% 50%}
+.pfl .pb{animation:pfBar .55s cubic-bezier(.34,1.56,.64,1) both}.pfl .pb2{animation-delay:.1s}.pfl .pb3{animation-delay:.2s}
+.pfl .pd{stroke-dasharray:1;animation:pfDraw .6s .3s ease-out both}
+.pfl .pball{animation:pfSpin .9s cubic-bezier(.2,.8,.2,1) both}
+.pfl .pflame{animation:pfFlick 1.5s ease-out both}
+.pfl .ppop{animation:pfPop .45s cubic-bezier(.34,1.56,.64,1) both}.pfl .ppop2{animation-delay:.75s}
+@keyframes pfBar{from{transform:scaleY(0)}}
+@keyframes pfDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes pfSpin{from{transform:translateY(-5px) rotate(-360deg)}60%{transform:translateY(0) rotate(-20deg)}}
+@keyframes pfFlick{0%{opacity:0;transform:scale(.4)}20%{opacity:1;transform:scale(1.25,1.4)}35%{transform:scale(.9,1.05) skewX(-6deg)}50%{transform:scale(1.1,1.25) skewX(5deg)}70%{transform:scale(.96,1.05)}100%{opacity:1;transform:none}}
+@keyframes pfPop{from{transform:scale(0);opacity:0}}
+[data-motion=calm] .pfl *,[data-motion=off] .pfl *,.still .pfl *{animation:none!important}
+@media(prefers-reduced-motion:reduce){.pfl *{animation:none!important}}

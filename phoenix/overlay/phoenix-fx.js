@@ -81,3 +81,24 @@
     addEventListener('pagehide', stop);
   } catch {}
 })();
+
+(() => {
+  try {
+    const d = document, bar = d.querySelector('.tabbar'); if (!bar) return;
+    const TAB = {
+      club: '<path fill="url(#pft)" fill-rule="evenodd" d="M16 2l11 4v9c0 7-4.500 12-11 15C9.500 27 5 22 5 15V6zM16 8.500c-1.300 1.700-2.100 3.900-1.700 6.300-.7-.2-1.200-.9-1.400-2-.9.900-1.600 2-1.600 3.700a4.700 4.700 0 0 0 9.400 0c0-3.700-2.800-5.300-4.700-8z"/><path class="pflame" fill="#fff3cf" d="M16 8.500c-1.300 1.700-2.100 3.900-1.700 6.300-.7-.2-1.200-.9-1.400-2-.9.900-1.600 2-1.600 3.700a4.700 4.700 0 0 0 9.400 0c0-3.700-2.800-5.300-4.700-8z"/>',
+      matches: '<g class="pball"><path fill="url(#pft)" fill-rule="evenodd" d="M16 2a14 14 0 1 1 0 28 14 14 0 0 1 0-28zm0 2.200a11.800 11.800 0 1 0 0 23.600 11.800 11.800 0 0 0 0-23.600z"/><path fill="url(#pft)" d="M16 10.8L20.9 14.4L19.1 20.2L12.9 20.2L11.1 14.4zM16 6.700L11.800 3.700A13 13 0 0 1 20.200 3.700zM24.800 13.100L26.400 8.200A13 13 0 0 1 29 16.200zM21.500 23.500L26.600 23.500A13 13 0 0 1 19.800 28.400zM10.500 23.500L12.200 28.400A13 13 0 0 1 5.400 23.500zM7.200 13.100L3 16.200A13 13 0 0 1 5.600 8.200z"/><path fill="none" stroke="url(#pft)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 10.800L16 6.700M20.900 14.400L24.800 13.100M19.100 20.200L21.500 23.500M12.900 20.200L10.500 23.500M11.100 14.400L7.200 13.100"/></g>',
+      stats: '<path class="pb" fill="url(#pft)" d="M4 20.500a1.500 1.500 0 0 1 1.500-1.500h3a1.500 1.500 0 0 1 1.500 1.500V29H4z"/><path class="pb pb2" fill="url(#pft)" d="M13 15.500a1.500 1.500 0 0 1 1.500-1.500h3a1.500 1.500 0 0 1 1.500 1.500V29h-6z"/><path class="pb pb3" fill="url(#pft)" d="M22 10.500A1.500 1.500 0 0 1 23.500 9h3a1.500 1.500 0 0 1 1.500 1.500V29h-6z"/><path class="pd" pathLength="1" fill="none" stroke="url(#pft)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4.500 13.500l7-5 4 2.500 8-7.500M19.500 3.200h4.200v4.200"/>',
+      tactics: '<path fill="url(#pft)" fill-rule="evenodd" d="M6 3h20a3 3 0 0 1 3 3v20a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zm0 2.200a.8.8 0 0 0-.8.800v20c0 .440.360.800.800.800h20a.8.8 0 0 0 .8-.8V6a.8.8 0 0 0-.8-.8z"/><path fill="none" stroke="url(#pft)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 8.500h5M8 12h3"/><circle class="ppop" cx="10.500" cy="21.500" r="3" fill="none" stroke="url(#pft)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/><path class="pd" pathLength="1" fill="none" stroke="url(#pft)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13.500 19c1.500-3.500 3.500-5.500 7-6.500"/><path class="ppop ppop2" fill="none" stroke="url(#pft)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 8l5 5M24 8l-5 5"/>',
+    };
+    const DEFS = '<defs><linearGradient id="pft" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="30" y2="30"><stop offset="0" stop-color="#fff3cf"/><stop offset=".5" style="stop-color:var(--pf2,#f3c95c)"/><stop offset="1" style="stop-color:var(--pf3,#e8741a)"/></linearGradient></defs>';
+    const sync = () => {
+      for (const a of bar.querySelectorAll('a[data-g]')) {
+        const s = a.querySelector('.tbi'), k = a.dataset.g, on = a.classList.contains('on'); if (!s || !TAB[k]) continue;
+        if (on && !s.classList.contains('pfl')) { s.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true">${DEFS.replace(/pft/g, 'pft-' + k)}${TAB[k].replace(/#pft/g, '#pft-' + k)}</svg>`; s.classList.add('pfl'); }
+        else if (!on && s.classList.contains('pfl')) { s.textContent = ''; s.classList.remove('pfl'); }
+      }
+    };
+    sync(); new MutationObserver(sync).observe(bar, { attributes: true, attributeFilter: ['class'], subtree: true });
+  } catch {}
+})();
