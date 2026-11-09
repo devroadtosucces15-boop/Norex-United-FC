@@ -35,7 +35,7 @@
         return m === 'calm' || m === 'off' || localStorage.getItem('norex.fx') === 'off' || d.body.classList.contains('still') || location.search.includes('still') || matchMedia('(prefers-reduced-motion: reduce)').matches;
       } catch { return true; }
     };
-    d.querySelectorAll('.tabbar .key svg').forEach((s) => { s.outerHTML = icon(false); });
+    d.querySelectorAll('.tabbar .key .kk svg, .tabbar .key > svg:not(.kl)').forEach((s) => { s.outerHTML = icon(false); });
     new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.id === 'hubfx') { const k = n.querySelector('.fx-key'); if (k) k.innerHTML = icon(true); } }).observe(d.body, { childList: true });
 
     let cv = null, x = null, raf = 0, last = 0, until = 0, P = [], rings = [], wings = null;

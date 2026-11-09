@@ -63,7 +63,9 @@ body[data-motion="calm"] .lg img,body[data-motion="off"] .lg img,body.still .lg 
  background:radial-gradient(closest-side,transparent 60%,rgba(255,206,110,.7) 66%,rgba(255,138,30,.3) 82%,transparent 100%);animation:pfHalo 2.4s ease-in-out infinite}
 .tabbar .key::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:2;
  background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.75) 49%,transparent 62%) 140% 0/260% 100% no-repeat;animation:pfGloss 4.8s ease-in-out infinite}
-.tabbar .key svg.pfk{width:64%;height:64%;position:relative;z-index:1;transform-origin:50% 100%;filter:drop-shadow(0 1px 0 rgba(255,244,210,.8));animation:pfKeyBounce 2.4s cubic-bezier(.3,.7,.3,1) infinite}
+.tabbar .key .kk{width:64%;height:64%}.tabbar .key .kglow{display:none}
+.tabbar .key svg.pfk{width:100%;height:100%;position:relative;z-index:1;transform-origin:50% 100%;filter:drop-shadow(0 1px 0 rgba(255,244,210,.8));animation:pfKeyBounce 2.4s cubic-bezier(.3,.7,.3,1) infinite}
+.tabbar .key>svg.pfk{width:64%;height:64%}
 .tabbar .key .kring{inset:-7px;border:1.5px solid rgba(255,176,74,.65)}
 @keyframes pfKeyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 @keyframes pfRim{to{--pfa:360deg}}
