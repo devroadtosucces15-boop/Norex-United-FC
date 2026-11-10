@@ -17,6 +17,11 @@ for (const f of ['docs-md.js', 'recs.js', 'cardcomposer.js', 'report.js', 'repor
 fs.writeFileSync(path.join(out, 'manifest.webmanifest'), JSON.stringify({ id: PUBLIC ? './' : 'norex-next', name: 'NOREX UNITED FC', short_name: 'NOREX', description: 'Results, squad, stats and the members Hub of NOREX UNITED FC.', start_url: 'index.html', scope: './', display: 'standalone', orientation: 'portrait', background_color: '#080b11', theme_color: '#080b11', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }], shortcuts: [{ name: 'Results', url: 'results.html' }, { name: 'Match Night', url: 'hub-matchnight.html' }, { name: 'Stats', url: 'stats.html' }] }));
 // the builder's offline seed: the newest game-rules dataset (builds.js asks the Worker's GET /api/game first, which has any version a manager published since)
 fs.writeFileSync(path.join(out, 'game.json'), JSON.stringify((await import('./lib/data.mjs')).game));
+// Match intelligence feed (decoded EA event counters): coverage, club-wide, per player (by gamer tag) and per match (us / opponent). Sparse: only games and players that carry event data.
+{ const d = await import('./lib/data.mjs');
+  fs.writeFileSync(path.join(out, 'intel.json'), JSON.stringify({ coverage: d.intel.coverage, club: d.intel.club,
+    players: Object.fromEntries(d.players.filter((p) => p.intel).map((p) => [p.n, p.intel])),
+    matches: Object.fromEntries(d.matches.filter((m) => m.intel.us || m.intel.opp).map((m) => [m.id, m.intel])) })); }
 // Phase E post-pass on every page: one h1 per page (the page's first heading becomes level 1 for assistive tech, no visual change), a small crest for the 22–86 px logo spots instead of the 180 KB original
 const finalize = (h) => {
   if (!/<h1[ >]/.test(h)) h = h.replace(/(<main id="main">[\s\S]*?)<(h[23])(?![^>]*aria-level)/, '$1<$2 aria-level="1"');

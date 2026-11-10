@@ -56,3 +56,8 @@ non-zero counters as `evraw` (`"215:21,216:5,…"`), so ids decoded later also w
 observation, not EA documentation; credit to the EA FC Pro Clubs API research project and the fc-clubs-api docs
 (https://1erkandogan.github.io/fc27-clubs-api/match-events/). `scripts/lib/schema.mjs` flags endpoint shape drift
 (`data/meta.json` `schemaDrift`) and a bad `platform` (use `common-gen5` or `nx`; EA rejects `common-gen4`).
+
+`scripts/lib/intel.mjs` turns decoded counters into totals, per-appearance averages and rates (pass accuracy, tackle win rate,
+possession won/lost, positioning…). The new site's data layer (`next/lib/data.mjs`) puts them on every match line (`ev`), every
+match (`intel.us` / `intel.opp`), every player (`intel`) and club-wide (`intel`), and `next/build.mjs` writes `intel.json`.
+Only games archived since 2026-10-23 carry them; every field is `null` when there is no event data.

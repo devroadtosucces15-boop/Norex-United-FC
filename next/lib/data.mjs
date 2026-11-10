@@ -1,5 +1,7 @@
 // Real club data, read from the repo's data/ folder (read-only). Everything the pages show comes from here.
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
+import { decodeEvents } from '../../scripts/lib/events.mjs';
+import { summarize, coverage } from '../../scripts/lib/intel.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 // the repo root is the nearest parent holding config.json (works from next/ in the repo and through the PLANNING symlink)
 const root = (() => { let p = here; for (let i = 0; i < 6; i++) { if (fs.existsSync(path.join(p, 'config.json')) && fs.existsSync(path.join(p, 'data'))) return p; p = path.dirname(p); } return path.join(here, '..', '..'); })();
@@ -19,12 +21,13 @@ for (const f of fs.readdirSync(mdir)) {
   const oppId = Object.keys(m.clubs).find((k) => k !== CLUB); const opp = m.clubs[oppId] ?? {};
   const gf = num(me.goals), ga = num(me.goalsAgainst);
   // every per-player number EA sends for a match (both sides); no possession, no event timeline exist in the feed
-  const toLine = (p) => ({ n: p.playername, line: LINE[p.pos] ?? 'MID', goals: num(p.goals), assists: num(p.assists), sa: num(p.secondassists), rating: num(p.rating), mom: num(p.mom), saves: num(p.saves),
+  // ev = EA's event counters decoded into named stats (scripts/lib/events.mjs); null for games archived before they were kept
+  const toLine = (p) => ({ n: p.playername, ev: p.evraw ? decodeEvents(p.evraw) : null,line: LINE[p.pos] ?? 'MID', goals: num(p.goals), assists: num(p.assists), sa: num(p.secondassists), rating: num(p.rating), mom: num(p.mom), saves: num(p.saves),
     shots: num(p.shots), pm: num(p.passesmade), pa: num(p.passattempts), tm: num(p.tacklesmade), ta: num(p.tackleattempts), drb: num(p.dribbles), red: num(p.redcards), secs: num(p.secondsPlayed), arch: ARCH[num(p.archetypeid) - 1] ?? '' });
   for (const [pid, p] of Object.entries(m.players?.[CLUB] ?? {})) if (p.playername) pidBy.set(p.playername.toLowerCase(), pid);
   const lines = Object.values(m.players?.[CLUB] ?? {}).map(toLine), olines = Object.values(m.players?.[oppId] ?? {}).map(toLine);
   for (const l of lines) { const a = arch.get(l.n) ?? {}; a[l.arch] = (a[l.arch] || 0) + 1; arch.set(l.n, a); }
-  matches.push({ id: m.matchId ?? f.replace('.json', ''), t: num(m.timestamp), type: m.matchType, oppId, crest: opp.kit?.crestAssetId ? String(opp.kit.crestAssetId) : '', opp: opp.name ?? `Club ${oppId}`, gf, ga, res: gf > ga ? 'W' : gf < ga ? 'L' : 'D', lines, olines });
+  matches.push({ id: m.matchId ?? f.replace('.json', ''), t: num(m.timestamp), type: m.matchType, oppId, crest: opp.kit?.crestAssetId ? String(opp.kit.crestAssetId) : '', opp: opp.name ?? `Club ${oppId}`, gf, ga, res: gf > ga ? 'W' : gf < ga ? 'L' : 'D', lines, olines, intel: { us: summarize(lines.map((l) => l.ev)), opp: summarize(olines.map((l) => l.ev)) } });
 }
 matches.sort((a, b) => b.t - a.t);
 // team totals for the comparison bars (only fields EA sends)
@@ -50,6 +53,7 @@ export const players = memberRows.map((m) => {
     pass: num(m.passSuccessRate), tackles: num(m.tacklesMade), tackleRate: num(m.tackleSuccessRate), red: num(m.redCards),
     cgp: num(c.gamesPlayed), cgoals: num(c.goals), cassists: num(c.assists), cmom: num(c.manOfTheMatch), crating: num(c.ratingAve),
     saves: mine.reduce((a, b) => a + b.saves, 0), arch: ar, archived: mine.length,
+    intel: summarize(mine.map((l) => l.ev)), // Match intelligence from decoded EA events; null until a game with event data is archived
     // form = the last three match ratings (matches are newest first); hot 8.0+, cold 6.0 or lower, needs 3 games
     ...(() => { const f = mine.slice(0, 3).map((l) => l.rating).filter((r) => r > 0), avg = f.length === 3 ? +(f.reduce((a, b) => a + b, 0) / 3).toFixed(1) : null; return { form3: f, formAvg: avg, hot: avg != null && avg >= 8, cold: avg != null && avg <= 6 }; })() };
 }).sort((a, b) => b.gp - a.gp);
@@ -58,6 +62,11 @@ export const players = memberRows.map((m) => {
 const o = club.overall ?? {};
 export const clubStats = { name: club.info?.name ?? cfg.siteTitle, sr: num(o.skillRating), div: num(club.leaderboard?.currentDivision), pts: num(club.leaderboard?.points), gp: num(o.gamesPlayed), w: num(o.wins), d: num(o.ties), l: num(o.losses), gf: num(o.goals), ga: num(o.goalsAgainst), streak: num(o.wstreak), unbeaten: num(o.unbeatenstreak), promotions: num(o.promotions), fetched: club.fetchedAt };
 export const recent = matches.slice(0, 10);
+// ---- match intelligence (decoded EA event counters), club-wide: our players only, plus how much of the archive carries event data ----
+export const intel = {
+  coverage: coverage(matches.map((m) => ({ id: m.id, t: m.t, hasEv: m.lines.some((l) => l.ev) }))),
+  club: summarize(matches.flatMap((m) => m.lines.map((l) => l.ev))),
+};
 // ---- opponents ----
 const opps = new Map();
 for (const m of matches) { const r = opps.get(m.oppId) ?? { id: m.oppId, crest: m.crest, n: m.opp, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, last: 0 }; r.p++; r[m.res.toLowerCase()]++; r.gf += m.gf; r.ga += m.ga; r.last = Math.max(r.last, m.t); opps.set(m.oppId, r); }
