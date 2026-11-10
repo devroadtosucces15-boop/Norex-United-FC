@@ -69,7 +69,7 @@
   // B2: it used to start only in Full mode, so the old "Enable tilt effects" switch did nothing in Calm or a custom mix.
   const canGyro = 'DeviceOrientationEvent' in window && matchMedia('(pointer: coarse)').matches;
   const askable = canGyro && typeof DeviceOrientationEvent.requestPermission === 'function';
-  let on = false, granted = !askable, gx = 0, gy = 0, tx = 0, ty = 0, raf = 0, base0 = null;
+  let on = false, granted = !askable || ls.get('norex.gyro.granted') === '1', gx = 0, gy = 0, tx = 0, ty = 0, raf = 0, base0 = null;
   const wanted = () => canGyro && (!window.NorexMotion || NorexMotion.on('gyro'));
   const onOri = (e) => { if (e.beta == null) return; const ang = (screen.orientation?.angle ?? window.orientation ?? 0) % 360;
     let b = e.beta, g = e.gamma; if (ang === 90) [b, g] = [-g, b]; else if (ang === 270 || ang === -90) [b, g] = [g, -b];
@@ -81,15 +81,39 @@
   const stop = () => { if (!on) return; on = false; removeEventListener('deviceorientation', onOri); cancelAnimationFrame(raf); raf = 0; gx = gy = tx = ty = 0; /* a pending smoothing frame used to re-apply the old tilt after switching it off */ H.classList.remove('gyro-on'); H.style.removeProperty('--gx'); H.style.removeProperty('--gy'); };
   async function enable() {
     if (!canGyro) return false;
-    try { if (!granted) { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') throw new Error('denied'); granted = true; } start(); return true; }
+    try { if (!granted) { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') { ls.set('norex.gyro.tried', '1'); throw new Error('denied'); } granted = true; ls.set('norex.gyro.granted', '1'); } start(); return true; }
     catch { window.NorexMotion?.toast('Phone tilt needs motion access. You can allow it in your browser settings.', { kind: 'err' }); return false; }
   }
-  // Android needs no prompt. iOS: if access was already given on this phone the silent ask resolves; otherwise it waits for a tap in the sheet
-  if (canGyro) { if (askable) { try { DeviceOrientationEvent.requestPermission().then((r) => { if (r === 'granted') { granted = true; start(); } }, () => {}); } catch {} } else start(); }
+  // Android needs no prompt. On iOS the stored grant lets the listener resume on later visits; a first grant is requested from a user tap.
+  if (canGyro && granted) start();
   d.addEventListener('visibilitychange', () => (d.hidden ? stop() : start()));
   addEventListener('norex:motion', () => (wanted() ? start() : stop()));
   // motion.js may load after this file: tilt must not start in Casual just because the choice was not known yet (page opened with a side look)
   d.readyState === 'loading' ? d.addEventListener('DOMContentLoaded', () => (wanted() ? start() : stop())) : (wanted() || stop());
   const gyro = { enable, stop, get on() { return on; }, can: canGyro, get needsAsk() { return canGyro && !granted; } };
   window.NorexApp = { standalone, ios, discord, resetZoom, gyro };
+
+  // Browsers require a user gesture before showing permission prompts. Present one first-open setup sheet so
+  // the same tap can request motion and notification access together where the platform supports both.
+  const PERM_KEY = 'norex.permissions.v1';
+  const showPermissionSetup = () => {
+    const gyroNeeds = askable && ls.get('norex.gyro.granted') !== '1' && ls.get('norex.gyro.tried') !== '1';
+    const notifyNeeds = 'Notification' in window && Notification.permission === 'default';
+    if ((!gyroNeeds && !notifyNeeds) || ls.get(PERM_KEY) === 'done' || Date.now() < +(ls.get(PERM_KEY) || 0) || d.getElementById('nx-permissions')) return;
+    const sh = d.createElement('div'); sh.className = 'nx-permissions'; sh.id = 'nx-permissions'; sh.setAttribute('role', 'dialog'); sh.setAttribute('aria-modal', 'true'); sh.setAttribute('aria-labelledby', 'nx-perm-title');
+    sh.innerHTML = `<div class="nx-permissions-card"><span aria-hidden="true" class="nx-permissions-icon">🔐</span><h2 id="nx-perm-title">Set up motion and alerts</h2><p>Allow phone motion for tilt effects and notifications for club alerts. Your browser will ask for each permission it supports.</p><div class="nx-permissions-actions"><button type="button" class="btn gold" data-perm-enable>Continue</button><button type="button" class="btn ghost" data-perm-later>Not now</button></div><small>Push alerts can be switched on later in your Alerts settings.</small></div>`;
+    sh.addEventListener('click', async (e) => {
+      if (e.target.closest('[data-perm-later]')) { ls.set(PERM_KEY, Date.now() + 7 * 864e5); sh.remove(); return; }
+      if (!e.target.closest('[data-perm-enable]')) return;
+      const btn = sh.querySelector('[data-perm-enable]'); btn.disabled = true; btn.textContent = 'Checking…';
+      const requests = [];
+      if (gyroNeeds) requests.push(gyro.enable());
+      if (notifyNeeds) { try { requests.push(Notification.requestPermission()); } catch {} }
+      await Promise.allSettled(requests);
+      const stillAskable = ('Notification' in window && Notification.permission === 'default') || (askable && !granted && ls.get('norex.gyro.tried') !== '1');
+      ls.set(PERM_KEY, stillAskable ? Date.now() + 7 * 864e5 : 'done'); sh.remove();
+    });
+    d.body.appendChild(sh);
+  };
+  setTimeout(showPermissionSetup, 700);
 })();

@@ -20,5 +20,5 @@
 .nv-rooms a{display:flex;align-items:center;gap:6px;min-height:40px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);color:#fff;font:600 12px Inter;text-decoration:none}
 .nv-rooms a[aria-current]{border-color:rgba(239,207,122,.5)}
 html[data-motion=off] .nv-panel,html[data-motion=off] .nv-fab span{animation:none;transition:none}
-@media(prefers-reduced-motion:reduce){.nv-panel{animation:none}.nv-fab span{transition:none}}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=full]) .nv-panel{animation:none}html:not([data-motion=full]) .nv-fab span{transition:none}}
 body:has(.gr-sheet) .nv-fab,body:has(.gr-sheet) .nv-panel{visibility:hidden}

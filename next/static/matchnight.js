@@ -85,7 +85,7 @@ ${list.length > 1 ? `<div class="mn-more"><div class="tiny muted">ALSO COMING UP
 <div class="mn-stars" role="radiogroup" aria-label="Rating for ${esc(p.n)}">${[1, 2, 3, 4, 5].map((s) => `<button type="button" role="radio" aria-checked="${cur === s}" class="${cur >= s ? 'on' : ''}" data-k="${esc(p.k)}" data-s="${s}" aria-label="${s} star${s === 1 ? '' : 's'}">★</button>`).join('')}</div><small class="muted">${cur ? `You gave ${cur}. Tap the same star to clear.` : 'Tap a star, the next teammate comes up.'}</small></div><button type="button" class="mn-nav" data-rn="1" aria-label="Next teammate">›</button></div>`;
   };
   const rstep = (n, dir) => { ri += n; const c = $('#mnrc', mount.rate); const go = () => { mount.rate.innerHTML = rateHtml(); const nc = $('#mnrc', mount.rate); nc?.animate?.([{ opacity: 0, transform: `translateX(${dir * 28}px)` }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.2,.9,.2,1)' }); };
-    if (c?.animate && M && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) c.animate([{ opacity: 1 }, { opacity: 0, transform: `translateX(${-dir * 28}px)` }], { duration: 140 }).finished.then(go).catch(go); else go(); };
+    if (c?.animate && M?.mode === 'full') c.animate([{ opacity: 1 }, { opacity: 0, transform: `translateX(${-dir * 28}px)` }], { duration: 140 }).finished.then(go).catch(go); else go(); };
   mount.rate?.addEventListener('click', (ev) => {
     const nv = ev.target.closest('[data-rn]'); if (nv) return rstep(+nv.dataset.rn, +nv.dataset.rn);
     const dt = ev.target.closest('[data-ri]'); if (dt) { const to = +dt.dataset.ri; return rstep(to - ri, to > ri ? 1 : -1); }

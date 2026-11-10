@@ -49,7 +49,7 @@
     const up = () => { drag = null; cv.style.cursor = 'grab'; };
     cv.addEventListener('pointerdown', down); cv.addEventListener('pointermove', move); cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
     const size = () => { const w = wrap.clientWidth, h = wrap.clientHeight; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }; addEventListener('resize', size);
-    const calm = document.documentElement.dataset.motion === 'calm' || document.documentElement.dataset.motion === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const calm = document.documentElement.dataset.motion === 'calm' || document.documentElement.dataset.motion === 'off';
     let vis = true; const io = new IntersectionObserver((e) => { vis = e[0].isIntersecting; if (vis && R && !R.raf) tick(); }); io.observe(wrap);
     const mo = new MutationObserver(() => { key = ''; }); mo.observe(board, { childList: true, subtree: true });
     cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); stop(); ls.set(false); });

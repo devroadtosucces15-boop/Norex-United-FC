@@ -78,7 +78,7 @@ addEventListener('DOMContentLoaded', () => {
       }
       fs.innerHTML = on ? `Showing <b>${n}</b> of ${total} games${res ? ` · ${NAMES[res]}` : ''}${day ? ` · ${dlab(+day)}` : ''} <button type="button" class="chip" id="rfx">Clear</button>` : '';
       fe.hidden = n > 0; rl.hidden = n === 0 || !$('#rv .chip.on[data-v=rows]');
-      if (scroll && on) { const top = (n ? fs : fe).getBoundingClientRect().top; if (top < 70 || top > 380) scrollTo({ top: scrollY + top - 130, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth' }); }
+      if (scroll && on) { const top = (n ? fs : fe).getBoundingClientRect().top; if (top < 70 || top > 380) scrollTo({ top: scrollY + top - 130, behavior: window.NorexMotion?.mode === 'calm' || window.NorexMotion?.mode === 'off' ? 'auto' : 'smooth' }); }
     };
     $$('#rf .chip').forEach((b) => b.addEventListener('click', () => { res = b.dataset.f; run(true); }));
     d.addEventListener('click', (e) => { if (e.target.closest('#rfx,#rfclear')) { res = day = ''; run(false); } });

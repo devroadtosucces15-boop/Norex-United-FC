@@ -87,7 +87,7 @@ a.rules-due{position:relative}a.rules-due:after{content:"";position:absolute;top
 [data-fx=prism] .mx-fx i:nth-child(1){inset:-40%;background:conic-gradient(from 0deg,rgba(255,80,80,.0),rgba(255,200,60,.22),rgba(80,255,160,.0),rgba(80,170,255,.22),rgba(190,80,255,.0),rgba(255,80,80,.0))}[data-fx=prism] .mx-fx i:nth-child(n+2){display:none}
 .mx-md.in[data-fx=prism] .mx-fx i:nth-child(1){animation:mxSpin 7s linear infinite}
 @keyframes mxSpin{to{transform:rotate(1turn)}}
-@media (prefers-reduced-motion:reduce){.mx-md{opacity:1;transform:none;filter:none}.mx-md .mx-fx i{animation:none!important}}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=full]) .mx-md{opacity:1;transform:none;filter:none}html:not([data-motion=full]) .mx-md .mx-fx i{animation:none!important}}
 html[data-motion="off"] .mx-md .mx-fx i,html[data-motion="calm"] .mx-md .mx-fx i{animation:none!important}
 
 /* ---------- award moment: black screen, rays, confetti ---------- */
@@ -192,7 +192,7 @@ html[data-motion="off"] .mx-md .mx-fx i,html[data-motion="calm"] .mx-md .mx-fx i
 @keyframes clipStamp{from{transform:rotate(-14deg) scale(1.8);opacity:0}}
 .clip.sealed{animation:clipThud .5s ease-out}@keyframes clipThud{30%{transform:translateY(3px) scale(.995)}}
 @media (max-width:520px){.clip{padding:30px 8px 8px}.clip-sheet{padding:26px 12px 14px 42px}.clip-sheet:before{left:30px}.clip-r{grid-template-columns:26px minmax(0,1fr) 48px;gap:8px}.clip-n{font-size:22px}}
-@media (prefers-reduced-motion:reduce){.clip-r.active .clip-ck,.clip-r.slide,.clip-stamp{animation:none}}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=full]) .clip-r.active .clip-ck,html:not([data-motion=full]) .clip-r.slide,html:not([data-motion=full]) .clip-stamp{animation:none}}
 html[data-motion="off"] .clip *,html[data-motion="calm"] .clip-r.active .clip-ck{animation:none}
 
 /* C3 (zn7): gold neon lighting behind the Locker Room – tubes along the top and both walls with a soft bloom. Static; it breathes slowly only while the glow effect is on. */

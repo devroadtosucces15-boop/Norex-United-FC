@@ -22,4 +22,4 @@ html[data-g=tactics]{--gi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 @media print{html[data-g] .panel{background-image:none}}
 /* no motion where motion is off or reduced: the squad stack and the tactics camera snap instead of gliding */
 html[data-motion=off] .wx .sk,html[data-motion=off] .camera,html[data-motion=off] .camera *{transition:none!important}
-@media (prefers-reduced-motion:reduce){.wx .sk,.camera,.camera *{transition:none!important}}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=full]) .wx .sk,html:not([data-motion=full]) .camera,html:not([data-motion=full]) .camera *{transition:none!important}}

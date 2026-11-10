@@ -9,7 +9,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const KEY = 'norex.rules.' + (A?.session?.u || 'local');
   const store = { get() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }, set(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch {} } };
-  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches || d.documentElement.dataset.motion === 'off';
+  const reduced = () => d.documentElement.dataset.motion === 'off' || (!window.NorexMotion && matchMedia('(prefers-reduced-motion: reduce)').matches);
   let ticks = store.get(), meta = { version: 0, acked: false, ackedAt: 0 }, live = false;
   const list = $('#cliplist'), foot = $('#clipfoot'), prog = $('#clipprog');
   const rows = () => [...list.querySelectorAll('.clip-r')];

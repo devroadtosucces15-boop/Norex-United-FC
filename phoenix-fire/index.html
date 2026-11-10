@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Norex United FC · Phoenix Fire preview</title>
+<link rel="icon" href="assets/favicon.png">
+<meta name="robots" content="noindex">
+<style>
+:root{--wine:#5c0f1c;--wine2:#3a0912;--ink:#0c0708;--gold:#d9b25f;--gold2:#f3d98f;--line:rgba(217,178,95,.22);--txt:#e9dcc3;--mut:#a99a80}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:#0a0506;color:var(--txt);font:16px/1.55 "Roboto Condensed","Segoe UI",system-ui,sans-serif;overflow-x:hidden}
+h1,h2,h3,.serif{font-family:"Cinzel","Trajan Pro","Palatino Linotype",Georgia,serif;letter-spacing:.04em}
+a{color:inherit;text-decoration:none}
+/* header */
+.hd{position:sticky;top:0;z-index:20;background:linear-gradient(#5c0f1c,#44091480);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hd .in{max-width:1180px;margin:auto;padding:8px 20px;display:flex;align-items:center;gap:26px;min-height:64px}
+.jig{width:54px;height:56px;display:block;transform-origin:50% 90%;animation:jig 4.8s ease-in-out infinite;filter:drop-shadow(0 4px 6px #0008)}
+.jig img{width:100%;height:100%;object-fit:contain}
+.jig:hover{animation-duration:.9s}
+@keyframes jig{0%,70%,100%{transform:rotate(0) scale(1)}74%{transform:rotate(-9deg) scale(1.06)}78%{transform:rotate(8deg) scale(1.06)}82%{transform:rotate(-5deg)}86%{transform:rotate(3deg)}90%{transform:rotate(0)}}
+.brand{font-family:Cinzel,Georgia,serif;color:var(--gold2);font-size:20px;letter-spacing:.08em;display:none;white-space:nowrap}
+nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+nav a{padding:8px 14px;font-size:17px;color:#e8d7b4;border-bottom:2px solid transparent}
+nav a.on,nav a:hover{color:#fff;border-color:var(--gold)}
+/* hero */
+.hero{position:relative;text-align:center;padding:26px 16px 10px;background:radial-gradient(60% 55% at 50% 30%,#4a0d19 0%,#1c0609 55%,#0a0506 100%);overflow:hidden}
+.stage{position:relative;width:min(560px,92vw);aspect-ratio:1/1.02;margin:0 auto;touch-action:pan-y}
+.stage canvas,.stage .fb{position:absolute;inset:0;width:100%;height:100%}
+.stage .fb{object-fit:contain;filter:drop-shadow(0 20px 30px #000a)}
+.stage.on .fb{display:none}
+.hero h1{font-size:clamp(34px,7vw,74px);color:var(--gold);font-weight:600;text-shadow:0 2px 0 #7a5a1c,0 10px 30px #000;margin-top:-6px;letter-spacing:.06em}
+.hero p.sub{color:var(--mut);margin:6px 0 18px;letter-spacing:.3em;text-transform:uppercase;font-size:13px}
+.tog{display:inline-flex;gap:8px;align-items:center;margin:4px 0 18px;font-size:14px;color:var(--mut)}
+.tog button{background:#ffffff10;color:var(--gold2);border:1px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer;font:inherit}
+.tog button:hover{background:#ffffff1c}
+.embers{position:absolute;inset:0;pointer-events:none}
+.embers i{position:absolute;bottom:-10px;width:3px;height:3px;border-radius:50%;background:#ffb257;box-shadow:0 0 8px 2px #ff8a2a99;opacity:0;animation:rise linear infinite}
+@keyframes rise{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:.9}100%{transform:translateY(-640px) translateX(var(--dx));opacity:0}}
+/* layout */
+.wrap{max-width:1180px;margin:auto;padding:30px 20px;display:grid;gap:24px;grid-template-columns:1.1fr 1fr}
+.legacy h2{font-size:clamp(24px,3.4vw,34px);color:var(--gold);line-height:1.15;margin-bottom:14px}
+.legacy p{color:#cdbfa5;margin-bottom:12px}
+.panel{background:linear-gradient(#14090b,#0d0607);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.panel>h3{background:linear-gradient(#6a1223,#4b0c18);color:#f2e3c2;font-size:15px;padding:9px 14px;letter-spacing:.12em;font-family:"Roboto Condensed",sans-serif;text-transform:uppercase;display:flex;justify-content:space-between}
+.row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid #ffffff0d;font-size:15px}
+.row img{width:22px;height:24px;object-fit:contain}
+.row b{margin-left:auto;color:var(--mut);font-weight:400;font-size:13px}
+.news .row{align-items:flex-start;padding:12px 14px}
+.news small{display:block;color:var(--mut)}
+.two{display:grid;gap:24px;grid-template-columns:1fr 1fr}
+.pack{grid-column:1/-1}
+.grid{display:grid;gap:12px;padding:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.tile{border:1px solid var(--line);border-radius:8px;padding:14px 10px 10px;text-align:center;background:#0a0506;position:relative;overflow:hidden}
+.tile .art{height:130px;display:grid;place-items:center}
+.tile .art img{max-height:120px;max-width:100%;object-fit:contain}
+.tile span{display:block;margin-top:8px;font-size:14px;color:var(--mut)}
+.tile.light{background:#f3efe8}.tile.light span{color:#443}
+.tile.chk{background:conic-gradient(#2a2a2a 25%,#3a3a3a 0 50%,#2a2a2a 0 75%,#3a3a3a 0) 0 0/16px 16px}
+.bw img{filter:grayscale(1) contrast(1.4)}
+.mono img{filter:grayscale(1) invert(1) brightness(1.6) contrast(1.2)}
+.ft{background:linear-gradient(#44091f,#2a050c);border-top:2px solid var(--gold);margin-top:20px}
+.ft .in{max-width:1180px;margin:auto;padding:24px 20px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.ft img{height:64px}
+.copy{text-align:center;color:var(--mut);font-size:13px;padding:12px;background:#12060a}
+.note{font-size:13px;color:var(--mut);text-align:center;padding:10px 16px;background:#150a0c;border-bottom:1px solid var(--line)}
+@media(max-width:820px){.two{grid-template-columns:1fr}.hero h1{font-size:30px}.wrap{grid-template-columns:1fr}.brand{display:block}nav{display:none}.hd .in{padding:8px 14px}}
+@media(prefers-reduced-motion:reduce){.jig,.embers i{animation:none}}
+</style></head><body>
+<div class="note">Preview only: Phoenix Fire crest in 3D on the home page. Drag or tilt the crest.</div>
+<header class="hd"><div class="in">
+ <a class="jig" href="#" aria-label="Norex United FC home"><img src="assets/crest-sm.png" alt=""></a>
+ <span class="brand">NOREX UNITED FC</span>
+ <nav><a class="on" href="#">Home</a><a href="#">Squad</a><a href="#">Fixtures</a><a href="#">News</a><a href="#">Fan Zone</a><a href="#">Shop</a></nav>
+</div></header>
+
+<section class="hero">
+ <div class="embers" id="emb"></div>
+ <div class="stage" id="stage"><img class="fb" src="assets/crest.png" alt="Phoenix Fire crest"></div>
+ <h1 class="serif">NOREX UNITED FC</h1>
+ <p class="sub">The Phoenix Fire Era</p>
+ <div class="tog"><button id="mot" type="button">Pause motion</button><span id="hint">Drag the crest to turn it</span></div>
+</section>
+
+<main class="wrap">
+ <div class="legacy">
+  <h2 class="serif">Our New Legacy:<br>The Phoenix Fire Era</h2>
+  <p>Out of the ashes of the old badge rises a new identity. Silver wings of the phoenix on one side, the golden sun on the other, six stars above for every season we refuse to stand still.</p>
+  <p>The crest is built to be held, turned and admired: in the app, on the site and on every matchday.</p>
+ </div>
+ <div class="pack panel" style="grid-column:auto">
+  <h3>Crest asset pack</h3>
+  <div class="grid">
+   <div class="tile"><div class="art"><img src="assets/crest.png" alt=""></div><span>Primary metallic</span></div>
+   <div class="tile light bw"><div class="art"><img src="assets/crest.png" alt=""></div><span>Print (B&amp;W)</span></div>
+   <div class="tile chk"><div class="art"><img src="assets/crest-sm.png" style="height:44px" alt=""></div><span>Favicon · 16 / 32</span></div>
+   <div class="tile"><div class="art"><img class="jig" style="width:90px;height:auto;animation-duration:3s" src="assets/crest.png" alt=""></div><span>Jiggle icon</span></div>
+  </div>
+ </div>
+ <div class="two" style="grid-column:1/-1">
+  <div class="panel"><h3>Fixtures <span>⤢</span></h3>
+   <div class="row"><img src="assets/crest-sm.png" alt="">Norex United FC <b>Sat 3</b></div>
+   <div class="row"><img src="assets/crest-sm.png" alt="">Squad night <b>Sun 4</b></div>
+   <div class="row"><img src="assets/crest-sm.png" alt="">League match <b>Wed 7</b></div>
+   <div class="row"><img src="assets/crest-sm.png" alt="">Cup tie <b>Sat 10</b></div>
+  </div>
+  <div class="panel news"><h3>Latest news <span>⤢</span></h3>
+   <div class="row"><img src="assets/crest-sm.png" alt=""><div>The Phoenix rises: new crest unveiled<small>Club news</small></div></div>
+   <div class="row"><img src="assets/crest-sm.png" alt=""><div>Result: a late winner seals the points<small>Match report</small></div></div>
+  </div>
+ </div>
+</main>
+<footer class="ft"><div class="in"><img src="assets/crest-sm.png" alt=""><span class="serif" style="color:var(--gold)">NOREX UNITED FC</span><span style="color:var(--mut)">Phoenix Fire · Est. new era</span></div><div class="copy">© Norex United FC. All rights reserved.</div></footer>
+
+<script src="assets/three.min.js"></script>
+<script>
+(()=>{
+ // embers (CSS, cheap)
+ const e=document.getElementById('emb');for(let i=0;i<26;i++){const s=document.createElement('i');s.style.cssText=`left:${Math.random()*100}%;--dx:${(Math.random()-.5)*120}px;animation-duration:${6+Math.random()*7}s;animation-delay:${-Math.random()*10}s;transform:scale(${.5+Math.random()})`;e.appendChild(s)}
+ const stage=document.getElementById('stage'),T=window.THREE;if(!T)return;
+ let calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const mot=document.getElementById('mot');mot.textContent=calm?'Play motion':'Pause motion';
+ let r;try{r=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'})}catch(x){return}
+ r.setPixelRatio(Math.min(devicePixelRatio||1,1.75));r.outputColorSpace=T.SRGBColorSpace;
+ stage.appendChild(r.domElement);stage.classList.add('on');
+ const sc=new T.Scene(),cam=new T.PerspectiveCamera(28,1,.1,50);cam.position.z=7.1;
+ const tex=new T.TextureLoader().load('assets/crest.png',()=>draw());tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=8;
+ const W=2.6,H=W*935/887,g=new T.Group();sc.add(g);
+ const geo=new T.PlaneGeometry(W,H),N=7;
+ // same trick as the Norex crest: the flat image on top, a few darker copies behind it for thickness
+ for(let i=N;i>=0;i--){const m=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.5,side:T.DoubleSide,color:i?new T.Color().setHSL(.1,.55,.1+.02*(N-i)):0xffffff});const p=new T.Mesh(geo,m);p.position.z=-i*.016;g.add(p)}
+ const st={rx:0,ry:0,tx:0,ty:0,vy:0,drag:false,px:0,py:0,idle:true};
+ const size=()=>{const w=stage.clientWidth,h=stage.clientHeight;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();draw()};
+ const down=e=>{st.drag=true;st.px=e.clientX;st.py=e.clientY;stage.setPointerCapture(e.pointerId);stage.style.cursor='grabbing'};
+ const move=e=>{if(st.drag){st.ty+=(e.clientX-st.px)*.012;st.tx+=(e.clientY-st.py)*.008;st.tx=Math.max(-.6,Math.min(.6,st.tx));st.ty=Math.max(-.7,Math.min(.7,st.ty));st.px=e.clientX;st.py=e.clientY}else if(e.pointerType==='mouse'){const b=stage.getBoundingClientRect();st.hx=((e.clientX-b.left)/b.width-.5)*.5;st.hy=((e.clientY-b.top)/b.height-.5)*.3}};
+ const up=()=>{st.drag=false;stage.style.cursor='grab'};
+ stage.style.cursor='grab';stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);
+ stage.addEventListener('dblclick',()=>{st.spin=6});
+ addEventListener('resize',size);
+ let vis=true;new IntersectionObserver(a=>{vis=a[0].isIntersecting;if(vis)loop()}).observe(stage);
+ mot.onclick=()=>{calm=!calm;mot.textContent=calm?'Play motion':'Pause motion';document.querySelectorAll('.jig,.embers i').forEach(n=>n.style.animationPlayState=calm?'paused':'running')};
+ let raf=0,t0=0;
+ function draw(){const t=performance.now()/1000;const idle=calm?0:Math.sin(t*.6)*.14;
+  st.hx=st.hx||0;st.hy=st.hy||0;
+  if(!st.drag){st.ty*=.94;st.tx*=.94}
+  if(st.spin>0){st.ty+=st.spin*.02;st.spin*=.95;if(st.spin<.05)st.spin=0}
+  g.rotation.y=st.ty+st.hx+idle;g.rotation.x=st.tx+st.hy*.6;
+  // fake glint: light orbits slowly so the metal shimmers
+  r.render(sc,cam)}
+ function loop(){if(raf)return;const f=()=>{raf=0;if(!vis||document.hidden)return;draw();raf=requestAnimationFrame(f)};raf=requestAnimationFrame(f)}
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)loop()});
+ r.domElement.addEventListener('webglcontextlost',ev=>{ev.preventDefault();stage.classList.remove('on')});
+ size();loop();
+})();
+</script></body></html>

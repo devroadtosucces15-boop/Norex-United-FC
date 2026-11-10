@@ -28,4 +28,4 @@
 .cp-bar i{display:block;height:100%;width:var(--w);border-radius:99px;background:linear-gradient(90deg,#6b7893,#aab6cc);transition:width .7s cubic-bezier(.2,.8,.2,1)}
 .cp-cell.top .cp-bar i{background:linear-gradient(90deg,#b88a22,#efcf7a)}
 @media(min-width:700px){.cp{padding:22px}.cp-faces{gap:22px}.cp-cells{gap:22px}.cp-name{font-size:22px}}
-@media(prefers-reduced-motion:reduce){.cp-bar i{transition:none}}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=full]) .cp-bar i{transition:none}}

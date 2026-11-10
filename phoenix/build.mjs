@@ -7,7 +7,10 @@ import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'
 const here = path.dirname(fileURLToPath(import.meta.url)), repo = path.resolve(here, '..');
 const arg = (k) => { const i = process.argv.indexOf(k); return i > -1 ? process.argv[i + 1] : null; };
 const out = path.resolve(arg('--out') || path.join(repo, 'site', 'phoenix'));
-const API = arg('--api') || 'https://phoenix.mock', MOCK = API === 'https://phoenix.mock'; // recording builds point at a local Worker; the published build points at the in-page mock (phoenix-mock.js)
+const LIVE = process.argv.includes('--live');
+const liveCfg = LIVE ? JSON.parse(fs.readFileSync(path.join(here, 'live.json'), 'utf8')) : null;
+const API = arg('--api') || (LIVE ? liveCfg.api : '') || 'https://phoenix.mock', MOCK = API === 'https://phoenix.mock';
+if (LIVE && MOCK) { console.error('phoenix: --live needs the Worker URL: set "api" in phoenix/live.json or pass --api <url>'); process.exit(1); } // recording builds point at a local Worker; the published build points at the in-page mock (phoenix-mock.js)
 const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'phoenix-'));
 const warn = (m) => console.warn('phoenix: ' + m);
 try {
@@ -18,7 +21,18 @@ try {
   fs.mkdirSync(path.join(stage, 'bot'));
   for (const f of fs.readdirSync(path.join(repo, 'bot'))) if (/\.m?js$/.test(f)) fs.copyFileSync(path.join(repo, 'bot', f), path.join(stage, 'bot', f));
   // 2. mock data (config.json + data/ in the stage root, which is where the build looks for them)
-  execFileSync('node', [path.join(here, 'gen-data.mjs'), stage], { stdio: 'inherit', env: { ...process.env, PF_API: API } });
+  if (LIVE) {
+    const rc = JSON.parse(fs.readFileSync(path.join(repo, 'config.json'), 'utf8'));
+    const cfg = { ...rc, siteTitle: 'PHOENIX FIRE', siteUrl: liveCfg.siteUrl || 'https://example.invalid/phoenix-fire/', homeClubId: liveCfg.club, extraClubIds: [], hiddenPlayers: [], platform: liveCfg.platform || 'common-gen5',
+      discovery: { ...(rc.discovery || {}), enabled: false }, discord: { applyLink: liveCfg.invite || '#', note: '' },
+      brand: { red: '#e8651a', ink: '#0a0705', founded: liveCfg.founded || '', motto: 'Rise. Burn. Repeat.' }, members: { api: API }, streams: { youtube: '', twitch: '' } };
+    fs.mkdirSync(path.join(stage, 'data'), { recursive: true });
+    fs.writeFileSync(path.join(stage, 'config.json'), JSON.stringify(cfg));
+    for (const d of ['updates', 'game']) fs.cpSync(path.join(repo, 'data', d), path.join(stage, 'data', d), { recursive: true });
+    try { execFileSync('node', [path.join(stage, 'scripts/fetch.mjs')], { stdio: 'inherit', cwd: stage }); }
+    catch (e) { console.error('phoenix: EA fetch failed for club ' + liveCfg.club + ': ' + e.message); process.exit(1); }
+    if (!fs.existsSync(path.join(stage, 'data', 'clubs', liveCfg.club + '.json'))) { console.error('phoenix: no data written for club ' + liveCfg.club); process.exit(1); }
+  } else execFileSync('node', [path.join(here, 'gen-data.mjs'), stage], { stdio: 'inherit', env: { ...process.env, PF_API: API } });
   // 3. colours (shell sed) and names (below)
   execFileSync('sh', [path.join(here, 'recolor.sh'), path.join(stage, 'next')], { stdio: 'inherit' });
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? (e.name === 'dist' ? [] : walk(path.join(d, e.name))) : [path.join(d, e.name)]);

@@ -26,5 +26,5 @@
 .ofab-old.late{border-color:rgba(200,53,44,.6)}.ofab-old.late em{color:#ff8f87}
 .of-gold{border-color:rgba(239,207,122,.55);background:linear-gradient(135deg,rgba(239,207,122,.12),transparent 70%)}
 .of-seg{display:flex;gap:8px;flex-wrap:wrap}
-@media(prefers-reduced-motion:reduce){.of-ring:after,.of-badge{animation:none}.of-fab,.of-row{transition:none}}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=full]) .of-ring:after,html:not([data-motion=full]) .of-badge{animation:none}html:not([data-motion=full]) .of-fab,html:not([data-motion=full]) .of-row{transition:none}}
 html[data-motion="calm"] .of-ring:after,html[data-motion="off"] .of-ring:after{animation:none}

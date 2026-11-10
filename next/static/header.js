@@ -253,7 +253,7 @@ ${realOwner() ? `<div class="pv" role="group" aria-label="Preview as"><span>👁
 // ?nx=<css selector> or ?nx=~<heading text>: arrive on a page already scrolled to that section (used by the Boardroom's Go to / Show me). Waits for late-rendered blocks.
 (() => {
   const d = document, q = new URLSearchParams(location.search).get('nx'); if (!q) return;
-  const calm = matchMedia('(prefers-reduced-motion:reduce)').matches; let n = 0;
+  const calm = window.NorexMotion ? NorexMotion.mode !== 'full' : matchMedia('(prefers-reduced-motion:reduce)').matches; let n = 0;
   const find = () => {
     let el = null;
     if (q[0] === '~') { const t = q.slice(1).toLowerCase(); el = [...d.querySelectorAll('h1,h2,h3,h4,.ribbon,.eyebrow,summary')].find((h) => !h.closest('[hidden]') && h.textContent.toLowerCase().includes(t)); } else { try { el = d.querySelector(q); } catch {} }

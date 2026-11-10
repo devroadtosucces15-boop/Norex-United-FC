@@ -1,7 +1,7 @@
 // NOREX widgets runtime: finds data-w hooks and brings the shared visuals to life. Respects reduced motion and ?still.
 (() => {
   const d = document, $ = (s, r = d) => r.querySelector(s), $$ = (s, r = d) => [...r.querySelectorAll(s)];
-  const RM = matchMedia('(prefers-reduced-motion:reduce)').matches, still = /[?&]still/.test(location.search), calm = RM || still;
+  const RM = matchMedia('(prefers-reduced-motion:reduce)').matches, still = /[?&]still/.test(location.search), calm = (window.NorexMotion ? NorexMotion.mode !== 'full' : RM) || still;
   const J = (el) => { try { return JSON.parse(el.dataset.j); } catch { return null; } };
   const seen = new WeakSet(), once = (el) => (seen.has(el) ? false : (seen.add(el), true));
   const inView = (el, fn, th = .35) => { if (calm) return fn(); const o = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { o.disconnect(); fn(); } }), { threshold: th }); o.observe(el); };

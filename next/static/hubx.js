@@ -4,7 +4,7 @@
 //  3. A rules reminder: if the club rules changed and you have not acknowledged them, a nudge on every sign-in session and a dot on the Handbook
 (() => {
   const d = document, $ = (s, r = d) => r.querySelector(s), $$ = (s, r = d) => [...r.querySelectorAll(s)];
-  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches || d.documentElement.dataset.motion === 'off';
+  const reduced = () => d.documentElement.dataset.motion === 'off' || (!window.NorexMotion && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const ss = { get(k) { try { return sessionStorage.getItem(k); } catch { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch {} } };
 

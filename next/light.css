@@ -1,0 +1,60 @@
+/* NOREX light copy: loaded last, only by the light build (node next/build-light.mjs). The dark site is untouched.
+   Design-critique fixes folded in: content visible at once, one quiet hero card per page, readable small text, 44px touch targets. */
+:root{--ink:#f4f6fa;--p0:#fff;--p1:#fff;--p2:#fff;--p3:#eef1f7;--line:rgba(15,23,42,.09);--line2:rgba(15,23,42,.18);
+ --red:#c8352c;--red2:#b32a22;--redg:rgba(200,53,44,.18);--text:#101828;--soft:#475467;--mute:#5b6678;
+ --g1:#e6bf62;--g2:#c9993a;--g3:#a87a1c;--g4:#7a5710;--ac:#c8352c;--ac-rgb:200,53,44}
+html,body{color-scheme:light}
+body{background:var(--ink);color:var(--text)}
+body:before{background:radial-gradient(900px 520px at 78% -8%,rgba(200,53,44,.10),transparent 62%),linear-gradient(180deg,#f8f9fc,#eef1f6)!important}
+body:after{background:none!important}
+.sub{background:rgba(255,255,255,.94)!important;border-color:var(--line)!important}.sub a{color:#344054!important}.sub a.on{color:#fff!important}
+.ib,.il{background:#fff!important;color:var(--text)!important;border-color:var(--line)!important}
+.btn:not(.red):not(.gold):not(.pri){background:#fff;color:#1d2939;border-color:var(--line2)}
+
+/* 1 · no empty pages: reveals stay out of the way */
+html.mx .reveal,html.mx .reveal>.rv-c,html.mx .rv-g>*{opacity:1!important;transform:none!important;clip-path:none!important;transition:none!important}
+
+/* surfaces */
+.panel,.card,.wx .tile,.wx .bento>*{background:#fff;border-color:var(--line);box-shadow:0 1px 2px rgba(15,23,42,.06),0 10px 28px rgba(15,23,42,.06)}
+html[data-g] .panel{background-image:none;background-color:#fff;box-shadow:inset 0 2px 0 rgba(var(--ac-rgb),.45),0 1px 2px rgba(15,23,42,.06),0 10px 28px rgba(15,23,42,.06)}
+.chip{background:#eef1f7;color:#1d2939;border-color:var(--line)}
+.chip.on,.chip.active,.chip[aria-pressed=true]{background:var(--red);color:#fff;border-color:var(--red)}
+h1,h2,h3,h4{color:#0b1220}
+
+/* header / menus */
+header,.hdr,.hdr-sub,.subnav,.tabbar{background:rgba(255,255,255,.92)!important;color:var(--text);border-color:var(--line)!important;backdrop-filter:blur(10px)}
+.tabbar a,.hdr a,.subnav a{color:#344054}
+.tabbar a.on{color:#fff}
+
+/* hero: one red card, quiet everywhere else */
+.hero h1,.hero .big,.hero-h{color:#0b1220}
+.hero em,.hero .red,.hero h1 span{color:var(--red)}
+.hero p{color:#344054}
+
+/* 3 · text and sizes */
+.small,small,.mute,.soft,[class*=cap]{color:var(--mute)}
+.wx *[style*="font-size:5"],.pc .arch{font-size:max(8px,1em)}
+.pc .stats span{font-size:max(7px,1em)}
+.devbar{display:none!important}
+
+/* 2 · touch targets on phones */
+@media (hover:none),(pointer:coarse){.chip,.btn,.tabbar a,.subnav a,button,select{min-height:44px}.chip{padding-inline:16px}}
+@media (max-width:820px){.subnav{display:none}}
+
+/* player cards: drop the initials watermark behind the name, keep the silhouette quiet */
+.pc .art svg.fb text.num{display:none}
+.pc .art svg.fb .sil{opacity:.5}
+
+/* tables, charts */
+table{color:var(--text)}th{color:var(--mute)}tr{border-color:var(--line)}
+.wx text,.wx .axis{fill:#475467;font-size:12px}
+
+/* header, lead copy, search */
+header.bar a,header.bar .nav a{color:#344054!important}header.bar a.on{color:var(--red)!important}header.bar a.lg{color:#0b1220!important}
+.lead,.hero .lead{color:#344054!important}
+header.bar button,header.bar .srch,header.bar [class*=search]{color:#344054!important;background:#fff!important;border-color:var(--line2)!important}
+.tabbar a.on{background:var(--red)}
+/* stats tiles (.kc) were glossy graphite */
+.kc,.wx .kc{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important;box-shadow:0 1px 2px rgba(15,23,42,.06),0 10px 28px rgba(15,23,42,.06)!important}
+.kc *{color:inherit}.kc .small,.kc small,.kc [class*=lbl],.kc [class*=cap]{color:var(--mute)!important}
+.kc.k-rec,.kc.k-rate{border-top:3px solid var(--red)!important}

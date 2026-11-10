@@ -3,7 +3,7 @@
 // Pages that need native scrolling set <html data-nosmooth> or are listed in SMOOTH_OFF (lib/ui.mjs).
 (() => {
   const H = document.documentElement;
-  const calm = () => H.dataset.motion === 'calm' || H.dataset.motion === 'off' || /[?&]still/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const calm = () => H.dataset.motion === 'calm' || H.dataset.motion === 'off' || /[?&]still/.test(location.search);
   if (H.hasAttribute('data-nosmooth') || calm() || !window.Lenis) return;
   // nested scrollers (menus, chat lists, tables, sheets) keep their own native scrolling
   const nested = (n) => { for (let e = n; e && e !== document.body && e !== H; e = e.parentElement) { if (e.hasAttribute && e.hasAttribute('data-lenis-prevent')) return true; const o = getComputedStyle(e); if (/(auto|scroll)/.test(o.overflowY) && e.scrollHeight > e.clientHeight + 1) return true; if (/(auto|scroll)/.test(o.overflowX) && e.scrollWidth > e.clientWidth + 1) return true; } return false; };

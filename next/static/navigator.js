@@ -24,7 +24,7 @@
 <div class="nv-acts"><button type="button" class="nv-b" data-nv-top>⬆️ Top</button><button type="button" class="nv-b" data-nv-end>⬇️ End</button></div>
 <div class="nv-rooms">${ROOMS.map(([h, i, t]) => `<a href="${h}"${h === page ? ' aria-current="page"' : ''}><span aria-hidden="true">${i}</span>${t}</a>`).join('')}</div>`;
     d.body.appendChild(panel); fab.setAttribute('aria-expanded', 'true');
-    const smooth = d.documentElement.dataset.motion === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    const smooth = d.documentElement.dataset.motion === 'calm' || d.documentElement.dataset.motion === 'off' ? 'auto' : 'smooth';
     panel.addEventListener('click', (e) => {
       if (e.target.closest('[data-nv-close]')) return close();
       if (e.target.closest('[data-nv-top]')) { scrollTo({ top: 0, behavior: smooth }); return close(); }

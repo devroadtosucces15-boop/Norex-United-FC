@@ -3,7 +3,7 @@
 // Light on the GPU: stacked flat layers, pixel ratio capped at 1.5, about 30 fps, drawing pauses off screen or in a hidden tab.
 (() => {
   const H = document.documentElement, ft = document.querySelector('.ft .wrap'); if (!ft) return;
-  const calm = () => H.dataset.motion === 'calm' || H.dataset.motion === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const calm = () => H.dataset.motion === 'calm' || H.dataset.motion === 'off';
   const store = { get: () => { try { return localStorage.getItem('norex.crest3d') === '1'; } catch (e) { return false; } }, set: (v) => { try { localStorage.setItem('norex.crest3d', v ? '1' : '0'); } catch (e) {} } };
   const btn = Object.assign(document.createElement('button'), { type: 'button', className: 'ftb', textContent: '🧊 3D crest' });
   btn.setAttribute('aria-pressed', 'false'); ft.appendChild(btn);

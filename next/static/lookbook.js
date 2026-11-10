@@ -1,6 +1,6 @@
 (() => {
   const d = document, $ = (s, r = d) => r.querySelector(s), $$ = (s, r = d) => [...r.querySelectorAll(s)], H = d.documentElement, LB = window.LB;
-  const RM = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const RM = window.NorexMotion ? NorexMotion.mode !== 'full' : matchMedia('(prefers-reduced-motion:reduce)').matches;
   const ls = { get: (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
   const still = /[?&]still/.test(location.search);
   const anim = (el, kf, o) => (RM || still) ? (el.animate(kf, { ...o, duration: 1 }), null) : el.animate(kf, o);

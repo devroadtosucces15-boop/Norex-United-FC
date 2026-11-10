@@ -96,7 +96,7 @@ html[data-pat=none] .opt:before,html[data-pat=none] .tile:before,html[data-pat=n
 .picks ol{margin:0;padding-left:22px;display:grid;gap:8px}.picks li{font:600 16px Inter}.picks li small{color:var(--tx3);font-weight:500}.picks li a{color:#efcf7a}
 .reveal-lb{opacity:0;transform:translateY(34px) scale(.98);transition:opacity .8s,transform .8s cubic-bezier(.2,.8,.2,1)}.reveal-lb.in{opacity:1;transform:none}
 @media(max-width:820px){.tray{font-size:13px;gap:10px;padding-left:14px}.tray .btn{padding:8px 14px;white-space:nowrap}.lbody{font-family:Inter,system-ui,sans-serif}.lbbar nav{display:none}.lbbar{padding:0 14px}.cnt2{margin-left:auto}.grid{grid-template-columns:1fr}.bento{grid-template-columns:repeat(2,1fr)}.tile.big{grid-column:span 2;grid-row:auto}.cover{padding-left:22vw;padding-right:22vw}.race .rr{grid-template-columns:84px 1fr 38px}.spots{grid-template-columns:1fr}.lh h2{font-size:28px}.navx.rail{display:none}.opt header{flex-wrap:wrap}.pick{margin-left:0}}
-@media(prefers-reduced-motion:reduce){.glow,.towers,.navx.orb .ob{animation:none}.reveal-lb{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=full]) .glow,html:not([data-motion=full]) .towers,html:not([data-motion=full]) .navx.orb .ob{animation:none}html:not([data-motion=full]) .reveal-lb{opacity:1;transform:none}}
 
 .opt button,.tray,.btn,.chip{font-family:Inter,system-ui,sans-serif}.opt h3,.lh h2,.intro h1,.tile b,.fr .sc,.sp b,.scrb{font-family:Oswald,Impact,sans-serif}
 @media(max-width:820px){.glow{filter:blur(50px);animation:none;width:90vw;height:90vw}html{scroll-behavior:auto}}

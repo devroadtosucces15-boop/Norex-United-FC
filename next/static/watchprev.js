@@ -3,7 +3,7 @@
 // black frame, and a tap opens the full player in a window. Ids come from data/media.json (scripts/media.mjs), already inlined in the page.
 (() => {
   const d = document, tiles = [...d.querySelectorAll('.wtp')]; if (!tiles.length) return;
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData;
+  const reduce = window.NorexMotion ? NorexMotion.mode !== 'full' : matchMedia('(prefers-reduced-motion: reduce)').matches;
   const HOST = location.hostname || 'localhost', MAX = 3, LEN = 8;
   const hms = (s) => `${Math.floor(s / 3600)}h${Math.floor(s % 3600 / 60)}m${Math.floor(s % 60)}s`;
   const win = (t) => { const secs = +t.dataset.secs || 0, short = t.dataset.kind === 'short'; const start = short ? 0 : t.dataset.kind === 'vod' ? Math.max(0, Math.floor(secs * .3)) : t.dataset.kind === 'clip' ? 0 : 15; return { start, end: start + (t.dataset.kind === 'clip' && secs && secs < 15 ? secs : LEN) }; };

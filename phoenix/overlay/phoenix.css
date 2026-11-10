@@ -46,6 +46,9 @@ h1 em{font-style:normal;background:var(--ember);-webkit-background-clip:text;bac
 body.still .pf-embers,body[data-motion="calm"] .pf-embers{display:none}
 
 /* --- new crest: jiggle icon in the header + entrance --- */
+.sub .wrap a{display:inline-flex;align-items:center;gap:7px}
+.sub .wrap a .ico{flex:none;opacity:.88}
+.sub .wrap a.on .ico{opacity:1}
 .lg img{transform-origin:50% 90%;animation:pfjig 5.5s ease-in-out infinite}
 .lg:hover img{animation-duration:1s}
 @keyframes pfjig{0%,68%,100%{transform:rotate(0) scale(1)}72%{transform:rotate(-9deg) scale(1.07)}76%{transform:rotate(8deg) scale(1.07)}80%{transform:rotate(-5deg)}84%{transform:rotate(3deg)}88%{transform:rotate(0)}}

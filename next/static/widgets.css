@@ -473,4 +473,4 @@ html[data-motion=off] .wx .si{transform:none!important}
 .wx .stk-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px}
 .wx .stk-bar button{min-width:44px;min-height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font:600 24px/1 Inter}
 .wx .stk-n{font:600 14px Oswald;letter-spacing:.1em;color:#c5cdde}
-@media (prefers-reduced-motion:reduce){.wx .sk,.wx .sk-in{transition:none}}
+@media(prefers-reduced-motion:reduce){html:not([data-motion=full]) .wx .sk,html:not([data-motion=full]) .wx .sk-in{transition:none}}

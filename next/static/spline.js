@@ -4,7 +4,7 @@
 (() => {
   const els = [...document.querySelectorAll('[data-spline]')]; if (!els.length) return;
   const H = document.documentElement;
-  const calm = H.dataset.motion === 'calm' || H.dataset.motion === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const calm = H.dataset.motion === 'calm' || H.dataset.motion === 'off';
   let on = false; try { on = localStorage.getItem('norex.crest3d') === '1'; } catch (e) {}
   if (calm || !on) return;
   const s = document.createElement('script'); s.type = 'module'; s.src = 'https://unpkg.com/@splinetool/viewer@1.9.28/build/spline-viewer.js';
