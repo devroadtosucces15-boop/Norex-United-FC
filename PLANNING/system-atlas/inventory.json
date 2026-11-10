@@ -1,9 +1,9 @@
 {
-  "revision": "35283539afea2d2b315cc8a36613ffa8a255708e",
-  "files": 1267,
-  "imports": 733,
+  "revision": "d489a754dd7cd9dfce4da134fca190189c6cb38e",
+  "files": 1279,
+  "imports": 736,
   "api_paths": 258,
-  "tables": 331,
+  "tables": 333,
   "records": [
     {
       "path": ".github/workflows/backup.yml",
@@ -4726,6 +4726,15 @@
       "functions": []
     },
     {
+      "path": "data/clubs/182049.json",
+      "layer": "data",
+      "lines": 375,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/clubs/1824542.json",
       "layer": "data",
       "lines": 187,
@@ -4954,6 +4963,15 @@
       "path": "data/clubs/228940.json",
       "layer": "data",
       "lines": 422,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/229393.json",
+      "layer": "data",
+      "lines": 610,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -5846,7 +5864,7 @@
     {
       "path": "data/clubs/56758.json",
       "layer": "data",
-      "lines": 1088,
+      "lines": 1276,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -6198,6 +6216,15 @@
       "path": "data/clubs/662435.json",
       "layer": "data",
       "lines": 657,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/clubs/664957.json",
+      "layer": "data",
+      "lines": 469,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -9702,9 +9729,72 @@
       "functions": []
     },
     {
+      "path": "data/matches/179404881810072.json",
+      "layer": "data",
+      "lines": 364,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/179412557610058.json",
+      "layer": "data",
+      "lines": 440,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/179418643590287.json",
+      "layer": "data",
+      "lines": 326,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
       "path": "data/matches/179428296080472.json",
       "layer": "data",
       "lines": 516,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/179570796170147.json",
+      "layer": "data",
+      "lines": 250,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/179622704750358.json",
+      "layer": "data",
+      "lines": 440,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/179778129760074.json",
+      "layer": "data",
+      "lines": 440,
+      "imports": [],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
+    },
+    {
+      "path": "data/matches/179842115390177.json",
+      "layer": "data",
+      "lines": 288,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -12361,7 +12451,7 @@
     {
       "path": "data/media.json",
       "layer": "data",
-      "lines": 51,
+      "lines": 36,
       "imports": [],
       "endpoints": [],
       "tables": [],
@@ -12379,7 +12469,7 @@
     {
       "path": "data/state.json",
       "layer": "data",
-      "lines": 13918,
+      "lines": 13963,
       "imports": [],
       "endpoints": [],
       "tables": [
@@ -13257,6 +13347,26 @@
         "max0",
         "parseAggregate",
         "rawEvents"
+      ]
+    },
+    {
+      "path": "scripts/lib/intel.mjs",
+      "layer": "scripts",
+      "lines": 64,
+      "imports": [],
+      "endpoints": [],
+      "tables": [
+        "summed",
+        "totals"
+      ],
+      "functions": [
+        "coverage",
+        "g",
+        "pct",
+        "r",
+        "ratesOf",
+        "sumEvents",
+        "summarize"
       ]
     },
     {
@@ -15032,6 +15142,20 @@
         "vote",
         "ws"
       ]
+    },
+    {
+      "path": "tests/matchintel.test.mjs",
+      "layer": "tests",
+      "lines": 36,
+      "imports": [
+        "./lib.mjs",
+        "../scripts/lib/events.mjs",
+        "../scripts/lib/intel.mjs",
+        "../next/lib/data.mjs"
+      ],
+      "endpoints": [],
+      "tables": [],
+      "functions": []
     },
     {
       "path": "tests/matchpicture.test.mjs",
@@ -21602,6 +21726,21 @@
     {
       "source": "tests/locker.test.mjs",
       "target": "tests/mock.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchintel.test.mjs",
+      "target": "tests/lib.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchintel.test.mjs",
+      "target": "scripts/lib/events.mjs",
+      "kind": "imports"
+    },
+    {
+      "source": "tests/matchintel.test.mjs",
+      "target": "scripts/lib/intel.mjs",
       "kind": "imports"
     },
     {
