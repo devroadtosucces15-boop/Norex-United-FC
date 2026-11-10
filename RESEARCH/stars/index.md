@@ -5,7 +5,7 @@ Synced from GitHub star lists every 6 h (`stars-sync.yml`). Links added through 
 
 | List | Repos |
 |---|---|
-| [🚀 My stack](my-stack.md) | 23 |
-| [Me](me.md) | 2 |
+| [Me](me.md) | 3 |
+| [🚀 My stack](my-stack.md) | 24 |
 | [✨ Inspiration](inspiration.md) | 2 |
 | [Unsorted stars](unsorted.md) | 38 |
