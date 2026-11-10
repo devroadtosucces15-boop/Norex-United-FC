@@ -75,6 +75,10 @@ Until then the web side can build against the shapes below with sample data.
 { "fun": { "jail": 3, "trivia": 120, "birthday": "07-14" } }
 ```
 
+## Planned: split into Stats / Matchday / Rush bots
+Design brief in `PLANNING/BOT-SPLIT.md` (2026-11-10, not built). Bot side owns the build (waves MB0–MB6); web side only
+needs the preferred-position picker in the RSVP sheet (MB2). Same Worker, three Discord apps, one D1.
+
 ## Bot-side work in flight
 
 - **PR #17** (merged) – server tools: leave/join alerts, welcome posts, `/purge`, `/tag`, `/remind`, ping-role buttons.
