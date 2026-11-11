@@ -1,5 +1,5 @@
 {
-  "revision": "d489a754dd7cd9dfce4da134fca190189c6cb38e",
+  "revision": "84d6391654dce1ceb979cb9f82872bc942d65e4e",
   "files": 1279,
   "imports": 736,
   "api_paths": 258,
@@ -12749,7 +12749,7 @@
     {
       "path": "package.json",
       "layer": "package.json",
-      "lines": 14,
+      "lines": 20,
       "imports": [],
       "endpoints": [],
       "tables": [],
