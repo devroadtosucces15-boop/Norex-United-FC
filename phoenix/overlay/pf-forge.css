@@ -1,0 +1,11 @@
+/* PROPOSAL A · FORGE (motion.dev). Additive layer: depth planes, word-by-word headline, fan-in cards, magnetic buttons. */
+.fw{display:inline-block;will-change:transform,opacity}
+html.forge-on .hero h1 .fw{opacity:0}
+.hero h1 em{background:none!important;-webkit-background-clip:initial!important;background-clip:initial!important;color:inherit!important;filter:none!important}
+.hero h1 em .fw{background:var(--ember);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 22px rgba(255,120,20,.35))}
+.hero h1 .fw+.fw{margin-left:.18em}
+/* the whole page warms as the crest rises: a fixed ember bloom driven by hero scroll */
+.fg-bloom{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;
+ background:radial-gradient(900px 620px at 72% 18%,rgba(255,150,40,.30),rgba(232,84,26,.10) 45%,transparent 70%)}
+.hero .stage,.hero>div:first-child,.hero .cardwrap{will-change:transform}
+.btn{will-change:translate}

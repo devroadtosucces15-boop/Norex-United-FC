@@ -38,8 +38,8 @@
     d.querySelectorAll('.tabbar .key .kk svg, .tabbar .key > svg:not(.kl)').forEach((s) => { s.outerHTML = icon(false); });
     new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.id === 'hubfx') { const k = n.querySelector('.fx-key'); if (k) k.innerHTML = icon(true); } }).observe(d.body, { childList: true });
 
-    let cv = null, x = null, raf = 0, last = 0, until = 0, P = [], rings = [], wings = null;
-    const stop = () => { cancelAnimationFrame(raf); raf = 0; P = []; rings = []; wings = null; if (cv) { cv.remove(); cv = null; } };
+    let cv = null, x = null, raf = 0, last = 0, until = 0, P = [], rings = [], wings = null, flash = null, rays = null;
+    const stop = () => { cancelAnimationFrame(raf); raf = 0; P = []; rings = []; wings = null; flash = null; rays = null; if (cv) { cv.remove(); cv = null; } };
     const ember = (px, py, vx, vy, r, m) => { if (P.length < 260) P.push({ x: px, y: py, vx, vy, r, l: 0, m }); };
     const feather = (ox, oy, s, a, L, al) => {
       const tx = ox + s * Math.sin(a) * L, ty = oy - Math.cos(a) * L, nx = Math.cos(a) * s * L * .17, ny = Math.sin(a) * L * .17, mx = (ox + tx) / 2, my = (oy + ty) / 2;
@@ -49,13 +49,20 @@
     const tick = (t) => {
       if (!cv) return; const dt = Math.min(.05, (t - last) / 1000); last = t;
       x.clearRect(0, 0, innerWidth, innerHeight); x.globalCompositeOperation = 'lighter';
+      if (flash) {
+        flash.t += dt / .55; if (flash.t >= 1) flash = null; else { const a = Math.pow(1 - flash.t, 2) * .55, g = x.createRadialGradient(flash.x, flash.y, 0, flash.x, flash.y, 40 + Math.max(innerWidth, innerHeight) * .6 * flash.t); g.addColorStop(0, `rgba(255,243,207,${a})`); g.addColorStop(.4, `rgba(255,170,60,${a * .5})`); g.addColorStop(1, 'rgba(232,84,26,0)'); x.fillStyle = g; x.fillRect(0, 0, innerWidth, innerHeight); }
+      }
+      if (rays) {
+        rays.t += dt / 1.1; if (rays.t >= 1) rays = null; else { const e = 1 - Math.pow(1 - rays.t, 3), far = Math.max(innerWidth, innerHeight) * .75; x.lineWidth = 2.2 * (1 - rays.t) + .4; x.strokeStyle = `rgba(255,222,150,${(1 - rays.t) * .6})`; x.beginPath(); for (let i = 0; i < 20; i++) { const a = i * 0.31416 + rays.t * .5, r0 = 36 + e * far * .12, r1 = 60 + e * far * (.55 + (i % 3) * .2); x.moveTo(rays.x + Math.cos(a) * r0, rays.y + Math.sin(a) * r0); x.lineTo(rays.x + Math.cos(a) * r1, rays.y + Math.sin(a) * r1); } x.stroke(); }
+      }
       if (wings) {
         wings.t += dt / .85; const w = wings.t;
-        if (w >= 1) wings = null; else { const e = 1 - Math.pow(1 - w, 3), al = Math.pow(1 - w, 1.4) * .8, k = Math.min(1.25, innerWidth / 400); for (const s of [-1, 1]) for (let i = 0; i < 6; i++) feather(wings.x, wings.y, s, (.2 + i * .29) * e, (120 + i * 30) * e * k, al); }
+        if (w >= 1) wings = null; else { const e = 1 - Math.pow(1 - w, 3), al = Math.pow(1 - w, 1.4) * .85, k = Math.min(1.7, innerWidth / 300); for (const s of [-1, 1]) for (let i = 0; i < 9; i++) feather(wings.x, wings.y, s, (.14 + i * .2) * e, (150 + i * 34) * e * k, al); }
       }
-      rings = rings.filter((r) => { r.t += dt / .65; if (r.t >= 1) return false; if (r.t > 0) { x.strokeStyle = `rgba(255,214,130,${(1 - r.t) * .8})`; x.lineWidth = 3.5 * (1 - r.t); x.beginPath(); x.arc(r.x, r.y, 30 + r.t * 190, 0, 6.283); x.stroke(); } return true; });
+      rings = rings.filter((r) => { r.t += dt / .65; if (r.t >= 1) return false; if (r.t > 0) { x.strokeStyle = `rgba(255,214,130,${(1 - r.t) * .8})`; x.lineWidth = 3.5 * (1 - r.t); x.beginPath(); x.arc(r.x, r.y, 30 + r.t * (r.R || 190), 0, 6.283); x.stroke(); } return true; });
       const key = d.querySelector('#hubfx .fx-key');
       if (key && +getComputedStyle(key).opacity > .05) { const r = key.getBoundingClientRect(), kx = r.left + r.width / 2, ky = r.top + r.height / 2; for (let i = 0; i < 3; i++) ember(kx + (Math.random() - .5) * r.width * .5, ky + (Math.random() - .5) * r.height * .5, (Math.random() - .5) * 70, 30 + Math.random() * 90, 1 + Math.random() * 2.2, .5 + Math.random() * .7); }
+      if (d.getElementById('hubfx')) for (let i = 0; i < 2; i++) ember(Math.random() * innerWidth, innerHeight + 6, (Math.random() - .5) * 40, -90 - Math.random() * 160, .8 + Math.random() * 1.8, 1.6 + Math.random());
       const drag = Math.pow(.12, dt);
       P = P.filter((p) => {
         p.l += dt / p.m; if (p.l >= 1) return false; p.vx *= drag; p.vy = p.vy * drag - 46 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
@@ -66,13 +73,15 @@
       if (t > until || (!P.length && !rings.length && !wings && !key)) return stop();
       raf = requestAnimationFrame(tick);
     };
-    const fire = (px, py) => {
+    const fire = (px, py, soft) => {
       if (!cv) { cv = d.createElement('canvas'); cv.className = 'pf-burst'; cv.setAttribute('aria-hidden', 'true'); d.body.appendChild(cv); x = cv.getContext('2d'); }
-      const dpr = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr); x.setTransform(dpr, 0, 0, dpr, 0, 0);
-      for (let i = 0; i < 56; i++) { const a = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.5, v = 140 + Math.random() * 460; ember(px, py, Math.cos(a) * v, Math.sin(a) * v, 1 + Math.random() * 2.6, .6 + Math.random() * .9); }
-      rings.push({ x: px, y: py, t: 0 }, { x: px, y: py, t: -.2 }); wings = { x: px, y: py, t: 0 };
-      last = performance.now(); until = last + 6000; if (!raf) raf = requestAnimationFrame(tick);
+      const dpr = Math.min(1.5, devicePixelRatio || 1); cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      for (let i = 0, n = soft ? 38 : 96; i < n; i++) { const a = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.7, v = 140 + Math.random() * 560; ember(px, py, Math.cos(a) * v, Math.sin(a) * v, 1 + Math.random() * 2.6, .6 + Math.random() * .9); }
+      if (soft) rings.push({ x: px, y: py, t: 0, R: 150 }); else { rings.push({ x: px, y: py, t: 0 }, { x: px, y: py, t: -.14, R: 300 }, { x: px, y: py, t: -.3, R: 460 }); wings = { x: px, y: py, t: 0 }; flash = { x: px, y: py, t: 0 }; rays = { x: px, y: py, t: 0 }; }
+      last = performance.now(); until = last + 12000; if (!raf) raf = requestAnimationFrame(tick);
     };
+    window.PhoenixKeyIcon = () => icon(true);
+    window.PhoenixFire = (px, py, soft) => { if (!calm()) fire(px, py, soft); };
     d.addEventListener('click', (e) => {
       const a = e.target.closest && e.target.closest('a[data-hub]'); if (!a || calm() || e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
       const r = a.getBoundingClientRect(); fire(r.left + r.width / 2, r.top + r.height / 2);

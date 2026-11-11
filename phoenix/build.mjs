@@ -47,10 +47,27 @@ try {
     if (s !== o) fs.writeFileSync(f, s);
   }
   // 4. overlay: badge crest, icons, 3D crest, theme layer
-  for (const f of fs.readdirSync(path.join(here, 'overlay'))) fs.copyFileSync(path.join(here, 'overlay', f), path.join(stage, 'next', f === 'crest.png' ? f : path.join('static', f)));
+  for (const f of fs.readdirSync(path.join(here, 'overlay'))) if (!f.startsWith('.')) fs.copyFileSync(path.join(here, 'overlay', f), path.join(stage, 'next', f === 'crest.png' ? f : path.join('static', f)));
   const appjs = path.join(stage, 'next/static/app.js'), as = fs.readFileSync(appjs, 'utf8');
   if (as.includes('if (!window.NOREX_API) {')) fs.writeFileSync(appjs, as.replace('if (!window.NOREX_API) {', 'if (!window.NOREX_API || window.PF_MOCK) {'));
   else warn('app.js preview toolbar condition changed upstream – toolbar may be missing');
+  // page transitions: fx.js asks window.PhoenixFX (pf-trans.js) for its scene map; the stock scenes remain the fallback
+  const fxjs = path.join(stage, 'next/static/fx.js');
+  if (fs.existsSync(fxjs)) {
+    let s = fs.readFileSync(fxjs, 'utf8'); const kind = "const KIND = { club: 'cclub', matches: 'cmatches', stats: 'cstats', tactics: 'ctactics', hub: 'locker' };";
+    if (s.includes(kind)) fs.writeFileSync(fxjs, s.replace(kind, kind.replace('const KIND =', 'let KIND =') + " try { const k = window.PhoenixFX && window.PhoenixFX({ FX, mk, run, frames }); if (k) KIND = k; } catch (e) {}"));
+    else warn('fx.js KIND map changed upstream – stock page transitions are used');
+  }
+  // smooth.js: its class/style observer restarts Lenis on every mutation, and Lenis rewrites the html class, so locking the page
+  // (the hub entrance sets overflow:hidden) flip-flops forever (Lenis answers with overflow:clip, which reads as unlocked) and freezes the tab.
+  // Treat the hub class as the lock, ignore Lenis's own clip, and only act when the state really changes.
+  const smjs = path.join(stage, 'next/static/smooth.js');
+  if (fs.existsSync(smjs)) {
+    let s = fs.readFileSync(smjs, 'utf8'); const syn = 'const sync = () => (locked() ? lenis.stop() : lenis.start());';
+    const lk = "getComputedStyle(H).overflowY === 'hidden' ||";
+    if (s.includes(syn) && s.includes(lk)) fs.writeFileSync(smjs, s.replace(syn, 'let lockedNow = null; const sync = () => { const l = locked(); if (l === lockedNow) return; lockedNow = l; l ? lenis.stop() : lenis.start(); };').replace(lk, "H.classList.contains('hubfx-on') || (H.style.overflow !== 'clip' && getComputedStyle(H).overflowY === 'hidden') ||"));
+    else warn('smooth.js lock sync changed upstream – the hub entrance may freeze the page');
+  }
   // 3D crest in the About-page toggle: swap the stacked flat layers for the Blender relief model
   const c3 = path.join(stage, 'next/static/crest3d.js');
   if (fs.existsSync(c3)) {
@@ -80,8 +97,9 @@ try {
     h = h.replace("window.NOREX_ROOT='../'", "window.NOREX_ROOT=''").replace("window.NOREX_SW='../sw.js'", "window.NOREX_SW='sw.js'");
     if (MOCK && !h.includes('phoenix-mock.js')) h = h.replace('<head>', '<head><script src="phoenix-mock.js"></script>');
     if (!h.includes('pf.init')) h = h.replace('<head>', '<head>' + init);
-    if (!h.includes('phoenix.css')) h = h.replace('</head>', '<link rel="stylesheet" href="phoenix.css"></head>');
-    if (!h.includes('phoenix3d.js')) h = h.replace('</body>', '<script src="phoenix3d.js" defer></script><script src="phoenix-fx.js" defer></script></body>');
+    if (!h.includes('phoenix.css')) h = h.replace('</head>', '<link rel="stylesheet" href="phoenix.css"><link rel="stylesheet" href="pf-forge.css"><link rel="stylesheet" href="pf-ignite.css"><link rel="stylesheet" href="pf-hub.css"></head>');
+    if (!h.includes('pf-trans.js')) h = h.replace('<head>', '<head><script src="pf-trans.js"></script>');
+    if (!h.includes('phoenix3d.js')) h = h.replace('</body>', '<script src="phoenix3d.js" defer></script><script src="phoenix-fx.js" defer></script><script src="vendor-motion.js" defer></script><script src="vendor-anime.js" defer></script><script src="pf-forge.js" defer></script><script src="pf-ignite.js" defer></script><script src="pf-hub.js" defer></script></body>');
     if (f === 'index.html') { // home hero: the club's own line and the six stars of the badge (skipped silently if the upstream copy changes)
       h = h.replace(/(<div class="eyebrow reveal">)(EA SPORTS)/, '$1<span class="pf-stars" aria-hidden="true">★★★★★★</span> $2').replace(/<h1 class="reveal" style="--i:1">[\s\S]*?<\/h1>/, '<h1 class="reveal" style="--i:1">Rise. Burn.<br><em>Repeat.</em></h1>');
     }

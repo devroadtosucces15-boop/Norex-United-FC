@@ -105,3 +105,7 @@ body[data-motion="calm"] .lg img,body[data-motion="off"] .lg img,body.still .lg 
 @keyframes pfPop{from{transform:scale(0);opacity:0}}
 [data-motion=calm] .pfl *,[data-motion=off] .pfl *,.still .pfl *{animation:none!important}
 @media(prefers-reduced-motion:reduce){.pfl *{animation:none!important}}
+
+/* --- Page transitions (pf-trans.js): the static cover the new page is painted under, matching the "Gilded Sweep" marble layer --- */
+html[data-tin^=pf]:before{background:radial-gradient(90% 70% at 50% 38%,rgba(var(--pfa),.2),transparent 62%),radial-gradient(70% 50% at 15% 105%,rgba(255,150,40,.12),transparent 60%),linear-gradient(180deg,#0e0a06,#050302)}
+html[data-tin=pfclub]{--pfa:255,154,46}html[data-tin=pfmatches]{--pfa:70,194,138}html[data-tin=pfstats]{--pfa:98,168,255}html[data-tin=pftactics]{--pfa:176,140,255}

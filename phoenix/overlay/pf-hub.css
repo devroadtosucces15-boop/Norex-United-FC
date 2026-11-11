@@ -1,0 +1,29 @@
+/* PHOENIX hub entrance "The Vault" (pf-hub.js). Layered over the stock #hubfx styles in style.css; transform/opacity are the only things animated. */
+#hubfx.hx .fx-veil{background:radial-gradient(90% 70% at 50% 42%,rgba(40,22,8,.9),rgba(5,3,2,.97) 75%),radial-gradient(70% 35% at 50% 115%,rgba(255,110,30,.3),transparent 70%);will-change:opacity}
+#hubfx .hx-bloom,#hubfx .hx-rays{position:absolute;inset:0;opacity:0;pointer-events:none;will-change:transform,opacity;transform-origin:50% 40%}
+#hubfx .hx-bloom{background:radial-gradient(circle at 50% 40%,rgba(255,244,205,.8),rgba(246,200,100,.5) 12%,rgba(200,110,30,.24) 32%,transparent 58%)}
+#hubfx .hx-rays{background:repeating-conic-gradient(from 0deg at 50% 40%,rgba(255,214,120,.16) 0 4deg,transparent 4deg 13deg)}
+#hubfx .hx-bar{position:absolute;left:0;right:0;height:8vh;background:#000;z-index:3;will-change:transform}#hubfx .hx-bar.t{top:0}#hubfx .hx-bar.b{bottom:0}
+#hubfx .hx-flash{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(circle at 50% 40%,#fff8e0,rgba(255,220,140,.6) 40%,transparent 75%)}
+#hubfx .fx-key{filter:drop-shadow(0 0 14px rgba(255,214,120,.9)) drop-shadow(0 0 34px rgba(255,150,40,.55))}
+#hubfx .hx-ghost{filter:blur(1.5px) drop-shadow(0 0 18px rgba(255,170,60,.8))}
+/* the vault */
+#hubfx .hx-vault{background:linear-gradient(150deg,#fbe6a4,#d4a63f 38%,#8a6118 70%,#e9c66a);border-radius:14px;box-shadow:0 50px 110px rgba(0,0,0,.85),0 0 120px rgba(255,170,60,.38);will-change:transform,opacity}
+#hubfx .hx-vault .fx-door{background:radial-gradient(120% 70% at 50% 0,#35281b,#150e08 62%),linear-gradient(#1b130b,#0d0805);overflow:hidden;
+ box-shadow:0 0 0 2px rgba(240,200,110,.75) inset,0 0 0 5px rgba(20,12,5,.9) inset,0 0 0 6px rgba(240,200,110,.35) inset,0 10px 24px rgba(0,0,0,.5)}
+#hubfx .hx-leaf{position:absolute;top:50%;width:170%;aspect-ratio:1;translate:0 -50%;background:url(crest-sm.png) center/contain no-repeat;opacity:.92;filter:drop-shadow(0 0 10px rgba(255,170,60,.45))}
+#hubfx .fx-door.l .hx-leaf{left:15%}#hubfx .fx-door.r .hx-leaf{left:-85%}
+#hubfx .hx-sheen{position:absolute;inset:0;pointer-events:none;transform:translateX(-130%);background:linear-gradient(105deg,transparent 36%,rgba(255,243,200,.5) 50%,transparent 64%)}
+#hubfx .hx-bolt{position:absolute;left:12%;right:12%;height:2.4%;border-radius:3px;z-index:5;background:linear-gradient(#fff3cf,#b9892c 55%,#6b4a10);box-shadow:0 3px 6px rgba(0,0,0,.55)}
+#hubfx .hx-bolt.t{top:24%}#hubfx .hx-bolt.m{top:76%}#hubfx .hx-bolt.u{top:88%}
+#hubfx .hx-dial{position:absolute;left:50%;top:50%;width:40%;aspect-ratio:1;translate:-50% -50%;z-index:6;border-radius:50%;background:conic-gradient(#fff3cf,#b9892c,#fff3cf,#8d6212,#fff3cf);box-shadow:0 8px 20px rgba(0,0,0,.6),0 0 0 3px rgba(40,24,6,.8),0 0 30px rgba(255,170,60,.35);will-change:transform,opacity}
+#hubfx .hx-ring{position:absolute;inset:7%;border-radius:50%;background:radial-gradient(circle,#140c05 58%,#2a1a09 100%);will-change:transform}
+#hubfx .hx-ring b{position:absolute;left:50%;top:0;width:2px;height:50%;margin-left:-1px;transform-origin:50% 100%;transform:rotate(var(--r))}
+#hubfx .hx-ring b:before{content:"";display:block;height:11%;background:#f3c95c;border-radius:1px}
+#hubfx .hx-core{position:absolute;inset:30%;border-radius:50%;background:radial-gradient(circle at 50% 50%,#050302 20%,#6b4a10 23%,#f6dc92 48%,#8a6118 100%);box-shadow:inset 0 2px 6px rgba(255,255,255,.4)}
+#hubfx .hx-pulse{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,230,160,.9);opacity:0;pointer-events:none}
+/* the room behind the doors */
+#hubfx .fx-cone{background:radial-gradient(60% 100% at 50% 20%,rgba(255,240,200,.95),rgba(255,190,80,.35) 50%,transparent 78%)}
+#hubfx .hx-glow{position:absolute;inset:0;opacity:0;background:radial-gradient(80% 60% at 50% 38%,rgba(255,244,210,.9),rgba(255,190,90,.35) 55%,transparent 80%)}
+html.hubfx-on .pf-burst{z-index:2147483000}
+@media (prefers-reduced-motion:reduce){#hubfx .hx-rays{display:none}}
