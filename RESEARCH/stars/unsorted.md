@@ -44,4 +44,4 @@
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | The open agent skills tool - npx skills | TypeScript | 2026-11-12 |
 | [vinta/awesome-python](https://github.com/vinta/awesome-python) | The definitive list that answers "I want to do X in Python, which tool should I use?" | Python | 2026-11-14 |
 | [VoltAgent/awesome-openclaw-skills](https://github.com/VoltAgent/awesome-openclaw-skills) | The awesome collection of OpenClaw skills. 5,400+ skills filtered and categorized from the official OpenClaw Skills Registry.🦞 | – | 2026-10-30 |
-| [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) | A feature-rich command-line audio/video downloader | Python | 2026-11-04 |
+| [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) | A feature-rich command-line audio/video downloader | Python | 2026-11-14 |
