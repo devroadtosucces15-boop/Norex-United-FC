@@ -1,6 +1,6 @@
 {
-  "revision": "3f2929ea21c6f0ea31a5a848cca7307ccb29b683",
-  "files": 1280,
+  "revision": "569ab772fe12aaeb42bb098e86745bfbcfcc1c75",
+  "files": 1279,
   "imports": 736,
   "api_paths": 258,
   "tables": 333,
@@ -64,15 +64,6 @@
         "RESEARCH",
         "anyone"
       ],
-      "functions": []
-    },
-    {
-      "path": ".github/workflows/mickey-relay.yml",
-      "layer": ".github",
-      "lines": 43,
-      "imports": [],
-      "endpoints": [],
-      "tables": [],
       "functions": []
     },
     {

@@ -9,9 +9,8 @@ flowchart LR
   n2[".github/workflows/ea-relay.yml"]
   n3[".github/workflows/issues-sync.yml"]
   n4[".github/workflows/link-inbox.yml"]
-  n5[".github/workflows/mickey-relay.yml"]
-  n6[".github/workflows/stars-sync.yml"]
-  n7[".github/workflows/system-atlas.yml"]
-  n8[".github/workflows/test.yml"]
-  n9[".github/workflows/update.yml"]
+  n5[".github/workflows/stars-sync.yml"]
+  n6[".github/workflows/system-atlas.yml"]
+  n7[".github/workflows/test.yml"]
+  n8[".github/workflows/update.yml"]
 ```
